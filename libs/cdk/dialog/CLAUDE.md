@@ -43,3 +43,5 @@ RAC `DialogTrigger` + `Dialog` (React Aria useDialog / useOverlayTrigger). Compo
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../modal/CLAUDE.md](../modal/CLAUDE.md), [../popover/CLAUDE.md](../popover/CLAUDE.md), [../overlay/CLAUDE.md](../overlay/CLAUDE.md)
 - Docs: [dialog](../../../apps/cdk-docs/content/components/dialog.md); examples `apps/cdk-docs/examples/dialog-*/`
+
+- ID-RESUME (2026-10-27): Generated dialog title, content and long-press description ids; DialogTrigger idSignal roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

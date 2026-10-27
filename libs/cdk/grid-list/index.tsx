@@ -96,7 +96,7 @@ import {
 } from "../slots/index.tsx";
 import { ButtonContext } from "../button/index.tsx";
 import { CheckboxContext, CheckboxFieldContext } from "../checkbox/contexts.ts";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { TextContext } from "../text/index.tsx";
 import { SelectionIndicatorContext } from "../selection-indicator/context.ts";
 import { SharedElementContext, type SharedElementScope } from "../shared-element-transition/transition.tsx";
@@ -683,7 +683,7 @@ export const GridListItem = /*#__PURE__*/ createLeafComponent(
     const disabledView = isLive(props, "isDisabled") ? liveView(props, ["isDisabled"]) : undefined;
     const specNow = (): RowSpec => (disabledView ? withDisabled(spec, !!read(disabledView.isDisabled as MaybeAccessor<boolean | undefined>)) : spec);
     const descriptionSlot = createSlotId();
-    const checkboxId = createId();
+    const checkboxId = resumedId();
     const router = useRouter();
     // Resumable closures / bags read locals only (a `props.x` read captures the whole props object).
     const { focusMode, allowsArrowNavigation, onHoverStart, onHoverEnd, onHoverChange } = props;

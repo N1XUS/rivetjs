@@ -69,7 +69,7 @@ import {
 } from "../utils/dom.ts";
 import { syntheticLinkAttrs, type LinkDOMProps, type Router } from "../utils/links.tsx";
 import { direction as elementDirection } from "../bidi/index.ts";
-import { useId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import {
   gridSelectionAnnouncement,
   gridSelectionCheckboxChange,
@@ -209,7 +209,7 @@ export interface GridListAria {
 /** The data `useGridList` shares with its items. Call once per list (component body); pass to the views. */
 export function gridListShared(props: AriaGridListOptions): GridListShared {
   return {
-    id: useId(props.id),
+    id: props.id || resumedId(),
     onAction: props.onAction,
     linkBehavior: props.linkBehavior ?? "action",
     keyboardNavigationBehavior: props.keyboardNavigationBehavior ?? "arrow",

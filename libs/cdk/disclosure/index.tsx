@@ -37,7 +37,7 @@ import {
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { dataBool, setDataAttr } from "../utils/data-attrs.tsx";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { isFocusVisible } from "../interactions/focus-visible.tsx";
 import { ButtonContext } from "../button/index.tsx";
 import {
@@ -222,7 +222,7 @@ function disclosure(inProps: DisclosureProps) {
   const props = hasLive(ctxProps) ? liveOptions(ctxProps, ["isDisabled"], ["isExpanded"]) : ctxProps;
   const groupState = useContext(DisclosureGroupStateContext);
   // Generate an id if one wasn't provided.
-  const domId = createId();
+  const domId = resumedId();
   const id: Key = props.id ?? domId;
   const userChange = props.onExpandedChange,
     onOpened = props.onOpened,

@@ -40,3 +40,5 @@ RAC Disclosure port: `DisclosureGroup`, `Disclosure`, `DisclosurePanel` (+ `<But
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../accordion/CLAUDE.md](../accordion/CLAUDE.md), [../button/CLAUDE.md](../button/CLAUDE.md)
 - Docs: `apps/cdk-docs/content/components/disclosure.md`, `accordion.md`
+
+- ID-RESUME (2026-10-27): Generated trigger / panel IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

@@ -34,7 +34,7 @@ import {
 } from "@rivetjs/cdk/date";
 import { parseDateValue, stringifyDateValue, toDateValueString, type AnyDateValue, type DateValueString } from "@rivetjs/cdk/date";
 import type { CalendarDateTime, ZonedDateTime } from "@rivetjs/cdk/date";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { formatString, getStringsForLocale, resolveLocale } from "@rivetjs/cdk/i18n";
 import { calendarMessages, type CalendarMessageKey } from "../calendar/intl.ts";
 
@@ -353,7 +353,7 @@ function baseState(
         ? alignEnd(focusedDate, visibleDuration, locale, effectiveMin, effectiveMax)
         : alignCenter(focusedDate, visibleDuration, locale, effectiveMin, effectiveMax);
   return {
-    id: options.id ?? createId(),
+    id: options.id ?? resumedId(),
     locale,
     calendar,
     ...(options.createCalendar ? { createCalendar: options.createCalendar } : {}),

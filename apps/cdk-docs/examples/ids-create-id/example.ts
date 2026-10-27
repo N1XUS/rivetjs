@@ -1,8 +1,8 @@
 import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
-  title: "createId",
-  summary: "A Field component that links its label, input and hint with createId(); a field added in the browser gets an id that cannot collide.",
+  title: "resumedId",
+  summary: "A Field component that links its label, input and hint with resumedId(); a field added in the browser gets an id that cannot collide.",
   tags: ["cdk", "id", "forms"],
   status: "experimental",
   frame: { height: "md" },

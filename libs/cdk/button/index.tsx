@@ -22,7 +22,7 @@
 import { createContext, createRoot, effect, provide, runWithOwner, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { type DOMRenderProps } from "../utils/render.ts";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { dataBool, readAttrs, mergeFocusableContext, focusStateIn, hoverStateOver, type InteractionStateOptions } from "../utils/data-attrs.tsx";
 // A user `onKeyDown` / `onKeyUp` alone = `keyboardKeyDown({ onKeyDown }, e)` (useKeyboard without shortcuts): the
@@ -278,7 +278,7 @@ export function Button(inProps: ButtonProps) {
   // Live: ARIA / form keys forward to the props (runtime mergeProps: a defined live value wins per read).
   const aria = lv ? (mergeLive(ariaBag, lv) as Record<string, unknown>) : ariaBag;
   // RAC: `useId(buttonProps.id)` + `useId()` for the progress bar (Rivet derives it: one id per button).
-  const id = (aria.id as string | undefined) ?? createId();
+  const id = (aria.id as string | undefined) ?? resumedId();
   const progressId = id + "-progress";
   // Accessor rule: aria-label / aria-labelledby may be accessors (Tree chevron Expand ↔ Collapse): read in bindings.
   const labelledByProp = (lv ? liveAt(lv, "aria-labelledby") : aria["aria-labelledby"]) as MaybeAccessor<string | undefined>;

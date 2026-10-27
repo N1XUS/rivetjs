@@ -67,7 +67,7 @@ No bare `@rivetjs/cdk/state`; pattern `./state/*` -> `state/<file>.ts`. Main exp
 - `npx vitest run --project cdk-components libs/cdk/tests-components/calendar-state.test.ts libs/cdk/tests-components/calendar-keyboard.test.ts libs/cdk/tests-components/calendar-parts.test.ts libs/cdk/tests-components/date-picker-state.test.ts libs/cdk/tests-components/tabs-state.test.ts`
 
 ## Gotchas
-- Two list states: `list.ts` (adapter-based, used by components) vs `../collections/list-state.ts` (faithful port, unused by components)
+- Two list states: `list.ts` (adapter-based) vs `../collections/list-state.ts` (built-collection state used by ListBox / GridList); both generated id fallbacks use `resumedId()`
 - `list.ts`, `select.ts`, `menu.ts`, `tabs.ts` import `../_adapters/*` (see `../_adapters/CLAUDE.md`)
 - `calendar.ts` / `date-field.ts` / `time-field.ts` / `date-picker.ts`: `state.aria` hookData is plain data only (a closure over the state = self-cycle, resume rejects); exception: a picker field's `extraDescribedBy` = the picker's `describedBy` accessor (closes over the picker state, not the field: no cycle) with `presentation: true`; TimeField state keeps the calendar identifier only (no `createCalendar` fn)
 - Module-level / imported functions as props are not serializable (`isDateUnavailable`, `createCalendar`) - wrap in a local const
@@ -77,3 +77,5 @@ No bare `@rivetjs/cdk/state`; pattern `./state/*` -> `state/<file>.ts`. Main exp
 - [../CLAUDE.md](../CLAUDE.md), [../selection/CLAUDE.md](../selection/CLAUDE.md), [../collections/CLAUDE.md](../collections/CLAUDE.md), [../_adapters/CLAUDE.md](../_adapters/CLAUDE.md)
 - component folders' `CLAUDE.md` (listbox, select, combobox, tabs, menu, calendar, date-field, date-picker, tooltip, …)
 - `docs/guides/resumability.md`, `docs/guides/aria.md`
+
+- ID-RESUME (2026-10-27): Generated combobox / select / list / tabs / menu-trigger / calendar / date-field / date-picker state roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

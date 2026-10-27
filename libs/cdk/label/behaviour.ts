@@ -2,10 +2,10 @@
 // src/label/useField.ts, src/utils/useLabels.ts), Apache-2.0, © Adobe.
 // Rivet: names per cdk convention: `useLabel` → `labelProps`, `useField` → `fieldProps`, `useLabels` → `labelsProps`
 // (old `labelAria` / `fieldAria` / `labelsAttrs` = deprecated migration shims).
-// Rivet: ids are created once on the server (`createId`); the description / error ids are part of
+// Rivet: generated ids are retained across resume (`resumedId`); the description / error ids are part of
 // `aria-describedby` only while that part renders (RA `useSlotId`): description when given, error
 // message while the field is invalid (`describedBy(ids, invalid)` is read by a binding).
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { DEV, devWhere } from "#dev";
 
 export interface LabelAriaProps {
@@ -31,7 +31,7 @@ export function labelsProps(
   labelledBy: string | undefined,
   defaultLabel?: string,
 ): { id: string; "aria-label"?: string; "aria-labelledby"?: string } {
-  const own = id ?? createId();
+  const own = id ?? resumedId();
   if (labelledBy && label) labelledBy = [...new Set([own, ...labelledBy.trim().split(/\s+/)])].join(" ");
   else if (labelledBy) labelledBy = labelledBy.trim().split(/\s+/).join(" ");
   if (!label && !labelledBy && defaultLabel) label = defaultLabel;
@@ -40,12 +40,12 @@ export function labelsProps(
 
 /** RA `useLabel`. With an explicit `id`, the part ids derive from it (`<id>-label`; byte-stable HTML). */
 export function labelProps(props: LabelAriaProps): LabelAria {
-  const id = props.id ?? createId();
+  const id = props.id ?? resumedId();
   let labelledBy = props["aria-labelledby"];
   const ariaLabel = props["aria-label"];
   let attrs: LabelAria["labelProps"] = {};
   if (props.label) {
-    const labelId = props.id ? props.id + "-label" : createId();
+    const labelId = props.id ? props.id + "-label" : resumedId();
     labelledBy = labelledBy ? `${labelId} ${labelledBy}` : labelId;
     attrs = { id: labelId, for: (props.labelElementType ?? "label") === "label" ? id : undefined };
   } else if (DEV && !labelledBy && !ariaLabel) {
@@ -79,8 +79,8 @@ export function fieldProps(props: FieldAriaProps): FieldIds {
   const label = labelProps(props);
   return {
     ...label,
-    descriptionId: props.description != null && props.description !== false ? (props.id ? props.id + "-description" : createId()) : undefined,
-    errorMessageId: props.id ? props.id + "-error" : createId(),
+    descriptionId: props.description != null && props.description !== false ? (props.id ? props.id + "-description" : resumedId()) : undefined,
+    errorMessageId: props.id ? props.id + "-error" : resumedId(),
     extraDescribedBy: props["aria-describedby"],
   };
 }

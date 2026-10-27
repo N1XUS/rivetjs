@@ -30,7 +30,7 @@ import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { Provider, contextProps, type ClassNameOrFunction, type ContextValue, type RefValue, type RenderProps, type StyleOrFunction } from "../slots/index.tsx";
 import { createEnterAnimation, createExitAnimationState, watchExitAnimation, type ExitAnimationState } from "../utils/animation.tsx";
 import { dataBool } from "../utils/data-attrs.tsx";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { isHidden } from "../collections/hidden.ts";
 import { FocusableProvider } from "../focus/focusable.tsx";
@@ -122,7 +122,7 @@ export function TooltipTrigger(props: TooltipTriggerComponentProps) {
   const live = hasLive(props) ? liveOptions(props, TRIGGER_LIVE as never, ["isOpen"]) : props;
   const state = createTooltipTriggerState(live);
   const triggerRef = createRef<Element>();
-  const tooltipId = createId();
+  const tooltipId = resumedId();
   const options: TooltipTriggerOptions = { isDisabled: live.isDisabled, trigger: live.trigger, shouldCloseOnPress: live.shouldCloseOnPress };
   const children = props.children;
   return (
@@ -183,7 +183,7 @@ export function Tooltip(props: TooltipProps) {
   const isExiting = () => !!readAccessor(explicitExiting) || (!state.shouldSkipAnimation() && exitAnimation.isExiting());
   // Resolved here (a selector / ref serializes): a re-created tooltip region has no context above it.
   const mount = useContext(PortalContext);
-  const id = p.id ?? createId();
+  const id = p.id ?? resumedId();
   return (
     <span data-rv-overlay-anchor="" style={{ display: "contents" }}>
       <Show when={() => state.isOpen() || isExiting()}>

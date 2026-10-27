@@ -96,3 +96,5 @@ Headless month / week / day scheduler (agenda): port of the user's own Angular l
 ## Documentation and integration
 - Public guides: [headless Scheduler](../../../apps/cdk-docs/content/components/scheduler.md) (eight examples), [styled Scheduler](../../../apps/ui-docs/content/components/scheduler.md) (15 examples). API entries are generated from public Scheduler/layout/UI entry points. Event/date strings and explicit SSR time zones are the documented resume path.
 - The original whole-week render and cold-handler byte targets remain unchanged and unmet. Current broad gate results, generated size measurements and the known UI suite failures are recorded in the [integration/performance report](../../../docs/benchmarks/2026-10-23-scheduler.md).
+
+- ID-RESUME (2026-10-27): Generated drag-hint and overflow-popover IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

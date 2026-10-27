@@ -69,7 +69,7 @@ import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts"
 import { dataBool } from "../utils/data-attrs.tsx";
 import { hasLive, liveAssign, liveAt, liveKeys, liveView } from "../utils/live.tsx";
 import { liveRenderProps } from "../slots/index.tsx";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { RouterContext } from "../utils/links.tsx";
 import { loadMoreSentinel, type LoadMoreSentinelProps } from "../utils/load-more-sentinel.tsx";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
@@ -235,7 +235,7 @@ function StandaloneListBox<T>(input: { props: ListBoxProps<T>; listBoxRef: RefVa
     ...(own as ListProps<T>),
     // RAC ListBoxInner merges SelectableCollectionContext (Autocomplete) into the props useListBox reads the id
     // from (mergeIds: the listbox's own id wins), so without an own id the list takes the collection id.
-    id: props.id ?? mergedIdOf((useContext(SelectableCollectionContext) as { id?: unknown } | null)?.id) ?? createId(),
+    id: props.id ?? mergedIdOf((useContext(SelectableCollectionContext) as { id?: unknown } | null)?.id) ?? resumedId(),
     items: undefined,
     children: undefined,
     collection,

@@ -33,3 +33,5 @@
 
 ## See also
 - [../overlay-arrow/CLAUDE.md](../overlay-arrow/CLAUDE.md), [../overlay/CLAUDE.md](../overlay/CLAUDE.md), [../preview-trigger/CLAUDE.md](../preview-trigger/CLAUDE.md)
+
+- ID-RESUME (2026-10-27): Generated trigger / tooltip IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

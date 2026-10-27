@@ -25,3 +25,5 @@ RAC `ColorField` + react-aria `useColorField` / `useColorChannelField`: hex text
 [../color/CLAUDE.md](../color/CLAUDE.md), [../number-field/CLAUDE.md](../number-field/CLAUDE.md), `apps/cdk-docs/content/components/color-field.md`
 - `render` (RAC DOMRenderProps): `if (render) return render(attrs, renderProps)` before the compiled element; reactive attrs are accessors, handlers inline arrows; tests `tests/render-forms.browser.test.tsx`; hidden form input stays a sibling of the rendered element
 - Input `data-rk` = `SPIN_KEYS` (`spinKeysAttr(isDisabled, isReadOnly)`): cold spin keys are held by the resume loader and replayed (SLIDER-KEY; `tests/color-field.browser.test.tsx`).
+
+- ID-RESUME (2026-10-27): Generated input / label / description / error IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

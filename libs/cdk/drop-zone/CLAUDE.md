@@ -31,3 +31,5 @@ RAC `DropZone` + react-aria `useDrop` (native drag events) + `useClipboard` (pas
 
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../file-trigger/CLAUDE.md](../file-trigger/CLAUDE.md), [../focus/CLAUDE.md](../focus/CLAUDE.md)
+
+- ID-RESUME (2026-10-27): Generated hidden-button / label IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

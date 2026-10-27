@@ -25,7 +25,7 @@ import { hoverProps } from "../interactions/hover.tsx";
 import { mergeProps } from "../interactions/merge-props.tsx";
 import { landmarkProps } from "../landmark/index.tsx";
 import { getEventTarget, getOwnerDocument } from "../utils/dom-core.ts";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { focusWithoutScrolling } from "../utils/index.ts";
 import type { QueuedToast, ToastState } from "../state/toast.ts";
 import { strings as intlMessages } from "./intl.ts";
@@ -110,8 +110,8 @@ export function toastProps<T>(props: AriaToastProps<T>, state: Pick<ToastState<T
     onCleanup(() => current?.timer?.pause());
   }
 
-  const titleId = createId();
-  const descriptionId = createId();
+  const titleId = resumedId();
+  const descriptionId = resumedId();
   // RA useSlotId: the description id only once an element with it rendered.
   const descriptionSlot = signal<string | undefined>(undefined);
 

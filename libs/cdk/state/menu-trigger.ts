@@ -4,7 +4,7 @@
 // stack of open submenus) and one submenu trigger state per SubmenuTrigger. Signals + JSON only. RAC DialogTrigger uses
 // it too (`useMenuTriggerState`), so it imports no list / selection / collection code.
 import { computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import type { FocusStrategy } from "../_adapters/collections.ts";
 import type { Key } from "./list.ts";
 import { closeOverlay, createOverlayTriggerState, openOverlay, toggleOverlay, type OverlayTriggerProps, type OverlayTriggerState } from "./overlays.ts";
@@ -35,7 +35,7 @@ export interface MenuTriggerState extends OverlayTriggerState {
 /** react-stately `useMenuTriggerState`. */
 export function createMenuTriggerState(props: MenuTriggerStateProps & { id?: string } = {}): MenuTriggerState {
   // Region state: a resumed page re-creating the menu's region (its first open) keeps it.
-  const menuId = props.id ?? createId();
+  const menuId = props.id ?? resumedId();
   return {
     ...createOverlayTriggerState(props),
     triggerId: menuId + "-trigger",

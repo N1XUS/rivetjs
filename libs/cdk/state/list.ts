@@ -6,7 +6,7 @@
 // items render the collection; in the browser handlers read it back from the DOM ("DOM as
 // collection"), so filtering / async items need no state change here.
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import {
   createMultipleSelectionState,
   flatItems,
@@ -132,7 +132,7 @@ function withList(
   }
   return {
     ...selection,
-    id: props.id ?? createId(),
+    id: props.id ?? resumedId(),
     options,
     ...(props.onAction ? { onAction: props.onAction } : {}),
   };

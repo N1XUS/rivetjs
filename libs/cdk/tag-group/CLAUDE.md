@@ -22,3 +22,5 @@ RAC TagGroup / TagList / Tag + RA useTagGroup / useTag on the `grid-list/behavio
 
 ## Tests
 `tests/tag-group.browser.test.tsx`, story `tests-components/tag-group.test.ts` (route `app/src/routes/tag-group.tsx`).
+
+- ID-RESUME (2026-10-27): Generated label and remove-button ids use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

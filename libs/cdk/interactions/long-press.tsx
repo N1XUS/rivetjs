@@ -5,7 +5,7 @@
 // Rivet: built on pressProps (resumable handlers); the description is an element rendered by the
 // caller from `descriptionProps` + `description` (the original's useDescription creates a hidden node
 // at run time — not resumable; render `<span id={descriptionId} hidden>{text}</span>` once).
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { focusWithoutScrolling, getOwnerDocument, getOwnerWindow, read, type FocusableElement, type MaybeAccessor } from "./utils.ts";
 import { pressProps, type PressEvent } from "./press.tsx";
 import { mergeProps } from "./merge-props.tsx";
@@ -107,7 +107,7 @@ export function longPressProps(props: LongPressProps = {}): LongPressResult {
     onPressEnd: (e: PressEvent) => longPressEnd(lp, e),
   });
   const described = props.onLongPress && !read(props.isDisabled) && props.accessibilityDescription;
-  const descriptionId = described ? createId() : undefined;
+  const descriptionId = described ? resumedId() : undefined;
   return {
     longPressProps: mergeProps(press.pressProps, descriptionId ? { "aria-describedby": descriptionId } : {}),
     descriptionId,

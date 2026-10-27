@@ -53,3 +53,5 @@ RAC Tabs family 1:1 (`Tabs` / `TabList` / `Tab` / `TabPanels` / `TabPanel`, rend
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../state/CLAUDE.md](../state/CLAUDE.md), [../_adapters/CLAUDE.md](../_adapters/CLAUDE.md), [../collections/CLAUDE.md](../collections/CLAUDE.md)
 - `docs/design/specs/2026-10-05-tabs-parity.md`
+
+- ID-RESUME (2026-10-27): Generated tab / panel roots (state/tabs.ts) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

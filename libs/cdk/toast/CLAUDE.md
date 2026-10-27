@@ -45,3 +45,5 @@ RAC Toast family (`UNSTABLE_*`, Toast.tsx) + @react-aria/toast (useToastRegion, 
 - Wake = one `rv-toast-queue` dispatch per update while unsubscribed: relies on the resume runtime attaching document `clientEvent` listeners before resumed handlers run (no retries)
 - Queue must live at module level (a component-local queue is a different instance in the browser); multiple queues per page need distinct `name`s
 - Module-level signals in example/route code are not bound to SSR output (browser module instance differs)
+
+- ID-RESUME (2026-10-27): `toastProps` generates title / description ids with the shared `resumedId()` helper for custom server-rendered toast consumers. The standard empty-at-SSR ToastRegion still creates its toasts only in the browser.

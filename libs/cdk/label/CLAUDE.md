@@ -19,14 +19,14 @@ RAC `Label` (reads `LabelContext`) + legacy `FieldError` + label/field id wiring
 ## Upstream
 - RAC `Label.tsx`, `Text.tsx`, `FieldError.tsx`; react-aria `label/useLabel.ts`, `label/useField.ts`, `utils/useLabels.ts` (Apache-2.0)
 - Rivet: Label reads `LabelContext` (fields provide id / `for` / `elementType`); `render` prop via `renderElement`; not hideable
-- Rivet (behaviour.ts:3-5): ids created once on server (`createId`); description / error ids in `aria-describedby` only while that part renders (RA `useSlotId`)
+- Rivet (behaviour.ts:3-5): generated ids retained across resume (`resumedId`); description / error ids in `aria-describedby` only while that part renders (RA `useSlotId`)
 - Rivet (FieldError): node kept with `hidden` while no error (RAC renders nothing) so id relation + bindings stay
 
 ## Rules / invariants
 - `describedBy(ids, invalid)` reads a live `aria-describedby` accessor (`ids.extraDescribedBy`) inside the caller's binding (LIVE-SWEEP; a function was joined as text before)
 - live props (P5): a live prop (own getter, e.g. `class={c()}` or dynamic children) takes `../utils/live-element.tsx` `liveElement` (class / style / children through bindings; other props forwarded); static props keep the compiled per-element path (0 cost); `render` stays read once
 - hideable (RAC `createHideableComponent`): `if (isHiddenPart()) return null` BEFORE `contextProps` (`../collections/hidden.ts`): in the collection build pass the providers are absent (slot lookups would throw)
-- explicit `id` -> derived part ids `<id>-label`, `<id>-description`, `<id>-error` (byte-stable HTML); else `createId()`
+- explicit `id` -> derived part ids `<id>-label`, `<id>-description`, `<id>-error` (byte-stable HTML); else `resumedId()`
 - `errorMessageId` always reserved (errors can appear later); `descriptionId` only when description given
 - `labelAria`: label `for` only when `labelElementType` is `label`; group fields (checkbox/radio group) pass `"span"`
 - `labelsAttrs`: aria-label + aria-labelledby both -> labelledby includes the element's own id
@@ -50,3 +50,5 @@ RAC `Label` (reads `LabelContext`) + legacy `FieldError` + label/field id wiring
 - [../CLAUDE.md](../CLAUDE.md)
 - `apps/cdk-docs/content/components/field.md`
 - [../form/CLAUDE.md](../form/CLAUDE.md), [../text-field/CLAUDE.md](../text-field/CLAUDE.md)
+
+- ID-RESUME (2026-10-27): Generated label, input, description and error ids use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

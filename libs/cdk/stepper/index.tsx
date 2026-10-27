@@ -29,7 +29,7 @@ import { Button, type ButtonProps } from "../button/index.tsx";
 import { useLocale } from "../i18n/index.ts";
 import { dataBool, focusStateBlur, focusStateFocus, hoverStateEnter, hoverStateLeave } from "../utils/data-attrs.tsx";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import type { DOMRenderProps } from "../utils/render.ts";
 import { renderProps as resolveRenderProps, type RefValue, type RenderProps } from "../slots/index.tsx";
 import {
@@ -196,7 +196,7 @@ export interface StepperProps extends StepperStateProps, RenderProps<StepperRend
 /** The stepper root: owns the state (upstream `CdkStepper`). `div` (tabs semantics) or `ol` (list semantics). */
 export function Stepper(props: StepperProps) {
   const { class: cls, style, children, render, ref } = props;
-  const id = props.id ?? createId();
+  const id = props.id ?? resumedId();
   const state = createStepperState(id, props);
   const values: StepperRenderProps = {
     selectedIndex: () => stepperSelectedIndex(state),

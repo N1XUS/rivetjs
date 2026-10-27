@@ -8,7 +8,7 @@
 //   are kept (React's first render does the same).
 // - `useOverlayFocusContain()` → the surrounding `<Overlay>` (`portal/`) contains focus.
 // - `isRefocusing` ref → a WeakSet of dialog elements being re-focused (handlers are free functions).
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { slotIdRef, type SlotId } from "../slots/index.tsx";
 import { focusSafely } from "../focus/index.ts";
 import { DEV, getActiveElement, isFocusWithin } from "../utils/dom-core.ts";
@@ -58,10 +58,10 @@ export interface DialogAria {
 /** Attribute bags of a dialog and its title / description (react-aria `useDialog`). */
 export function dialogProps(props: AriaDialogProps, slots: DialogSlots = {}): DialogAria {
   const role = props.role ?? "dialog";
-  let titleId: string | undefined = slots.title?.id ?? createId();
+  let titleId: string | undefined = slots.title?.id ?? resumedId();
   titleId = props["aria-label"] ? undefined : titleId;
 
-  let contentId: string | undefined = slots.content?.id ?? createId();
+  let contentId: string | undefined = slots.content?.id ?? resumedId();
   contentId = role === "alertdialog" && !props["aria-describedby"] ? contentId : undefined;
 
   const title = slots.title,

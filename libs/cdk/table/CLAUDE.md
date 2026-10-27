@@ -30,3 +30,5 @@ RAC Table family + RA useTable / useTableColumnHeader / useTableRow / useTableCe
 
 ## Tests
 `tests/table.browser.test.tsx` (RAC Table.test.js port), `tests/table-resizing.browser.test.tsx` (RA tableResizingTests port), story `tests-components/table.test.ts` (route `app/src/routes/table.tsx`).
+
+- ID-RESUME (2026-10-27): Generated grid root used by row / header / cell ids use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

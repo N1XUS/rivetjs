@@ -60,3 +60,5 @@ React Aria overlay primitives (imperative, browser-side): overlay stack, positio
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../portal/CLAUDE.md](../portal/CLAUDE.md), [../overlay-service/CLAUDE.md](../overlay-service/CLAUDE.md), [../popover/CLAUDE.md](../popover/CLAUDE.md), [../modal/CLAUDE.md](../modal/CLAUDE.md)
 - Docs: [overlays](../../../apps/cdk-docs/content/foundations/overlays.md); examples `apps/cdk-docs/examples/overlay-{custom,layer,position}/`
+
+- ID-RESUME (2026-10-27): Generated overlayTrigger aria-controls targets use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

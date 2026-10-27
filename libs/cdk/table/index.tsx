@@ -154,7 +154,7 @@ import { focusSafely, getFocusableTreeWalker } from "../focus/index.ts";
 import { getItemElement } from "../collections/dom.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { isScrollable } from "../utils/dom.ts";
-import { useId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { useLocale } from "../i18n/index.ts";
 import { loadMoreSentinel, type LoadMoreSentinelProps } from "../utils/load-more-sentinel.tsx";
 import { useRouter, type LinkDOMProps } from "../utils/links.tsx";
@@ -442,7 +442,7 @@ export function Table(inProps: TableProps) {
     return filter ? c.filter(filter as never) : c;
   });
   const shared = gridShared({ onRowAction, onCellAction, shouldSelectOnPressUp, keyboardNavigationBehavior });
-  const gridId = useId(props.id);
+  const gridId = props.id || resumedId();
   const view = (): TableStateLike<unknown> => ({ ...tableState<unknown>(data, collection()), grid: shared, gridId });
   const sortDescriptionId = gridId + "-sort-description";
   const descriptionId = gridId + "-description";

@@ -30,7 +30,7 @@
 //   builds a locale `contains` filter on use; with neither, no filtering (upstream hook semantics).
 // - The validation value (`{ inputValue, value, selectedKey }` or null) is a signal kept in sync too.
 import { batch, signal, untrack, type Signal } from "@rivetjs/reactivity";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { CollectionBuilder, createCollection } from "@rivetjs/cdk/collections/builder";
 import { ListCollection } from "@rivetjs/cdk/collections/list";
 import { getChildNodes } from "@rivetjs/cdk/collections/nodes";
@@ -238,7 +238,7 @@ export function createComboBoxCore<T = any, M extends SelectionMode = "single">(
   const initialDisplay = single && Array.isArray(initialValue) ? (initialValue[0] ?? null) : initialValue;
   const core = {
     // The listbox id (RA useMenuTrigger `menuId` = useId()); `props.id` is the input's id.
-    id: createId(),
+    id: resumedId(),
     selectionMode,
     menuTrigger: props.menuTrigger ?? "input",
     allowsEmptyCollection: !!props.allowsEmptyCollection,

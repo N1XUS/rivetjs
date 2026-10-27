@@ -25,3 +25,5 @@ RAC GridList family + RA useGridList / useGridListItem / useGridListSection / us
 
 ## Resumability
 - Root `data-rk` = `selectableCollectionKeys` (arrows, Home / End, PageUp / PageDown; `gridListAttrs` + both GridList branches, tree via `treeProps`): held by the resume loader while a cold chunk loads; a row's text field keeps its caret keys (the loader stops at a text field without its own `data-rk`). SLIDER-KEY.
+
+- ID-RESUME (2026-10-27): Generated collection roots and selection-checkbox ids use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

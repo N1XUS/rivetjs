@@ -36,7 +36,7 @@ import type {
   CarouselRotationControlProps as CarouselRotationControlPrimitiveProps,
   CarouselSlideProps as CarouselSlidePrimitiveProps,
 } from "@rivetjs/cdk/carousel";
-import { useId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
@@ -108,7 +108,7 @@ const ROOT_STYLE_PROPS = ["class", "size", "placement"] as const;
 const CarouselRoot = (props: CarouselRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "size", "placement", "orientation", "id", "onSelect"]);
   const orientation: CarouselOrientation = local.orientation ?? "horizontal";
-  const id = useId(local.id);
+  const id = local.id || resumedId();
   const onSelect = local.onSelect;
   const context: CarouselContext = {
     get size() {

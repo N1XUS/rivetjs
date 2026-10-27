@@ -46,3 +46,5 @@ Native `<button>` with RA press events, pending state, form attrs; `press.ts` re
 - [../CLAUDE.md](../CLAUDE.md)
 - `apps/cdk-docs/content/components/button.md`, `apps/cdk-docs/content/foundations/interactions.md`
 - [../toggle-button/CLAUDE.md](../toggle-button/CLAUDE.md), [../link/CLAUDE.md](../link/CLAUDE.md)
+
+- ID-RESUME (2026-10-27): Generated Button / progress-bar IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

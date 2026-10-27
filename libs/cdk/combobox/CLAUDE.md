@@ -41,3 +41,5 @@ LabelContext, ButtonContext (+ `isPressed` while open), InputContext, FieldInput
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../listbox/CLAUDE.md](../listbox/CLAUDE.md), [../autocomplete/CLAUDE.md](../autocomplete/CLAUDE.md), [../state/CLAUDE.md](../state/CLAUDE.md)
 - `apps/cdk-docs/content/components/combobox.md`
+
+- ID-RESUME (2026-10-27): Generated listbox and menu-trigger roots (state/combobox.ts and behaviour.tsx) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

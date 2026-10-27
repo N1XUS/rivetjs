@@ -17,7 +17,7 @@ import {
   type DateValueString,
 } from "@rivetjs/cdk/date";
 import { controllable } from "@rivetjs/cdk/interactions";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { resolveLocale } from "@rivetjs/cdk/i18n";
 import {
   createFormValidationState,
@@ -138,7 +138,7 @@ export type AnyDatePickerState = DatePickerState | DateRangePickerState;
 
 const pickerBase = (options: DatePickerBaseOptions): Omit<PickerStateBase, keyof OverlayTriggerState> & OverlayTriggerState => ({
   ...createOverlayTriggerState(options),
-  id: options.id ?? createId(),
+  id: options.id ?? resumedId(),
   shouldCloseOnSelect: options.shouldCloseOnSelect ?? true,
   ...(options.pageBehavior ? { pageBehavior: options.pageBehavior } : {}),
   ...(options.firstDayOfWeek ? { firstDayOfWeek: options.firstDayOfWeek } : {}),

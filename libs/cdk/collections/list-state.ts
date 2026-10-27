@@ -9,7 +9,7 @@
 // resumed handler rebuilds them from the state). React's `state.selectionManager.x` is
 // `listSelectionManager(state).x`.
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { CollectionBuilder, Item as CollectionItem, createCollection } from "@rivetjs/cdk/collections/builder";
 import { ListCollection } from "@rivetjs/cdk/collections/list";
 import type { Collection, CollectionChildren, CollectionElement, Key, LayoutDelegate, Node } from "@rivetjs/cdk/collections/types";
@@ -101,7 +101,7 @@ export function createListState<T = Item>(options: ListProps<T>): ListState<T> {
   const disabledKeys = new Set<Key>(options.disabledKeys ?? []);
   const selectionState = createMultipleSelectionState({ ...options, disabledKeys });
   return {
-    id: options.id ?? createId(),
+    id: options.id ?? resumedId(),
     selectionState,
     disabledKeys,
     items: options.items,

@@ -17,7 +17,7 @@ import { Show, type DOMValue } from "@rivetjs/runtime/dom";
 import { splitProps } from "@rivetjs/runtime/props";
 import { visuallyHidden } from "../a11y/index.ts";
 import { useLocale } from "../i18n/index.ts";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { liveOptions } from "../utils/live.tsx";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { SchedulerContext, type SchedulerContextValue, type SchedulerRenderEvent, type SchedulerClassNames } from "./context.tsx";
@@ -283,8 +283,8 @@ export function Scheduler<T = unknown>(props: SchedulerProps<T>): DOMValue {
     showWeekNumbers: () => !!readValue(state.options.showWeekNumbers),
     dateOf: (day) => fromLayout(day, 0, state.date.value(), timeZone(), true),
     t: (key, vars) => t(key, vars),
-    dragHintId: createId(),
-    popoverId: createId(),
+    dragHintId: resumedId(),
+    popoverId: resumedId(),
     renderEvent,
     // Keyboard / click actions (T8): the delegated handlers (`keys*.ts`, leaf chunks) call these, so the state / intl /
     // layout code loads only when a key actually changes something.

@@ -24,7 +24,7 @@
 import { untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
-import { createId, idSignal } from "../utils/id.ts";
+import { resumedId, idSignal } from "../utils/id.ts";
 import { DEV, isFocusWithin } from "../utils/dom-core.ts";
 import { focusMovedByUser, focusSafely } from "../focus/index.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
@@ -186,7 +186,7 @@ export function DialogTrigger(props: DialogTriggerProps) {
     // useMenuTrigger `trigger: 'longPress'`: a long press opens; a keyboard / virtual press toggles.
     const longPress = { props: { onLongPress: () => openOverlay(state) }, state: { timer: undefined, globals: [] } };
     const description = props.longPressAccessibilityDescription;
-    const descriptionId = description ? createId() : undefined;
+    const descriptionId = description ? resumedId() : undefined;
     return (
       <Provider
         values={[

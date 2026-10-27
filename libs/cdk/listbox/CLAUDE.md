@@ -61,3 +61,5 @@ RAC ListBox re-port (collections pilot): `ListBox`, `ListBoxItem`, `ListBoxSecti
 - [../CLAUDE.md](../CLAUDE.md), [../collections/CLAUDE.md](../collections/CLAUDE.md), [../selection/CLAUDE.md](../selection/CLAUDE.md), [../select/CLAUDE.md](../select/CLAUDE.md), [../combobox/CLAUDE.md](../combobox/CLAUDE.md), [../_adapters/CLAUDE.md](../_adapters/CLAUDE.md)
 - `apps/cdk-docs/content/components/listbox.md`, `apps/cdk-docs/content/foundations/collections.md`
 - `render` (RAC DOMRenderProps) on ListBox, ListBoxItem (div/a), ListBoxSection; early-return attrs path, custom events as `on<Type>` keys; tests `tests/render-leftovers.browser.test.tsx`.
+
+- ID-RESUME (2026-10-27): Generated standalone list and slot roots (including labels / descriptions in lazy rows) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

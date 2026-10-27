@@ -8,7 +8,7 @@
 // item nodes are read as data entries (`selectEntries`), `value` = the node's object value, `content` = its children.
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { controllable, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { buildNodes, ListCollection, type FocusStrategy } from "../_adapters/collections.ts";
 import { createOverlayTriggerState, openOverlay, toggleOverlay, type OverlayTriggerProps, type OverlayTriggerState } from "./overlays.ts";
 import {
@@ -136,7 +136,7 @@ export function createSelectState<M extends SelectionMode = "single">(props: Sel
   const initial = untrack(value);
   return {
     ...createOverlayTriggerState(props),
-    id: props.id ?? createId(),
+    id: props.id ?? resumedId(),
     selectionMode,
     value,
     control,

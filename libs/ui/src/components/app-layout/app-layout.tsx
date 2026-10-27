@@ -20,7 +20,7 @@
 // - Motion: CSS transitions (aside width / translate, `--app-layout-aside-duration`), off with `reduceMotion` or
 //   `prefers-reduced-motion`.
 import { Icon } from "@rivetjs/kit/icon";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { createContext, useContext, type Signal } from "@rivetjs/reactivity";
 import { Provider, clientEffect, clientEvent } from "@rivetjs/runtime/dom";
 import type { Content, JSX, Slot } from "@rivetjs/runtime/jsx-runtime";
@@ -232,7 +232,7 @@ const layoutOf = (el: Element): { rect: DOMRect; rtl: boolean } => {
 
 const AppLayoutRoot = (props: AppLayoutRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ROOT_KEYS);
-  const id = local.id ?? createId();
+  const id = local.id ?? resumedId();
   const asideId = `${id}-aside`;
   const sheet = local.asideMobile === "sheet";
   const aside = createAsideState(local);

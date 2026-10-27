@@ -39,7 +39,7 @@ import { ListKeyboardDelegate } from "../selection/list-keyboard-delegate.ts";
 import { selectableCollectionKeyDown, syncFocus, type AriaSelectableCollectionOptions } from "../selection/selectable-collection.ts";
 import { dispatchVirtualFocus } from "../selection/dom-utils.ts";
 import { nodeContains, cssEscape } from "../utils/dom-core.ts";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { routerOpen, type Router, type RouterOptions } from "../utils/links.tsx";
 import { displayValidation, read, type MaybeAccessor, type ValidationResult } from "../state/form-validation.ts";
 import {
@@ -612,7 +612,7 @@ export function comboBoxProps(props: AriaComboBoxOptions, state: ComboBoxState):
   const format = (key: string) => formatMessage(intlMessages, locale, key);
 
   // useMenuTrigger({type: 'listbox'}) + useOverlayTrigger: trigger / overlay ids.
-  const menuTriggerId = createId();
+  const menuTriggerId = resumedId();
   // Set listbox id so it can be used when calling getItemId later
   const listBoxId = state.id;
   // RA useMenuTrigger `menuId` (useId): the ListBox's own id merges into it (mergeIds re-renders useComboBox), so

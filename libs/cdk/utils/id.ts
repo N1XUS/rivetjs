@@ -3,13 +3,15 @@
 // Ported from react-spectrum packages/react-aria/src/utils/useId.ts (Apache-2.0, © Adobe):
 // `useId`, `mergeIds`, `useSlotId`.
 //
-// Rivet: no hydration, so an id only has to be unique in the document — there is no SSR id
-// matching to do and `useId(defaultId)` is `defaultId ?? createId()`. React re-renders components
+// Rivet: `useId` supplies document uniqueness. Cross-part IDREF roots use `resumedId()`
+// (the date fields' keyed signal helper) so an adopt run reuses the server value. React re-renders components
 // whose id lost a `mergeIds`; Rivet components that need that read an `idSignal()` (reactive id),
 // which `mergeIds` updates the same way the original updates its `idsUpdaterMap` refs.
 import { signal, type Signal } from "@rivetjs/reactivity";
 import { createId } from "@rivetjs/runtime/id";
 import { idScoping, scopedIdUpdaters } from "#server";
+import { resumedId } from "./resumed-id.tsx";
+export { resumedId } from "./resumed-id.tsx";
 export { createId, withIdScope } from "@rivetjs/runtime/id";
 
 /** If a default is not provided, generate an id (react-aria `useId`). */
@@ -36,7 +38,7 @@ const registry = (): Updaters => (idScoping && (scopedIdUpdaters() as Updaters |
  * reading it update when a `mergeIds` call merges this id into another one.
  */
 export function idSignal(defaultId?: string): Signal<string> {
-  const id = useId(defaultId);
+  const id = defaultId || resumedId();
   const value = signal(id);
   const map = registry();
   const refs = map.get(id);

@@ -17,7 +17,7 @@
 // (or callback).
 import { probeSlots, slotProbing } from "#server";
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { displayValidation, read, type MaybeAccessor, type ValidationResult } from "../state/form-validation.ts";
 import {
   createRadioGroupState,
@@ -371,7 +371,7 @@ function radioGroupParts(props: RadioGroupPartsProps) {
     isReadOnly = groupReadOnly(state);
   const initialLabel = !merged["aria-label"] && !merged["aria-labelledby"];
   const [labelRef, hasLabel] = createSlot(initialLabel);
-  const id = merged.id ?? createId();
+  const id = merged.id ?? resumedId();
   // Radio group is not an HTML input element so it shouldn't be labeled by a <label> element.
   const ids = fieldProps({
     id,

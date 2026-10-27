@@ -9,7 +9,7 @@
 import { For, Provider } from "@rivetjs/runtime/dom";
 import { untrack, type Signal } from "@rivetjs/reactivity";
 import type { Content, JSX, Slot } from "@rivetjs/runtime/jsx-runtime";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { displayValidation, type MaybeAccessor, type ValidationBehavior, type ValidationFunction, type ValidationResult } from "../state/form-validation.ts";
 import { createRadioGroupState, type RadioGroupState } from "../state/radio-group.ts";
 import { useValidationBehavior, useValidationErrors } from "../form/index.tsx";
@@ -148,7 +148,7 @@ function RadioGroupItems(props: RadioGroupItemsProps) {
     validationErrors: useValidationErrors(),
   });
   const { items, children: render, errorMessage } = props;
-  const id = props.id ?? createId();
+  const id = props.id ?? resumedId();
   const ids = fieldAria({
     id,
     label: props.label,
@@ -215,7 +215,7 @@ function RadioGroupItems(props: RadioGroupItemsProps) {
           {(item) => {
             const option = item();
             const disabled = isDisabled || !!(option.isDisabled ?? option.disabled);
-            const inputId = option.id ?? createId();
+            const inputId = option.id ?? resumedId();
             const descriptionId = option.description ? inputId + "-description" : undefined;
             const itemDom = globalDOMProps(option, ["onMouseDown"]);
             const valueProp = option.value;

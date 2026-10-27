@@ -15,7 +15,7 @@
 //   `effectiveFocusedKey` read: `focusedSelection` remembers the selection the focused key was set
 //   under, so a selection change from outside moves the tab stop like the original's effect.
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { hasKey, type MultipleSelectionState } from "../_adapters/grid-selection.ts";
 import type { Key, Orientation, SelectionValue } from "../_adapters/collection.ts";
 import type { FocusStrategy } from "../collections/types.ts";
@@ -147,7 +147,7 @@ export function createTabListState(options: TabListStateOptions): TabListState {
   }
   const initial = untrack(selectedKey);
   return {
-    id: options.id ?? createId(),
+    id: options.id ?? resumedId(),
     selectedKey,
     controlled,
     focusedKey: signal<Key | null>(initial),

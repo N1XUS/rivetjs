@@ -20,7 +20,7 @@
 // proxy (Rivet compiles element templates). `render` (`DOMRenderProps` / `DOMRenderFunction`, re-exported below from `../utils/render.ts`) is a per-part prop; `createSlot` returns
 // `[Ref, hasSlot accessor]` (no layout-effect re-render; see `createSlot`).
 import { createContext, onCleanup, signal, untrack, useContext, type Context, type Signal } from "@rivetjs/reactivity";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { Provider as ContextProvider, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content, JSX, Ref } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
@@ -523,7 +523,7 @@ export interface SlotId {
  * inline arrow argument (arguments are not resumable).
  */
 export function createSlotId(id?: string, deps?: () => unknown): SlotId {
-  const slotId: SlotId = { id: id ?? createId(), rendered: signal<boolean | string>(!SERVER) };
+  const slotId: SlotId = { id: id ?? resumedId(), rendered: signal<boolean | string>(!SERVER) };
   if (!SERVER)
     clientEffect(() => {
       if (deps) deps();
@@ -608,7 +608,7 @@ export interface MergedId {
 
 /** Creates a merged id (`id` defaults to a generated one). Read `mergedId.current()` inside bindings. */
 export function createMergedId(id?: string): MergedId {
-  const value = id ?? createId();
+  const value = id ?? resumedId();
   return { id: value, current: signal(value) };
 }
 

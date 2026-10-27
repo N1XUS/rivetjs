@@ -64,3 +64,5 @@ Select (RAC `Select` + `SelectValue`, composing Label / Button / Popover / ListB
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../listbox/CLAUDE.md](../listbox/CLAUDE.md), [../combobox/CLAUDE.md](../combobox/CLAUDE.md), [../state/CLAUDE.md](../state/CLAUDE.md), [../_adapters/CLAUDE.md](../_adapters/CLAUDE.md)
 - `apps/cdk-docs/content/components/select.md`
+
+- ID-RESUME (2026-10-27): Generated trigger / label / value / listbox roots (state/select.ts) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

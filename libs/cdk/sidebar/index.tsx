@@ -51,7 +51,7 @@ import { Disclosure, DisclosurePanel } from "../disclosure/index.tsx";
 import { RouterContext, createRouter, type Href, type RouterOptions } from "../utils/links.tsx";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
 import { dataBool } from "../utils/data-attrs.tsx";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import type { GlobalDOMAttributes } from "../utils/dom-props.ts";
 import type { DOMRenderProps } from "../utils/render.ts";
 import { Provider, renderProps, type ClassNameOrFunction, type RefValue, type StyleObject } from "../slots/index.tsx";
@@ -448,8 +448,8 @@ interface SidebarSheetProps {
 function SidebarSheet(props: SidebarSheetProps) {
   const { state, side, children, overlayClass, sheetClass, dialogClass, style, rest, backdrop } = props;
   const sheetRef = createRef<HTMLDivElement>();
-  const titleId = createId();
-  const descriptionId = createId();
+  const titleId = resumedId();
+  const descriptionId = resumedId();
   // Swipe-to-dismiss (./sheet-motion.ts) while the sheet is open.
   clientEffect(() => {
     const el = sheetRef();

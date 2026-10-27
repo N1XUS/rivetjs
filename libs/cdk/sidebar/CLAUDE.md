@@ -55,3 +55,5 @@ User decision 2026-10-08: keep the shadcn API + names, add features. Defaults of
 - On a cold mobile page the desktop gap / container stay in the DOM (CSS-hidden) until the first toggle swaps them for the sheet.
 - Provider: a closure referencing `rp` must be declared after `rp` (the compiler captures eagerly: TDZ "Cannot access 'rp' before initialization" at SSR).
 - vitest browser iframe < 768px → tests stub `innerWidth` (`setWidth(1024)`).
+
+- ID-RESUME (2026-10-27): Generated mobile-dialog title and description ids use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

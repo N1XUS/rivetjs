@@ -15,7 +15,7 @@
 import { Button as ButtonPrimitive } from "@rivetjs/cdk/button";
 import type { ButtonProps as ButtonPrimitiveProps } from "@rivetjs/cdk/button";
 import { controlledValue } from "@rivetjs/cdk/interactions";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { Link as LinkPrimitive } from "@rivetjs/cdk/link";
 import type { LinkProps as LinkPrimitiveProps } from "@rivetjs/cdk/link";
 import { RouterContext, createRouter } from "@rivetjs/cdk/links";
@@ -116,7 +116,7 @@ const STATE_KEYS = ["hideOnScroll", "parentRef", "isMenuOpen", "defaultMenuOpen"
 
 const NavbarRoot = (props: NavbarRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "position", "size", "maxWidth", "navigate", "useHref", "style", ...STATE_KEYS]);
-  const state = createNavbarState(local, createId());
+  const state = createNavbarState(local, resumedId());
   const position = local.position ?? "sticky";
   const size = local.size ?? "md";
   const maxWidth = local.maxWidth ?? "lg";

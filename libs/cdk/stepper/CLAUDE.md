@@ -30,3 +30,5 @@ Angular CDK stepper port (v22.2.2): wizard-like workflow split into steps, linea
 
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), `docs/guides/resumability.md`, `libs/ui/src/components/stepper/`.
+
+- ID-RESUME (2026-10-27): Generated step-header / panel IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

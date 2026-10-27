@@ -21,7 +21,7 @@
 // - Context `KanbanContext` `{ keyboard, describedBy }` (plain data) from the root to its cards.
 import { DragHandle as DragHandlePrimitive, DragPlaceholder, DropList, DropListGroup, Drag } from "@rivetjs/cdk/drag-drop";
 import type { DragDrop, DragHandleProps as DragHandlePrimitiveProps, DragProps, DropListGroupProps, DropListProps } from "@rivetjs/cdk/drag-drop";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { Icon } from "@rivetjs/kit/icon";
 import { createContext, signal, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
@@ -85,7 +85,7 @@ const KanbanRoot = (props: KanbanRootProps): JSX.Element => {
         {children}
       </DropListGroup>
     );
-  const describedBy = createId();
+  const describedBy = resumedId();
   const context: KanbanContextValue = { keyboard: true, describedBy };
   return (
     <DropListGroup

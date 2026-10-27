@@ -45,7 +45,7 @@ import {
   type ColorFieldState,
 } from "@rivetjs/cdk/color";
 import { channelFieldColorValue } from "../color/channel-field-state.tsx";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { focusBlur, focusFocus } from "../interactions/focus.tsx";
 import { keyboardKeyDown, keyboardKeyUp } from "../interactions/keyboard.tsx";
 import { getEventTarget, read, type MaybeAccessor } from "../interactions/utils.ts";
@@ -165,7 +165,7 @@ export function colorFieldProps(props: AriaColorFieldProps, state: ColorFieldSta
   const isReadOnly = (props.isReadOnly ?? false) as MaybeAccessor<boolean | undefined>;
   const isRequired = (props.isRequired ?? false) as MaybeAccessor<boolean | undefined>;
   const behaviour = state.validation.behavior;
-  const inputId = createId();
+  const inputId = resumedId();
   const field = fieldProps({ ...props, id: inputId });
   const isInvalid = () => displayValidation(state.validation).isInvalid;
   return {

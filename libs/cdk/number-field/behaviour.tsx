@@ -32,7 +32,7 @@
  */
 
 import { untrack } from "@rivetjs/reactivity";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { announce } from "../announcer/live-announcer.ts";
 import { formatMessage } from "../_adapters/intl.ts";
 import { focusBlur, focusFocus, focusWithinBlur, focusWithinFocus } from "../interactions/focus.tsx";
@@ -243,7 +243,7 @@ export function numberFieldProps(props: AriaNumberFieldProps, state: NumberField
   const { decrementAriaLabel, incrementAriaLabel, isRequired, autoFocus, placeholder } = props;
   const isDisabled = () => !!read(props.isDisabled);
   const isReadOnly = () => !!read(props.isReadOnly);
-  const inputId = props.id ?? createId();
+  const inputId = props.id ?? resumedId();
   const field = fieldProps({ ...props, id: inputId });
   const behaviour = state.validation.behavior;
   const isInvalid = () => displayValidation(state.validation).isInvalid;
@@ -263,8 +263,8 @@ export function numberFieldProps(props: AriaNumberFieldProps, state: NumberField
   if (!fieldLabel) {
     ariaLabelledby = props.label != null && props.label !== false ? field.labelProps.id : props["aria-labelledby"];
   }
-  const incrementId = createId();
-  const decrementId = createId();
+  const incrementId = resumedId();
+  const decrementId = resumedId();
   const ids = { ...field, inputId, incrementId, decrementId };
   // Rivet: the closures capture plain values only (an arrow passed as an argument is not resumable).
   const buttonProps = (id: string, ariaLabel: string | undefined, key: "increase" | "decrease"): Bag => ({

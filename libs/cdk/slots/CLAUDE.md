@@ -47,3 +47,5 @@ THE RAC slot / context / render-prop contract (port of RAC `utils.tsx`). Every R
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), `../interactions/merge-props.tsx`, `docs/guides/resumability.md`
 - docs: `apps/cdk-docs/content/foundations/slots.md`
+
+- ID-RESUME (2026-10-27): Generated createSlotId and createMergedId roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

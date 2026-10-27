@@ -53,7 +53,7 @@ import {
 import { focusRingBlur, focusRingFocus } from "../focus/focus-ring.tsx";
 import { useRouter, type LinkDOMProps } from "../utils/links.tsx";
 import { useLocale } from "../i18n/index.ts";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import type { HoverEvents } from "../utils/types.ts";
 import type { PressEvents } from "../interactions/press.tsx";
 import {
@@ -210,7 +210,7 @@ export function TagGroup(inProps: TagGroupProps) {
   const shared: GridListShared = { id: state.id, onAction, linkBehavior: "override", keyboardNavigationBehavior: "tab", shouldSelectOnPressUp };
   // react-aria useField (labelElementType span) + useSlot: the label id while a Label renders.
   const [labelRef, hasLabel] = createSlot(!ariaLabel && !ownLabelledBy);
-  const labelId = createId();
+  const labelId = resumedId();
   const descriptionId = createSlotId(state.id + "-description");
   const errorId = createSlotId(state.id + "-error");
   const labelledBy = () => [hasLabel() ? labelId : undefined, ownLabelledBy].filter(Boolean).join(" ") || undefined;
@@ -604,7 +604,7 @@ export const Tag = /*#__PURE__*/ createLeafComponent(ItemNode, function Tag(prop
   const { state, shared, locale, direction, onRemove } = ctx;
   const key = item.key;
   const spec = rowSpec(key, item, props as Record<string, any>);
-  const removeButtonId = createId();
+  const removeButtonId = resumedId();
   const router = useRouter();
   if (!item.textValue && DEV && typeof document !== "undefined")
     console.warn("A `textValue` prop is required for <Tag> elements with non-plain text children for accessibility.");

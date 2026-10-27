@@ -16,7 +16,7 @@
 //   cold press morphs at once; nothing runs at load.
 import { ButtonRoot } from "../button/index.ts";
 import type { ButtonRootProps } from "../button/index.ts";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { closeMorph, createMorphState, openMorph, syncMorph, toggleMorph } from "@rivetjs/cdk/morph";
 import type { MorphDirection, MorphMotionOptions, MorphState, MorphStateProps } from "@rivetjs/cdk/morph";
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
@@ -86,7 +86,7 @@ const MorphRoot = (props: MorphRootProps): JSX.Element => {
     "id",
   ]);
   const state = createMorphState({ isOpen: local.isOpen, defaultOpen: local.defaultOpen, onOpenChange: local.onOpenChange, isDisabled: local.isDisabled });
-  const id = local.id ?? createId();
+  const id = local.id ?? resumedId();
   const direction = local.direction ?? "top";
   const variant = local.variant ?? "primary";
   const animation = local.animation;

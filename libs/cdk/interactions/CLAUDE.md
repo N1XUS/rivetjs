@@ -62,3 +62,5 @@ Controlled/uncontrolled signals (`index.ts`), THE prop-merging helpers (`merge-p
 - [../CLAUDE.md](../CLAUDE.md), [../focus/CLAUDE.md](../focus/CLAUDE.md), [../keys/CLAUDE.md](../keys/CLAUDE.md), [../utils/CLAUDE.md](../utils/CLAUDE.md)
 - `apps/cdk-docs/content/foundations/{interactions,focus-interactions,props-and-values}.md`
 - `docs/guides/resumability.md`, `docs/guides/aria.md`
+
+- ID-RESUME (2026-10-27): Generated long-press accessibility-description ids use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

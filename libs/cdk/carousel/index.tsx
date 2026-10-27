@@ -29,7 +29,7 @@ import { Button, type ButtonProps } from "../button/index.tsx";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { dataBool } from "../utils/data-attrs.tsx";
-import { useId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
 import {
   Provider,
@@ -199,7 +199,7 @@ export function Carousel(inProps: CarouselProps) {
   if (engine.direction === undefined) engine.direction = localeDirection;
   const state = createCarouselState({
     ...(engine as CarouselOptions),
-    id: useId(props.id),
+    id: props.id || resumedId(),
     slideCount: props.slideCount,
     autoplay: props.autoplay,
     autoScroll: props.autoScroll,

@@ -10,14 +10,14 @@
 //   itself when given a ref that is already attached).
 // - `id` option: the overlay id (RA: `useId()`), so the server and the browser agree.
 import { untrack } from "@rivetjs/reactivity";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
 import { onCloseMap } from "./close-on-scroll.ts";
 import { closeOverlay, toggleOverlay, type OverlayTriggerState } from "../state/overlays.ts";
 
 export interface OverlayTriggerProps {
   /** Type of overlay that is opened by the trigger. */
   type: "dialog" | "menu" | "listbox" | "tree" | "grid";
-  /** Rivet: id of the overlay element. @default createId() */
+  /** Rivet: id of the overlay element. @default resumedId() */
   id?: string;
 }
 
@@ -53,7 +53,7 @@ export function overlayTriggerProps(props: OverlayTriggerProps, state: OverlayTr
   if (type === "menu") ariaHasPopup = true;
   else if (type === "listbox") ariaHasPopup = "listbox";
 
-  const overlayId = props.id ?? createId();
+  const overlayId = props.id ?? resumedId();
   return {
     triggerProps: {
       "aria-haspopup": ariaHasPopup,
