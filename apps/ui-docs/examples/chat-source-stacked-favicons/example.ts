@@ -7,5 +7,10 @@ export default defineExample({
   status: "experimental",
   frame: { height: 300 },
   show: ["src/routes/index.tsx"],
-  test: [{ matches: ".chat-sources__favicons" }, { click: ".chat-sources__trigger" }, { expect: [".chat-sources__list", "Browser support"] }],
+  test: [
+    { matches: ".chat-sources__favicons" },
+    { click: ".chat-sources__trigger" },
+    { attr: [".chat-sources__trigger", "aria-expanded", "true"] },
+    { expect: [".chat-sources__list", "Browser support"] },
+  ],
 });

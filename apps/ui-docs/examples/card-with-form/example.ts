@@ -7,5 +7,5 @@ export default defineExample({
   status: "experimental",
   frame: { height: 364 },
   show: ["src/routes/index.tsx"],
-  test: [{ fill: ["input[type=email]", "ada@example.com"] }, { matches: "button[type=submit]" }],
+  test: [{ fill: ["input[type=email]", "ada@example.com"] }, { matches: "input[type=email]:not(:placeholder-shown)" }, { matches: "button[type=submit]" }],
 });

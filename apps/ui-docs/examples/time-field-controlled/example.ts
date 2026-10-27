@@ -7,5 +7,11 @@ export default defineExample({
   status: "experimental",
   frame: { height: 260 },
   show: ["src/routes/index.tsx"],
-  test: [{ click: "text=Set now" }, { expect: ["[data-slot=description]", ":"] }, { click: "text=Clear" }, { expect: ["[data-slot=description]", "(empty)"] }],
+  test: [
+    { click: "text=Set now" },
+    { absent: "[data-rv-segment=hour][data-placeholder]" },
+    { expect: ["[data-slot=description]", ":"] },
+    { click: "text=Clear" },
+    { expect: ["[data-slot=description]", "(empty)"] },
+  ],
 });

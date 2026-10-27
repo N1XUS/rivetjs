@@ -7,5 +7,9 @@ export default defineExample({
   status: "experimental",
   frame: { height: 380 },
   show: ["src/routes/index.tsx"],
-  test: [{ click: ".chat-tool-group__trigger" }, { expect: [".chat-tool-group__body", "searchHotels"] }],
+  test: [
+    { click: ".chat-tool-group__trigger" },
+    { attr: [".chat-tool-group__trigger", "aria-expanded", "true"] },
+    { expect: [".chat-tool-group__body", "searchHotels"] },
+  ],
 });

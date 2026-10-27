@@ -7,5 +7,5 @@ export default defineExample({
   status: "experimental",
   frame: { height: "sm" },
   show: ["src/routes/index.tsx"],
-  test: [{ name: ["input", "Name"] }, { fill: ["input", "Ada"] }, { matches: "input.input.input--primary" }],
+  test: [{ name: ["input", "Name"] }, { fill: ["input", "Ada"] }, { matches: "input:not(:placeholder-shown)" }, { matches: "input.input.input--primary" }],
 });

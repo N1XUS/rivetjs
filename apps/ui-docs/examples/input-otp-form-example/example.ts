@@ -9,6 +9,7 @@ export default defineExample({
   show: ["src/routes/index.tsx"],
   test: [
     { fill: ["input[data-slot=input-otp]", "123"] },
+    { absent: "input[data-input-otp-placeholder-shown]" },
     { attr: ["button[type=submit]", "data-disabled", "true"] },
     { fill: ["input[data-slot=input-otp]", "123456"] },
     { absent: "button[type=submit][data-disabled]" },

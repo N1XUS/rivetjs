@@ -7,5 +7,10 @@ export default defineExample({
   status: "experimental",
   frame: { height: 380 },
   show: ["src/routes/index.tsx"],
-  test: [{ matches: ".chat-tool[data-state=output-available]" }, { click: ".chat-tool__trigger" }, { expect: [".chat-tool__result", "sunny"] }],
+  test: [
+    { matches: ".chat-tool[data-state=output-available]" },
+    { click: ".chat-tool__trigger" },
+    { attr: [".chat-tool__trigger", "aria-expanded", "true"] },
+    { expect: [".chat-tool__result", "sunny"] },
+  ],
 });

@@ -12,6 +12,7 @@ export default defineExample({
     { attr: ["#carousel-lazy-load-slide-0 > div", "data-loaded", "true"] },
     { attr: ["#carousel-lazy-load-slide-2 > div", "data-loaded", null] },
     { click: "#carousel-lazy-load-next" },
+    { attr: ["#carousel-lazy-load-tab-1", "aria-selected", "true"] },
     { attr: ["#carousel-lazy-load-slide-1 > div", "data-loaded", "true"] },
     { matches: "#carousel-lazy-load-slide-1 img" },
     { click: "#carousel-lazy-load-tab-4" },
