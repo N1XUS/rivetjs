@@ -210,6 +210,24 @@ export * from "./src/components/floating-toc/index.ts";
 // Rivet addition: settings-row color picker (inspired by HeroUI Pro Cell Color Picker docs)
 export * from "./src/components/cell-color-picker/index.ts";
 
+// Rivet addition (feature set inspired by HeroUI Pro's public Chart Tooltip docs; UI-PORT S6)
+export * from "./src/components/chart-tooltip/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Pie Chart docs; UI-PORT S6)
+export * from "./src/components/pie-chart/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Radar Chart docs; UI-PORT S6)
+export * from "./src/components/radar-chart/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Radial Chart docs; UI-PORT S6)
+export * from "./src/components/radial-chart/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Composed Chart docs; UI-PORT S6)
+export * from "./src/components/composed-chart/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Kanban docs; UI-PORT S6)
+export * from "./src/components/kanban/index.ts";
+
 // Rivet additions (no HeroUI OSS counterpart; feature sets inspired by HeroUI Pro's public AI docs; independent implementations): AI chat components.
 export * from "./src/components/text-shimmer/index.ts";
 export * from "./src/components/chat-loader/index.ts";

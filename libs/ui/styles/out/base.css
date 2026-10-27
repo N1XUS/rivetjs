@@ -80,6 +80,7 @@
       --tw-space-y-reverse: 0;
       --tw-tracking: initial;
       --tw-space-x-reverse: 0;
+      --tw-scroll-snap-strictness: proximity;
     }
   }
 }

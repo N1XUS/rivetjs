@@ -564,6 +564,30 @@
       "types": "./src/components/cell-color-picker/index.ts",
       "default": "./src/components/cell-color-picker/index.ts"
     },
+    "./chart-tooltip": {
+      "types": "./src/components/chart-tooltip/index.ts",
+      "default": "./src/components/chart-tooltip/index.ts"
+    },
+    "./pie-chart": {
+      "types": "./src/components/pie-chart/index.ts",
+      "default": "./src/components/pie-chart/index.ts"
+    },
+    "./radar-chart": {
+      "types": "./src/components/radar-chart/index.ts",
+      "default": "./src/components/radar-chart/index.ts"
+    },
+    "./radial-chart": {
+      "types": "./src/components/radial-chart/index.ts",
+      "default": "./src/components/radial-chart/index.ts"
+    },
+    "./composed-chart": {
+      "types": "./src/components/composed-chart/index.ts",
+      "default": "./src/components/composed-chart/index.ts"
+    },
+    "./kanban": {
+      "types": "./src/components/kanban/index.ts",
+      "default": "./src/components/kanban/index.ts"
+    },
     "./text-shimmer": {
       "types": "./src/components/text-shimmer/index.ts",
       "default": "./src/components/text-shimmer/index.ts"

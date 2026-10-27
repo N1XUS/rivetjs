@@ -421,8 +421,136 @@
     flex: 1;
   }
 
+  .chart--pie, .chart--radial {
+    align-items: center;
+    gap: calc(var(--spacing, .25rem) * 6);
+    flex-flow: wrap;
+  }
+
+  .chart--radar {
+    align-items: flex-start;
+  }
+
+  .chart__polar {
+    width: var(--chart-polar-size, 200px);
+    height: var(--chart-polar-size, 200px);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .chart__polar-svg {
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+  }
+
+  .chart__sector {
+    pointer-events: none;
+    --tw-outline-style: none;
+    outline-style: none;
+    position: absolute;
+    inset: 0;
+  }
+
+  .chart__sector:hover, .chart__sector:focus-visible {
+    z-index: 10;
+  }
+
+  .chart__sector-path {
+    fill: var(--chart-color);
+    pointer-events: visiblePainted;
+    transition: opacity var(--duration-fast) var(--ease-smooth);
+  }
+
+  .chart__sector:focus-visible .chart__sector-path {
+    stroke: var(--focus);
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .chart__polar:has(.chart__sector:hover) .chart__sector:not(:hover) .chart__sector-path {
+    opacity: .45;
+  }
+
+  .chart__anchor {
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .chart__anchor > .chart__tooltip {
+    top: 0;
+    translate: 0 -50%;
+  }
+
+  .chart__polar-label {
+    pointer-events: none;
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    white-space: nowrap;
+    color: var(--muted);
+    position: absolute;
+    translate: -50% -50%;
+  }
+
+  .chart__polar-label[data-align="start"] {
+    translate: 0 -50%;
+  }
+
+  .chart__polar-label[data-align="end"] {
+    translate: -100% -50%;
+  }
+
+  .chart__polar-grid path {
+    fill: none;
+    stroke: var(--separator);
+  }
+
+  .chart__polar-center {
+    pointer-events: none;
+    text-align: center;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    position: absolute;
+    inset: 0;
+  }
+
+  :is(.chart__sector:hover, .chart__sector:focus-visible) .chart__dot {
+    opacity: 1;
+  }
+
+  :is(.chart__sector:hover, .chart__sector:focus-visible) .chart__tooltip {
+    opacity: 1;
+    display: flex;
+  }
+
+  @starting-style {
+    :is(.chart__sector:hover, .chart__sector:focus-visible) .chart__tooltip {
+      opacity: 0;
+    }
+  }
+
+  .chart__tooltip--custom {
+    min-width: 0;
+    box-shadow: none;
+    background-color: #0000;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .chart__line[data-dashed] {
+    stroke-dasharray: 6 4;
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .chart__tooltip, .chart__guide, .chart__dot, .chart__bar, .chart__donut-segment {
+    .chart__sector-path, .chart__tooltip, .chart__guide, .chart__dot, .chart__bar, .chart__donut-segment {
       transition: none;
     }
   }

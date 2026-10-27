@@ -1,0 +1,191 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no kanban). Feature set (columns with header, indicator, count and actions, card lists, cards, drag handle, drop indicator, empty state, sizes) inspired by HeroUI Pro's public Kanban docs; independent implementation on HeroUI tokens over the `@rivetjs/cdk/drag-drop` state classes. */
+/* -------------------------------------------------------------------------------------------------
+ * Kanban Component Styles
+ * Block: kanban (parts: column / column-header / column-indicator / column-title / column-count / column-actions /
+ * column-body / scroll-shadow / card-list / card / card-content / drag-handle / drop-indicator / empty)
+ * Modifiers: kanban--sm / --md / --lg
+ * Variables: --kanban-column-min-width, --kanban-column-gap, --kanban-column-height, --kanban-column-color,
+ * --kanban-drop-height
+ * -----------------------------------------------------------------------------------------------*/
+
+.kanban {
+  --kanban-column-min-width: 280px;
+  --kanban-column-gap: 16px;
+  --kanban-column-height: 480px;
+  @apply grid snap-x snap-mandatory items-start overflow-x-auto pb-2;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(var(--kanban-column-min-width), 1fr);
+  gap: var(--kanban-column-gap);
+}
+
+.kanban--sm {
+  --kanban-column-min-width: 240px;
+  --kanban-column-gap: 12px;
+}
+
+.kanban--lg {
+  --kanban-column-min-width: 320px;
+  --kanban-column-gap: 20px;
+}
+
+.kanban__column {
+  @apply flex min-w-0 snap-center flex-col gap-2;
+}
+
+.kanban__column-header {
+  @apply flex items-center gap-2 px-1;
+}
+
+.kanban__column-indicator {
+  @apply inline-flex size-2 shrink-0 items-center justify-center rounded-full;
+  background-color: var(--kanban-column-color, var(--muted));
+
+  &[data-icon] {
+    @apply size-5 bg-transparent;
+    color: var(--kanban-column-color, var(--muted));
+  }
+}
+
+.kanban__column-title {
+  @apply m-0 text-sm font-semibold text-foreground;
+}
+
+.kanban__column-count {
+  @apply text-xs text-muted tabular-nums;
+}
+
+.kanban__column-actions {
+  @apply ms-auto flex items-center gap-1 opacity-0;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+
+  .kanban__column-header:hover &,
+  .kanban__column-header:focus-within & {
+    @apply opacity-100;
+  }
+}
+
+@media (hover: none) {
+  .kanban__column-actions {
+    @apply opacity-100;
+  }
+}
+
+.kanban__column-body {
+  @apply flex flex-col gap-2 rounded-2xl bg-default/40 p-2;
+}
+
+.kanban__scroll-shadow {
+  max-height: var(--kanban-column-height);
+}
+
+.kanban__card-list {
+  @apply flex min-h-16 flex-col gap-2 rounded-xl;
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+
+  &.cdk-drop-list-receiving,
+  &.cdk-drop-list-dragging {
+    background-color: color-mix(in oklab, var(--accent) 6%, transparent);
+  }
+}
+
+.kanban__card {
+  @apply relative cursor-grab rounded-xl outline-none select-none;
+
+  &:active {
+    @apply cursor-grabbing;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  &.cdk-drag-disabled {
+    @apply cursor-default opacity-60;
+  }
+
+  &.cdk-drag-animating,
+  .kanban__card-list.cdk-drop-list-dragging &:not(.cdk-drag-placeholder) {
+    transition: transform var(--duration-base) var(--ease-smooth);
+  }
+}
+
+.kanban__card-group {
+  display: contents;
+}
+
+.kanban__card-content {
+  @apply flex flex-col gap-2 rounded-xl bg-overlay p-3 text-sm text-foreground;
+  box-shadow: var(--surface-shadow);
+  transition: box-shadow var(--duration-fast) var(--ease-smooth);
+
+  .kanban__card:hover .kanban__card:hover > & {
+    box-shadow: var(--overlay-shadow);
+  }
+
+  .kanban--sm & {
+    @apply gap-1.5 p-2 text-xs;
+  }
+
+  .kanban--lg & {
+    @apply gap-3 p-4 text-base;
+  }
+}
+
+/* The floating copy while dragging (cdk preview, in <body>). */
+.kanban__card.cdk-drag-preview {
+  @apply cursor-grabbing;
+  box-sizing: border-box;
+  rotate: 2deg;
+
+  .kanban__card-content {
+    box-shadow: var(--overlay-shadow);
+  }
+}
+
+/* The source slot while dragging: the default placeholder is the faded card itself. */
+.kanban__card.cdk-drag-placeholder {
+  @apply opacity-40;
+}
+
+.kanban__drop-indicator {
+  @apply rounded-xl border-2 border-dashed;
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background-color: color-mix(in oklab, var(--accent) 6%, transparent);
+  height: var(--kanban-drop-height, 64px);
+}
+
+.kanban__drag-handle {
+  @apply absolute end-2 top-2 inline-flex size-6 items-center justify-center rounded-md text-muted opacity-0;
+  cursor: grab;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+
+  .kanban__card:hover &,
+  .kanban__card:focus-within &,
+  &:focus-visible {
+    @apply opacity-100;
+  }
+}
+
+.kanban__empty {
+  @apply hidden min-h-16 items-center justify-center rounded-xl border border-dashed p-4 text-center text-xs text-muted;
+  border-color: var(--separator);
+
+  .kanban__card-list:not(:has(> .kanban__card)) > & {
+    @apply flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanban__card,
+  .kanban__card-content,
+  .kanban__card-list,
+  .kanban__column-actions,
+  .kanban__drag-handle {
+    transition: none;
+  }
+
+  .kanban__card.cdk-drag-preview {
+    rotate: none;
+  }
+}

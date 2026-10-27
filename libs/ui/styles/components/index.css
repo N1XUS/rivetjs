@@ -183,6 +183,12 @@
  * ------------------------------------------------------------------------------------------------ */
 @import "./kbd.css";
 @import "./kpi.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./kanban.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./composed-chart.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./radial-chart.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./radar-chart.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./pie-chart.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chart-tooltip.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./cell-color-picker.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./floating-toc.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./holo-card.css"; /* Rivet-authored (TWEAKS.md) */

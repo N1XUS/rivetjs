@@ -2,9 +2,6 @@
   "/carousel light": [
     "color-contrast"
   ],
-  "/data-display-pro light": [
-    "aria-prohibited-attr"
-  ],
   "/data-grid light": [
     "aria-required-attr"
   ],
@@ -82,7 +79,6 @@
     "color-contrast"
   ],
   "/data-display-pro dark": [
-    "aria-prohibited-attr",
     "color-contrast"
   ],
   "/data-grid dark": [

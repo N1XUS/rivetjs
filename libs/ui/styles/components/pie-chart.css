@@ -1,0 +1,16 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no charts). Feature set (pie / donut, outside labels, nested rings, breakdown legend) inspired by HeroUI Pro's public Pie Chart docs; independent implementation on HeroUI tokens. Shared polar rules: chart.css. */
+/* -------------------------------------------------------------------------------------------------
+ * Pie Chart Component Styles
+ * Block: pie-chart (parts: leader)
+ * Variables: --chart-polar-size (from `size`)
+ * -----------------------------------------------------------------------------------------------*/
+
+.pie-chart__leader {
+  fill: none;
+  stroke: var(--muted);
+  stroke-opacity: 0.3;
+}
+
+.pie-chart .chart__legend[data-legend="breakdown"] {
+  @apply max-w-64 min-w-40 flex-1 flex-col items-stretch gap-2;
+}

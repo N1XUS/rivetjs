@@ -53,6 +53,12 @@ export * from "./input-group/index.ts";
 export * from "./input-otp/index.ts";
 export * from "./kbd/index.ts";
 export * from "./kpi/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./kanban/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./composed-chart/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./radial-chart/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./radar-chart/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./pie-chart/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./chart-tooltip/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./cell-color-picker/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./floating-toc/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./holo-card/index.ts"; // Rivet-authored (TWEAKS.md)

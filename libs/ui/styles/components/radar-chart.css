@@ -1,0 +1,37 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no charts). Feature set (polygon / circle grid, filled or outline shapes, dots, radius ticks) inspired by HeroUI Pro's public Radar Chart docs; independent implementation on HeroUI tokens. Shared polar rules: chart.css. */
+/* -------------------------------------------------------------------------------------------------
+ * Radar Chart Component Styles
+ * Block: radar-chart (parts: shape / vertex / hit / tick)
+ * Variables: --chart-polar-size (from `size`), --chart-color (per series)
+ * -----------------------------------------------------------------------------------------------*/
+
+.radar-chart__shape {
+  fill: none;
+  stroke: none;
+
+  &[data-fill] {
+    fill: var(--chart-color);
+    fill-opacity: 0.22;
+  }
+
+  &[data-stroke] {
+    stroke: var(--chart-color);
+    stroke-width: 2px;
+    stroke-linejoin: round;
+  }
+}
+
+.radar-chart__vertex {
+  fill: var(--chart-color);
+}
+
+.radar-chart__hit {
+  fill: transparent;
+  pointer-events: all;
+}
+
+.radar-chart__tick {
+  @apply pointer-events-none absolute ps-1 whitespace-nowrap text-muted tabular-nums;
+  font-size: 10px;
+  translate: 0 -50%;
+}

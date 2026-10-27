@@ -398,6 +398,42 @@ export const entries: ApiEntryConfig[] = [
     summary: "Charts (Rivet addition): area, line, bar, donut and sparkline charts rendered on the server, CSS-only tooltips.",
   },
   {
+    entry: "@rivetjs/ui/chart-tooltip",
+    file: "ui/src/components/chart-tooltip/index.ts",
+    runsOn: "both",
+    summary: "ChartTooltip (Rivet addition): tooltip parts (header, items, indicator, label, value) for custom chart tooltips.",
+  },
+  {
+    entry: "@rivetjs/ui/pie-chart",
+    file: "ui/src/components/pie-chart/index.ts",
+    runsOn: "both",
+    summary: "PieChart (Rivet addition): pie and donut rings rendered on the server with labels, legend and CSS-only tooltips.",
+  },
+  {
+    entry: "@rivetjs/ui/radar-chart",
+    file: "ui/src/components/radar-chart/index.ts",
+    runsOn: "both",
+    summary: "RadarChart (Rivet addition): polygon or circle grid radar with one or more series, server-rendered.",
+  },
+  {
+    entry: "@rivetjs/ui/radial-chart",
+    file: "ui/src/components/radial-chart/index.ts",
+    runsOn: "both",
+    summary: "RadialChart (Rivet addition): concentric progress rings with track, legend and centre content.",
+  },
+  {
+    entry: "@rivetjs/ui/composed-chart",
+    file: "ui/src/components/composed-chart/index.ts",
+    runsOn: "both",
+    summary: "ComposedChart (Rivet addition): bar, line and area series on one cartesian frame.",
+  },
+  {
+    entry: "@rivetjs/ui/kanban",
+    file: "ui/src/components/kanban/index.ts",
+    runsOn: "both",
+    summary: "Kanban (Rivet addition): board of columns and draggable cards on cdk DropList / Drag, with createKanban state.",
+  },
+  {
     entry: "@rivetjs/ui/navbar",
     file: "ui/src/components/navbar/index.ts",
     runsOn: "both",

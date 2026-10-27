@@ -1,0 +1,14 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no charts). Feature set (radial bars, gauges, progress rings, background track) inspired by HeroUI Pro's public Radial Chart docs; independent implementation on HeroUI tokens. Shared polar rules: chart.css. */
+/* -------------------------------------------------------------------------------------------------
+ * Radial Chart Component Styles
+ * Block: radial-chart (parts: track)
+ * Variables: --chart-polar-size (from `size`), --chart-color (per ring)
+ * -----------------------------------------------------------------------------------------------*/
+
+.radial-chart__track {
+  fill: var(--default);
+}
+
+.radial-chart .chart__legend {
+  @apply max-w-64 min-w-40 flex-1 flex-col items-stretch gap-2;
+}

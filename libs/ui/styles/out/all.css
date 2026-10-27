@@ -80,6 +80,7 @@
       --tw-space-y-reverse: 0;
       --tw-tracking: initial;
       --tw-space-x-reverse: 0;
+      --tw-scroll-snap-strictness: proximity;
     }
   }
 }
@@ -15867,8 +15868,136 @@
     flex: 1;
   }
 
+  .chart--pie, .chart--radial {
+    align-items: center;
+    gap: calc(var(--spacing, .25rem) * 6);
+    flex-flow: wrap;
+  }
+
+  .chart--radar {
+    align-items: flex-start;
+  }
+
+  .chart__polar {
+    width: var(--chart-polar-size, 200px);
+    height: var(--chart-polar-size, 200px);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .chart__polar-svg {
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+  }
+
+  .chart__sector {
+    pointer-events: none;
+    --tw-outline-style: none;
+    outline-style: none;
+    position: absolute;
+    inset: 0;
+  }
+
+  .chart__sector:hover, .chart__sector:focus-visible {
+    z-index: 10;
+  }
+
+  .chart__sector-path {
+    fill: var(--chart-color);
+    pointer-events: visiblePainted;
+    transition: opacity var(--duration-fast) var(--ease-smooth);
+  }
+
+  .chart__sector:focus-visible .chart__sector-path {
+    stroke: var(--focus);
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .chart__polar:has(.chart__sector:hover) .chart__sector:not(:hover) .chart__sector-path {
+    opacity: .45;
+  }
+
+  .chart__anchor {
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .chart__anchor > .chart__tooltip {
+    top: 0;
+    translate: 0 -50%;
+  }
+
+  .chart__polar-label {
+    pointer-events: none;
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    white-space: nowrap;
+    color: var(--muted);
+    position: absolute;
+    translate: -50% -50%;
+  }
+
+  .chart__polar-label[data-align="start"] {
+    translate: 0 -50%;
+  }
+
+  .chart__polar-label[data-align="end"] {
+    translate: -100% -50%;
+  }
+
+  .chart__polar-grid path {
+    fill: none;
+    stroke: var(--separator);
+  }
+
+  .chart__polar-center {
+    pointer-events: none;
+    text-align: center;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    position: absolute;
+    inset: 0;
+  }
+
+  :is(.chart__sector:hover, .chart__sector:focus-visible) .chart__dot {
+    opacity: 1;
+  }
+
+  :is(.chart__sector:hover, .chart__sector:focus-visible) .chart__tooltip {
+    opacity: 1;
+    display: flex;
+  }
+
+  @starting-style {
+    :is(.chart__sector:hover, .chart__sector:focus-visible) .chart__tooltip {
+      opacity: 0;
+    }
+  }
+
+  .chart__tooltip--custom {
+    min-width: 0;
+    box-shadow: none;
+    background-color: #0000;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .chart__line[data-dashed] {
+    stroke-dasharray: 6 4;
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .chart__tooltip, .chart__guide, .chart__dot, .chart__bar, .chart__donut-segment {
+    .chart__sector-path, .chart__tooltip, .chart__guide, .chart__dot, .chart__bar, .chart__donut-segment {
       transition: none;
     }
   }
@@ -20589,6 +20718,448 @@
     line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
     color: var(--muted);
     display: flex;
+  }
+}
+@layer components {
+  .kanban {
+    --kanban-column-min-width: 280px;
+    --kanban-column-gap: 16px;
+    --kanban-column-height: 480px;
+    scroll-snap-type: x var(--tw-scroll-snap-strictness);
+    --tw-scroll-snap-strictness: mandatory;
+    padding-bottom: calc(var(--spacing, .25rem) * 2);
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(var(--kanban-column-min-width), 1fr);
+    align-items: flex-start;
+    gap: var(--kanban-column-gap);
+    display: grid;
+    overflow-x: auto;
+  }
+
+  .kanban--sm {
+    --kanban-column-min-width: 240px;
+    --kanban-column-gap: 12px;
+  }
+
+  .kanban--lg {
+    --kanban-column-min-width: 320px;
+    --kanban-column-gap: 20px;
+  }
+
+  .kanban__column {
+    scroll-snap-align: center;
+    gap: calc(var(--spacing, .25rem) * 2);
+    flex-direction: column;
+    min-width: 0;
+    display: flex;
+  }
+
+  .kanban__column-header {
+    align-items: center;
+    gap: calc(var(--spacing, .25rem) * 2);
+    padding-inline: var(--spacing, .25rem);
+    display: flex;
+  }
+
+  .kanban__column-indicator {
+    width: calc(var(--spacing, .25rem) * 2);
+    height: calc(var(--spacing, .25rem) * 2);
+    background-color: var(--kanban-column-color, var(--muted));
+    border-radius: 3.40282e38px;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+  }
+
+  .kanban__column-indicator[data-icon] {
+    width: calc(var(--spacing, .25rem) * 5);
+    height: calc(var(--spacing, .25rem) * 5);
+    color: var(--kanban-column-color, var(--muted));
+    background-color: #0000;
+  }
+
+  .kanban__column-title {
+    font-size: var(--text-sm, .875rem);
+    line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+    --tw-font-weight: var(--font-weight-semibold, 600);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--foreground);
+    margin: 0;
+  }
+
+  .kanban__column-count {
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    color: var(--muted);
+    --tw-numeric-spacing: tabular-nums;
+    font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
+  }
+
+  .kanban__column-actions {
+    align-items: center;
+    gap: var(--spacing, .25rem);
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-smooth);
+    margin-inline-start: auto;
+    display: flex;
+  }
+
+  .kanban__column-header:hover .kanban__column-actions, .kanban__column-header:focus-within .kanban__column-actions {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .kanban__column-actions {
+      opacity: 1;
+    }
+  }
+
+  .kanban__column-body {
+    gap: calc(var(--spacing, .25rem) * 2);
+    border-radius: calc(var(--radius) * 2);
+    background-color: var(--default);
+    flex-direction: column;
+    display: flex;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .kanban__column-body {
+      background-color: color-mix(in oklab, var(--default) 40%, transparent);
+    }
+  }
+
+  .kanban__column-body {
+    padding: calc(var(--spacing, .25rem) * 2);
+  }
+
+  .kanban__scroll-shadow {
+    max-height: var(--kanban-column-height);
+  }
+
+  .kanban__card-list {
+    min-height: calc(var(--spacing, .25rem) * 16);
+    gap: calc(var(--spacing, .25rem) * 2);
+    border-radius: calc(var(--radius) * 1.5);
+    transition: background-color var(--duration-fast) var(--ease-smooth);
+    flex-direction: column;
+    display: flex;
+  }
+
+  .kanban__card-list.cdk-drop-list-receiving, .kanban__card-list.cdk-drop-list-dragging {
+    background-color: var(--accent);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .kanban__card-list.cdk-drop-list-receiving, .kanban__card-list.cdk-drop-list-dragging {
+      background-color: color-mix(in oklab, var(--accent) 6%, transparent);
+    }
+  }
+
+  .kanban__card {
+    cursor: grab;
+    border-radius: calc(var(--radius) * 1.5);
+    --tw-outline-style: none;
+    -webkit-user-select: none;
+    user-select: none;
+    outline-style: none;
+    position: relative;
+  }
+
+  .kanban__card:active {
+    cursor: grabbing;
+  }
+
+  .kanban__card:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .kanban__card.cdk-drag-disabled {
+    cursor: default;
+    opacity: .6;
+  }
+
+  .kanban__card.cdk-drag-animating, .kanban__card-list.cdk-drop-list-dragging .kanban__card:not(.cdk-drag-placeholder) {
+    transition: transform var(--duration-base) var(--ease-smooth);
+  }
+
+  .kanban__card-group {
+    display: contents;
+  }
+
+  .kanban__card-content {
+    gap: calc(var(--spacing, .25rem) * 2);
+    border-radius: calc(var(--radius) * 1.5);
+    background-color: var(--overlay);
+    padding: calc(var(--spacing, .25rem) * 3);
+    font-size: var(--text-sm, .875rem);
+    line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+    color: var(--foreground);
+    box-shadow: var(--surface-shadow);
+    transition: box-shadow var(--duration-fast) var(--ease-smooth);
+    flex-direction: column;
+    display: flex;
+  }
+
+  .kanban__card:hover .kanban__card:hover > .kanban__card-content {
+    box-shadow: var(--overlay-shadow);
+  }
+
+  .kanban--sm .kanban__card-content {
+    gap: calc(var(--spacing, .25rem) * 1.5);
+    padding: calc(var(--spacing, .25rem) * 2);
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+  }
+
+  .kanban--lg .kanban__card-content {
+    gap: calc(var(--spacing, .25rem) * 3);
+    padding: calc(var(--spacing, .25rem) * 4);
+    font-size: var(--text-base, 1rem);
+    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
+  }
+
+  .kanban__card.cdk-drag-preview {
+    cursor: grabbing;
+    box-sizing: border-box;
+    rotate: 2deg;
+  }
+
+  .kanban__card.cdk-drag-preview .kanban__card-content {
+    box-shadow: var(--overlay-shadow);
+  }
+
+  .kanban__card.cdk-drag-placeholder {
+    opacity: .4;
+  }
+
+  .kanban__drop-indicator {
+    border-radius: calc(var(--radius) * 1.5);
+    border-style: var(--tw-border-style);
+    --tw-border-style: dashed;
+    border-style: dashed;
+    border-width: 2px;
+    border-color: var(--accent);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .kanban__drop-indicator {
+      border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+    }
+  }
+
+  .kanban__drop-indicator {
+    background-color: var(--accent);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .kanban__drop-indicator {
+      background-color: color-mix(in oklab, var(--accent) 6%, transparent);
+    }
+  }
+
+  .kanban__drop-indicator {
+    height: var(--kanban-drop-height, 64px);
+  }
+
+  .kanban__drag-handle {
+    inset-inline-end: calc(var(--spacing, .25rem) * 2);
+    top: calc(var(--spacing, .25rem) * 2);
+    width: calc(var(--spacing, .25rem) * 6);
+    height: calc(var(--spacing, .25rem) * 6);
+    border-radius: calc(var(--radius) * .75);
+    color: var(--muted);
+    opacity: 0;
+    cursor: grab;
+    transition: opacity var(--duration-fast) var(--ease-smooth);
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+    position: absolute;
+  }
+
+  .kanban__card:hover .kanban__drag-handle, .kanban__card:focus-within .kanban__drag-handle, .kanban__drag-handle:focus-visible {
+    opacity: 1;
+  }
+
+  .kanban__empty {
+    min-height: calc(var(--spacing, .25rem) * 16);
+    border-radius: calc(var(--radius) * 1.5);
+    border-style: var(--tw-border-style);
+    --tw-border-style: dashed;
+    padding: calc(var(--spacing, .25rem) * 4);
+    text-align: center;
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    color: var(--muted);
+    border-style: dashed;
+    border-width: 1px;
+    border-color: var(--separator);
+    justify-content: center;
+    align-items: center;
+    display: none;
+  }
+
+  .kanban__card-list:not(:has( > .kanban__card)) > .kanban__empty {
+    display: flex;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kanban__card, .kanban__card-content, .kanban__card-list, .kanban__column-actions, .kanban__drag-handle {
+      transition: none;
+    }
+
+    .kanban__card.cdk-drag-preview {
+      rotate: none;
+    }
+  }
+}
+@layer components {
+  .composed-chart .chart__bars {
+    pointer-events: none;
+  }
+
+  .composed-chart__slot:hover .chart__guide, .composed-chart__slot:focus-visible .chart__guide {
+    opacity: .6;
+  }
+}
+@layer components {
+  .radial-chart__track {
+    fill: var(--default);
+  }
+
+  .radial-chart .chart__legend {
+    max-width: calc(var(--spacing, .25rem) * 64);
+    min-width: calc(var(--spacing, .25rem) * 40);
+    align-items: stretch;
+    gap: calc(var(--spacing, .25rem) * 2);
+    flex-direction: column;
+    flex: 1;
+  }
+}
+@layer components {
+  .radar-chart__shape {
+    fill: none;
+    stroke: none;
+  }
+
+  .radar-chart__shape[data-fill] {
+    fill: var(--chart-color);
+    fill-opacity: .22;
+  }
+
+  .radar-chart__shape[data-stroke] {
+    stroke: var(--chart-color);
+    stroke-width: 2px;
+    stroke-linejoin: round;
+  }
+
+  .radar-chart__vertex {
+    fill: var(--chart-color);
+  }
+
+  .radar-chart__hit {
+    fill: #0000;
+    pointer-events: all;
+  }
+
+  .radar-chart__tick {
+    pointer-events: none;
+    white-space: nowrap;
+    color: var(--muted);
+    --tw-numeric-spacing: tabular-nums;
+    font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
+    padding-inline-start: var(--spacing, .25rem);
+    font-size: 10px;
+    position: absolute;
+    translate: 0 -50%;
+  }
+}
+@layer components {
+  .pie-chart__leader {
+    fill: none;
+    stroke: var(--muted);
+    stroke-opacity: .3;
+  }
+
+  .pie-chart .chart__legend[data-legend="breakdown"] {
+    max-width: calc(var(--spacing, .25rem) * 64);
+    min-width: calc(var(--spacing, .25rem) * 40);
+    align-items: stretch;
+    gap: calc(var(--spacing, .25rem) * 2);
+    flex-direction: column;
+    flex: 1;
+  }
+}
+@layer components {
+  .chart-tooltip {
+    min-width: calc(var(--spacing, .25rem) * 36);
+    gap: calc(var(--spacing, .25rem) * 1.5);
+    border-radius: calc(var(--radius) * 1.5);
+    border-style: var(--tw-border-style);
+    background-color: var(--overlay);
+    padding-inline: calc(var(--spacing, .25rem) * 3);
+    padding-block: calc(var(--spacing, .25rem) * 2);
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    color: var(--foreground);
+    border-width: 1px;
+    border-color: var(--border, var(--separator));
+    box-shadow: var(--overlay-shadow);
+    flex-direction: column;
+    display: flex;
+  }
+
+  .chart-tooltip__header {
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    --tw-font-weight: var(--font-weight-medium, 500);
+    font-weight: var(--font-weight-medium, 500);
+    color: var(--muted);
+  }
+
+  .chart-tooltip__item {
+    align-items: center;
+    gap: calc(var(--spacing, .25rem) * 2);
+    display: flex;
+  }
+
+  .chart-tooltip__indicator {
+    background-color: var(--chart-color, var(--accent));
+    flex-shrink: 0;
+  }
+
+  .chart-tooltip__indicator--dot {
+    width: calc(var(--spacing, .25rem) * 2);
+    height: calc(var(--spacing, .25rem) * 2);
+    border-radius: 3.40282e38px;
+  }
+
+  .chart-tooltip__indicator--line {
+    height: calc(var(--spacing, .25rem) * 3);
+    width: var(--spacing, .25rem);
+    border-radius: 3.40282e38px;
+  }
+
+  .chart-tooltip__label {
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    color: var(--muted);
+    flex: 1;
+  }
+
+  .chart-tooltip__value {
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    --tw-font-weight: var(--font-weight-semibold, 600);
+    font-weight: var(--font-weight-semibold, 600);
+    white-space: nowrap;
+    color: var(--foreground);
+    --tw-numeric-spacing: tabular-nums;
+    font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
+    margin-inline-start: auto;
+    padding-inline-start: calc(var(--spacing, .25rem) * 3);
   }
 }
 @layer components {
@@ -27369,4 +27940,9 @@
   syntax: "*";
   inherits: false;
   initial-value: 0;
+}
+@property --tw-scroll-snap-strictness {
+  syntax: "*";
+  inherits: false;
+  initial-value: proximity;
 }

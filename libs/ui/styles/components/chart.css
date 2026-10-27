@@ -287,6 +287,116 @@
   @apply max-w-64 min-w-40 flex-1 flex-col items-stretch gap-2;
 }
 
+/* Polar charts (pie / radar / radial; `@rivetjs/ui/pie-chart`, `/radar-chart`, `/radial-chart`): a square plot of stacked
+   layers. Each `.chart__sector` layer holds one hit path and its tooltip; the layer itself ignores the pointer, the path
+   takes it (its painted shape), so `:hover` reaches the layer through the path and shows that tooltip with CSS only. */
+.chart--pie,
+.chart--radial {
+  @apply flex-row flex-wrap items-center gap-6;
+}
+
+.chart--radar {
+  @apply items-start;
+}
+
+.chart__polar {
+  @apply relative shrink-0;
+  width: var(--chart-polar-size, 200px);
+  height: var(--chart-polar-size, 200px);
+}
+
+.chart__polar-svg {
+  @apply pointer-events-none absolute inset-0 block size-full overflow-visible;
+}
+
+.chart__sector {
+  @apply pointer-events-none absolute inset-0 outline-none;
+
+  &:hover,
+  &:focus-visible {
+    @apply z-10;
+  }
+}
+
+.chart__sector-path {
+  fill: var(--chart-color);
+  pointer-events: visiblePainted;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+
+  .chart__sector:focus-visible & {
+    stroke: var(--focus);
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
+.chart__polar:has(.chart__sector:hover) .chart__sector:not(:hover) .chart__sector-path {
+  opacity: 0.45;
+}
+
+.chart__anchor {
+  @apply pointer-events-none absolute size-0;
+
+  > .chart__tooltip {
+    top: 0;
+    translate: 0 -50%;
+  }
+}
+
+.chart__polar-label {
+  @apply pointer-events-none absolute text-xs whitespace-nowrap text-muted;
+  translate: -50% -50%;
+
+  &[data-align="start"] {
+    translate: 0 -50%;
+  }
+
+  &[data-align="end"] {
+    translate: -100% -50%;
+  }
+}
+
+.chart__polar-grid path {
+  fill: none;
+  stroke: var(--separator);
+}
+
+.chart__polar-center {
+  @apply pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center;
+}
+
+.chart__sector:hover,
+.chart__sector:focus-visible {
+  .chart__dot {
+    @apply opacity-100;
+  }
+
+  .chart__tooltip {
+    @apply flex opacity-100;
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}
+
+/* Custom tooltip content (`tooltip` render function, e.g. a ChartTooltip): the wrapper only positions it. */
+.chart__tooltip--custom {
+  @apply min-w-0 rounded-none bg-transparent p-0;
+  box-shadow: none;
+}
+
+/* Dashed line series (`@rivetjs/ui/composed-chart` `dashed`). */
+.chart__line[data-dashed] {
+  stroke-dasharray: 6 4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart__sector-path {
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chart__tooltip,
   .chart__guide,

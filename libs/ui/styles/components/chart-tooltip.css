@@ -1,0 +1,42 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no charts). Feature set (a tooltip card with header, series rows, dot / line indicators) inspired by HeroUI Pro's public Chart Tooltip docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * Chart Tooltip Component Styles
+ * Block: chart-tooltip (parts: header / item / indicator / label / value)
+ * Modifiers: chart-tooltip__indicator--dot / --line
+ * Variables: --chart-color (indicator colour)
+ * -----------------------------------------------------------------------------------------------*/
+
+.chart-tooltip {
+  @apply flex min-w-36 flex-col gap-1.5 rounded-xl border bg-overlay px-3 py-2 text-xs text-foreground;
+  border-color: var(--border, var(--separator));
+  box-shadow: var(--overlay-shadow);
+}
+
+.chart-tooltip__header {
+  @apply text-xs font-medium text-muted;
+}
+
+.chart-tooltip__item {
+  @apply flex items-center gap-2;
+}
+
+.chart-tooltip__indicator {
+  @apply shrink-0;
+  background-color: var(--chart-color, var(--accent));
+}
+
+.chart-tooltip__indicator--dot {
+  @apply size-2 rounded-full;
+}
+
+.chart-tooltip__indicator--line {
+  @apply h-3 w-1 rounded-full;
+}
+
+.chart-tooltip__label {
+  @apply flex-1 text-xs text-muted;
+}
+
+.chart-tooltip__value {
+  @apply ms-auto ps-3 text-xs font-semibold whitespace-nowrap text-foreground tabular-nums;
+}

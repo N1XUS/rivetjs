@@ -70,26 +70,27 @@ Everything is static markup: the server computes the paths and bars, and the too
 
 ### Data Attributes
 
-- `[data-slot]`: `chart-slot` (one per x value, focusable), `chart-tooltip`.
+- `[data-slot]`: `chart-slot` (one per x value, focusable `role="group"` named by its values), `chart-tooltip`.
 - Slot: `[data-side]` `start` / `end` (which side the tooltip opens).
 
 ## API Reference
 
 ### AreaChart / LineChart / BarChart
 
-| Prop                                                                  | Type                                  | Default        | Description                                 |
-| --------------------------------------------------------------------- | ------------------------------------- | -------------- | ------------------------------------------- |
-| `data`                                                                | `ChartDatum[]`                        | -              | One object per x value                      |
-| `index`                                                               | `string`                              | -              | Key of the x label                          |
-| `series`                                                              | `ChartSeries[]`                       | -              | `{ key, label?, color? }` per series        |
-| `height`                                                              | `number`                              | `240`          | Plot height in px                           |
-| `valueFormatter`                                                      | `(value: number) => string`           | grouped number | Y axis and tooltip values                   |
-| `indexFormatter`                                                      | `(value: string \| number) => string` | -              | X labels                                    |
-| `minValue` / `maxValue`                                               | `number`                              | from data      | Y range                                     |
-| `stacked`                                                             | `boolean`                             | `false`        | Stack series (area, bar)                    |
-| `curve`                                                               | `"monotone"` \| `"linear"`            | `"monotone"`   | Line shape (area, line)                     |
-| `showLegend` / `showGrid` / `showXAxis` / `showYAxis` / `showTooltip` | `boolean`                             | `true`         | Toggle parts (legend: shown with 2+ series) |
-| `aria-label`                                                          | `string`                              | -              | Accessible name of the figure               |
+| Prop                                                                  | Type                                  | Default        | Description                                                                                  |
+| --------------------------------------------------------------------- | ------------------------------------- | -------------- | -------------------------------------------------------------------------------------------- |
+| `data`                                                                | `ChartDatum[]`                        | -              | One object per x value                                                                       |
+| `index`                                                               | `string`                              | -              | Key of the x label                                                                           |
+| `series`                                                              | `ChartSeries[]`                       | -              | `{ key, label?, color? }` per series                                                         |
+| `height`                                                              | `number`                              | `240`          | Plot height in px                                                                            |
+| `valueFormatter`                                                      | `(value: number) => string`           | grouped number | Y axis and tooltip values                                                                    |
+| `indexFormatter`                                                      | `(value: string \| number) => string` | -              | X labels                                                                                     |
+| `minValue` / `maxValue`                                               | `number`                              | from data      | Y range                                                                                      |
+| `stacked`                                                             | `boolean`                             | `false`        | Stack series (area, bar)                                                                     |
+| `curve`                                                               | `"monotone"` \| `"linear"`            | `"monotone"`   | Line shape (area, line)                                                                      |
+| `showLegend` / `showGrid` / `showXAxis` / `showYAxis` / `showTooltip` | `boolean`                             | `true`         | Toggle parts (legend: shown with 2+ series)                                                  |
+| `aria-label`                                                          | `string`                              | -              | Accessible name of the figure                                                                |
+| `tooltip`                                                             | `(point: ChartPoint) => JSX.Element`  | -              | Custom tooltip per x value (server-rendered; see [ChartTooltip](/components/chart-tooltip/)) |
 
 ### DonutChart
 
@@ -106,5 +107,7 @@ Everything is static markup: the server computes the paths and bars, and the too
 ## Related Components
 
 - [Kpi](/components/kpi/): Metric cards with a sparkline.
+- [ChartTooltip](/components/chart-tooltip/): Parts for a custom `tooltip`.
+- [PieChart](/components/pie-chart/), [RadarChart](/components/radar-chart/), [RadialChart](/components/radial-chart/), [ComposedChart](/components/composed-chart/): More chart types.
 - [DataGrid](/components/data-grid/): The table under the charts.
 - [Meter](/components/meter/): A single value in a range.

@@ -7,6 +7,10 @@
 //   tooltip on `:hover` / `:focus-visible`. No state, no script: a chart costs no JS on a resumed page.
 // - `data` / `series` / formatters are read once at mount (all geometry is plain strings computed before the markup); re-create
 //   the chart to show other data (`<Show keyed when={period()}>`).
+// - `tooltip` (every chart): a render function `(point: ChartPoint) => JSX` replacing the default tooltip rows (e.g. a
+//   `@rivetjs/ui/chart-tooltip` card); still server-rendered, still shown by CSS.
+// - The helpers below (`prepare`, `renderFrame`, `renderTooltip`, `colorOf`, …) are shared with `../pie-chart`,
+//   `../radar-chart`, `../radial-chart` and `../composed-chart` (not part of the `@rivetjs/ui/chart` entry).
 import { createId } from "@rivetjs/cdk/id";
 import { cachedIntl } from "@rivetjs/cdk/i18n/intl-cache";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
@@ -18,10 +22,20 @@ import type { Point } from "./chart-math.ts";
 const SLOTS = chartVariants();
 
 // Gradient stops (`offset` is missing from the JSX SVG stop typings: spread plain attribute objects).
-const STOP_TOP = { offset: "0%", "stop-color": "currentColor", "stop-opacity": "0.32" } as Record<string, string>;
-const STOP_BOTTOM = { offset: "100%", "stop-color": "currentColor", "stop-opacity": "0.02" } as Record<string, string>;
+export const STOP_TOP = { offset: "0%", "stop-color": "currentColor", "stop-opacity": "0.32" } as Record<string, string>;
+export const STOP_BOTTOM = { offset: "100%", "stop-color": "currentColor", "stop-opacity": "0.02" } as Record<string, string>;
 
 type ChartDatum = Record<string, string | number>;
+
+/** One hovered index (cartesian / radar) or segment (pie / radial), handed to a chart's `tooltip` render function. */
+interface ChartPoint {
+  /** Index of the datum / segment. */
+  index: number;
+  /** The formatted index value (x label) or the segment / ring name. */
+  label: string;
+  /** One entry per series (pie / radial: the segment). */
+  items: { key: string; name: string; value: number; formatted: string; color: string }[];
+}
 
 interface ChartSeries {
   /** Key of the value in each datum. */
@@ -52,6 +66,8 @@ interface CartesianChartProps extends Omit<JSX.IntrinsicElements["figure"], "chi
   showXAxis?: boolean;
   showYAxis?: boolean;
   showTooltip?: boolean;
+  /** Custom tooltip content per index (e.g. a `ChartTooltip`). */
+  tooltip?: (point: ChartPoint) => JSX.Element;
   /** Accessible name of the figure. */
   "aria-label"?: string;
   class?: string;
@@ -70,11 +86,11 @@ interface BarChartProps extends CartesianChartProps {
   stacked?: boolean;
 }
 
-const colorOf = (s: ChartSeries, i: number) => s.color ?? `var(--chart-${(i % 6) + 1})`;
-const defaultFormat = (v: number) => cachedIntl(Intl.NumberFormat, "en-US").format(v);
-const pct = (n: number) => `${Math.round(n * 1000) / 1000}%`;
+export const colorOf = (s: ChartSeries, i: number) => s.color ?? `var(--chart-${(i % 6) + 1})`;
+export const defaultFormat = (v: number) => cachedIntl(Intl.NumberFormat, "en-US").format(v);
+export const pct = (n: number) => `${Math.round(n * 1000) / 1000}%`;
 
-interface Prepared {
+export interface Prepared {
   rows: { label: string; values: number[]; sums: number[] }[];
   ticks: number[];
   min: number;
@@ -85,7 +101,7 @@ interface Prepared {
   labels: string[];
 }
 
-function prepare(props: CartesianChartProps, stacked: boolean): Prepared {
+export function prepare(props: CartesianChartProps, stacked: boolean): Prepared {
   const format = props.valueFormatter ?? defaultFormat;
   const indexFormat = props.indexFormatter ?? ((v: string | number) => String(v));
   const rows = props.data.map((d) => {
@@ -115,6 +131,15 @@ function prepare(props: CartesianChartProps, stacked: boolean): Prepared {
 
 /** Legend items (plain data). */
 const legendOf = (p: Prepared) => p.labels.map((label, i) => ({ label, color: p.colors[i]! }));
+
+/** The point handed to a `tooltip` render function. */
+function pointOf(p: Prepared, row: Prepared["rows"][number], index: number, keys: string[]): ChartPoint {
+  return {
+    index,
+    label: row.label,
+    items: row.values.map((v, i) => ({ key: keys[i]!, name: p.labels[i]!, value: v, formatted: p.format(v), color: p.colors[i]! })),
+  };
+}
 
 function tooltipLabel(p: Prepared, row: Prepared["rows"][number]): string {
   return `${row.label}: ${row.values.map((v, i) => `${p.labels[i]} ${p.format(v)}`).join(", ")}`;
@@ -159,6 +184,14 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
       title: r.label,
       dots: r.values.map((v, si) => ({ top: pct(p.y(stacked ? r.sums[si]! : v)), color: p.colors[si]! })),
       rows: r.values.map((v, si) => ({ label: p.labels[si]!, value: p.format(v), color: p.colors[si]! })),
+      custom: props.tooltip?.(
+        pointOf(
+          p,
+          r,
+          i,
+          props.series.map((s) => s.key),
+        ),
+      ),
     };
   });
   return renderFrame(
@@ -191,6 +224,7 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
               class={SLOTS.slot()}
               data-slot="chart-slot"
               data-side={slot.side}
+              role="group"
               tabIndex={0}
               aria-label={slot.label}
               style={{ left: slot.left, width: slot.width }}
@@ -199,7 +233,7 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
               {slot.dots.map((dot) => (
                 <span class={SLOTS.dot()} style={{ top: dot.top, "inset-inline-start": slot.inner, "--chart-color": dot.color }} />
               ))}
-              {renderTooltip(slot.title, slot.rows, slot.inner)}
+              {renderTooltip(slot.title, slot.rows, slot.inner, slot.custom)}
             </div>
           ))}
         </div>
@@ -212,7 +246,18 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
 // Positional-argument helpers are lower-case (`renderTooltip` / `renderFrame`): a capitalised function returning JSX
 // compiles as a component boundary, and these are not components (called with positional arguments, not props) — as
 // boundaries the resumed page re-rendered the frame on its first event (tooltips gone, focus lost).
-function renderTooltip(title: string, rows: { label: string; value: string; color: string }[], anchor?: string): JSX.Element {
+export function renderTooltip(title: string, rows: { label: string; value: string; color: string }[], anchor?: string, custom?: JSX.Element): JSX.Element {
+  if (custom != null)
+    return (
+      <div
+        class={SLOTS.tooltip({ class: "chart__tooltip--custom" })}
+        data-slot="chart-tooltip"
+        aria-hidden="true"
+        style={anchor ? { "--chart-anchor": anchor } : undefined}
+      >
+        {custom}
+      </div>
+    );
   return (
     <div class={SLOTS.tooltip()} data-slot="chart-tooltip" aria-hidden="true" style={anchor ? { "--chart-anchor": anchor } : undefined}>
       <div class={SLOTS.tooltipTitle()}>{title}</div>
@@ -228,7 +273,7 @@ function renderTooltip(title: string, rows: { label: string; value: string; colo
 }
 
 /** Figure + legend + y axis + grid + plot content + x axis. */
-function renderFrame(props: CartesianChartProps, p: Prepared, kind: string, plot: JSX.Element, xOf: (i: number) => number): JSX.Element {
+export function renderFrame(props: CartesianChartProps, p: Prepared, kind: string, plot: JSX.Element, xOf: (i: number) => number): JSX.Element {
   const showY = props.showYAxis !== false && kind !== "sparkline";
   const showX = props.showXAxis !== false && kind !== "sparkline";
   const showGrid = props.showGrid !== false && kind !== "sparkline";
@@ -252,6 +297,7 @@ function renderFrame(props: CartesianChartProps, p: Prepared, kind: string, plot
     showXAxis: _x,
     showYAxis: _y,
     showTooltip: _t,
+    tooltip: _tt,
     class: cls,
     ...rest
   } = props as CartesianChartProps & Record<string, unknown>;
@@ -359,6 +405,14 @@ const BarChart = (props: BarChartProps): JSX.Element => {
   const xOf = (i: number) => ((i + 0.5) / Math.max(1, n)) * 100;
   const base = p.y(Math.max(p.min, 0));
   const groups = p.rows.map((r, i) => ({
+    custom: props.tooltip?.(
+      pointOf(
+        p,
+        r,
+        i,
+        props.series.map((s) => s.key),
+      ),
+    ),
     label: tooltipLabel(p, r),
     title: r.label,
     side: xOf(i) > 60 ? "start" : "end",
@@ -371,7 +425,14 @@ const BarChart = (props: BarChartProps): JSX.Element => {
     "bar",
     <div class={SLOTS.bars()}>
       {groups.map((g) => (
-        <div class={SLOTS.barGroup()} data-slot="chart-slot" data-side={g.side} tabIndex={props.showTooltip === false ? undefined : 0} aria-label={g.label}>
+        <div
+          class={SLOTS.barGroup()}
+          data-slot="chart-slot"
+          data-side={g.side}
+          role="group"
+          tabIndex={props.showTooltip === false ? undefined : 0}
+          aria-label={g.label}
+        >
           {stacked ? (
             <div class={SLOTS.barStack()}>
               {g.bars.map((bar) => (
@@ -381,7 +442,7 @@ const BarChart = (props: BarChartProps): JSX.Element => {
           ) : (
             g.bars.map((bar) => <span class={SLOTS.bar()} style={{ height: bar.height, "--chart-color": bar.color }} />)
           )}
-          {props.showTooltip === false ? null : renderTooltip(g.title, g.rows)}
+          {props.showTooltip === false ? null : renderTooltip(g.title, g.rows, undefined, g.custom)}
         </div>
       ))}
     </div>,
@@ -486,4 +547,4 @@ const DonutChart = (props: DonutChartProps): JSX.Element => {
 };
 
 export { AreaChart, LineChart, BarChart, DonutChart, Sparkline };
-export type { AreaChartProps, LineChartProps, BarChartProps, DonutChartProps, DonutSegment, ChartDatum, ChartSeries, CartesianChartProps };
+export type { AreaChartProps, LineChartProps, BarChartProps, DonutChartProps, DonutSegment, ChartDatum, ChartSeries, CartesianChartProps, ChartPoint };
