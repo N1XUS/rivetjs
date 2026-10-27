@@ -16,7 +16,7 @@ export const DEPLOY_TARGETS = [
   { id: "netlify", label: "Netlify", hint: "netlify.toml + Netlify Functions (dist/netlify)" },
   { id: "cloudflare", label: "Cloudflare Workers", hint: "Workers + static assets, `wrangler deploy`" },
   { id: "bun", label: "Bun", hint: "`bun dist/server/bun.js` (server template)" },
-  { id: "deno", label: "Deno", hint: "`deno run dist/server/deno.js` (server template)" },
+  { id: "deno", label: "Deno", hint: "`deno run --allow-net --allow-read --allow-env dist/server/deno.js` (server template)" },
 ] as const;
 export type DeployTarget = (typeof DEPLOY_TARGETS)[number]["id"];
 
@@ -79,10 +79,10 @@ export function deployOverlay(target: DeployTarget, pm: PackageManager = "npm"):
         const label = findDeployTarget(target)!.label;
         const how: Record<DeployTarget, string> = {
           vercel: `\`${run("build")}\` also writes \`.vercel/output\` (Build Output API). Deploy it with the Vercel CLI: \`${run("deploy")}\` (\`vercel deploy --prebuilt\`).`,
-          netlify: `\`netlify.toml\` makes Netlify run \`${run("build")}\` and publish \`dist/netlify\`; the server function goes to \`.netlify/v1\`. Connect the repository in Netlify, or deploy with the Netlify CLI after a build.`,
+          netlify: `\`netlify.toml\` makes Netlify run \`${run("build")}\` and publish \`dist/netlify\`; server-mode builds also put a function in \`.netlify/v1\`. Connect the repository in Netlify, or deploy with the Netlify CLI after a build.`,
           cloudflare: `\`${run("build")}\` writes \`dist/cloudflare\` (worker + static assets + \`wrangler.json\`). \`${run("preview")}\` runs it in the local Workers runtime, \`${run("deploy")}\` uploads it. Keep \`nodejs_compat\` off (the build sets the compatibility flags).`,
-          bun: `\`${run("build")}\` writes \`dist/server/bun.js\`; \`${run("start")}\` serves the app with Bun (\`PORT\`, \`HOST\`). Bun must be installed.`,
-          deno: `\`${run("build")}\` writes \`dist/server/deno.js\`; \`${run("start")}\` serves the app with Deno (\`PORT\`, \`HOST\`). Deno must be installed.`,
+          bun: `\`${run("build")}\` writes \`dist/server/bun.js\`; \`${run("start")}\` serves the app with Bun (\`PORT\`, \`HOST\`). Bun must be installed. This target removes the Node-only \`serve.js\`, \`Dockerfile\` and \`.dockerignore\`; the earlier Docker instructions do not apply.`,
+          deno: `\`${run("build")}\` writes \`dist/server/deno.js\`; \`${run("start")}\` serves the app with Deno (\`PORT\`, \`HOST\`). Deno must be installed. This target removes the Node-only \`serve.js\`, \`Dockerfile\` and \`.dockerignore\`; the earlier Docker instructions do not apply.`,
         };
         writeFileSync(
           readme,

@@ -6,15 +6,15 @@ Read this before editing this project. Rivet looks like React / Solid JSX but is
 
 ## 1. What Rivet is
 
-Rivet is a compiled, resumable JSX framework. A Rust compiler turns `.tsx` into server HTML (streamed) and DOM templates. A component function runs **on the server**, and in the browser only when the user first interacts with it: the page **resumes** from the HTML plus the signal values of its interactive components; nothing runs on load, and a component's code loads on intent and runs once over the existing HTML on its first event. State is fine-grained signals (`@rivetjs/reactivity`). Routing is file-based (`@rivetjs/router`), i18n is compile-time (`@rivetjs/i18n`), forms are progressive (`@rivetjs/forms`), UI is `@rivetjs/ui` (styled compound components) on headless `@rivetjs/cdk`.
+Rivet is a compiled, resumable JSX framework. A Rust compiler turns `.tsx` into server HTML (streamed) and DOM templates. A component function renders **on the server**. The browser **resumes** an interactive boundary by running its ordinary compiled DOM function over the existing HTML on its first event, signal wake or client trigger, using the recorded signal values. The loader can fetch code ahead of use; client effects can also start boundaries without a user event. State is fine-grained signals (`@rivetjs/reactivity`). Routing is file-based (`@rivetjs/router`), i18n is compile-time (`@rivetjs/i18n`), forms are progressive (`@rivetjs/forms`), UI is `@rivetjs/ui` (styled compound components) on headless `@rivetjs/cdk`.
 
 ## 2. Differences from React / Solid
 
 ### Mental model
 
-- No virtual DOM, no re-renders. A signal change updates only the text / attribute / row that reads it. No `useMemo`, `useCallback`, dependency arrays, or hooks rules: `signal()` / `computed()` can be created anywhere.
-- Component body = server code. `window`, `document`, `localStorage` there are a compile error (RV2001). `console.log` in the body prints in the terminal.
-- `typeof window !== "undefined"` branches in a component never run in the browser. Use a handler, `clientEffect`, `clientEvent` or `clientOnly`.
+- No virtual DOM, no re-renders. A signal change updates only the text / attribute / row that reads it. No `useMemo`, `useCallback`, dependency arrays, or React hooks ordering rules. In resumable components, create per-item state in a child component rather than calling `signal()` / `createStore()` in a loop (RV2104).
+- Component bodies run during SSR and again when their boundary resumes. Browser-global reads (`window`, `document`, `localStorage`) during server rendering are errors (RV2001). Keep browser-only work in handlers or client helpers; a body log can run on both sides.
+- Do not branch rendered markup on `typeof window`: the two sides must render the same structure. Use a handler, `clientEffect`, `clientEvent` or `clientOnly` for browser-only work.
 
 ### JSX
 
@@ -50,14 +50,14 @@ untrack(count); // read without subscribing (there is no .peek())
 - Avoid `count(5)` (not a setter) and `count.value`.
 - In an `effect` / `computed` / `clientEffect`, write from the current value with `update`: `count.set(count() + 1)` there subscribes the effect to its own write and re-runs it until the 10000-run cutoff (RV1017). In event handlers `count.set(count() + 1)` is fine (nothing tracks there).
 - `computed` / `effect` must be synchronous (an async fn is a type error).
-- Stores: `createStore` from `@rivetjs/reactivity/store`.
+- Stores: `createStore`, `read` and `write` from `@rivetjs/reactivity/store`: `const state = createStore({ done: false })`, `read(state, "done")`, `write(state, "done", (done) => !done)`. Writes copy data; do not mutate a value returned by `read`.
 
 ### Effects, lifecycle, cleanup
 
 - In components use `clientEffect` from `@rivetjs/runtime/dom`: recorded on the server, runs only in the browser, re-runs when its signals change. Return a function for cleanup.
-- `effect` from `@rivetjs/reactivity` runs immediately where called — in a component that means on the server only. Use it in plain TS / tests.
+- `effect` from `@rivetjs/reactivity` runs immediately where called, including during SSR and when the component resumes. Use `clientEffect` for browser-only work.
 - `onCleanup(fn)` (reactivity) registers cleanup for the current effect / root; throws outside one.
-- Options: `clientEffect(fn, { when: "idle" | "load" | "visible" | "interaction" | "media:(…)" })`. Default `idle`; `visible` = the component's first element near the screen; `interaction` / `media:` start it at its first use (plan M6).
+- Options: `clientEffect(fn, { when: "idle" | "load" | "visible" | "interaction" | "media:(…)" })`. On derived pages, the default and `load` schedule idle adoption; `visible` observes the boundary's first element intersecting the viewport. `interaction` / `media:` adopt on the first event in the boundary, not on a media-query change. Once the boundary runs, the effect starts in a microtask.
 - Async `clientEffect`: only signals read before the first `await` are tracked; returned cleanup works only from non-async effects.
 
 ```tsx
@@ -137,15 +137,15 @@ const theme = useContext(ThemeContext); // import { useContext } from "@rivetjs/
 
 ## 3. Resumability rules
 
-The server writes the HTML plus a short record per interactive component (it has a handler, reads a signal in its markup, or uses an effect): where it is, its signal values, its props when they are plain data. The browser runs nothing on load; the first event, signal write or trigger inside a component runs its compiled code once over the existing HTML. Functions, class instances, library objects and JSX are never written into the page: the browser builds them again when the component runs.
+The server writes the HTML plus a short record per interactive component (it has a handler, reads a signal in its markup, or uses an effect): where it is, its signal values, its props when they are plain data. The first event, signal wake or client trigger runs the boundary's compiled DOM function over the existing HTML. Handlers, functions, service objects and JSX props have no capture-serialization rules: the browser reconstructs them when the component runs.
 
 - Render the same thing on both sides: no `Date.now()` / `Math.random()` / `new Date()` / `crypto.randomUUID()` in a render (RV2103) — keep it in a signal (`signal(Date.now())`, the server value ships) or compute it in a handler / `clientEffect`. One signal per creation site: no `signal()` inside a loop (RV2104 warning). Browser globals only in handlers / `clientEffect` / `clientEvent` / `clientOnly` (RV2001).
-- Signal values reach the browser as data (primitives, plain objects / arrays, `Date`, `Map`, `Set`, `URL`, `bigint`, typed arrays); a signal holding a function or class instance starts again from its initial value in the browser.
-- Pass data, not services: a component whose props are plain data wakes up alone; one given a function, a service object or JSX with handlers runs together with its parent.
-- Route loader data must be encodable (RV2107 warning, the page then renders in the browser): no functions, symbols, promises, unregistered class instances. Classes: `registerClass(Cls, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`, imported on server and browser.
+- Keep signal/store values as plain JSON data (null, booleans, finite numbers, strings, arrays and plain objects). In this derived implementation a recorded non-JSON signal value is omitted; adoption uses its browser initializer and a structural mismatch falls back to browser rendering. Do not rely on it retaining server state. The richer resume-format encoding below applies to route data.
+- Plain-data props can let the build make a component independent. Functions, services and JSX props are allowed; a component given non-data props adopts with its parent. There is no handler-capture restriction.
+- Route loader/action data must be encodable (RV2107 runtime warning; the page renders on the server but cannot resume): no functions, symbols, promises, unregistered class instances. Resume-format data also supports `Date`, `Map`, `Set`, `URL`, `bigint` and typed arrays. Classes: `registerClass(Cls, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`, imported on server and browser.
 - Render a function child as `{props.children}` directly. `For each={xs}` with `by` for lists that change.
 - `.ts` files are not server-rewritten: import `@rivetjs/runtime/dom` (`For`, `Show`, `clientEffect`, …) only from `.tsx` files, else the DOM runtime is bundled into SSR.
-- Components outside `src/routes` need no registration: `rivetRouter` resumes every `.tsx` / `.jsx` file a route imports.
+- With the default `resume.appModules: true`, project `.tsx` / `.jsx` files imported by routes need no registration (outside `node_modules` and within the project root).
 - A component whose markup differs in the browser renders there instead of reusing the server nodes (dev prints a warning naming it).
 - Not yet on this model (plan M6): framework islands, `@rivetjs/forms` progressive enhancement, some `Suspense` cases.
 - Playwright tests: the first trusted mouse click per document flushes DOM updates one task later. After a page's first `page.click`, wait (`expect(...).toHaveText` retries / `waitForFunction`), don't read the DOM synchronously.
@@ -168,7 +168,7 @@ src/
     _404.tsx  _error.tsx
 ```
 
-- Files/folders starting with `_` (except `_layout`, `_404`, `_error`), `.`, `*.test.*`, `*.d.ts` are ignored. `*.server.ts` = server-only module: browser code cannot use it (RV3008 in a route module's browser part); a page that imports one itself becomes a document route (full page load), a component, layout or error page that reaches one fails the build (RV3011).
+- Files/folders starting with `_` (except `_layout`, `_404`, `_error`), `.`, `*.test.*`, `*.spec.*`, `*.d.ts` are ignored. `*.server.ts` = server-only module: browser code cannot use it (RV3008 in a route module's browser part); a page that imports one itself becomes a document route (full page load), a component, layout or error page that reaches one fails the build (RV3011).
 - `.rivet/` is generated (route types `routes.d.ts`, editor manifest): never edit; `rivet sync` regenerates it.
 
 ### Page module exports
@@ -223,7 +223,7 @@ export default function Layout({ data, children }: LayoutProps<typeof loader>) {
 
 ### Links and navigation
 
-- Plain `<a href="/about">` works (client navigation). Typed: `import { Link } from "@rivetjs/router/link"`; `<Link to="/items/42">`.
+- Plain `<a href="/about">` works; it uses client navigation when the page has the client router and document navigation otherwise. Typed: `import { Link } from "@rivetjs/router/link"`; `<Link to="/items/42">`.
 - `import { navigate, invalidate, useSearchParams, setSearchParams, beforeLeave, actionResult } from "@rivetjs/router/client"`.
 - Under a base path, plain anchors need `withBase("/x")` from `@rivetjs/router`.
 - Never call `history.pushState` yourself: the router does not see it.
@@ -302,14 +302,14 @@ import { t } from "@rivetjs/i18n";
 <p>{t("terms", { link: (c) => <a href="/terms">{c}</a> })}</p>
 ```
 
-- Key = string literal; params = inline object literal. Unknown key RV4001, missing / extra param RV4002, bad args RV4003, tags in attributes RV4004.
+- Use a literal key and inline object params. A fixed-prefix template key such as ``t(`nav.${id}`)`` is also supported for plain-text messages without params. Unknown key RV4001, missing / extra param RV4002, bad args RV4003, tags in attributes RV4004.
 - Server code outside rendering (emails in actions): `t.in("de", "cart.title")`. Never `String(t(…))` on the server.
 - Current language: `locale()` from `@rivetjs/i18n` (call during render; loaders / actions: `event.locals.locale`). `t()` values work in attributes (`Picture alt`), route `head` and kit `<Title>` / `<Meta>`.
 - Generated types: `src/rivet-i18n.d.ts` (do not edit). Locale URLs: `[[lang]]` route folder.
 
 ## 6. Styles
 
-- Templates use Tailwind v4: `src/styles.css` (`@import "tailwindcss"; @source "./**/*.{ts,tsx}";`), listed in `rivetRouter({ styles: ["src/styles.css"] })`, plus `tailwindcss()` Vite plugin. Write utilities in `class`.
+- Static, server and UI starters use Tailwind v4 (minimal has no styling tools): `src/styles.css` (`@import "tailwindcss"; @source "./**/*.{ts,tsx}";`), listed in `rivetRouter({ styles: ["src/styles.css"] })`, plus `tailwindcss()` Vite plugin. Write utilities in `class`.
 - Scoped CSS (experimental): ``const styles = css`.card { … }` `` at module top level, `import { css, cx } from "@rivetjs/runtime/css"`; use `class={styles.card}`, combine with `cx(styles.card, on() && styles.selected, props.class)`.
 - Dynamic values: `style={{ "--x": n(), marginTop: "1px" }}` or `style:color={c()}`; `data-*` attributes for state styling.
 
@@ -370,7 +370,7 @@ import { Select } from "@rivetjs/ui/select";
 ```
 
 - `@rivetjs/cdk`: headless 1:1 ports of React Aria / React Stately / RAC / Angular CDK, one subpath per module (`@rivetjs/cdk/select`, `@rivetjs/cdk/dialog`, `@rivetjs/cdk/overlay`, …). Unstyled: default `rv-*` classes + `data-*` state attributes. Overlays use a div layer in a portal (no native `<dialog>` / `popover`). Use it for custom-styled widgets; prefer `@rivetjs/ui` when its look fits.
-- Animations: `@rivetjs/motion` (Motion / motion.dev API, peer `motion` 14.x, no React): `<Motion.div initial={…} animate={…} exit={…} whileHover={…} whilePress={…}>` (`whilePress`, not `whileTap`), `Presence` / `PresenceFor` from `/presence` (not `AnimatePresence`; cdk / ui overlays and kit `Transition` already are presences), `layout` / `layoutId` + `animateLayout(scope, update)` from `/layout` (layout animates inside `animateLayout`, not on every render), `createScroll` / `createInView` / `prefersReducedMotion` accessors. Entrances render final styles + CSS on the server (no JS); values Motion's mini engine cannot animate (`rotateX`, `pathLength`, …) are a dev error: use `animate` from `@rivetjs/motion/animate` in a handler or `clientEffect`. Gestures with physics (drag, flick, carousel, sheet) stay cdk `motion` (`@rivetjs/cdk/motion`); there is no `drag` prop.
+- Animations: `@rivetjs/motion` (Motion / motion.dev API, peer `motion` 14.x, no React): `<Motion.div initial={…} animate={…} exit={…} whileHover={…} whilePress={…}>` (`whilePress`, not `whileTap`), `Presence` / `PresenceFor` from `/presence` (not `AnimatePresence`; cdk / ui overlays and kit `Transition` already are presences), `layout` / `layoutId` + `animateLayout(scope, update)` from `/layout` (layout animates inside `animateLayout`, not on every render), `createScroll` from `/scroll`, `createInView` from `/in-view`, and `prefersReducedMotion` from `/reduced-motion` return accessors. Entrances render final styles + CSS on the server (no JS); values Motion's mini engine cannot animate (`rotateX`, `pathLength`, …) are a dev error: use `animate` from `@rivetjs/motion/animate` in a handler or `clientEffect`. Gestures with physics (drag, flick, carousel, sheet) stay cdk `motion` (`@rivetjs/cdk/motion`); there is no `drag` prop.
 
 ## 9. Commands
 
@@ -406,7 +406,7 @@ import { Select } from "@rivetjs/ui/select";
 | RV1102          | Invalid `preload` value                                                                             | `eager` / `idle` / `visible` / `intent` / `interaction`                   |
 | RV2001          | Browser global read during server rendering                                                         | handler / `clientEffect` / `clientEvent` / `clientOnly`                   |
 | RV2103 / RV2104 | resume modules: `Date.now()` / `Math.random()` while rendering / (warning) signal created in a loop | keyed `signal(Date.now())` or `clientEffect`; one signal outside the loop |
-| RV2107          | (warning) Route data not encodable (function, symbol, promise, unregistered class)                  | plain data; `registerClass`                                               |
+| RV2107          | (runtime warning) Route data not encodable (function, symbol, promise, unregistered class)          | plain data; `registerClass`                                               |
 | RV3003 / RV3004 | Structural helper namespace import / alias                                                          | `import { For } from "@rivetjs/runtime/dom"`                              |
 | RV3006          | `clientOnly` erasure shape                                                                          | inline `() => import("…")`                                                |
 | RV3007          | Route module server export shape (`export *` in a route)                                            | declare server exports directly                                           |

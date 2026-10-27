@@ -8,7 +8,7 @@ cd my-app
 npm run dev
 ```
 
-It asks for a project name, a template, whether to install dependencies and whether to create a git repository. Other package managers: `pnpm create rivet`, `yarn create rivet`, `bun create rivet`.
+On a terminal it asks for any missing project folder and template, a deploy target, and whether to install dependencies and create a git repository. With `--yes` or non-interactive input, defaults are `rivet-app`, `static`, no deploy adapter, install on and git on. Other package managers: `pnpm create rivet`, `yarn create rivet`, `bun create rivet`.
 
 ## Templates
 
@@ -34,6 +34,8 @@ npm create rivet@latest my-app -- --template server --yes --no-git
 | `-n`, `--name <name>` | `package.json` name (default: the folder name) |
 | `-y`, `--yes` | ask nothing, take the defaults |
 | `--no-install` | skip installing dependencies |
+| `--rivet-version <spec>` | override the `@rivetjs/*` dependency spec (default: this release) |
+| `-v`, `--version` | print the create-rivet version |
 | `--no-git` | skip `git init` |
 | `--pm <name>` | `npm`, `pnpm`, `yarn` or `bun` (default: the one running the command) |
 | `-f`, `--force` | write into a folder that is not empty |

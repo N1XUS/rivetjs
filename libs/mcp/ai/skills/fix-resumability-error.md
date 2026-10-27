@@ -5,7 +5,7 @@ description: Diagnose and fix Rivet resumability errors - RV2xxx compiler diagno
 
 # Fix a resumability error
 
-A Rivet page is rendered on the server and resumed in the browser: the first time a component is used, the browser runs its code once over the server HTML, starting from the signal values the server wrote. Errors come from code that renders differently on the two sides or from route data that cannot be written into the page.
+A Rivet page is rendered on the server and resumed in the browser: the first time a component is used, the browser runs its code once over the server HTML, starting from the signal values the server wrote. Errors come from code that renders differently on the two sides or from state/data that cannot be written into the page. Keep signal/store values as plain JSON data; the richer resume-format encoding (including registered classes) applies to route data.
 
 1. Get the exact diagnostic: `npm run check` (`file:line:col - error RVnnnn`), the Vite overlay (`[RVnnnn] file:line:col`), or `check_code(source, filename)`. For the fix: `explain_diagnostic("RVnnnn")`; `check_code` also returns the quick-fixed source when one applies.
 2. Common codes:
@@ -13,7 +13,7 @@ A Rivet page is rendered on the server and resumed in the browser: the first tim
    - RV1016 handler expression reads state when it binds (`onClick={a() ? f : g}`) → wrap: `onClick={(e) => (a() ? f(e) : g(e))}`.
    - RV2103 render is not deterministic (`Date.now()`, `Math.random()`, `crypto.randomUUID()` read while rendering) → keep the value in keyed state (`signal(Date.now())`) or read it in a handler / `clientEffect`.
    - RV2104 (warning) keyed state created in a loop → create one signal / store outside the loop and keep the per-item values in it.
-3. RV2107 (warning) route data not encodable: a loader / action / error value holds a function, symbol, promise or an instance of an unregistered class; the page then renders in the browser instead of resuming. Return plain data; for a class use `registerClass(X, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`, imported on server and browser.
+3. RV2107 (runtime warning) route data not encodable: a loader / action / error value holds a function, symbol, promise or an instance of an unregistered class; the page renders on the server but cannot resume. Return plain data; for a class use `registerClass(X, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`, imported on server and browser.
 4. Dev warning that a component's markup differs and it renders in the browser: its render reads something that differs between server and browser (a browser global, a time, a random value, data the browser loads differently) → keep it in a signal, or move it into a `clientEffect`.
 5. `.ts` module importing `@rivetjs/runtime/dom` (bundles the DOM runtime into SSR) → move that code into a `.tsx` file.
 6. Re-run `npm run check` and `npm run build`; both must be clean.

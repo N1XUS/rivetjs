@@ -1,6 +1,6 @@
 ---
 name: rivet-port-react-component
-description: Port a React (or Solid / Next.js) component or page to Rivet idioms - signals instead of useState, clientEffect instead of useEffect, For with a key, live props, class, serializable handlers. Use when the user pastes React code or asks to convert / migrate a component to Rivet.
+description: Port a React (or Solid / Next.js) component or page to Rivet idioms - signals instead of useState, clientEffect instead of useEffect, For with a key, live props, class, ordinary function handlers. Use when the user pastes React code or asks to convert / migrate a component to Rivet.
 ---
 
 # Port a React component to Rivet
@@ -21,7 +21,7 @@ Map each construct (full table: `get_doc("docs:/start/coming-from-other-framewor
 | `style="…"` strings                                     | `style={{ color: c() }}` or `style:color={c()}`                                                                                     |
 | `function Badge({ count })`                             | `function Badge(props: { count: number })` + `props.count` (props are live; destructuring reads once)                               |
 | `React.lazy`, `<Suspense>`                              | `lazyComponent`, `Async`, `Suspense` (`@rivetjs/runtime/dom`)                                                                       |
-| Next.js `getServerSideProps`, Remix `loader` / `action` | `export const loader = load(…)` / `actions(…)` in the route file                                                                       |
+| Next.js `getServerSideProps`, Remix `loader` / `action` | `export const loader = load(…)` / `actions(…)` in the route file                                                                    |
 | `useRouter().push`, `useSearchParams`                   | `navigate()`, `useSearchParams()` from `@rivetjs/router/client`                                                                     |
 | icon components / inline SVG                            | `<Icon icon={Check} />` from `@rivetjs/kit/icon` + `import { Check } from "lucide"`                                                 |
 

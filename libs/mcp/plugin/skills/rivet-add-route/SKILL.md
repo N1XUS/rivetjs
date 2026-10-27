@@ -32,5 +32,5 @@ export default function Post({ data }: PageProps<"blog/[slug]">) {
 - Static mode (`rivetRouter({ mode: "static" })`): `load(…)` runs at build time; dynamic `[param]` pages list their params in `entries(…)`.
 - Server-only helpers go in `*.server.ts` files (browser code cannot import them: RV3008).
 
-3. Link to it: plain `<a href="/blog/hello">` (client navigation), or typed `<Link to="/blog/hello">` from `@rivetjs/router/link`; programmatic `navigate()` from `@rivetjs/router/client`.
+3. Link to it: plain `<a href="/blog/hello">` (client navigation when the page has the client router; document navigation otherwise), or typed `<Link to="/blog/hello">` from `@rivetjs/router/link`; programmatic `navigate()` from `@rivetjs/router/client`.
 4. Run `npm run check` (`rivet sync` regenerates the typed routes in `.rivet/`, `rivet-check` reports `RV` codes; RV3101 = a link matches no route). Fix every diagnostic (`explain_diagnostic(code)`), then `npm run build`.
