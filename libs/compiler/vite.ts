@@ -897,6 +897,9 @@ function rivetPlugin(
   // Locale tables (ZERO UI-JS2, `locale-tables.ts`): the declared locales (option, else the `i18n()` plugin's), the tables by marker index.
   let declaredLocales: readonly string[] | null = localesOption ?? null;
   const localeMarks: { table: LocaleTable; file: string }[] = [];
+  // The tables `localeRewrite` parsed, by `<file>#<name>` (the first of a name in source order): their lazy full-table
+  // module is built from them, not from the file read and parsed again (PERF-REST P10). Cleared with `localeMarks`.
+  const localeFull = new Map<string, LocaleTable>();
   const LOCALE_FULL = "\0rivet-locale-table:";
   const localeClient = (ctx: { environment?: { config?: { consumer?: string } } }, options?: { ssr?: boolean }): boolean => {
     const consumer = ctx.environment?.config?.consumer;
@@ -906,6 +909,7 @@ function rivetPlugin(
   const localeRewrite = (filename: string, code: string): string | null => {
     const tables = localeTables(code, filename);
     if (!tables.length) return null;
+    for (const table of [...tables].reverse()) localeFull.set(filename + "#" + table.name, table);
     let out = code;
     for (const table of [...tables].sort((a, b) => b.start - a.start)) {
       const index = localeMarks.push({ table, file: filename }) - 1;
@@ -2051,7 +2055,7 @@ function rivetPlugin(
         warned.clear();
         diagnosticErrors = diagnosticWarnings = 0;
       }
-      if (localeClient(this)) localeMarks.length = 0;
+      if (localeClient(this)) ((localeMarks.length = 0), localeFull.clear());
       // Compiler ↔ runtime ABI handshake (abi.ts), once per plugin instance: the app's resolved runtime.
       if (!abiChecked) {
         abiChecked = true;
@@ -2182,7 +2186,7 @@ function rivetPlugin(
         const hash = id.lastIndexOf("#");
         const file = id.slice(LOCALE_FULL.length, hash);
         const name = id.slice(hash + 1);
-        const table = localeTables(await readFile(file, "utf8"), file).find((entry) => entry.name === name);
+        const table = localeFull.get(file + "#" + name) ?? localeTables(await readFile(file, "utf8"), file).find((entry) => entry.name === name);
         if (!table) this.error(`locale table ${name} of ${file} not found`);
         return { code: `export const ${name} = ${entriesText(table.entries)};\n`, moduleSideEffects: false };
       }
