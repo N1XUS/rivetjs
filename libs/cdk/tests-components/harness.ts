@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { chromium, type Browser, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
 import { inject } from "vitest";
-import { buildApp, dist } from "./app/serve.ts";
+import { buildAppInChild, dist } from "./app/serve.ts";
 import type {} from "./global-setup.ts";
 
 let built: Promise<void> | null = null;
@@ -21,8 +21,9 @@ export interface Stories {
  * need lean pages (M6-CUT: derived is the only model; fetch-ahead has its own tests in `libs/runtime`).
  */
 export async function stories(options: { preload?: NonNullable<Parameters<typeof start>[0]>["preload"] } = {}): Promise<Stories> {
-  // `cdk-components` builds once in `global-setup.ts`; other callers (fuzz, own `STORIES_DIST`) build here.
-  await (built ??= inject("cdkStoriesDist") === dist ? Promise.resolve() : buildApp());
+  // `cdk-components` builds once in `global-setup.ts`; other callers (fuzz, own `STORIES_DIST`) build here, in child
+  // processes (the build's memory is not kept by this fork while Chromium runs).
+  await (built ??= inject("cdkStoriesDist") === dist ? Promise.resolve() : buildAppInChild());
   const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {}, preload: options.preload ?? { lean: true } });
   const browser = await chromium.launch({ headless: true });
   return {

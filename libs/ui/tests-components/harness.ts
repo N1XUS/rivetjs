@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { chromium, type Browser, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
 import { inject } from "vitest";
-import { buildApp, dist } from "./app/serve.ts";
+import { buildAppInChild, dist } from "./app/serve.ts";
 import type {} from "./global-setup.ts";
 
 let built: Promise<void> | null = null;
@@ -20,8 +20,9 @@ export interface Stories {
  * broke the request-based "only runtime entry chunks before interaction" checks, M6-CUT); fetch-ahead stories pass `{}`.
  */
 export async function stories(options: { preload?: NonNullable<Parameters<typeof start>[0]>["preload"] } = {}): Promise<Stories> {
-  // `ui-components` builds once in `global-setup.ts`; other callers (fuzz, own `STORIES_DIST`) build here.
-  await (built ??= inject("uiStoriesDist") === dist ? Promise.resolve() : buildApp());
+  // `ui-components` builds once in `global-setup.ts`; other callers (fuzz, own `STORIES_DIST`) build here, in child
+  // processes (the build's memory is not kept by this fork while Chromium runs).
+  await (built ??= inject("uiStoriesDist") === dist ? Promise.resolve() : buildAppInChild());
   const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {}, preload: options.preload ?? { lean: true } });
   const browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
   return {
