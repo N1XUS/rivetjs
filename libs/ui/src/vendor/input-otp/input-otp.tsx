@@ -340,14 +340,16 @@ export const OTPInput = (props: OTPInputProps): JSX.Element => {
     return () => timeouts.forEach((timeout) => clearTimeout(timeout));
   });
 
-  // `onComplete` (upstream effect over the previous render's value)
-  const completedFrom = signal<string | undefined>(undefined);
+  // `onComplete` (upstream effect over the previous render's value). The previous value starts as the rendered one, not
+  // `undefined`: the mount sync above runs first and may already have written a value found in the input (browser-restored,
+  // or typed into a cold resumed page before it adopted) — upstream's sync re-renders, so its effect sees "" → the value and
+  // completes; here the first run then saw the synced value as its own previous one and never completed (COLD-FIX-B).
+  const completedFrom = signal<string>(untrack(value));
   clientEffect(() => {
     const v = value();
     untrack(() => {
       const previousValue = completedFrom();
       completedFrom.set(v);
-      if (previousValue === undefined) return;
       if (v !== previousValue && previousValue.length < maxLength() && v.length === maxLength()) local.onComplete?.(v);
     });
   });

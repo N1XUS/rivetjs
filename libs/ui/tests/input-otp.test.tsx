@@ -136,6 +136,26 @@ test("upstream: calls onComplete when maxLength is reached", async () => {
   r.unmount();
 });
 
+// COLD-FIX-B (2026-10-27): a value already in the input when its mount effect runs (browser-restored, or typed into a cold
+// resumed page before the boundary adopted) is synced and completes like typing (upstream: the sync's `onChange` re-renders and
+// the `[value]` effect sees the previous render's ""). Before, the onComplete effect's first run already saw the synced value
+// as its "previous" one: a cold fill of all six digits never called onComplete (ui-docs `input-otp-on-complete`).
+test("vendor: a full value present before the mount effect calls onComplete", async () => {
+  const done: string[] = [];
+  const changes: string[] = [];
+  const r = renderOtp({ maxLength: 4, onComplete: (v: string) => done.push(v), onChange: (v: string) => changes.push(v) });
+  try {
+    const el = input(r.container);
+    el.value = "1234";
+    await flush();
+    await wait(0);
+    assert.deepEqual(changes, ["1234"]);
+    assert.deepEqual(done, ["1234"]);
+  } finally {
+    r.unmount();
+  }
+});
+
 test("upstream: supports disabled state", async () => {
   const calls: string[] = [];
   const r = renderOtp({ isDisabled: true, onChange: (v: string) => calls.push(v) });
