@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 6fc854ca60f0 532502 css a4c50a9136d3 1182243
-@rivetjs/ui [server] b8e2275ed53b 473791 css a4c50a9136d3 1182243
+@rivetjs/ui [dom] 28388d898a54 533260 css a4c50a9136d3 1182243
+@rivetjs/ui [server] c9cd5b3466a3 474531 css a4c50a9136d3 1182243
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -317,8 +317,8 @@
 @rivetjs/ui/file-tree [server] 99f0c397b68c 11210 css a0e7402bbf00 1177177
 @rivetjs/ui/pressable-feedback [dom] e7a2045b047f 9617 css a0e7402bbf00 1177177
 @rivetjs/ui/pressable-feedback [server] 8855a43c7ffb 6843 css a0e7402bbf00 1177177
-@rivetjs/ui/holo-card [dom] 26c60676f8d0 7289 css a0e7402bbf00 1177177
-@rivetjs/ui/holo-card [server] cd8ee222481a 7094 css a0e7402bbf00 1177177
+@rivetjs/ui/holo-card [dom] e765c53b9fc7 8074 css a0e7402bbf00 1177177
+@rivetjs/ui/holo-card [server] 4f8e9ea216e3 7866 css a0e7402bbf00 1177177
 @rivetjs/ui/floating-toc [dom] 75e840bbaeee 6563 css a0e7402bbf00 1177177
 @rivetjs/ui/floating-toc [server] e0e2912d159a 6138 css a0e7402bbf00 1177177
 @rivetjs/ui/cell-color-picker [dom] 1d5f4ac4265e 8931 css a0e7402bbf00 1177177
