@@ -1092,10 +1092,14 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
     }
 
-    /// Among a component's lazy children: the "maybe nothing" forms `lazy_child_v2` makes live, memoized
-    /// (`_scoped(_cond(…))`); None for the rest (`lazy_binds.rs`).
+    /// Among a component's lazy children: a conditional with a JSX operand and a dynamic test (`cond_v2`: the
+    /// "maybe nothing" forms `lazy_child_v2` makes live, and `c() ? <A/> : <B/>` with JSX on both sides), memoized
+    /// (`_scoped(_cond(…))`); None for the rest (`lazy_binds.rs`). COLD-FIX-B (2026-10-27): a both-JSX ternary was
+    /// left inline in the slot thunk, so a branch switch re-ran the whole slot where the component inserts it —
+    /// every sibling child was rebuilt (ui DateField `{isInvalid() ? <FieldError/> : <Description/>}`: the focused
+    /// segment was replaced when the value turned invalid, the rest of the typed date was lost).
     pub(super) fn lazy_cond_v2(&mut self, e: &'a Expression<'a>) -> Option<Expr> {
-        if !may_render_jsx(e) || self.v2_static_message(e) {
+        if self.v2_static_message(e) {
             return None;
         }
         let value = self.cond_v2(e)?;

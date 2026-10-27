@@ -6,7 +6,8 @@
 //!   `_scoped(() => value)` (`dom_v2.rs` `lazy_child_v2`, the fragment-child rule), so it stays live where the slot
 //!   lands — also under `Show` / `Provider`, which call the slot once. Other expressions are unchanged. With a dynamic
 //!   test it is `_scoped(_cond(() => test, mode, (v) => …))` (TERNARY-MEMO, `cond_v2`: the branch is rebuilt only when
-//!   the picked branch changes).
+//!   the picked branch changes) — also a ternary with JSX on both sides (`{c() ? <A/> : <B/>}`, COLD-FIX-B
+//!   2026-10-27: inline in the slot thunk, its switch re-ran the whole slot and rebuilt every sibling child).
 
 use super::*;
 
@@ -16,8 +17,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if self.server {
             return self.expr(e);
         }
-        // TERNARY-MEMO: the "maybe nothing" forms `lazy_child_v2` makes live get the condition memo
-        // (`_scoped(_cond(…))`, `dom_v2.rs` `cond_v2`); other lazy children are unchanged.
+        // TERNARY-MEMO: a conditional with a JSX operand and a dynamic test gets the condition memo
+        // (`_scoped(_cond(…))`, `dom_v2.rs` `cond_v2`; both-JSX ternaries too, COLD-FIX-B); other lazy children are unchanged.
         if let Some(value) = self.lazy_cond_v2(e) {
             return value;
         }

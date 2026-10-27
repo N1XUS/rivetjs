@@ -130,6 +130,33 @@ test("date-field: supports typing digits into segments to build a full date", as
   unmount();
 });
 
+// COLD-FIX-B (2026-10-27): `{isInvalid() ? <FieldError/> : <Description/>}` among the field's children switches when the
+// typed value turns invalid — only that child is replaced (compiler: a both-JSX ternary among lazy children is a `_cond`
+// accessor); before, the whole children slot re-ran, the focused year segment was rebuilt and the rest of "2020" was lost.
+test("date-field: a FieldError / Description switch while typing keeps the segments and focus", async () => {
+  const value = signal<string | null>(null);
+  const isInvalid = () => value() !== null && value()! < "2026-01-01";
+  const { unmount } = render(() => (
+    <DateField isRequired isInvalid={isInvalid} minValue="2026-01-01" name="date" value={value}>
+      <Label>Date</Label>
+      <DateField.Group>
+        <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
+      </DateField.Group>
+      {isInvalid() ? <FieldError>Date must be today or in the future</FieldError> : <Description>Enter a date</Description>}
+    </DateField>
+  ));
+  try {
+    const year = segment(/year/i);
+    await type(segment(/month/i), "01012020");
+    assert.equal(value(), "2020-01-01");
+    assert.equal(segment(/year/i), year, "the year segment is the same node");
+    assert.equal(document.activeElement, year, "focus stays in the year segment");
+    assert.equal(slot("field-error")?.textContent, "Date must be today or in the future");
+  } finally {
+    unmount();
+  }
+});
+
 test("date-field: supports controlled value (Signal)", async () => {
   const value = signal<string | null>("2026-08-15");
   const { unmount } = render(() => <Fixture value={value} />);

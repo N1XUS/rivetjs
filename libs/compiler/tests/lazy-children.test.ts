@@ -66,3 +66,39 @@ export const view = () => { const n = signal(1); return <main><Card><b>{n()}</b>
   assert.match(r.code, /__rivet_c\(Card, \{ children: __rivetSlot\(\(\) => /);
   assert.match(r.code, /__rivetPropsGetter\(o, "title", 0\);\s*o\["children"\] = "x";[\s\S]*__rivet_c\(Card, __rivetProps\d+\(\(\) => n\(\)\)\)/);
 });
+
+// COLD-FIX-B (2026-10-27): a ternary with JSX on both sides among a component's lazy children is a condition memo
+// (`_scoped(_cond(…))`) like the "maybe nothing" forms: inline in the slot thunk, its branch switch re-ran the whole slot
+// where the component inserts it and rebuilt every sibling (ui DateField: the focused segment, under a FieldError /
+// Description switch). The server output is unchanged (plain value).
+test("DOM: a both-JSX ternary among lazy children is a `_cond` accessor; its siblings keep their nodes", async () => {
+  const source = `import { signal } from "@rivetjs/reactivity";
+export const on = signal(false);
+const Box = (props: { children?: unknown }) => <div>{props.children as never}</div>;
+export const A = () => <Box><input id="kept" />{on() ? <b>on</b> : <i>off</i>}</Box>;`;
+  const r = compile(source, { target: "dom", filename: "m.tsx" });
+  assert.deepEqual(r.diagnostics, []);
+  assert.match(r.code, /__rivetSlot\(\(\) => \[[^\]]*_scoped\(__rivet_cond\(\(\) => on\(\), 0, /);
+  const server = compile(source, { target: "server", filename: "m.tsx" });
+  assert.deepEqual(server.diagnostics, []);
+  assert.doesNotMatch(server.code, /_cond/);
+  const { Window } = await import("happy-dom");
+  const runtime = new URL("../../runtime/dom.ts", import.meta.url).href;
+  const reactivity = new URL("../../reactivity/index.ts", import.meta.url).href;
+  const code = r.code
+    .replaceAll('"@rivetjs/runtime/dom"', JSON.stringify(runtime))
+    .replaceAll('"@rivetjs/runtime/props"', JSON.stringify(new URL("../../runtime/props.ts", import.meta.url).href))
+    .replaceAll('"@rivetjs/reactivity"', JSON.stringify(reactivity));
+  const window = new Window({ url: "http://localhost/" });
+  Object.assign(globalThis, { document: window.document });
+  const { A, on } = await import("data:text/javascript;base64," + Buffer.from(code).toString("base64"));
+  const { mount } = await import(runtime);
+  const host = window.document.createElement("div");
+  const stop = mount(() => A(), host);
+  const kept = host.querySelector("#kept");
+  assert.equal(host.querySelector("i")?.textContent, "off");
+  on.set(true);
+  assert.equal(host.querySelector("b")?.textContent, "on");
+  assert.equal(host.querySelector("#kept"), kept, "the sibling input is the same node");
+  stop();
+});
