@@ -10,7 +10,9 @@ import { DataGrid } from "@rivetjs/ui/data-grid";
 import { Kpi } from "@rivetjs/ui/kpi";
 import { SearchField } from "@rivetjs/ui/search-field";
 import { Segment } from "@rivetjs/ui/segment";
-import { ChartNoAxesCombined, Download, Percent, ReceiptText, RotateCcw, Wallet } from "lucide";
+import { Status } from "@rivetjs/ui/status";
+import { Widget } from "@rivetjs/ui/widget";
+import { Download, Percent, ReceiptText, RotateCcw, Wallet } from "lucide";
 
 export const head = { title: "Showcase: Dashboard" };
 
@@ -163,6 +165,7 @@ export function Dashboard() {
       header: "Status",
       cell: (o: Order) => (
         <Chip size="sm" variant="soft" color={STATUS_COLOR[o.status]}>
+          <Status color={STATUS_COLOR[o.status]} size="sm" pulse={o.status === "pending"} class="me-1" />
           {o.status}
         </Chip>
       ),
@@ -262,36 +265,43 @@ export function Dashboard() {
                 </Kpi>
               </div>
               <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
-                <section class="flex flex-col gap-3 rounded-3xl bg-surface p-4 shadow-surface lg:col-span-2">
-                  <div class="flex items-center gap-2">
-                    <Icon icon={ChartNoAxesCombined} size={16} class="text-muted" />
-                    <h2 class="text-sm font-medium">Revenue, {p.label}</h2>
-                  </div>
-                  <AreaChart
-                    data={[...p.series]}
-                    index="x"
-                    series={[
-                      { key: "revenue", label: "This period" },
-                      { key: "previous", label: "Previous period", color: "var(--chart-3)" },
-                    ]}
-                    valueFormatter={(v) => (v >= 1000 ? `$${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : `$${v}`)}
-                    height={220}
-                    aria-label={`Revenue, ${p.label}, against the previous period`}
-                  />
-                </section>
-                <section class="flex flex-col gap-3 rounded-3xl bg-surface p-4 shadow-surface">
-                  <h2 class="text-sm font-medium">Revenue by channel</h2>
-                  <DonutChart data={[...p.channels]} size={150} valueFormatter={usd} centerLabel="Revenue" aria-label={`Revenue by channel, ${p.label}`} />
-                </section>
+                <Widget id="revenue" class="lg:col-span-2" role="region" aria-labelledby="revenue-title">
+                  <Widget.Header>
+                    <Widget.Title id="revenue-title">Revenue, {p.label}</Widget.Title>
+                  </Widget.Header>
+                  <Widget.Content>
+                    <AreaChart
+                      data={[...p.series]}
+                      index="x"
+                      series={[
+                        { key: "revenue", label: "This period" },
+                        { key: "previous", label: "Previous period", color: "var(--chart-3)" },
+                      ]}
+                      valueFormatter={(v) => (v >= 1000 ? `$${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : `$${v}`)}
+                      height={220}
+                      aria-label={`Revenue, ${p.label}, against the previous period`}
+                    />
+                  </Widget.Content>
+                </Widget>
+                <Widget id="channels" role="region" aria-labelledby="channels-title">
+                  <Widget.Header>
+                    <Widget.Title id="channels-title">Revenue by channel</Widget.Title>
+                  </Widget.Header>
+                  <Widget.Content>
+                    <DonutChart data={[...p.channels]} size={150} valueFormatter={usd} centerLabel="Revenue" aria-label={`Revenue by channel, ${p.label}`} />
+                  </Widget.Content>
+                </Widget>
               </div>
             </div>
           );
         }}
       </Show>
 
-      <section class="flex flex-col gap-3 rounded-3xl bg-surface p-4 shadow-surface">
-        <div class="flex flex-wrap items-center gap-3">
-          <h2 class="me-auto text-sm font-medium">Recent orders</h2>
+      <Widget id="recent-orders" role="region" aria-labelledby="orders-title">
+        <Widget.Header>
+          <Widget.Title id="orders-title" class="me-auto">
+            Recent orders
+          </Widget.Title>
           <div class="max-w-full overflow-x-auto">
             <Segment aria-label="Status" selectedKey={status} size="sm">
               <Segment.Item id="all">All</Segment.Item>
@@ -308,12 +318,14 @@ export function Dashboard() {
               <SearchField.ClearButton />
             </SearchField.Group>
           </SearchField>
-        </div>
-        <div class="-mx-4 overflow-x-auto px-4">
+        </Widget.Header>
+        <Widget.Content class="overflow-x-auto p-0">
           <DataGrid<Order> id="orders" aria-label="Recent orders" data={orders} columns={columns} class="min-w-[40rem]" />
-        </div>
-        <p class="text-xs text-muted">{orders().length === 0 ? "No orders match." : `${orders().length} of ${ORDERS.length} orders`}</p>
-      </section>
+        </Widget.Content>
+        <Widget.Footer id="orders-count" role="status">
+          {orders().length === 0 ? "No orders match." : `${orders().length} of ${ORDERS.length} orders`}
+        </Widget.Footer>
+      </Widget>
     </div>
   );
 }

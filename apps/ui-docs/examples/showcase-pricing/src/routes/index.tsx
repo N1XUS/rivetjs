@@ -2,12 +2,16 @@
 import { Icon } from "@rivetjs/kit/icon";
 import { signal } from "@rivetjs/reactivity";
 import { Accordion } from "@rivetjs/ui/accordion";
+import { Alert } from "@rivetjs/ui/alert";
 import { Button } from "@rivetjs/ui/button";
 import { Card } from "@rivetjs/ui/card";
 import { Chip } from "@rivetjs/ui/chip";
+import { FeatureList } from "@rivetjs/ui/feature-list";
 import { NumberStepper } from "@rivetjs/ui/number-stepper";
+import { NumberValue } from "@rivetjs/ui/number-value";
 import { Segment } from "@rivetjs/ui/segment";
-import { Check, ChevronDown, CircleCheck, Minus, Sparkles, Store } from "lucide";
+import { Table } from "@rivetjs/ui/table";
+import { Check, ChevronDown, Minus, Sparkles, Store } from "lucide";
 
 export const head = { title: "Showcase: Pricing" };
 
@@ -133,9 +137,16 @@ export default function PricingShowcase() {
             <Card.Content class="gap-5">
               <div class="flex flex-col gap-1">
                 <p class="flex items-baseline gap-1">
-                  <span id={`price-${plan.id}`} class="text-4xl font-semibold tabular-nums">
-                    {money(price(plan))}
-                  </span>
+                  <NumberValue
+                    id={`price-${plan.id}`}
+                    value={() => price(plan)}
+                    style="currency"
+                    currency="EUR"
+                    maximumFractionDigits={0}
+                    locale="en-IE"
+                    isTabular
+                    class="text-4xl font-semibold"
+                  />
                   <span class="text-sm text-muted">{plan.perSeat ? "per seat / month" : "forever"}</span>
                 </p>
                 <p id={`total-${plan.id}`} class="text-xs text-muted tabular-nums">
@@ -144,14 +155,11 @@ export default function PricingShowcase() {
                     : `${money(total(plan))} ${yearly() ? "billed yearly" : "billed monthly"} for ${seats() ?? 1} ${seats() === 1 ? "seat" : "seats"}`}
                 </p>
               </div>
-              <ul class="flex flex-col gap-2 text-sm">
+              <FeatureList aria-label={`${plan.name} features`}>
                 {plan.features.map((feature) => (
-                  <li class="flex items-start gap-2">
-                    <Icon icon={Check} size={16} class="mt-0.5 shrink-0 text-success" />
-                    {feature}
-                  </li>
+                  <FeatureList.Item>{feature}</FeatureList.Item>
                 ))}
-              </ul>
+              </FeatureList>
             </Card.Content>
             <Card.Footer class="mt-auto">
               <Button
@@ -169,55 +177,56 @@ export default function PricingShowcase() {
         ))}
       </section>
 
-      <p id="pricing-status" role="status" class={chosen() ? "flex items-center justify-center gap-2 text-sm text-success" : "sr-only"}>
-        <Icon icon={CircleCheck} size={16} />
-        {chosen() ? `Selected ${chosen()}` : ""}
-      </p>
+      {/* A live region from the start (announced when the alert appears); hidden while empty. */}
+      <div id="pricing-status" role="status" class="mx-auto w-full max-w-xl empty:hidden">
+        {chosen() ? (
+          <Alert status="success">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Selected {chosen()}</Alert.Title>
+            </Alert.Content>
+          </Alert>
+        ) : null}
+      </div>
 
       <section aria-labelledby="compare-title" class="flex flex-col gap-4">
         <h2 id="compare-title" class="text-xl font-semibold">
           Compare plans
         </h2>
         {/* The table scrolls inside its card on narrow screens; the page itself never scrolls sideways. */}
-        <div class="overflow-x-auto rounded-2xl bg-surface shadow-surface">
-          <table class="w-full min-w-[34rem] text-left text-sm">
-            <thead>
-              <tr class="border-b border-separator">
-                <th scope="col" class="p-4 font-medium text-muted">
-                  Feature
-                </th>
+        <Table id="compare">
+          <Table.ScrollContainer>
+            <Table.Content aria-labelledby="compare-title" class="min-w-[34rem]">
+              <Table.Header>
+                <Table.Column isRowHeader>Feature</Table.Column>
                 {PLANS.map((plan) => (
-                  <th scope="col" class="p-4 font-semibold">
-                    {plan.name}
-                  </th>
+                  <Table.Column>{plan.name}</Table.Column>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARE.map((row) => (
-                <tr class="border-b border-separator last:border-0">
-                  <th scope="row" class="p-4 font-normal text-muted">
-                    {row.label}
-                  </th>
-                  {row.values.map((value) =>
-                    typeof value === "string" ? (
-                      <td class="p-4">{value}</td>
-                    ) : (
-                      <td class="p-4">
-                        <Icon
-                          icon={value ? Check : Minus}
-                          size={16}
-                          class={value ? "text-success" : "text-muted"}
-                          aria-label={value ? "Included" : "Not included"}
-                        />
-                      </td>
-                    ),
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </Table.Header>
+              <Table.Body>
+                {COMPARE.map((row) => (
+                  <Table.Row id={row.label}>
+                    <Table.Cell class="text-muted">{row.label}</Table.Cell>
+                    {row.values.map((value) => (
+                      <Table.Cell>
+                        {typeof value === "string" ? (
+                          value
+                        ) : (
+                          <Icon
+                            icon={value ? Check : Minus}
+                            size={16}
+                            class={value ? "text-success" : "text-muted"}
+                            aria-label={value ? "Included" : "Not included"}
+                          />
+                        )}
+                      </Table.Cell>
+                    ))}
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+        </Table>
       </section>
 
       <section aria-labelledby="faq-title" class="mx-auto flex w-full max-w-3xl flex-col gap-4">

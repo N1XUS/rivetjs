@@ -1,15 +1,20 @@
 // Rivet-authored showcase (own content: an invented shop owner's account settings).
 import { Icon } from "@rivetjs/kit/icon";
 import { signal } from "@rivetjs/reactivity";
+import type { Signal } from "@rivetjs/reactivity";
+import { Alert } from "@rivetjs/ui/alert";
 import { AlertDialog } from "@rivetjs/ui/alert-dialog";
 import { Avatar } from "@rivetjs/ui/avatar";
 import { Button } from "@rivetjs/ui/button";
 import { Card } from "@rivetjs/ui/card";
 import { Description } from "@rivetjs/ui/description";
 import { FieldError } from "@rivetjs/ui/field-error";
+import { Fieldset } from "@rivetjs/ui/fieldset";
 import { Form } from "@rivetjs/ui/form";
 import { Input } from "@rivetjs/ui/input";
 import { InputGroup } from "@rivetjs/ui/input-group";
+import { ItemCard } from "@rivetjs/ui/item-card";
+import { ItemCardGroup } from "@rivetjs/ui/item-card-group";
 import { Label } from "@rivetjs/ui/label";
 import { NativeSelect } from "@rivetjs/ui/native-select";
 import { RadioButtonGroup } from "@rivetjs/ui/radio-button-group";
@@ -19,7 +24,7 @@ import { Switch } from "@rivetjs/ui/switch";
 import { Tabs } from "@rivetjs/ui/tabs";
 import { TextArea } from "@rivetjs/ui/textarea";
 import { TextField } from "@rivetjs/ui/textfield";
-import { CircleCheck, Monitor, Moon, Sun, Upload } from "lucide";
+import { KeyRound, Monitor, Moon, ShieldCheck, Sun, Upload } from "lucide";
 
 export const head = { title: "Showcase: Settings" };
 
@@ -33,6 +38,36 @@ const NOTIFICATIONS = [
 
 const BIO_MAX = 160;
 
+// The notification rows: a component of its own, so the group's children are one element (a list built inline from
+// live state would make every ItemCardGroup on the site a resume candidate).
+function NotificationItems(props: { notify: Signal<Record<string, boolean>> }) {
+  const notify = props.notify;
+  const notifyKey = (key: string) => {
+    const on = signal(notify()[key]);
+    return on;
+  };
+  return NOTIFICATIONS.map((n) => {
+    const on = notifyKey(n.key);
+    return (
+      <ItemCard>
+        <ItemCard.Content>
+          <ItemCard.Title>{n.label}</ItemCard.Title>
+          <ItemCard.Description class="whitespace-normal">{n.description}</ItemCard.Description>
+        </ItemCard.Content>
+        <ItemCard.Action>
+          <Switch id={`notify-${n.key}`} aria-label={n.label} isSelected={on} onChange={(v: boolean) => notify.set({ ...notify(), [n.key]: v })}>
+            <Switch.Content>
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+            </Switch.Content>
+          </Switch>
+        </ItemCard.Action>
+      </ItemCard>
+    );
+  });
+}
+
 export default function SettingsShowcase() {
   const name = signal("Theo Varga");
   const handle = signal("fieldnote");
@@ -45,11 +80,6 @@ export default function SettingsShowcase() {
   const density = signal<string | null>("comfortable");
   const twoFactor = signal(true);
   const closed = signal(false);
-
-  const notifyKey = (key: string) => {
-    const on = signal(notify()[key]);
-    return on;
-  };
 
   return (
     <div class="mx-auto flex max-w-3xl flex-col gap-6 p-4 text-sm sm:p-8">
@@ -77,16 +107,21 @@ export default function SettingsShowcase() {
               }}
             >
               <div class="flex flex-wrap items-center gap-3">
-                <div class="min-w-0 flex-1">
-                  <h2 class="font-semibold">Public profile</h2>
-                  <p id="profile-status" role="status" class="flex items-center gap-1 text-xs text-success empty:hidden">
-                    {saved() ? <Icon icon={CircleCheck} size={12} /> : null}
-                    {saved()}
-                  </p>
-                </div>
+                <h2 class="me-auto font-semibold">Public profile</h2>
                 <Button id="save-profile" type="submit">
                   Save changes
                 </Button>
+              </div>
+              {/* A live region from the start (announced when the alert appears); hidden while empty. */}
+              <div id="profile-status" role="status" class="empty:hidden">
+                {saved() ? (
+                  <Alert status="success">
+                    <Alert.Indicator />
+                    <Alert.Content>
+                      <Alert.Title>{saved()}</Alert.Title>
+                    </Alert.Content>
+                  </Alert>
+                ) : null}
               </div>
               <Separator />
               <div class="flex items-center gap-4">
@@ -98,7 +133,7 @@ export default function SettingsShowcase() {
                     <Icon icon={Upload} size={14} />
                     Upload photo
                   </Button>
-                  <p class="text-xs text-muted">JPG or PNG, at least 256 × 256 px.</p>
+                  <Description>JPG or PNG, at least 256 × 256 px.</Description>
                 </div>
               </div>
               <div class="grid gap-4 sm:grid-cols-2">
@@ -153,46 +188,29 @@ export default function SettingsShowcase() {
         <Tabs.Panel id="notifications" class="pt-6">
           {() => (
             <div class="flex flex-col gap-6">
-              <Card variant="secondary">
-                <Card.Header>
-                  <Card.Title>Email</Card.Title>
-                  <Card.Description>Sent to theo@fieldnote.studio</Card.Description>
-                </Card.Header>
-                <Card.Content class="flex flex-col gap-1">
-                  {NOTIFICATIONS.map((n) => {
-                    const on = notifyKey(n.key);
-                    return (
-                      <Switch id={`notify-${n.key}`} isSelected={on} onChange={(v: boolean) => notify.set({ ...notify(), [n.key]: v })} class="w-full py-2">
-                        <Switch.Content class="flex w-full items-center justify-between gap-4">
-                          <span class="flex flex-col gap-0.5">
-                            <span class="font-medium">{n.label}</span>
-                            <span class="text-xs text-muted">{n.description}</span>
-                          </span>
-                          <Switch.Control class="shrink-0">
-                            <Switch.Thumb />
-                          </Switch.Control>
-                        </Switch.Content>
-                      </Switch>
-                    );
-                  })}
-                </Card.Content>
-              </Card>
-              <div class="flex flex-col gap-2">
-                <p class="font-medium">Order emails</p>
+              <ItemCardGroup id="notify-email" variant="secondary" aria-labelledby="notify-email-title">
+                <ItemCardGroup.Header>
+                  <ItemCardGroup.Title id="notify-email-title">Email</ItemCardGroup.Title>
+                  <ItemCardGroup.Description>Sent to theo@fieldnote.studio</ItemCardGroup.Description>
+                </ItemCardGroup.Header>
+                <NotificationItems notify={notify} />
+              </ItemCardGroup>
+              <Fieldset class="gap-2">
+                <Fieldset.Legend class="text-sm">Order emails</Fieldset.Legend>
                 <Segment id="frequency" aria-label="Order email frequency" selectedKey={frequency} size="sm" class="self-start">
                   <Segment.Item id="instant">Every order</Segment.Item>
                   <Segment.Item id="daily">Daily digest</Segment.Item>
                   <Segment.Item id="weekly">Weekly</Segment.Item>
                 </Segment>
-                <p id="notify-summary" class="text-xs text-muted">
+                <Description id="notify-summary">
                   {Object.values(notify()).filter(Boolean).length} of {NOTIFICATIONS.length} on
                   {frequency() === "instant"
                     ? ", orders arrive one by one."
                     : frequency() === "daily"
                       ? ", orders bundled once a day."
                       : ", orders bundled every Monday."}
-                </p>
-              </div>
+                </Description>
+              </Fieldset>
             </div>
           )}
         </Tabs.Panel>
@@ -233,16 +251,16 @@ export default function SettingsShowcase() {
                   </RadioButtonGroup.ItemContent>
                 </RadioButtonGroup.Item>
               </RadioButtonGroup>
-              <div class="flex flex-col gap-2">
-                <p class="font-medium">Density</p>
+              <Fieldset class="gap-2">
+                <Fieldset.Legend class="text-sm">Density</Fieldset.Legend>
                 <Segment aria-label="Density" selectedKey={density} size="sm" class="self-start">
                   <Segment.Item id="compact">Compact</Segment.Item>
                   <Segment.Item id="comfortable">Comfortable</Segment.Item>
                 </Segment>
-              </div>
-              <p id="appearance-summary" class="text-xs text-muted">
+              </Fieldset>
+              <Description id="appearance-summary">
                 Admin pages use the {theme()} theme with {density()} spacing. The storefront keeps its own look.
-              </p>
+              </Description>
             </div>
           )}
         </Tabs.Panel>
@@ -250,36 +268,45 @@ export default function SettingsShowcase() {
         <Tabs.Panel id="account" class="pt-6">
           {() => (
             <div class="flex flex-col gap-6">
-              <Card variant="secondary">
-                <Card.Header>
-                  <Card.Title>Security</Card.Title>
-                </Card.Header>
-                <Card.Content class="flex flex-col gap-4">
-                  <Switch id="two-factor" isSelected={twoFactor} class="w-full">
-                    <Switch.Content class="flex w-full items-center justify-between gap-4">
-                      <span class="flex flex-col gap-0.5">
-                        <span class="font-medium">Two-step sign-in</span>
-                        <span class="text-xs text-muted">
-                          {twoFactor() ? "On: a code from your authenticator app at every new sign-in." : "Off: only your password protects the shop."}
-                        </span>
-                      </span>
-                      <Switch.Control class="shrink-0">
-                        <Switch.Thumb />
-                      </Switch.Control>
-                    </Switch.Content>
-                  </Switch>
-                  <Separator />
-                  <div class="flex flex-wrap items-center justify-between gap-3">
-                    <span class="flex flex-col gap-0.5">
-                      <span class="font-medium">Password</span>
-                      <span class="text-xs text-muted">Last changed 4 months ago</span>
-                    </span>
+              <ItemCardGroup id="security" variant="secondary" aria-labelledby="security-title">
+                <ItemCardGroup.Header>
+                  <ItemCardGroup.Title id="security-title">Security</ItemCardGroup.Title>
+                </ItemCardGroup.Header>
+                <ItemCard>
+                  <ItemCard.Icon>
+                    <Icon icon={ShieldCheck} size={18} />
+                  </ItemCard.Icon>
+                  <ItemCard.Content>
+                    <ItemCard.Title>Two-step sign-in</ItemCard.Title>
+                    <ItemCard.Description class="whitespace-normal">
+                      {twoFactor() ? "On: a code from your authenticator app at every new sign-in." : "Off: only your password protects the shop."}
+                    </ItemCard.Description>
+                  </ItemCard.Content>
+                  <ItemCard.Action>
+                    <Switch id="two-factor" aria-label="Two-step sign-in" isSelected={twoFactor}>
+                      <Switch.Content>
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                      </Switch.Content>
+                    </Switch>
+                  </ItemCard.Action>
+                </ItemCard>
+                <ItemCard>
+                  <ItemCard.Icon>
+                    <Icon icon={KeyRound} size={18} />
+                  </ItemCard.Icon>
+                  <ItemCard.Content>
+                    <ItemCard.Title>Password</ItemCard.Title>
+                    <ItemCard.Description>Last changed 4 months ago</ItemCard.Description>
+                  </ItemCard.Content>
+                  <ItemCard.Action>
                     <Button size="sm" variant="secondary">
                       Change password
                     </Button>
-                  </div>
-                </Card.Content>
-              </Card>
+                  </ItemCard.Action>
+                </ItemCard>
+              </ItemCardGroup>
               <Card class="border border-danger/40">
                 <Card.Header>
                   <Card.Title class="text-danger">Close the shop</Card.Title>
@@ -287,9 +314,13 @@ export default function SettingsShowcase() {
                 </Card.Header>
                 <Card.Footer>
                   {closed() ? (
-                    <p id="closed-status" role="status" class="text-danger">
-                      The shop is offline. Reopen it from the dashboard within 90 days.
-                    </p>
+                    <Alert id="closed-status" role="status" status="danger" class="w-full">
+                      <Alert.Indicator />
+                      <Alert.Content>
+                        <Alert.Title>The shop is offline.</Alert.Title>
+                        <Alert.Description>Reopen it from the dashboard within 90 days.</Alert.Description>
+                      </Alert.Content>
+                    </Alert>
                   ) : (
                     <AlertDialog>
                       <Button id="close-shop" variant="danger">

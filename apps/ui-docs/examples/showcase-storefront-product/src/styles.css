@@ -8,3 +8,12 @@
     @apply m-0 bg-background font-sans text-foreground antialiased;
   }
 }
+
+/* Save toggle: the heart fills while selected (ToggleButton sets aria-pressed). */
+.product-save[aria-pressed="true"] {
+  @apply text-danger;
+
+  & svg {
+    fill: currentColor;
+  }
+}

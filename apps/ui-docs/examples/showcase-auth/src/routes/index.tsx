@@ -1,15 +1,18 @@
 // Rivet-authored showcase (own content: an invented shop's sign-in; nothing is sent anywhere).
 import { Icon } from "@rivetjs/kit/icon";
 import { computed, signal } from "@rivetjs/reactivity";
+import { Alert } from "@rivetjs/ui/alert";
 import { Button } from "@rivetjs/ui/button";
 import { Checkbox } from "@rivetjs/ui/checkbox";
 import { Description } from "@rivetjs/ui/description";
+import { EmptyState } from "@rivetjs/ui/empty-state";
 import { FieldError } from "@rivetjs/ui/field-error";
 import { Form } from "@rivetjs/ui/form";
 import { Input } from "@rivetjs/ui/input";
 import { InputGroup } from "@rivetjs/ui/input-group";
 import { InputOTP } from "@rivetjs/ui/input-otp";
 import { Label } from "@rivetjs/ui/label";
+import { Link } from "@rivetjs/ui/link";
 import { Meter } from "@rivetjs/ui/meter";
 import { Segment } from "@rivetjs/ui/segment";
 import { Separator } from "@rivetjs/ui/separator";
@@ -128,9 +131,9 @@ export default function AuthShowcase() {
                     <FieldError />
                   </TextField>
                   {passwordField("signin-password", false)}
-                  <button id="forgot" type="button" class="-mt-2 self-end text-xs text-accent hover:underline" onClick={() => step.set("reset")}>
+                  <Link id="forgot" class="-mt-2 self-end text-xs" onPress={() => step.set("reset")}>
                     Forgot password?
-                  </button>
+                  </Link>
                   <Button id="signin-submit" type="submit" fullWidth>
                     Sign in
                   </Button>
@@ -180,11 +183,7 @@ export default function AuthShowcase() {
                 </Form>
               </div>
 
-              <div class="flex items-center gap-3 text-xs text-muted">
-                <Separator class="flex-1" />
-                or
-                <Separator class="flex-1" />
-              </div>
+              <Separator id="auth-or">or</Separator>
               <div class="flex flex-col gap-2">
                 <Button variant="secondary" fullWidth onPress={() => step.set("code")}>
                   <Icon icon={KeyRound} size={16} />
@@ -209,10 +208,13 @@ export default function AuthShowcase() {
                 <p class="text-sm text-muted">We send a link that is valid for 30 minutes.</p>
               </div>
               {step() === "reset-sent" ? (
-                <p id="reset-status" role="status" class="flex items-start gap-2 rounded-xl bg-success/10 p-3 text-sm text-success">
-                  <Icon icon={CircleCheck} size={16} class="mt-0.5 shrink-0" />
-                  If {email()} has an account, the link is on its way.
-                </p>
+                <Alert id="reset-status" role="status" status="success">
+                  <Alert.Indicator />
+                  <Alert.Content>
+                    <Alert.Title>Check your inbox</Alert.Title>
+                    <Alert.Description>If {email()} has an account, the link is on its way.</Alert.Description>
+                  </Alert.Content>
+                </Alert>
               ) : (
                 <Form
                   class="flex flex-col gap-4"
@@ -275,14 +277,23 @@ export default function AuthShowcase() {
           ) : null}
 
           {step() === "done" ? (
-            <div id="auth-done" class="flex flex-col items-center gap-3 py-10 text-center">
-              <Icon icon={CircleCheck} size={40} class="text-success" />
-              <h1 class="text-2xl font-semibold">{signUp() ? `Welcome, ${name() || "new seller"}` : "You are signed in"}</h1>
-              <p class="text-sm text-muted">Taking you to the dashboard…</p>
-              <Button variant="secondary" onPress={() => step.set("form")}>
-                Start over
-              </Button>
-            </div>
+            <EmptyState id="auth-done" size="lg">
+              <EmptyState.Header>
+                <EmptyState.Media variant="icon" class="bg-success-soft text-success-soft-foreground">
+                  <Icon icon={CircleCheck} size={24} />
+                </EmptyState.Media>
+                {/* The step's page heading (the other steps have an h1). */}
+                <EmptyState.Title aria-level={1} class="text-2xl font-semibold">
+                  {signUp() ? `Welcome, ${name() || "new seller"}` : "You are signed in"}
+                </EmptyState.Title>
+                <EmptyState.Description>Taking you to the dashboard…</EmptyState.Description>
+              </EmptyState.Header>
+              <EmptyState.Content>
+                <Button variant="secondary" onPress={() => step.set("form")}>
+                  Start over
+                </Button>
+              </EmptyState.Content>
+            </EmptyState>
           ) : null}
         </div>
       </main>

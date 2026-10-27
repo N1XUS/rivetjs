@@ -6,7 +6,7 @@ status: experimental
 related: [components/overview, start/introduction]
 ---
 
-Each showcase is a complete, interactive screen made only from `@rivetjs/ui` components, `@rivetjs/kit` icons and a few Tailwind classes. Every one renders on the server, resumes without re-rendering, works at phone width and follows the light and dark theme. Open the code tab to copy a screen into your app.
+Each showcase is a complete, interactive screen made only from `@rivetjs/ui` components, `@rivetjs/kit` icons and a few Tailwind classes (layout, spacing, headings); colours come from the theme tokens. Every one renders on the server, resumes without re-rendering, works at phone width and follows the light and dark theme. Open the code tab to copy a screen into your app.
 
 :::note
 Rivet-authored screens with invented content (shops, people, numbers). Product photos in the storefront are AI-generated sample images.
