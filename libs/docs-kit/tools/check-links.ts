@@ -54,7 +54,7 @@ export async function checkLinks(dist: string): Promise<string[]> {
       }
       if (/^[a-z]+:/i.test(value) || value.startsWith("//")) continue;
       const [path = "", hash] = value.split("#", 2) as [string, string | undefined];
-      const target = path ? (path.startsWith("/") ? pageFile(path) : pageFile(new URL(path, "http://x" + from).pathname)) : file;
+      const target = path ? pageFile(new URL(path, "http://x" + from).pathname) : file;
       if (!target) {
         problems.push(`${from}: ${kind}="${value}" does not exist`);
         continue;
