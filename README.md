@@ -78,6 +78,7 @@ The report opens at `http://127.0.0.1:18120/report.html`. Complete result JSON, 
 
 Contributor gates (run before commits that touch runtime, router, compiler or kit code):
 
+- `node scripts/gates/run.ts`: plans and runs every gate the changed files need (typecheck, tests, docs checks and builds, zero-cost, size report, format; `--list` shows the plan, `--all` runs everything) and prints one table; see `CONTRIBUTING.md`.
 - `npm run zero-cost`: runtime entry hashes, ssr-bench lane hashes and the compiler oracle must match their baselines (`sh scripts/zero-cost/check.sh --update` for intended deltas).
 - `npm run size-report -- --check` (optional): production-builds the playground, the kit fixture, the starters and a set of docs examples, loads each route in headless Chromium, and fails if any app's shipped bytes grew compared with `scripts/size-report/baseline.json`. Measured per route: HTML, resume state, inline script, module requests and JS before the first interaction, the runtime/page import closure, and JS loaded by the first scripted interaction. Also measures the ssr-bench lane server bundles. Readable table: `scripts/size-report/baseline.md`. `--update` rewrites the baseline (for intended deltas; list them in the commit). `--apps=playground,example:counter` limits the run, and `--tolerance=<bytes>` allows small growth.
 

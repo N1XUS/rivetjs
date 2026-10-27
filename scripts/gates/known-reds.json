@@ -1,0 +1,33 @@
+{
+  "$comment": "Known reds for scripts/gates/run.ts: a failed gate whose every failure line contains the `match` of an entry for that gate (`gate`: id, or prefix + `*`) is reported as known-red, not failing. vitest lines = `<file> > <test name>`; docs builds = `example <id>`. Every entry names a reason + owner; remove it when the red is fixed.",
+  "reds": [
+    {
+      "gate": "vitest:runtime",
+      "match": "libs/runtime/tests/click-defer-browser.test.ts > first mouse click of a tab paints sooner than with a synchronous flush",
+      "reason": "frame-timing comparison flakes on a loaded host (load > cores); passes alone on a quiet machine and on CI",
+      "owner": "runtime (first-click defer)",
+      "since": "2026-10-26"
+    },
+    {
+      "gate": "vitest:runtime-dev",
+      "match": "libs/runtime/tests/click-defer-browser.test.ts > first mouse click of a tab paints sooner than with a synchronous flush",
+      "reason": "same timing test under the development condition",
+      "owner": "runtime (first-click defer)",
+      "since": "2026-10-26"
+    },
+    {
+      "gate": "vitest:router",
+      "match": "libs/router/tests/document-links.test.ts > document links: unmatched paths and endpoints load documents; page routes navigate in the client",
+      "reason": "Chromium navigation timing flakes on a loaded host (listed as known flaky in .claude/skills/rivet-intake-gates)",
+      "owner": "router",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:router",
+      "match": "libs/router/tests/dictionary-e2e.test.ts > Chromium: the linked dictionary is fetched",
+      "reason": "first response not yet recorded when asserted under host load (load ~18); passed on rerun 2026-10-27",
+      "owner": "router",
+      "since": "2026-10-27"
+    }
+  ]
+}

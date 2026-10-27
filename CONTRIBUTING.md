@@ -8,6 +8,8 @@
 
 ## Before you open a PR
 
+`node scripts/gates/run.ts` runs every check below that your changes need (changed files vs `HEAD`, or `--base <ref>`; `--all` for everything; `--list` prints the plan) and prints one table; known reds and measurement noise are listed separately. The steps one by one:
+
 1. `npm run typecheck` (TypeScript 7 native `tsgo` through `scripts/tsc.ts`; `RIVET_TSC=tsc npm run typecheck` runs TypeScript 5.9 instead)
 2. `npm test` (or `npx vitest run --project <name>` for one suite; names in `vitest.config.ts`)
 3. `npm run zero-cost` — must print `runtime + lanes: identical` and `N/N corpus cases match`. Update baselines only for intended size/output changes and say so in the PR.

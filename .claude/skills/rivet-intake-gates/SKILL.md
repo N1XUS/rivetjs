@@ -17,8 +17,9 @@ Root CLAUDE.md "Gates" = source of truth for each command. This skill = order, s
 
 ## Pick gates (affected only; CI runs the full matrix on push)
 
-- If `scripts/gates/run.ts` exists: use it (plans changed files → projects → gates, known-red registry `scripts/gates/known-reds.json`). Read its `--help` first.
-- Else by hand:
+- Default: `node scripts/gates/run.ts` (vs `HEAD`; `--base <ref>` for committed lane work; `--list` first to see the plan; `--only <gate,…>` / `--skip` to narrow; `--update-baselines` for intended byte deltas; `--json <file>`). It encodes the ordering gotchas below, the limits above (sequential, `nice`, 3-slot heavy semaphore, tree RSS > 3 GB = red) and the known-red registry `scripts/gates/known-reds.json` (add an entry with reason + owner instead of re-explaining a base red). Details: `scripts/CLAUDE.md` "Gates runner"; `--help`.
+- Long run: `nohup node scripts/gates/run.ts … > log 2>&1 &`, wait on the final `gates:` line; logs + `report.json` in `.artifacts/gates/<timestamp>/`.
+- By hand (only when the runner cannot express it):
   1. Projects touched + direct dependents → `typecheck` each; `node scripts/check-tsx-projects.ts`.
   2. vitest projects of touched libs (names in `vitest.config.ts`).
   3. Compiler touched → `npx nx run compiler:parity`.
