@@ -11,7 +11,11 @@ Main checkout is shared by several agents and the user. A bare `git commit` / `g
 
 - `git add -A`, `git add .`, `git commit -a`, `--amend`, `stash`, `reset --hard`, worktrees, rebase, push (push only when the user says so in this session).
 - User WIP: `apps/playground/src/routes/_layout.tsx`, `apps/playground/tsconfig.json`, `apps/docs/examples/todo-list/src/routes/index.tsx`, `apps/ui-docs/examples/card-with-images/**`, `*-tmp.ts`.
-- `package-lock.json` (unless the user approved that change), `apps/ui-docs/src/generated/api.json`.
+- `package-lock.json` (unless the user approved that change).
+
+## Always
+
+- `apps/ui-docs/src/generated/api.json` is committed and production builds (Cloudflare) read it as-is: when a change adds / renames a documented `@rivetjs/ui` symbol, regenerate it (`node libs/docs-kit/cli.ts api apps/ui-docs`; the gates runner's `api:ui-docs` does it) and commit it with that change. Skipping it broke the ui-docs deploy on 2026-10-27 (`unknown API symbol …#ResizableIndicator`).
 
 ## Steps
 

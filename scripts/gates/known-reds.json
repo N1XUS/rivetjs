@@ -28,6 +28,139 @@
       "reason": "first response not yet recorded when asserted under host load (load ~18); passed on rerun 2026-10-27",
       "owner": "router",
       "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/carousel.test.ts > carousel: HeroUI CSS applied; no engine before interaction on the static carousels",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/collections.test.ts > breadcrumbs: SSR markup, separators, current page; resumed onPress",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/combo-box-dev.test.ts > dev server: ComboBox cold load + open / type / pick log no error and no a11y warning",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/data-grid.test.ts > data-grid: resumed sort + selection keep the server rows; keyboard after resume",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/data-grid.test.ts > data-grid: virtualized 10k rows scroll swaps the window; sort on 10k",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/data-grid.test.ts > data-grid: pinned cells stay opaque (default / hover / selected) while columns scroll under them",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/disclosure-group.test.ts > disclosure-group: useDisclosureGroupNavigation buttons on the resumed page",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/geometry.test.ts > geometry: Card → concentric Button (radius=concentric)",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/morph-icons.test.ts > morph chevron: Select open → close → open mid-flight reverses without a jump; settles as ⌃",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/navbar.test.ts > navbar: first press on a slow network is fast (handler chunks prefetched while visible)",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/popover.test.ts > popover: controlled isOpen signal both ways",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/removed-region.test.ts > ternary: writes after the server step was removed update the client step only",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/removed-region.test.ts > keyed Show: writes after the server step was removed update the client step only",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/removed-region.test.ts > Label in a div next to a conditional sibling: first changes resume",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/sidebar-resize.test.ts > sidebar-resize: keyboard — arrows, Shift, Home / End, Enter toggles",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/stepper.test.ts > stepper: keyboard Tab + Enter selects; display-only ignores clicks",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/theme-scope.test.ts > theme-scope: Popover + Tooltip inside the scope",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/wave1.test.ts > wave1: every wave-1 component renders on the server (data-slot per part), styles applied; Button / Link preload only their resume chunks",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/wave1.test.ts > wave1: T10–T13 markup identical server vs resumed client, per component (adopted region kept, re-created region equal), no resume errors",
+      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
+      "owner": "ui (triage lane)",
+      "since": "2026-10-27"
     }
   ]
 }
