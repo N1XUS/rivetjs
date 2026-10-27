@@ -158,7 +158,7 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
       const derived = await buildApp(rows, roots);
       // Manifest: the derived runtime (the chunk holding it, no re-export facade: B1), boundary names (`<module>#<export>`)
       // → the chunk of their module.
-      assert.match(derived.manifest.runtime, /^\/assets\/dom-derived-.*\.js$/);
+      assert.match(derived.manifest.runtime, /^\/assets\/derived-runtime-.*\.js$/);
       const runtimeChunk = await readFile(resolve(derived.root, "client-dist" + derived.manifest.runtime), "utf8");
       assert.match(runtimeChunk, /as default\}/);
       assert.ok(runtimeChunk.length > 10_000, "the runtime itself, not a facade");

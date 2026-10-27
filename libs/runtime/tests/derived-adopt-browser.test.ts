@@ -215,7 +215,9 @@ test("lazy rows: a keyed read outside a row writer (a text binding) wakes the wh
 test("triggers: a load / idle / visible boundary materialises without input (data-boot)", async () => {
   for (const flag of [32, 64, 128]) {
     const served = await files(4, { server: (s) => s.replace('_rB("Counter", 1,', '_rB("Counter", ' + (1 | flag) + ",") });
-    assert.match(served["/"]!, /<script type="rivet\/boundaries" data-rt="\/rt.js" data-boot data-fo="\/rt.js \/page.js">/);
+    // A `visible` trigger alone (ZERO ABI-SPLIT): `data-boot` names the boundary (the loader waits until it is on screen).
+    const boot = flag === 128 ? 'data-boot="3"' : "data-boot";
+    assert.ok(served["/"]!.includes('<script type="rivet/boundaries" data-rt="/rt.js" ' + boot + ' data-fo="/rt.js /page.js">'), served["/"]!.slice(-900));
     await withPage(served, async (page, requests) => {
       await page.goto("http://rivet.test/");
       await page.waitForFunction(() => (document.querySelector("#inc") as unknown as Record<string, unknown>).$$click !== undefined);
@@ -228,6 +230,31 @@ test("triggers: a load / idle / visible boundary materialises without input (dat
       await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
     });
   }
+});
+
+test("visible-only boot (ZERO ABI-SPLIT): the runtime loads when the boundary scrolls into view, not before", async () => {
+  const served = await files(4, { server: (s) => s.replace('_rB("Counter", 1,', '_rB("Counter", ' + (1 | 128) + ",") });
+  // Below the fold: a spacer taller than the viewport before the page.
+  served["/"] = served["/"]!.replace("<body>", '<body><div id="spacer" style="height:3000px"></div>');
+  assert.ok(served["/"]!.includes('data-boot="3"'));
+  await withPage(served, async (page, requests) => {
+    await page.goto("http://rivet.test/");
+    await page.waitForTimeout(300);
+    // (`/rt.js` may be fetched ahead at idle — `data-fo` — but it does not start: nothing is adopted.)
+    assert.equal(await handled(page, "#inc"), false, "the runtime started before the boundary was visible");
+    assert.equal(await page.evaluate(() => typeof (document as unknown as { $rdp?: unknown }).$rdp), "undefined");
+    await page.evaluate(() => document.querySelector("#inc")!.scrollIntoView());
+    await page.waitForFunction(() => (document.querySelector("#inc") as unknown as Record<string, unknown>).$$click !== undefined);
+    assert.ok(requests.includes("/page.js"));
+    await page.click("#inc");
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+  });
+  // An event before it is visible boots as on any page (the held click replays).
+  await withPage(served, async (page) => {
+    await page.goto("http://rivet.test/");
+    await page.evaluate(() => (document.querySelector("#inc") as HTMLElement).click());
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+  });
 });
 
 test("dev adopt verifier: a hand-broken fixture warns with the boundary name and renders it in the browser", async () => {

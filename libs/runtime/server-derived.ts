@@ -59,7 +59,7 @@ import type { BoundaryRecord, ClassHooks, ClassRegistry, DerivedAsync, DerivedDo
 import { encodeTail } from "./server-tail.ts";
 import { derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
-import { DERIVED_LOADER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
+import { DERIVED_LOADER, DERIVED_LOADER_VISIBLE, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
 import { _onEager, _onIsland, _onWeak } from "./derived-eager.ts";
 import type { DerivedIsland } from "./derived-eager.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
@@ -2073,12 +2073,13 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   const json = encodeTail(tail);
   let events = "";
   for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
-  const key = (nonce ? "n" : "-") + (ctx.boot ? "b" : "-") + (liteTail ? "l" : "-") + when + events + "\0" + ctx.clicks + "\0" + ahead;
+  const boot = ctx.boot ? visibleBoot(ctx) : null;
+  const key = (nonce ? "n" : "-") + (boot === null ? "-" : "b" + boot) + (liteTail ? "l" : "-") + when + events + "\0" + ctx.clicks + "\0" + ahead;
   let memo = tails.get(manifest);
   if (memo === undefined) tails.set(manifest, (memo = new Map()));
   let fragments = memo.get(key);
   if (fragments === undefined) {
-    fragments = tailFragments(runtime, ahead, when, events, ctx, !!nonce);
+    fragments = tailFragments(runtime, ahead, when, events, ctx, boot, !!nonce);
     // Bounded: an app with more page shapes than this re-builds the rest per request.
     if (memo.size < 512) memo.set(key, fragments);
   }
@@ -2131,20 +2132,39 @@ function liteAhead(manifest: Partial<ResumeManifest>, l: Record<string, string>,
 }
 /** Per manifest: memo key (`derivedTail`) → the tail script's frozen fragments around the JSON (and nonce) slots. */
 const tails = new WeakMap<object, Map<string, readonly string[]>>();
-function tailFragments(runtime: string, ahead: string, when: string, events: string, ctx: DerivedRender, nonce: boolean): readonly string[] {
+/** ZERO ABI-SPLIT: the ids of the page's `VISIBLE` boundaries when they are its only triggers (no load / idle trigger, no
+ * hydrated island): the loader starts the runtime when one of them is on screen (`data-boot="<ids>"`); else "" (start now). */
+function visibleBoot(ctx: DerivedRender): string {
+  if (ctx.adopt.length) return "";
+  let ids = "";
+  for (const b of ctx.boundaries)
+    if (b.flags & TRIGGERS) {
+      if (b.flags & (LOAD | IDLE)) return "";
+      ids += ids ? " " + b.id : String(b.id);
+    }
+  return ids;
+}
+function tailFragments(
+  runtime: string,
+  ahead: string,
+  when: string,
+  events: string,
+  ctx: DerivedRender,
+  boot: string | null,
+  nonce: boolean,
+): readonly string[] {
   // The derived client: attributes the loader reads, then the loader (same nonce sanitising as the serialized loader).
   const attrs =
     ' data-rt="' +
     attr(runtime) +
     '"' +
     (events ? ' data-events="' + attr(DEFAULT_EVENTS + " " + events) + '"' : "") +
-    (ctx.boot ? " data-boot" : "") +
+    (boot === null ? "" : boot ? ' data-boot="' + boot + '"' : " data-boot") +
     (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "") +
     (ahead ? ' data-fo="' + attr(ahead) + '"' + (when === "idle" ? "" : ' data-fw="' + when + '"') : "");
-  const open = '<script type="rivet/boundaries"' + attrs + ">";
-  return Object.freeze(
-    nonce ? [open, '</script><script nonce="', '">' + DERIVED_LOADER + "</script>"] : [open, "</script><script>" + DERIVED_LOADER + "</script>"],
-  );
+  const open = '<script type="rivet/boundaries"' + attrs + ">",
+    loader = boot ? DERIVED_LOADER_VISIBLE : DERIVED_LOADER;
+  return Object.freeze(nonce ? [open, '</script><script nonce="', '">' + loader + "</script>"] : [open, "</script><script>" + loader + "</script>"]);
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`); `data-events` = these + the page's
  * other listener types (boundary `events`, spread listener props). */

@@ -45,7 +45,8 @@ test("npm create rivet: every template installs from the tarballs, builds, serve
     }
     if (result.template.includes("+")) assert.match(result.steps.at(-1)!, new RegExp(`^${result.template.split("+")[1]} layout: `));
     else if (PAGE_CHECK[result.template] === "zero-js") assert.match(result.steps.at(-1)!, /^GET \/ 200 .*no script\), POST \?\/add 303 → \/ lists the note$/);
-    // The page's runtime: `dom-lite` when every boundary has a lite residual (RT-DIET: minimal starter), else `dom-derived`.
-    else assert.match(result.steps.at(-1)!, /^GET \/ 200 .*resume boundaries \+ bootstrap.*, GET \/assets\/dom-(derived|lite)-[\w-]+\.js 200$/);
+    // The page's runtime: `dom-lite` when every boundary has a lite residual (RT-DIET: minimal starter), else the derived
+    // runtime's own chunk (`derived-runtime-*`, ZERO ABI-SPLIT; before, the shared `dom-derived-*`).
+    else assert.match(result.steps.at(-1)!, /^GET \/ 200 .*resume boundaries \+ bootstrap.*, GET \/assets\/(?:dom-lite|derived-runtime)-[\w-]+\.js 200$/);
   }
 });

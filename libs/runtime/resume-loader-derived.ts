@@ -5,7 +5,8 @@
 // It reads nothing but the tail script's attributes until an event: `data-events` (delegated types, default
 // "click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout": a cold press holds its
 // pointer / mouse / focus events too, DERIVED-C), `data-rt` (the runtime URL: its default export is `dom-derived.ts`'s instance),
-// `data-boot` (a boundary has a load / idle / visible trigger: start now). An event inside a boundary (`data-b`, or
+// `data-boot` (a boundary has a load / idle / visible trigger: start now; `data-boot="<ids>"`, ZERO ABI-SPLIT: the page's only
+// triggers are `visible` ones — start when the first element of one of those boundaries intersects the viewport). An event inside a boundary (`data-b`, or
 // `<!--b<id>-->` openers before an ancestor) whose name listens to its type (tail v2 `n[i][2]`, D5 / ZERO R2; any other event acts
 // natively: nothing listens there before the page adopts) goes to the runtime: when everything around its target is adopted now it
 // runs live (`rt.on`); else it is held — click defaults (links, toggles, labels, summary, submit / reset), submit,
@@ -178,6 +179,7 @@ export function derivedLoader(): void {
     .map((type) => listen(type, on, !/^(touch|wheel|scroll)/.test(type)));
   listen("focusin", warm);
   listen("touchstart", warm);
+  // Triggers: start now. (`data-boot="<ids>"`, ZERO ABI-SPLIT: `DERIVED_LOADER_VISIBLE` runs `derivedVisibleBoot` here instead.)
   if (script.hasAttribute("data-boot")) boot(1).catch(fail);
   // Fetch-ahead (`data-fo`, DERIVED-C; timing `data-fw`, ZERO ONDEMAND): the runtime + the page's live boundary chunks +
   // their static closures as low-priority modulepreloads in the first idle period after `load` (default) or right after it
@@ -188,6 +190,28 @@ export function derivedLoader(): void {
     net?.saveData ||
     /2g/.test(net?.effectiveType!) ||
     addEventListener("load", () => (fw ? ahead() : (self.requestIdleCallback || setTimeout)(() => ahead())));
+}
+
+/**
+ * Visible-only boot (ZERO ABI-SPLIT 2026-10-27): on a page whose only triggers are `visible` ones the tail says
+ * `data-boot="<ids>"`, and the server ships `DERIVED_LOADER_VISIBLE` = the loader with this function called in place of
+ * its `data-boot` start (`build-loader.ts` splices it in with the loader's minified names: every other page's loader is
+ * unchanged). The runtime starts when the first element of one of those boundaries (a `data-b` element, else the first
+ * element after its `<!--b<id>-->` opener, before a `<!--/b-->`) intersects the viewport — the runtime's own `visible`
+ * trigger (`dom-derived.ts` `trigger`) then fires at once —, or now when there is no such element.
+ */
+export function derivedVisibleBoot(script: HTMLScriptElement, boot: (bg?: unknown) => Promise<unknown>, fail: (error: unknown) => void): void {
+  const d = document,
+    io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && (io.disconnect(), boot(1).catch(fail)));
+  for (const id of script.dataset.boot!.split(" ")) {
+    let el: Node | null = d.querySelector('[data-b="' + id + '"]');
+    if (!el) {
+      const walk = d.createTreeWalker(d, 128);
+      while ((el = walk.nextNode()) && (el as Comment).data != "b" + id);
+      while (el && el.nodeType != 1 && (el = el.nextSibling) && (el as Comment).data != "/b");
+    }
+    el?.nodeType == 1 ? io.observe(el as Element) : boot(1).catch(fail);
+  }
 }
 
 /**

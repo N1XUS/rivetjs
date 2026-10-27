@@ -1069,8 +1069,19 @@ export class ListKeyboardDelegate implements KeyboardDelegate {
 }
 
 let searchCollator: Intl.Collator | undefined;
-/** `useCollator({ usage: "search", sensitivity: "base" })`. */
-export const getSearchCollator = (): Intl.Collator => (searchCollator ??= new Intl.Collator(undefined, { usage: "search", sensitivity: "base" }));
+/**
+ * `useCollator({ usage: "search", sensitivity: "base" })`. The `Intl.Collator` is made on the first `compare` /
+ * `resolvedOptions` (typeahead), as `searchCollator` (`selection/list-keyboard-delegate.ts`): its collation data costs
+ * ~3.5 ms at 1× (~13 ms at 4× CPU) on first use, which a menu / select open would otherwise pay inside its press.
+ */
+export const getSearchCollator = (): Intl.Collator => {
+  if (!searchCollator) {
+    let real: Intl.Collator | undefined;
+    const made = (): Intl.Collator => (real ??= new Intl.Collator(undefined, { usage: "search", sensitivity: "base" }));
+    searchCollator = { compare: (x: string, y: string) => made().compare(x, y), resolvedOptions: () => made().resolvedOptions() } as Intl.Collator;
+  }
+  return searchCollator;
+};
 
 /** react-aria `isNonContiguousSelectionModifier`: Alt on Apple platforms, Ctrl elsewhere. */
 export const isNonContiguousSelectionModifier = (e: { altKey: boolean; ctrlKey: boolean }): boolean => (isMac() ? e.altKey : e.ctrlKey);

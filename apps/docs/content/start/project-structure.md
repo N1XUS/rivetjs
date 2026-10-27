@@ -146,7 +146,7 @@ After `npm run build`:
 - `dist/client`: what the browser gets. HTML files (one folder per page), `_data.json` files for client navigation (only when some page resumes), `404.html`, and `assets/` with scripts and styles. Deploy this folder to any static host.
 - `dist/server`: the server build. The static starter uses it only to render the HTML files.
 
-The script files in `dist/client/assets` hold the browser code: the resume runtime (`dom-derived-….js`; `dom-lite-….js` and small lite chunks for pages whose interactive components are all simple enough, see [Chunks](../guides/performance/chunks.md)), one chunk per component file that can wake up (for example `index-….js` for `src/routes/index.tsx`, `app-….js` for the generated app and its layouts) and the shared chunks they import. After a page loads, the browser fetches the ones it may need at low priority; it runs them only when you use the page.
+The script files in `dist/client/assets` hold the browser code: the resume runtime (`derived-runtime-….js`, with the code every component shares in `dom-derived-abi-….js`; `dom-lite-….js` and small lite chunks for pages whose interactive components are all simple enough, see [Chunks](../guides/performance/chunks.md)), one chunk per component file that can wake up (for example `index-….js` for `src/routes/index.tsx`, `app-….js` for the generated app and its layouts) and the shared chunks they import. After a page loads, the browser fetches the ones it may need at low priority; it runs them only when you use the page.
 
 ## `prerender.js` and `serve.js`
 

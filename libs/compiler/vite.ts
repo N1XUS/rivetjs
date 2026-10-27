@@ -343,7 +343,7 @@ export interface DevResume {
   };
 }
 
-/** The derived runtime entry (manifest `runtime`, default export = the `dom-derived` instance). */
+/** The derived runtime entry (manifest `runtime`, default export = the `dom-derived-runtime` instance). */
 const DERIVED_ENTRY = "\0rivet-derived-entry";
 /** Client resume builds: prefix of a boundary module's facade entry id (ZERO B6). */
 const BOUNDARY_ENTRY = "\0rivet-boundary:";
@@ -1734,7 +1734,7 @@ function rivetPlugin(
         const code = derivedSwitch(clean);
         if (code !== null) return code;
       }
-      if (id === DERIVED_ENTRY) return 'export { default } from "@rivetjs/runtime/dom-derived";\n';
+      if (id === DERIVED_ENTRY) return 'export { default } from "@rivetjs/runtime/dom-derived-runtime";\n';
       // `resume.domData` (DERIVED-C5): the browser reader (`DOM_DATA` in `dom-derived.ts`) and the server's list registry +
       // `d` encoder (`dom-data-derived.ts` → `server-derived-dom.ts`); the resume manifest says so when the reader loaded.
       if (domDataOn()) {

@@ -4,16 +4,37 @@
 // The resume-loader test fails when the generated file is stale.
 import { writeFile } from "node:fs/promises";
 import { transform } from "esbuild";
-import { derivedLoader, derivedStream } from "./resume-loader-derived.ts";
+import { derivedLoader, derivedStream, derivedVisibleBoot } from "./resume-loader-derived.ts";
 
 const minify = async (fn: () => void): Promise<string> => (await transform("(" + fn + ")()", { minify: true, target: "es2020" })).code.trim();
 /** Minified inline loader, shipped after the boundaries tail. */
 export const minifiedDerived = (): Promise<string> => minify(derivedLoader);
+/** The loader's minified `data-boot` start (`<script>.hasAttribute("data-boot")&&<boot>(1).catch(<fail>)`). */
+const START = /(\w+)\.hasAttribute\("data-boot"\)&&(\w+)\(1\)\.catch\((\w+)\)/;
+/**
+ * ZERO ABI-SPLIT: the visible-boot loader (pages whose only triggers are `visible` ones, `data-boot="<ids>"`) = the loader
+ * with its `data-boot` start made `s.dataset.boot ? (derivedVisibleBoot)(s, boot, fail) : <start>` — spliced into the
+ * minified loader, so every other page's loader stays the same bytes. Returns [splice index, inserted text].
+ */
+export const visibleSplice = async (loader: string): Promise<[number, string]> => {
+  const hit = START.exec(loader);
+  if (!hit) throw Error("build-loader: no data-boot start in the minified loader");
+  const [, script, boot, fail] = hit;
+  const fn = (await transform("(" + derivedVisibleBoot + ")(__s,__b,__f);", { minify: true, target: "es2020" })).code.trim().replace(/;$/, "");
+  return [hit.index, script + ".dataset.boot?" + fn.replace("(__s,__b,__f)", "(" + script + "," + boot + "," + fail + ")") + ":"];
+};
+/** The visible-boot loader (`DERIVED_LOADER_VISIBLE`). */
+export const minifiedDerivedVisible = async (): Promise<string> => {
+  const loader = await minifiedDerived(),
+    [at, text] = await visibleSplice(loader);
+  return loader.slice(0, at) + text + loader.slice(at);
+};
 /** Minified stream add-on (`$rD`), shipped once before a page's first streamed segment. */
 export const minifiedDerivedStream = (): Promise<string> => minify(derivedStream);
 
 if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
   const derived = await minifiedDerived(),
+    [at, splice] = await visibleSplice(derived),
     derivedAdd = await minifiedDerivedStream();
   await writeFile(
     new URL("./resume-loader-derived.min.ts", import.meta.url),
@@ -21,9 +42,12 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
       "export const DERIVED_LOADER = " +
       JSON.stringify(derived) +
       ";\n" +
+      '/** The loader of a page whose only triggers are `visible` ones (`data-boot="<ids>"`, `derivedVisibleBoot`). */\n' +
+      `export const DERIVED_LOADER_VISIBLE = DERIVED_LOADER.slice(0, ${at}) + ${JSON.stringify(splice)} + DERIVED_LOADER.slice(${at});\n` +
       "export const DERIVED_STREAM = " +
       JSON.stringify(derivedAdd) +
       ";\n",
   );
-  console.log("derived " + derived.length + " chars (+ stream " + derivedAdd.length + ")");
+  const derivedVisible = derived.slice(0, at) + splice + derived.slice(at);
+  console.log("derived " + derived.length + " chars (visible boot " + derivedVisible.length + ", + stream " + derivedAdd.length + ")");
 }

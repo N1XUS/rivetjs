@@ -1,7 +1,9 @@
 // Derived model, browser side (milestone M2 lane R: R2 runtime half + R3; plan docs/design/plans/2026-10-18-derived-client.md,
-// spec docs/design/specs/2026-10-18-structural-resume-design.md §3.4 / §3.5). Own subpath (`@rivetjs/runtime/dom-derived`,
-// pay-per-use): compiled derived DOM modules import the component ABI from here, and the page's runtime URL (tail
-// `data-rt`) default-exports the instance the inline loader (`resume-loader-derived.ts`) starts.
+// spec docs/design/specs/2026-10-18-structural-resume-design.md §3.4 / §3.5). Own subpath
+// (`@rivetjs/runtime/dom-derived-runtime`, pay-per-use): the page's runtime URL (tail `data-rt`) default-exports the
+// instance the inline loader (`resume-loader-derived.ts`) starts. Compiled derived DOM modules import the component ABI
+// from `@rivetjs/runtime/dom-derived` (`dom-derived-abi.ts`, ZERO ABI-SPLIT): a client render needs no adopt runtime;
+// evaluating this module installs the implementations below (`_abi`).
 //
 // Component ABI (the DOM twin of `server-derived.ts`'s `_rB` / `_rSig` / `_rSigStore`):
 //
@@ -41,6 +43,7 @@ import type { BoundaryTail, DerivedAsync, DerivedDom } from "./resume-format.ts"
 import { eachRecord } from "./resume-tail.ts";
 import { DOM_DATA } from "./dom-data.ts";
 import { DEV } from "#dev";
+import { _abi, _guard as guard } from "./dom-derived-abi.ts";
 
 /** Record flags (`BoundaryRecord[2]`, `server-derived.ts`). */
 const INDEPENDENT = 1,
@@ -340,10 +343,10 @@ const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []):
 const report = (error: unknown): void => (api ? api.f(error) : console.error(error));
 
 /**
- * Compiler ABI (derived DOM target): an interactive component's body. Client render: `body()`. Adopt run: a hole the
+ * `_b` (`dom-derived-abi.ts`) once this runtime is evaluated: an interactive component's body. Client render: `body()`. Adopt run: a hole the
  * unit's alignment pairs with the server range of this boundary (adopted next as a unit of its own, or deferred).
  */
-export function _b<T>(name: string, body: () => T): T {
+function b<T>(name: string, body: () => T): T {
   const u = cur;
   if (u === null) return body();
   if (u.self) {
@@ -380,8 +383,8 @@ export function _b<T>(name: string, body: () => T): T {
   return hole.range.slice() as T;
 }
 
-/** Compiler ABI (derived DOM target): keyed `signal(init)`; in an adopt run, the record's value. */
-export function _sig<T>(key: string, init?: T, options?: EqualsOptions<T>): Signal<T> {
+/** `_sig` (`dom-derived-abi.ts`) once this runtime is evaluated: keyed `signal(init)`; in an adopt run, the record's value. */
+function sig<T>(key: string, init?: T, options?: EqualsOptions<T>): Signal<T> {
   const u = cur,
     rec = u?.rec,
     make = (DEV && _adoption.signal) || signal;
@@ -414,8 +417,8 @@ export function _sig<T>(key: string, init?: T, options?: EqualsOptions<T>): Sign
   return get;
 }
 
-/** Compiler ABI (derived DOM target): keyed `createStore(init)`; in an adopt run, created from the record's value. */
-export function _sigStore<T extends object>(key: string, init: T): Store<T> {
+/** `_sigStore` (`dom-derived-abi.ts`) once this runtime is evaluated: keyed `createStore(init)`; in an adopt run, created from the record's value. */
+function sigStore<T extends object>(key: string, init: T): Store<T> {
   const u = cur,
     rec = u?.rec;
   if (!u || !rec) return createStore(init);
@@ -435,22 +438,14 @@ export function _sigStore<T extends object>(key: string, init: T): Store<T> {
 // adopts the readers of its keys at once.
 /** Deferred `MOD` records: adopted before the first write to a signal no wake key names. */
 let loose: Set<Rec> | null = null;
-/** The derived alias of `signal` (`@rivetjs/runtime/derived-reactivity`). */
-export function _dsignal<T>(init?: T, options?: EqualsOptions<T>): Signal<T> {
+/** The derived alias of `signal` (`@rivetjs/runtime/derived-reactivity`; `_dsignal` in `dom-derived-abi.ts` runs it). */
+function dsignal<T>(init?: T, options?: EqualsOptions<T>): Signal<T> {
   const s = signal(init as T, options),
     u = cur;
   if (u === null || u.rec === null || u.depth || _tracking()) return guard(s, wakeLoose);
   const n = u.made++,
     ids = u.mode === PROBE ? undefined : tail?.w?.[u.rec.id + ".$" + n];
   return ids ? guard(s, () => wakeAll(ids)) : s;
-}
-function guard<T>(s: Signal<T>, fn: () => void): Signal<T> {
-  const set = s.set;
-  s.set = function (this: unknown, value: T) {
-    fn();
-    return set.call(this, value);
-  } as Signal<T>["set"];
-  return s;
 }
 function wakeAll(ids: number[]): void {
   for (const id of ids) {
@@ -2523,4 +2518,7 @@ if (DEV)
     globalThis.document.querySelector('script[type="rivet/boundaries"]')?.removeAttribute("data-g");
     for (const owner of roots.splice(0)) _dispose(owner);
   };
+// The component ABI (`dom-derived-abi.ts`, `@rivetjs/runtime/dom-derived`) runs these from now on.
+_abi({ b, s: sig, st: sigStore, d: dsignal, l: wakeLoose });
+export { _b, _sig, _sigStore, _dsignal } from "./dom-derived-abi.ts";
 export default runtime;

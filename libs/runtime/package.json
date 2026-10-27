@@ -99,6 +99,10 @@
       "default": "./props.ts"
     },
     "./dom-derived": {
+      "types": "./dom-derived-abi.ts",
+      "default": "./dom-derived-abi.ts"
+    },
+    "./dom-derived-runtime": {
       "types": "./dom-derived.ts",
       "default": "./dom-derived.ts"
     },

@@ -130,7 +130,7 @@ npm run preview
 Open the preview address and the browser's developer tools, on the Network tab:
 
 1. Reload the page. The text and the button are there right away: they are in the HTML.
-2. Look at the scripts. After the page has loaded, a few files arrive at low priority (such as `dom-derived-….js` and the home page's own chunk): the resume runtime and the page's code are fetched ahead, but none of it runs yet.
+2. Look at the scripts. After the page has loaded, a few files arrive at low priority (such as `derived-runtime-….js`, `dom-derived-abi-….js` and the home page's own chunk): the resume runtime and the page's code are fetched ahead, but none of it runs yet.
 3. Click the button. The runtime starts, runs the home page's code (`src/routes/index.tsx`) over the HTML that is already there, and the click reaches the counter's handler: the count goes up.
 
 Nothing ran in the browser until you used the page, and the click reused the server's nodes instead of rendering new ones. [Resuming](../learn/resuming.md) explains how.

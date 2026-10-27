@@ -1,8 +1,8 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { brotliCompressSync } from "node:zlib";
-import { minifiedDerived, minifiedDerivedStream } from "../build-loader.ts";
-import { DERIVED_LOADER, DERIVED_STREAM } from "../resume-loader-derived.min.ts";
+import { minifiedDerived, minifiedDerivedStream, minifiedDerivedVisible } from "../build-loader.ts";
+import { DERIVED_LOADER, DERIVED_LOADER_VISIBLE, DERIVED_STREAM } from "../resume-loader-derived.min.ts";
 
 // Derived model loader (M2 lane R, R2; spec §3.2 budget ≤ 1 KB br): 1,023 B (2026-10-20) — the serialized loader's
 // navigation-type reload fallback and the `mousewheel` passive type were left out to fit (see resume-loader-derived.ts).
@@ -26,6 +26,18 @@ test("shipped derived loader is current, inline-safe and fits 1,585 B brotli", a
   const size = brotliCompressSync(DERIVED_LOADER).length;
   assert.ok(size <= 1585, `minified ${size} B`);
   console.log(`derived loader brotli: ${size} B`);
+});
+
+// ZERO ABI-SPLIT visible-only boot: the loader of a `data-boot="<ids>"` page = the loader above with `derivedVisibleBoot`
+// spliced in at its `data-boot` start (the other pages' loader is unchanged): 1,768 B brotli at landing (+184 B).
+test("shipped visible-boot loader is current, inline-safe and fits 1,800 B brotli", async () => {
+  assert.equal(DERIVED_LOADER_VISIBLE, await minifiedDerivedVisible(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
+  assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER_VISIBLE));
+  assert.ok(DERIVED_LOADER_VISIBLE.includes(".dataset.boot?(function("));
+  new Function(DERIVED_LOADER_VISIBLE);
+  const size = brotliCompressSync(DERIVED_LOADER_VISIBLE).length;
+  assert.ok(size <= 1800, `minified ${size} B`);
+  console.log(`derived visible-boot loader brotli: ${size} B`);
 });
 
 // Derived stream add-on (DERIVED-C2): `$rD`, shipped once before a derived page's first streamed segment (the serialized

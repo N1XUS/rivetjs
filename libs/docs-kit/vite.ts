@@ -5,7 +5,7 @@ import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Plugin, Rollup, ViteDevServer } from "vite";
-import { serverOnlyStub } from "@rivetjs/compiler/vite";
+import { _hintEagerCompile, serverOnlyStub } from "@rivetjs/compiler/vite";
 import { kit } from "@rivetjs/kit/vite";
 import { docsContent } from "./tools/content/plugin.ts";
 import { docsDevSearch } from "./tools/dev-search.ts";
@@ -390,10 +390,16 @@ function docsWatch(): Plugin {
  * every chunk with a namespace object (merged route / boundary facades, the search palette) imported the highlighter
  * statically — 202 docs chunks, the palette's cold open 223 KB. Out of an entry, the runtime stays its own
  * 187 B `rolldown-runtime` chunk.
+ *
+ * Site chrome (ZERO ABI-SPLIT 2026-10-27): the live theme menu / mobile drawer chunks (`components/theme-menu-open.tsx`,
+ * `mobile-menu-open.tsx`, fetched on pointer / focus intent) and their static imports carry the V8 eager-compile hint
+ * (`_hintEagerCompile`): their functions compile while the module loads on hover, not lazily inside the press that
+ * opens the cdk menu (warm theme click, 4× CPU: V8 CompileCode ~13 ms of the pointerdown).
  */
 function docsChunks(): Plugin {
   const shiki = /[\\/]node_modules[\\/](?:shiki|@shikijs)[\\/]/;
   const grammar = /[\\/]langs[\\/]/;
+  const chrome = /[\\/]docs-kit[\\/]components[\\/](?:theme|mobile)-menu-open\.tsx$/;
   return {
     name: "rivet-docs-chunks",
     config: () => ({
@@ -405,6 +411,13 @@ function docsChunks(): Plugin {
         },
       },
     }),
+    generateBundle: {
+      order: "post",
+      handler(_options, bundle) {
+        if (this.environment?.config?.consumer === "server") return;
+        _hintEagerCompile(bundle, (output) => chrome.test(output.facadeModuleId!));
+      },
+    },
   };
 }
 

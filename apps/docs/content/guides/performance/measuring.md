@@ -46,7 +46,7 @@ In the **Elements** panel, find `<script type="rivet/boundaries">` near the end 
 
 The `data-fo` attribute on the same script lists the files the loader fetches after the page loads, or on the first intent (the runtime and the page's component chunks; `data-fw` names a timing other than the default, see [Preloading](preloading.md#change-the-timing)), and `data-rt` names the runtime (the lite runtime on a page whose every interactive component has a lite chunk, see [Chunks](chunks.md)). See [Preloading](preloading.md).
 
-If the page has client effects or client events, `data-boot` is set, and the runtime loads at idle.
+If the page has client effects or client events, `data-boot` is set, and the runtime loads at idle. When its only ones start with `when: "visible"`, `data-boot` lists those components, and the runtime loads when the first of them scrolls into view.
 
 ## Check the first interaction
 

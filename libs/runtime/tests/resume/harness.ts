@@ -42,6 +42,7 @@ const sources: Record<string, string> = {
   "/dom-data.ts": "dom-data.ts",
   "/derived.ts": "derived.ts",
   "/dom-derived.ts": "dom-derived.ts",
+  "/dom-derived-abi.ts": "dom-derived-abi.ts",
   "/dom-lite.ts": "dom-lite.ts",
   "/dom-lite-core.ts": "dom-lite-core.ts",
   "/dom-lite-attr.ts": "dom-lite-attr.ts",
@@ -69,7 +70,9 @@ export const DERIVED_BUILD: Record<string, string> = switchBuild(DERIVED_SWITCHE
 /** Rewrite package specifiers to served paths. */
 export const rewrite = (code: string): string =>
   code
-    .replaceAll("@rivetjs/runtime/dom-derived", "/dom-derived.ts")
+    .replaceAll("@rivetjs/runtime/dom-derived-runtime", "/dom-derived.ts")
+    // The component ABI only (ZERO ABI-SPLIT): the runtime is the page's `data-rt` module, as built.
+    .replaceAll("@rivetjs/runtime/dom-derived", "/dom-derived-abi.ts")
     .replaceAll("@rivetjs/runtime/dom-lite", "/dom-lite.ts")
     .replaceAll("@rivetjs/runtime/resume-format", "/resume-format.ts")
     .replaceAll("@rivetjs/runtime/dom", "/dom.ts")
