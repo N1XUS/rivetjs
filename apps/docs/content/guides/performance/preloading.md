@@ -15,7 +15,9 @@ A Rivet page arrives as finished HTML. The JavaScript of a button is not needed 
 3. When the pointer moves onto a component that reacts to hover, rests on an element (80 ms), it gets focus, a key is pressed, or a finger or the pointer goes down, the loader fetches every file of that list that has not arrived, at high priority and all at once.
 4. On the event, the runtime runs the component and the components around it that have not run yet (with file routes: up to the router's root, unless the build proved the component reads nothing they provide), then the handler. An event that comes before its code is held and replayed.
 
-With Save-Data on, or on a 2G connection, step 2 is skipped: code loads on intent.
+After step 2 (or after the list that intent fetched in step 3), once all of it has arrived, the browser fetches the page's lazy components at low priority, at the next idle moment: the chunks of the `lazyComponent(() => import("…"))` calls in that code, with their static imports. Nothing of them runs until a component renders them, so opening one later costs no extra round trip.
+
+With Save-Data on, or on a 2G connection, step 2 and the lazy components are skipped: code loads on intent.
 
 A page whose only interactive part is its links (client navigation, nothing else reacts to events) also skips step 2 unless you set `ahead`: the runtime and the router load when the pointer rests on a link, or on the first click.
 
@@ -53,7 +55,7 @@ Preload strategies per element (`preload="…"`), per component (`export const p
 
 ## Code that loads later
 
-Code that a component loads with `import()`, such as lazy components or other routes, is fetched when it is needed.
+Lazy components (`lazyComponent(() => import("./Chart.tsx"))`, the importer written inline) in the page's code are fetched after the rest of the page's code, at idle (see above), and run when they first render. Other code loaded with `import()`, such as other routes, a `clientOnly` component or an importer passed in from elsewhere, is fetched when it is needed.
 
 To keep analytics or other heavy code out of the first seconds, load it inside a `clientEffect` with `when: "idle"`:
 

@@ -27,7 +27,7 @@ Grouping options (`resume.chunks`, `merge`, `cap`) and `ChunkGroup` have no effe
 
 ## Lazy components and routes
 
-`lazyComponent(() => import("./Chart.tsx"))` puts a component behind a dynamic import. Its code is a separate chunk, loaded when the component first renders in the browser.
+`lazyComponent(() => import("./Chart.tsx"))` puts a component behind a dynamic import. Its code is a separate chunk: on a resumed page the browser fetches it at idle after the page's other code (without running it), and runs it when the component first renders. See [Preloading](preloading.md).
 
 In a file-routed app, every page is loaded this way. Code for other pages loads when the user navigates to them.
 

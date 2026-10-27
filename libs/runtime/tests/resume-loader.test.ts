@@ -1,8 +1,8 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { brotliCompressSync } from "node:zlib";
-import { minifiedDerived, minifiedDerivedStream, minifiedDerivedVisible } from "../build-loader.ts";
-import { DERIVED_LOADER, DERIVED_LOADER_VISIBLE, DERIVED_STREAM } from "../resume-loader-derived.min.ts";
+import { minifiedDerived, minifiedDerivedLater, minifiedDerivedStream, minifiedDerivedVisible } from "../build-loader.ts";
+import { DERIVED_LOADER, DERIVED_LOADER_LATER, DERIVED_LOADER_VISIBLE, DERIVED_LOADER_VISIBLE_LATER, DERIVED_STREAM } from "../resume-loader-derived.min.ts";
 
 // Derived model loader (M2 lane R, R2; spec §3.2 budget ≤ 1 KB br): 1,023 B (2026-10-20) — the serialized loader's
 // navigation-type reload fallback and the `mousewheel` passive type were left out to fit (see resume-loader-derived.ts).
@@ -43,6 +43,27 @@ test("shipped visible-boot loader is current, inline-safe and fits 1,825 B brotl
   const size = brotliCompressSync(DERIVED_LOADER_VISIBLE).length;
   assert.ok(size <= 1825, `minified ${size} B`);
   console.log(`derived visible-boot loader brotli: ${size} B`);
+});
+
+// IDLE-PREFETCH lazy-part loaders: the loader of a page with `data-fl` = the loader above with `derivedFetchLater` spliced
+// in place of its fetch-ahead link loop (pages without lazy parts keep the plain loader): 1,719 B brotli at landing
+// (+83 B over the 1,636 B loader), 1,894 B with the visible boot too.
+test("shipped lazy-part loaders are current, inline-safe and fit 1,720 / 1,895 B brotli", async () => {
+  assert.equal(DERIVED_LOADER_LATER, await minifiedDerivedLater(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
+  assert.equal(DERIVED_LOADER_VISIBLE_LATER, await minifiedDerivedLater(true), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
+  for (const [loader, budget] of [
+    [DERIVED_LOADER_LATER, 1720],
+    [DERIVED_LOADER_VISIBLE_LATER, 1895],
+  ] as const) {
+    assert.ok(!/<\/script|<!--/i.test(loader));
+    assert.ok(loader.includes(".dataset.fl.split("), "the lazy-part fetch is spliced in");
+    assert.ok(!loader.includes('.split(" ").map(e=>l.head.append('), "in place of the plain link loop");
+    new Function(loader);
+    const size = brotliCompressSync(loader).length;
+    assert.ok(size <= budget, `minified ${size} B`);
+    console.log(`derived lazy-part loader brotli: ${size} B`);
+  }
+  assert.ok(DERIVED_LOADER_VISIBLE_LATER.includes(".dataset.boot?(function("));
 });
 
 // Derived stream add-on (DERIVED-C2): `$rD`, shipped once before a derived page's first streamed segment (the serialized

@@ -12,7 +12,7 @@ import { brotliCompressSync } from "node:zlib";
 import { build } from "vite";
 import { chromium, type Browser } from "playwright";
 import { hasDerivedModel } from "../index.ts";
-import { rivet } from "../vite.ts";
+import { _lazyParts, rivet } from "../vite.ts";
 import { expandTail } from "@rivetjs/runtime/resume-format";
 
 const COUNTER = `import { signal } from "@rivetjs/reactivity";
@@ -78,9 +78,16 @@ const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javas
 interface Built {
   root: string;
   html: string;
-  manifest: { runtime: string; symbols: Record<string, string>; builtins?: string; deps?: Record<string, string[]>; domData?: boolean };
+  manifest: {
+    runtime: string;
+    symbols: Record<string, string>;
+    builtins?: string;
+    deps?: Record<string, string[]>;
+    domData?: boolean;
+    lazy?: Record<string, string[]>;
+  };
 }
-async function buildApp(rows: "static" | "interactive", roots: string[], domData = false): Promise<Built> {
+async function buildApp(rows: "static" | "interactive", roots: string[], domData = false, files: Record<string, string> = {}): Promise<Built> {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-derived-" + rows + "-"));
   roots.push(root);
@@ -89,6 +96,7 @@ async function buildApp(rows: "static" | "interactive", roots: string[], domData
   await writeFile(resolve(root, "src/page.tsx"), page(rows));
   await writeFile(resolve(root, "src/server.tsx"), SERVER);
   await writeFile(resolve(root, "index.html"), "<!doctype html><p>client</p>");
+  for (const [file, text] of Object.entries(files)) await writeFile(resolve(root, file), text);
   // Two builds (client, then SSR), each with its own plugin instance, like `vite build` + `vite build --ssr`.
   // `serverExports`: the page is a route module (its default export is a route root: an independent boundary).
   const plugin = () =>
@@ -261,6 +269,102 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
         await page.click("#dark");
         await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
       });
+    } finally {
+      await browser.close();
+      for (const root of roots) await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
+test("_lazyParts: inline lazyComponent importers only", () => {
+  assert.deepEqual(
+    _lazyParts(`const A = lazyComponent(() => import("./a.tsx"));
+const B = /*#__PURE__*/ lazyComponent<Props>(
+  (): Promise<M> => import('./b.tsx'),
+  (m) => m.B,
+);
+const C = lazyComponent(load);
+const D = lazyComponent<P>(PAGES[i]!);
+const E = () => import("./e.ts");
+const F = clientOnly(() => import("./f.tsx"));`),
+    ["./a.tsx", "./b.tsx"],
+  );
+  assert.deepEqual(_lazyParts("no lazy parts here"), []);
+});
+
+// IDLE-PREFETCH: a `lazyComponent(() => import(…))` part is its own chunk, listed in the manifest's `lazy` under the chunk of
+// the module that imports it (+ its closure in `deps`); the server's tail lists it in `data-fl` (not `data-fo`), the
+// browser fetches it after the fetch-ahead list without running it, and opening the part fetches nothing more. A plain
+// `import()` is no lazy part.
+const LAZY_COUNTER = `import { signal } from "@rivetjs/reactivity";
+import { Show, lazyComponent } from "@rivetjs/runtime/dom";
+const Panel = lazyComponent(() => import("./panel.tsx"), (module) => module.Panel);
+const later = () => import("./later.ts");
+export function Counter(props) {
+  const n = signal(props.start);
+  const open = signal(false);
+  return (
+    <div class="counter">
+      <button type="button" id="inc" onClick={() => (n.set(n() + 1), open.set(true))}>+</button>
+      <span id="count">{n()}</span>
+      <button type="button" id="later" onClick={() => later().then((m) => m.run())}>later</button>
+      <Show when={open}>{() => <Panel label="panel" />}</Show>
+    </div>
+  );
+}
+export function Other(props) {
+  const on = signal(false);
+  return <p id="other" onClick={() => on.set(!on())}>{props.label}: {on() ? "on" : "off"}</p>;
+}
+`;
+const PANEL = `import { signal } from "@rivetjs/reactivity";
+(globalThis as any).__panelRuns = ((globalThis as any).__panelRuns ?? 0) + 1;
+export function Panel(props) {
+  const shown = signal(props.label);
+  return <section id="panel">{shown()}</section>;
+}
+`;
+
+(hasDerivedModel() ? test : test.skip)(
+  "rivet({ resume }): lazy parts → manifest lazy + deps, tail data-fl, fetched after the list, opened without a request",
+  async () => {
+    const browser = await chromium.launch({ headless: true });
+    const roots: string[] = [];
+    try {
+      const built = await buildApp("static", roots, false, {
+        "src/counter.tsx": LAZY_COUNTER,
+        "src/panel.tsx": PANEL,
+        "src/later.ts": "export const run = () => {};\n",
+      });
+      const counter = built.manifest.symbols["src/counter.tsx#Counter"]!;
+      const lazy = built.manifest.lazy!;
+      assert.deepEqual(Object.keys(lazy), [counter], "one importer: the counter's chunk");
+      assert.equal(lazy[counter]!.length, 1);
+      const part = lazy[counter]![0]!;
+      assert.match(part, /^\/assets\/panel-.*\.js$/);
+      assert.ok(built.manifest.deps![part], "the part's static closure is in deps");
+      const ahead = /data-fo="([^"]*)"/.exec(built.html)![1]!.split(" "),
+        later = /data-fl="([^"]*)"/.exec(built.html)![1]!.split(" ");
+      assert.ok(ahead.includes(counter) && !ahead.includes(part));
+      assert.equal(later[0], part);
+      for (const url of later) assert.ok(!ahead.includes(url), url);
+      assert.ok(!later.some((url) => /later-/.test(url)), "a plain import() is no lazy part");
+      await serve(built, browser, async (page, requests) => {
+        await page.waitForLoadState("networkidle");
+        await page.waitForFunction((n) => document.querySelectorAll('link[rel="modulepreload"]').length === n, ahead.length + later.length);
+        await page.waitForLoadState("networkidle");
+        const paths = requests.map((r) => r.path);
+        assert.ok(paths.indexOf(part) > Math.max(...ahead.map((url) => paths.indexOf(url))), "after the fetch-ahead list");
+        assert.equal(await page.evaluate(() => (globalThis as { __panelRuns?: number }).__panelRuns), undefined, "fetched, not evaluated");
+        const fetched = requests.length;
+        await page.click("#inc");
+        await page.waitForFunction(() => document.querySelector("#panel")?.textContent === "panel");
+        assert.equal(requests.length, fetched, "opening the part fetches nothing");
+      });
+      // Without lazy parts (the plain app): no manifest field, no data-fl.
+      const plain = await buildApp("static", roots);
+      assert.equal(plain.manifest.lazy, undefined);
+      assert.doesNotMatch(plain.html, /data-fl=/);
     } finally {
       await browser.close();
       for (const root of roots) await rm(root, { recursive: true, force: true });

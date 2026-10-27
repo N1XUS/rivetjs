@@ -22,6 +22,8 @@
 // it would leave is "not hovered"; the page's CSS `:hover` drew the hover meanwhile).
 // Fetch-ahead timing (`data-fw`, ZERO ONDEMAND): absent = after `load`, in the first idle period; `load` = right after
 // `load`; `intent` = nothing before the first intent. None in the background under Save-Data or a 2G connection.
+// Lazy parts (`data-fl`, IDLE-PREFETCH): pages with one ship the loader with `derivedFetchLater` in place of the fetch-ahead's
+// link loop: once every fetch-ahead link loaded, the lazy parts follow in the next idle period, at low priority.
 import type { DerivedLoaderApi, DerivedRuntime, HeldEvent } from "./dom-derived.ts";
 import type { BoundaryTail } from "./resume-format.ts";
 
@@ -200,6 +202,29 @@ export function derivedLoader(): void {
     net?.saveData ||
     /2g/.test(net?.effectiveType!) ||
     addEventListener("load", () => (fw ? ahead() : (self.requestIdleCallback || setTimeout)(() => ahead())));
+}
+
+/**
+ * Lazy-part prefetch (IDLE-PREFETCH 2026-10-27): on a page whose tail lists lazy parts (`data-fl`: the chunks of the
+ * `lazyComponent(() => import(…))` parts its fetch-ahead list reaches, with their static closures), the server ships
+ * `DERIVED_LOADER_LATER` (`DERIVED_LOADER_VISIBLE_LATER`) = the loader with this function called in place of the fetch-ahead's
+ * link loop (`build-loader.ts` splices it in with the loader's minified names: every other page's loader is unchanged).
+ * It appends the fetch-ahead modulepreloads as the loader does (`priority`, default low); once each of them loaded or
+ * failed, the next idle period appends the lazy parts' modulepreloads at low priority, so they never compete with the
+ * code every first interaction needs, and a later open of a lazy part evaluates a module already fetched (no round trip).
+ * Never under Save-Data / 2G. Fetched + compiled, never evaluated: the part's `lazyComponent` imports it on use.
+ */
+export function derivedFetchLater(script: HTMLScriptElement, fo: string, priority?: string): void {
+  const d = document,
+    net = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection,
+    add = (href: string, fetchPriority: string): Promise<unknown> =>
+      new Promise((done) => d.head.append(Object.assign(d.createElement("link"), { rel: "modulepreload", href, fetchPriority, onload: done, onerror: done })));
+  Promise.all(fo.split(" ").map((href) => add(href, priority || "low"))).then(
+    () =>
+      net?.saveData ||
+      /2g/.test(net?.effectiveType!) ||
+      (self.requestIdleCallback || setTimeout)(() => script.dataset.fl!.split(" ").map((href) => add(href, "low"))),
+  );
 }
 
 /**

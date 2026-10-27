@@ -155,7 +155,7 @@ Create the resource in the component as the whole value of one `const`, and call
 
 ## Load a component on demand
 
-`lazyComponent` loads a component's code only when it is first rendered. Use it for big parts that many visitors never see:
+`lazyComponent` keeps a component's code out of the code a page needs before its first interaction; the component runs when it is first rendered. Use it for big parts that many visitors never see:
 
 ```tsx
 import { lazyComponent } from "@rivetjs/runtime/dom";
@@ -170,7 +170,8 @@ const Chart = lazyComponent(() => import("../components/Chart.tsx"), undefined, 
 
 - The first argument imports a module with a `default` export.
 - The second argument picks a named export instead: `(module) => module.Chart`. Pass `undefined` for the default export.
-- Options: `fallback`, `error`, and `warm`. On a resumed page Rivet loads declared lazy components when the browser is idle, so they are ready when needed. `warm: false` turns that off.
+- Options: `fallback` and `error`.
+- On a resumed page the browser fetches the lazy components in the page's code at idle, after the rest of its code (not under Save-Data); a first render after that does not wait for the network. Only an importer written inline counts (`lazyComponent(() => import("…"))`); see [Preloading](../performance/preloading.md).
 
 ::api{symbol="@rivetjs/runtime/dom#lazyComponent"}
 

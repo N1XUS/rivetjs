@@ -126,3 +126,26 @@ export function urlsOf(
   for (const url of islands) add(url);
   return [...urls];
 }
+
+/**
+ * The later fetch list (tail `data-fl`, IDLE-PREFETCH): the lazy parts (manifest `lazy`: chunk → the chunks of the
+ * `lazyComponent(() => import(…))` parts its modules import) that the fetch-ahead URLs reach, transitively, with their
+ * static closures (`deps`), minus the fetch-ahead URLs. The loader fetches them after the fetch-ahead list, at idle.
+ */
+export function laterUrls(ahead: readonly string[], lazy: Record<string, string[]>, deps: Record<string, string[]> | undefined): string[] {
+  const seen = new Set(ahead),
+    queue = [...ahead],
+    out: string[] = [];
+  const add = (url: string): void => {
+    if (seen.has(url)) return;
+    seen.add(url);
+    out.push(url);
+    queue.push(url);
+  };
+  for (let i = 0; i < queue.length; i++)
+    for (const part of lazy[queue[i]!] ?? []) {
+      add(part);
+      for (const dep of deps?.[part] ?? []) add(dep);
+    }
+  return out;
+}
