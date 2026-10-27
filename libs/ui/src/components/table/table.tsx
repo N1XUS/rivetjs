@@ -20,6 +20,7 @@
 //   one `Table.Cell` per column with `item[column.id]`) and `footer` as a `Table.Footer`. The form is decided once at render
 //   (`columns` / `items` stay live); the compound form is unchanged. No Virtualizer path (the cdk `TableLayout` is a cdk
 //   Virtualizer layout; wiring it into `Table.Content` stays the `table-virtualization` example's explicit form).
+// - Rivet (TABLE-NATIVE 2026-10-27): static tables render native `<table>` markup without the cdk grid (see "Native table").
 import type {
   CellProps,
   ColumnProps,
@@ -32,6 +33,7 @@ import type {
   TableProps,
 } from "@rivetjs/cdk/table";
 import {
+  TableContext as TablePrimitiveContext,
   Cell as CellPrimitive,
   Column as ColumnPrimitive,
   ColumnResizer as ColumnResizerPrimitive,
@@ -42,13 +44,15 @@ import {
   TableHeader as TableHeaderPrimitive,
   TableLoadMoreItem as TableLoadMoreItemPrimitive,
 } from "@rivetjs/cdk/table";
-import { Collection as CollectionPrimitive } from "@rivetjs/cdk/collections/components";
+import { Collection as CollectionPrimitive, CollectionRendererContext, DefaultCollectionRenderer } from "@rivetjs/cdk/collections/components";
+import { isHiddenPart } from "@rivetjs/cdk/collections/hidden";
+import { SelectableCollectionContext } from "@rivetjs/cdk/autocomplete-contexts";
 import type { Key } from "@rivetjs/cdk/collections/types";
 import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { isSlot } from "@rivetjs/runtime/slot";
+import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { ChevronUp } from "lucide";
 import { cx } from "../../../styles/src/utils/tv.ts";
 
@@ -58,6 +62,7 @@ import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { nativeAttrs, nativeProps } from "../../utils/native.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Table Context
@@ -66,6 +71,8 @@ interface TableContext {
   /** `true` inside a `Table` (the variant may be `undefined` = default). */
   inTable?: boolean;
   variant?: TableVariants["variant"];
+  /** A native (static, zero-JS) table: the parts render plain table elements (TABLE-NATIVE). */
+  native?: NativeTable;
 }
 
 const TableContext = createContext<TableContext>({});
@@ -80,6 +87,51 @@ const slotsOf = (context: TableContext): TableSlots | undefined => (context.inTa
 type ClassOf = () => string | ((values: never) => string);
 const liveClass = (local: object, classOf: ClassOf): unknown =>
   hasLiveProp(local, ["class"]) ? (values: unknown) => renderClass(classOf(), values) : classOf();
+
+/* -------------------------------------------------------------------------------------------------
+ * Native table (TABLE-NATIVE 2026-10-27, ZERO STATESPACE family)
+ * -----------------------------------------------------------------------------------------------*/
+/**
+ * A static data table needs nothing the browser does not give a native `<table>`: no selection, sort, row / cell action,
+ * link rows, column resize, drag, load-more, expandable rows or controlled state. The cdk grid adds cell / row keyboard
+ * navigation (one tab stop, arrow keys, typeahead) and `role="grid"`: an interactive widget pattern; WAI-ARIA keeps data
+ * tables as tables (static cells are read with the screen reader's table commands, not focused one by one). The build
+ * marks the call sites where every part passes declared data props only (`$native`, `../../utils/native.ts`,
+ * `libs/compiler/facts-native.ts`): the root re-checks its props and the providers above, then the parts render `table` /
+ * `thead` / `tbody` / `tr` / `th scope` / `td` with the same classes and `data-slot`s, no record and no JavaScript
+ * before or after input. Row headers (`isRowHeader` columns) are `th scope="row"` cells; the table keeps its accessible
+ * name (`aria-label` / `aria-labelledby` on `Table.Content`, or on the root in the auto form).
+ */
+// @rivet-native TableRoot(children,class,variant,columns,items,footer,id) TableScrollContainer(children,class,id) TableContent(children,class,id) TableHeader(children,class) TableColumn(children,class,id,isRowHeader,textValue) TableBody(children,class) TableRow(children,class,id,textValue) TableCell(children,class,id,textValue,colSpan) TableFooter(children,class,id)
+const NATIVE_ROOT = new Set(["children", "class", "variant", "columns", "items", "footer", "id"]);
+
+/** One native table's header bookkeeping: row-header column indexes, the next column index, the current row's next cell. */
+interface NativeTable {
+  headers: number[];
+  col: number;
+  cell: number;
+}
+
+/** A context value that hands the table props or behaviour (a provider above). */
+const given = (value: unknown): boolean => value != null && (typeof value !== "object" || Object.keys(value).length > 0);
+
+/**
+ * The call site is proven (`$native: 1`) and holds declared data props only (no getter: a live prop), nothing above gives
+ * the cdk Table props or a renderer (cdk `TableContext` slots, an Autocomplete's collection context, a Virtualizer, the
+ * collection build pass), and the auto form's columns sort nothing. Same answer on the server and in an adopt run.
+ */
+function nativeTable(props: object): NativeTable | null {
+  if (!nativeProps(props, NATIVE_ROOT)) return null;
+  const { columns, items } = props as { columns?: unknown; items?: unknown };
+  if (columns !== undefined && (!Array.isArray(columns) || columns.some((c: TableColumnDef) => c.allowsSorting))) return null;
+  if (items !== undefined && !Array.isArray(items)) return null;
+  if (isHiddenPart() || given(useContext(TablePrimitiveContext)) || given(useContext(SelectableCollectionContext))) return null;
+  if (useContext(CollectionRendererContext) !== DefaultCollectionRenderer) return null;
+  return { headers: [], col: 0, cell: 0 };
+}
+
+/** The auto form's accessible name / description: on the `<table>`, not the root `div` (as `CONTENT_KEYS`). */
+const NAME_KEYS = ["aria-label", "aria-labelledby", "aria-describedby"];
 
 /* -------------------------------------------------------------------------------------------------
  * Table Root
@@ -168,6 +220,58 @@ function TableRoot<T extends object = object>(props: TableAutoProps<T> & DivRest
 function TableRoot<E extends keyof JSX.IntrinsicElements = "div">(props: TableCompoundProps<E> & JSX.IntrinsicElements[E]): JSX.Element;
 function TableRoot(props: TableNamedProps & DivRest): JSX.Element;
 function TableRoot(props: TableRootDivProps): JSX.Element {
+  const native = nativeTable(props);
+  if (native) {
+    // The native root (in the root's body: the parts it renders are family code for the build's proof): the compound
+    // form's markup, or the auto form's header + body from `columns` / `items`.
+    const p = props as unknown as Record<string, unknown>;
+    const variant = p.variant as TableVariants["variant"];
+    const columns = p.columns as TableColumnDef[] | undefined;
+    const auto = columns !== undefined || p["aria-label"] !== undefined || p["aria-labelledby"] !== undefined;
+    const attrs = nativeAttrs(props);
+    const named: Record<string, unknown> = {};
+    if (auto) for (const key of NAME_KEYS) if (key in attrs) ((named[key] = attrs[key]), delete attrs[key]);
+    const body = (): Content =>
+      columns === undefined ? (
+        (p.children as Content)
+      ) : (
+        <>
+          <TableHeader>
+            {columns.map((column) => (
+              <TableColumn isRowHeader={column.isRowHeader}>{column.name}</TableColumn>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {((p.items as object[] | undefined) ?? []).map((item) => (
+              <TableRow>
+                {columns.map((column) => (
+                  <TableCell>{(item as Record<PropertyKey, unknown>)[column.id] as Content}</TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </>
+      );
+    const content = () => (
+      <div {...attrs} id={p.id as string | undefined} class={slotsFor(variant).base({ class: p.class as string | undefined })} data-slot="table">
+        {auto ? (
+          <>
+            <TableScrollContainer>
+              <TableContent {...(named as TableContentProps)}>{body()}</TableContent>
+            </TableScrollContainer>
+            {p.footer !== undefined && <TableFooter>{p.footer as Content}</TableFooter>}
+          </>
+        ) : (
+          (p.children as Content)
+        )}
+      </div>
+    );
+    return (
+      <Provider token={TableContext} value={{ inTable: true, variant, native }}>
+        {content()}
+      </Provider>
+    );
+  }
   const [local, others] = splitLive(props as TableRootDivProps & { columns?: Iterable<TableColumnDef>; items?: Iterable<object>; footer?: Content }, [
     "children",
     "class",
@@ -175,6 +279,7 @@ function TableRoot(props: TableRootDivProps): JSX.Element {
     "footer",
     "items",
     "variant",
+    "$native" as never, // the build's mark (a proven site the run-time check refused): never rendered
   ]);
   const auto = local.columns !== undefined || others["aria-label"] !== undefined || others["aria-labelledby"] !== undefined;
   const [contentProps, rest] = auto ? splitLive(others, CONTENT_KEYS as never) : [{}, others];
@@ -267,8 +372,22 @@ const TableScrollContainer = <E extends keyof JSX.IntrinsicElements = "div">(pro
 interface TableContentProps extends TableProps {}
 
 const TableContent = (props: TableContentProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class", "keyboardNavigationBehavior"]);
   const context = useContext(TableContext);
+  if (context.native) {
+    const p = props as Record<string, unknown>;
+    // No generated id (the grid's `useId`): nothing refers to it, and an ancestor's adopt run would rewrite a server id.
+    return (
+      <table
+        {...nativeAttrs(props)}
+        id={p.id as string | undefined}
+        class={cx(slotsOf(context)?.content(), p.class as string | undefined)}
+        data-slot="table-content"
+      >
+        {p.children as Content}
+      </table>
+    );
+  }
+  const [local, rest] = splitLive(props, ["class", "keyboardNavigationBehavior"]);
   const cls = liveClass(local, () => composeTwRenderProps(local.class as never, slotsOf(context)?.content()));
 
   return (
@@ -287,8 +406,18 @@ const TableContent = (props: TableContentProps): JSX.Element => {
 interface TableHeaderPartProps<T extends object = object> extends TableHeaderProps<T> {}
 
 const TableHeader = <T extends object = object>(props: TableHeaderPartProps<T>): JSX.Element => {
-  const [local, rest] = splitLive(props as TableHeaderPartProps, ["class"]);
   const context = useContext(TableContext);
+  if (context.native) {
+    const p = props as Record<string, unknown>;
+    // The columns register (row headers, indexes) before the body renders.
+    const columns = renderSlot(p.children as Content);
+    return (
+      <thead {...nativeAttrs(props)} class={cx(slotsOf(context)?.header(), p.class as string | undefined)} data-slot="table-header">
+        <tr>{columns}</tr>
+      </thead>
+    );
+  }
+  const [local, rest] = splitLive(props as TableHeaderPartProps, ["class"]);
   const cls = liveClass(local, () => composeTwRenderProps(local.class as never, slotsOf(context)?.header()));
 
   return <TableHeaderPrimitive class={cls as never} data-slot="table-header" {...(rest as TableHeaderProps<object>)} />;
@@ -300,8 +429,19 @@ const TableHeader = <T extends object = object>(props: TableHeaderPartProps<T>):
 interface TableColumnProps extends ColumnProps {}
 
 const TableColumn = (props: TableColumnProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class"]);
   const context = useContext(TableContext);
+  const native = context.native;
+  if (native) {
+    const p = props as Record<string, unknown>;
+    if (p.isRowHeader) native.headers.push(native.col);
+    native.col++;
+    return (
+      <th {...nativeAttrs(props)} scope="col" class={cx(slotsOf(context)?.column(), p.class as string | undefined)} data-slot="table-column">
+        {p.children as Content}
+      </th>
+    );
+  }
+  const [local, rest] = splitLive(props, ["class"]);
   const cls = liveClass(local, () => composeTwRenderProps(local.class as never, slotsOf(context)?.column()));
 
   return <ColumnPrimitive class={cls as never} data-slot="table-column" {...(rest as ColumnProps)} />;
@@ -313,8 +453,16 @@ const TableColumn = (props: TableColumnProps): JSX.Element => {
 interface TableBodyPartProps<T extends object = object> extends TableBodyProps<T> {}
 
 const TableBody = <T extends object = object>(props: TableBodyPartProps<T>): JSX.Element => {
-  const [local, rest] = splitLive(props as TableBodyPartProps, ["class"]);
   const context = useContext(TableContext);
+  if (context.native) {
+    const p = props as Record<string, unknown>;
+    return (
+      <tbody {...nativeAttrs(props)} class={cx(slotsOf(context)?.body(), p.class as string | undefined)} data-slot="table-body">
+        {p.children as Content}
+      </tbody>
+    );
+  }
+  const [local, rest] = splitLive(props as TableBodyPartProps, ["class"]);
   const cls = liveClass(local, () => composeTwRenderProps(local.class as never, slotsOf(context)?.body()));
 
   return <TableBodyPrimitive class={cls as never} data-slot="table-body" {...(rest as TableBodyProps<object>)} />;
@@ -326,8 +474,19 @@ const TableBody = <T extends object = object>(props: TableBodyPartProps<T>): JSX
 interface TableRowProps<T extends object = object> extends RowProps<T> {}
 
 const TableRow = <T extends object = object>(props: TableRowProps<T>): JSX.Element => {
-  const [local, rest] = splitLive(props as TableRowProps, ["class"]);
   const context = useContext(TableContext);
+  const native = context.native;
+  if (native) {
+    const p = props as Record<string, unknown>;
+    native.cell = 0;
+    const cells = renderSlot(p.children as Content); // this row's cells count from 0
+    return (
+      <tr {...nativeAttrs(props)} class={cx(slotsOf(context)?.row(), p.class as string | undefined)} data-slot="table-row">
+        {cells}
+      </tr>
+    );
+  }
+  const [local, rest] = splitLive(props as TableRowProps, ["class"]);
   const cls = liveClass(local, () => composeTwRenderProps(local.class as never, slotsOf(context)?.row()));
 
   return <RowPrimitive class={cls as never} data-slot="table-row" {...(rest as RowProps<object>)} />;
@@ -339,8 +498,25 @@ const TableRow = <T extends object = object>(props: TableRowProps<T>): JSX.Eleme
 interface TableCellProps extends CellProps {}
 
 const TableCell = (props: TableCellProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class"]);
   const context = useContext(TableContext);
+  const native = context.native;
+  if (native) {
+    const p = props as Record<string, unknown>;
+    const index = native.cell;
+    const span = p.colSpan as number | undefined;
+    native.cell += span && span > 1 ? span : 1;
+    const cls = cx(slotsOf(context)?.cell(), p.class as string | undefined);
+    return native.headers.includes(index) ? (
+      <th {...nativeAttrs(props)} scope="row" colSpan={span} class={cls} data-slot="table-cell">
+        {p.children as Content}
+      </th>
+    ) : (
+      <td {...nativeAttrs(props)} colSpan={span} class={cls} data-slot="table-cell">
+        {p.children as Content}
+      </td>
+    );
+  }
+  const [local, rest] = splitLive(props, ["class"]);
   const cls = liveClass(local, () => composeTwRenderProps(local.class as never, slotsOf(context)?.cell()));
 
   return <CellPrimitive class={cls as never} data-slot="table-cell" {...(rest as CellProps)} />;

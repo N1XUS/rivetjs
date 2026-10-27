@@ -136,6 +136,9 @@
   "/stepper dark": [
     "color-contrast"
   ],
+  "/table-static-parity dark": [
+    "color-contrast"
+  ],
   "/tabs dark": [
     "aria-valid-attr-value",
     "color-contrast"

@@ -480,3 +480,52 @@ test("table auto form: aria-label without columns wraps header/body children", (
   assert.ok(q('[data-slot="table"] > .table__scroll-container > table[role="grid"]'));
   assert.equal(q('[role="grid"]')!.getAttribute("aria-label"), "Plain");
 });
+
+// TABLE-NATIVE: a proven static call site (`$native: 1`, compiler-injected) renders native table markup in the browser
+// too (a client render or an ancestor's adopt run): row headers by column index, a live `class` from the caller's own
+// binding still updates (the caller owns its expressions), and the auto form.
+test("table native (DOM): semantic markup, row headers, caller bindings", () => {
+  const NATIVE = { $native: 1 } as {};
+  const label = signal("Kate");
+  mount(() => (
+    <>
+      <Table {...NATIVE}>
+        <Table.ScrollContainer>
+          <Table.Content aria-label="Team">
+            <Table.Header>
+              <Table.Column>Role</Table.Column>
+              <Table.Column isRowHeader>Name</Table.Column>
+            </Table.Header>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell>CEO</Table.Cell>
+                <Table.Cell>{label()}</Table.Cell>
+              </Table.Row>
+              <Table.Row>
+                <Table.Cell>CTO</Table.Cell>
+                <Table.Cell>John</Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table.Content>
+        </Table.ScrollContainer>
+      </Table>
+      <Table {...NATIVE} aria-label="Auto" columns={[{ id: "name", name: "Name", isRowHeader: true }]} items={rows} />
+    </>
+  ));
+  assert.equal(qa('[role="grid"], [tabindex]').length, 0);
+  const tables = qa("table");
+  assert.equal(tables.length, 2);
+  assert.equal(tables[0]!.getAttribute("aria-label"), "Team");
+  assert.deepEqual(
+    [...tables[0]!.querySelectorAll("tbody tr")].map((tr) => [...tr.children].map((c) => c.tagName + (c.getAttribute("scope") ?? "")).join()),
+    ["TD,THrow", "TD,THrow"],
+  );
+  assert.equal(tables[0]!.querySelector("tbody th")!.textContent, "Kate");
+  label.set("Kim");
+  assert.equal(tables[0]!.querySelector("tbody th")!.textContent, "Kim");
+  assert.deepEqual(
+    [...tables[1]!.querySelectorAll("tbody th[scope=row]")].map((th) => th.textContent),
+    rows.map((r) => r.name),
+  );
+  assert.equal(tables[1]!.getAttribute("aria-label"), "Auto");
+});

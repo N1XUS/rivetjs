@@ -44,6 +44,9 @@ export const pins: FuzzPin[] = [
     ),
     step: 29,
   },
+  // TABLE-NATIVE parity route: its grid-path twins (cdk Table, no handlers) show the shared cold-hover difference; the
+  // native tables have no hover state attribute (`:hover` only). Grid behaviour on a resumed page: `/table`.
+  pin("/table-static-parity", "mismatch", 'csr only [data-hovered="true"]', "runtime", COLD_HOVER + " (grid twins)", true),
   pin("/carousel", "load", 'data-ready="true"', "cdk", "carousel engine starts on the first interaction on a resumed page, at mount in a client render", true),
   pin("/carousel", "mismatch", "data-in-view", "cdk", "carousel engine state (in-view slides) follows its start", true),
   pin("/pro-forms", "load", 'data-roll="true"', "ui", "number roll entrance: " + MOUNT_EFFECT, true),

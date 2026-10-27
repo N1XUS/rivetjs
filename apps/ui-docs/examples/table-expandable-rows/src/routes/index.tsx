@@ -52,32 +52,6 @@ export function ExpandableRows() {
 
   const expandedKeys = signal(new Set<Key>(["1"]));
 
-  const renderExpandableRow = (item: Row) => {
-    return (
-      <Table.Row id={item.id} textValue={item.title}>
-        <Table.Cell textValue={item.title}>
-          {({ hasChildItems, isDisabled, isExpanded, isTreeColumn }) => (
-            <span class="flex items-center gap-1">
-              {hasChildItems() && isTreeColumn() ? (
-                <Button isIconOnly aria-label="Toggle row" isDisabled={isDisabled()} size="sm" slot="chevron" variant="ghost">
-                  <Icon
-                    aria-hidden
-                    icon={ChevronRight}
-                    class={cn("size-4 text-muted transition-transform duration-150", isExpanded() ? "rotate-90" : "rtl:rotate-180")}
-                  />
-                </Button>
-              ) : null}
-              <span>{item.title}</span>
-            </span>
-          )}
-        </Table.Cell>
-        <Table.Cell>{item.type}</Table.Cell>
-        <Table.Cell>{item.date}</Table.Cell>
-        <Table.Collection items={item.children}>{renderExpandableRow}</Table.Collection>
-      </Table.Row>
-    );
-  };
-
   return (
     <Table>
       <Table.ScrollContainer>
@@ -89,7 +63,35 @@ export function ExpandableRows() {
             <Table.Column id="type">Type</Table.Column>
             <Table.Column id="date">Date Modified</Table.Column>
           </Table.Header>
-          <Table.Body items={data}>{renderExpandableRow}</Table.Body>
+          {/* The row renderer is written inline (a named function for the recursion): a Table part built outside a
+              Table's JSX (a helper or wrapper component) turns the static-table (zero JS) path off app-wide. */}
+          <Table.Body items={data}>
+            {function renderExpandableRow(item: Row) {
+              return (
+                <Table.Row id={item.id} textValue={item.title}>
+                  <Table.Cell textValue={item.title}>
+                    {({ hasChildItems, isDisabled, isExpanded, isTreeColumn }) => (
+                      <span class="flex items-center gap-1">
+                        {hasChildItems() && isTreeColumn() ? (
+                          <Button isIconOnly aria-label="Toggle row" isDisabled={isDisabled()} size="sm" slot="chevron" variant="ghost">
+                            <Icon
+                              aria-hidden
+                              icon={ChevronRight}
+                              class={cn("size-4 text-muted transition-transform duration-150", isExpanded() ? "rotate-90" : "rtl:rotate-180")}
+                            />
+                          </Button>
+                        ) : null}
+                        <span>{item.title}</span>
+                      </span>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>{item.type}</Table.Cell>
+                  <Table.Cell>{item.date}</Table.Cell>
+                  <Table.Collection items={item.children}>{renderExpandableRow}</Table.Collection>
+                </Table.Row>
+              );
+            }}
+          </Table.Body>
         </Table.Content>
       </Table.ScrollContainer>
     </Table>

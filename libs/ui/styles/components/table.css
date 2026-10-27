@@ -71,10 +71,10 @@
   @apply shadow-none;
 
   /* Non-virtualized */
-  & tr:first-child td:first-child,
-  & tr:first-child td:last-child,
-  & tr:last-child td:first-child,
-  & tr:last-child td:last-child {
+  & tr:first-child :is(td, th):first-child,
+  & tr:first-child :is(td, th):last-child,
+  & tr:last-child :is(td, th):first-child,
+  & tr:last-child :is(td, th):last-child {
     @apply rounded-none;
   }
 
@@ -190,17 +190,18 @@
 .table__body {
   /* Non-virtualized: round corners via first/last cells
      (border-radius on <tbody> itself has no effect).
-     Logical properties so corners follow `dir` in RTL. */
-  & tr:first-child td:first-child {
+     Logical properties so corners follow `dir` in RTL.
+     Rivet: `th` too (a static table's row header cell is a `th scope="row"`, TABLE-NATIVE). */
+  & tr:first-child :is(td, th):first-child {
     border-start-start-radius: min(32px, var(--radius-2xl));
   }
-  & tr:first-child td:last-child {
+  & tr:first-child :is(td, th):last-child {
     border-start-end-radius: min(32px, var(--radius-2xl));
   }
-  & tr:last-child td:first-child {
+  & tr:last-child :is(td, th):first-child {
     border-end-start-radius: min(32px, var(--radius-2xl));
   }
-  & tr:last-child td:last-child {
+  & tr:last-child :is(td, th):last-child {
     border-end-end-radius: min(32px, var(--radius-2xl));
   }
 
@@ -285,6 +286,13 @@
     @apply rounded-lg outline-none;
     box-shadow: inset 0 0 0 2px var(--focus);
   }
+}
+
+/* Rivet (TABLE-NATIVE): a static table's row header cell is a `th scope="row"`: it looks like the grid's
+   `td role="rowheader"` (no UA bold / centring; zero specificity, so utilities on the cell still apply). */
+:where(th.table__cell) {
+  font-weight: inherit;
+  text-align: inherit;
 }
 
 /* --------------------------------------------------------------------------

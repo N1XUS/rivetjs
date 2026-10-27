@@ -49,6 +49,8 @@ export default () => (
 );
 ```
 
+Additional exported parts: `Table.Root`.
+
 ## Examples
 
 ### Data
@@ -138,6 +140,19 @@ The table is one tab stop (a grid, as in React Aria): Tab enters at the focused 
 - Enter runs the row action (`onRowAction`) when the table has one.
 - A row context menu (right click, Shift+F10, the context-menu key): see [ContextMenu: Table and List Rows](/components/context-menu/#table-and-list-rows).
 
+### Static tables (zero JavaScript)
+
+A table that only shows data renders as a plain HTML table and ships no JavaScript, before or after an interaction ([Usage](#usage), [Secondary Variant](#secondary-variant) and [Tailwind CSS](#tailwind-css) above are static). The build proves the call site: the root and every part inside it pass only these props, with plain values (literals, module constants, `.map` items):
+
+- `Table`: `class`, `variant`, `id`, `aria-*` / `data-*`; the data form's `columns` (none with `allowsSorting`), `items` (an array) and `footer`.
+- `Table.ScrollContainer`, `Table.Footer`: `class`, `id`. `Table.Content`: `class`, `id`, `aria-label` / `aria-labelledby` / `aria-describedby`. `Table.Header`, `Table.Body`: `class`.
+- `Table.Column`: `class`, `isRowHeader`, `id`, `textValue`. `Table.Row`: `class`, `id`, `textValue`. `Table.Cell`: `class`, `colSpan`, `id`, `textValue`.
+- Other components inside only when they read no context and have no state of their own (an `Icon`); cell text may come from the calling component's signals (that component keeps it live).
+
+Markup there: `table` / `thead` / `tbody` / `tr`, column headers `th scope="col"`, the cells of `isRowHeader` columns `th scope="row"`, the other cells `td`; same classes and `data-slot`s, hover from `:hover`. It is a data table, not a grid: no `role="grid"`, no tab stop, no arrow-key cell navigation; screen readers read it with their table commands (WAI-ARIA keeps static data tables as tables; the grid pattern is for interactive cells).
+
+The grid path (the cdk Table, keyboard above) is used as soon as a site has any of: `selectionMode` / `selectedKeys` / `onSelectionChange`, `sortDescriptor` / `onSortChange` / `allowsSorting`, `onRowAction` / `onCellAction` / row `href` / `onAction`, `disabledKeys` / `isDisabled`, `expandedKeys` / `treeColumn` / nested rows, `keyboardNavigationBehavior`, render props or `items` with a row function (`<Table.Body items={…}>{(item) => …}</Table.Body>`), a signal or computed as a prop value, a spread, `Table.Collection` / `Table.SortableColumnHeader` / `Table.ColumnResizer` / `Table.ResizableContainer` / `Table.LoadMore`, a Virtualizer, or another component that reads a context. Limits: the proof is per component (a grid table in the same component keeps its static siblings on the grid path), and a Table part called outside a `<Table>` JSX element anywhere in the app (a row helper function or a wrapper component) turns the static path off for every table in that build: write row renderers inline (see [Expandable Rows](#expandable-rows)). App CSS that targets the grid attributes (`[role=gridcell]`, `[data-key]`) does not match static tables. See the framework guide "Native automata".
+
 ## Customization
 
 ### Tailwind CSS
@@ -179,6 +194,8 @@ To customize the Table component classes, you can use the `@layer components` di
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `table-scroll-container`, `table-content`, `table-header`, `table-body`, `table-row`, `table-cell`, `table-footer`, `table-resizable-container`, `table-column-resizer`, `table-load-more`, `table-load-more-content`, `table-sortable-column-indicator`, `table-sortable-column-header`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -186,6 +203,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The Table component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/table.css)):
 
 #### Base Classes
+
 - `.table-root` - Root container (named `table-root` instead of `table` because `table` is a built-in Tailwind CSS utility class for `display: table`)
 - `.table__scroll-container` - Horizontal scroll wrapper with custom scrollbar
 - `.table__content` - The `<table>` element
@@ -197,12 +215,14 @@ The Table component uses these CSS classes ([View source styles](https://github.
 - `.table__footer` - Footer container (outside table)
 
 #### Advanced Classes
+
 - `.table__column-resizer` - Drag handle for column resizing
 - `.table__resizable-container` - Wrapper enabling column resizing
 - `.table__load-more` - Sentinel row for infinite scrolling
 - `.table__load-more-content` - Styled container for the loading indicator
 
 #### Variant Classes
+
 - `.table-root--primary` - Gray background container with card-style body (default)
 - `.table-root--secondary` - No background, standalone rounded headers
 
@@ -220,168 +240,174 @@ The Table supports both CSS pseudo-classes and data attributes for flexibility:
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/table/) for every named export and part prop type.
+
 ### Table
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant. Primary has a gray background container; secondary is flat with transparent rows. |
-| `class` | `string` | - | Additional CSS classes for the root container |
-| `children` | `Content \| (item: T) => Content` | - | Table content (ScrollContainer, Footer, etc.); data form: the header + body (no `columns`) or a row renderer |
-| `columns` | `Iterable<{ id; name; isRowHeader?; allowsSorting?; textValue? }>` | - | Data form: the columns (header + default cells) |
-| `items` | `Iterable<T>` | - | Data form: the rows |
-| `footer` | `Content` | - | Data form: `Table.Footer` content |
-| `aria-label`, `sortDescriptor`, `selectionMode`, … | cdk Table props | - | Data form: passed to `Table.Content` |
+| Prop                                               | Type                                                               | Default     | Description                                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------ |
+| `variant`                                          | `"primary" \| "secondary"`                                         | `"primary"` | Visual variant. Primary has a gray background container; secondary is flat with transparent rows.            |
+| `class`                                            | `string`                                                           | -           | Additional CSS classes for the root container                                                                |
+| `children`                                         | `Content \| (item: T) => Content`                                  | -           | Table content (ScrollContainer, Footer, etc.); data form: the header + body (no `columns`) or a row renderer |
+| `columns`                                          | `Iterable<{ id; name; isRowHeader?; allowsSorting?; textValue? }>` | -           | Data form: the columns (header + default cells)                                                              |
+| `items`                                            | `Iterable<T>`                                                      | -           | Data form: the rows                                                                                          |
+| `footer`                                           | `Content`                                                          | -           | Data form: `Table.Footer` content                                                                            |
+| `aria-label`, `sortDescriptor`, `selectionMode`, … | cdk Table props                                                    | -           | Data form: passed to `Table.Content`                                                                         |
 
 ### Table.ScrollContainer
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Table.Content element |
+| Prop       | Type      | Default | Description            |
+| ---------- | --------- | ------- | ---------------------- |
+| `class`    | `string`  | -       | Additional CSS classes |
+| `children` | `Content` | -       | Table.Content element  |
 
 ### Table.Content
 
 Inherits from [cdk Table](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `aria-label` | `string` | - | Accessible label for the table |
-| `selectionMode` | `"none" \| "single" \| "multiple"` | `"none"` | Selection behavior |
-| `selectedKeys` | `Selection \| Signal<Selection>` | - | Selected keys (a `Signal` is two-way) |
-| `onSelectionChange` | `(keys: Selection) => void` | - | Selection change handler |
-| `sortDescriptor` | `SortDescriptor \| Signal<SortDescriptor \| null>` | - | Current sort state (a `Signal` is two-way) |
-| `onSortChange` | `(descriptor: SortDescriptor) => void` | - | Sort change handler |
-| `class` | `string` | - | Additional CSS classes |
+| Prop                | Type                                               | Default  | Description                                |
+| ------------------- | -------------------------------------------------- | -------- | ------------------------------------------ |
+| `aria-label`        | `string`                                           | -        | Accessible label for the table             |
+| `selectionMode`     | `"none" \| "single" \| "multiple"`                 | `"none"` | Selection behavior                         |
+| `selectedKeys`      | `Selection \| Signal<Selection>`                   | -        | Selected keys (a `Signal` is two-way)      |
+| `onSelectionChange` | `(keys: Selection) => void`                        | -        | Selection change handler                   |
+| `sortDescriptor`    | `SortDescriptor \| Signal<SortDescriptor \| null>` | -        | Current sort state (a `Signal` is two-way) |
+| `onSortChange`      | `(descriptor: SortDescriptor) => void`             | -        | Sort change handler                        |
+| `class`             | `string`                                           | -        | Additional CSS classes                     |
 
 ### Table.Header
 
 Inherits from [cdk TableHeader](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `columns` | `T[]` | - | Dynamic column data for render prop pattern |
-| `children` | `Content \| (column: T) => Content` | - | Static columns or render prop |
+| Prop       | Type                                | Default | Description                                 |
+| ---------- | ----------------------------------- | ------- | ------------------------------------------- |
+| `columns`  | `T[]`                               | -       | Dynamic column data for render prop pattern |
+| `children` | `Content \| (column: T) => Content` | -       | Static columns or render prop               |
 
 ### Table.Column
 
 Inherits from [cdk Column](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `id` | `string` | - | Column identifier |
-| `allowsSorting` | `boolean` | `false` | Whether the column is sortable |
-| `isRowHeader` | `boolean` | `false` | Whether this column is a row header |
-| `defaultWidth` | `string \| number` | - | Default width for resizable columns |
-| `minWidth` | `number` | - | Minimum width for resizable columns |
-| `children` | `Content \| (values: ColumnRenderProps) => Content` | - | Column content or render prop with sort direction |
+| Prop            | Type                                                | Default | Description                                       |
+| --------------- | --------------------------------------------------- | ------- | ------------------------------------------------- |
+| `id`            | `string`                                            | -       | Column identifier                                 |
+| `allowsSorting` | `boolean`                                           | `false` | Whether the column is sortable                    |
+| `isRowHeader`   | `boolean`                                           | `false` | Whether this column is a row header               |
+| `defaultWidth`  | `string \| number`                                  | -       | Default width for resizable columns               |
+| `minWidth`      | `number`                                            | -       | Minimum width for resizable columns               |
+| `children`      | `Content \| (values: ColumnRenderProps) => Content` | -       | Column content or render prop with sort direction |
 
 ### Table.Body
 
 Inherits from [cdk TableBody](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `items` | `T[]` | - | Dynamic row data for render prop pattern |
-| `renderEmptyState` | `() => Content` | - | Content to display when the table is empty |
-| `children` | `Content \| (item: T) => Content` | - | Static rows or render prop |
+| Prop               | Type                              | Default | Description                                |
+| ------------------ | --------------------------------- | ------- | ------------------------------------------ |
+| `items`            | `T[]`                             | -       | Dynamic row data for render prop pattern   |
+| `renderEmptyState` | `() => Content`                   | -       | Content to display when the table is empty |
+| `children`         | `Content \| (item: T) => Content` | -       | Static rows or render prop                 |
 
 ### Table.Row
 
 Inherits from [cdk Row](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `id` | `string \| number` | - | Row identifier |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Row cells |
+| Prop       | Type               | Default | Description            |
+| ---------- | ------------------ | ------- | ---------------------- |
+| `id`       | `string \| number` | -       | Row identifier         |
+| `class`    | `string`           | -       | Additional CSS classes |
+| `children` | `Content`          | -       | Row cells              |
 
 ### Table.Cell
 
 Inherits from [cdk Cell](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Cell content |
+| Prop       | Type      | Default | Description            |
+| ---------- | --------- | ------- | ---------------------- |
+| `class`    | `string`  | -       | Additional CSS classes |
+| `children` | `Content` | -       | Cell content           |
 
 ### Table.SortableColumnHeader
 
 Renders a sortable column label with an ascending/descending indicator. Use it inside a `Table.Column` render-prop callback and forward the `sortDirection` value.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `sortDirection` | `"ascending" \| "descending" \| (() => SortDirection \| undefined)` | - | Current sort direction (value or accessor). Pass through from the `Table.Column` render prop. |
-| `showIndicator` | `boolean` | `true` | Whether to render the sort indicator icon when a direction is set. |
-| `indicator` | `Content` | - | Custom indicator element. Overrides the default chevron and receives a `data-direction` attribute. |
-| `class` | `string` | - | Additional CSS classes for the wrapper. |
-| `children` | `Content` | - | Column label content |
+| Prop            | Type                                                                | Default | Description                                                                                        |
+| --------------- | ------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| `sortDirection` | `"ascending" \| "descending" \| (() => SortDirection \| undefined)` | -       | Current sort direction (value or accessor). Pass through from the `Table.Column` render prop.      |
+| `showIndicator` | `boolean`                                                           | `true`  | Whether to render the sort indicator icon when a direction is set.                                 |
+| `indicator`     | `Content`                                                           | -       | Custom indicator element. Overrides the default chevron and receives a `data-direction` attribute. |
+| `class`         | `string`                                                            | -       | Additional CSS classes for the wrapper.                                                            |
+| `children`      | `Content`                                                           | -       | Column label content                                                                               |
 
 ### Table.Footer
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Footer content (e.g., pagination) |
+| Prop       | Type      | Default | Description                       |
+| ---------- | --------- | ------- | --------------------------------- |
+| `class`    | `string`  | -       | Additional CSS classes            |
+| `children` | `Content` | -       | Footer content (e.g., pagination) |
 
 ### Table.ColumnResizer
 
 Inherits from [cdk ColumnResizer](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
+| Prop    | Type     | Default | Description            |
+| ------- | -------- | ------- | ---------------------- |
+| `class` | `string` | -       | Additional CSS classes |
 
 ### Table.ResizableContainer
 
 Inherits from [cdk ResizableTableContainer](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Table.Content element |
+| Prop       | Type      | Default | Description            |
+| ---------- | --------- | ------- | ---------------------- |
+| `class`    | `string`  | -       | Additional CSS classes |
+| `children` | `Content` | -       | Table.Content element  |
 
 ### Table.LoadMore
 
 Inherits from [cdk TableLoadMoreItem](site:cdk/components/table/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isLoading` | `boolean \| (() => boolean)` | `false` | Whether data is currently loading (value or accessor / signal) |
-| `onLoadMore` | `() => void` | - | Handler called when the sentinel row is visible |
-| `children` | `Content` | - | Loading indicator content |
+| Prop         | Type                         | Default | Description                                                    |
+| ------------ | ---------------------------- | ------- | -------------------------------------------------------------- |
+| `isLoading`  | `boolean \| (() => boolean)` | `false` | Whether data is currently loading (value or accessor / signal) |
+| `onLoadMore` | `() => void`                 | -       | Handler called when the sentinel row is visible                |
+| `children`   | `Content`                    | -       | Loading indicator content                                      |
 
 ### Table.LoadMoreContent
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Loading indicator content (e.g., Spinner) |
+| Prop       | Type      | Default | Description                               |
+| ---------- | --------- | ------- | ----------------------------------------- |
+| `class`    | `string`  | -       | Additional CSS classes                    |
+| `children` | `Content` | -       | Loading indicator content (e.g., Spinner) |
 
 ### Table.Collection
 
 Re-exported from the cdk `Collection` (`@rivetjs/cdk/collections/components`; React Aria `Collection` port). Used to render dynamic cells within rows alongside static cells (e.g., checkboxes).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `items` | `T[]` | - | Collection items |
-| `children` | `(item: T) => Content` | - | Render prop for each item |
+| Prop       | Type                   | Default | Description               |
+| ---------- | ---------------------- | ------- | ------------------------- |
+| `items`    | `T[]`                  | -       | Collection items          |
+| `children` | `(item: T) => Content` | -       | Render prop for each item |
 
 ### TableLayout
 
 `TableLayout` and `CollectionVirtualizer` come from `@rivetjs/cdk/virtualizer`. The options go in the `CollectionVirtualizer`'s `layoutOptions`.
 
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `rowHeight` | `number \| undefined` | 48 | The fixed height of a row in px. |
-| `estimatedRowHeight` | `number \| undefined` | — | The estimated height of a row, when row heights are variable. |
-| `headingHeight` | `number \| undefined` | 48 | The fixed height of a section header in px. |
-| `estimatedHeadingHeight` | `number \| undefined` | — | The estimated height of a section header, when the height is variable. |
-| `loaderHeight` | `number \| undefined` | 48 | The fixed height of a loader element in px. This loader is specifically for "load more" elements rendered when loading more rows at the root level or inside nested row/sections. |
-| `dropIndicatorThickness` | `number \| undefined` | 2 | The thickness of the drop indicator. |
-| `gap` | `number \| undefined` | 0 | The gap between items. |
-| `padding` | `number \| undefined` | 0 | The padding around the list. |
+| Name                     | Type                  | Default | Description                                                                                                                                                                       |
+| ------------------------ | --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rowHeight`              | `number \| undefined` | 48      | The fixed height of a row in px.                                                                                                                                                  |
+| `estimatedRowHeight`     | `number \| undefined` | —       | The estimated height of a row, when row heights are variable.                                                                                                                     |
+| `headingHeight`          | `number \| undefined` | 48      | The fixed height of a section header in px.                                                                                                                                       |
+| `estimatedHeadingHeight` | `number \| undefined` | —       | The estimated height of a section header, when the height is variable.                                                                                                            |
+| `loaderHeight`           | `number \| undefined` | 48      | The fixed height of a loader element in px. This loader is specifically for "load more" elements rendered when loading more rows at the root level or inside nested row/sections. |
+| `dropIndicatorThickness` | `number \| undefined` | 2       | The thickness of the drop indicator.                                                                                                                                              |
+| `gap`                    | `number \| undefined` | 0       | The gap between items.                                                                                                                                                            |
+| `padding`                | `number \| undefined` | 0       | The padding around the list.                                                                                                                                                      |
 
 ::api{symbol="@rivetjs/ui/table#TableRoot"}
+
+## Accessibility
+
+The cdk Table implements grid keyboard navigation and selection. Give the table an accessible name, use column headers, and provide `textValue` for rows with rich content. Label selection and action controls; keep sort state and empty/loading feedback understandable without color.
 
 ## Related Components
 
