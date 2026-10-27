@@ -25,6 +25,7 @@ RAC `DateField` / `TimeField` / `DateInput` / `DateSegment` / `HiddenDateInput` 
 - `state.aria.ownLabelledBy` (`AriaDateFieldOptions["aria-labelledby"]`) = a string or an accessor (pickers pass `base.labelledBy`); `fieldLabelledBy` reads it per call.
 
 ## Gotchas
+- Id root (FACTS-GAP 2026-10-27): DateField / TimeField pass the state `id: props.id || resumedId()` (caller's id, else `createId()` in a keyed signal): a resumed page's adopt run reuses the server id; see `../date-picker/CLAUDE.md`.
 - Description id stays in server markup until the slot-id effect runs (RA useSlotId)
 - `isDateUnavailable`, `validate`, `onChange` must be inline / local
 - `segmentKeys` / `segmentOf` (behaviour.tsx) derive keys once per `segments(state)` array (WeakMap; `segmentKeys` returns a copy): every segment attribute binding asks `segmentOf`, which rebuilt the keys + called `segments` twice. `textValueOf` / `segmentStyle` read `resolvedOptionsOf(formatter)` (state/date-field.ts). DatePicker 300 mounts 93.1 → 75.1 ms with the i18n memos (HOTPATH 2026-10-09)
@@ -35,3 +36,5 @@ RAC `DateField` / `TimeField` / `DateInput` / `DateSegment` / `HiddenDateInput` 
 - `render` (RAC DOMRenderProps): `if (render) return render(attrs, renderProps)` before the compiled element (default path unchanged); reactive attrs are accessors, handlers inline arrows; parts: DateField, TimeField (the value-description span + HiddenDateInput stay siblings), DateSegment; DateInput renders `<Group>` (no `render` until Group has it); tests `tests/render-date-color.browser.test.tsx`
 - DateInput forwards `render` to its Group.
 - Live flags (LIVE-REST 2026-10-09): `isDisabled` / `isReadOnly` / `isRequired` / `isInvalid` value forms stay live (DateField / TimeField: `untrack` body + `liveOptions(FIELD_LIVE)`); the owner keeps creation `isX` + accessor `disabled` / `readOnly` / `required` (`state/date-field.ts` `ownerBase`), read via `ownerDisabled` / `ownerReadOnly` / `ownerRequired` at event time (keys, typing, `setValue`, `confirmPlaceholder`, time-wheels); attribute values from `behaviour.tsx` `ownerFlag` / `ownerFlagAttr` / `ownerFlagTrue` / `segmentTabIndex` (creation value when static, returned arrow when live); root `data-*` flags only in the spread bag `dom` (no plain JSX attribute); tests `tests/live-controlled.browser.test.tsx` "live flags: date parts", `tests/live-flags-ssr.test.ts`, story `/live-props` `#lf-date-*`
+
+- ID-RESUME (2026-10-27): DateField / TimeField roots (the existing FACTS-GAP helper now comes from utils/resumed-id.tsx via utils/id.ts) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.

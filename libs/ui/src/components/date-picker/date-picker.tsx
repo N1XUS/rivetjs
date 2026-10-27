@@ -8,7 +8,8 @@
 // - Focus restore (upstream: a window keydown listener while open + `triggerRef.current.focus()` in a frame after a keyboard close): the
 //   listener (module-level `onGlobalKeyDown` + `restore` flag) is added / removed in the wrapped `onOpenChange` (inline: browser
 //   globals only in handlers); the trigger is found by its cdk id (`<picker id>-button`), so the root
-//   passes an `id` (the caller's, else `createId()`). Module-level flag (one open picker at a time).
+//   passes an `id` (the caller's, else `createId()` in a keyed signal: a resumed page reuses the server's id, FACTS-GAP).
+//   Module-level flag (one open picker at a time).
 // - `data-required`: set by the cdk picker root itself (RAC sets it too). Children: passed through (the cdk root calls a render function).
 // - Date props (`value`, `defaultValue`, `minValue`, `maxValue`, `placeholderValue`) reach the cdk picker as strings
 //   (`../../utils/date-value.ts`); a controlled `value` is a Signal of the string form (cdk).
@@ -20,7 +21,7 @@ import type { ButtonProps as ButtonPrimitiveProps, ButtonRenderProps } from "@ri
 import type { DateValue } from "@rivetjs/cdk/date";
 import { DatePicker as DatePickerPrimitive } from "@rivetjs/cdk/date-picker";
 import type { DatePickerProps as DatePickerPrimitiveProps, DatePickerRenderProps } from "@rivetjs/cdk/date-picker";
-import { createId } from "@rivetjs/cdk/id";
+import { resumedId } from "@rivetjs/cdk/id";
 import { Popover as PopoverPrimitive } from "@rivetjs/cdk/popover";
 import type { PopoverProps as PopoverPrimitiveProps, PopoverRenderProps } from "@rivetjs/cdk/popover";
 import { Icon } from "@rivetjs/kit/icon";
@@ -79,7 +80,7 @@ interface DatePickerRootProps<T extends DateValue = DateValue> extends DatePicke
 
 function DatePickerRoot<T extends DateValue = DateValue>(props: DatePickerRootProps<T>): JSX.Element {
   const [local, rest] = splitLive(props as DatePickerRootProps, ["children", "class", "id", "onOpenChange", ...DATE_KEYS]);
-  const id = (local.id as string | undefined) ?? createId();
+  const id = (local.id as string | undefined) ?? resumedId();
   const triggerId = id + "-button";
   const onOpenChange = local.onOpenChange;
   const base = rootSlots().base();

@@ -112,6 +112,50 @@ fn conditional_event(tree: &Tree<'_>, site: &super::Site) -> Option<NodeId> {
     (!unconditional_handler(tree, e)).then_some(attr)
 }
 
+/// FACTS-GAP 2026-10-27: a value that is never a listener (`undefined`, `null`, `void …`): a key holding it installs nothing.
+fn never_listener<'a>(tree: &Tree<'a>, e: &Expression<'a>) -> bool {
+    match unwrap(e) {
+        Expression::NullLiteral(_) => true,
+        Expression::Identifier(ident) => ident.name == "undefined" && tree.symbol_of_ref(ident).is_none(),
+        Expression::UnaryExpression(u) => u.operator == UnaryOperator::Void,
+        _ => false,
+    }
+}
+
+/// FACTS-GAP 2026-10-27: a spread value the module builds itself that may hold a listener — an object literal with an
+/// `on[A-Z]` key (static name; methods, getters and shorthands count) whose value is not `undefined` / `null`, a `?:` /
+/// `&&` / `||` / `??` with such a leaf, an object literal spreading one, or a binding (`const` / `let` / `var` with a plain
+/// identifier) initialized to one. Conservative: a call (`mergeProps(…)`, a hook's bag), a member read, a parameter or a
+/// destructured binding (`rest` of `splitProps`, props forwarded from outside) is not seen through.
+fn built_listeners<'a>(tree: &Tree<'a>, e: &Expression<'a>, depth: u32) -> bool {
+    if depth > 8 {
+        return false;
+    }
+    match unwrap(e) {
+        Expression::ObjectExpression(o) => o.properties.iter().any(|p| match p {
+            ObjectPropertyKind::ObjectProperty(p) => {
+                let name = match &p.key {
+                    PropertyKey::StaticIdentifier(k) if !p.computed => k.name.as_str(),
+                    PropertyKey::StringLiteral(k) if !p.computed => k.value.as_str(),
+                    _ => return false,
+                };
+                let b = name.as_bytes();
+                b.len() > 2 && b[0] == b'o' && b[1] == b'n' && b[2].is_ascii_uppercase() && !never_listener(tree, &p.value)
+            }
+            ObjectPropertyKind::SpreadProperty(s) => built_listeners(tree, &s.argument, depth + 1),
+        }),
+        Expression::ConditionalExpression(c) => built_listeners(tree, &c.consequent, depth + 1) || built_listeners(tree, &c.alternate, depth + 1),
+        Expression::LogicalExpression(l) => built_listeners(tree, &l.left, depth + 1) || built_listeners(tree, &l.right, depth + 1),
+        Expression::Identifier(ident) => tree.resolve(ident, false).is_some_and(|decl| match tree.kind(decl) {
+            AstKind::VariableDeclarator(d) => {
+                matches!(d.id.kind, BindingPatternKind::BindingIdentifier(_)) && d.init.as_ref().is_some_and(|init| built_listeners(tree, init, depth + 1))
+            }
+            _ => false,
+        }),
+        _ => false,
+    }
+}
+
 /// An asset import (STATIC-ZERO T1): a query import (`./a.png?image`, `?url`, `?raw`, `?svg`) or a file of a data /
 /// media type. Its bindings are build-time values, never browser state.
 fn asset_import(source: &str) -> bool {
@@ -876,6 +920,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
             let (params, props) = params(tree, function);
             let mut context = false;
             let mut source = source;
+            let mut listens = listens;
             let mut provides = false;
             let mut renders: Vec<String> = Vec::new();
             let mut calls = Vec::new();
@@ -898,6 +943,21 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
                     AstKind::JSXElement(el) => {
                         if is_native(tree, el) {
                             elements += 1;
+                            // FACTS-GAP 2026-10-27: a native element of the component's own body (not of a module helper it
+                            // calls: cdk `renderLink` / `dropZone` keep their static-by-design bags) spreading a locally built
+                            // object that may hold a listener (`built_listeners`) listens, as a conditional JSX handler: a
+                            // `COND` boundary whose spread objects pass through `_rHandlers` (kept per instance that installs
+                            // a function). Was: no fact — HoloCard's `{ ...rest, ...(isStatic ? {} : { onPointerMove, … }) }`
+                            // root was no boundary, so a docs frame (nothing open around it) shipped no loader.
+                            if !listens
+                                && el
+                                    .opening_element
+                                    .attributes
+                                    .iter()
+                                    .any(|a| matches!(a, JSXAttributeItem::SpreadAttribute(s) if built_listeners(tree, &s.argument, 0)))
+                            {
+                                listens = true;
+                            }
                         }
                         if let Some(tag) = component_tag(tree, el) {
                             if tag == "Provider" || tag.ends_with(".Provider") {

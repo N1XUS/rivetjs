@@ -26,6 +26,7 @@ import { LabelContext } from "../label/index.tsx";
 import { TextContext } from "../text/index.tsx";
 import { probeSlots, slotProbing } from "#server";
 import { dataBool } from "../utils/data-attrs.tsx";
+import { resumedId } from "../utils/id.ts";
 import { nodeContains } from "../utils/dom-core.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import type { MaybeAccessor, ValidationResult } from "../state/form-validation.ts";
@@ -270,6 +271,7 @@ function dateField<T extends DateValue>(inProps: DateFieldProps<T>) {
   const props = hasLive(ctxProps) ? liveOptions(ctxProps, FIELD_LIVE as never) : ctxProps;
   const state = createDateFieldState({
     ...(liveDateProps(props) as DateFieldStateOptions<T>),
+    id: props.id || resumedId(),
     validationBehavior: formValidationBehavior(props.validationBehavior),
     validationErrors: formValidationErrors(),
   });
@@ -287,6 +289,7 @@ function timeField<T extends TimeValue>(inProps: TimeFieldProps<T>) {
   const props = hasLive(ctxProps) ? liveOptions(ctxProps, FIELD_LIVE as never) : ctxProps;
   const state = createTimeFieldState({
     ...(liveDateProps(props) as TimeFieldStateOptions<T>),
+    id: props.id || resumedId(),
     validationBehavior: formValidationBehavior(props.validationBehavior),
     validationErrors: formValidationErrors(),
   });

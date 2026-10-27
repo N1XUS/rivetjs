@@ -32,6 +32,7 @@ import { DateFieldContext, DateInput, DateSegment, HiddenDateInput, type DateSeg
 import { DialogContext } from "../dialog/contexts.ts";
 import { OverlayTriggerStateContext, PopoverContext } from "../overlay/contexts.ts";
 import { dataBool } from "../utils/data-attrs.tsx";
+import { resumedId } from "../utils/id.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import type { MaybeAccessor, ValidationResult } from "../state/form-validation.ts";
 import {
@@ -358,6 +359,7 @@ function datePicker<T extends DateValue>(inProps: DatePickerProps<T>) {
   const live = liveDateProps(props);
   const state: DatePickerState = createDatePickerState({
     ...(live as DatePickerStateOptions<T>),
+    id: props.id || resumedId(),
     validationBehavior,
     validationErrors: formValidationErrors(),
   });
@@ -389,6 +391,7 @@ function dateRangePicker<T extends DateValue>(inProps: DateRangePickerProps<T>) 
   const live = liveDateProps(props);
   const state: DateRangePickerState = createDateRangePickerState({
     ...(live as DateRangePickerStateOptions<T>),
+    id: props.id || resumedId(),
     validationBehavior,
     validationErrors: formValidationErrors(),
   });

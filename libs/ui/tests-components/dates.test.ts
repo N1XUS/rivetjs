@@ -131,3 +131,44 @@ test("dates: DateRangePicker range select", () =>
     await page.waitForFunction(() => document.querySelector("#drp-value")?.textContent === "2026-08-10/2026-08-12");
     assert.deepEqual(seen.errors, []);
   }));
+
+// FACTS-GAP 2026-10-27: a resumed field must keep the server's id root. The picker / field state used to create a new browser
+// id (`rvc…`) in the adopt run: the parts that run adopted (label, group, clicked segment) moved to it, the lazily adopted
+// segment rows kept the server's (`rv…`) and their `aria-labelledby` / `aria-describedby` pointed at ids gone from the page.
+// A static route (`/date-picker-scroll`: the picker inside a Card boundary, as the ui-docs home tile) and `/dates`.
+const IDREFS = ["aria-labelledby", "aria-describedby", "aria-controls", "for"];
+const dangling = (page: Page, root: string) =>
+  page.evaluate(
+    ({ root, names }) => {
+      const out: string[] = [];
+      for (const el of document.querySelectorAll(root + " *"))
+        for (const name of names)
+          for (const id of (el.getAttribute(name) ?? "").split(/\s+/).filter(Boolean)) if (!document.getElementById(id)) out.push(`#${el.id} ${name} -> ${id}`);
+      return out;
+    },
+    { root, names: IDREFS },
+  );
+for (const [route, root] of [
+  ["/date-picker-scroll", "#dps-portal"],
+  ["/date-picker-scroll", "#dps-body"],
+  ["/dates", "#dp"],
+  ["/dates", "#drp"],
+  ["/dates", "#df"],
+  ["/dates", "#tf"],
+])
+  test(`dates: a resumed field keeps its IDREFs (${route} ${root})`, () =>
+    onPage(async (page) => {
+      const seen = watch(page);
+      await page.goto(s.origin + route);
+      await page.waitForLoadState("networkidle");
+      assert.deepEqual(await dangling(page, root), [], "server markup");
+      const ids = () => page.$$eval(`${root} [role=spinbutton]`, (list) => list.map((el) => el.id));
+      const server = await ids();
+      // Cold click on the last segment: the field adopts, that segment's row with it, the others stay lazy.
+      await page.click(`${root} [role=spinbutton] >> nth=-1`);
+      await page.waitForFunction((root) => document.activeElement?.closest(root) != null, root);
+      await page.waitForTimeout(300);
+      assert.deepEqual(await dangling(page, root), [], "after the first click");
+      assert.deepEqual(await ids(), server, "segment ids are the server's");
+      assert.deepEqual(seen.errors, []);
+    }));
