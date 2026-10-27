@@ -14,8 +14,6 @@ Notes:
 - `Disclosure.Indicator` renders the lucide `ChevronDown` icon. Custom indicator children are not cloned: they render inside a `span` that carries the indicator class, `data-slot` and `data-expanded`.
 - The demos' brand icons come from lucide (`QrCode`, `Apple`, `ShoppingBag`).
 
-Accessibility: The trigger is a `button` with `aria-expanded` and `aria-controls`; the panel has `role="group"` and is labelled by the trigger. Enter and Space toggle the panel. A collapsed panel is `hidden="until-found"`, so the browser's find-in-page expands it on a match.
-
 ## Usage
 
 ```tsx
@@ -40,6 +38,8 @@ export default () => (
   </Disclosure>
 );
 ```
+
+Additional exported parts: `Disclosure.Root`, `Disclosure.Body`.
 
 ## Examples
 
@@ -80,6 +80,8 @@ To customize the Disclosure component classes, you can use the `@layer component
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `disclosure-heading`, `disclosure-trigger`, `disclosure-content`, `disclosure-body`, `disclosure-indicator`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -104,6 +106,8 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 - **Hidden**: `[aria-hidden="false"]` on content for visibility
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/disclosure/) for every named export and part prop type.
 
 ### Disclosure
 
@@ -141,6 +145,10 @@ When using the render prop pattern, these values are provided (accessors):
 | `isDisabled` | `() => boolean` | Whether disclosure is disabled |
 
 ::api{symbol="@rivetjs/ui/disclosure#DisclosureRootProps"}
+
+## Accessibility
+
+The trigger is a `button` with `aria-expanded` and `aria-controls`; the panel has `role="group"` and is labelled by the trigger. Enter and Space toggle the panel. A collapsed panel is `hidden="until-found"`, so the browser's find-in-page expands it on a match.
 
 ## Related Components
 

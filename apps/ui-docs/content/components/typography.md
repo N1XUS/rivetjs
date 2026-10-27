@@ -1,9 +1,9 @@
 ---
 title: Typography
-description: "A semantic typography primitive for headings, body copy, and inline code built on React Aria Components Text."
+description: "A semantic typography primitive for headings, body copy, and inline code built on the Rivet cdk Text component."
 template: reference
 status: experimental
-related: []
+related: [components/label, components/description, components/kbd]
 ---
 
 `Typography` renders text in the Rivet UI type scale. The element follows `type`: `h1`…`h6`, `p` for body sizes, `code`.
@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - Headings and code go through the cdk Text dynamic element: no resumable event handlers on them.
 - `Typography.Prose` takes `render`.
-
-Accessibility: Headings are real heading elements (cdk Text with `elementType`): choose `level` for the outline and `type` / `class` for the look.
 
 ## Usage
 
@@ -33,6 +31,8 @@ import { Typography } from "@rivetjs/ui/typography";
 
 export default () => <Typography type="h1">Heading</Typography>;
 ```
+
+Additional exported parts: `Typography.Root`.
 
 ## Examples
 
@@ -115,6 +115,8 @@ The Typography component uses these CSS classes ([View source styles](https://gi
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/typography/) for every named export and part prop type.
+
 ### Typography
 
 | Prop       | Type                                                                                         | Default     | Description                                   |
@@ -129,4 +131,12 @@ The Typography component uses these CSS classes ([View source styles](https://gi
 
 ::api{symbol="@rivetjs/ui/typography#TypographyRootProps"}
 
+## Accessibility
+
+Headings are real heading elements (cdk Text with `elementType`): choose `level` for the outline and `type` / `class` for the look.
+
 ## Related Components
+
+- [Label](/components/label/)
+- [Description](/components/description/)
+- [Kbd](/components/kbd/)

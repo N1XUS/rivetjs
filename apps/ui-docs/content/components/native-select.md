@@ -8,8 +8,6 @@ related: [components/select, components/text-field, components/form]
 
 `NativeSelect` wraps a real `<select>`: the browser draws the option list, so it gets mobile pickers, type-ahead, autofill and plain form submission for free. Use it for short, simple choices in forms; use [Select](/components/select/) when options need custom content, search or multiple selection. The field is the [cdk TextField](site:cdk/components/text-field/) with the cdk `NativeSelect` part, so Label, Description, FieldError and Form validation work as for a text field.
 
-Accessibility: the `<select>` keeps its native `combobox` role and keyboard handling. `Label` is linked with `for` / `id`; without a visible label pass `aria-label` on the root. Description and FieldError are referenced from `aria-describedby`; `isInvalid` or a failed validation sets `aria-invalid`. The indicator is decorative (`aria-hidden`, no pointer events).
-
 ## Usage
 
 ```tsx
@@ -44,6 +42,8 @@ export default function Field() {
 
 `NativeSelect.Trigger` is the positioned wrapper holding the `<select>` (its children are the options) and the indicator. An HTML `<select>` cannot contain anything but options, so the indicator is passed through the Trigger's `indicator` prop rather than as a child; the default is `<NativeSelect.Indicator />` (a chevron), `null` hides it.
 
+Additional exported parts: `NativeSelect.Root`.
+
 ## Examples
 
 ### Shorthand
@@ -66,11 +66,11 @@ The default `NativeSelect.Indicator` is a morph chevron: two CSS bars drawn like
 
 Style hooks, on the NativeSelect or any ancestor (Tailwind: `[--native-select-indicator-size:20px]`):
 
-| Variable | Default | |
-| --- | --- | --- |
-| `--native-select-indicator-size` | `1rem` | Box size; the chevron scales with it |
-| `--native-select-indicator-stroke` | size / 12 | Bar thickness |
-| `--native-select-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off |
+| Variable                             | Default                                  |                                      |
+| ------------------------------------ | ---------------------------------------- | ------------------------------------ |
+| `--native-select-indicator-size`     | `1rem`                                   | Box size; the chevron scales with it |
+| `--native-select-indicator-stroke`   | size / 12                                | Bar thickness                        |
+| `--native-select-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off             |
 
 Theme tokens for every morph chevron: `--duration-morph-chevron`, `--ease-morph-chevron-open`, `--ease-morph-chevron-close`. Children replace the morph (next section).
 
@@ -135,6 +135,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/native-select/) for every named export and part prop type.
+
 ### NativeSelect
 
 | Prop                 | Type                                            | Default     | Description                                      |
@@ -145,14 +147,12 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `defaultValue`       | `string`                                        | -           | Initially selected value (uncontrolled)          |
 | `onChange`           | `(value: string) => void`                       | -           | Called with the picked value                     |
 | `name`               | `string`                                        | -           | Form field name                                  |
-| `isRequired`         | `boolean`                                       | `false`     | Required (native validation)                     |
-| `isInvalid`          | `boolean`                                       | `false`     | Invalid state                                    |
+| `isRequired`         | `boolean \| (() => boolean)`                    | `false`     | Required (native validation)                     |
+| `isInvalid`          | `boolean \| (() => boolean)`                    | `false`     | Invalid state                                    |
 | `isDisabled`         | `boolean`                                       | `false`     | Disables the select                              |
 | `validate`           | `(value: string) => string \| string[] \| null` | -           | Custom validation                                |
 | `validationBehavior` | `"native"` \| `"aria"`                          | `"native"`  | Native constraint validation or ARIA-only        |
 | `class`              | `string` \| render-prop function                | -           | Additional CSS classes                           |
-
-::api{symbol="@rivetjs/ui/native-select#NativeSelectRootProps"}
 
 ### NativeSelect.Trigger
 
@@ -174,6 +174,12 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 ### NativeSelect.OptGroup
 
 `<optgroup>` props; `label` is required.
+
+::api{symbol="@rivetjs/ui/native-select#NativeSelectRootProps"}
+
+## Accessibility
+
+the `<select>` keeps its native `combobox` role and keyboard handling. `Label` is linked with `for` / `id`; without a visible label pass `aria-label` on the root. Description and FieldError are referenced from `aria-describedby`; `isInvalid` or a failed validation sets `aria-invalid`. The indicator is decorative (`aria-hidden`, no pointer events).
 
 ## Related Components
 

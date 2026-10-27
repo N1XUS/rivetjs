@@ -15,8 +15,6 @@ Notes:
 - `isInvalid` may be an accessor (`isInvalid={() => name().length < 3}`) and stays live.
 - Shorthand (Rivet addition): `label`, `description`, `errorMessage` and `placeholder` without children render the same Label / Input / Description / FieldError parts.
 
-Accessibility: The field links the label (`aria-labelledby`), the description and the error (`aria-describedby`) to the input; `isRequired` / `isInvalid` map to native `required` / `aria-invalid`.
-
 ## Usage
 
 ```tsx
@@ -46,6 +44,8 @@ export default () => (
 
 > **TextField** combines label, input, description, and error into a single accessible component.
 > For standalone inputs, use **[Input](/components/input/)** or **[TextArea](/components/text-area/)**.
+
+Additional exported parts: `TextField.Root`.
 
 ## Examples
 
@@ -159,24 +159,26 @@ Additional attributes are available through render props (see TextFieldRenderPro
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/textfield/) for every named export and part prop type.
+
 ### TextField
 
 TextField inherits all props from React Aria's [TextField](https://react-spectrum.adobe.com/react-aria/TextField.html) component.
 
 #### Base Props
 
-| Prop           | Type                                                                         | Default | Description                                                           |
-| -------------- | ---------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------- |
-| `children`     | `Content \| (values: TextFieldRenderProps) => Content`                       | -       | Child components (Label, Input, etc.) or render function.             |
-| `class`        | `string \| (values: TextFieldRenderProps) => string`                         | -       | CSS classes for styling, supports render props.                       |
-| `style`        | `StyleObject \| (values: TextFieldRenderProps) => StyleObject`               | -       | Inline styles, supports render props.                                 |
-| `fullWidth`    | `boolean`                                                                    | `false` | Whether the text field should take full width of its container        |
-| `label`        | `Content`                                                                    | -       | Shorthand (no children): the Label content.                           |
-| `description`  | `Content`                                                                    | -       | Shorthand (no children): a Description under the input.               |
-| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content`                      | -       | Shorthand (no children): the FieldError content, shown while invalid. |
-| `placeholder`  | `string`                                                                     | -       | Shorthand (no children): the Input's placeholder.                     |
-| `id`           | `string`                                                                     | -       | The element's unique identifier.                                      |
-| `render`       | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, TextFieldRenderProps>` | -       | Overrides the default DOM element with a custom render function.      |
+| Prop           | Type                                                                   | Default | Description                                                           |
+| -------------- | ---------------------------------------------------------------------- | ------- | --------------------------------------------------------------------- |
+| `children`     | `Content \| (values: TextFieldRenderProps) => Content`                 | -       | Child components (Label, Input, etc.) or render function.             |
+| `class`        | `string \| (values: TextFieldRenderProps) => string`                   | -       | CSS classes for styling, supports render props.                       |
+| `style`        | `StyleObject \| (values: TextFieldRenderProps) => StyleObject`         | -       | Inline styles, supports render props.                                 |
+| `fullWidth`    | `boolean`                                                              | `false` | Whether the text field should take full width of its container        |
+| `label`        | `Content`                                                              | -       | Shorthand (no children): the Label content.                           |
+| `description`  | `Content`                                                              | -       | Shorthand (no children): a Description under the input.               |
+| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content`                | -       | Shorthand (no children): the FieldError content, shown while invalid. |
+| `placeholder`  | `string`                                                               | -       | Shorthand (no children): the Input's placeholder.                     |
+| `id`           | `string`                                                               | -       | The element's unique identifier.                                      |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, TextFieldRenderProps>` | -       | Overrides the default DOM element with a custom render function.      |
 
 #### Validation Props
 
@@ -242,19 +244,20 @@ Each of these components has its own props API. Use them directly within TextFie
 
 ### Render Props
 
-When using render props with `class`, `style`, or `children`, these values are available:
+Render functions receive the following values. Call accessor members to read their current value:
 
-| Prop             | Type      | Description                                                                |
-| ---------------- | --------- | -------------------------------------------------------------------------- |
-| `isDisabled`     | `boolean` | Whether the field is disabled.                                             |
-| `isInvalid`      | `boolean` | Whether the field is currently invalid.                                    |
-| `isReadOnly`     | `boolean` | Whether the field is read-only.                                            |
-| `isRequired`     | `boolean` | Whether the field is required.                                             |
-| `isFocused`      | `boolean` | Whether the field is currently focused (DEPRECATED - use `isFocusWithin`). |
-| `isFocusWithin`  | `boolean` | Whether any child element is focused.                                      |
-| `isFocusVisible` | `boolean` | Whether focus is visible (keyboard navigation).                            |
+| Prop         | Type            | Description                          |
+| ------------ | --------------- | ------------------------------------ |
+| `isDisabled` | `() => boolean` | Whether the text field is disabled.  |
+| `isInvalid`  | `() => boolean` | Whether the value is invalid.        |
+| `isReadOnly` | `() => boolean` | Whether the text field is read only. |
+| `isRequired` | `() => boolean` | Whether the text field is required.  |
 
 ::api{symbol="@rivetjs/ui/textfield#TextFieldRootProps"}
+
+## Accessibility
+
+The field links the label (`aria-labelledby`), the description and the error (`aria-describedby`) to the input; `isRequired` / `isInvalid` map to native `required` / `aria-invalid`.
 
 ## Related Components
 

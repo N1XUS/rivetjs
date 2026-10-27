@@ -20,8 +20,6 @@ Rivet differences from shadcn/ui:
 - `data-active` is `"true"` or absent (shadcn writes `"false"` too).
 - Rivet extensions on the same API: tree items (`expandable` items, `Sidebar.MenuTrigger`, `Sidebar.MenuIndicator`, guide lines), `Sidebar.MenuChip`, `Sidebar.MenuActions`, `isCurrent` / `forceReload` links, `Sidebar.Pages`, a configurable `toggleShortcut`, `reduceMotion`, `closeMobileOnAction`, provider-level `side` / `variant` / `collapsible` defaults, a client router (`navigate`), the sheet `backdrop` and a resize handle (`resizable`).
 
-Accessibility: `Sidebar.Trigger` and `Sidebar.Rail` are labelled "Toggle Sidebar"; Cmd/Ctrl+B toggles (`toggleShortcut`). Tree items follow the WAI-ARIA disclosure navigation pattern: each `Sidebar.MenuTrigger` is a button with `aria-expanded` / `aria-controls`, Tab moves between items, Enter / Space toggles (no `role="tree"`: the menu stays a list of links). On mobile the sheet is a modal dialog titled "Sidebar" (visually hidden) with focus containment and Escape to close. Collapsed icon-mode menu buttons show their `tooltip`. The `resizable` handle is a focusable window splitter (`role="separator"`, `aria-orientation="vertical"`, `aria-valuenow` / `-min` / `-max` in px, labelled "Resize sidebar").
-
 ## Usage
 
 ```tsx
@@ -72,6 +70,8 @@ export default () => (
   </Sidebar.Provider>
 );
 ```
+
+Additional exported parts: `Sidebar.Root`, `Sidebar.Input`.
 
 ## Examples
 
@@ -382,6 +382,8 @@ Set the CSS variables on `Sidebar.Provider` `style`: `--sidebar-width` (16rem), 
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `sidebar-trigger-icon`.
+
 BEM classes (Rivet-authored, `libs/ui/styles/components/sidebar.css`).
 
 ### CSS Classes
@@ -424,6 +426,8 @@ BEM classes (Rivet-authored, `libs/ui/styles/components/sidebar.css`).
 - **Resizing**: `.sidebar[data-resizing="true"]` while a drag follows the pointer (gap / container transitions off); `.sidebar__resize-handle[data-dragging="true"]` during a drag
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/sidebar/) for every named export and part prop type.
 
 ### Sidebar.Provider
 
@@ -547,6 +551,10 @@ BEM classes (Rivet-authored, `libs/ui/styles/components/sidebar.css`).
 `Sidebar.Group` also takes `closeMobileOnAction`. Other parts (`Header`, `Footer`, `Content`, `Separator`, `Input`, `Group*`, `MenuBadge`, `MenuSub`, `Rail`, `Inset`, `Trigger`) take `class`, `style`, `render`, global DOM props and `children`.
 
 ::api{symbol="@rivetjs/ui/sidebar#SidebarMenuButtonProps"}
+
+## Accessibility
+
+`Sidebar.Trigger` and `Sidebar.Rail` are labelled "Toggle Sidebar"; Cmd/Ctrl+B toggles (`toggleShortcut`). Tree items follow the WAI-ARIA disclosure navigation pattern: each `Sidebar.MenuTrigger` is a button with `aria-expanded` / `aria-controls`, Tab moves between items, Enter / Space toggles (no `role="tree"`: the menu stays a list of links). On mobile the sheet is a modal dialog titled "Sidebar" (visually hidden) with focus containment and Escape to close. Collapsed icon-mode menu buttons show their `tooltip`. The `resizable` handle is a focusable window splitter (`role="separator"`, `aria-orientation="vertical"`, `aria-valuenow` / `-min` / `-max` in px, labelled "Resize sidebar").
 
 ## Related Components
 

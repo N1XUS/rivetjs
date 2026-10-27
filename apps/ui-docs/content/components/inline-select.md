@@ -8,8 +8,6 @@ related: [components/select, components/cell-select, components/breadcrumbs]
 
 `InlineSelect` is a select without the form field around it: a ghost trigger that keeps the font of the text around it, a truncated value and up / down chevrons. Use it for contextual choices such as a workspace switcher, a sort order inside a sentence or the project in a breadcrumb trail. It is built on the [cdk Select](site:cdk/components/select/) parts, so single and multiple selection, `value` / `defaultValue`, `onChange`, `disabledKeys`, `name`, keyboard and typeahead work as in [Select](/components/select/); the options are a [ListBox](/components/list-box/).
 
-Accessibility: the trigger is a button with `aria-haspopup="listbox"`, named by its value. Give the root an `aria-label` (there is no visible label), or put a [Label](/components/label/) inside the root. The root is a `span`, so an InlineSelect is valid inside a paragraph.
-
 ## Usage
 
 ```tsx
@@ -48,6 +46,8 @@ export default function SortOrder() {
   );
 }
 ```
+
+Additional exported parts: `InlineSelect.Root`.
 
 ## Examples
 
@@ -113,6 +113,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/inline-select/) for every named export and part prop type.
+
 ### InlineSelect
 
 | Prop            | Type                                       | Default    | Description                                                                                         |
@@ -128,8 +130,6 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `aria-label`    | `string`                                   | -          | Accessible name                                                                                     |
 | `items`         | `Iterable<T>`                              | -          | Shorthand: the list items (the root renders the parts); `children` is a render function of one item |
 | `class`         | `string` \| render-prop function           | -          | Additional CSS classes                                                                              |
-
-::api{symbol="@rivetjs/ui/inline-select#InlineSelectRootProps"}
 
 ### InlineSelect.Item
 
@@ -150,6 +150,12 @@ Takes the cdk `Popover` props.
 ### InlineSelect.Trigger / .Value
 
 Take the cdk `Button` / `SelectValue` props.
+
+::api{symbol="@rivetjs/ui/inline-select#InlineSelectRootProps"}
+
+## Accessibility
+
+the trigger is a button with `aria-haspopup="listbox"`, named by its value. Give the root an `aria-label` (there is no visible label), or put a [Label](/components/label/) inside the root. The root is a `span`, so an InlineSelect is valid inside a paragraph.
 
 ## Related Components
 

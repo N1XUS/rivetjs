@@ -16,8 +16,6 @@ Notes:
 - `UNSTABLE_portalContainer` is not supported: wrap the dialog in the cdk `PortalProvider` with a `container` (selector, element or accessor) instead.
 - `AlertDialog.Icon` default icons are lucide (`Info`, `CircleCheck`, `TriangleAlert`, `CircleAlert`).
 
-Accessibility: `AlertDialog.Dialog` has `role="alertdialog"` and is labelled by `AlertDialog.Heading`. Focus moves into the dialog on open, stays trapped inside, and returns to the trigger on close. Backdrop press and Escape do not dismiss it unless enabled (`isDismissable`, `isKeyboardDismissDisabled={false}`), and the page scroll is locked while it is open.
-
 ## Usage
 
 ```tsx
@@ -51,6 +49,8 @@ export default () => (
   </AlertDialog>
 );
 ```
+
+Additional exported parts: `AlertDialog.Root`.
 
 ## Examples
 
@@ -140,6 +140,8 @@ To customize the AlertDialog component classes, you can use the `@layer componen
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `alert-dialog-default-icon`, `alert-dialog-root`, `alert-dialog-trigger`, `alert-dialog-container`, `alert-dialog-dialog`, `alert-dialog-header`, `alert-dialog-heading`, `alert-dialog-body`, `alert-dialog-footer`, `alert-dialog-icon`, `alert-dialog-close-trigger`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -185,6 +187,8 @@ The component supports these interactive states:
 - **Placement**: `[data-placement="*"]` - Applied based on dialog position (auto, top, center, bottom)
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/alert-dialog/) for every named export and part prop type.
 
 ### AlertDialog
 
@@ -300,6 +304,8 @@ Implements [WAI-ARIA AlertDialog pattern](https://www.w3.org/WAI/ARIA/apg/patter
 - **Screen readers**: Proper ARIA attributes with `role="alertdialog"`
 - **Scroll lock**: Body scroll disabled when open
 - **Required action**: Defaults to requiring explicit user action (no backdrop/ESC dismiss)
+
+`AlertDialog.Dialog` has `role="alertdialog"` and is labelled by `AlertDialog.Heading`. Focus moves into the dialog on open, stays trapped inside, and returns to the trigger on close. Backdrop press and Escape do not dismiss it unless enabled (`isDismissable`, `isKeyboardDismissDisabled={false}`), and the page scroll is locked while it is open.
 
 ## Related Components
 

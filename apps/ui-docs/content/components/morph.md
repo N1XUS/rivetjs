@@ -8,8 +8,6 @@ related: [components/button, components/popover, components/drawer, components/l
 
 `Morph` turns a compact pill (a bag count, a notification badge, a delivery chip) into a small panel in place. The surface's box, radius and background animate continuously from one to the other, the pill's content fades out while the panel's content fades in with a short stagger, and the press that opened it can reverse it at any moment. The page around it never moves: the footprint is always the pill's size and the panel overflows it.
 
-Accessibility: `Morph.Trigger` is a native button with `aria-expanded` and `aria-controls`; the panel is a `dialog` named by `aria-label` on `Morph.ExpandedContent`. Opening moves focus to the first focusable element in the panel (or one marked `data-morph-autofocus`); `Morph.Close`, Escape and a press outside close it and return focus to the trigger; tabbing out of the panel closes it and leaves focus where it went. The hidden side is `inert`, so neither keyboard nor screen readers reach it.
-
 ## Usage
 
 ```tsx
@@ -41,23 +39,27 @@ export default function Anatomy() {
 
 A press anywhere on the collapsed content opens the morph; `Morph.Trigger` is its keyboard and focus target. Set the panel's width with a class on `Morph.ExpandedContent`; its height follows the content. Both sizes are measured when the morph starts, so content can change between opens.
 
-## Directions
+Additional exported parts: `Morph.Root`.
+
+## Examples
+
+### Directions
 
 ::example{id=morph-directions}
 
-## Variants
+### Variants
 
 ::example{id=morph-variants}
 
 `primary` (default) inverts the surface: inside it the theme tokens (`foreground`, `background`, `muted`, `default`, `separator`, `border`) are swapped, so Buttons, Separators and `text-muted` read correctly on the dark (light mode) or light (dark mode) panel.
 
-## Controlled
+### Controlled
 
 ::example{id=morph-controlled}
 
 `isOpen` takes a value, an accessor or a two-way Signal; `defaultOpen` renders the panel open from the server with no script. Inside a Morph, `useMorph()` returns `{ isOpen, open, close, toggle }`.
 
-## Animation
+### Animation
 
 ::example{id=morph-animation}
 
@@ -65,6 +67,27 @@ The motion is the house motion of `@rivetjs/cdk/motion` (the same integrator as 
 
 The same motion lifts a list item into a panel: `@rivetjs/ui/item-morph` (iOS-style long-press preview, [ListBox: Item Morph](/components/list-box/#item-morph)).
 
-## Behaviour without JavaScript
+### Behaviour without JavaScript
 
 Nothing runs at page load: the server renders the closed (or `defaultOpen`) state, and the press handler's code is fetched while the morph is visible, so the first press morphs at once.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `morph-collapsed`, `morph-surface`, `morph-expanded`, `morph-trigger`, `morph-close`.
+
+## API Reference
+
+See the [full module API](/api/rivetjs/ui/morph/) for every named export and part prop type.
+
+::api{symbol="@rivetjs/ui/morph#MorphRootProps"}
+
+## Accessibility
+
+`Morph.Trigger` is a native button with `aria-expanded` and `aria-controls`; the panel is a `dialog` named by `aria-label` on `Morph.ExpandedContent`. Opening moves focus to the first focusable element in the panel (or one marked `data-morph-autofocus`); `Morph.Close`, Escape and a press outside close it and return focus to the trigger; tabbing out of the panel closes it and leaves focus where it went. The hidden side is `inert`, so neither keyboard nor screen readers reach it.
+
+## Related Components
+
+- [Button](/components/button/)
+- [Popover](/components/popover/)
+- [Drawer](/components/drawer/)
+- [ListBox](/components/list-box/)

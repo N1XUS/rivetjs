@@ -15,8 +15,6 @@ Notes:
 - `Tooltip.Arrow`'s default tip is a CSS-shaped `span` filled with `var(--overlay)`. A custom arrow child is not cloned: give it `data-slot="overlay-arrow"`.
 - The tooltip renders in Rivet's div overlay layer; nothing is rendered on the server while it is closed.
 
-Accessibility: The tooltip has `role="tooltip"` and is linked to its trigger with `aria-describedby` while open. It opens on hover and keyboard focus, never takes focus, and closes on Escape, blur, press and pointer leave. `Tooltip.Trigger` is a focusable `div role="button"`; give it an `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -43,6 +41,8 @@ export default () => (
   </Tooltip>
 );
 ```
+
+Additional exported parts: `Tooltip.Root`.
 
 ## Examples
 
@@ -87,6 +87,8 @@ To customize the Tooltip component classes, you can use the `@layer components` 
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `tooltip-root`, `tooltip-arrow`, `tooltip-trigger`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -107,6 +109,8 @@ The component supports animation states:
 - **Placement**: `[data-placement="*"]` - Applied based on tooltip position
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/tooltip/) for every named export and part prop type.
 
 ### Tooltip
 
@@ -146,6 +150,10 @@ The component supports animation states:
 | `render`   | `DOMRenderFunction<"div", OverlayArrowRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ::api{symbol="@rivetjs/ui/tooltip#TooltipContentProps"}
+
+## Accessibility
+
+The tooltip has `role="tooltip"` and is linked to its trigger with `aria-describedby` while open. It opens on hover and keyboard focus, never takes focus, and closes on Escape, blur, press and pointer leave. `Tooltip.Trigger` is a focusable `div role="button"`; give it an `aria-label`.
 
 ## Related Components
 

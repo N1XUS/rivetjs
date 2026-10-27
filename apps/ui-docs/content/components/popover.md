@@ -16,8 +16,6 @@ Notes:
 - `Popover.Trigger` is a `div role="button"` made pressable by the cdk `Pressable` (render-function child internally).
 - `Popover.Content` renders the `Popover.Dialog` itself, and `title` renders a `Popover.Heading` first. Children may be a function of the dialog render props (`({ close }) => …`). Write `dialog={false}` to put your own `Popover.Dialog` in, for example to style or label it. See [Content](#content).
 
-Accessibility: The content is a `dialog` labelled by `Popover.Heading`; focus moves into it on open and returns to the trigger on close. Escape and an outside press dismiss it. The trigger gets `aria-expanded` / `aria-controls`.
-
 ## Usage
 
 ```tsx
@@ -41,6 +39,8 @@ export default () => (
   </Popover>
 );
 ```
+
+Additional exported parts: `Popover.Root`.
 
 ## Examples
 
@@ -115,6 +115,8 @@ To customize the Popover component classes, you can use the `@layer components` 
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `popover-root`, `popover-overlay-arrow-group`, `popover-dialog`, `popover-trigger`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -138,6 +140,8 @@ The component supports animation states:
 - **Focus**: `:focus-visible` or `[data-focus-visible="true"]`
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/popover/) for every named export and part prop type.
 
 ### Popover
 
@@ -186,6 +190,10 @@ Inside a `Popover.Content` that folds its dialog (no `dialog={false}`), `Popover
 | `render`   | `DOMRenderFunction<"div", OverlayArrowRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ::api{symbol="@rivetjs/ui/popover#PopoverContentProps"}
+
+## Accessibility
+
+The content is a `dialog` labelled by `Popover.Heading`; focus moves into it on open and returns to the trigger on close. Escape and an outside press dismiss it. The trigger gets `aria-expanded` / `aria-controls`.
 
 ## Related Components
 

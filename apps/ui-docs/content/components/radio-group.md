@@ -15,8 +15,6 @@ Notes:
 - `Radio.Indicator` takes `span` props only.
 - Shorthand (Rivet addition): `label` / `description` / `errorMessage` / `items` render the Label, Description, FieldError and one Radio per item.
 
-Accessibility: `role="radiogroup"` labelled by its `Label`; one tab stop, arrow keys move and select (React Aria). Each `Radio.Content` is the radio's `<label>`.
-
 ## Usage
 
 ```tsx
@@ -40,7 +38,9 @@ export default () => (
     <Label />
     <Description />
     <Radio value="option1">
-      <Radio.Content> {/* The clickable area: control + label */}
+      <Radio.Content>
+        {" "}
+        {/* The clickable area: control + label */}
         <Radio.Control>
           <Radio.Indicator>
             <span>✓</span> {/* Custom indicator (optional) */}
@@ -53,8 +53,10 @@ export default () => (
     </Radio>
     <FieldError /> {/* Optional — group-level validation */}
   </RadioGroup>
-)
+);
 ```
+
+Additional exported parts: `RadioGroup.Root`.
 
 ## Examples
 
@@ -181,81 +183,88 @@ The radio supports both CSS pseudo-classes and data attributes for flexibility:
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/radio-group/) for every named export and part prop type.
+
 ### RadioGroup
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string` | - | The current value (controlled) |
-| `defaultValue` | `string` | - | The default value (uncontrolled) |
-| `onChange` | `(value: string) => void` | - | Handler called when the value changes |
-| `isDisabled` | `boolean` | `false` | Whether the radio group is disabled |
-| `isRequired` | `boolean` | `false` | Whether the radio group is required |
-| `isReadOnly` | `boolean` | `false` | Whether the radio group is read only |
-| `isInvalid` | `boolean` | `false` | Whether the radio group is in an invalid state |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `name` | `string` | - | The name of the radio group, used when submitting an HTML form |
-| `orientation` | `'horizontal' \| 'vertical'` | `'vertical'` | The orientation of the radio group |
-| `children` | `Content \| (values: RadioGroupRenderProps) => Content` | - | Radio group content or render prop |
-| `label` | `Content` | - | Shorthand: the group Label (before the children). |
-| `description` | `Content` | - | Shorthand: the group Description (after the Label). |
-| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content` | - | Shorthand: a FieldError after the options, shown while invalid. |
-| `items` | `{ value: string; label: Content; description?: Content; isDisabled?: boolean }[]` | - | Shorthand: one Radio per item instead of children. Read once at mount. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, RadioGroupRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                               | Default      | Description                                                                                                                                                        |
+| -------------- | ---------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `value`        | `string`                                                                           | -            | The current value (controlled)                                                                                                                                     |
+| `defaultValue` | `string`                                                                           | -            | The default value (uncontrolled)                                                                                                                                   |
+| `onChange`     | `(value: string) => void`                                                          | -            | Handler called when the value changes                                                                                                                              |
+| `isDisabled`   | `boolean`                                                                          | `false`      | Whether the radio group is disabled                                                                                                                                |
+| `isRequired`   | `boolean`                                                                          | `false`      | Whether the radio group is required                                                                                                                                |
+| `isReadOnly`   | `boolean`                                                                          | `false`      | Whether the radio group is read only                                                                                                                               |
+| `isInvalid`    | `boolean \| (() => boolean)`                                                       | `false`      | Whether the radio group is in an invalid state                                                                                                                     |
+| `variant`      | `"primary" \| "secondary"`                                                         | `"primary"`  | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `name`         | `string`                                                                           | -            | The name of the radio group, used when submitting an HTML form                                                                                                     |
+| `orientation`  | `'horizontal' \| 'vertical'`                                                       | `'vertical'` | The orientation of the radio group                                                                                                                                 |
+| `children`     | `Content \| (values: RadioGroupRenderProps) => Content`                            | -            | Radio group content or render prop                                                                                                                                 |
+| `label`        | `Content`                                                                          | -            | Shorthand: the group Label (before the children).                                                                                                                  |
+| `description`  | `Content`                                                                          | -            | Shorthand: the group Description (after the Label).                                                                                                                |
+| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content`                            | -            | Shorthand: a FieldError after the options, shown while invalid.                                                                                                    |
+| `items`        | `{ value: string; label: Content; description?: Content; isDisabled?: boolean }[]` | -            | Shorthand: one Radio per item instead of children. Read once at mount.                                                                                             |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, RadioGroupRenderProps>`            | -            | Overrides the default DOM element with a custom render function.                                                                                                   |
 
 ### Radio
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string` | - | The value of the radio button |
-| `isDisabled` | `boolean` | `false` | Whether the radio button is disabled |
-| `name` | `string` | - | The name of the radio button, used when submitting an HTML form |
-| `children` | `Content \| (values: RadioFieldRenderProps) => Content` | - | Radio content or field render prop |
-| `label` | `Content` | - | Shorthand (no children): the label next to the control. |
-| `description` | `Content` | - | Shorthand (no children): a Description under the label. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, RadioFieldRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop          | Type                                                                    | Default | Description                                                      |
+| ------------- | ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| `value`       | `string`                                                                | -       | The value of the radio button                                    |
+| `isDisabled`  | `boolean`                                                               | `false` | Whether the radio button is disabled                             |
+| `name`        | `string`                                                                | -       | The name of the radio button, used when submitting an HTML form  |
+| `children`    | `Content \| (values: RadioFieldRenderProps) => Content`                 | -       | Radio content or field render prop                               |
+| `label`       | `Content`                                                               | -       | Shorthand (no children): the label next to the control.          |
+| `description` | `Content`                                                               | -       | Shorthand (no children): a Description under the label.          |
+| `render`      | `DOMRenderFunction<keyof JSX.IntrinsicElements, RadioFieldRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ### Radio.Control
 
-Extends `React.HTMLAttributes<HTMLSpanElement>`.
+Extends `JSX.IntrinsicElements["span"]`.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content` | - | The content to render inside the control wrapper (typically Radio.Indicator) |
+| Prop       | Type      | Default | Description                                                                  |
+| ---------- | --------- | ------- | ---------------------------------------------------------------------------- |
+| `children` | `Content` | -       | The content to render inside the control wrapper (typically Radio.Indicator) |
 
 ### Radio.Indicator
 
-Extends `React.HTMLAttributes<HTMLSpanElement>`.
+Extends `JSX.IntrinsicElements["span"]`.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| (values: RadioButtonRenderProps) => Content` | - | Optional content or render prop that receives the current radio button state. |
+| Prop       | Type                                                     | Default | Description                                                                   |
+| ---------- | -------------------------------------------------------- | ------- | ----------------------------------------------------------------------------- |
+| `children` | `Content \| (values: RadioButtonRenderProps) => Content` | -       | Optional content or render prop that receives the current radio button state. |
 
 ### Radio.Content
 
 The clickable area of the radio (the `<label>` wrapping the hidden input). Place `Radio.Control` and the `Label` inside it. `class` accepts a render function that receives `RadioButtonRenderProps`.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| (values: RadioButtonRenderProps) => Content` | - | The clickable content (typically Radio.Control and Label) |
+| Prop       | Type                                                     | Default | Description                                               |
+| ---------- | -------------------------------------------------------- | ------- | --------------------------------------------------------- |
+| `children` | `Content \| (values: RadioButtonRenderProps) => Content` | -       | The clickable content (typically Radio.Control and Label) |
 
 ### RadioFieldRenderProps
 
 When using a render prop on the root `Radio`, these field-level values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isSelected` | `boolean` | Whether the radio is currently selected |
-| `isDisabled` | `boolean` | Whether the radio is disabled |
-| `isReadOnly` | `boolean` | Whether the radio is read only |
-| `isInvalid` | `boolean` | Whether the radio is in an invalid state |
-| `isRequired` | `boolean` | Whether the radio is required |
+| Prop         | Type            | Description                              |
+| ------------ | --------------- | ---------------------------------------- |
+| `isSelected` | `() => boolean` | Whether the radio is currently selected  |
+| `isDisabled` | `() => boolean` | Whether the radio is disabled            |
+| `isReadOnly` | `() => boolean` | Whether the radio is read only           |
+| `isInvalid`  | `() => boolean` | Whether the radio is in an invalid state |
+| `isRequired` | `() => boolean` | Whether the radio is required            |
 
 ### RadioButtonRenderProps
 
 `Radio.Control` and `Radio.Indicator` use button-level render props (`isHovered`, `isPressed`, `isFocusVisible`, etc.). Pass a function as `Radio.Control` children or to `Radio.Indicator` to access them.
 
 ::api{symbol="@rivetjs/ui/radio-group#RadioGroupRootProps"}
+
 ::api{symbol="@rivetjs/ui/radio#RadioRootProps"}
+
+## Accessibility
+
+`role="radiogroup"` labelled by its `Label`; one tab stop, arrow keys move and select (React Aria). Each `Radio.Content` is the radio's `<label>`.
 
 ## Related Components
 

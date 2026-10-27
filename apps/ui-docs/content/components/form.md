@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - `onSubmit` receives the native `SubmitEvent`.
 
-Accessibility: A native `<form>`; with `validationBehavior="native"` (default) invalid fields block the submit and the first one is focused.
-
 ## Usage
 
 ```tsx
@@ -32,11 +30,13 @@ import { Form } from "@rivetjs/ui/form";
 export default () => (
   <Form>
     {/* Form fields go here */}
-    <Button type="submit"/>
-    <Button type="reset"/>
+    <Button type="submit" />
+    <Button type="reset" />
   </Form>
-)
+);
 ```
+
+Additional exported parts: `Form.Root`.
 
 ## Examples
 
@@ -111,29 +111,31 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology for components that 
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/form/) for every named export and part prop type.
+
 ### Form
 
 The Form component is a wrapper around React Aria's Form primitive that provides form validation and submission handling capabilities.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `action` | `string \| FormHTMLAttributes['action']` | - | The URL to submit the form data to. |
-| `class` | `string` | - | Tailwind CSS classes applied to the form element. |
-| `children` | `Content` | - | Form content (fields, buttons, etc.). |
-| `encType` | `'application/x-www-form-urlencoded' \| 'multipart/form-data' \| 'text/plain'` | - | The encoding type for form data submission. |
-| `method` | `'get' \| 'post'` | - | The HTTP method to use when submitting the form. |
-| `onInvalid` | `(event: FormEvent<HTMLFormElement>) => void` | - | Handler called when the form validation fails. By default, the first invalid field will be focused. Use `preventDefault()` to customize focus behavior. |
-| `onReset` | `(event: FormEvent<HTMLFormElement>) => void` | - | Handler called when the form is reset. |
-| `onSubmit` | `(event: SubmitEvent, result?: Promise<boolean>) => void` | - | Handler called when the form is submitted. With `form`: after the forms submit, with its result. |
-| `form` | `Form` (`@rivetjs/forms`) | - | Rivet: a forms store (`createForm`); fields join it by `name`. Needs `definition`. |
-| `definition` | `FormDefinition` | - | Rivet: the `defineForm` definition (module scope) the store was created from. |
-| `format` | `(issue: Issue) => string` | issue message, else key | Rivet: issue → message, with `form`. |
-| `target` | `'_self' \| '_blank' \| '_parent' \| '_top'` | - | Where to display the response after submitting the form. |
-| `validationBehavior` | `'native' \| 'aria'` | `'native'` | Whether to use native HTML validation or ARIA validation. 'native' blocks form submission, 'aria' displays errors in realtime. |
-| `validationErrors` | `ValidationErrors` | - | Server-side validation errors mapped by field name. Displayed immediately and cleared when user modifies the field. |
-| `aria-label` | `string` | - | Accessibility label for the form. |
-| `aria-labelledby` | `string` | - | ID of element that labels the form. Creates a form landmark when provided. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, undefined>` | - | Overrides the default DOM element with a custom render function.|
+| Prop                 | Type                                                                           | Default                 | Description                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `action`             | `string \| FormHTMLAttributes['action']`                                       | -                       | The URL to submit the form data to.                                                                                                                     |
+| `class`              | `string`                                                                       | -                       | Tailwind CSS classes applied to the form element.                                                                                                       |
+| `children`           | `Content`                                                                      | -                       | Form content (fields, buttons, etc.).                                                                                                                   |
+| `encType`            | `'application/x-www-form-urlencoded' \| 'multipart/form-data' \| 'text/plain'` | -                       | The encoding type for form data submission.                                                                                                             |
+| `method`             | `'get' \| 'post'`                                                              | -                       | The HTTP method to use when submitting the form.                                                                                                        |
+| `onInvalid`          | `(event: FormEvent<HTMLFormElement>) => void`                                  | -                       | Handler called when the form validation fails. By default, the first invalid field will be focused. Use `preventDefault()` to customize focus behavior. |
+| `onReset`            | `(event: FormEvent<HTMLFormElement>) => void`                                  | -                       | Handler called when the form is reset.                                                                                                                  |
+| `onSubmit`           | `(event: SubmitEvent, result?: Promise<boolean>) => void`                      | -                       | Handler called when the form is submitted. With `form`: after the forms submit, with its result.                                                        |
+| `form`               | `Form` (`@rivetjs/forms`)                                                      | -                       | Rivet: a forms store (`createForm`); fields join it by `name`. Needs `definition`.                                                                      |
+| `definition`         | `FormDefinition`                                                               | -                       | Rivet: the `defineForm` definition (module scope) the store was created from.                                                                           |
+| `format`             | `(issue: Issue) => string`                                                     | issue message, else key | Rivet: issue → message, with `form`.                                                                                                                    |
+| `target`             | `'_self' \| '_blank' \| '_parent' \| '_top'`                                   | -                       | Where to display the response after submitting the form.                                                                                                |
+| `validationBehavior` | `'native' \| 'aria'`                                                           | `'native'`              | Whether to use native HTML validation or ARIA validation. 'native' blocks form submission, 'aria' displays errors in realtime.                          |
+| `validationErrors`   | `ValidationErrors`                                                             | -                       | Server-side validation errors mapped by field name. Displayed immediately and cleared when user modifies the field.                                     |
+| `aria-label`         | `string`                                                                       | -                       | Accessibility label for the form.                                                                                                                       |
+| `aria-labelledby`    | `string`                                                                       | -                       | ID of element that labels the form. Creates a form landmark when provided.                                                                              |
+| `render`             | `DOMRenderFunction<keyof JSX.IntrinsicElements, undefined>`                    | -                       | Overrides the default DOM element with a custom render function.                                                                                        |
 
 ### Form Validation
 
@@ -161,7 +163,9 @@ Messages for the native constraints (`isRequired`, `minLength`, `type="email"`, 
   <Label>Email</Label>
   <Input />
   <FieldError>
-    {({ validationDetails }) => (validationDetails().valueMissing ? "Enter your email." : validationDetails().typeMismatch ? "This is not an email address." : "")}
+    {({ validationDetails }) =>
+      validationDetails().valueMissing ? "Enter your email." : validationDetails().typeMismatch ? "This is not an email address." : ""
+    }
   </FieldError>
 </TextField>
 ```
@@ -181,7 +185,7 @@ function handleSubmit(e: FormEvent<HTMLFormElement>) {
   e.preventDefault();
   const formData = new FormData(e.currentTarget);
   const data = Object.fromEntries(formData);
-  console.log('Form data:', data);
+  console.log("Form data:", data);
 }
 ```
 
@@ -200,6 +204,7 @@ All field components automatically integrate with the Form's validation and subm
 ### Advanced Usage
 
 For more advanced use cases including:
+
 - Custom validation context
 - Form context providers
 - Integration with third-party libraries
@@ -217,6 +222,8 @@ Forms are accessible by default when using React Aria components. Key features i
 - Form landmark creation with `aria-label` or `aria-labelledby`
 - Automatic focus management on validation errors
 - ARIA validation attributes when using `validationBehavior="aria"`
+
+A native `<form>`; with `validationBehavior="native"` (default) invalid fields block the submit and the first one is focused.
 
 ## Related Components
 

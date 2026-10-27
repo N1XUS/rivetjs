@@ -14,8 +14,6 @@ Notes:
 - `isSelected` takes a two-way signal (`isSelected={on}`) or a value; render props are accessors (`({ isSelected }) => isSelected()`).
 - Shorthand (Rivet addition): `label` / `description` without children render the Content / Control / Thumb / Description parts.
 
-Accessibility: A native checkbox input with `role="switch"` inside the `Switch.Content` `<label>` (Tab focuses, Space toggles). Without visible text, give the Switch an `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -37,7 +35,7 @@ export default () => (
   <Switch>
     <Switch.Control>
       <Switch.Thumb>
-        <Switch.Icon/> {/* Optional */}
+        <Switch.Icon /> {/* Optional */}
       </Switch.Thumb>
     </Switch.Control>
     <Switch.Content>
@@ -72,6 +70,8 @@ export default () => (
   </SwitchGroup>
 );
 ```
+
+Additional exported parts: `Switch.Root`.
 
 ## Examples
 
@@ -170,6 +170,8 @@ To customize the Switch component classes, you can use the `@layer components` d
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `switch-content`, `switch-thumb`, `switch-icon`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -212,57 +214,62 @@ Where the build proves a switch call site closed (declared data props only, no h
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/switch/) for every named export and part prop type.
+
 ### Switch
 
 Inherits from [React Aria Switch](https://react-spectrum.adobe.com/react-aria/Switch.html).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | The size of the switch |
-| `isSelected` | `boolean` | `false` | Whether the switch is on |
-| `defaultSelected` | `boolean` | `false` | Whether the switch is on by default (uncontrolled) |
-| `isDisabled` | `boolean` | `false` | Whether the switch is disabled |
-| `isInvalid` | `boolean` | `false` | Whether the switch is invalid |
-| `isReadOnly` | `boolean` | `false` | Whether the switch is read only |
-| `isRequired` | `boolean` | `false` | Whether the switch must be selected |
-| `validate` | `(value: boolean) => ValidationError \| true \| null \| undefined` | - | Custom validation function |
-| `validationBehavior` | `'native' \| 'aria'` | `'native'` | Whether to use native HTML form validation or ARIA |
-| `name` | `string` | - | The name of the input element, used when submitting an HTML form |
-| `value` | `string` | - | The value of the input element, used when submitting an HTML form |
-| `onChange` | `(isSelected: boolean) => void` | - | Handler called when the switch value changes |
-| `onPress` | `(e: PressEvent) => void` | - | Handler called when the switch is pressed |
-| `children` | `Content \| (values: SwitchRenderProps) => Content` | - | Switch content or render prop |
-| `label` | `Content` | - | Shorthand (no children): the label next to the control. |
-| `description` | `Content` | - | Shorthand (no children): a Description under the label. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, SwitchRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop                 | Type                                                                     | Default    | Description                                                       |
+| -------------------- | ------------------------------------------------------------------------ | ---------- | ----------------------------------------------------------------- |
+| `size`               | `'sm' \| 'md' \| 'lg'`                                                   | `'md'`     | The size of the switch                                            |
+| `isSelected`         | `boolean \| Signal<boolean> \| (() => boolean)`                          | `false`    | Whether the switch is on                                          |
+| `defaultSelected`    | `boolean`                                                                | `false`    | Whether the switch is on by default (uncontrolled)                |
+| `isDisabled`         | `boolean`                                                                | `false`    | Whether the switch is disabled                                    |
+| `isInvalid`          | `boolean \| (() => boolean)`                                             | `false`    | Whether the switch is invalid                                     |
+| `isReadOnly`         | `boolean \| (() => boolean)`                                             | `false`    | Whether the switch is read only                                   |
+| `isRequired`         | `boolean \| (() => boolean)`                                             | `false`    | Whether the switch must be selected                               |
+| `validate`           | `(value: boolean) => ValidationError \| true \| null \| undefined`       | -          | Custom validation function                                        |
+| `validationBehavior` | `'native' \| 'aria'`                                                     | `'native'` | Whether to use native HTML form validation or ARIA                |
+| `name`               | `string`                                                                 | -          | The name of the input element, used when submitting an HTML form  |
+| `value`              | `string`                                                                 | -          | The value of the input element, used when submitting an HTML form |
+| `onChange`           | `(isSelected: boolean) => void`                                          | -          | Handler called when the switch value changes                      |
+| `onPress`            | `(e: PressEvent) => void`                                                | -          | Handler called when the switch is pressed                         |
+| `children`           | `Content \| (values: SwitchFieldRenderProps) => Content`                 | -          | Switch content or render prop                                     |
+| `label`              | `Content`                                                                | -          | Shorthand (no children): the label next to the control.           |
+| `description`        | `Content`                                                                | -          | Shorthand (no children): a Description under the label.           |
+| `render`             | `DOMRenderFunction<keyof JSX.IntrinsicElements, SwitchFieldRenderProps>` | -          | Overrides the default DOM element with a custom render function.  |
 
 ### Render Props
 
-When using the render prop pattern, these values are provided:
+The root’s `class` and function children receive `SwitchFieldRenderProps`:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isSelected` | `boolean` | Whether the switch is currently on |
-| `isHovered` | `boolean` | Whether the switch is hovered |
-| `isPressed` | `boolean` | Whether the switch is currently pressed |
-| `isFocused` | `boolean` | Whether the switch is focused |
-| `isFocusVisible` | `boolean` | Whether the switch is keyboard focused |
-| `isDisabled` | `boolean` | Whether the switch is disabled |
-| `isReadOnly` | `boolean` | Whether the switch is read only |
-| `isInvalid` | `boolean` | Whether the switch is invalid |
-| `isRequired` | `boolean` | Whether the switch is required |
-| `state` | `-` | State of the switch. |
+| Prop         | Type            |
+| ------------ | --------------- |
+| `isDisabled` | `() => boolean` |
+| `isInvalid`  | `() => boolean` |
+| `isReadOnly` | `() => boolean` |
+| `isRequired` | `() => boolean` |
+| `isSelected` | `() => boolean` |
+| `state`      | `ToggleState`   |
+
+`Switch.Content` receives `SwitchButtonRenderProps`, which also exposes the `isHovered`, `isPressed`, `isFocused` and `isFocusVisible` accessors. Call each accessor to read its current value.
 
 ### SwitchGroup
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop          | Type                         | Default      | Description                         |
+| ------------- | ---------------------------- | ------------ | ----------------------------------- |
 | `orientation` | `'horizontal' \| 'vertical'` | `'vertical'` | The orientation of the switch group |
-| `children` | `Content` | - | The switch items to render |
-| `class` | `string` | - | Additional CSS class names |
+| `children`    | `Content`                    | -            | The switch items to render          |
+| `class`       | `string`                     | -            | Additional CSS class names          |
 
 ::api{symbol="@rivetjs/ui/switch#SwitchRootProps"}
+
 ::api{symbol="@rivetjs/ui/switch-group#SwitchGroupRootProps"}
+
+## Accessibility
+
+A native checkbox input with `role="switch"` inside the `Switch.Content` `<label>` (Tab focuses, Space toggles). Without visible text, give the Switch an `aria-label`.
 
 ## Related Components
 

@@ -8,8 +8,6 @@ related: [components/slider, components/number-stepper]
 
 `CellSlider` fits sliders into settings lists and inspector panels. The cell itself is the track: press or drag anywhere on it, and the fill follows. The label and the formatted value sit on top of the fill. It is the [cdk Slider](site:cdk/components/slider/) (horizontal, one thumb), so bounds, `step`, `formatOptions`, `onChangeEnd`, `name` and the keyboard work as in Slider. Stepped sliders drag freely and snap to the nearest step with an animation on release (no animation with `prefers-reduced-motion`).
 
-Accessibility: the thumb holds a visually hidden `input type="range"` labelled by `CellSlider.Label`; arrow keys, Page Up / Down and Home / End change the value, and the cell shows a focus ring while the thumb has keyboard focus. Without a label, give the root an `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -38,6 +36,8 @@ export default function Volume() {
 ```
 
 `CellSlider.Track` stretches over the whole cell behind the label and the output, which ignore the pointer, so a press anywhere on the cell moves the value.
+
+Additional exported parts: `CellSlider.Root`.
 
 ## Examples
 
@@ -104,6 +104,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/cell-slider/) for every named export and part prop type.
+
 ### CellSlider
 
 | Prop            | Type                             | Default     | Description                                                                  |
@@ -118,11 +120,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `step`          | `number`                         | `1`         | Step; dragging snaps to it on release                                        |
 | `formatOptions` | `Intl.NumberFormatOptions`       | -           | Value formatting                                                             |
 | `isDisabled`    | `boolean`                        | `false`     | Disables the slider                                                          |
-| `name`          | `string`                         | -           | Form field name                                                              |
 | `label`         | `Content`                        | -           | Shorthand (no children): the Label; Track, Fill, Thumb and Output render too |
 | `class`         | `string` \| render-prop function | -           | Additional CSS classes                                                       |
-
-::api{symbol="@rivetjs/ui/cell-slider#CellSliderRootProps"}
 
 ### CellSlider.Output
 
@@ -131,6 +130,12 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 ### CellSlider.Track / .Fill / .Thumb / .Label
 
 Take the cdk `SliderTrack` / `SliderFill` / `SliderThumb` / `Label` props.
+
+::api{symbol="@rivetjs/ui/cell-slider#CellSliderRootProps"}
+
+## Accessibility
+
+the thumb holds a visually hidden `input type="range"` labelled by `CellSlider.Label`; arrow keys, Page Up / Down and Home / End change the value, and the cell shows a focus ring while the thumb has keyboard focus. Without a label, give the root an `aria-label`.
 
 ## Related Components
 

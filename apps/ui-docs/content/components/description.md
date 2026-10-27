@@ -21,6 +21,12 @@ import { Description } from "@rivetjs/ui/description";
 
 ::example{id=description-basic}
 
+## Anatomy
+
+`Description` exposes `Description.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
+
 ## Examples
 
 ### With Form Fields
@@ -81,6 +87,8 @@ The Description component uses these CSS classes ([View source styles](https://g
 - `.description` - Base description styles with `muted` text color
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/description/) for every named export and part prop type.
 
 ### Description
 

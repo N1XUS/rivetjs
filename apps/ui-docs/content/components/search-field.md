@@ -15,8 +15,6 @@ Notes:
 - `SearchField.SearchIcon` default = lucide `Search`; custom children are wrapped in a `span` with the icon slot class (no element clone).
 - Shorthand (Rivet addition): `label` / `description` / `errorMessage` / `placeholder` without children render the Label, Group, Description and FieldError parts.
 
-Accessibility: Input `type=search` labelled by the `Label`; the clear button is excluded from the tab order (Escape clears from the keyboard).
-
 ## Usage
 
 ```tsx
@@ -44,10 +42,12 @@ export default () => (
     <Description />
     <FieldError />
   </SearchField>
-)
+);
 ```
 
 > **SearchField** allows users to enter and clear a search query. It includes a search icon and an optional clear button for easy reset.
+
+Additional exported parts: `SearchField.Root`.
 
 ## Examples
 
@@ -172,6 +172,8 @@ SearchField uses CSS classes that can be customized. Override the component clas
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `search-field-search-icon`, `search-field-group`, `search-field-input`, `search-field-clear-button`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -206,73 +208,75 @@ Additional attributes are available through render props (see SearchFieldRenderP
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/search-field/) for every named export and part prop type.
+
 ### SearchField
 
 SearchField inherits all props from React Aria's [SearchField](https://react-spectrum.adobe.com/react-aria/SearchField.html) component.
 
 #### Base Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| (values: SearchFieldRenderProps) => Content` | - | Child components (Label, Group, Input, etc.) or render function. |
-| `label` | `Content` | - | Shorthand (no children): the Label content. |
-| `description` | `Content` | - | Shorthand (no children): a Description under the group. |
-| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content` | - | Shorthand (no children): the FieldError content, shown while invalid. |
-| `placeholder` | `string` | - | Shorthand (no children): the input's placeholder. |
-| `class` | `string \| (values: SearchFieldRenderProps) => string` | - | CSS classes for styling, supports render props. |
-| `style` | `StyleObject \| (values: SearchFieldRenderProps) => StyleObject` | - | Inline styles, supports render props. |
-| `fullWidth` | `boolean` | `false` | Whether the search field should take full width of its container |
-| `id` | `string` | - | The element's unique identifier. |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, SearchFieldRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                     | Default     | Description                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `children`     | `Content \| (values: SearchFieldRenderProps) => Content`                 | -           | Child components (Label, Group, Input, etc.) or render function.                                                                                                   |
+| `label`        | `Content`                                                                | -           | Shorthand (no children): the Label content.                                                                                                                        |
+| `description`  | `Content`                                                                | -           | Shorthand (no children): a Description under the group.                                                                                                            |
+| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content`                  | -           | Shorthand (no children): the FieldError content, shown while invalid.                                                                                              |
+| `placeholder`  | `string`                                                                 | -           | Shorthand (no children): the input's placeholder.                                                                                                                  |
+| `class`        | `string \| (values: SearchFieldRenderProps) => string`                   | -           | CSS classes for styling, supports render props.                                                                                                                    |
+| `style`        | `StyleObject \| (values: SearchFieldRenderProps) => StyleObject`         | -           | Inline styles, supports render props.                                                                                                                              |
+| `fullWidth`    | `boolean`                                                                | `false`     | Whether the search field should take full width of its container                                                                                                   |
+| `id`           | `string`                                                                 | -           | The element's unique identifier.                                                                                                                                   |
+| `variant`      | `"primary" \| "secondary"`                                               | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, SearchFieldRenderProps>` | -           | Overrides the default DOM element with a custom render function.                                                                                                   |
 
 #### Value Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string` | - | Current value (controlled). |
-| `defaultValue` | `string` | - | Default value (uncontrolled). |
-| `onChange` | `(value: string) => void` | - | Handler called when the value changes. |
+| Prop           | Type                      | Default | Description                            |
+| -------------- | ------------------------- | ------- | -------------------------------------- |
+| `value`        | `string`                  | -       | Current value (controlled).            |
+| `defaultValue` | `string`                  | -       | Default value (uncontrolled).          |
+| `onChange`     | `(value: string) => void` | -       | Handler called when the value changes. |
 
 #### Validation Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isRequired` | `boolean` | `false` | Whether user input is required before form submission. |
-| `isInvalid` | `boolean` | - | Whether the value is invalid. |
-| `validate` | `(value: string) => ValidationError \| true \| null \| undefined` | - | Custom validation function. |
-| `validationBehavior` | `'native' \| 'aria'` | `'native'` | Whether to use native HTML form validation or ARIA attributes. |
-| `validationErrors` | `string[]` | - | Server-side validation errors. |
+| Prop                 | Type                                                              | Default    | Description                                                    |
+| -------------------- | ----------------------------------------------------------------- | ---------- | -------------------------------------------------------------- |
+| `isRequired`         | `boolean`                                                         | `false`    | Whether user input is required before form submission.         |
+| `isInvalid`          | `boolean`                                                         | -          | Whether the value is invalid.                                  |
+| `validate`           | `(value: string) => ValidationError \| true \| null \| undefined` | -          | Custom validation function.                                    |
+| `validationBehavior` | `'native' \| 'aria'`                                              | `'native'` | Whether to use native HTML form validation or ARIA attributes. |
+| `validationErrors`   | `string[]`                                                        | -          | Server-side validation errors.                                 |
 
 #### State Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isDisabled` | `boolean` | - | Whether the input is disabled. |
-| `isReadOnly` | `boolean` | - | Whether the input can be selected but not changed. |
+| Prop         | Type      | Default | Description                                        |
+| ------------ | --------- | ------- | -------------------------------------------------- |
+| `isDisabled` | `boolean` | -       | Whether the input is disabled.                     |
+| `isReadOnly` | `boolean` | -       | Whether the input can be selected but not changed. |
 
 #### Form Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `name` | `string` | - | Name of the input element, for HTML form submission. |
-| `autoFocus` | `boolean` | - | Whether the element should receive focus on render. |
+| Prop        | Type      | Default | Description                                          |
+| ----------- | --------- | ------- | ---------------------------------------------------- |
+| `name`      | `string`  | -       | Name of the input element, for HTML form submission. |
+| `autoFocus` | `boolean` | -       | Whether the element should receive focus on render.  |
 
 #### Event Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `onSubmit` | `(value: string) => void` | - | Handler called when the user submits the search (Enter key). |
-| `onClear` | `() => void` | - | Handler called when the clear button is pressed. |
+| Prop       | Type                      | Default | Description                                                  |
+| ---------- | ------------------------- | ------- | ------------------------------------------------------------ |
+| `onSubmit` | `(value: string) => void` | -       | Handler called when the user submits the search (Enter key). |
+| `onClear`  | `() => void`              | -       | Handler called when the clear button is pressed.             |
 
 #### Accessibility Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `aria-label` | `string` | - | Accessibility label when no visible label is present. |
-| `aria-labelledby` | `string` | - | ID of elements that label this field. |
-| `aria-describedby` | `string` | - | ID of elements that describe this field. |
-| `aria-details` | `string` | - | ID of elements with additional details. |
+| Prop               | Type     | Default | Description                                           |
+| ------------------ | -------- | ------- | ----------------------------------------------------- |
+| `aria-label`       | `string` | -       | Accessibility label when no visible label is present. |
+| `aria-labelledby`  | `string` | -       | ID of elements that label this field.                 |
+| `aria-describedby` | `string` | -       | ID of elements that describe this field.              |
+| `aria-details`     | `string` | -       | ID of elements with additional details.               |
 
 ### Composition Components
 
@@ -305,58 +309,59 @@ Each of these components has its own props API. Use them directly within SearchF
 
 SearchField.Group inherits props from React Aria's [Group](https://react-spectrum.adobe.com/react-aria/Group.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| (values: GroupRenderProps) => Content` | - | Child components (SearchIcon, Input, ClearButton) or render function. |
-| `class` | `string \| (values: GroupRenderProps) => string` | - | CSS classes for styling. |
+| Prop       | Type                                               | Default | Description                                                           |
+| ---------- | -------------------------------------------------- | ------- | --------------------------------------------------------------------- |
+| `children` | `Content \| (values: GroupRenderProps) => Content` | -       | Child components (SearchIcon, Input, ClearButton) or render function. |
+| `class`    | `string \| (values: GroupRenderProps) => string`   | -       | CSS classes for styling.                                              |
 
 #### SearchField.Input Props
 
 SearchField.Input inherits props from React Aria's [Input](https://react-spectrum.adobe.com/react-aria/Input.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | CSS classes for styling. |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the input. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `placeholder` | `string` | - | Placeholder text displayed when the input is empty. |
-| `type` | `string` | `"search"` | Input type (automatically set to "search"). |
+| Prop          | Type                       | Default     | Description                                                                                                                                                    |
+| ------------- | -------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `class`       | `string`                   | -           | CSS classes for styling.                                                                                                                                       |
+| `variant`     | `"primary" \| "secondary"` | `"primary"` | Visual variant of the input. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `placeholder` | `string`                   | -           | Placeholder text displayed when the input is empty.                                                                                                            |
+| `type`        | `string`                   | `"search"`  | Input type (automatically set to "search").                                                                                                                    |
 
 #### SearchField.SearchIcon Props
 
 SearchField.SearchIcon is a custom component that renders the search icon.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop       | Type      | Default          | Description                                   |
+| ---------- | --------- | ---------------- | --------------------------------------------- |
 | `children` | `Content` | `<IconSearch />` | Custom icon element. Defaults to search icon. |
-| `class` | `string` | - | CSS classes for styling. |
+| `class`    | `string`  | -                | CSS classes for styling.                      |
 
 #### SearchField.ClearButton Props
 
 SearchField.ClearButton inherits props from React Aria's [Button](https://react-spectrum.adobe.com/react-aria/Button.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop       | Type      | Default                | Description                                             |
+| ---------- | --------- | ---------------------- | ------------------------------------------------------- |
 | `children` | `Content` | `<CloseButton icon />` | Icon or content for the button. Defaults to close icon. |
-| `class` | `string` | - | CSS classes for styling. |
-| `slot` | `"clear"` | `"clear"` | Must be set to "clear" (automatically set). |
+| `class`    | `string`  | -                      | CSS classes for styling.                                |
+| `slot`     | `"clear"` | `"clear"`              | Must be set to "clear" (automatically set).             |
 
 ### Render Props
 
-When using render props with `class`, `style`, or `children`, these values are available:
+Render functions receive the following values. Call accessor members to read their current value:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isDisabled` | `boolean` | Whether the field is disabled. |
-| `isInvalid` | `boolean` | Whether the field is currently invalid. |
-| `isReadOnly` | `boolean` | Whether the field is read-only. |
-| `isRequired` | `boolean` | Whether the field is required. |
-| `isFocused` | `boolean` | Whether the field is currently focused (DEPRECATED - use `isFocusWithin`). |
-| `isFocusWithin` | `boolean` | Whether any child element is focused. |
-| `isFocusVisible` | `boolean` | Whether focus is visible (keyboard navigation). |
-| `value` | `string` | Current value. |
-| `isEmpty` | `boolean` | Whether the field is empty. |
+| Prop         | Type               | Description                            |
+| ------------ | ------------------ | -------------------------------------- |
+| `isDisabled` | `() => boolean`    | Whether the search field is disabled.  |
+| `isEmpty`    | `() => boolean`    | Whether the search field is empty.     |
+| `isInvalid`  | `() => boolean`    | Whether the search field is invalid.   |
+| `isReadOnly` | `() => boolean`    | Whether the search field is read only. |
+| `isRequired` | `() => boolean`    | Whether the search field is required.  |
+| `state`      | `SearchFieldState` | State of the search field.             |
 
 ::api{symbol="@rivetjs/ui/search-field#SearchFieldRootProps"}
+
+## Accessibility
+
+Input `type=search` labelled by the `Label`; the clear button is excluded from the tab order (Escape clears from the keyboard).
 
 ## Related Components
 

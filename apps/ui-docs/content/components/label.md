@@ -21,6 +21,12 @@ import { Label } from "@rivetjs/ui/label";
 
 ::example{id=label-basic}
 
+## Anatomy
+
+`Label` exposes `Label.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
+
 ## Examples
 
 ### With Required Indicator
@@ -98,6 +104,8 @@ The Label component uses these CSS classes ([View source styles](https://github.
 This prevents duplicate asterisks when using group components with required fields.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/label/) for every named export and part prop type.
 
 ### Label
 

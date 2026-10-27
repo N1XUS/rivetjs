@@ -34,37 +34,41 @@ export default function Anatomy() {
 }
 ```
 
-## Comparison
+Additional exported parts: `PressableFeedback.Root`.
+
+## Examples
+
+### Comparison
 
 ::example{id=pressable-feedback-comparison}
 
-## Hold Confirm
+### Hold Confirm
 
 Hold with the pointer, or hold Space / Enter. `duration` sets the hold time and `releaseDuration` the snap-back; `onComplete` fires when the hold finishes. `resetOnComplete={false}` keeps the overlay after a completed hold.
 
 ::example{id=pressable-feedback-hold-confirm}
 
-## Sweep
+### Sweep
 
 ::example{id=pressable-feedback-sweep}
 
-## Progress Feedback
+### Progress Feedback
 
 ::example{id=pressable-feedback-progress}
 
-## Progress Without Reset
+### Progress Without Reset
 
 ::example{id=pressable-feedback-no-reset}
 
-## Pressable Cards
+### Pressable Cards
 
 ::example{id=pressable-feedback-cards}
 
-## Standalone Highlight
+### Standalone Highlight
 
 ::example{id=pressable-feedback-standalone}
 
-## Standalone Ripple
+### Standalone Ripple
 
 Outside a `PressableFeedback` root, `.Ripple` follows its parent element's own press: a pointer or touch press ripples from the press point, Space / Enter on the parent from the centre; a parent that is `:disabled`, `aria-disabled="true"` or `data-disabled="true"` gets none. The parent needs a position (a ui `Button` has one) and its own corner radius (the ripple inherits it). On a resumed page the first press loads the ripple and still shows it. Live demo: [Button, Adding Ripple Effect](button.md#adding-ripple-effect).
 
@@ -82,7 +86,7 @@ export function RippleButton() {
 }
 ```
 
-## Disabled
+### Disabled
 
 ::example{id=pressable-feedback-disabled}
 
@@ -112,6 +116,8 @@ export function RippleButton() {
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/pressable-feedback/) for every named export and part prop type.
+
 ### PressableFeedback
 
 The cdk `Button`: `isDisabled`, `onPress`, `onPressStart`, `onPressEnd`, `class` (string or a function of the render props), `render`, and native button attributes.
@@ -122,36 +128,45 @@ A `span` overlay; no props beyond `span` attributes and `class`.
 
 ### PressableFeedback.Ripple
 
-| Prop                   | Type      | Default | Description                              |
-| ---------------------- | --------- | ------- | ---------------------------------------- |
-| `duration`             | `number`  | `150`   | Grow animation (ms)                      |
-| `hoverOpacity`         | `number`  | `0.08`  | Hover layer opacity                      |
-| `pressedOpacity`       | `number`  | `0.12`  | Ripple opacity                           |
-| `minimumPressDuration` | `number`  | `225`   | Minimum time the ripple stays pressed    |
-| `isDisabled`           | `boolean` | -       | No ripple                                |
+| Prop                   | Type      | Default | Description                           |
+| ---------------------- | --------- | ------- | ------------------------------------- |
+| `duration`             | `number`  | `150`   | Grow animation (ms)                   |
+| `hoverOpacity`         | `number`  | `0.08`  | Hover layer opacity                   |
+| `pressedOpacity`       | `number`  | `0.12`  | Ripple opacity                        |
+| `minimumPressDuration` | `number`  | `225`   | Minimum time the ripple stays pressed |
+| `isDisabled`           | `boolean` | -       | No ripple                             |
 
 ### PressableFeedback.HoldConfirm
 
-| Prop              | Type                                   | Default   | Description                                 |
-| ----------------- | -------------------------------------- | --------- | ------------------------------------------- |
-| `duration`        | `number`                               | `2000`    | Hold time (ms) until confirmed              |
-| `releaseDuration` | `number`                               | `200`     | Snap-back time on release (ms)              |
-| `sweep`           | `"right" \| "left" \| "down" \| "up"`  | `"right"` | Edge the reveal moves toward                |
-| `resetOnComplete` | `boolean`                              | `true`    | Reset when the completed press ends         |
-| `isDisabled`      | `boolean`                              | -         | No hold confirm                             |
-| `onComplete`      | `() => void`                           | -         | The hold reached `duration`                 |
-| `children`        | `Content`                              | -         | Overlay content                             |
+| Prop              | Type                                  | Default   | Description                         |
+| ----------------- | ------------------------------------- | --------- | ----------------------------------- |
+| `duration`        | `number`                              | `2000`    | Hold time (ms) until confirmed      |
+| `releaseDuration` | `number`                              | `200`     | Snap-back time on release (ms)      |
+| `sweep`           | `"right" \| "left" \| "down" \| "up"` | `"right"` | Edge the reveal moves toward        |
+| `resetOnComplete` | `boolean`                             | `true`    | Reset when the completed press ends |
+| `isDisabled`      | `boolean`                             | -         | No hold confirm                     |
+| `onComplete`      | `() => void`                          | -         | The hold reached `duration`         |
+| `children`        | `Content`                             | -         | Overlay content                     |
 
 ### PressableFeedback.ProgressFeedback
 
-| Prop              | Type                                   | Default   | Description                                 |
-| ----------------- | -------------------------------------- | --------- | ------------------------------------------- |
-| `duration`        | `number`                               | `2000`    | Progress time (ms) until confirmed          |
-| `releaseDuration` | `number`                               | `300`     | Snap-back time on reset (ms)                |
-| `sweep`           | `"right" \| "left" \| "down" \| "up"`  | `"right"` | Edge the reveal moves toward                |
-| `autoReset`       | `boolean`                              | `true`    | Reset after completing                      |
-| `resetDelay`      | `number`                               | `1500`    | Delay before the reset (ms)                 |
-| `isDisabled`      | `boolean`                              | -         | No progress                                 |
-| `onComplete`      | `() => void`                           | -         | The progress reached `duration`             |
-| `onReset`         | `() => void`                           | -         | The overlay went back to idle               |
-| `children`        | `Content`                              | -         | Overlay content                             |
+| Prop              | Type                                  | Default   | Description                        |
+| ----------------- | ------------------------------------- | --------- | ---------------------------------- |
+| `duration`        | `number`                              | `2000`    | Progress time (ms) until confirmed |
+| `releaseDuration` | `number`                              | `300`     | Snap-back time on reset (ms)       |
+| `sweep`           | `"right" \| "left" \| "down" \| "up"` | `"right"` | Edge the reveal moves toward       |
+| `autoReset`       | `boolean`                             | `true`    | Reset after completing             |
+| `resetDelay`      | `number`                              | `1500`    | Delay before the reset (ms)        |
+| `isDisabled`      | `boolean`                             | -         | No progress                        |
+| `onComplete`      | `() => void`                          | -         | The progress reached `duration`    |
+| `onReset`         | `() => void`                          | -         | The overlay went back to idle      |
+| `children`        | `Content`                             | -         | Overlay content                    |
+
+## Accessibility
+
+The root inherits the [Button](/components/button/) keyboard and disabled behavior. Feedback layers are hidden from assistive technology. Keep the action in the button’s accessible name; do not rely on ripple, hold or progress visuals to communicate a result.
+
+## Related Components
+
+- [Button](/components/button/)
+- [ItemCard](/components/item-card/)

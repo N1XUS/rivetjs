@@ -8,8 +8,6 @@ related: [components/checkbox-group, components/radio-button-group, components/s
 
 `CheckboxButtonGroup` shows several independent options (add-ons, notification channels, devices) as cards: the whole card is the click target, the selected card gets an accent border, and an optional indicator marks the state in the corner. Behaviour is the [cdk CheckboxGroup](site:cdk/components/checkbox-group/) with native inputs, so it works before any JavaScript loads and submits with plain forms.
 
-Accessibility: the root is a `group` labelled by its `Label`; each card is a `label` around a visually hidden native checkbox, so Tab moves between cards, Space toggles the focused one, and the values submit with the form under `name`. An `ItemContent` `Description` describes its own input. Indicator and ItemIcon are decorative (`aria-hidden`).
-
 ## Usage
 
 ```tsx
@@ -41,6 +39,8 @@ export default function Options() {
   );
 }
 ```
+
+Additional exported parts: `CheckboxButtonGroup.Root`.
 
 ## Examples
 
@@ -124,6 +124,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/checkbox-button-group/) for every named export and part prop type.
+
 ### CheckboxButtonGroup
 
 | Prop           | Type                             | Default  | Description                                 |
@@ -133,12 +135,10 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `defaultValue` | `string[]`                       | -        | Initial selection (uncontrolled)            |
 | `onChange`     | `(value: string[]) => void`      | -        | Called with the new selection               |
 | `name`         | `string`                         | -        | Form field name                             |
-| `isDisabled`   | `boolean`                        | `false`  | Disables every card                         |
-| `isRequired`   | `boolean`                        | `false`  | Required (native validation)                |
-| `isInvalid`    | `boolean`                        | `false`  | Invalid state                               |
+| `isDisabled`   | `boolean \| (() => boolean)`     | `false`  | Disables every card                         |
+| `isRequired`   | `boolean \| (() => boolean)`     | `false`  | Required (native validation)                |
+| `isInvalid`    | `boolean \| (() => boolean)`     | `false`  | Invalid state                               |
 | `class`        | `string` \| render-prop function | -        | Additional CSS classes                      |
-
-::api{symbol="@rivetjs/ui/checkbox-button-group#CheckboxButtonGroupRootProps"}
 
 ### CheckboxButtonGroup.Item
 
@@ -157,6 +157,12 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 ### CheckboxButtonGroup.ItemIcon / CheckboxButtonGroup.ItemContent
 
 `span` props and `class`.
+
+::api{symbol="@rivetjs/ui/checkbox-button-group#CheckboxButtonGroupRootProps"}
+
+## Accessibility
+
+the root is a `group` labelled by its `Label`; each card is a `label` around a visually hidden native checkbox, so Tab moves between cards, Space toggles the focused one, and the values submit with the form under `name`. An `ItemContent` `Description` describes its own input. Indicator and ItemIcon are decorative (`aria-hidden`).
 
 ## Related Components
 

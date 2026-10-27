@@ -18,8 +18,6 @@ Notes:
 - `Modal.Header` wraps string children in a `Modal.Heading` (Rivet addition): `<Modal.Header>Welcome</Modal.Header>` labels the dialog.
 - `Modal.Trigger` is a `div role="button"` made pressable by the cdk `Pressable` (render-function child internally).
 
-Accessibility: `Modal.Dialog` has `role="dialog"` and is labelled by `Modal.Heading`. Focus moves into the dialog on open, stays trapped inside, and returns to the trigger on close. Escape and a backdrop press dismiss it unless disabled, and the page scroll is locked while it is open.
-
 ## Usage
 
 ```tsx
@@ -68,6 +66,8 @@ The explicit parts stay available for a styled backdrop or container:
   </Modal.Backdrop>
 </Modal>
 ```
+
+Additional exported parts: `Modal.Root`.
 
 ## Examples
 
@@ -153,6 +153,8 @@ To customize the Modal component classes, you can use the `@layer components` di
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `modal-root`, `modal-trigger`, `modal-container`, `modal-dialog`, `modal-header`, `modal-body`, `modal-footer`, `modal-icon`, `modal-heading`, `modal-close-trigger`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -195,6 +197,8 @@ The component supports these interactive states:
 - **Placement**: `[data-placement="*"]` - Applied based on modal position (auto, top, center, bottom)
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/modal/) for every named export and part prop type.
 
 ### Modal
 
@@ -314,6 +318,8 @@ Implements [WAI-ARIA Dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/di
 - **Keyboard**: `ESC` closes (when enabled), `Tab` cycles elements
 - **Screen readers**: Proper ARIA attributes
 - **Scroll lock**: Body scroll disabled when open
+
+`Modal.Dialog` has `role="dialog"` and is labelled by `Modal.Heading`. Focus moves into the dialog on open, stays trapped inside, and returns to the trigger on close. Escape and a backdrop press dismiss it unless disabled, and the page scroll is locked while it is open.
 
 ## Related Components
 

@@ -52,47 +52,51 @@ export default function Anatomy() {
 }
 ```
 
-## With File List
+Additional exported parts: `DropZone.Root`.
+
+## Examples
+
+### With File List
 
 Keep the files in a signal and render a `FileItem` per file. `status` (`uploading`, `complete`, `failed`) styles the row; show `FileProgress` while uploading and `FileRetryTrigger` after a failure.
 
 ::example{id=drop-zone-file-list}
 
-## Compact File List
+### Compact File List
 
 ::example{id=drop-zone-compact}
 
-## Disabled
+### Disabled
 
 `isDisabled` on `.Area` turns off drops and paste. Disable the trigger and the input too.
 
 ::example{id=drop-zone-disabled}
 
-## Image Only
+### Image Only
 
 `getDropOperation(types, allowedOperations)` decides while dragging: return `"cancel"` to refuse the drag (no drop target state), or an operation such as `"copy"`. `accept` on `.Input` filters the file picker.
 
 ::example{id=drop-zone-image-only}
 
-## Max Size Limit
+### Max Size Limit
 
 Sizes are known once the files arrive: check them in `onDrop` and `onSelect`.
 
 ::example{id=drop-zone-max-size}
 
-## Multiple Files
+### Multiple Files
 
 ::example{id=drop-zone-multiple}
 
-## Custom Icon
+### Custom Icon
 
 ::example{id=drop-zone-custom-icon}
 
-## Custom Triggers
+### Custom Triggers
 
 ::example{id=drop-zone-custom-triggers}
 
-## Reading Dropped Files
+### Reading Dropped Files
 
 `onDrop` receives `DropItem`s. Filter file items with `isFileDropItem` from `@rivetjs/cdk/drop-zone` and read each with `getFile()`:
 
@@ -108,6 +112,8 @@ const onDrop = async (e: DropEvent) => {
 Text items (`isTextDropItem`, `getText(type)`) and directories (`isDirectoryDropItem`, `getEntries()`) arrive the same way.
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `drop-zone-area`, `drop-zone-icon`, `drop-zone-label`, `drop-zone-description`, `drop-zone-input`, `drop-zone-trigger`, `drop-zone-file-item`, `drop-zone-file-format-icon`, `drop-zone-file-info`, `drop-zone-file-name`, `drop-zone-file-meta`, `drop-zone-file-progress`, `drop-zone-file-retry-trigger`, `drop-zone-file-remove-trigger`.
 
 ### CSS Classes
 
@@ -138,6 +144,8 @@ Text items (`isTextDropItem`, `getText(type)`) and directories (`isDirectoryDrop
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/drop-zone/) for every named export and part prop type.
+
 ### DropZone
 
 The root wrapper. Takes `div` props, `class` and `render`.
@@ -146,16 +154,16 @@ The root wrapper. Takes `div` props, `class` and `render`.
 
 The cdk `DropZone`.
 
-| Prop               | Type                                                            | Default | Description                                          |
-| ------------------ | --------------------------------------------------------------- | ------- | ---------------------------------------------------- |
-| `onDrop`           | `(e: DropEvent) => void`                                        | -       | Called with the dropped or pasted items              |
-| `getDropOperation` | `(types: DragTypesLike, allowed: DropOperation[]) => DropOperation` | -   | Accept (`"copy"`, `"move"`, `"link"`) or `"cancel"`  |
-| `onDropEnter`      | `(e: DropEnterEvent) => void`                                   | -       | A drag entered the area                              |
-| `onDropMove`       | `(e: DropMoveEvent) => void`                                    | -       | A drag moved over the area                           |
-| `onDropExit`       | `(e: DropExitEvent) => void`                                    | -       | A drag left the area                                 |
-| `onDropActivate`   | `(e: DropActivateEvent) => void`                                | -       | A drag held still over the area                      |
-| `isDisabled`       | `boolean \| () => boolean`                                      | -       | No drops and no paste                                |
-| `class`            | `string \| (values) => string`                                  | -       | Class, or a function of the render props             |
+| Prop               | Type                                                                | Default | Description                                         |
+| ------------------ | ------------------------------------------------------------------- | ------- | --------------------------------------------------- |
+| `onDrop`           | `(e: DropEvent) => void`                                            | -       | Called with the dropped or pasted items             |
+| `getDropOperation` | `(types: DragTypesLike, allowed: DropOperation[]) => DropOperation` | -       | Accept (`"copy"`, `"move"`, `"link"`) or `"cancel"` |
+| `onDropEnter`      | `(e: DropEnterEvent) => void`                                       | -       | A drag entered the area                             |
+| `onDropMove`       | `(e: DropMoveEvent) => void`                                        | -       | A drag moved over the area                          |
+| `onDropExit`       | `(e: DropExitEvent) => void`                                        | -       | A drag left the area                                |
+| `onDropActivate`   | `(e: DropActivateEvent) => void`                                    | -       | A drag held still over the area                     |
+| `isDisabled`       | `boolean \| () => boolean`                                          | -       | No drops and no paste                               |
+| `class`            | `string \| (values) => string`                                      | -       | Class, or a function of the render props            |
 
 Render props (accessors): `isHovered`, `isFocused`, `isFocusVisible`, `isDropTarget`, `isDisabled`.
 
@@ -175,13 +183,13 @@ Secondary description text.
 
 The hidden file input the triggers open.
 
-| Prop       | Type                         | Default | Description                                   |
-| ---------- | ---------------------------- | ------- | --------------------------------------------- |
-| `accept`   | `string`                     | -       | Accepted file types (e.g. `"image/*,.pdf"`)   |
-| `multiple` | `boolean`                    | -       | Whether multiple files can be selected        |
-| `onSelect` | `(files: FileList) => void`  | -       | Called when files are picked                  |
-| `disabled` | `boolean`                    | -       | Triggers do not open the picker               |
-| `name`     | `string`                     | -       | Form field name                               |
+| Prop       | Type                        | Default | Description                                 |
+| ---------- | --------------------------- | ------- | ------------------------------------------- |
+| `accept`   | `string`                    | -       | Accepted file types (e.g. `"image/*,.pdf"`) |
+| `multiple` | `boolean`                   | -       | Whether multiple files can be selected      |
+| `onSelect` | `(files: FileList) => void` | -       | Called when files are picked                |
+| `disabled` | `boolean`                   | -       | Triggers do not open the picker             |
+| `name`     | `string`                    | -       | Form field name                             |
 
 ### DropZone.Trigger
 
@@ -193,15 +201,15 @@ The list of files (`ul`).
 
 ### DropZone.FileItem
 
-| Prop     | Type                                    | Default | Description                    |
-| -------- | --------------------------------------- | ------- | ------------------------------ |
-| `status` | `"uploading" \| "complete" \| "failed"` | -       | Upload status (`data-status`)  |
+| Prop     | Type                                    | Default | Description                   |
+| -------- | --------------------------------------- | ------- | ----------------------------- |
+| `status` | `"uploading" \| "complete" \| "failed"` | -       | Upload status (`data-status`) |
 
 ### DropZone.FileFormatIcon
 
-| Prop     | Type     | Default  | Description                                                                          |
-| -------- | -------- | -------- | ------------------------------------------------------------------------------------ |
-| `format` | `string` | -        | Format badge text (e.g. `"PDF"`)                                                      |
+| Prop     | Type     | Default  | Description                                                                                                                 |
+| -------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `format` | `string` | -        | Format badge text (e.g. `"PDF"`)                                                                                            |
 | `color`  | `string` | `"gray"` | `gray`, `blue`, `green`, `orange`, `yellow`, `red`, or a theme colour (`accent`, `success`, `warning`, `danger`, `default`) |
 
 ### DropZone.FileInfo, FileName, FileMeta

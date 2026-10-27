@@ -8,8 +8,6 @@ related: [components/toggle-button-group, components/radio-group, components/but
 
 `Segment` switches between a few mutually exclusive options, like a view mode or a time range. One item is always selected, and a single indicator slides behind the selected item. Behaviour is the [cdk ToggleButtonGroup](site:cdk/components/toggle-button-group/) in single selection with the cdk `SelectionIndicator`.
 
-Accessibility: the root is a `radiogroup` and each item a `radio` with `aria-checked` (React Aria ToggleButtonGroup, single selection). Tab moves focus into the group, arrow keys move focus between items, Enter / Space select the focused item; disabled items are skipped. Give the root an `aria-label` (or `aria-labelledby`), and icon-only items their own `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -35,6 +33,8 @@ export default function Range() {
 ```
 
 Each `Segment.Item` needs an `id`: it is the item's key in the selection. The indicator renders inside the selected item and moves with CSS transitions (`translate`, `width`, `height`); with `prefers-reduced-motion` it jumps.
+
+Additional exported parts: `Segment.Root`.
 
 ## Examples
 
@@ -113,6 +113,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/segment/) for every named export and part prop type.
+
 ### Segment
 
 | Prop                   | Type                                     | Default     | Description                                           |
@@ -126,8 +128,6 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `isDisabled`           | `boolean`                                | `false`     | Disables every item                                   |
 | `class`                | `string` \| render-prop function         | -           | Additional CSS classes                                |
 
-::api{symbol="@rivetjs/ui/segment#SegmentRootProps"}
-
 ### Segment.Item
 
 | Prop         | Type                                                        | Default | Description                                |
@@ -140,6 +140,12 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 ### Segment.Separator
 
 A decorative `span` (`aria-hidden`); takes `span` props and `class`.
+
+::api{symbol="@rivetjs/ui/segment#SegmentRootProps"}
+
+## Accessibility
+
+the root is a `radiogroup` and each item a `radio` with `aria-checked` (React Aria ToggleButtonGroup, single selection). Tab moves focus into the group, arrow keys move focus between items, Enter / Space select the focused item; disabled items are skipped. Give the root an `aria-label` (or `aria-labelledby`), and icon-only items their own `aria-label`.
 
 ## Related Components
 

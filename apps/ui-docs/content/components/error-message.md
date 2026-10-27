@@ -42,14 +42,18 @@ import { ErrorMessage } from "@rivetjs/ui/error-message";
 </TagGroup>;
 ```
 
-## When to Use
+Additional exported parts: `ErrorMessage.Root`.
+
+## Examples
+
+### When to Use
 
 `ErrorMessage` is **not tied to forms**. It's a generic error display component for non-form contexts.
 
 - **Recommended for** non-form components (e.g., `TagGroup`, `Calendar`, collection components)
 - **For form fields**, we recommend using [`FieldError`](/components/field-error/) instead, which provides form-specific validation features and automatic error handling, following standardized form validation patterns.
 
-## ErrorMessage vs FieldError
+### ErrorMessage vs FieldError
 
 | Component      | Use Case                  | Form Integration | Example Components                   |
 | -------------- | ------------------------- | ---------------- | ------------------------------------ |
@@ -57,6 +61,10 @@ import { ErrorMessage } from "@rivetjs/ui/error-message";
 | `FieldError`   | Form fields (recommended) | Yes              | `TextField`, `NumberField`, `Select` |
 
 For form validation, we recommend using `FieldError` as it follows standardized form validation patterns and provides form-specific features. See the [FieldError documentation](/components/field-error/) and the [Form guide](/components/form/) for examples and best practices.
+
+### Note
+
+`ErrorMessage` is built on React Aria's `Text` component with `slot="errorMessage"`. It can be targeted using the `[slot=errorMessage]` CSS selector.
 
 ## Customization
 
@@ -94,6 +102,8 @@ The ErrorMessage component uses these CSS classes ([View source styles](https://
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/error-message/) for every named export and part prop type.
+
 ### ErrorMessage
 
 | Prop       | Type      | Default | Description               |
@@ -102,10 +112,6 @@ The ErrorMessage component uses these CSS classes ([View source styles](https://
 | `children` | `Content` | -       | The error message content |
 
 ::api{symbol="@rivetjs/ui/error-message#ErrorMessageRootProps"}
-
-## Note
-
-`ErrorMessage` is built on React Aria's `Text` component with `slot="errorMessage"`. It can be targeted using the `[slot=errorMessage]` CSS selector.
 
 ## Accessibility
 

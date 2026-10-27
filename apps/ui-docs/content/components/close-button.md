@@ -14,8 +14,6 @@ Notes:
 - The icon is lucide `X` (stroked).
 - Any child replaces the default icon; omit children to keep it.
 
-Accessibility: A real `<button>` named "Close" unless you pass another `aria-label`. Keyboard: Enter and Space. A CloseButton without `onPress`, outside triggers, ships no JavaScript (plain `<button>`, CSS states).
-
 ## Usage
 
 ```tsx
@@ -23,6 +21,12 @@ import { CloseButton } from "@rivetjs/ui/close-button";
 ```
 
 ::example{id=close-button-default}
+
+## Anatomy
+
+`CloseButton` exposes `CloseButton.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -59,6 +63,8 @@ To customize the CloseButton component classes, you can use the `@layer componen
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `close-button-icon`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -84,14 +90,16 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/close-button/) for every named export and part prop type.
+
 ### CloseButton
 
-| Prop         | Type                  | Default         | Description                                 |
-| ------------ | --------------------- | --------------- | ------------------------------------------- |
-| `variant`    | `"default"`           | `"default"`     | Visual variant of the button                |
-| `children`   | `Content \| function` | `<CloseIcon />` | Content to display (defaults to close icon) |
-| `onPress`    | `() => void`          | -               | Handler called when the button is pressed   |
-| `isDisabled` | `boolean`             | `false`         | Whether the button is disabled              |
+| Prop         | Type                         | Default         | Description                                 |
+| ------------ | ---------------------------- | --------------- | ------------------------------------------- |
+| `variant`    | `"default"`                  | `"default"`     | Visual variant of the button                |
+| `children`   | `Content \| function`        | `<CloseIcon />` | Content to display (defaults to close icon) |
+| `onPress`    | `() => void`                 | -               | Handler called when the button is pressed   |
+| `isDisabled` | `boolean \| (() => boolean)` | `false`         | Whether the button is disabled              |
 
 ### React Aria Button Props
 
@@ -107,14 +115,18 @@ CloseButton extends all React Aria Button props. Common props include:
 
 When using the render prop pattern, these values are provided:
 
-| Prop         | Type      | Description                    |
-| ------------ | --------- | ------------------------------ |
-| `isHovered`  | `boolean` | Whether the button is hovered  |
-| `isPressed`  | `boolean` | Whether the button is pressed  |
-| `isFocused`  | `boolean` | Whether the button is focused  |
-| `isDisabled` | `boolean` | Whether the button is disabled |
+| Prop         | Type            | Description                    |
+| ------------ | --------------- | ------------------------------ |
+| `isHovered`  | `() => boolean` | Whether the button is hovered  |
+| `isPressed`  | `() => boolean` | Whether the button is pressed  |
+| `isFocused`  | `() => boolean` | Whether the button is focused  |
+| `isDisabled` | `() => boolean` | Whether the button is disabled |
 
 ::api{symbol="@rivetjs/ui/close-button#CloseButtonRootProps"}
+
+## Accessibility
+
+A real `<button>` named "Close" unless you pass another `aria-label`. Keyboard: Enter and Space. A CloseButton without `onPress`, outside triggers, ships no JavaScript (plain `<button>`, CSS states).
 
 ## Related Components
 

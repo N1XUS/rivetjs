@@ -8,8 +8,6 @@ related: [components/chain-of-thought, components/code-block, components/disclos
 
 `ChatTool` shows one tool call. In preset mode (no children) it renders the trigger (status icon, `triggerPrefix`, `toolName`) and the content from `input` / `argsText`, `output`, `errorText` and the approval buttons, by `state`. Children switch to composable mode with the parts. It is a [Disclosure](/components/disclosure/); `ChatToolGroup` folds several calls under one trigger.
 
-Accessibility: the status icon is an image with a text label ("Running", "Completed", "Failed", "Needs approval"); errors are `role="alert"`; a call that `requires-action` opens by default so the buttons are reachable.
-
 ## Usage
 
 ```tsx
@@ -36,31 +34,43 @@ import { ChatTool, ChatToolGroup } from "@rivetjs/ui/chat-tool";
 
 States: `input-streaming`, `input-available` (default), `output-available`, `output-error`, `requires-action`. `ChatTool.Icon` (Rivet extra) is a lucide wrench for custom triggers.
 
-## Streaming
+Additional exported parts: `ChatTool.Root`, `ChatTool.Result`, `ChatTool.Approval`, `ChatToolGroup.Root`, `ChatToolGroup.Trigger`, `ChatToolGroup.Content`.
+
+## Examples
+
+### Streaming
 
 `input-streaming` shows a spinner and the partial `argsText`; the state is read once, so re-create the tool per state (keyed `Show`).
 
 ::example{id=chat-tool-streaming}
 
-## Error
+### Error
 
 ::example{id=chat-tool-error}
 
-## Approval
+### Approval
 
 `requires-action` renders Reject / Approve (`onReject` / `onApprove`) and opens the tool.
 
 ::example{id=chat-tool-approval}
 
-## Grouped
+### Grouped
 
 ::example{id=chat-tool-grouped}
 
-## Composable
+### Composable
 
 ::example{id=chat-tool-composable}
 
-## CSS Classes
+### Resumability
+
+Server-rendered with highlighted JSON; the Disclosure resumes on first toggle, approval buttons on first press.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chat-tool-trigger`, `chat-tool-status-icon`, `chat-tool-content`, `chat-tool-args`, `chat-tool-result`, `chat-tool-group-trigger`, `chat-tool-group-content`.
+
+### CSS Classes
 
 | Class                                                      | Applied                           |
 | ---------------------------------------------------------- | --------------------------------- |
@@ -75,6 +85,8 @@ States: `input-streaming`, `input-available` (default), `output-available`, `out
 | `chat-tool-group` / `__trigger` / `__body`                 | `ChatToolGroup`                   |
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/chat-tool/) for every named export and part prop type.
 
 | Prop                                        | Type             | Default                       |
 | ------------------------------------------- | ---------------- | ----------------------------- |
@@ -95,6 +107,12 @@ States: `input-streaming`, `input-available` (default), `output-available`, `out
 
 ::api{symbol="@rivetjs/ui/chat-tool#ChatToolApprovalProps"}
 
-## Resumability
+## Accessibility
 
-Server-rendered with highlighted JSON; the Disclosure resumes on first toggle, approval buttons on first press.
+the status icon is an image with a text label ("Running", "Completed", "Failed", "Needs approval"); errors are `role="alert"`; a call that `requires-action` opens by default so the buttons are reachable.
+
+## Related Components
+
+- [ChainOfThought](/components/chain-of-thought/)
+- [CodeBlock](/components/code-block/)
+- [Disclosure](/components/disclosure/)

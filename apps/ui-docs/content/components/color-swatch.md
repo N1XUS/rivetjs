@@ -22,6 +22,12 @@ import { ColorSwatch } from "@rivetjs/ui/color-swatch";
 
 ::example{id=color-swatch-basic}
 
+## Anatomy
+
+`ColorSwatch` exposes `ColorSwatch.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
+
 ## Examples
 
 ### Sizes
@@ -76,13 +82,16 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The ColorSwatch component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/color-swatch.css)):
 
 #### Base Classes
+
 - `.color-swatch` - Base swatch styles with checkered background for transparency
 
 #### Shape Classes
+
 - `.color-swatch--circle` - Circular shape (default)
 - `.color-swatch--square` - Square shape with rounded corners
 
 #### Size Classes
+
 - `.color-swatch--xs` - Extra small (16px)
 - `.color-swatch--sm` - Small (24px)
 - `.color-swatch--md` - Medium (32px, default)
@@ -91,18 +100,20 @@ The ColorSwatch component uses these CSS classes ([View source styles](https://g
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/color-swatch/) for every named export and part prop type.
+
 ### ColorSwatch
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `color` | `string \| Color \| (() => string \| Color)` | - | The color value to display (hex, rgb, hsl, etc.); Rivet: or an accessor |
-| `colorName` | `string` | - | Accessible name for the color (overrides auto-generated description) |
-| `class` | `string` | - | Additional CSS classes |
-| `shape` | `"circle" \| "square"` | `"circle"` | Shape of the swatch |
-| `size` | `"xs" \| "sm" \| "md" \| "lg" \| "xl"` | `"md"` | Size of the swatch |
-| `style` | `JSX.CSSProperties \| ((renderProps) => JSX.CSSProperties)` | - | Inline styles or render props function with access to color |
-| `aria-label` | `string` | - | Accessible label for the swatch |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorSwatchRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop         | Type                                                                     | Default    | Description                                                             |
+| ------------ | ------------------------------------------------------------------------ | ---------- | ----------------------------------------------------------------------- |
+| `color`      | `string \| Color \| (() => string \| Color)`                             | -          | The color value to display (hex, rgb, hsl, etc.); Rivet: or an accessor |
+| `colorName`  | `string`                                                                 | -          | Accessible name for the color (overrides auto-generated description)    |
+| `class`      | `string`                                                                 | -          | Additional CSS classes                                                  |
+| `shape`      | `"circle" \| "square"`                                                   | `"circle"` | Shape of the swatch                                                     |
+| `size`       | `"xs" \| "sm" \| "md" \| "lg" \| "xl"`                                   | `"md"`     | Size of the swatch                                                      |
+| `style`      | `JSX.CSSProperties \| ((renderProps) => JSX.CSSProperties)`              | -          | Inline styles or render props function with access to color             |
+| `aria-label` | `string`                                                                 | -          | Accessible label for the swatch                                         |
+| `render`     | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorSwatchRenderProps>` | -          | Overrides the default DOM element with a custom render function.        |
 
 ### Style Render Props
 
@@ -118,11 +129,16 @@ When using the `style` prop as a function, you receive render props with access 
 ```
 
 `color` is an accessor (Rivet); the `Color` it returns provides methods like:
+
 - `color().toString("css")` - Returns CSS color string
 - `color().toString("hex")` - Returns hex color string
 - `color().getChannelValue("alpha")` - Returns alpha channel value
 
 ::api{symbol="@rivetjs/ui/color-swatch#ColorSwatch"}
+
+## Accessibility
+
+The cdk ColorSwatch exposes the color as an image with an accessible name. Use `colorName` for a human-readable name and retain text when color carries status or meaning. A swatch alone is not a selectable control; use [ColorSwatchPicker](/components/color-swatch-picker/) for selection.
 
 ## Related Components
 

@@ -8,8 +8,6 @@ related: [components/scroll-shadow, components/card]
 
 `ScrollArea` keeps native scrolling (wheel, touch, keyboard, scroll chaining) and draws its own thin, rounded scrollbars on top, the Rivet UI look. Behaviour is the [cdk ScrollArea](site:cdk/components/scroll-area/), a port of Radix UI ScrollArea.
 
-Accessibility: The viewport is the native scroll container, so screen readers and keyboard scrolling work as usual; the custom scrollbars are presentational. Give the viewport `tabIndex={0}` (and an `aria-label`) when its content has nothing focusable.
-
 ## Usage
 
 ```tsx
@@ -39,6 +37,8 @@ export default function Tags() {
 
 A `Scrollbar` without children renders its `Thumb`. Add a `Scrollbar` per axis you want to scroll: an axis without one does not scroll (Radix).
 
+Additional exported parts: `ScrollArea.Root`.
+
 ## Examples
 
 ### Horizontal
@@ -63,7 +63,7 @@ A `Scrollbar` without children renders its `Thumb`. Add a `Scrollbar` per axis y
 
 ::example{id=scroll-area-shadow}
 
-## Resumability
+### Resumability
 
 On a resumed page the area loads no JavaScript until it is used: the first frame is server markup with native scrolling on both axes (`variant="always"` also server-renders its scrollbar tracks). The pointer entering the area, a wheel, a scroll or keyboard focus activates it; `variant="always"` (and `type="auto"`) activates when it scrolls into view. Once active it behaves exactly like Radix ScrollArea.
 
@@ -97,6 +97,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/scroll-area/) for every named export and part prop type.
+
 ### ScrollArea
 
 | Prop              | Type                                              | Default   | Description                                              |
@@ -113,6 +115,10 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 Props are read once, when the area is created. The other parts take the cdk part props plus `class`: `Scrollbar` `orientation` and `forceMount`, `Thumb` / `Corner` / `Viewport` element props.
 
 ::api{symbol="@rivetjs/ui/scroll-area#ScrollAreaRootProps"}
+
+## Accessibility
+
+The viewport is the native scroll container, so screen readers and keyboard scrolling work as usual; the custom scrollbars are presentational. Give the viewport `tabIndex={0}` (and an `aria-label`) when its content has nothing focusable.
 
 ## Related Components
 

@@ -33,25 +33,29 @@ export default function Anatomy() {
 }
 ```
 
-## Controlled
+Additional exported parts: `HoverCard.Root`.
+
+## Examples
+
+### Controlled
 
 `isOpen` takes a value or a two-way signal. `onOpenChange` reports changes.
 
 ::example{id=hover-card-controlled}
 
-## Custom Delays
+### Custom Delays
 
 ::example{id=hover-card-custom-delays}
 
-## Placements
+### Placements
 
 ::example{id=hover-card-placements}
 
-## With Arrow
+### With Arrow
 
 ::example{id=hover-card-with-arrow}
 
-## With Image
+### With Image
 
 When the trigger wraps a link, give the trigger `tabIndex={-1}` so the link stays the only tab stop. The link's focus does not open the card; hover does.
 
@@ -72,6 +76,8 @@ When the trigger wraps a link, give the trigger `tabIndex={-1}` so the link stay
 - `[data-placement="top | bottom | left | right"]` on the content and the arrow.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/hover-card/) for every named export and part prop type.
 
 ### HoverCard
 

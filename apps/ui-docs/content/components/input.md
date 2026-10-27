@@ -14,8 +14,6 @@ Notes:
 - React's `onChange` on a native input fires per keystroke; in Rivet that is `onInput` (`onChange` is the native change event). Controlled: `value={value()}` + `onInput`.
 - The variant falls back to the enclosing TextField's `variant`, then to an enclosing ComboBox's.
 
-Accessibility: A native `<input>`; give it a label (`aria-label`, a `Label` with `for`, or a TextField).
-
 ## Usage
 
 ```tsx
@@ -27,6 +25,12 @@ import { Input } from "@rivetjs/ui/input";
 :::note
 For validation, labels, and error messages, see **[TextField](/components/text-field/)**.
 :::
+
+## Anatomy
+
+`Input` exposes `Input.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -109,35 +113,41 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/input/) for every named export and part prop type.
+
 ### Input
 
 Input accepts all standard HTML `<input>` attributes plus the following:
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Tailwind classes merged with the component styles. |
-| `type` | `string` | `"text"` | Input type (text, email, password, number, etc.). |
-| `value` | `string` | - | Controlled value. |
-| `defaultValue` | `string` | - | Uncontrolled initial value. |
-| `onChange` | `(event: React.ChangeEvent<HTMLInputElement>) => void` | - | Change handler. |
-| `placeholder` | `string` | - | Placeholder text. |
-| `disabled` | `boolean` | `false` | Disables the input. |
-| `readOnly` | `boolean` | `false` | Makes the input read-only. |
-| `required` | `boolean` | `false` | Marks the input as required. |
-| `name` | `string` | - | Name for form submission. |
-| `autoComplete` | `string` | - | Autocomplete hint for the browser. |
-| `maxLength` | `number` | - | Maximum number of characters. |
-| `minLength` | `number` | - | Minimum number of characters. |
-| `pattern` | `string` | - | Regex pattern for validation. |
-| `min` | `number \| string` | - | Minimum value (for number/date inputs). |
-| `max` | `number \| string` | - | Maximum value (for number/date inputs). |
-| `step` | `number \| string` | - | Stepping interval (for number inputs). |
-| `fullWidth` | `boolean` | `false` | Whether the input should take full width of its container |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| Prop           | Type                                        | Default     | Description                                                                                                                                                        |
+| -------------- | ------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `class`        | `string`                                    | -           | Tailwind classes merged with the component styles.                                                                                                                 |
+| `type`         | `string`                                    | `"text"`    | Input type (text, email, password, number, etc.).                                                                                                                  |
+| `value`        | `string`                                    | -           | Controlled value.                                                                                                                                                  |
+| `defaultValue` | `string`                                    | -           | Uncontrolled initial value.                                                                                                                                        |
+| `onInput`      | `JSX.IntrinsicElements["input"]["onInput"]` | -           | Fires while the user edits. Read `event.currentTarget.value`.                                                                                                      |
+| `placeholder`  | `string`                                    | -           | Placeholder text.                                                                                                                                                  |
+| `disabled`     | `boolean`                                   | `false`     | Disables the input.                                                                                                                                                |
+| `readOnly`     | `boolean`                                   | `false`     | Makes the input read-only.                                                                                                                                         |
+| `required`     | `boolean`                                   | `false`     | Marks the input as required.                                                                                                                                       |
+| `name`         | `string`                                    | -           | Name for form submission.                                                                                                                                          |
+| `autoComplete` | `string`                                    | -           | Autocomplete hint for the browser.                                                                                                                                 |
+| `maxLength`    | `number`                                    | -           | Maximum number of characters.                                                                                                                                      |
+| `minLength`    | `number`                                    | -           | Minimum number of characters.                                                                                                                                      |
+| `pattern`      | `string`                                    | -           | Regex pattern for validation.                                                                                                                                      |
+| `min`          | `number \| string`                          | -           | Minimum value (for number/date inputs).                                                                                                                            |
+| `max`          | `number \| string`                          | -           | Maximum value (for number/date inputs).                                                                                                                            |
+| `step`         | `number \| string`                          | -           | Stepping interval (for number inputs).                                                                                                                             |
+| `fullWidth`    | `boolean`                                   | `false`     | Whether the input should take full width of its container                                                                                                          |
+| `variant`      | `"primary" \| "secondary"`                  | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
 
 > For validation props like `isInvalid`, `isRequired`, and error handling, use **[TextField](/components/text-field/)** with Input as a child component.
 
 ::api{symbol="@rivetjs/ui/input#InputRootProps"}
+
+## Accessibility
+
+A native `<input>`; give it a label (`aria-label`, a `Label` with `for`, or a TextField).
 
 ## Related Components
 

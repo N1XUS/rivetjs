@@ -16,8 +16,6 @@ Notes:
 - The scroll buttons use the lucide `ChevronLeft` / `ChevronRight` / `ChevronUp` / `ChevronDown` icons.
 - Render Function demo: the tabs render a plain `<a>`; the cdk Tab renders a link for `href` and navigates through the cdk router. `render` functions receive accessor-valued attributes: type them `(props: Record<string, any>)`.
 
-Accessibility: The list has `role="tablist"` with `aria-orientation`; each tab has `role="tab"`, `aria-selected` and, while selected, `aria-controls` for its panel (`role="tabpanel"`, labelled by the tab). Arrow keys move between tabs and select them (automatic activation; `keyboardActivation="manual"` selects on Enter / Space), Home / End jump to the ends, disabled tabs are skipped. The scroll buttons are out of the tab order (`tabIndex=-1`).
-
 ## Usage
 
 ```tsx
@@ -44,6 +42,8 @@ export default () => (
   </Tabs>
 );
 ```
+
+Additional exported parts: `Tabs.Root`.
 
 ## Examples
 
@@ -122,6 +122,8 @@ To customize the Tabs component classes, you can use the `@layer components` dir
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `tabs-list`, `tabs-list-container`, `tabs-tab`, `tabs-indicator`, `tabs-panel`, `tabs-separator`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -165,6 +167,8 @@ The component supports both CSS pseudo-classes and data attributes:
 - **Disabled**: `[aria-disabled="true"]`
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/tabs/) for every named export and part prop type.
 
 ### Tabs
 
@@ -221,6 +225,10 @@ The List renders the `div.tabs__list-container` around itself. To style it, wrap
 | `render`           | `DOMRenderFunction<"div", TabPanelRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ::api{symbol="@rivetjs/ui/tabs#TabsRootProps"}
+
+## Accessibility
+
+The list has `role="tablist"` with `aria-orientation`; each tab has `role="tab"`, `aria-selected` and, while selected, `aria-controls` for its panel (`role="tabpanel"`, labelled by the tab). Arrow keys move between tabs and select them (automatic activation; `keyboardActivation="manual"` selects on Enter / Space), Home / End jump to the ends, disabled tabs are skipped. The scroll buttons are out of the tab order (`tabIndex=-1`).
 
 ## Related Components
 

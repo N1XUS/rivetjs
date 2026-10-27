@@ -14,8 +14,6 @@ Notes:
 - `Accordion.Indicator` renders the lucide `ChevronDown` icon. Custom indicator children are not cloned: they render inside a `span` that carries the indicator class, `data-slot` and `data-expanded`.
 - `render` functions on the parts receive accessor-valued attributes; type them `(props: Record<string, any>)` when spreading onto another tag.
 
-Accessibility: Each trigger is a `button` inside the heading with `aria-expanded` and `aria-controls`; the panel has `role="group"` and is labelled by its trigger. Enter and Space toggle the item. A collapsed panel is `hidden="until-found"`, so find-in-page expands it on a match.
-
 ## Usage
 
 ```tsx
@@ -44,6 +42,8 @@ export default () => (
   </Accordion>
 );
 ```
+
+Additional exported parts: `Accordion.Root`.
 
 ## Examples
 
@@ -108,6 +108,8 @@ To customize the Accordion component classes, you can use the `@layer components
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `accordion-item`, `accordion-indicator`, `accordion-heading`, `accordion-trigger`, `accordion-body`, `accordion-panel`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -126,7 +128,7 @@ The Accordion component uses these CSS classes ([View source styles](https://git
 
 #### Variant Classes
 
-- `.accordion--outline` - Outline variant with border and background
+- `.accordion--surface` - Built-in surface variant. `.accordion--outline` in the customization example is a custom class, not a shipped variant.
 
 #### State Classes
 
@@ -148,20 +150,22 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/accordion/) for every named export and part prop type.
+
 ### Accordion
 
-| Prop                     | Type                                                   | Default     | Description                                                      |
-| ------------------------ | ------------------------------------------------------ | ----------- | ---------------------------------------------------------------- |
-| `allowsMultipleExpanded` | `boolean`                                              | `false`     | Whether multiple items can be expanded at once                   |
-| `defaultExpandedKeys`    | `Iterable<Key>`                                        | -           | The initial expanded keys                                        |
-| `expandedKeys`           | `Iterable<Key> \| Signal<Set<Key>>`                    | -           | The controlled expanded keys (a signal is two-way)               |
-| `onExpandedChange`       | `(keys: Set<Key>) => void`                             | -           | Handler called when expanded keys change                         |
-| `isDisabled`             | `boolean`                                              | `false`     | Whether the entire accordion is disabled                         |
-| `variant`                | `"default" \| "surface"`                               | `"default"` | The visual variant of the accordion                              |
-| `hideSeparator`          | `boolean`                                              | `false`     | Hide separator lines between accordion items                     |
-| `class`                  | `string`                                               | -           | Additional CSS classes                                           |
-| `children`               | `Content`                                              | -           | The accordion items                                              |
-| `render`                 | `DOMRenderFunction<"div", DisclosureGroupRenderProps>` | -           | Overrides the default DOM element with a custom render function. |
+| Prop                     | Type                                                         | Default     | Description                                                      |
+| ------------------------ | ------------------------------------------------------------ | ----------- | ---------------------------------------------------------------- |
+| `allowsMultipleExpanded` | `boolean \| Signal<boolean> \| (() => boolean \| undefined)` | `false`     | Whether multiple items can be expanded at once                   |
+| `defaultExpandedKeys`    | `Iterable<Key>`                                              | -           | The initial expanded keys                                        |
+| `expandedKeys`           | `Iterable<Key> \| Signal<Set<Key>>`                          | -           | The controlled expanded keys (a signal is two-way)               |
+| `onExpandedChange`       | `(keys: Set<Key>) => void`                                   | -           | Handler called when expanded keys change                         |
+| `isDisabled`             | `boolean`                                                    | `false`     | Whether the entire accordion is disabled                         |
+| `variant`                | `"default" \| "surface"`                                     | `"default"` | The visual variant of the accordion                              |
+| `hideSeparator`          | `boolean`                                                    | `false`     | Hide separator lines between accordion items                     |
+| `class`                  | `string`                                                     | -           | Additional CSS classes                                           |
+| `children`               | `Content`                                                    | -           | The accordion items                                              |
+| `render`                 | `DOMRenderFunction<"div", DisclosureGroupRenderProps>`       | -           | Overrides the default DOM element with a custom render function. |
 
 ### Accordion.Item
 
@@ -209,6 +213,10 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 | `children` | `Content` | -       | Body content           |
 
 ::api{symbol="@rivetjs/ui/accordion#AccordionRootProps"}
+
+## Accessibility
+
+Each trigger is a `button` inside the heading with `aria-expanded` and `aria-controls`; the panel has `role="group"` and is labelled by its trigger. Enter and Space toggle the item. A collapsed panel is `hidden="until-found"`, so find-in-page expands it on a match.
 
 ## Related Components
 

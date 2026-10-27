@@ -55,6 +55,8 @@ export default () => (
 );
 ```
 
+Additional exported parts: `Pagination.Root`.
+
 ## Examples
 
 ### Shorthand
@@ -101,6 +103,10 @@ Rivet addition (not in the original demo set): the range in the summary is an [I
 
 ::example{id=pagination-page-size}
 
+### Note
+
+Pagination buttons use `onPress` instead of `onClick`. The `onPress` handler of the cdk Button (React Aria port) normalizes press behavior across pointer types and provides accessibility improvements out of the box.
+
 ## Customization
 
 ### Tailwind CSS
@@ -130,6 +136,8 @@ To customize the Pagination component classes, you can use the `@layer component
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `pagination-summary`, `pagination-content`, `pagination-item`, `pagination-link`, `pagination-previous`, `pagination-previous-icon`, `pagination-next`, `pagination-next-icon`, `pagination-ellipsis`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -137,6 +145,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The Pagination component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/pagination.css)):
 
 #### Base & Layout Classes
+
 - `.pagination` - Root navigation container with flex layout
 - `.pagination__summary` - Left-side info text container
 - `.pagination__content` - Container for pagination items
@@ -146,6 +155,7 @@ The Pagination component uses these CSS classes ([View source styles](https://gi
 - `.pagination__ellipsis` - Ellipsis indicator
 
 #### Size Classes
+
 - `.pagination--sm` - Small size variant
 - `.pagination--md` - Medium size variant (default)
 - `.pagination--lg` - Large size variant
@@ -162,79 +172,77 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/pagination/) for every named export and part prop type.
+
 ### Pagination
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `size` | `"sm" \| "md" \| "lg"` | `"md"` | Size of the pagination items |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Pagination parts (Summary, Content) |
-| `total` | `number` | - | Rivet shorthand: number of pages (no children: the root renders the links) |
-| `page` | `number \| Signal<number> \| () => number` | - | Rivet shorthand: current page, 1-based (Signal two-way) |
-| `defaultPage` | `number` | `1` | Rivet shorthand: uncontrolled start page |
-| `onPageChange` | `(page: number) => void` | - | Rivet shorthand: called with the new page |
-| `siblings` | `number` | `1` | Rivet shorthand: pages on each side of the current one |
-| `boundaries` | `number` | `1` | Rivet shorthand: pages always shown at each end |
-| `previousLabel` / `nextLabel` | `Content` | `"Previous"` / `"Next"` | Rivet shorthand: text next to the icons |
+| Prop                          | Type                                       | Default                 | Description                                                                |
+| ----------------------------- | ------------------------------------------ | ----------------------- | -------------------------------------------------------------------------- |
+| `size`                        | `"sm" \| "md" \| "lg"`                     | `"md"`                  | Size of the pagination items                                               |
+| `class`                       | `string`                                   | -                       | Additional CSS classes                                                     |
+| `children`                    | `Content`                                  | -                       | Pagination parts (Summary, Content)                                        |
+| `total`                       | `number`                                   | -                       | Rivet shorthand: number of pages (no children: the root renders the links) |
+| `page`                        | `number \| Signal<number> \| () => number` | -                       | Rivet shorthand: current page, 1-based (Signal two-way)                    |
+| `defaultPage`                 | `number`                                   | `1`                     | Rivet shorthand: uncontrolled start page                                   |
+| `onPageChange`                | `(page: number) => void`                   | -                       | Rivet shorthand: called with the new page                                  |
+| `siblings`                    | `number`                                   | `1`                     | Rivet shorthand: pages on each side of the current one                     |
+| `boundaries`                  | `number`                                   | `1`                     | Rivet shorthand: pages always shown at each end                            |
+| `previousLabel` / `nextLabel` | `Content`                                  | `"Previous"` / `"Next"` | Rivet shorthand: text next to the icons                                    |
 
 ### Pagination.Summary
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Summary content (e.g., "Showing 1-10 of 120") |
+| Prop       | Type      | Default | Description                                   |
+| ---------- | --------- | ------- | --------------------------------------------- |
+| `class`    | `string`  | -       | Additional CSS classes                        |
+| `children` | `Content` | -       | Summary content (e.g., "Showing 1-10 of 120") |
 
 ### Pagination.Content
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Pagination items |
+| Prop       | Type      | Default | Description            |
+| ---------- | --------- | ------- | ---------------------- |
+| `class`    | `string`  | -       | Additional CSS classes |
+| `children` | `Content` | -       | Pagination items       |
 
 ### Pagination.Item
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Item content (Link, Previous, Next, or Ellipsis) |
+| Prop       | Type      | Default | Description                                      |
+| ---------- | --------- | ------- | ------------------------------------------------ |
+| `class`    | `string`  | -       | Additional CSS classes                           |
+| `children` | `Content` | -       | Item content (Link, Previous, Next, or Ellipsis) |
 
 ### Pagination.Link
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isActive` | `boolean` | `false` | Whether this is the current page |
-| `isDisabled` | `boolean` | `false` | Whether the link is disabled |
-| `onPress` | `(e: PressEvent) => void` | - | Press handler (cdk Button) |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Page number content |
+| Prop         | Type                      | Default | Description                      |
+| ------------ | ------------------------- | ------- | -------------------------------- |
+| `isActive`   | `boolean`                 | `false` | Whether this is the current page |
+| `isDisabled` | `boolean`                 | `false` | Whether the link is disabled     |
+| `onPress`    | `(e: PressEvent) => void` | -       | Press handler (cdk Button)       |
+| `class`      | `string`                  | -       | Additional CSS classes           |
+| `children`   | `Content`                 | -       | Page number content              |
 
 ### Pagination.Previous / Pagination.Next
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isDisabled` | `boolean` | `false` | Whether the button is disabled |
-| `onPress` | `(e: PressEvent) => void` | - | Press handler (cdk Button) |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Button content (compose with PreviousIcon/NextIcon) |
+| Prop         | Type                      | Default | Description                                         |
+| ------------ | ------------------------- | ------- | --------------------------------------------------- |
+| `isDisabled` | `boolean`                 | `false` | Whether the button is disabled                      |
+| `onPress`    | `(e: PressEvent) => void` | -       | Press handler (cdk Button)                          |
+| `class`      | `string`                  | -       | Additional CSS classes                              |
+| `children`   | `Content`                 | -       | Button content (compose with PreviousIcon/NextIcon) |
 
 ### Pagination.PreviousIcon / Pagination.NextIcon
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
+| Prop       | Type      | Default        | Description                                |
+| ---------- | --------- | -------------- | ------------------------------------------ |
+| `class`    | `string`  | -              | Additional CSS classes                     |
 | `children` | `Content` | lucide chevron | Custom icon to replace the default chevron |
 
 ### Pagination.Ellipsis
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
+| Prop    | Type     | Default | Description            |
+| ------- | -------- | ------- | ---------------------- |
+| `class` | `string` | -       | Additional CSS classes |
 
 ::api{symbol="@rivetjs/ui/pagination#PaginationRoot"}
-
-## Note
-
-Pagination buttons use `onPress` instead of `onClick`. The `onPress` handler of the cdk Button (React Aria port) normalizes press behavior across pointer types and provides accessibility improvements out of the box.
 
 ## Accessibility
 

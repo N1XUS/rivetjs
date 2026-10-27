@@ -6,7 +6,7 @@ status: experimental
 related: [components/chart, components/chart-tooltip, components/kpi]
 ---
 
-`ComposedChart` puts several kinds of series on one frame: each series has a `type` (`bar`, `line` or `area`). It shares the legend, axes and grid of the [cartesian charts](/components/chart/) and keeps one focusable slot per index whose tooltip lists every series. Everything renders on the server; no script runs in the browser.
+`ComposedChart` puts several kinds of series on one frame: each series has a `type` (`bar`, `line` or `area`). It shares the legend, axes and grid of the [cartesian charts](/components/chart/) and keeps one focusable slot per index whose tooltip lists every series when tooltips are enabled. Everything renders on the server; no script runs in the browser.
 
 ## Usage
 
@@ -16,23 +16,31 @@ import { ComposedChart } from "@rivetjs/ui/composed-chart";
 
 ::example{id=composed-chart-basic}
 
-## Stacked Bar With Line
+## Anatomy
+
+`ComposedChart` is a single data-driven component. Set each series `type` to `bar`, `line` or `area`; the component renders those series in one plot with shared axes, legend and tooltip slots.
+
+## Examples
+
+### Stacked Bar With Line
 
 ::example{id=composed-chart-stacked-bar-with-line}
 
-## Area With Line
+### Area With Line
 
 ::example{id=composed-chart-area-with-line}
 
-## Bar With Area
+### Bar With Area
 
 ::example{id=composed-chart-bar-with-area}
 
-## Multi Type
+### Multi Type
 
 ::example{id=composed-chart-multi-type}
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chart-slot`.
 
 ### CSS Classes
 
@@ -50,6 +58,8 @@ import { ComposedChart } from "@rivetjs/ui/composed-chart";
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/composed-chart/) for every named export and part prop type.
+
 ### ComposedChart
 
 Every [AreaChart / LineChart / BarChart](/components/chart/) prop, plus:
@@ -60,6 +70,10 @@ Every [AreaChart / LineChart / BarChart](/components/chart/) prop, plus:
 | `stacked` | `boolean`                            | `false`      | Stack the bar series                                                |
 | `curve`   | `"monotone"` \| `"linear"`           | `"monotone"` | Line and area shape                                                 |
 | `tooltip` | `(point: ChartPoint) => JSX.Element` | -            | Custom tooltip content                                              |
+
+## Accessibility
+
+With tooltips enabled, each index has a focusable group whose accessible name contains the values. Bar and SVG geometry are decorative. Supply a meaningful `aria-label`; use a text summary or table when the chart carries essential information.
 
 ## Related Components
 

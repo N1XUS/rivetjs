@@ -16,8 +16,6 @@ Notes:
 - After the popover closes following keyboard input, focus returns to the trigger in a frame, found by the cdk trigger id (`<picker id>-button`).
 - Icons are lucide (`Calendar` default indicator, `ChevronDown`).
 
-Accessibility: the group is `role="group"` labelled by the `Label`; the trigger has `aria-haspopup="dialog"` / `aria-expanded`; the popover is a dialog holding the calendar grid (arrow keys, Page Up / Down, Enter to select, Escape to close).
-
 ## Usage
 
 ```tsx
@@ -43,9 +41,7 @@ export default () => (
   <DatePicker>
     <Label />
     <DateField.Group>
-      <DateField.Input>
-        {(segment) => <DateField.Segment segment={segment} />}
-      </DateField.Input>
+      <DateField.Input>{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
       <DateField.Suffix>
         <DatePicker.Trigger>
           <DatePicker.TriggerIndicator />
@@ -63,15 +59,13 @@ export default () => (
           <Calendar.NavButton slot="next" />
         </Calendar.Header>
         <Calendar.Grid>
-          <Calendar.GridHeader>
-            {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-          </Calendar.GridHeader>
+          <Calendar.GridHeader>{(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}</Calendar.GridHeader>
           <Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
         </Calendar.Grid>
       </Calendar>
     </DatePicker.Popover>
   </DatePicker>
-)
+);
 ```
 
 ## Examples
@@ -119,6 +113,7 @@ The example below shows the Indian calendar system:
 **Note:** The `onChange` event always returns a date in the same calendar system as the `value` or `defaultValue` (Gregorian if no value is provided), regardless of the displayed locale. This ensures your application logic works consistently with a single calendar system while still displaying dates in the user's preferred format.
 
 For a complete list of supported calendar systems and their identifiers, see:
+
 - [React Aria Calendar Implementations](https://react-aria.adobe.com/internationalized/date/Calendar#implementations)
 - [React Aria International Calendars](https://react-aria.adobe.com/Calendar#international-calendars)
 
@@ -154,6 +149,8 @@ To customize DatePicker base classes, use `@layer components`.
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `date-picker-trigger`, `date-picker-trigger-indicator`, `date-picker-popover`.
+
 Rivet UI follows [BEM](https://getbem.com/) naming for reusable customization.
 
 ### CSS Classes
@@ -176,41 +173,48 @@ DatePicker supports React Aria data attributes and pseudo states:
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/date-picker/) for every named export and part prop type.
+
 ### DatePicker
 
 DatePicker inherits all props from the [cdk DatePicker](site:cdk/components/date-picker/) (React Aria `DatePicker`).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `DateValue \| null` | - | Controlled selected date value. |
-| `defaultValue` | `DateValue \| null` | - | Default selected value in uncontrolled mode. |
-| `onChange` | `(value: DateValue \| null) => void` | - | Called when selected date changes. |
-| `isOpen` | `boolean` | - | Controlled popover open state. |
-| `defaultOpen` | `boolean` | `false` | Initial popover open state. |
-| `onOpenChange` | `(isOpen: boolean) => void` | - | Called when popover open state changes. |
-| `isDisabled` | `boolean` | `false` | Disables date selection and trigger interactions. |
-| `isInvalid` | `boolean` | - | Marks the field as invalid for validation state. |
-| `minValue` | `DateValue` | - | Minimum selectable date. |
-| `maxValue` | `DateValue` | - | Maximum selectable date. |
-| `name` | `string` | - | Name used for HTML form submission. |
-| `children` | `Content \| (values: DatePickerRenderProps) => Content` | - | Composed content or render function. |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, DatePickerRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                    | Default | Description                                                      |
+| -------------- | ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| `value`        | `DateValue \| null`                                                     | -       | Controlled selected date value.                                  |
+| `defaultValue` | `DateValue \| null`                                                     | -       | Default selected value in uncontrolled mode.                     |
+| `onChange`     | `(value: DateValue \| null) => void`                                    | -       | Called when selected date changes.                               |
+| `isOpen`       | `boolean`                                                               | -       | Controlled popover open state.                                   |
+| `defaultOpen`  | `boolean`                                                               | `false` | Initial popover open state.                                      |
+| `onOpenChange` | `(isOpen: boolean) => void`                                             | -       | Called when popover open state changes.                          |
+| `isDisabled`   | `boolean`                                                               | `false` | Disables date selection and trigger interactions.                |
+| `isInvalid`    | `boolean`                                                               | -       | Marks the field as invalid for validation state.                 |
+| `minValue`     | `DateValue`                                                             | -       | Minimum selectable date.                                         |
+| `maxValue`     | `DateValue`                                                             | -       | Maximum selectable date.                                         |
+| `name`         | `string`                                                                | -       | Name used for HTML form submission.                              |
+| `children`     | `Content \| (values: DatePickerRenderProps) => Content`                 | -       | Composed content or render function.                             |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, DatePickerRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ### Composition Parts
 
-| Component | Description |
-|-----------|-------------|
-| `DatePicker.Root` | Root date picker container and state owner. |
-| `DatePicker.Trigger` | Trigger button, usually rendered inside `DateField.Suffix`. |
-| `DatePicker.TriggerIndicator` | Indicator slot with default calendar icon. |
-| `DatePicker.Popover` | Popover wrapper for `Calendar` content. |
+| Component                     | Description                                                 |
+| ----------------------------- | ----------------------------------------------------------- |
+| `DatePicker.Root`             | Root date picker container and state owner.                 |
+| `DatePicker.Trigger`          | Trigger button, usually rendered inside `DateField.Suffix`. |
+| `DatePicker.TriggerIndicator` | Indicator slot with default calendar icon.                  |
+| `DatePicker.Popover`          | Popover wrapper for `Calendar` content.                     |
 
 ### Related packages
+
 - `@rivetjs/cdk/date` (port of [`@internationalized/date`](https://react-aria.adobe.com/internationalized/date/)) — date types (`CalendarDate`, `CalendarDateTime`, `ZonedDateTime`) and utilities used by all date components
 - `I18nProvider` (`@rivetjs/cdk/i18n-provider`) — override locale for a subtree
 - `useLocale` (`@rivetjs/cdk/i18n`) — read the current locale and layout direction
 
 ::api{symbol="@rivetjs/ui/date-picker#DatePicker"}
+
+## Accessibility
+
+the group is `role="group"` labelled by the `Label`; the trigger has `aria-haspopup="dialog"` / `aria-expanded`; the popover is a dialog holding the calendar grid (arrow keys, Page Up / Down, Enter to select, Escape to close).
 
 ## Related Components
 

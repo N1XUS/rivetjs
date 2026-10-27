@@ -3,7 +3,7 @@ title: Kbd
 description: "Display keyboard shortcuts and key combinations."
 template: reference
 status: experimental
-related: []
+related: [components/typography, components/tooltip, components/command]
 ---
 
 `Kbd` shows a key or a shortcut.
@@ -12,8 +12,6 @@ Notes:
 
 - `class`, not `className`.
 - The key symbols are text labels, not icons.
-
-Accessibility: The `abbr` carries the key's name in `title`. For an exact spoken label, set `aria-label` on the root ("Command K").
 
 ## Usage
 
@@ -35,6 +33,8 @@ export default () => (
   </Kbd>
 );
 ```
+
+Additional exported parts: `Kbd.Root`.
 
 ## Examples
 
@@ -101,6 +101,8 @@ The Kbd component uses these CSS classes ([View source styles](https://github.co
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/kbd/) for every named export and part prop type.
+
 ### Kbd
 
 | Prop       | Type       | Default  | Description        |
@@ -111,20 +113,22 @@ The Kbd component uses these CSS classes ([View source styles](https://github.co
 
 ### Kbd.Abbr
 
-| Prop       | Type      | Default | Description                                               |
-| ---------- | --------- | ------- | --------------------------------------------------------- |
-| `title`    | `string`  | -       | Title attribute for accessibility (e.g., "Command" for ⌘) |
-| `children` | `Content` | -       | The symbol or text to display (e.g., ⌘, ⌥, ⇧)             |
-| `class`    | `string`  | -       | Custom CSS classes                                        |
+| Prop       | Type     | Default   | Description                                                    |
+| ---------- | -------- | --------- | -------------------------------------------------------------- |
+| `keyValue` | `KbdKey` | required  | Selects the displayed key symbol and default accessible title. |
+| `title`    | `string` | key label | Overrides the title of the abbreviation.                       |
+| `class`    | `string` | unset     | Additional classes.                                            |
 
-### Kbd.Key
+Use Kbd.Content for arbitrary text.
+
+### Kbd.Content
 
 | Prop       | Type      | Default | Description             |
 | ---------- | --------- | ------- | ----------------------- |
 | `children` | `Content` | -       | Text content of the key |
 | `class`    | `string`  | -       | Custom CSS classes      |
 
-### Kbd.Content Type
+### Kbd.Abbr keyValue
 
 Available key values for the `keyValue` prop:
 
@@ -141,4 +145,12 @@ Available key values for the `keyValue` prop:
 
 ::api{symbol="@rivetjs/ui/kbd#KbdRootProps"}
 
+## Accessibility
+
+The `abbr` carries the key's name in `title`. For an exact spoken label, set `aria-label` on the root ("Command K").
+
 ## Related Components
+
+- [Typography](/components/typography/)
+- [Tooltip](/components/tooltip/)
+- [Command](/components/command/)

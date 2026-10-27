@@ -8,8 +8,6 @@ related: [components/sidebar, components/list-box]
 
 `ChatListView` lists conversations for a sidebar or a history page. `Item` is a button, or a link with `href`; `isCurrent` (value or accessor) marks the open thread. `Section` labels groups ("Today", "Previous 7 days").
 
-Accessibility: items are native buttons / links in tab order; the current one has `aria-current` (`true` for buttons, `page` for links).
-
 ## Usage
 
 ```tsx
@@ -34,13 +32,25 @@ import { ChatListView } from "@rivetjs/ui/chat-list-view";
 </ChatListView>
 ```
 
-## Compact
+Additional exported parts: `ChatListView.Root`.
+
+## Examples
+
+### Compact
 
 `variant="compact"`: one line per thread, tighter padding.
 
 ::example{id=chat-list-view-compact}
 
-## CSS Classes
+### Resumability
+
+Static list; items resume on first press. `isCurrent` accessors are attribute bindings.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chat-list-view-item`, `chat-list-view-section`.
+
+### CSS Classes
 
 | Class                                            | Applied                |
 | ------------------------------------------------ | ---------------------- |
@@ -54,6 +64,8 @@ import { ChatListView } from "@rivetjs/ui/chat-list-view";
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/chat-list-view/) for every named export and part prop type.
+
 | Prop                 | Type                       | Default     |
 | -------------------- | -------------------------- | ----------- |
 | `variant`            | `"default" \| "compact"`   | `"default"` |
@@ -65,6 +77,11 @@ import { ChatListView } from "@rivetjs/ui/chat-list-view";
 
 ::api{symbol="@rivetjs/ui/chat-list-view#ChatListViewRootProps"}
 
-## Resumability
+## Accessibility
 
-Static list; items resume on first press. `isCurrent` accessors are attribute bindings.
+items are native buttons / links in tab order; the current one has `aria-current` (`true` for buttons, `page` for links).
+
+## Related Components
+
+- [Sidebar](/components/sidebar/)
+- [ListBox](/components/list-box/)

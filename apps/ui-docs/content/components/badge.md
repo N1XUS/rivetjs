@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - Literal text is wrapped in `Badge.Label`. A child expression that reads a signal is not wrapped in the server markup: use an explicit `Badge.Label` for it.
 
-Accessibility: Plain markup without a role. A badge that carries information should also be in the anchored control's name (`aria-label="Notifications, 3 unread"`).
-
 ## Usage
 
 ```tsx
@@ -35,6 +33,8 @@ Badge is designed to be positioned relative to another element using `Badge.Anch
   <Badge color="danger">5</Badge>
 </Badge.Anchor>
 ```
+
+Additional exported parts: `Badge.Root`.
 
 ## Examples
 
@@ -94,6 +94,8 @@ To customize the Badge component classes, you can use the `@layer components` di
 ```
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `badge-label`.
 
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
@@ -156,6 +158,8 @@ Badges support combining variant and color classes (e.g., `.badge--primary.badge
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/badge/) for every named export and part prop type.
+
 ### Badge
 
 | Prop        | Type                                                           | Default       | Description                                                                                  |
@@ -182,6 +186,10 @@ Badges support combining variant and color classes (e.g., `.badge--primary.badge
 | `class`    | `string`  | -       | Additional CSS classes for the label slot |
 
 ::api{symbol="@rivetjs/ui/badge#BadgeRootProps"}
+
+## Accessibility
+
+Plain markup without a role. A badge that carries information should also be in the anchored control's name (`aria-label="Notifications, 3 unread"`).
 
 ## Related Components
 

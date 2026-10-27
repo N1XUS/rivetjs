@@ -8,8 +8,6 @@ related: [components/chat-tool, components/text-shimmer, components/disclosure]
 
 `ChainOfThought` shows the reasoning or the actions behind an answer without crowding it: a trigger with a summary ("Thought for 4 seconds") opens a list of steps. It is the ui [Disclosure](/components/disclosure/) (`defaultExpanded`, `isExpanded`, `onExpandedChange`), so it opens with the keyboard and animates like every disclosure.
 
-Accessibility: the trigger is a button inside a heading (`level`, default 3) with `aria-expanded`; `Steps` is a list. Step status icons are decorative (`data-status` styles them): say the status in the label when it matters.
-
 ## Usage
 
 ```tsx
@@ -31,25 +29,37 @@ import { ChainOfThought } from "@rivetjs/ui/chain-of-thought";
 </ChainOfThought>
 ```
 
-## Streaming
+Additional exported parts: `ChainOfThought.Root`.
+
+## Examples
+
+### Streaming
 
 `isStreaming` (value or accessor) sets `data-streaming`: the trigger label shimmers ([TextShimmer](/components/text-shimmer/)). Steps rendered from a signal list arrive in place; while streaming each new step expands in (height and fade, instant under reduced motion).
 
 ::example{id=chain-of-thought-streaming}
 
-## Agent Trace
+### Agent Trace
 
 Each `Step` has a `status` (`complete` default, `active`, `pending`, `error`) and an optional lucide `icon` replacing the status icon. Children are the step details.
 
 ::example{id=chain-of-thought-agent-trace}
 
-## Agent Trace Streaming
+### Agent Trace Streaming
 
 The same trace while the agent works: `isStreaming` on the running block, and each step's `status` (a live prop: an expression over a signal) moves from `pending` to `active` to `complete`.
 
 ::example{id=chain-of-thought-agent-trace-streaming}
 
-## CSS Classes
+### Resumability
+
+Server-rendered collapsed or open; the Disclosure resumes on the first toggle. `isStreaming` is an attribute binding.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chain-of-thought-trigger`, `chain-of-thought-content`, `chain-of-thought-steps`, `chain-of-thought-step`.
+
+### CSS Classes
 
 | Class                                                             | Applied                                                |
 | ----------------------------------------------------------------- | ------------------------------------------------------ |
@@ -63,6 +73,8 @@ The same trace while the agent works: `isStreaming` on the running block, and ea
 | `chain-of-thought__step-body` / `__step-label` / `__step-content` | step text                                              |
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/chain-of-thought/) for every named export and part prop type.
 
 | Prop                                                  | Type                                             | Default        |
 | ----------------------------------------------------- | ------------------------------------------------ | -------------- |
@@ -78,6 +90,12 @@ The same trace while the agent works: `isStreaming` on the running block, and ea
 
 ::api{symbol="@rivetjs/ui/chain-of-thought#ChainOfThoughtStepProps"}
 
-## Resumability
+## Accessibility
 
-Server-rendered collapsed or open; the Disclosure resumes on the first toggle. `isStreaming` is an attribute binding.
+the trigger is a button inside a heading (`level`, default 3) with `aria-expanded`; `Steps` is a list. Step status icons are decorative (`data-status` styles them): say the status in the label when it matters.
+
+## Related Components
+
+- [ChatTool](/components/chat-tool/)
+- [TextShimmer](/components/text-shimmer/)
+- [Disclosure](/components/disclosure/)

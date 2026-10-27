@@ -3,7 +3,7 @@ title: Spinner
 description: "A loading indicator component to show pending states."
 template: reference
 status: experimental
-related: []
+related: [components/progress-bar, components/progress-circle, components/button]
 ---
 
 `Spinner` is an indeterminate loading indicator.
@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - The icon is lucide `LoaderCircle` (a stroked arc); same `data-slot`, `viewBox` and spin animation. `lucide` is a peer dependency.
 
-Accessibility: `role="status"` with an `aria-label`, so a spinner that appears is announced politely. The icon is hidden from assistive technology.
-
 ## Usage
 
 ```tsx
@@ -22,6 +20,12 @@ import { Spinner } from "@rivetjs/ui/spinner";
 ```
 
 ::example{id=spinner-basic}
+
+## Anatomy
+
+`Spinner` exposes `Spinner.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -65,6 +69,8 @@ To customize the Spinner component classes, you can use the `@layer components` 
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `spinner-icon`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -89,6 +95,8 @@ The Spinner component uses these CSS classes ([View source styles](https://githu
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/spinner/) for every named export and part prop type.
+
 ### Spinner
 
 | Prop    | Type                                                          | Default    | Description                  |
@@ -99,4 +107,12 @@ The Spinner component uses these CSS classes ([View source styles](https://githu
 
 ::api{symbol="@rivetjs/ui/spinner#SpinnerRootProps"}
 
+## Accessibility
+
+`role="status"` with an `aria-label`, so a spinner that appears is announced politely. The icon is hidden from assistive technology.
+
 ## Related Components
+
+- [ProgressBar](/components/progress-bar/)
+- [ProgressCircle](/components/progress-circle/)
+- [Button](/components/button/)

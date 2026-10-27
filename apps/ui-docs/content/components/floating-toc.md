@@ -37,31 +37,37 @@ export default function Anatomy() {
 }
 ```
 
-## Hierarchical
+Additional exported parts: `FloatingToc.Root`.
+
+## Examples
+
+### Hierarchical
 
 ::example{id=floating-toc-hierarchical}
 
-## Press Mode
+### Press Mode
 
 ::example{id=floating-toc-press-mode}
 
-## Left Placement
+### Left Placement
 
 ::example{id=floating-toc-left}
 
-## Custom Delays
+### Custom Delays
 
 ::example{id=floating-toc-delays}
 
-## Controlled
+### Controlled
 
 ::example{id=floating-toc-controlled}
 
-## In Page Context
+### In Page Context
 
 ::example{id=floating-toc-in-page}
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `floating-toc-trigger`, `floating-toc-content`.
 
 ### CSS Classes
 
@@ -84,19 +90,21 @@ export default function Anatomy() {
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/floating-toc/) for every named export and part prop type.
+
 ### FloatingToc
 
 The cdk `DialogTrigger`.
 
-| Prop           | Type                         | Default   | Description                                      |
-| -------------- | ---------------------------- | --------- | ------------------------------------------------ |
-| `placement`    | `"left" \| "right"`          | `"right"` | Side of the page                                 |
-| `triggerMode`  | `"hover" \| "press"`         | `"hover"` | What opens the list                              |
-| `open`         | `boolean \| Signal<boolean>` | -         | Controlled open state (a signal is two-way)      |
-| `defaultOpen`  | `boolean`                    | -         | Initial open state                               |
-| `onOpenChange` | `(open: boolean) => void`    | -         | Open state changed                               |
-| `openDelay`    | `number`                     | `200`     | Hover delay before opening (ms)                  |
-| `closeDelay`   | `number`                     | `300`     | Delay before closing once the pointer left (ms)  |
+| Prop           | Type                         | Default   | Description                                     |
+| -------------- | ---------------------------- | --------- | ----------------------------------------------- |
+| `placement`    | `"left" \| "right"`          | `"right"` | Side of the page                                |
+| `triggerMode`  | `"hover" \| "press"`         | `"hover"` | What opens the list                             |
+| `open`         | `boolean \| Signal<boolean>` | -         | Controlled open state (a signal is two-way)     |
+| `defaultOpen`  | `boolean`                    | -         | Initial open state                              |
+| `onOpenChange` | `(open: boolean) => void`    | -         | Open state changed                              |
+| `openDelay`    | `number`                     | `200`     | Hover delay before opening (ms)                 |
+| `closeDelay`   | `number`                     | `300`     | Delay before closing once the pointer left (ms) |
 
 ### FloatingToc.Trigger
 
@@ -104,9 +112,9 @@ A cdk `Button` (`aria-label` defaults to "Table of contents").
 
 ### FloatingToc.Bar
 
-| Prop     | Type      | Default | Description                         |
-| -------- | --------- | ------- | ----------------------------------- |
-| `active` | `boolean` | -       | The current section                 |
+| Prop     | Type      | Default | Description                            |
+| -------- | --------- | ------- | -------------------------------------- |
+| `active` | `boolean` | -       | The current section                    |
 | `level`  | `number`  | `1`     | Nesting depth; deeper bars are shorter |
 
 ### FloatingToc.Content
@@ -121,3 +129,12 @@ A cdk `Button`; a press also closes the list (both modes).
 | -------- | --------- | ------- | ---------------------------------------- |
 | `active` | `boolean` | -       | The current section                      |
 | `level`  | `number`  | `1`     | Nesting depth; deeper items are indented |
+
+## Accessibility
+
+The trigger is a button named “Table of contents” by default. Items are buttons; pressing an item closes the popover. Supply an `onPress` handler to navigate to the section and meaningful item text. Hover-mode content is non-modal.
+
+## Related Components
+
+- [HoverCard](/components/hover-card/)
+- [Popover](/components/popover/)

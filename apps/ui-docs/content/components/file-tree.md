@@ -32,34 +32,40 @@ export default function Anatomy() {
 }
 ```
 
-## Sizes
+Additional exported parts: `FileTree.Root`.
+
+## Examples
+
+### Sizes
 
 ::example{id=file-tree-sizes}
 
-## Guide Lines
+### Guide Lines
 
 ::example{id=file-tree-guide-lines}
 
-## Multiple Selection
+### Multiple Selection
 
 ::example{id=file-tree-selection}
 
-## Custom Indicator
+### Custom Indicator
 
 `indicator` replaces the rotating chevron. `icon` and `indicator` can be functions of the row's render props (accessors such as `isExpanded()`).
 
 ::example{id=file-tree-custom-indicator}
 
-## Dynamic Collection
+### Dynamic Collection
 
 ::example{id=file-tree-dynamic}
 
-## Not Yet Supported
+### Not Yet Supported
 
 - Drag and drop to move rows: waits for drag and drop in the cdk `Tree`.
 - Sections (`TreeSection` headers): waits for server rendering of cdk tree sections.
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `file-tree-item`, `file-tree-item-content`, `file-tree-indicator`, `file-tree-indicator-spacer`, `file-tree-selection-cell`, `file-tree-icon`, `file-tree-title`.
 
 ### CSS Classes
 
@@ -86,34 +92,45 @@ export default function Anatomy() {
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/file-tree/) for every named export and part prop type.
+
 ### FileTree
 
 The cdk `Tree`.
 
-| Prop                  | Type                                    | Default  | Description                                           |
-| --------------------- | --------------------------------------- | -------- | ----------------------------------------------------- |
-| `size`                | `"sm" \| "md" \| "lg"`                  | `"md"`   | Row height, text size and indent                      |
-| `showGuideLines`      | `boolean \| "hover"`                    | `true`   | Guide lines always, while hovered / focused, or never |
-| `selectionMode`       | `"none" \| "single" \| "multiple"`      | `"none"` | Selection; adds a checkbox per row                    |
-| `selectedKeys`        | `Signal<Selection> \| Iterable<Key>`    | -        | Selected rows (a signal is two-way)                   |
-| `expandedKeys`        | `Signal<Set<Key>> \| Iterable<Key>`     | -        | Expanded folders (a signal is two-way)                |
-| `defaultExpandedKeys` | `Iterable<Key>`                         | -        | Initially expanded folders                            |
-| `onExpandedChange`    | `(keys: Set<Key>) => void`              | -        | Expanded folders changed                              |
-| `disabledKeys`        | `Iterable<Key>`                         | -        | Rows that cannot be focused or selected               |
-| `onAction`            | `(key: Key) => void`                    | -        | A row was pressed (or Enter)                          |
-| `items`               | `Iterable<T>`                           | -        | Items for a dynamic tree (children = render function) |
-| `renderEmptyState`    | `() => Content`                         | -        | Content when there are no rows                        |
+| Prop                  | Type                                 | Default  | Description                                           |
+| --------------------- | ------------------------------------ | -------- | ----------------------------------------------------- |
+| `size`                | `"sm" \| "md" \| "lg"`               | `"md"`   | Row height, text size and indent                      |
+| `showGuideLines`      | `boolean \| "hover"`                 | `true`   | Guide lines always, while hovered / focused, or never |
+| `selectionMode`       | `"none" \| "single" \| "multiple"`   | `"none"` | Selection; adds a checkbox per row                    |
+| `selectedKeys`        | `Signal<Selection> \| Iterable<Key>` | -        | Selected rows (a signal is two-way)                   |
+| `expandedKeys`        | `Signal<Set<Key>> \| Iterable<Key>`  | -        | Expanded folders (a signal is two-way)                |
+| `defaultExpandedKeys` | `Iterable<Key>`                      | -        | Initially expanded folders                            |
+| `onExpandedChange`    | `(keys: Set<Key>) => void`           | -        | Expanded folders changed                              |
+| `disabledKeys`        | `Iterable<Key>`                      | -        | Rows that cannot be focused or selected               |
+| `onAction`            | `(key: Key) => void`                 | -        | A row was pressed (or Enter)                          |
+| `items`               | `Iterable<T>`                        | -        | Items for a dynamic tree (children = render function) |
+| `renderEmptyState`    | `() => Content`                      | -        | Content when there are no rows                        |
 
 ### FileTree.Item
 
 The cdk `TreeItem` with its content row.
 
-| Prop         | Type                                    | Default         | Description                                 |
-| ------------ | --------------------------------------- | --------------- | ------------------------------------------- |
-| `id`         | `Key`                                   | -               | Row key                                     |
-| `title`      | `Content`                               | -               | Row label                                   |
-| `textValue`  | `string`                                | `title` (text)  | Typeahead and accessible text               |
-| `icon`       | `Content \| (values) => Content`        | -               | Leading icon                                |
-| `indicator`  | `Content \| (values) => Content`        | chevron         | Expand button content                       |
-| `isDisabled` | `boolean`                               | -               | Disable this row                            |
-| `children`   | `Content`                               | -               | Nested `FileTree.Item`s or a `Collection`   |
+| Prop         | Type                             | Default        | Description                               |
+| ------------ | -------------------------------- | -------------- | ----------------------------------------- |
+| `id`         | `Key`                            | -              | Row key                                   |
+| `title`      | `Content`                        | -              | Row label                                 |
+| `textValue`  | `string`                         | `title` (text) | Typeahead and accessible text             |
+| `icon`       | `Content \| (values) => Content` | -              | Leading icon                              |
+| `indicator`  | `Content \| (values) => Content` | chevron        | Expand button content                     |
+| `isDisabled` | `boolean`                        | -              | Disable this row                          |
+| `children`   | `Content`                        | -              | Nested `FileTree.Item`s or a `Collection` |
+
+## Accessibility
+
+The cdk Tree supplies treegrid navigation, selection and typeahead. Give the tree an accessible name and each item meaningful `textValue`. Arrow keys navigate the hierarchy; keep expand controls and selection controls available instead of communicating hierarchy only with guide lines.
+
+## Related Components
+
+- [ListView](/components/list-view/)
+- [Sidebar](/components/sidebar/)

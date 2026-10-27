@@ -3,7 +3,7 @@ title: ProgressBar
 description: "A progress bar shows either determinate or indeterminate progress of an operation over time."
 template: reference
 status: experimental
-related: []
+related: [components/progress-circle, components/spinner, components/meter]
 ---
 
 `ProgressBar` shows how far a task has come, or that it runs (indeterminate). The root is the [cdk Progress Bar](site:cdk/components/progress-bar/) (`role="progressbar"`, `aria-valuenow`, `aria-valuetext`); the parts are styled elements.
@@ -14,8 +14,6 @@ Notes:
 - Value props also accept accessors (a cdk superset).
 - Context `state` fields are accessors, not React snapshot values.
 - SVG / style attributes keep their DOM names (`stroke-dasharray`, `width: 60%`); same output.
-
-Accessibility: `role="progressbar"` with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and `aria-valuetext` from the cdk. A [Label](label.md) child labels it (`aria-labelledby`).
 
 ## Usage
 
@@ -42,6 +40,8 @@ export default () => (
   </ProgressBar>
 );
 ```
+
+Additional exported parts: `ProgressBar.Root`.
 
 ## Examples
 
@@ -100,6 +100,8 @@ To customize the ProgressBar component classes, you can use the `@layer componen
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `progress-bar-output`, `progress-bar-track`, `progress-bar-fill`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -129,6 +131,8 @@ The ProgressBar component uses these CSS classes ([View source styles](https://g
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/progress-bar/) for every named export and part prop type.
+
 ### ProgressBar
 
 Inherits from [React Aria ProgressBar](https://react-spectrum.adobe.com/react-aria/ProgressBar.html).
@@ -138,7 +142,7 @@ Inherits from [React Aria ProgressBar](https://react-spectrum.adobe.com/react-ar
 | `value`           | `number`                                                      | `0`                  | The current value                   |
 | `minValue`        | `number`                                                      | `0`                  | The minimum value                   |
 | `maxValue`        | `number`                                                      | `100`                | The maximum value                   |
-| `isIndeterminate` | `boolean`                                                     | `false`              | Whether progress is indeterminate   |
+| `isIndeterminate` | `boolean \| (() => boolean)`                                  | `false`              | Whether progress is indeterminate   |
 | `size`            | `"sm" \| "md" \| "lg"`                                        | `"md"`               | Size of the progress track          |
 | `color`           | `"default" \| "accent" \| "success" \| "warning" \| "danger"` | `"accent"`           | Color of the fill bar               |
 | `formatOptions`   | `Intl.NumberFormatOptions`                                    | `{style: 'percent'}` | Number format for the value display |
@@ -149,12 +153,20 @@ Inherits from [React Aria ProgressBar](https://react-spectrum.adobe.com/react-ar
 
 When using the render prop pattern, these values are provided:
 
-| Prop              | Type      | Description                            |
-| ----------------- | --------- | -------------------------------------- |
-| `percentage`      | `number`  | The percentage of the progress (0-100) |
-| `valueText`       | `string`  | The formatted value text               |
-| `isIndeterminate` | `boolean` | Whether progress is indeterminate      |
+| Prop              | Type                        | Description                            |
+| ----------------- | --------------------------- | -------------------------------------- |
+| `percentage`      | `() => number \| undefined` | The percentage of the progress (0-100) |
+| `valueText`       | `() => string \| undefined` | The formatted value text               |
+| `isIndeterminate` | `() => boolean`             | Whether progress is indeterminate      |
 
 ::api{symbol="@rivetjs/ui/progress-bar#ProgressBarRootProps"}
 
+## Accessibility
+
+`role="progressbar"` with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and `aria-valuetext` from the cdk. A [Label](label.md) child labels it (`aria-labelledby`).
+
 ## Related Components
+
+- [ProgressCircle](/components/progress-circle/)
+- [Spinner](/components/spinner/)
+- [Meter](/components/meter/)

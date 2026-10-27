@@ -8,8 +8,6 @@ related: [components/chat-message, components/skeleton, components/spinner]
 
 `ChatLoader` holds the loaders an AI chat shows between sending a prompt and the first token: three bouncing `Dots`, a `Pulse`, a `Spinner` (the ui Spinner) and a `Skeleton` of text lines with an optional avatar placeholder. The skeleton parts (`SkeletonAvatar`, `SkeletonBlock`, `SkeletonLine`) compose custom shapes.
 
-Accessibility: each loader is a polite `role="status"` named by `aria-label` (default "Loading"); the moving parts are `aria-hidden`. Motion stops under `prefers-reduced-motion`.
-
 ## Usage
 
 ```tsx
@@ -31,7 +29,17 @@ import { ChatLoader } from "@rivetjs/ui/chat-loader";
 </ChatLoader.SkeletonBlock>
 ```
 
-## CSS Classes
+## Examples
+
+### Resumability
+
+Static markup with CSS animation: nothing runs at load.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chat-loader-dots`, `chat-loader-pulse`, `chat-loader-spinner`, `chat-loader-avatar`, `chat-loader-content`, `chat-loader-line`.
+
+### CSS Classes
 
 | Class                                           | Applied                           |
 | ----------------------------------------------- | --------------------------------- |
@@ -44,6 +52,8 @@ import { ChatLoader } from "@rivetjs/ui/chat-loader";
 | `chat-loader__line`                             | `SkeletonLine`                    |
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/chat-loader/) for every named export and part prop type.
 
 | Prop                      | Type                           | Default     |
 | ------------------------- | ------------------------------ | ----------- |
@@ -59,6 +69,12 @@ Every part takes `class` and `div` attributes.
 
 ::api{symbol="@rivetjs/ui/chat-loader#ChatLoaderSpinnerProps"}
 
-## Resumability
+## Accessibility
 
-Static markup with CSS animation: nothing runs at load.
+each loader is a polite `role="status"` named by `aria-label` (default "Loading"); the moving parts are `aria-hidden`. Motion stops under `prefers-reduced-motion`.
+
+## Related Components
+
+- [ChatMessage](/components/chat-message/)
+- [Skeleton](/components/skeleton/)
+- [Spinner](/components/spinner/)

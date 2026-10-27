@@ -16,8 +16,6 @@ Notes:
 - The thumb follows the pointer freely while dragging and animates to the closest channel step (1° of hue, 1% of the percentage channels) on release, like the Rivet Slider; `snap="drag"` gives React Aria's step-by-step drag. The value is always stepped.
 - Render props are accessors (`({ color }) => color().toString("css")`, `({ isDragging }) => isDragging()`).
 
-Accessibility: the thumb holds a hidden range input named by the `Label` (or the channel name), with the channel value as `aria-valuetext`; arrow keys step it, Page Up / Down take larger steps, Home / End jump to the ends.
-
 ## Usage
 
 ```tsx
@@ -41,8 +39,11 @@ export default () => (
       <ColorSlider.Thumb />
     </ColorSlider.Track>
   </ColorSlider>
-)
+);
 ```
+
+Additional exported parts: `ColorSlider.Root`.
+
 ## Examples
 
 ### Disabled
@@ -112,6 +113,8 @@ To customize the ColorSlider component classes, you can use the `@layer componen
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `color-slider-output`, `color-slider-track`, `color-slider-thumb`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -119,12 +122,14 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The ColorSlider component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/color-slider.css)):
 
 #### Base Classes
+
 - `.color-slider` - Base slider container
 - `.color-slider__output` - Output element displaying current value
 - `.color-slider__track` - Track element with color gradient
 - `.color-slider__thumb` - Thumb element showing current color
 
 #### State Classes
+
 - `.color-slider[data-disabled="true"]` - Disabled slider state
 - `.color-slider[data-orientation="vertical"]` - Vertical orientation
 - `.color-slider__thumb[data-dragging="true"]` - Thumb being dragged
@@ -142,58 +147,60 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/color-slider/) for every named export and part prop type.
+
 ### ColorSlider
 
 Inherits from [cdk ColorSlider](site:cdk/components/color-slider/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `channel` | `ColorChannel` | - | The color channel that the slider manipulates (hue, saturation, lightness, brightness, alpha, red, green, blue) |
-| `colorSpace` | `ColorSpace` | - | The color space (hsl, hsb, rgb). Defaults to the color space of the value |
-| `value` | `string \| Color \| Signal<string \| Color>` | - | The current color value (controlled; Rivet: a signal is two-way) |
-| `defaultValue` | `string \| Color` | - | The default color value (uncontrolled) |
-| `onChange` | `(value: Color) => void` | - | Handler called when the value changes during dragging |
-| `onChangeEnd` | `(value: Color) => void` | - | Handler called when dragging ends |
-| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | The orientation of the slider |
-| `isDisabled` | `boolean` | - | Whether the slider is disabled |
-| `name` | `string` | - | The name of the input element for form submission |
-| `aria-label` | `string` | - | Accessibility label for the slider |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Slider content or render function |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorSliderRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                     | Default        | Description                                                                                                     |
+| -------------- | ------------------------------------------------------------------------ | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `channel`      | `ColorChannel`                                                           | -              | The color channel that the slider manipulates (hue, saturation, lightness, brightness, alpha, red, green, blue) |
+| `colorSpace`   | `ColorSpace`                                                             | -              | The color space (hsl, hsb, rgb). Defaults to the color space of the value                                       |
+| `value`        | `string \| Color \| Signal<string \| Color>`                             | -              | The current color value (controlled; Rivet: a signal is two-way)                                                |
+| `defaultValue` | `string \| Color`                                                        | -              | The default color value (uncontrolled)                                                                          |
+| `onChange`     | `(value: Color) => void`                                                 | -              | Handler called when the value changes during dragging                                                           |
+| `onChangeEnd`  | `(value: Color) => void`                                                 | -              | Handler called when dragging ends                                                                               |
+| `orientation`  | `"horizontal" \| "vertical"`                                             | `"horizontal"` | The orientation of the slider                                                                                   |
+| `isDisabled`   | `boolean`                                                                | -              | Whether the slider is disabled                                                                                  |
+| `name`         | `string`                                                                 | -              | The name of the input element for form submission                                                               |
+| `aria-label`   | `string`                                                                 | -              | Accessibility label for the slider                                                                              |
+| `class`        | `string`                                                                 | -              | Additional CSS classes                                                                                          |
+| `children`     | `Content \| RenderFunction`                                              | -              | Slider content or render function                                                                               |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorSliderRenderProps>` | -              | Overrides the default DOM element with a custom render function.                                                |
 
 ### ColorSlider.Output
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Output content or render function |
+| Prop       | Type                        | Default | Description                       |
+| ---------- | --------------------------- | ------- | --------------------------------- |
+| `class`    | `string`                    | -       | Additional CSS classes            |
+| `children` | `Content \| RenderFunction` | -       | Output content or render function |
 
 ### ColorSlider.Track
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `style` | `JSX.CSSProperties \| RenderFunction` | - | Inline styles or render function |
-| `children` | `Content \| RenderFunction` | - | Track content or render function |
+| Prop       | Type                                  | Default | Description                      |
+| ---------- | ------------------------------------- | ------- | -------------------------------- |
+| `class`    | `string`                              | -       | Additional CSS classes           |
+| `style`    | `JSX.CSSProperties \| RenderFunction` | -       | Inline styles or render function |
+| `children` | `Content \| RenderFunction`           | -       | Track content or render function |
 
 ### ColorSlider.Thumb
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `style` | `JSX.CSSProperties \| RenderFunction` | - | Inline styles or render function |
-| `children` | `Content \| RenderFunction` | - | Thumb content or render function |
+| Prop       | Type                                  | Default | Description                      |
+| ---------- | ------------------------------------- | ------- | -------------------------------- |
+| `class`    | `string`                              | -       | Additional CSS classes           |
+| `style`    | `JSX.CSSProperties \| RenderFunction` | -       | Inline styles or render function |
+| `children` | `Content \| RenderFunction`           | -       | Thumb content or render function |
 
 ### Render Props
 
 When using render functions, these values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `state` | `ColorSliderState` | The state of the color slider (read it with the `@rivetjs/cdk/color` functions, e.g. `getDisplayColor(state)`) |
-| `orientation` | `() => "horizontal" \| "vertical"` | The orientation of the slider |
-| `isDisabled` | `() => boolean` | Whether the slider is disabled |
+| Prop          | Type                | Description                                                                                                    |
+| ------------- | ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `state`       | `ColorSliderState`  | The state of the color slider (read it with the `@rivetjs/cdk/color` functions, e.g. `getDisplayColor(state)`) |
+| `orientation` | `() => Orientation` | The orientation of the slider                                                                                  |
+| `isDisabled`  | `() => boolean`     | Whether the slider is disabled                                                                                 |
 
 Rivet: render props are accessors; the current color is `getDisplayColor(state)` (React Aria passes no separate `color`).
 
@@ -211,6 +218,8 @@ The ColorSlider component implements the ARIA slider pattern and provides:
 - Internationalization support with locale-aware value formatting
 
 For more information, see the [cdk ColorSlider page](site:cdk/components/color-slider/).
+
+the thumb holds a hidden range input named by the `Label` (or the channel name), with the channel value as `aria-valuetext`; arrow keys step it, Page Up / Down take larger steps, Home / End jump to the ends.
 
 ## Related Components
 

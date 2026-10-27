@@ -29,27 +29,31 @@ import { TrendChip } from "@rivetjs/ui/trend-chip";
 </TrendChip>
 ```
 
-## Sizes
+Additional exported parts: `TrendChip.Root`.
+
+## Examples
+
+### Sizes
 
 ::example{id=trend-chip-sizes}
 
-## Variants
+### Variants
 
 ::example{id=trend-chip-variants}
 
 `soft` tints the background, `primary` fills it with the tone colour, `secondary` uses the neutral chip background with tone-coloured text, `tertiary` and `ghost` drop the background (`ghost` also drops the padding).
 
-## Prefix And Suffix
+### Prefix And Suffix
 
 ::example{id=trend-chip-prefix-suffix}
 
-## Custom Indicator
+### Custom Indicator
 
 ::example{id=trend-chip-custom-indicator}
 
 `TrendChip.Indicator` holds your own icon; the default direction icon hides while an indicator is present (CSS `:has()`, no script).
 
-## Tabular Nums
+### Tabular Nums
 
 ::example{id=trend-chip-tabular-nums}
 
@@ -80,6 +84,8 @@ The chip always uses tabular numerals, so changes line up in tables and lists.
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/trend-chip/) for every named export and part prop type.
+
 ### TrendChip
 
 | Prop         | Type                                                                  | Default     | Description                             |
@@ -94,6 +100,10 @@ The chip always uses tabular numerals, so changes line up in tables and lists.
 ### TrendChip.Prefix / TrendChip.Suffix / TrendChip.Indicator
 
 `span` parts with `children` and `class`; native `span` attributes pass through. The indicator is `aria-hidden`.
+
+## Accessibility
+
+The direction indicator is decorative (`aria-hidden`). Include the direction and meaning in the text, such as “Revenue increased 8%”, so color and the arrow are not the only cues.
 
 ## Related Components
 

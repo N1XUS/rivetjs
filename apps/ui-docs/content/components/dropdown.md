@@ -15,8 +15,6 @@ Notes:
 - `Dropdown.Popover` is optional: a `Dropdown.Menu` outside one renders its own popover (`placement` / `offset` / `crossOffset` / `shouldFlip` go on the Menu), also inside a `Dropdown.SubmenuTrigger`. Write the Popover to style it or to put more than the menu in it (see [Item shorthand](#item-shorthand)).
 - `Dropdown.Item` shorthand: string children become a `Label` and the `textValue`; `icon` (lucide icon data), `description` and `shortcut` (`"command+N"`: known keys as `Kbd.Abbr`, the rest as `Kbd.Content`; or any content) render the full item anatomy.
 
-Accessibility: ARIA `menu` with `menuitem` / `menuitemradio` / `menuitemcheckbox` items, keyboard navigation and typeahead, submenus on ArrowRight / hover, focus returns to the trigger on close.
-
 ## Usage
 
 ```tsx
@@ -41,7 +39,8 @@ export default () => (
     <Dropdown.Trigger>
       <Button />
     </Dropdown.Trigger>
-    <Dropdown.Popover>{/* optional */}
+    <Dropdown.Popover>
+      {/* optional */}
       <Dropdown.Menu>
         <Dropdown.Item>
           <Label />
@@ -68,8 +67,10 @@ export default () => (
       </Dropdown.Menu>
     </Dropdown.Popover>
   </Dropdown>
-)
+);
 ```
+
+Additional exported parts: `Dropdown.Root`.
 
 ## Examples
 
@@ -206,6 +207,8 @@ To customize the Dropdown component classes, you can use the `@layer components`
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `dropdown-submenu-trigger`, `dropdown-trigger`, `dropdown-popover`, `dropdown-menu`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -213,12 +216,14 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The Dropdown component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/dropdown.css)):
 
 #### Base Classes
+
 - `.dropdown` - Base dropdown container
 - `.dropdown__trigger` - The button or element that triggers the dropdown
 - `.dropdown__popover` - The popover container
 - `.dropdown__menu` - The menu container inside the popover
 
 #### State Classes
+
 - `.dropdown__trigger[data-focus-visible="true"]` - Focused trigger state
 - `.dropdown__trigger[data-disabled="true"]` - Disabled trigger state
 - `.dropdown__trigger[data-pressed="true"]` - Pressed trigger state
@@ -232,10 +237,12 @@ The Dropdown component uses these CSS classes ([View source styles](https://gith
 The Dropdown component uses Menu, MenuItem, and MenuSection as base components. These classes are also available for customization:
 
 #### Menu Classes
+
 - `.menu` - Base menu container ([menu.css](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/menu.css))
   - `[data-slot="separator"]` - Separator elements within the menu
 
 #### MenuItem Classes
+
 - `.menu-item` - Base menu item container ([menu-item.css](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/menu-item.css))
 - `.menu-item__indicator` - Selection indicator (checkmark or dot)
   - `[data-slot="menu-item-indicator--checkmark"]` - Checkmark indicator SVG
@@ -246,6 +253,7 @@ The Dropdown component uses Menu, MenuItem, and MenuSection as base components. 
 - `.menu-item__icon` / `.menu-item__text` / `.menu-item__shortcut` - Rivet: the `icon` / `description` / `shortcut` shorthand parts
 
 #### MenuItem State Classes
+
 - `.menu-item[data-focus-visible="true"]` - Focused item state (keyboard focus)
 - `.menu-item[data-focus="true"]` - Focused item state
 - `.menu-item[data-pressed]` - Pressed item state
@@ -259,6 +267,7 @@ The Dropdown component uses Menu, MenuItem, and MenuSection as base components. 
 - `.menu-item[aria-selected="true"]` - Selected item (ARIA)
 
 #### MenuSection Classes
+
 - `.menu-section` - Base menu section container ([menu-section.css](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/menu-section.css))
 
 ### Interactive States
@@ -273,109 +282,111 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/dropdown/) for every named export and part prop type.
+
 ### Dropdown
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isOpen` | `boolean` | - | Sets the open state of the menu (controlled) |
-| `defaultOpen` | `boolean` | - | Sets the default open state of the menu (uncontrolled) |
-| `onOpenChange` | `(isOpen: boolean) => void` | - | Handler called when the open state changes |
-| `trigger` | `"press" \| "longPress"` | `"press"` | The type of interaction that triggers the menu |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Dropdown content |
+| Prop           | Type                                            | Default   | Description                                            |
+| -------------- | ----------------------------------------------- | --------- | ------------------------------------------------------ |
+| `isOpen`       | `boolean \| Signal<boolean> \| (() => boolean)` | -         | Sets the open state of the menu (controlled)           |
+| `defaultOpen`  | `boolean`                                       | -         | Sets the default open state of the menu (uncontrolled) |
+| `onOpenChange` | `(isOpen: boolean) => void`                     | -         | Handler called when the open state changes             |
+| `trigger`      | `"press" \| "longPress"`                        | `"press"` | The type of interaction that triggers the menu         |
+| `class`        | `string`                                        | -         | Additional CSS classes                                 |
+| `children`     | `Content`                                       | -         | Dropdown content                                       |
 
 ### Dropdown.Trigger
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Trigger content or render function |
+| Prop       | Type                        | Default | Description                        |
+| ---------- | --------------------------- | ------- | ---------------------------------- |
+| `class`    | `string`                    | -       | Additional CSS classes             |
+| `children` | `Content \| RenderFunction` | -       | Trigger content or render function |
 
 All [cdk Button](site:cdk/components/button/) props are also supported when using a Button as the trigger.
 
 ### Dropdown.Popover
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop        | Type                                                                                                                                                                                                                                                                                                                     | Default    | Description                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------ |
 | `placement` | `"bottom" \| "bottom left" \| "bottom right" \| "bottom start" \| "bottom end" \| "top" \| "top left" \| "top right" \| "top start" \| "top end" \| "left" \| "left top" \| "left bottom" \| "start" \| "start top" \| "start bottom" \| "right" \| "right top" \| "right bottom" \| "end" \| "end top" \| "end bottom"` | `"bottom"` | Placement of the popover relative to the trigger |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Content children |
+| `class`     | `string`                                                                                                                                                                                                                                                                                                                 | -          | Additional CSS classes                           |
+| `children`  | `Content`                                                                                                                                                                                                                                                                                                                | -          | Content children                                 |
 
 All [cdk Popover](site:cdk/components/popover/) props are also supported.
 
 ### Dropdown.Menu
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `selectionMode` | `"single" \| "multiple" \| "none"` | `"none"` | Whether single or multiple selection is enabled |
-| `selectedKeys` | `Iterable<Key>` | - | The currently selected keys (controlled) |
-| `defaultSelectedKeys` | `Iterable<Key>` | - | The initial selected keys (uncontrolled) |
-| `onSelectionChange` | `(keys: Selection) => void` | - | Handler called when the selection changes |
-| `disabledKeys` | `Iterable<Key>` | - | Keys of disabled items |
-| `onAction` | `(key: Key) => void` | - | Handler called when an item is activated |
-| `placement` / `offset` / `crossOffset` / `shouldFlip` | `Dropdown.Popover` props | - | Rivet: the popover the Menu renders when it is not inside a `Dropdown.Popover` |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Menu content |
+| Prop                                                  | Type                               | Default  | Description                                                                    |
+| ----------------------------------------------------- | ---------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| `selectionMode`                                       | `"single" \| "multiple" \| "none"` | `"none"` | Whether single or multiple selection is enabled                                |
+| `selectedKeys`                                        | `Iterable<Key>`                    | -        | The currently selected keys (controlled)                                       |
+| `defaultSelectedKeys`                                 | `Iterable<Key>`                    | -        | The initial selected keys (uncontrolled)                                       |
+| `onSelectionChange`                                   | `(keys: Selection) => void`        | -        | Handler called when the selection changes                                      |
+| `disabledKeys`                                        | `Iterable<Key>`                    | -        | Keys of disabled items                                                         |
+| `onAction`                                            | `(key: Key) => void`               | -        | Handler called when an item is activated                                       |
+| `placement` / `offset` / `crossOffset` / `shouldFlip` | `Dropdown.Popover` props           | -        | Rivet: the popover the Menu renders when it is not inside a `Dropdown.Popover` |
+| `class`                                               | `string`                           | -        | Additional CSS classes                                                         |
+| `children`                                            | `Content`                          | -        | Menu content                                                                   |
 
 All [cdk Menu](site:cdk/components/menu/) props are also supported.
 
 ### Dropdown.Section
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `selectionMode` | `"single" \| "multiple"` | - | Selection mode for items within this section |
-| `selectedKeys` | `Iterable<Key>` | - | The currently selected keys (controlled) |
-| `defaultSelectedKeys` | `Iterable<Key>` | - | The initial selected keys (uncontrolled) |
-| `onSelectionChange` | `(keys: Selection) => void` | - | Handler called when the selection changes |
-| `disabledKeys` | `Iterable<Key>` | - | Keys of disabled items |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Section content |
+| Prop                  | Type                        | Default | Description                                  |
+| --------------------- | --------------------------- | ------- | -------------------------------------------- |
+| `selectionMode`       | `"single" \| "multiple"`    | -       | Selection mode for items within this section |
+| `selectedKeys`        | `Iterable<Key>`             | -       | The currently selected keys (controlled)     |
+| `defaultSelectedKeys` | `Iterable<Key>`             | -       | The initial selected keys (uncontrolled)     |
+| `onSelectionChange`   | `(keys: Selection) => void` | -       | Handler called when the selection changes    |
+| `disabledKeys`        | `Iterable<Key>`             | -       | Keys of disabled items                       |
+| `class`               | `string`                    | -       | Additional CSS classes                       |
+| `children`            | `Content`                   | -       | Section content                              |
 
 All [cdk MenuSection](site:cdk/components/menu/) props are also supported.
 
 ### Dropdown.Item
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `id` | `Key` | - | Unique identifier for the item |
-| `textValue` | `string` | - | Text content of the item for typeahead |
-| `variant` | `"default" \| "danger"` | `"default"` | Visual variant of the item |
-| `icon` | `IconNode` | - | Rivet: leading lucide icon (`.menu-item__icon`, 16 px; danger items tint it) |
-| `description` | `Content` | - | Rivet: second line under the label (`Description`, wires `aria-describedby`) |
-| `shortcut` | `string \| Content` | - | Rivet: trailing `Kbd` (`"command+shift+D"`: known keys as `Kbd.Abbr`, the rest as `Kbd.Content`) |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Item content or render function; a string = `Label` + `textValue` |
+| Prop          | Type                        | Default     | Description                                                                                      |
+| ------------- | --------------------------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| `id`          | `Key`                       | -           | Unique identifier for the item                                                                   |
+| `textValue`   | `string`                    | -           | Text content of the item for typeahead                                                           |
+| `variant`     | `"default" \| "danger"`     | `"default"` | Visual variant of the item                                                                       |
+| `icon`        | `IconNode`                  | -           | Rivet: leading lucide icon (`.menu-item__icon`, 16 px; danger items tint it)                     |
+| `description` | `Content`                   | -           | Rivet: second line under the label (`Description`, wires `aria-describedby`)                     |
+| `shortcut`    | `string \| Content`         | -           | Rivet: trailing `Kbd` (`"command+shift+D"`: known keys as `Kbd.Abbr`, the rest as `Kbd.Content`) |
+| `class`       | `string`                    | -           | Additional CSS classes                                                                           |
+| `children`    | `Content \| RenderFunction` | -           | Item content or render function; a string = `Label` + `textValue`                                |
 
 All [cdk MenuItem](site:cdk/components/menu/) props are also supported.
 
 ### Dropdown.ItemIndicator
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `type` | `"checkmark" \| "dot"` | `"checkmark"` | Type of indicator to display |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Custom indicator content or render function |
+| Prop       | Type                        | Default       | Description                                 |
+| ---------- | --------------------------- | ------------- | ------------------------------------------- |
+| `type`     | `"checkmark" \| "dot"`      | `"checkmark"` | Type of indicator to display                |
+| `class`    | `string`                    | -             | Additional CSS classes                      |
+| `children` | `Content \| RenderFunction` | -             | Custom indicator content or render function |
 
 When using a render function, these values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isSelected` | `boolean` | Whether the item is selected |
+| Prop              | Type      | Description                                   |
+| ----------------- | --------- | --------------------------------------------- |
+| `isSelected`      | `boolean` | Whether the item is selected                  |
 | `isIndeterminate` | `boolean` | Whether the item is in an indeterminate state |
 
 ### Dropdown.SubmenuIndicator
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Custom indicator content |
+| Prop       | Type      | Default | Description              |
+| ---------- | --------- | ------- | ------------------------ |
+| `class`    | `string`  | -       | Additional CSS classes   |
+| `children` | `Content` | -       | Custom indicator content |
 
 ### Dropdown.SubmenuTrigger
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Submenu trigger content |
+| Prop       | Type      | Default | Description             |
+| ---------- | --------- | ------- | ----------------------- |
+| `class`    | `string`  | -       | Additional CSS classes  |
+| `children` | `Content` | -       | Submenu trigger content |
 
 All [cdk SubmenuTrigger](site:cdk/components/menu/) props are also supported.
 
@@ -383,12 +394,12 @@ All [cdk SubmenuTrigger](site:cdk/components/menu/) props are also supported.
 
 When using render functions with Dropdown.Item, these values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isSelected` | `() => boolean` | Whether the item is selected |
-| `isFocused` | `() => boolean` | Whether the item is focused |
-| `isDisabled` | `() => boolean` | Whether the item is disabled |
-| `isPressed` | `() => boolean` | Whether the item is being pressed |
+| Prop         | Type            | Description                       |
+| ------------ | --------------- | --------------------------------- |
+| `isSelected` | `() => boolean` | Whether the item is selected      |
+| `isFocused`  | `() => boolean` | Whether the item is focused       |
+| `isDisabled` | `() => boolean` | Whether the item is disabled      |
+| `isPressed`  | `() => boolean` | Whether the item is being pressed |
 
 ::api{symbol="@rivetjs/ui/dropdown#DropdownRootProps"}
 
@@ -404,6 +415,8 @@ The Dropdown component implements the ARIA menu pattern and provides:
 - Submenu navigation
 
 For more information, see the [cdk Menu page](site:cdk/components/menu/).
+
+ARIA `menu` with `menuitem` / `menuitemradio` / `menuitemcheckbox` items, keyboard navigation and typeahead, submenus on ArrowRight / hover, focus returns to the trigger on close.
 
 ## Related Components
 

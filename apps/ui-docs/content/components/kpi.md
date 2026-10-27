@@ -45,39 +45,43 @@ export default function Anatomy() {
 
 `Kpi.Value` formats a number with `Intl.NumberFormat` (`formatOptions`, `locale`; one cached formatter per locale and options); pass an accessor to update it live, or children for a preformatted string. `Kpi.Trend` is a small [TrendChip](/components/trend-chip/). Put a [Sparkline](/components/chart/) in `Kpi.Chart`: it runs edge to edge across the card, and as the last part (no `Kpi.Footer`) it also reaches the bottom edge, clipped to the rounded corners.
 
-## Variants
+Additional exported parts: `Kpi.Root`.
+
+## Examples
+
+### Variants
 
 ::example{id=kpi-variants}
 
 `default` is a raised surface, `secondary` a flat tinted one, `transparent` drops the surface for KPIs inside an existing card.
 
-## With Icon
+### With Icon
 
 ::example{id=kpi-with-icon}
 
 `Kpi.Icon` `status` (`success` / `warning` / `danger`) tints the icon background.
 
-## With Actions
+### With Actions
 
 ::example{id=kpi-with-actions}
 
 `Kpi.Actions` is a corner slot: put your own [Button](/components/button/) or [Dropdown](/components/dropdown/) in it.
 
-## With Progress
+### With Progress
 
 ::example{id=kpi-with-progress}
 
-## With Footer
+### With Footer
 
 ::example{id=kpi-with-footer}
 
-## With Chart Inline
+### With Chart Inline
 
 ::example{id=kpi-with-chart-inline}
 
 `Kpi.Content` places the value and the trend side by side (like `Kpi.Body`, centred); lay it out next to a chart with your own classes.
 
-## With Chart Bottom
+### With Chart Bottom
 
 ::example{id=kpi-with-chart-bottom}
 
@@ -105,6 +109,8 @@ export default function Anatomy() {
 - `[data-status]` on `.kpi__icon` and `.kpi__progress`: `success` / `warning` / `danger`.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/kpi/) for every named export and part prop type.
 
 ### Kpi
 
@@ -145,6 +151,10 @@ A `div role="progressbar"` with `aria-valuenow`.
 ### Other parts
 
 `Kpi.Header`, `Kpi.Body`, `Kpi.Content`, `Kpi.Description`, `Kpi.Chart`, `Kpi.Actions`, `Kpi.Footer` take `div` props and `class`; `Kpi.Title` is an `h3`; `Kpi.Separator` an `hr`.
+
+## Accessibility
+
+`Kpi.Title` renders a heading. `Kpi.Progress` has `role="progressbar"`, a 0–100 range and a default name of “Progress”; set `aria-label` to name the metric. Give action buttons accessible names and explain trend status in text.
 
 ## Related Components
 

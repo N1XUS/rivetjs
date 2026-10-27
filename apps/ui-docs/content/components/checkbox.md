@@ -15,8 +15,6 @@ Notes:
 - Default indicator icons are lucide `Check` (with the draw animation) / `Minus`; `Checkbox.Indicator` takes `span` props only.
 - Shorthand (Rivet addition): `label` / `description` without children render the Content / Control / Indicator / Description parts.
 
-Accessibility: A native checkbox input inside the `Checkbox.Content` `<label>` (keyboard: Tab focuses, Space toggles); a nested `Label` renders as a `span`, so the label has no nested label. `isIndeterminate` sets the input's `indeterminate` property (`aria-checked="mixed"`).
-
 ## Usage
 
 ```tsx
@@ -45,6 +43,8 @@ export default () => (
   </Checkbox>
 );
 ```
+
+Additional exported parts: `Checkbox.Root`.
 
 ## Examples
 
@@ -159,6 +159,8 @@ To customize the Checkbox component classes, you can use the `@layer components`
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `checkbox-content`, `checkbox-indicator`, `checkbox-default-indicator--indeterminate`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -190,57 +192,63 @@ Where the build proves a checkbox call site closed (declared data props only, no
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/checkbox/) for every named export and part prop type.
+
 ### Checkbox
 
 Inherits from [React Aria CheckboxField](https://react-spectrum.adobe.com/react-aria/Checkbox.html).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isSelected` | `boolean` | `false` | Whether the checkbox is checked |
-| `defaultSelected` | `boolean` | `false` | Whether the checkbox is checked by default (uncontrolled) |
-| `isIndeterminate` | `boolean` | `false` | Whether the checkbox is in an indeterminate state |
-| `isDisabled` | `boolean` | `false` | Whether the checkbox is disabled |
-| `isInvalid` | `boolean` | `false` | Whether the checkbox is invalid |
-| `isReadOnly` | `boolean` | `false` | Whether the checkbox is read only |
-| `isRequired` | `boolean` | `false` | Whether the checkbox must be selected |
-| `validate` | `(value: boolean) => ValidationError \| true \| null \| undefined` | - | Custom validation function |
-| `validationBehavior` | `'native' \| 'aria'` | `'native'` | Whether to use native HTML form validation or ARIA |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `name` | `string` | - | The name of the input element, used when submitting an HTML form |
-| `value` | `string` | - | The value of the input element, used when submitting an HTML form |
-| `onChange` | `(isSelected: boolean) => void` | - | Handler called when the checkbox value changes |
-| `children` | `Content \| (values: CheckboxFieldRenderProps) => Content` | - | Checkbox content or field render prop |
-| `label` | `Content` | - | Shorthand (no children): the label next to the control. |
-| `description` | `Content` | - | Shorthand (no children): a Description under the label. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, CheckboxFieldRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop                 | Type                                                                       | Default     | Description                                                                                                                                                        |
+| -------------------- | -------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `isSelected`         | `boolean \| Signal<boolean> \| (() => boolean)`                            | `false`     | Whether the checkbox is checked                                                                                                                                    |
+| `defaultSelected`    | `boolean`                                                                  | `false`     | Whether the checkbox is checked by default (uncontrolled)                                                                                                          |
+| `isIndeterminate`    | `boolean \| (() => boolean)`                                               | `false`     | Whether the checkbox is in an indeterminate state                                                                                                                  |
+| `isDisabled`         | `boolean`                                                                  | `false`     | Whether the checkbox is disabled                                                                                                                                   |
+| `isInvalid`          | `boolean \| (() => boolean)`                                               | `false`     | Whether the checkbox is invalid                                                                                                                                    |
+| `isReadOnly`         | `boolean \| (() => boolean)`                                               | `false`     | Whether the checkbox is read only                                                                                                                                  |
+| `isRequired`         | `boolean \| (() => boolean)`                                               | `false`     | Whether the checkbox must be selected                                                                                                                              |
+| `validate`           | `(value: boolean) => ValidationError \| true \| null \| undefined`         | -           | Custom validation function                                                                                                                                         |
+| `validationBehavior` | `'native' \| 'aria'`                                                       | `'native'`  | Whether to use native HTML form validation or ARIA                                                                                                                 |
+| `variant`            | `"primary" \| "secondary"`                                                 | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `name`               | `string`                                                                   | -           | The name of the input element, used when submitting an HTML form                                                                                                   |
+| `value`              | `string`                                                                   | -           | The value of the input element, used when submitting an HTML form                                                                                                  |
+| `onChange`           | `(isSelected: boolean) => void`                                            | -           | Handler called when the checkbox value changes                                                                                                                     |
+| `children`           | `Content \| (values: CheckboxFieldRenderProps) => Content`                 | -           | Checkbox content or field render prop                                                                                                                              |
+| `label`              | `Content`                                                                  | -           | Shorthand (no children): the label next to the control.                                                                                                            |
+| `description`        | `Content`                                                                  | -           | Shorthand (no children): a Description under the label.                                                                                                            |
+| `render`             | `DOMRenderFunction<keyof JSX.IntrinsicElements, CheckboxFieldRenderProps>` | -           | Overrides the default DOM element with a custom render function.                                                                                                   |
 
 ### Checkbox.Content
 
 The clickable `<label>` that wraps the control and label text. Put `Checkbox.Control` and the `Label` inside it; keep `Description`/`FieldError` as siblings of `Checkbox.Content`. For a checkbox with no label, omit the `Label` and pass an `aria-label` on `Checkbox`.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| (values: CheckboxButtonRenderProps) => Content` | - | Button content (control + label), or a button render prop |
-| `class` | `string \| (values: CheckboxButtonRenderProps) => string` | - | Classes applied to the clickable label |
+| Prop       | Type                                                        | Default | Description                                               |
+| ---------- | ----------------------------------------------------------- | ------- | --------------------------------------------------------- |
+| `children` | `Content \| (values: CheckboxButtonRenderProps) => Content` | -       | Button content (control + label), or a button render prop |
+| `class`    | `string \| (values: CheckboxButtonRenderProps) => string`   | -       | Classes applied to the clickable label                    |
 
 ### CheckboxFieldRenderProps
 
 When using a render prop on the root `Checkbox`, these field-level values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isSelected` | `boolean` | Whether the checkbox is currently checked |
-| `isIndeterminate` | `boolean` | Whether the checkbox is in an indeterminate state |
-| `isDisabled` | `boolean` | Whether the checkbox is disabled |
-| `isReadOnly` | `boolean` | Whether the checkbox is read only |
-| `isInvalid` | `boolean` | Whether the checkbox is invalid |
-| `isRequired` | `boolean` | Whether the checkbox is required |
+| Prop              | Type            | Description                                       |
+| ----------------- | --------------- | ------------------------------------------------- |
+| `isSelected`      | `() => boolean` | Whether the checkbox is currently checked         |
+| `isIndeterminate` | `() => boolean` | Whether the checkbox is in an indeterminate state |
+| `isDisabled`      | `() => boolean` | Whether the checkbox is disabled                  |
+| `isReadOnly`      | `() => boolean` | Whether the checkbox is read only                 |
+| `isInvalid`       | `() => boolean` | Whether the checkbox is invalid                   |
+| `isRequired`      | `() => boolean` | Whether the checkbox is required                  |
 
 ### CheckboxButtonRenderProps
 
 `Checkbox.Control` and `Checkbox.Indicator` use button-level render props (`isHovered`, `isPressed`, `isFocusVisible`, etc.). Pass a function as `Checkbox.Control` children or to `Checkbox.Indicator` to access them.
 
 ::api{symbol="@rivetjs/ui/checkbox#CheckboxRootProps"}
+
+## Accessibility
+
+A native checkbox input inside the `Checkbox.Content` `<label>` (keyboard: Tab focuses, Space toggles); a nested `Label` renders as a `span`, so the label has no nested label. `isIndeterminate` sets the input's `indeterminate` property (`aria-checked="mixed"`).
 
 ## Related Components
 

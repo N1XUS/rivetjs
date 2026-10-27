@@ -10,12 +10,6 @@ related: [components/separator]
 
 ::example{id=header-basic}
 
-## Import
-
-```tsx
-import { Header } from "@rivetjs/ui/header";
-```
-
 ## Usage
 
 ```tsx
@@ -34,12 +28,28 @@ export default function Recent() {
 
 `headerVariants`: no variants. There is no `Header.Root`.
 
+## Examples
+
+### Import
+
+```tsx
+import { Header } from "@rivetjs/ui/header";
+```
+
+### Notes
+
+- `class`, not `className`.
+
+## API Reference
+
+See the [full module API](/api/rivetjs/ui/header/) for every named export and part prop type.
+
 ::api{symbol="@rivetjs/ui/header#HeaderRootProps"}
 
 ## Accessibility
 
 A `<header>` element. In a cdk ListBox or Menu section it becomes the section's label.
 
-## Notes
+## Related Components
 
-- `class`, not `className`.
+- [Separator](/components/separator/)

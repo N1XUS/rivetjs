@@ -42,29 +42,35 @@ export default function Anatomy() {
 
 `Rotator`, `Frame` and `Surface` are required; the other layers are optional. `Shine` renders a `ShinePattern` unless it has children.
 
-## Composing the Card Face
+Additional exported parts: `HoloCard.Root`, `HoloCard.ShinePattern`.
+
+## Examples
+
+### Composing the Card Face
 
 Render one `HoloCard.Content` per band of the card and position its children with flex utilities. Content layers drift against the tilt (`parallax={false}` turns that off) and sit above the glare so text stays readable. Put full-bleed art in `HoloCard.Image` (below the glare), not in a content layer.
 
-## Custom Gradient
+### Custom Gradient
 
 ::example{id=holo-card-custom-gradient}
 
-## With Pattern
+### With Pattern
 
 ::example{id=holo-card-pattern}
 
-## Static
+### Static
 
 On touch screens, horizontal drags tilt the card and vertical drags scroll the page.
 
 ::example{id=holo-card-static}
 
-## Credit Card
+### Credit Card
 
 ::example{id=holo-card-credit-card}
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `holo-card-rotator`, `holo-card-frame`, `holo-card-surface`, `holo-card-shine-pattern`, `holo-card-shine`, `holo-card-image`, `holo-card-content`.
 
 ### CSS Classes
 
@@ -87,19 +93,19 @@ On touch screens, horizontal drags tilt the card and vertical drags scroll the p
 
 ### CSS Variables
 
-| Variable                      | Default         | Description                            |
-| ----------------------------- | --------------- | -------------------------------------- |
-| `--holo-card-width`           | `302px`         | Card width                             |
-| `--holo-card-height`          | `453px`         | Card height                            |
-| `--holo-card-radius`          | `20px`          | Corner radius                          |
-| `--holo-card-perspective`     | `600px`         | 3D perspective depth                   |
-| `--holo-card-gradient`        | dark gradient   | Surface background                     |
-| `--holo-card-inset-color`     | white 6 %       | Hairline border colour                 |
-| `--holo-card-pattern`         | rainbow sheen   | Texture for both texture layers        |
-| `--holo-card-pattern-size`    | `200% 200%`     | `background-size` of the textures      |
-| `--holo-card-pattern-opacity` | `0.9`           | Glare texture opacity                  |
-| `--holo-card-texture-opacity` | `0.1`           | Static texture opacity                 |
-| `--holo-card-parallax`        | `10`            | Content drift at the edge (px)         |
+| Variable                      | Default       | Description                       |
+| ----------------------------- | ------------- | --------------------------------- |
+| `--holo-card-width`           | `302px`       | Card width                        |
+| `--holo-card-height`          | `453px`       | Card height                       |
+| `--holo-card-radius`          | `20px`        | Corner radius                     |
+| `--holo-card-perspective`     | `600px`       | 3D perspective depth              |
+| `--holo-card-gradient`        | dark gradient | Surface background                |
+| `--holo-card-inset-color`     | white 6 %     | Hairline border colour            |
+| `--holo-card-pattern`         | rainbow sheen | Texture for both texture layers   |
+| `--holo-card-pattern-size`    | `200% 200%`   | `background-size` of the textures |
+| `--holo-card-pattern-opacity` | `0.9`         | Glare texture opacity             |
+| `--holo-card-texture-opacity` | `0.1`         | Static texture opacity            |
+| `--holo-card-parallax`        | `10`          | Content drift at the edge (px)    |
 
 Image textures: inline styles refuse `url()`, so set `--holo-card-pattern: url(...)` in a stylesheet rule on a class and pass the class.
 
@@ -107,17 +113,19 @@ Written by the card on pointer move (read only): `--holo-card-pointer-x`, `--hol
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/holo-card/) for every named export and part prop type.
+
 ### HoloCard
 
 A `div` that tracks the pointer. Wrap it in a flex or grid container to position it.
 
-| Prop               | Type      | Default | Description                                         |
-| ------------------ | --------- | ------- | --------------------------------------------------- |
-| `gradient`         | `string`  | -       | Surface background (`--holo-card-gradient`)         |
-| `patternSize`      | `string`  | -       | Texture `background-size`                           |
-| `isInteractive`    | `boolean` | `true`  | Tilt and light up on pointer move                   |
-| `isDisabled`       | `boolean` | `false` | No pointer tracking                                 |
-| `parallaxStrength` | `number`  | `10`    | How far content layers drift (px)                   |
+| Prop               | Type      | Default | Description                                 |
+| ------------------ | --------- | ------- | ------------------------------------------- |
+| `gradient`         | `string`  | -       | Surface background (`--holo-card-gradient`) |
+| `patternSize`      | `string`  | -       | Texture `background-size`                   |
+| `isInteractive`    | `boolean` | `true`  | Tilt and light up on pointer move           |
+| `isDisabled`       | `boolean` | `false` | No pointer tracking                         |
+| `parallaxStrength` | `number`  | `10`    | How far content layers drift (px)           |
 
 ### HoloCard.Rotator / Frame / Surface / Inset / Pattern / Shine / ShinePattern
 
@@ -129,6 +137,15 @@ An `img` (`alt` required; `""` for decorative art).
 
 ### HoloCard.Content
 
-| Prop       | Type      | Default | Description                    |
-| ---------- | --------- | ------- | ------------------------------ |
-| `parallax` | `boolean` | `true`  | Drift against the tilt         |
+| Prop       | Type      | Default | Description            |
+| ---------- | --------- | ------- | ---------------------- |
+| `parallax` | `boolean` | `true`  | Drift against the tilt |
+
+## Accessibility
+
+The root is a plain `div`, not an interactive control. Tilt and glare are decorative and remain flat under reduced motion. Use real, labelled buttons or links for actions inside the card and meaningful alternative text for informative images.
+
+## Related Components
+
+- [Card](/components/card/)
+- [ItemCard](/components/item-card/)

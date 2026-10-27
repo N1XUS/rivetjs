@@ -33,13 +33,17 @@ export default function Anatomy() {
 }
 ```
 
-## Vertical
+Additional exported parts: `KpiGroup.Root`.
+
+## Examples
+
+### Vertical
 
 `orientation="vertical"` stacks the cards; separators turn horizontal.
 
 ::example{id=kpi-group-vertical}
 
-## With From Suffix
+### With From Suffix
 
 Show the previous value next to the current one. [NumberValue](/components/number-value/) formats both the same way.
 
@@ -59,6 +63,8 @@ Show the previous value next to the current one. [NumberValue](/components/numbe
 - `[data-orientation]`: `horizontal` / `vertical` on the root.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/kpi-group/) for every named export and part prop type.
 
 ### KpiGroup
 

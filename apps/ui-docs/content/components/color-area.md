@@ -15,8 +15,6 @@ Notes:
 - `colorSpace`, `xChannel` and `yChannel` are read once: to switch them, re-create the area (`<Show keyed when={…}>`, Space and Channels demo).
 - Render props are accessors (`({ color }) => color().toString("css")`, `({ isDragging }) => isDragging()`).
 
-Accessibility: the root is a `role="group"`; the x input is a slider with `aria-roledescription="2D slider"` (the y input is `aria-hidden`); arrow keys step the channels, Page Up / Down and Shift + arrows take larger steps.
-
 ## Usage
 
 ```tsx
@@ -36,6 +34,8 @@ export default () => (
   </ColorArea>
 );
 ```
+
+Additional exported parts: `ColorArea.Root`.
 
 ## Examples
 
@@ -86,6 +86,8 @@ To customize the ColorArea component classes, you can use the `@layer components
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `color-area-thumb`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -93,10 +95,12 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The ColorArea component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/color-area.css)):
 
 #### Base Classes
+
 - `.color-area` - Base styles with gradient background and inner shadow
 - `.color-area--show-dots` - Adds dot grid overlay for precision picking
 
 #### Element Classes
+
 - `.color-area__thumb` - Draggable thumb indicator
 
 ### Interactive States
@@ -109,33 +113,39 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/color-area/) for every named export and part prop type.
+
 ### ColorArea
 
 Inherits from [cdk ColorArea](site:cdk/components/color-area/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string \| Color \| Signal<string \| Color>` | - | The current color value (controlled; Rivet: a signal is two-way) |
-| `defaultValue` | `string \| Color` | - | The default color value (uncontrolled) |
-| `onChange` | `(color: Color) => void` | - | Handler called when the color changes while dragging |
-| `onChangeEnd` | `(color: Color) => void` | - | Handler called when the user stops dragging |
-| `xChannel` | `ColorChannel` | `"saturation"` | Color channel for the horizontal axis |
-| `yChannel` | `ColorChannel` | `"brightness"` | Color channel for the vertical axis |
-| `colorSpace` | `ColorSpace` | - | The color space for the channels |
-| `isDisabled` | `boolean` | `false` | Whether the color area is disabled |
-| `showDots` | `boolean` | `false` | Whether to show the dot grid overlay |
-| `class` | `string` | - | Additional CSS classes |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorAreaRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                   | Default        | Description                                                      |
+| -------------- | ---------------------------------------------------------------------- | -------------- | ---------------------------------------------------------------- |
+| `value`        | `string \| Color \| Signal<string \| Color>`                           | -              | The current color value (controlled; Rivet: a signal is two-way) |
+| `defaultValue` | `string \| Color`                                                      | -              | The default color value (uncontrolled)                           |
+| `onChange`     | `(color: Color) => void`                                               | -              | Handler called when the color changes while dragging             |
+| `onChangeEnd`  | `(color: Color) => void`                                               | -              | Handler called when the user stops dragging                      |
+| `xChannel`     | `ColorChannel`                                                         | `"saturation"` | Color channel for the horizontal axis                            |
+| `yChannel`     | `ColorChannel`                                                         | `"brightness"` | Color channel for the vertical axis                              |
+| `colorSpace`   | `ColorSpace`                                                           | -              | The color space for the channels                                 |
+| `isDisabled`   | `boolean`                                                              | `false`        | Whether the color area is disabled                               |
+| `showDots`     | `boolean`                                                              | `false`        | Whether to show the dot grid overlay                             |
+| `class`        | `string`                                                               | -              | Additional CSS classes                                           |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorAreaRenderProps>` | -              | Overrides the default DOM element with a custom render function. |
 
 ### ColorArea.Thumb
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `style` | `JSX.CSSProperties \| ((renderProps) => JSX.CSSProperties)` | - | Inline styles or render props function |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorThumbRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop     | Type                                                                    | Default | Description                                                      |
+| -------- | ----------------------------------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| `class`  | `string`                                                                | -       | Additional CSS classes                                           |
+| `style`  | `JSX.CSSProperties \| ((renderProps) => JSX.CSSProperties)`             | -       | Inline styles or render props function                           |
+| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorThumbRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ::api{symbol="@rivetjs/ui/color-area#ColorArea"}
+
+## Accessibility
+
+the root is a `role="group"`; the x input is a slider with `aria-roledescription="2D slider"` (the y input is `aria-hidden`); arrow keys step the channels, Page Up / Down and Shift + arrows take larger steps.
 
 ## Related Components
 

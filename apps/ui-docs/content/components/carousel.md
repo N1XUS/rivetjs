@@ -10,12 +10,6 @@ related: [components/card, components/button]
 
 ::example{id=carousel-basic}
 
-## Import
-
-```tsx
-import { Carousel } from "@rivetjs/ui/carousel";
-```
-
 ## Usage
 
 ```tsx
@@ -51,13 +45,15 @@ export default function Gallery() {
 | `Carousel` / `.Root`                 | `div role=region`, class `carousel`                | `carousel`                                   |
 | `Carousel.Content`                   | viewport `div` + track `div` (`carousel__content`) | `carousel-viewport` / `carousel-content`     |
 | `Carousel.Item`                      | `div role=group` (`tabpanel` with `tabs`)          | `carousel-item`                              |
-| `Carousel.Previous` / `.Next`        | icon-only `button` (Button classes)                 | `carousel-previous` / `carousel-next`        |
+| `Carousel.Previous` / `.Next`        | icon-only `button` (Button classes)                | `carousel-previous` / `carousel-next`        |
 | `Carousel.RotationControl`           | icon-only `button` (pause / play)                  | `carousel-rotation-control`                  |
 | `Carousel.Dots` / `.Dot`             | `div role=tablist` / `button role=tab`             | `carousel-dots` / `carousel-dot`             |
 | `Carousel.Thumbnails` / `.Thumbnail` | `div role=tablist` / `button role=tab`             | `carousel-thumbnails` / `carousel-thumbnail` |
 | `Carousel.Counter`                   | `span` "N / M"                                     | `carousel-counter`                           |
 
 Controls are placed by a CSS grid on the root, wherever they are written: previous / next centred on the viewport edges, dots and thumbnails below (beside it when vertical), rotation control bottom-start and counter top-end over the viewport.
+
+Additional exported parts: `Carousel.Root`.
 
 ## Examples
 
@@ -107,11 +103,17 @@ Set the slide size with `--rv-carousel-slide-size` (on the root or an item); `sl
 
 ::example{id=carousel-api-access}
 
-## Embla examples
+### Import
+
+```tsx
+import { Carousel } from "@rivetjs/ui/carousel";
+```
+
+### Embla examples
 
 Every predefined example of [embla-carousel](https://www.embla-carousel.com/examples/predefined/) 8.6.0, in its order, on the ui Carousel. Default, Loop, Drag Free, Y-axis and Thumbnails are the example at the top, [Loop](#loop), [Free drag](#free-drag), [Vertical](#vertical) and [Thumbnails](#thumbnails) above; the headless versions are on the [cdk carousel page](site:cdk/components/carousel/#examples).
 
-### Basic examples
+#### Basic examples
 
 #### Right to left
 
@@ -143,7 +145,7 @@ One slide, two from `sm` and three from `lg`: the slide size changes per breakpo
 
 ::example{id=carousel-slides-per-view}
 
-### Plugin examples
+#### Plugin examples
 
 #### Autoplay
 
@@ -175,7 +177,7 @@ The ClassNames plugin (`@rivetjs/cdk/carousel/class-names`) toggles `is-snapped`
 
 ::example{id=carousel-class-names}
 
-### Tween examples
+#### Tween examples
 
 `onApi` hands over the embla API; the tweens listen to `scroll` and style each slide by its distance to the selected snap.
 
@@ -191,7 +193,7 @@ The ClassNames plugin (`@rivetjs/cdk/carousel/class-names`) toggles `is-snapped`
 
 ::example{id=carousel-opacity}
 
-### Miscellaneous examples
+#### Miscellaneous examples
 
 #### Progress
 
@@ -221,53 +223,53 @@ Vertical, drag-free carousels with embla's translate switched off, drawn as 3D w
 
 ::example{id=carousel-ios-picker-loop}
 
-## shadcn/ui examples
+### shadcn/ui examples
 
 The demos of the [shadcn/ui Carousel](https://ui.shadcn.com/docs/components/carousel) page (also embla-based) on the ui Carousel. shadcn's `CarouselPrevious` / `CarouselNext` sit outside the track: `placement="outside"`.
 
-### Demo
+#### Demo
 
 ::example{id=carousel-shadcn-demo}
 
-### Sizes
+#### Sizes
 
 shadcn sets `basis-*` on the items; here `--rv-carousel-slide-size` per breakpoint (`md:[--rv-carousel-slide-size:50%] lg:[--rv-carousel-slide-size:33.333%]`).
 
 ::example{id=carousel-shadcn-sizes}
 
-### Spacing
+#### Spacing
 
 shadcn pairs `-ml-*` on the content with `pl-*` on the items; here one variable, `--carousel-gap`.
 
 ::example{id=carousel-shadcn-spacing}
 
-### Orientation
+#### Orientation
 
 `orientation="vertical"` with a `--carousel-height` (shadcn: `h-[200px]` on the content).
 
 ::example{id=carousel-shadcn-orientation}
 
-### Options
+#### Options
 
 shadcn's `opts` are the root props here: `align="start"`, `loop`, `dragFree`, … (every embla option).
 
-### API and events
+#### API and events
 
 shadcn's `setApi` is `onApi`: it receives the embla API once the engine runs; `api.on("select", …)` follows the selection.
 
 ::example{id=carousel-shadcn-api}
 
-### Plugins
+#### Plugins
 
 shadcn passes `plugins={[Autoplay({ delay: 2000 })]}` and stops / resets it on mouse enter / leave. `autoplay` takes the plugin options; hover already pauses it (W3C APG). Other plugins go in `plugins={() => [ … ]}`.
 
 ::example{id=carousel-shadcn-plugin}
 
-### RTL
+#### RTL
 
 ::example{id=carousel-shadcn-rtl}
 
-## Variants
+### Variants
 
 `carouselVariants` slots: `base`, `viewport`, `content`, `item`, `control`, `previous`, `next`, `rotationControl`, `dots`, `dot`, `thumbnails`, `thumbnail`, `counter`.
 
@@ -277,7 +279,26 @@ shadcn passes `plugins={[Autoplay({ delay: 2000 })]}` and stops / resets it on m
 
 Control props: `variant` (Button variant, default `tertiary`) and `size` (default: the carousel's) on `Previous` / `Next` / `RotationControl`.
 
-## CSS variables
+### Motion
+
+Slides move with the embla engine (scroll body physics, `duration`, `dragFree`, `skipSnaps`), not CSS transitions. On a resumed page the engine starts on the first interaction (pointer, focus, key), or when the carousel becomes visible if it autoplays or has `plugins` / `onApi` (Fade, AutoHeight and tweens style the slides from the start); until then the server markup is the first snap.
+
+With `prefers-reduced-motion: reduce` (from the cdk) the slides jump instead of animating: buttons, dots, keys, autoplay and the drag release. While you drag, the track still follows the pointer. A change of the setting applies to the next movement.
+
+### Notes
+
+- Styles: `styles/components/carousel.css`.
+- Icons: lucide `ChevronLeft` / `ChevronRight` / `ChevronUp` / `ChevronDown` (flipped for RTL), `Pause` / `Play`.
+
+### Behaviour source
+
+Behaviour: [embla-carousel](https://www.embla-carousel.com) 8.6.0 (MIT) via `@rivetjs/cdk/carousel`.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `carousel-previous-icon`, `carousel-next-icon`, `carousel-pause-icon`, `carousel-play-icon`.
+
+### CSS variables
 
 | Variable                                             | Default (md)                   | What                                         |
 | ---------------------------------------------------- | ------------------------------ | -------------------------------------------- |
@@ -288,23 +309,17 @@ Control props: `variant` (Button variant, default `tertiary`) and `size` (defaul
 | `--carousel-dot-size` / `--carousel-dot-active-size` | `0.5rem` / `1.5rem`            | Dot / active pill width.                     |
 | `--carousel-thumbnail-size`                          | `4rem`                         | Thumbnail size.                              |
 
-## Motion
+## API Reference
 
-Slides move with the embla engine (scroll body physics, `duration`, `dragFree`, `skipSnaps`), not CSS transitions. On a resumed page the engine starts on the first interaction (pointer, focus, key), or when the carousel becomes visible if it autoplays or has `plugins` / `onApi` (Fade, AutoHeight and tweens style the slides from the start); until then the server markup is the first snap.
+See the [full module API](/api/rivetjs/ui/carousel/) for every named export and part prop type.
 
-With `prefers-reduced-motion: reduce` (from the cdk) the slides jump instead of animating: buttons, dots, keys, autoplay and the drag release. While you drag, the track still follows the pointer. A change of the setting applies to the next movement.
+::api{symbol="@rivetjs/ui/carousel#CarouselRootProps"}
 
 ## Accessibility
 
 W3C APG carousel: `role=region` + `aria-roledescription="carousel"` (give it `aria-label`), slides `aria-roledescription="slide"` labelled "N of M", previous / next labelled "Previous slide" / "Next slide" and disabled at the ends. With `tabs`, dots / thumbnails are a tab list (arrow keys, Home / End) and slides are tab panels. Autoplay pauses on hover and focus; the rotation control is labelled "Stop automatic slide show" / "Start automatic slide show". Arrow keys on the carousel move one snap.
 
-::api{symbol="@rivetjs/ui/carousel#CarouselRootProps"}
+## Related Components
 
-## Notes
-
-- Styles: `styles/components/carousel.css`.
-- Icons: lucide `ChevronLeft` / `ChevronRight` / `ChevronUp` / `ChevronDown` (flipped for RTL), `Pause` / `Play`.
-
-## Behaviour source
-
-Behaviour: [embla-carousel](https://www.embla-carousel.com) 8.6.0 (MIT) via `@rivetjs/cdk/carousel`.
+- [Card](/components/card/)
+- [Button](/components/button/)

@@ -15,8 +15,6 @@ Notes:
 - Stepper defaults = lucide `Plus` / `Minus`; any children replace them (also text or a function result, not only an element).
 - Shorthand (Rivet addition): `label` / `description` / `errorMessage` / `placeholder` without children render the Label, Group, Description and FieldError parts.
 
-Accessibility: The input has `aria-roledescription="Number field"`; the steppers are labelled "Increase" / "Decrease" + the field label and excluded from the tab order (arrow keys step from the input).
-
 ## Usage
 
 ```tsx
@@ -44,10 +42,12 @@ export default () => (
     <Description />
     <FieldError />
   </NumberField>
-)
+);
 ```
 
 > **NumberField** allows users to enter numeric values with optional increment/decrement buttons. It supports internationalized formatting, validation, and keyboard navigation.
+
+Additional exported parts: `NumberField.Root`.
 
 ## Examples
 
@@ -179,6 +179,8 @@ NumberField uses CSS classes that can be customized. Override the component clas
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `number-field-{increment,decrement}-button-icon`, `number-field-group`, `number-field-input`, `number-field-increment-button`, `number-field-increment-button-icon`, `number-field-decrement-button`, `number-field-decrement-button-icon`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -212,81 +214,83 @@ Additional attributes are available through render props (see NumberFieldRenderP
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/number-field/) for every named export and part prop type.
+
 ### NumberField
 
 NumberField inherits all props from React Aria's [NumberField](https://react-spectrum.adobe.com/react-aria/NumberField.html) component.
 
 #### Base Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| (values: NumberFieldRenderProps) => Content` | - | Child components (Label, Group, Input, etc.) or render function. |
-| `label` | `Content` | - | Shorthand (no children): the Label content. |
-| `description` | `Content` | - | Shorthand (no children): a Description under the group. |
-| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content` | - | Shorthand (no children): the FieldError content, shown while invalid. |
-| `placeholder` | `string` | - | Shorthand (no children): the input's placeholder. |
-| `class` | `string \| (values: NumberFieldRenderProps) => string` | - | CSS classes for styling, supports render props. |
-| `style` | `StyleObject \| (values: NumberFieldRenderProps) => StyleObject` | - | Inline styles, supports render props. |
-| `fullWidth` | `boolean` | `false` | Whether the number field should take full width of its container |
-| `id` | `string` | - | The element's unique identifier. |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, NumberFieldRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                     | Default     | Description                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `children`     | `Content \| (values: NumberFieldRenderProps) => Content`                 | -           | Child components (Label, Group, Input, etc.) or render function.                                                                                                   |
+| `label`        | `Content`                                                                | -           | Shorthand (no children): the Label content.                                                                                                                        |
+| `description`  | `Content`                                                                | -           | Shorthand (no children): a Description under the group.                                                                                                            |
+| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content`                  | -           | Shorthand (no children): the FieldError content, shown while invalid.                                                                                              |
+| `placeholder`  | `string`                                                                 | -           | Shorthand (no children): the input's placeholder.                                                                                                                  |
+| `class`        | `string \| (values: NumberFieldRenderProps) => string`                   | -           | CSS classes for styling, supports render props.                                                                                                                    |
+| `style`        | `StyleObject \| (values: NumberFieldRenderProps) => StyleObject`         | -           | Inline styles, supports render props.                                                                                                                              |
+| `fullWidth`    | `boolean`                                                                | `false`     | Whether the number field should take full width of its container                                                                                                   |
+| `id`           | `string`                                                                 | -           | The element's unique identifier.                                                                                                                                   |
+| `variant`      | `"primary" \| "secondary"`                                               | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, NumberFieldRenderProps>` | -           | Overrides the default DOM element with a custom render function.                                                                                                   |
 
 #### Value Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `number` | - | Current value (controlled). |
-| `defaultValue` | `number` | - | Default value (uncontrolled). |
-| `onChange` | `(value: number \| undefined) => void` | - | Handler called when the value changes. |
+| Prop           | Type                                   | Default | Description                            |
+| -------------- | -------------------------------------- | ------- | -------------------------------------- |
+| `value`        | `number`                               | -       | Current value (controlled).            |
+| `defaultValue` | `number`                               | -       | Default value (uncontrolled).          |
+| `onChange`     | `(value: number \| undefined) => void` | -       | Handler called when the value changes. |
 
 #### Formatting Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `formatOptions` | `Intl.NumberFormatOptions` | - | Options for formatting numbers (currency, percent, decimal, unit). |
-| `locale` | `string` | - | Locale for number formatting. |
+| Prop            | Type                       | Default | Description                                                        |
+| --------------- | -------------------------- | ------- | ------------------------------------------------------------------ |
+| `formatOptions` | `Intl.NumberFormatOptions` | -       | Options for formatting numbers (currency, percent, decimal, unit). |
+| `locale`        | `string`                   | -       | Locale for number formatting.                                      |
 
 #### Validation Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isRequired` | `boolean` | `false` | Whether user input is required before form submission. |
-| `isInvalid` | `boolean` | - | Whether the value is invalid. |
-| `validate` | `(value: number) => ValidationError \| true \| null \| undefined` | - | Custom validation function. |
-| `validationBehavior` | `'native' \| 'aria'` | `'native'` | Whether to use native HTML form validation or ARIA attributes. |
-| `validationErrors` | `string[]` | - | Server-side validation errors. |
+| Prop                 | Type                                                              | Default    | Description                                                    |
+| -------------------- | ----------------------------------------------------------------- | ---------- | -------------------------------------------------------------- |
+| `isRequired`         | `boolean`                                                         | `false`    | Whether user input is required before form submission.         |
+| `isInvalid`          | `boolean`                                                         | -          | Whether the value is invalid.                                  |
+| `validate`           | `(value: number) => ValidationError \| true \| null \| undefined` | -          | Custom validation function.                                    |
+| `validationBehavior` | `'native' \| 'aria'`                                              | `'native'` | Whether to use native HTML form validation or ARIA attributes. |
+| `validationErrors`   | `string[]`                                                        | -          | Server-side validation errors.                                 |
 
 #### Range Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `minValue` | `number` | - | Minimum allowed value. |
-| `maxValue` | `number` | - | Maximum allowed value. |
-| `step` | `number` | `1` | Step value for increment/decrement operations. |
+| Prop       | Type     | Default | Description                                    |
+| ---------- | -------- | ------- | ---------------------------------------------- |
+| `minValue` | `number` | -       | Minimum allowed value.                         |
+| `maxValue` | `number` | -       | Maximum allowed value.                         |
+| `step`     | `number` | `1`     | Step value for increment/decrement operations. |
 
 #### State Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isDisabled` | `boolean` | - | Whether the input is disabled. |
-| `isReadOnly` | `boolean` | - | Whether the input can be selected but not changed. |
+| Prop         | Type      | Default | Description                                        |
+| ------------ | --------- | ------- | -------------------------------------------------- |
+| `isDisabled` | `boolean` | -       | Whether the input is disabled.                     |
+| `isReadOnly` | `boolean` | -       | Whether the input can be selected but not changed. |
 
 #### Form Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `name` | `string` | - | Name of the input element, for HTML form submission. |
-| `autoFocus` | `boolean` | - | Whether the element should receive focus on render. |
+| Prop        | Type      | Default | Description                                          |
+| ----------- | --------- | ------- | ---------------------------------------------------- |
+| `name`      | `string`  | -       | Name of the input element, for HTML form submission. |
+| `autoFocus` | `boolean` | -       | Whether the element should receive focus on render.  |
 
 #### Accessibility Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `aria-label` | `string` | - | Accessibility label when no visible label is present. |
-| `aria-labelledby` | `string` | - | ID of elements that label this field. |
-| `aria-describedby` | `string` | - | ID of elements that describe this field. |
-| `aria-details` | `string` | - | ID of elements with additional details. |
+| Prop               | Type     | Default | Description                                           |
+| ------------------ | -------- | ------- | ----------------------------------------------------- |
+| `aria-label`       | `string` | -       | Accessibility label when no visible label is present. |
+| `aria-labelledby`  | `string` | -       | ID of elements that label this field.                 |
+| `aria-describedby` | `string` | -       | ID of elements that describe this field.              |
+| `aria-details`     | `string` | -       | ID of elements with additional details.               |
 
 ### Composition Components
 
@@ -319,59 +323,57 @@ Each of these components has its own props API. Use them directly within NumberF
 
 NumberField.Group inherits props from React Aria's [Group](https://react-spectrum.adobe.com/react-aria/Group.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| (values: GroupRenderProps) => Content` | - | Child components (Input, Buttons) or render function. |
-| `class` | `string \| (values: GroupRenderProps) => string` | - | CSS classes for styling. |
+| Prop       | Type                                               | Default | Description                                           |
+| ---------- | -------------------------------------------------- | ------- | ----------------------------------------------------- |
+| `children` | `Content \| (values: GroupRenderProps) => Content` | -       | Child components (Input, Buttons) or render function. |
+| `class`    | `string \| (values: GroupRenderProps) => string`   | -       | CSS classes for styling.                              |
 
 #### NumberField.Input Props
 
 NumberField.Input inherits props from React Aria's [Input](https://react-spectrum.adobe.com/react-aria/Input.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | CSS classes for styling. |
+| Prop      | Type                       | Default     | Description                                                                                                                                                    |
+| --------- | -------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `class`   | `string`                   | -           | CSS classes for styling.                                                                                                                                       |
 | `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the input. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
 
 #### NumberField.IncrementButton Props
 
 NumberField.IncrementButton inherits props from React Aria's [Button](https://react-spectrum.adobe.com/react-aria/Button.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content` | `<IconPlus />` | Icon or content for the button. Defaults to plus icon. |
-| `class` | `string` | - | CSS classes for styling. |
-| `slot` | `"increment"` | `"increment"` | Must be set to "increment" (automatically set). |
+| Prop       | Type          | Default        | Description                                            |
+| ---------- | ------------- | -------------- | ------------------------------------------------------ |
+| `children` | `Content`     | `<IconPlus />` | Icon or content for the button. Defaults to plus icon. |
+| `class`    | `string`      | -              | CSS classes for styling.                               |
+| `slot`     | `"increment"` | `"increment"`  | Must be set to "increment" (automatically set).        |
 
 #### NumberField.DecrementButton Props
 
 NumberField.DecrementButton inherits props from React Aria's [Button](https://react-spectrum.adobe.com/react-aria/Button.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content` | `<IconMinus />` | Icon or content for the button. Defaults to minus icon. |
-| `class` | `string` | - | CSS classes for styling. |
-| `slot` | `"decrement"` | `"decrement"` | Must be set to "decrement" (automatically set). |
+| Prop       | Type          | Default         | Description                                             |
+| ---------- | ------------- | --------------- | ------------------------------------------------------- |
+| `children` | `Content`     | `<IconMinus />` | Icon or content for the button. Defaults to minus icon. |
+| `class`    | `string`      | -               | CSS classes for styling.                                |
+| `slot`     | `"decrement"` | `"decrement"`   | Must be set to "decrement" (automatically set).         |
 
 ### Render Props
 
-When using render props with `class`, `style`, or `children`, these values are available:
+Render functions receive the following values. Call accessor members to read their current value:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isDisabled` | `boolean` | Whether the field is disabled. |
-| `isInvalid` | `boolean` | Whether the field is currently invalid. |
-| `isReadOnly` | `boolean` | Whether the field is read-only. |
-| `isRequired` | `boolean` | Whether the field is required. |
-| `isFocused` | `boolean` | Whether the field is currently focused (DEPRECATED - use `isFocusWithin`). |
-| `isFocusWithin` | `boolean` | Whether any child element is focused. |
-| `isFocusVisible` | `boolean` | Whether focus is visible (keyboard navigation). |
-| `value` | `number \| undefined` | Current value. |
-| `minValue` | `number \| undefined` | Minimum allowed value. |
-| `maxValue` | `number \| undefined` | Maximum allowed value. |
-| `step` | `number` | Step value for increment/decrement. |
+| Prop         | Type               | Description                            |
+| ------------ | ------------------ | -------------------------------------- |
+| `isDisabled` | `() => boolean`    | Whether the number field is disabled.  |
+| `isInvalid`  | `() => boolean`    | Whether the number field is invalid.   |
+| `isReadOnly` | `() => boolean`    | Whether the number field is read only. |
+| `isRequired` | `() => boolean`    | Whether the number field is required.  |
+| `state`      | `NumberFieldState` | State of the number field.             |
 
 ::api{symbol="@rivetjs/ui/number-field#NumberFieldRootProps"}
+
+## Accessibility
+
+The input has `aria-roledescription="Number field"`; the steppers are labelled "Increase" / "Decrease" + the field label and excluded from the tab order (arrow keys step from the input).
 
 ## Related Components
 

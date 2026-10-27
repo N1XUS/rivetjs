@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - The default icon is lucide `ArrowUpRight` (stroked).
 
-Accessibility: A real `<a>`. A disabled link gets `aria-disabled` and loses its `href`. State attributes: `data-hovered`, `data-pressed`, `data-focus-visible`, `data-current`, `data-disabled`. With `@rivetjs/router`, navigation goes through the router.
-
 ## Usage
 
 ```tsx
@@ -35,6 +33,8 @@ export default () => (
   </Link>
 );
 ```
+
+Additional exported parts: `Link.Root`.
 
 ## Examples
 
@@ -117,6 +117,8 @@ To customize the Link component classes, you can use the `@layer components` dir
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `link-default-icon`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -139,6 +141,8 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/link/) for every named export and part prop type.
+
 ### Link
 
 | Prop         | Type                                                              | Default   | Description                                                      |
@@ -147,7 +151,7 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 | `target`     | `string`                                                          | `"_self"` | Controls where to open the linked document                       |
 | `rel`        | `string`                                                          | -         | Relationship between the current and linked documents            |
 | `download`   | `boolean \| string`                                               | -         | Prompts file download instead of navigation                      |
-| `isDisabled` | `boolean`                                                         | `false`   | Disables pointer and keyboard interaction                        |
+| `isDisabled` | `boolean \| (() => boolean)`                                      | `false`   | Disables pointer and keyboard interaction                        |
 | `class`      | `string`                                                          | -         | Custom classes merged with the default styles                    |
 | `children`   | `Content`                                                         | -         | Content rendered inside the link                                 |
 | `onPress`    | `(e: PressEvent) => void`                                         | -         | Fired when the link is activated                                 |
@@ -210,6 +214,10 @@ export default function NativeLink() {
 ```
 
 ::api{symbol="@rivetjs/ui/link#LinkRootProps"}
+
+## Accessibility
+
+A real `<a>`. A disabled link gets `aria-disabled` and loses its `href`. State attributes: `data-hovered`, `data-pressed`, `data-focus-visible`, `data-current`, `data-disabled`. With `@rivetjs/router`, navigation goes through the router.
 
 ## Related Components
 

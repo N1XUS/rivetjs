@@ -8,8 +8,6 @@ related: [components/toolbar, components/table, components/list-box]
 
 `ActionBar` appears at the bottom centre of the screen while something is selected and holds the bulk actions for that selection. It is selection-agnostic: you decide when it is open (`isOpen`) and render the count and actions yourself, so it works with a DataGrid, a [Table](/components/table/), a [ListBox](/components/list-box/) or any custom list. The pill is the ui [Toolbar](/components/toolbar/) (arrow keys move between the actions).
 
-Accessibility: the pill is a `toolbar` named by `aria-label` (default "Actions"); Tab enters it and arrow keys move between the actions. `ActionBar.Prefix` is a polite live region, so a count rendered there is announced when it changes while the bar is open. Icon-only buttons need their own `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -17,10 +15,6 @@ import { ActionBar } from "@rivetjs/ui/action-bar";
 ```
 
 ::example{id=action-bar-basic}
-
-## With Data Grid
-
-::example{id=action-bar-with-data-grid}
 
 ## Anatomy
 
@@ -49,13 +43,29 @@ export default function Anatomy(props: { count: () => number }) {
 
 The bar is always in the page: `isOpen` flips `data-open`, and CSS transitions slide it in and out (`@starting-style`; with `prefers-reduced-motion` it appears without a transition). The outer layer lets pointer events through; only the pill takes them.
 
-## Responsive Labels
+Additional exported parts: `ActionBar.Root`.
+
+## Examples
+
+### With Data Grid
+
+::example{id=action-bar-with-data-grid}
+
+### Responsive Labels
 
 Wrap button text in `.action-bar__label`: below 640px it is screen-reader-only, so the buttons become icon-only on phones and keep their accessible names.
 
 ::example{id=action-bar-responsive-labels}
 
-## CSS Classes
+### Resumability
+
+Server-rendered (closed or open); the bar itself runs no code at load: `isOpen` is an attribute binding that updates when the selection signal changes, and the motion is CSS.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `action-bar-announcer`, `action-bar-wrapper`, `action-bar-prefix`, `action-bar-content`, `action-bar-suffix`.
+
+### CSS Classes
 
 | Class                                   | Applied                                                                                    |
 | --------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -74,6 +84,8 @@ Wrap button text in `.action-bar__label`: below 640px it is screen-reader-only, 
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/action-bar/) for every named export and part prop type.
+
 | Prop (`ActionBar`) | Type                                  | Default        |
 | ------------------ | ------------------------------------- | -------------- |
 | `isOpen`           | `boolean \| () => boolean` (required) | —              |
@@ -86,6 +98,12 @@ Wrap button text in `.action-bar__label`: below 640px it is screen-reader-only, 
 
 ::api{symbol="@rivetjs/ui/action-bar#ActionBarRootProps"}
 
-## Resumability
+## Accessibility
 
-Server-rendered (closed or open); the bar itself runs no code at load: `isOpen` is an attribute binding that updates when the selection signal changes, and the motion is CSS.
+the pill is a `toolbar` named by `aria-label` (default "Actions"); Tab enters it and arrow keys move between the actions. `ActionBar.Prefix` is a polite live region, so a count rendered there is announced when it changes while the bar is open. Icon-only buttons need their own `aria-label`.
+
+## Related Components
+
+- [Toolbar](/components/toolbar/)
+- [Table](/components/table/)
+- [ListBox](/components/list-box/)

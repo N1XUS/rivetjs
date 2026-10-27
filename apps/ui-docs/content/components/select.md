@@ -16,8 +16,6 @@ Notes:
 - The Backspace / Delete clear shortcut is on whenever a `Select.ClearButton` renders inside the Select (checked at key time).
 - The asynchronous demo uses the cdk `createAsyncList` (react-stately `useAsyncList` port).
 
-Accessibility: button trigger with `aria-haspopup="listbox"`, labelled by the value and the `Label`; ARIA `listbox` in a popover; typeahead and ArrowLeft / ArrowRight on the closed trigger, arrow keys and typeahead in the list; focus returns to the trigger on close.
-
 ## Usage
 
 ```tsx
@@ -63,6 +61,8 @@ export default () => (
   </Select>
 );
 ```
+
+Additional exported parts: `Select.Root`.
 
 ## Examples
 
@@ -135,11 +135,11 @@ The default `Select.Indicator` is a morph chevron: two CSS bars drawn like lucid
 
 Style hooks, on the Select or any ancestor (Tailwind: `[--select-indicator-size:20px]`):
 
-| Variable | Default | |
-| --- | --- | --- |
-| `--select-indicator-size` | `1rem` | Box size; the chevron scales with it |
-| `--select-indicator-stroke` | size / 12 | Bar thickness |
-| `--select-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off |
+| Variable                      | Default                                  |                                      |
+| ----------------------------- | ---------------------------------------- | ------------------------------------ |
+| `--select-indicator-size`     | `1rem`                                   | Box size; the chevron scales with it |
+| `--select-indicator-stroke`   | size / 12                                | Bar thickness                        |
+| `--select-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off             |
 
 Theme tokens for every morph chevron: `--duration-morph-chevron`, `--ease-morph-chevron-open`, `--ease-morph-chevron-close`. Children replace the morph (next section); a custom indicator rotates 180° while open, or animate it yourself with `.select__indicator[data-open="true"]`.
 
@@ -207,6 +207,8 @@ To customize the Select component classes, you can use the `@layer components` d
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `select-clear-button`, `select-trigger`, `select-value`, `select-default-indicator`, `select-clear-button-icon`, `select-popover`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -247,32 +249,34 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/select/) for every named export and part prop type.
+
 ### Select
 
-| Prop            | Type                                    | Default            | Description                                              |
-| --------------- | --------------------------------------- | ------------------ | -------------------------------------------------------- |
-| `placeholder`   | `string`                                | `'Select an item'` | Temporary text that occupies the select when it is empty |
-| `selectionMode` | `"single" \| "multiple"`                | `"single"`         | Whether single or multiple selection is enabled          |
-| `isOpen`        | `boolean \| Signal<boolean>`            | -                  | Sets the open state of the menu (controlled; a signal is two-way) |
-| `defaultOpen`   | `boolean`                               | -                  | Sets the default open state of the menu (uncontrolled)   |
-| `onOpenChange`  | `(isOpen: boolean) => void`             | -                  | Handler called when the open state changes               |
-| `disabledKeys`  | `Iterable<Key>`                         | -                  | Keys of disabled items                                   |
-| `isDisabled`    | `boolean`                               | -                  | Whether the select is disabled                           |
-| `value`         | `Key \| Key[] \| null` or a `Signal`     | -                  | Current value (controlled; a signal is two-way)          |
-| `defaultValue`  | `Key \| Key[] \| null`                  | -                  | Default value (uncontrolled)                             |
-| `onChange`      | `(value: Key \| Key[] \| null) => void` | -                  | Handler called when the value changes                    |
-| `onClear`       | `() => void`                            | -                  | Handler called when the selection is cleared             |
-| `isRequired`    | `boolean`                               | -                  | Whether user input is required                           |
-| `isInvalid`     | `boolean`                               | -                  | Whether the select value is invalid                      |
-| `name`          | `string`                                | -                  | The name of the input, used when submitting an HTML form |
-| `autoComplete`  | `string`                                | -                  | Describes the type of autocomplete functionality         |
-| `fullWidth`     | `boolean`                               | `false`             | Whether the select should take full width of its container |
-| `variant`       | `"primary" \| "secondary"`             | `"primary"`         | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `class`     | `string`                                | -                  | Additional CSS classes                                   |
-| `children`      | `Content \| RenderFunction`           | -                  | Select content or render function                        |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, SelectRenderProps>` | - | Overrides the default DOM element with a custom render function.|
-| `label` | `Content` | - | Shorthand: the Label content; the root renders Trigger + Popover + ListBox around its children |
-| `items` | `Iterable<T>` | - | Shorthand: the ListBox items; `children` is then `(item: T) => Content` |
+| Prop            | Type                                                                | Default            | Description                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `placeholder`   | `string`                                                            | `'Select an item'` | Temporary text that occupies the select when it is empty                                                                                                           |
+| `selectionMode` | `"single" \| "multiple"`                                            | `"single"`         | Whether single or multiple selection is enabled                                                                                                                    |
+| `isOpen`        | `boolean \| Signal<boolean>`                                        | -                  | Sets the open state of the menu (controlled; a signal is two-way)                                                                                                  |
+| `defaultOpen`   | `boolean`                                                           | -                  | Sets the default open state of the menu (uncontrolled)                                                                                                             |
+| `onOpenChange`  | `(isOpen: boolean) => void`                                         | -                  | Handler called when the open state changes                                                                                                                         |
+| `disabledKeys`  | `Iterable<Key>`                                                     | -                  | Keys of disabled items                                                                                                                                             |
+| `isDisabled`    | `boolean`                                                           | -                  | Whether the select is disabled                                                                                                                                     |
+| `value`         | `Key \| Key[] \| null` or a `Signal`                                | -                  | Current value (controlled; a signal is two-way)                                                                                                                    |
+| `defaultValue`  | `Key \| Key[] \| null`                                              | -                  | Default value (uncontrolled)                                                                                                                                       |
+| `onChange`      | `(value: Key \| Key[] \| null) => void`                             | -                  | Handler called when the value changes                                                                                                                              |
+| `onClear`       | `() => void`                                                        | -                  | Handler called when the selection is cleared                                                                                                                       |
+| `isRequired`    | `boolean`                                                           | -                  | Whether user input is required                                                                                                                                     |
+| `isInvalid`     | `boolean`                                                           | -                  | Whether the select value is invalid                                                                                                                                |
+| `name`          | `string`                                                            | -                  | The name of the input, used when submitting an HTML form                                                                                                           |
+| `autoComplete`  | `string`                                                            | -                  | Describes the type of autocomplete functionality                                                                                                                   |
+| `fullWidth`     | `boolean`                                                           | `false`            | Whether the select should take full width of its container                                                                                                         |
+| `variant`       | `"primary" \| "secondary"`                                          | `"primary"`        | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `class`         | `string`                                                            | -                  | Additional CSS classes                                                                                                                                             |
+| `children`      | `Content \| RenderFunction`                                         | -                  | Select content or render function                                                                                                                                  |
+| `render`        | `DOMRenderFunction<keyof JSX.IntrinsicElements, SelectRenderProps>` | -                  | Overrides the default DOM element with a custom render function.                                                                                                   |
+| `label`         | `Content`                                                           | -                  | Shorthand: the Label content; the root renders Trigger + Popover + ListBox around its children                                                                     |
+| `items`         | `Iterable<T>`                                                       | -                  | Shorthand: the ListBox items; `children` is then `(item: T) => Content`                                                                                            |
 
 ### Select.Item
 
@@ -280,33 +284,33 @@ Rivet addition: `ListBox.Item` props (`id`, `textValue`, `isDisabled`, …) plus
 
 ### Select.Trigger
 
-| Prop        | Type                          | Default | Description                        |
-| ----------- | ----------------------------- | ------- | ---------------------------------- |
-| `class` | `string`                      | -       | Additional CSS classes             |
-| `children`  | `Content \| RenderFunction` | -       | Trigger content or render function |
+| Prop       | Type                        | Default | Description                        |
+| ---------- | --------------------------- | ------- | ---------------------------------- |
+| `class`    | `string`                    | -       | Additional CSS classes             |
+| `children` | `Content \| RenderFunction` | -       | Trigger content or render function |
 
 ### Select.Value
 
-| Prop        | Type                          | Default | Description                      |
-| ----------- | ----------------------------- | ------- | -------------------------------- |
-| `class` | `string`                      | -       | Additional CSS classes           |
-| `children`  | `Content \| RenderFunction` | -       | Value content or render function |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, SelectValueRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop       | Type                                                                     | Default | Description                                                      |
+| ---------- | ------------------------------------------------------------------------ | ------- | ---------------------------------------------------------------- |
+| `class`    | `string`                                                                 | -       | Additional CSS classes                                           |
+| `children` | `Content \| RenderFunction`                                              | -       | Value content or render function                                 |
+| `render`   | `DOMRenderFunction<keyof JSX.IntrinsicElements, SelectValueRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ### Select.Indicator
 
-| Prop        | Type        | Default | Description              |
-| ----------- | ----------- | ------- | ------------------------ |
-| `class` | `string`    | -       | Additional CSS classes   |
-| `children`  | `Content` | -       | Custom indicator content |
+| Prop       | Type      | Default | Description              |
+| ---------- | --------- | ------- | ------------------------ |
+| `class`    | `string`  | -       | Additional CSS classes   |
+| `children` | `Content` | -       | Custom indicator content |
 
 ### Select.ClearButton
 
-| Prop        | Type                      | Default | Description                                |
-| ----------- | ------------------------- | ------- | ------------------------------------------ |
-| `class` | `string`                  | -       | Additional CSS classes                     |
-| `children`  | `Content`               | -       | Custom content, replacing the default icon |
-| `onClick`   | `(e: MouseEvent) => void` | -       | Handler called when the control is clicked |
+| Prop       | Type                      | Default | Description                                |
+| ---------- | ------------------------- | ------- | ------------------------------------------ |
+| `class`    | `string`                  | -       | Additional CSS classes                     |
+| `children` | `Content`                 | -       | Custom content, replacing the default icon |
+| `onClick`  | `(e: MouseEvent) => void` | -       | Handler called when the control is clicked |
 
 `Select.ClearButton` renders as a `span` so it can live inside `Select.Trigger` (a button) without nesting buttons. It is visually hidden when the selection is empty.
 
@@ -315,20 +319,20 @@ Rivet addition: `ListBox.Item` props (`id`, `textValue`, `isDisabled`, …) plus
 | Prop        | Type                                                                                                                                                                                                                                                                                                                     | Default    | Description                                      |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------ |
 | `placement` | `"bottom" \| "bottom left" \| "bottom right" \| "bottom start" \| "bottom end" \| "top" \| "top left" \| "top right" \| "top start" \| "top end" \| "left" \| "left top" \| "left bottom" \| "start" \| "start top" \| "start bottom" \| "right" \| "right top" \| "right bottom" \| "end" \| "end top" \| "end bottom"` | `"bottom"` | Placement of the popover relative to the trigger |
-| `class` | `string`                                                                                                                                                                                                                                                                                                                 | -          | Additional CSS classes                           |
-| `children`  | `Content`                                                                                                                                                                                                                                                                                                              | -          | Content children                                 |
+| `class`     | `string`                                                                                                                                                                                                                                                                                                                 | -          | Additional CSS classes                           |
+| `children`  | `Content`                                                                                                                                                                                                                                                                                                                | -          | Content children                                 |
 
 ### Render Props
 
 When using render functions with Select.Value, these values are provided:
 
-| Prop              | Type          | Description                        |
-| ----------------- | ------------- | ---------------------------------- |
-| `defaultChildren` | `Content`   | The default rendered value         |
-| `isPlaceholder`   | `() => boolean` | Whether the value is a placeholder |
-| `state`           | `SelectState` | The state of the select            |
+| Prop              | Type              | Description                                                                                |
+| ----------------- | ----------------- | ------------------------------------------------------------------------------------------ |
+| `defaultChildren` | `Content`         | The default rendered value                                                                 |
+| `isPlaceholder`   | `() => boolean`   | Whether the value is a placeholder                                                         |
+| `state`           | `SelectState`     | The state of the select                                                                    |
 | `selectedItems`   | `() => unknown[]` | The item objects of the selected keys (dynamic `ListBox` `items`; `null` for static items) |
-| `selectedText`    | `() => string` | The text of the selected items     |
+| `selectedText`    | `() => string`    | The text of the selected items                                                             |
 
 ## Accessibility
 
@@ -342,6 +346,8 @@ The Select component implements the ARIA listbox pattern and provides:
 - HTML form integration
 
 For more information, see the [cdk Select page](site:cdk/components/select/).
+
+button trigger with `aria-haspopup="listbox"`, labelled by the value and the `Label`; ARIA `listbox` in a popover; typeahead and ArrowLeft / ArrowRight on the closed trigger, arrow keys and typeahead in the list; focus returns to the trigger on close.
 
 ## Related Components
 

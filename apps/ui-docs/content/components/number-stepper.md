@@ -8,8 +8,6 @@ related: [components/number-field, components/slider]
 
 `NumberStepper` adjusts small numbers such as guests, seats or quantities. The buttons step the value and turn off at the bounds, the value stays editable (type a number and press Enter), and only the characters that change roll in. It is the [cdk NumberField](site:cdk/components/number-field/), so every NumberField option works: bounds, step, `formatOptions`, locale, validation and form submission.
 
-Accessibility: the value is the NumberField's text input (`aria-roledescription="Number field"`): arrow keys, Page Up / Down, Home / End and typing work as in NumberField, and screen readers announce the value. The animated display over it is `aria-hidden`. The buttons are labelled "Decrease" / "Increase" plus the field label. Give the root a `Label` or an `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -39,6 +37,8 @@ export default function Quantity() {
 ```
 
 `NumberStepper.Value` renders the real input with transparent text and a display above it, one span per character. A changed character is a new span that rolls in with a CSS animation; characters rendered by the server never animate, and with `prefers-reduced-motion` nothing moves. The display stays while the input has focus (a button press focuses it), so every step animates. The input's own text shows only while you edit it (typing, IME, moving the caret or clicking into the text); a step, Enter or leaving the field brings the display back, and the committed edit rolls in.
+
+Additional exported parts: `NumberStepper.Root`.
 
 ## Examples
 
@@ -104,6 +104,8 @@ The parts render in the order you write them.
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `number-stepper-decrement-icon`, `number-stepper-increment-icon`.
+
 ### CSS Classes
 
 Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
@@ -132,6 +134,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/number-stepper/) for every named export and part prop type.
+
 ### NumberStepper
 
 | Prop            | Type                                 | Default | Description                             |
@@ -144,11 +148,9 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `maxValue`      | `number`                             | -       | Upper bound                             |
 | `step`          | `number`                             | `1`     | Step of the buttons and arrow keys      |
 | `formatOptions` | `Intl.NumberFormatOptions`           | -       | Number formatting                       |
-| `isDisabled`    | `boolean`                            | `false` | Disables the stepper                    |
+| `isDisabled`    | `boolean \| (() => boolean)`         | `false` | Disables the stepper                    |
 | `name`          | `string`                             | -       | Form field name (hidden input)          |
 | `class`         | `string` \| render-prop function     | -       | Additional CSS classes                  |
-
-::api{symbol="@rivetjs/ui/number-stepper#NumberStepperRootProps"}
 
 ### NumberStepper.Value
 
@@ -162,6 +164,12 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 ### NumberStepper.Group / .DecrementButton / .IncrementButton
 
 Group takes the cdk `Group` props. The buttons take cdk `Button` props (the `slot` is fixed); `children` replace the default icon.
+
+::api{symbol="@rivetjs/ui/number-stepper#NumberStepperRootProps"}
+
+## Accessibility
+
+the value is the NumberField's text input (`aria-roledescription="Number field"`): arrow keys, Page Up / Down, Home / End and typing work as in NumberField, and screen readers announce the value. The animated display over it is `aria-hidden`. The buttons are labelled "Decrease" / "Increase" plus the field label. Give the root a `Label` or an `aria-label`.
 
 ## Related Components
 

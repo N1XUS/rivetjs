@@ -8,8 +8,6 @@ related: [components/prompt-input, components/close-button]
 
 `ChatAttachment` shows one file. `mediaType` (`image`, `video`, `audio`, `document`, `unknown`) is inferred from `mimeType` and the file name: images and videos with `src` render a media preview (`data-variant="media"`), the rest a file chip with an icon per kind (PDF, spreadsheet, archive, code, …), the name and a formatted size. `onRemove` (Rivet extra) adds the remove button. `ChatAttachmentGroup` lays chips out as a list; `ChatAttachmentInput` adds the hidden file input, a `Trigger` button and a `Dropzone`.
 
-Accessibility: the group is a `group` named "Attachments"; the remove button is "Remove attachment"; the picker trigger is "Attach files". Dropping is a pointer shortcut for the same picker.
-
 ## Usage
 
 ```tsx
@@ -34,17 +32,29 @@ import { ChatAttachment, ChatAttachmentGroup, ChatAttachmentInput } from "@rivet
 
 Helpers: `inferChatAttachmentFileKind(name, mimeType)` and `formatChatAttachmentSize(bytes)` ("482 KB").
 
-## Composer
+Additional exported parts: `ChatAttachment.Root`, `ChatAttachment.Icon`, `ChatAttachmentInput.Root`, `ChatAttachmentInput.Trigger`.
+
+## Examples
+
+### Composer
 
 `ChatAttachmentInput.Dropzone` `render` puts the drop target attributes onto your own element (here `PromptInput.Shell`); `data-drop-target` styles the drag-over state. `onFilesSelected` gets the picked or dropped files after the `accept` filter. Revoke object URLs you create for previews when a file is removed or sent.
 
 ::example{id=chat-attachment-composer}
 
-## Grouped
+### Grouped
 
 ::example{id=chat-attachment-grouped}
 
-## CSS Classes
+### Resumability
+
+Chips are static markup; remove, pick and drop handlers resume on first use.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chat-attachment-preview`, `chat-attachment-icon`, `chat-attachment-info`, `chat-attachment-name`, `chat-attachment-size`, `chat-attachment-remove`, `chat-attachment-input-trigger`.
+
+### CSS Classes
 
 | Class                                             | Applied                                                       |
 | ------------------------------------------------- | ------------------------------------------------------------- |
@@ -57,6 +67,8 @@ Helpers: `inferChatAttachmentFileKind(name, mimeType)` and `formatChatAttachment
 | `chat-attachment-input` / `__dropzone`            | `ChatAttachmentInput` (display contents) / default `Dropzone` |
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/chat-attachment/) for every named export and part prop type.
 
 | Prop                                      | Type                      | Default  |
 | ----------------------------------------- | ------------------------- | -------- |
@@ -76,6 +88,11 @@ Helpers: `inferChatAttachmentFileKind(name, mimeType)` and `formatChatAttachment
 
 ::api{symbol="@rivetjs/ui/chat-attachment#ChatAttachmentInputRootProps"}
 
-## Resumability
+## Accessibility
 
-Chips are static markup; remove, pick and drop handlers resume on first use.
+the group is a `group` named "Attachments"; the remove button is "Remove attachment"; the picker trigger is "Attach files". Dropping is a pointer shortcut for the same picker.
+
+## Related Components
+
+- [PromptInput](/components/prompt-input/)
+- [CloseButton](/components/close-button/)

@@ -35,33 +35,39 @@ export default function Anatomy() {
 }
 ```
 
-## Auto Content
+Additional exported parts: `ChartTooltip.Root`.
+
+## Examples
+
+### Auto Content
 
 Every chart (`AreaChart`, `LineChart`, `BarChart`, `PieChart`, `RadarChart`, `RadialChart`, `ComposedChart`) takes `tooltip`, a function of the hovered `ChartPoint` (`{ index, label, items: { key, name, value, formatted, color }[] }`). `ChartTooltip.Content` lays out a point's label and items.
 
 ::example{id=chart-tooltip-auto-content}
 
-## Chart Colors
+### Chart Colors
 
 ::example{id=chart-tooltip-chart-colors}
 
-## Custom Formatters
+### Custom Formatters
 
 ::example{id=chart-tooltip-custom-formatters}
 
-## Inactive
+### Inactive
 
 ::example{id=chart-tooltip-inactive}
 
-## Line Indicator
+### Line Indicator
 
 ::example{id=chart-tooltip-line-indicator}
 
-## No Header
+### No Header
 
 ::example{id=chart-tooltip-no-header}
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chart-tooltip-header`, `chart-tooltip-item`, `chart-tooltip-indicator`, `chart-tooltip-label`, `chart-tooltip-value`.
 
 ### CSS Classes
 
@@ -83,6 +89,8 @@ Every chart (`AreaChart`, `LineChart`, `BarChart`, `PieChart`, `RadarChart`, `Ra
 - `[data-indicator]` on the card: `dot` / `line`.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/chart-tooltip/) for every named export and part prop type.
 
 ### ChartTooltip
 
@@ -115,6 +123,10 @@ Plain `div` / `span` parts; all native attributes.
 | ----------- | ------------------- | ------------- | ----------------- |
 | `color`     | `string`            | `--accent`    | Any CSS colour    |
 | `indicator` | `"dot"` \| `"line"` | from the root | Shape of this one |
+
+## Accessibility
+
+The indicator is decorative (`aria-hidden`). Keep the series label and formatted value in text. This component supplies tooltip content; the chart or other host controls when it is shown and must expose the same values to assistive technology.
 
 ## Related Components
 

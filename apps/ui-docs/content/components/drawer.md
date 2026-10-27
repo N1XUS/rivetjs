@@ -17,8 +17,6 @@ Notes:
 - The drawer renders in Rivet's div overlay layer (no native `<dialog>` / top layer); an open drawer is in the server HTML.
 - Drag to dismiss: from the handle, header or footer only; past 30 % of the panel or a fast flick closes it). While dragging and when it settles back, the panel moves on the Rivet motion physics (`@rivetjs/cdk/motion`) instead of a CSS transition; `prefers-reduced-motion` makes the settle jump. Enter and exit animations are CSS.
 
-Accessibility: `Drawer.Dialog` has `role="dialog"` and is labelled by `Drawer.Heading`. Focus moves into the drawer on open, stays trapped inside, and returns to the trigger on close. Escape and a backdrop press dismiss it unless disabled, and the page scroll is locked while it is open.
-
 ## Usage
 
 ```tsx
@@ -67,6 +65,8 @@ The explicit parts stay available for a styled backdrop or container:
   </Drawer.Backdrop>
 </Drawer>
 ```
+
+Additional exported parts: `Drawer.Root`.
 
 ## Examples
 
@@ -136,6 +136,8 @@ To customize the Drawer component classes, you can use the `@layer components` d
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `drawer-content`, `drawer-root`, `drawer-trigger`, `drawer-dialog`, `drawer-header`, `drawer-body`, `drawer-footer`, `drawer-heading`, `drawer-handle`, `drawer-handle-bar`, `drawer-close-trigger`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -187,6 +189,8 @@ The component supports these interactive states:
 - **Placement**: `[data-placement="*"]` - Applied based on drawer position (top, bottom, left, right)
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/drawer/) for every named export and part prop type.
 
 ### Drawer
 
@@ -318,6 +322,8 @@ Implements [WAI-ARIA Dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/di
 - **Screen readers**: Proper ARIA attributes via the cdk dialog
 - **Scroll lock**: Body scroll disabled when open
 - **Drag to dismiss**: Supports pointer-based drag gestures on handle, header, and footer areas
+
+`Drawer.Dialog` has `role="dialog"` and is labelled by `Drawer.Heading`. Focus moves into the drawer on open, stays trapped inside, and returns to the trigger on close. Escape and a backdrop press dismiss it unless disabled, and the page scroll is locked while it is open.
 
 ## Related Components
 

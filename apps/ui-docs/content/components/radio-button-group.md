@@ -8,8 +8,6 @@ related: [components/radio-group, components/checkbox-button-group, components/s
 
 `RadioButtonGroup` shows one option out of a few (plan, delivery speed, payment method) as cards: the whole card is the click target, the selected card gets an accent border, and an optional indicator marks the state in the corner. Behaviour is the [cdk RadioGroup](site:cdk/components/radio-group/) with native inputs, so it works before any JavaScript loads and submits with plain forms.
 
-Accessibility: the root is a `radiogroup` labelled by its `Label`; each card is a `label` around a visually hidden native radio sharing the group's `name`, so the group is one tab stop, arrow keys move the selection (disabled cards are skipped), and the value submits with the form. An `ItemContent` `Description` describes its own input. Indicator and ItemIcon are decorative (`aria-hidden`).
-
 ## Usage
 
 ```tsx
@@ -41,6 +39,8 @@ export default function Options() {
   );
 }
 ```
+
+Additional exported parts: `RadioButtonGroup.Root`.
 
 ## Examples
 
@@ -128,6 +128,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/radio-button-group/) for every named export and part prop type.
+
 ### RadioButtonGroup
 
 | Prop           | Type                                       | Default  | Description                                 |
@@ -139,10 +141,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `name`         | `string`                                   | -        | Form field name                             |
 | `isDisabled`   | `boolean`                                  | `false`  | Disables every card                         |
 | `isRequired`   | `boolean`                                  | `false`  | Required (native validation)                |
-| `isInvalid`    | `boolean`                                  | `false`  | Invalid state                               |
+| `isInvalid`    | `boolean \| (() => boolean)`               | `false`  | Invalid state                               |
 | `class`        | `string` \| render-prop function           | -        | Additional CSS classes                      |
-
-::api{symbol="@rivetjs/ui/radio-button-group#RadioButtonGroupRootProps"}
 
 ### RadioButtonGroup.Item
 
@@ -161,6 +161,12 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 ### RadioButtonGroup.ItemIcon / RadioButtonGroup.ItemContent
 
 `span` props and `class`.
+
+::api{symbol="@rivetjs/ui/radio-button-group#RadioButtonGroupRootProps"}
+
+## Accessibility
+
+the root is a `radiogroup` labelled by its `Label`; each card is a `label` around a visually hidden native radio sharing the group's `name`, so the group is one tab stop, arrow keys move the selection (disabled cards are skipped), and the value submits with the form. An `ItemContent` `Description` describes its own input. Indicator and ItemIcon are decorative (`aria-hidden`).
 
 ## Related Components
 

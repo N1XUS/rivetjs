@@ -6,7 +6,7 @@ status: experimental
 related: [components/kpi, components/data-grid, components/meter]
 ---
 
-`@rivetjs/ui/chart` draws the charts a dashboard needs from plain data: `AreaChart`, `LineChart`, `BarChart` (grouped or stacked), `DonutChart` and `Sparkline`. Charts are computed and rendered on the server: no chart library, no canvas and no script in the browser. Tooltips, guides and dots appear on hover and keyboard focus with CSS alone, and every data point is a focusable slot with a text label, so the numbers are reachable without a mouse.
+`@rivetjs/ui/chart` draws the charts a dashboard needs from plain data: `AreaChart`, `LineChart`, `BarChart` (grouped or stacked), `DonutChart` and `Sparkline`. Charts are computed and rendered on the server: no chart library, no canvas and no script in the browser. Tooltips, guides and dots appear on hover and keyboard focus with CSS alone, and cartesian charts expose labelled, focusable data slots while tooltips are enabled. DonutChart and Sparkline use a different, non-interactive structure.
 
 ## Usage
 
@@ -16,77 +16,85 @@ import { AreaChart, BarChart, DonutChart, LineChart, Sparkline } from "@rivetjs/
 
 Cartesian charts take `data` (one object per x value), `index` (the key of the x label) and `series` (`{ key, label?, color?, dashed? }`). Colours default to the `--chart-1` … `--chart-6` palette; the y axis gets rounded ticks from the data range.
 
-## Area
+## Anatomy
+
+This subpath exports separate `AreaChart`, `LineChart`, `BarChart`, `DonutChart` and `Sparkline` components; there is no `Chart` root. Cartesian components take `data`, `index` and `series`; DonutChart takes labelled values, and Sparkline takes the same `data`, `index` and `series` shape as AreaChart. The chart builds its plot, axes, legend and tooltip slots from those props.
+
+## Examples
+
+### Area
 
 ::example{id=chart-area}
 
 `curve` is `"monotone"` (default, never overshoots the data) or `"linear"`; `stacked` stacks the series.
 
-## Line
+### Line
 
 ::example{id=chart-line}
 
 `valueFormatter` formats the y axis and the tooltip values; `indexFormatter` the x labels. `minValue` / `maxValue` fix the y range.
 
-### With dots
+#### With dots
 
 ::example{id=chart-line-dots}
 
 `showDots` (line and area) draws a dot on every data point; without it, dots appear on the hovered or focused x value only.
 
-### Colors
+#### Colors
 
 ::example{id=chart-line-multi-colors}
 
 Each series takes any CSS colour as `color`, or a palette token such as `var(--chart-3)`. The legend, dots and tooltip follow it.
 
-### Dashed comparison
+#### Dashed comparison
 
 ::example{id=chart-line-dashed-comparison}
 
 A series with `dashed: true` draws its line dashed (a previous period, a target).
 
-### Missing values
+#### Missing values
 
 ::example{id=chart-line-gaps}
 
 A `null` value (or a missing key) is no value: the line and the area break into separate runs, the hovered x value lists only the series that have a value, and a slot with no values is named "no data". `connectNulls` draws straight across the gaps instead. Stacked series count a missing value as 0, so the layers stay closed.
 
-## Bar
+### Bar
 
 ::example{id=chart-bar}
 
-### Grouped
+#### Grouped
 
 ::example{id=chart-bar-grouped}
 
 Without `stacked`, the series of one category sit side by side; the whole group is one focusable slot. A missing value keeps an empty place in its group.
 
-### Horizontal
+#### Horizontal
 
 ::example{id=chart-bar-horizontal}
 
 `orientation="horizontal"` puts the categories down the side (labels in a `categoryWidth` column, default `6rem`) and grows the bars along the inline axis, so they start at the right in right-to-left pages. The value ticks run along the bottom.
 
-### Horizontal stacked
+#### Horizontal stacked
 
 ::example{id=chart-bar-horizontal-stacked}
 
-## Donut
+### Donut
 
 ::example{id=chart-donut}
 
 `DonutChart` takes `{ key, label, value, color? }` segments; the centre shows the total (or `children`) above `centerLabel`, and the legend lists values and shares. `size` sets the outer size in pixels, `thickness` the ring.
 
-## Sparkline
+### Sparkline
 
 A `Sparkline` is an area chart without axes, grid, legend or tooltip, sized to its container; see [Kpi](/components/kpi/) for one in a metric card.
 
-## Behaviour without JavaScript
+### Behaviour without JavaScript
 
 Everything is static markup: the server computes the paths and bars, and the tooltips are CSS. `data`, `series` and the formatters are read once; to switch data (a period picker), re-create the chart with `<Show keyed when={period()}>`.
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chart-legend`, `chart-plot`.
 
 ### CSS Classes
 
@@ -116,6 +124,8 @@ Everything is static markup: the server computes the paths and bars, and the too
 - Figure: `[data-orientation="horizontal"]` on a horizontal bar chart.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/chart/) for every named export and part prop type.
 
 ### AreaChart / LineChart / BarChart
 
@@ -149,6 +159,10 @@ Everything is static markup: the server computes the paths and bars, and the too
 | `children`       | `Content`                   | total   | Centre value                    |
 | `valueFormatter` | `(value: number) => string` | -       | Legend and centre values        |
 | `showLegend`     | `boolean`                   | `true`  | Show the legend                 |
+
+## Accessibility
+
+Cartesian charts expose labelled, focusable data slots when tooltips are enabled; tooltips appear on hover and focus. The SVG geometry and tooltip copies are hidden from assistive technology. Give charts an `aria-label` and provide a textual summary or table for essential data. DonutChart and Sparkline do not provide the same per-point keyboard slots.
 
 ## Related Components
 

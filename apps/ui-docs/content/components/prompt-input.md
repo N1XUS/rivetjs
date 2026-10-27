@@ -8,8 +8,6 @@ related: [components/chat-attachment, components/prompt-suggestion, components/t
 
 `PromptInput` is the box where users write prompts. The textarea grows with its text up to `maxHeight` (CSS `field-sizing: content`, with a script fallback); Enter sends, Shift+Enter adds a line, IME composition never sends. `status` (`ready`, `submitted`, `streaming`, `error`) turns Send into Stop and, with `lockInputOnRun`, locks the textarea while a response runs.
 
-Accessibility: the textarea is named by its placeholder unless you pass `aria-label`; Send is "Send message" and "Stop generating" while running, disabled while there is no text; toolbar `Action`s are icon buttons with optional tooltips.
-
 ## Usage
 
 ```tsx
@@ -45,53 +43,65 @@ import { PromptInput } from "@rivetjs/ui/prompt-input";
 
 Uncontrolled composers clear after `onSubmit`; controlled ones (`value`) leave clearing to you.
 
-## Secondary
+Additional exported parts: `PromptInput.Root`.
+
+## Examples
+
+### Secondary
 
 ::example{id=prompt-input-secondary}
 
-## Inline
+### Inline
 
 ::example{id=prompt-input-inline}
 
-## Compact
+### Compact
 
 A one-line pill that expands into the stacked layout when the text wraps or attachments show (`data-expanded`).
 
 ::example{id=prompt-input-compact}
 
-## Review Composer
+### Review Composer
 
 Compose the toolbar with workflow controls for compact agent surfaces: a review follow-up with the pull request, a commit option and an Approve action next to Send.
 
 ::example{id=prompt-input-review-composer}
 
-## With Suggestions
+### With Suggestions
 
 `value` takes a Signal for two-way binding; suggestion buttons write it.
 
 ::example{id=prompt-input-with-suggestions}
 
-## Run State
+### Run State
 
 ::example{id=prompt-input-run-state}
 
-## Queue
+### Queue
 
 `PromptInput.Queue` lists prompts sent while a response runs; rows compose `Icon`, `Body`, `Content`, `Description`, `Attachments`, `AttachmentsOverflow`, `Actions`, `Remove`, `More`. Drag reordering is not implemented yet: `Handle` is visual only.
 
 ::example{id=prompt-input-queue}
 
-## With Attachments
+### With Attachments
 
 Wrap the shell in [ChatAttachmentInput](/components/chat-attachment/): the shell becomes the drop target and picked files render in `Attachments`.
 
 ::example{id=chat-attachment-composer}
 
-## Token Input
+### Token Input
 
 A token input (tokens, suggestions, mentions) is not implemented yet.
 
-## CSS Classes
+### Resumability
+
+Server-rendered; typing, Enter and Send resume on first input. Autosizing is CSS where `field-sizing` is supported, so nothing measures at load.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `prompt-input-footer`, `prompt-input-textarea`, `prompt-input-action`, `prompt-input-send`, `prompt-input-queue-list`, `prompt-input-queue-item`, `prompt-input-queue-item-handle`, `prompt-input-queue-item-icon`, `prompt-input-queue-item-attachments-overflow`, `prompt-input-queue-item-action`.
+
+### CSS Classes
 
 | Class                                                                                                                                                                               | Applied                                                                                           |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -113,6 +123,8 @@ A token input (tokens, suggestions, mentions) is not implemented yet.
 | `--prompt-input-text`       | per size | font size                           |
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/prompt-input/) for every named export and part prop type.
 
 | Prop                                                      | Type                                                          | Default                     |
 | --------------------------------------------------------- | ------------------------------------------------------------- | --------------------------- |
@@ -137,6 +149,12 @@ A token input (tokens, suggestions, mentions) is not implemented yet.
 
 ::api{symbol="@rivetjs/ui/prompt-input#PromptInputTextAreaProps"}
 
-## Resumability
+## Accessibility
 
-Server-rendered; typing, Enter and Send resume on first input. Autosizing is CSS where `field-sizing` is supported, so nothing measures at load.
+the textarea is named by its placeholder unless you pass `aria-label`; Send is "Send message" and "Stop generating" while running, disabled while there is no text; toolbar `Action`s are icon buttons with optional tooltips.
+
+## Related Components
+
+- [ChatAttachment](/components/chat-attachment/)
+- [PromptSuggestion](/components/prompt-suggestion/)
+- [TextArea](/components/text-area/)

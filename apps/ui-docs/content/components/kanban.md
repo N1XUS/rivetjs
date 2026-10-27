@@ -48,42 +48,41 @@ export default function Anatomy() {
 }
 ```
 
-## Notion Board
+Additional exported parts: `Kanban.Root`.
+
+## Examples
+
+### Notion Board
 
 ::example{id=kanban-notion-board}
 
-## Project Board
+### Project Board
 
 ::example{id=kanban-project-board}
 
-## Sizes
+### Sizes
 
 ::example{id=kanban-sizes}
 
-## Keyboard Moves
+### Keyboard Moves
 
 `onCardMove` on the board makes every card focusable (`tabindex="0"`, described by visually hidden instructions). Space or Enter picks the focused card up, Up / Down move it within its column, Left / Right to the neighbouring column (mirrored in RTL), Space or Enter drops it and Escape puts it back where it was picked up; Tab away drops it in place. Each step is announced (cdk live announcer, polite); change the texts with `messages`. The board calls `onCardMove({ key, column, index, from })` for every step: `createKanban().onCardMove` applies it.
 
 ::example{id=kanban-keyboard}
 
-## Add a Card
+### Add a Card
 
 `KanbanComposer` (its own export, so a board without one loads no form code) is the "add a card" row of a column: a ghost trigger that opens an inline title field. Enter or the Add button calls `onSubmit(title)` (trimmed, never empty) and closes it (`keepOpen` keeps it open for the next card); Escape or Cancel closes it and focus returns to the trigger.
 
 ::example{id=kanban-composer}
 
-## Accessibility
-
-- Columns are `section`s; name each with `aria-labelledby` pointing at its `Kanban.ColumnTitle` (an `h3`).
-- Name every card with `textValue` (its `aria-label`).
-- Pass `onCardMove` so keyboard and screen reader users can move cards: each card gets `tabindex="0"` and `aria-describedby` pointing at the instructions; every pick up, move, drop and cancel is announced with the card's name, column and position.
-- `KanbanComposer`'s field is named by its `label`; Escape closes it and returns focus to the trigger.
-
-## Not Yet Supported
+### Not Yet Supported
 
 - Card selection (`selectionMode`).
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `kanban-column-indicator`, `kanban-column-title`, `kanban-column-count`, `kanban-column-actions`, `kanban-column-body`, `kanban-drop-indicator`.
 
 ### CSS Classes
 
@@ -115,6 +114,8 @@ export default function Anatomy() {
 - Keyboard moves: `[data-grabbed]` on the picked-up card; `[data-kanban-grabbed]` (the card key) on the board.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/kanban/) for every named export and part prop type.
 
 ### Kanban
 
@@ -205,6 +206,13 @@ const board = createKanban({
 | `onMove`       | `(item: T, column: string, index: number) => void` | After a move                          |
 
 Returns `{ items, itemsOf(column), move(key, column, index), onDropped, onCardMove }` (`onCardMove` = `Kanban onCardMove`).
+
+## Accessibility
+
+- Columns are `section`s; name each with `aria-labelledby` pointing at its `Kanban.ColumnTitle` (an `h3`).
+- Name every card with `textValue` (its `aria-label`).
+- Pass `onCardMove` so keyboard and screen reader users can move cards: each card gets `tabindex="0"` and `aria-describedby` pointing at the instructions; every pick up, move, drop and cancel is announced with the card's name, column and position.
+- `KanbanComposer`'s field is named by its `label`; Escape closes it and returns focus to the trigger.
 
 ## Related Components
 

@@ -14,8 +14,6 @@ Notes:
 - There is no element cloning: every Button under the group reads it, also nested ones. Opt out with `BUTTON_GROUP_CHILD: false`.
 - Group props are live (`isDisabled={d()}`).
 
-Accessibility: The root has `role="group"`; give it an `aria-label` when the buttons need a shared name. Separators are `aria-hidden`. Each Button keeps its own Tab stop (use a [ToggleButtonGroup](toggle-button-group.md) for arrow-key navigation).
-
 ## Usage
 
 ```tsx
@@ -47,6 +45,8 @@ export default () => (
 ```
 
 > **ButtonGroup** wraps multiple Button components together, applying consistent styling, spacing, and automatic border radius handling. It uses React Context to pass `size`, `variant`, and `isDisabled` props to all child buttons.
+
+Additional exported parts: `ButtonGroup.Root`.
 
 ## Examples
 
@@ -82,6 +82,15 @@ Simply omit the `<ButtonGroup.Separator />` component from your buttons.
 
 ::example{id=button-group-without-separator}
 
+### Note
+
+- ButtonGroup uses React Context to pass `size`, `variant`, and `isDisabled` props to all child Button components
+- **Only direct child buttons receive the ButtonGroup props** - Buttons nested inside other components (like Modal, Dropdown, etc.) will not inherit the group's props even if they are descendants of the ButtonGroup
+- Individual Button components can override the group's `isDisabled` prop by setting `isDisabled={false}`
+- The component automatically handles border radius between buttons
+- Add `<ButtonGroup.Separator />` inside each Button (except the first) to show dividers between buttons
+- Buttons in a group have their active/pressed scale transform removed for a more cohesive appearance
+
 ## Customization
 
 ### Tailwind CSS
@@ -107,6 +116,8 @@ To customize the ButtonGroup component classes, you can use the `@layer componen
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `button-group-separator`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -130,6 +141,8 @@ Add `<ButtonGroup.Separator />` inside each Button (except the first) to show di
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/button-group/) for every named export and part prop type.
+
 ### ButtonGroup
 
 | Prop          | Type                                                            | Default        | Description                                                                             |
@@ -150,14 +163,9 @@ Add `<ButtonGroup.Separator />` inside each Button (except the first) to show di
 
 ::api{symbol="@rivetjs/ui/button-group#ButtonGroupRootProps"}
 
-## Note
+## Accessibility
 
-- ButtonGroup uses React Context to pass `size`, `variant`, and `isDisabled` props to all child Button components
-- **Only direct child buttons receive the ButtonGroup props** - Buttons nested inside other components (like Modal, Dropdown, etc.) will not inherit the group's props even if they are descendants of the ButtonGroup
-- Individual Button components can override the group's `isDisabled` prop by setting `isDisabled={false}`
-- The component automatically handles border radius between buttons
-- Add `<ButtonGroup.Separator />` inside each Button (except the first) to show dividers between buttons
-- Buttons in a group have their active/pressed scale transform removed for a more cohesive appearance
+The root has `role="group"`; give it an `aria-label` when the buttons need a shared name. Separators are `aria-hidden`. Each Button keeps its own Tab stop (use a [ToggleButtonGroup](toggle-button-group.md) for arrow-key navigation).
 
 ## Related Components
 

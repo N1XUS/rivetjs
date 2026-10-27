@@ -8,8 +8,6 @@ related: [components/markdown, components/chat-tool]
 
 `CodeBlock` renders code highlighted by `@rivetjs/cdk/highlight`, a small synchronous tokenizer that gives the same output on the server and in the browser (TS / JS / JSX, JSON, CSS, HTML / XML, shell, Python, SQL, YAML, diff and C-like languages). The header holds the language label and a copy button.
 
-Accessibility: the code is a focusable scroll region named after the language ("TSX code"), so keyboard users can scroll it; tokens are spans without roles.
-
 ## Usage
 
 ```tsx
@@ -32,7 +30,19 @@ import { CodeBlock } from "@rivetjs/ui/code-block";
 
 `code` can be an accessor: a streaming answer re-highlights in place. Rivet UI ships its own tokenizer and colours tokens with CSS variables, so there is no `theme` prop.
 
-## CSS Classes
+Additional exported parts: `CodeBlock.Root`.
+
+## Examples
+
+### Resumability
+
+Highlighting runs on the server; the page carries finished token spans and no highlighter code until a `code` accessor changes.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `code-block-header`, `code-block-language`, `code-block-code`, `code-block-copy-button`.
+
+### CSS Classes
 
 | Class                        | Applied                                                                                     |
 | ---------------------------- | ------------------------------------------------------------------------------------------- |
@@ -50,6 +60,8 @@ import { CodeBlock } from "@rivetjs/ui/code-block";
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/code-block/) for every named export and part prop type.
+
 | Prop                                    | Type                          | Default                  |
 | --------------------------------------- | ----------------------------- | ------------------------ |
 | `code` (`Code`, `CopyButton`)           | `string \| () => string`      | required                 |
@@ -63,6 +75,11 @@ import { CodeBlock } from "@rivetjs/ui/code-block";
 
 ::api{symbol="@rivetjs/ui/code-block#CodeBlockCopyButtonProps"}
 
-## Resumability
+## Accessibility
 
-Highlighting runs on the server; the page carries finished token spans and no highlighter code until a `code` accessor changes.
+the code is a focusable scroll region named after the language ("TSX code"), so keyboard users can scroll it; tokens are spans without roles.
+
+## Related Components
+
+- [Markdown](/components/markdown/)
+- [ChatTool](/components/chat-tool/)

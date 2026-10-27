@@ -6,7 +6,7 @@ status: experimental
 related: [components/chart, components/radial-chart, components/chart-tooltip]
 ---
 
-`PieChart` draws proportional data as a pie or a donut. Like the other [charts](/components/chart/) it is computed and rendered on the server from plain data (`{ label, value, color? }`): no chart library and no script in the browser. Every sector is focusable and has a text label; its tooltip appears on hover and keyboard focus with CSS alone, and the other sectors dim.
+`PieChart` draws proportional data as a pie or a donut. Like the other [charts](/components/chart/) it is computed and rendered on the server from plain data (`{ label, value, color? }`): no chart library and no script in the browser. With tooltips enabled, each sector is focusable and has a text label; its tooltip appears on hover and keyboard focus with CSS alone, and the other sectors dim.
 
 ## Usage
 
@@ -16,37 +16,45 @@ import { PieChart } from "@rivetjs/ui/pie-chart";
 
 ::example{id=pie-chart-basic}
 
-## Custom Tooltip
+## Anatomy
+
+`PieChart` is a single data-driven component. It creates sectors, optional inner rings, center content and the legend from its props; customize tooltip content with `tooltip`.
+
+## Examples
+
+### Custom Tooltip
 
 `tooltip` renders your own content per sector, for example a [ChartTooltip](/components/chart-tooltip/).
 
 ::example{id=pie-chart-custom-tooltip}
 
-## Donut
+### Donut
 
 ::example{id=pie-chart-donut}
 
-## Donut With Content
+### Donut With Content
 
 ::example{id=pie-chart-donut-with-content}
 
-## Donut With Label
+### Donut With Label
 
 ::example{id=pie-chart-donut-with-label}
 
-## Nested Donut
+### Nested Donut
 
 ::example{id=pie-chart-nested-donut}
 
-## With Breakdown
+### With Breakdown
 
 ::example{id=pie-chart-with-breakdown}
 
-## Behaviour without JavaScript
+### Behaviour without JavaScript
 
 Everything is static markup: the server computes the sector paths and labels, and the tooltips are CSS. `data` and the formatters are read once; to switch data, re-create the chart with `<Show keyed when={period()}>`.
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chart-plot`.
 
 ### CSS Classes
 
@@ -73,6 +81,8 @@ Everything is static markup: the server computes the sector paths and labels, an
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/pie-chart/) for every named export and part prop type.
+
 ### PieChart
 
 | Prop                      | Type                                            | Default        | Description                                       |
@@ -91,6 +101,10 @@ Everything is static markup: the server computes the sector paths and labels, an
 | `children`                | `Content`                                       | total          | Donut centre value                                |
 | `centerLabel`             | `string`                                        | -              | Text under the centre value                       |
 | `aria-label`              | `string`                                        | all segments   | Accessible name of the figure                     |
+
+## Accessibility
+
+With tooltips enabled, sectors are focusable groups with labels containing the category, value and share. With `showTooltip={false}`, sectors are removed from the tab order. Supply a meaningful `aria-label` and a textual summary or table when users need the underlying numbers.
 
 ## Related Components
 

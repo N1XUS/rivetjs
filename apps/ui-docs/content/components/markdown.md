@@ -8,8 +8,6 @@ related: [components/code-block, components/chat-message]
 
 `Markdown` renders CommonMark plus the GFM parts chat answers use (tables, task lists, strikethrough, autolinks) with the Rivet UI typography. `@rivetjs/cdk/markdown` parses the text into plain data and the component builds elements from it: raw HTML stays text and links are limited to http(s), mailto, tel and relative URLs, so model output can never inject markup.
 
-Accessibility: headings, lists, tables and quotes are their native elements; images keep their alt text; task-list checkboxes are read-only.
-
 ## Usage
 
 ```tsx
@@ -26,17 +24,29 @@ import { Markdown } from "@rivetjs/ui/markdown";
 
 Fill the signal from a `fetch` body with `streamText(signal, response.body)` from `@rivetjs/cdk/chat`: one signal write per chunk.
 
-## Streaming
+Additional exported parts: `Markdown.Root`.
+
+## Examples
+
+### Streaming
 
 Pass an accessor as `content` and `isStreaming`. The text is split into top-level blocks; finished blocks keep their DOM nodes (keyed rows). The block being written is keyed down to its words: a chunk only appends word spans, which fade and un-blur in, and each new block (paragraph, list item, code block) eases in. While streaming, open marks in the last block (`**`, `__`, `~~`, a backtick) are closed for display, a soft pulsing caret follows the text, and the root's height grows smoothly (`followHeight` from `@rivetjs/cdk/chat`). An open code fence streams as plain words in the code block frame and is highlighted once it closes. Fenced code renders as a [CodeBlock](/components/code-block/). Reduced motion: no fades, no height easing.
 
 ::example{id=markdown-streaming}
 
-## With Streamdown
+### With Streamdown
 
 There is no Streamdown adapter: the built-in streaming mode above covers mark repair and the caret.
 
-## CSS Classes
+### Resumability
+
+Parsed and rendered on the server; a static answer ships no parser. A streaming accessor re-parses only the last block per update; the parser loads with the first change.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `markdown-caret`, `code-block-code`.
+
+### CSS Classes
 
 | Class                                                        | Applied                                        |
 | ------------------------------------------------------------ | ---------------------------------------------- |
@@ -58,6 +68,8 @@ There is no Streamdown adapter: the built-in streaming mode above covers mark re
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/markdown/) for every named export and part prop type.
+
 | Prop          | Type                       | Default |
 | ------------- | -------------------------- | ------- |
 | `content`     | `string \| () => string`   | —       |
@@ -70,6 +82,11 @@ Other `div` attributes pass to the root. Not supported: per-element `components`
 
 ::api{symbol="@rivetjs/ui/markdown#MarkdownProps"}
 
-## Resumability
+## Accessibility
 
-Parsed and rendered on the server; a static answer ships no parser. A streaming accessor re-parses only the last block per update; the parser loads with the first change.
+headings, lists, tables and quotes are their native elements; images keep their alt text; task-list checkboxes are read-only.
+
+## Related Components
+
+- [CodeBlock](/components/code-block/)
+- [ChatMessage](/components/chat-message/)

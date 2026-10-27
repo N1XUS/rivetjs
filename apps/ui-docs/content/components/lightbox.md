@@ -10,12 +10,6 @@ related: [components/carousel, components/modal]
 
 ::example{id=lightbox-basic}
 
-## Import
-
-```tsx
-import { Lightbox, LightboxCounter, LightboxThumbnails, LightboxZoom, LightboxZoomIn } from "@rivetjs/ui/lightbox";
-```
-
 ## Usage
 
 ```tsx
@@ -73,29 +67,41 @@ export default function Gallery() {
 
 The parts are a render function (`{() => …}`): they are created when the lightbox opens, so a closed lightbox renders nothing but its anchor and loads no code.
 
-## Plugins
+## Examples
+
+### Import
+
+```tsx
+import { Lightbox, LightboxCounter, LightboxThumbnails, LightboxZoom, LightboxZoomIn } from "@rivetjs/ui/lightbox";
+```
+
+### Plugins
 
 Plugin parts are separate named exports (an unused one adds no bytes): `LightboxZoom` + `LightboxZoomIn` / `LightboxZoomOut`, `LightboxCaptions` + `LightboxCaptionsToggle`, `LightboxCounter`, `LightboxThumbnails` + `LightboxThumbnailsToggle`, `LightboxSlideshow`, `LightboxFullscreen`, `LightboxDownload`, `LightboxShare`. Fullscreen and Share hide themselves where the browser lacks the API.
 
 ::example{id=lightbox-plugins}
 
-## Video, embeds and PDF
+### Video, embeds and PDF
 
 `Lightbox.Media` renders a native `<video>`, an embed iframe that exists only while its slide is current (neighbours show the `poster`, so an unopened YouTube slide makes no request), or the browser's PDF viewer with a download link as fallback. Thumbnails of slides without an image show a lucide type icon.
 
 ::example{id=lightbox-media}
 
-## Inline
+### Inline
 
 `LightboxInline` renders the same carousel in the page, without the overlay. Give it a size with `class`; without children it renders slides and Previous / Next.
 
 ::example{id=lightbox-inline}
 
-## Options
+### Options
 
 Every `@rivetjs/cdk/lightbox` setting passes through: `carousel` (`finite`, `preload`, `padding`, `spacing`, `imageFit`), `animation` (`fade`, `swipe`, `navigation`, `zoom`), `controller` (`closeOnBackdropClick`, `closeOnPullDown`, `closeOnPullUp`, `closeOnEscape`, `touchAction`, …), `labels`, and the events `onView`, `onClick`, `onEntering`, `onEntered`, `onExiting`, `onExited`, `onIndexChange`, `onOpenChange`. See the [cdk page](site:cdk/components/lightbox/) for each option.
 
-## Styling
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `lightbox-loading-icon`, `lightbox-error-icon`, `lightbox-pdf-icon`, `lightbox-close-icon`, `lightbox-previous-icon`, `lightbox-next-icon`, `lightbox-zoom-in-icon`, `lightbox-zoom-out-icon`, `lightbox-download-icon`, `lightbox-share-icon`, `lightbox-fullscreen-enter-icon`, `lightbox-fullscreen-exit-icon`, `lightbox-play-icon`, `lightbox-pause-icon`, `lightbox-captions-off-icon`, `lightbox-captions-icon`, `lightbox-thumbnails-icon`, `lightbox-thumbnail-icon`.
+
+### Styling
 
 | Class                                                                                            | Element                                               |
 | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
@@ -108,12 +114,19 @@ Every `@rivetjs/cdk/lightbox` setting passes through: `carousel` (`finite`, `pre
 
 Controls use `--lightbox-control-bg` / `--lightbox-control-fg`. State is in attributes: `[data-current]` on the current slide, `[aria-pressed]` on toggles, `[data-zoomed]` on the container.
 
+## API Reference
+
+See the [full module API](/api/rivetjs/ui/lightbox/) for every named export and part prop type.
+
+Props and options: the [cdk Lightbox page](site:cdk/components/lightbox/) (every cdk prop passes through) plus `backdrop`, `backdropClass` and `containerClass` on the root.
+
 ## Accessibility
 
 - The container is a `role="dialog"` with `aria-modal` and the `aria-label` you pass. Focus moves into it on open and returns to the trigger on close.
 - Slides are groups labelled "2 of 4"; slides that are not current are inert.
 - :kbd[ArrowLeft] / :kbd[ArrowRight] move between slides (pan while zoomed), :kbd[Escape] closes, :kbd[+] / :kbd[-] zoom with `LightboxZoom`.
 
-## API Reference
+## Related Components
 
-Props and options: the [cdk Lightbox page](site:cdk/components/lightbox/) (every cdk prop passes through) plus `backdrop`, `backdropClass` and `containerClass` on the root.
+- [Carousel](/components/carousel/)
+- [Modal](/components/modal/)

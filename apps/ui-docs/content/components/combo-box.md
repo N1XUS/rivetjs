@@ -60,8 +60,10 @@ export default () => (
       </ListBox>
     </ComboBox.Popover>
   </ComboBox>
-)
+);
 ```
+
+Additional exported parts: `ComboBox.Root`.
 
 ## Examples
 
@@ -125,11 +127,11 @@ The default `ComboBox.Trigger` icon is a morph chevron: two CSS bars drawn like 
 
 Style hooks, on the ComboBox or any ancestor (Tailwind: `[--combo-box-indicator-size:20px]`):
 
-| Variable | Default | |
-| --- | --- | --- |
-| `--combo-box-indicator-size` | `1rem` | Box size; the chevron scales with it |
-| `--combo-box-indicator-stroke` | size / 12 | Bar thickness |
-| `--combo-box-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off |
+| Variable                         | Default                                  |                                      |
+| -------------------------------- | ---------------------------------------- | ------------------------------------ |
+| `--combo-box-indicator-size`     | `1rem`                                   | Box size; the chevron scales with it |
+| `--combo-box-indicator-stroke`   | size / 12                                | Bar thickness                        |
+| `--combo-box-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off             |
 
 Theme tokens for every morph chevron: `--duration-morph-chevron`, `--ease-morph-chevron-open`, `--ease-morph-chevron-close`. Trigger children replace the morph (next section) and are yours to animate, e.g. with `.combo-box__trigger[data-open="true"] svg`.
 
@@ -231,6 +233,8 @@ To customize the ComboBox component classes, you can use the `@layer components`
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `combo-box-input-group`, `combo-box-value`, `combo-box-trigger`, `combo-box-trigger-default-icon`, `combo-box-popover`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -238,6 +242,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The ComboBox component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/combo-box.css)):
 
 #### Base Classes
+
 - `.combo-box` - Base ComboBox container
 - `.combo-box__input-group` - Container for the input and trigger button
 - `.combo-box__value` - The selected value display (used in multiple selection)
@@ -245,6 +250,7 @@ The ComboBox component uses these CSS classes ([View source styles](https://gith
 - `.combo-box__popover` - The popover container
 
 #### State Classes
+
 - `.combo-box[data-invalid="true"]` - Invalid state
 - `.combo-box[data-disabled="true"]` - Disabled ComboBox state
 - `.combo-box__trigger[data-focus-visible="true"]` - Focused trigger state
@@ -262,47 +268,49 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/combo-box/) for every named export and part prop type.
+
 ### ComboBox
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `inputValue` | `string` | - | Current input value (controlled) |
-| `defaultInputValue` | `string` | - | Default input value (uncontrolled) |
-| `onInputChange` | `(value: string) => void` | - | Handler called when the input value changes |
-| `selectionMode` | `"single" \| "multiple"` | `"single"` | Whether single or multiple selection is enabled |
-| `selectedKey` | `Key \| null` | - | Current selected key (controlled, single selection) |
-| `defaultSelectedKey` | `Key \| null` | - | Default selected key (uncontrolled, single selection) |
-| `onSelectionChange` | `(key: Key \| null) => void` | - | Handler called when the selection changes (single selection) |
-| `value` | `Key \| null \| Key[]` | - | The currently selected keys (controlled). `Key[]` when `selectionMode="multiple"` |
-| `defaultValue` | `Key \| null \| Key[]` | - | The initial selected keys (uncontrolled). `Key[]` when `selectionMode="multiple"` |
-| `onChange` | `(value: Key \| null \| Key[]) => void` | - | Handler called when the selection changes |
-| `items` | `Iterable<T>` | - | The items to display in the listbox |
-| `disabledKeys` | `Iterable<Key>` | - | Keys of disabled items |
-| `defaultFilter` | `(text: string, inputValue: string) => boolean` | - | Custom filter function for filtering items |
-| `isDisabled` | `boolean` | - | Whether the ComboBox is disabled |
-| `isReadOnly` | `boolean` | - | Whether the input can be selected but not changed by the user |
-| `isRequired` | `boolean` | - | Whether user input is required |
-| `isInvalid` | `boolean` | - | Whether the ComboBox value is invalid |
-| `validate` | `(value: ComboBoxValidationValue) => ValidationError \| true \| null \| undefined` | - | A function that returns an error message if a given value is invalid. Validation errors are displayed to the user when the form is submitted if `validationBehavior="native"`. For realtime validation, use the `isInvalid` prop instead |
-| `validationBehavior` | `"native" \| "aria"` | `"native"` | Whether to use native HTML form validation to prevent form submission when the value is missing or invalid, or mark the field as required or invalid via ARIA |
-| `name` | `string` | - | The name of the input, used when submitting an HTML form |
-| `form` | `string` | - | The id of a `<form>` element to associate the input with |
-| `formValue` | `"text" \| "key"` | `"key"` | Whether the text or key of the selected item is submitted as part of an HTML form. When `allowsCustomValue` is `true`, this option does not apply and the text is always submitted |
-| `autoComplete` | `string` | - | Describes the type of autocomplete functionality |
-| `autoFocus` | `boolean` | - | Whether the element should receive focus on render |
-| `allowsCustomValue` | `boolean` | - | Whether the ComboBox allows custom values not in the list |
-| `allowsEmptyCollection` | `boolean` | - | Whether the ComboBox allows an empty collection |
-| `menuTrigger` | `"focus" \| "input" \| "manual"` | `"focus"` | The interaction required to display the ComboBox menu |
-| `shouldFocusWrap` | `boolean` | - | Whether keyboard navigation is circular |
-| `fullWidth` | `boolean` | `false` | Whether the ComboBox should take full width of its container |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `label` | `Content` | - | Rivet shorthand: the Label (with `label` / `placeholder` / `description` / `errorMessage` / `items` the root renders the parts) |
-| `placeholder` | `string` | - | Rivet shorthand: the input placeholder |
-| `description` | `Content` | - | Rivet shorthand: the Description under the input group |
-| `errorMessage` | `Content` | - | Rivet shorthand: the FieldError (shown while invalid) |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | ComboBox content or render function |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ComboBoxRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop                    | Type                                                                               | Default     | Description                                                                                                                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `inputValue`            | `string`                                                                           | -           | Current input value (controlled)                                                                                                                                                                                                         |
+| `defaultInputValue`     | `string`                                                                           | -           | Default input value (uncontrolled)                                                                                                                                                                                                       |
+| `onInputChange`         | `(value: string) => void`                                                          | -           | Handler called when the input value changes                                                                                                                                                                                              |
+| `selectionMode`         | `"single" \| "multiple"`                                                           | `"single"`  | Whether single or multiple selection is enabled                                                                                                                                                                                          |
+| `selectedKey`           | `Key \| null`                                                                      | -           | Current selected key (controlled, single selection)                                                                                                                                                                                      |
+| `defaultSelectedKey`    | `Key \| null`                                                                      | -           | Default selected key (uncontrolled, single selection)                                                                                                                                                                                    |
+| `onSelectionChange`     | `(key: Key \| null) => void`                                                       | -           | Handler called when the selection changes (single selection)                                                                                                                                                                             |
+| `value`                 | `Key \| null \| Key[]`                                                             | -           | The currently selected keys (controlled). `Key[]` when `selectionMode="multiple"`                                                                                                                                                        |
+| `defaultValue`          | `Key \| null \| Key[]`                                                             | -           | The initial selected keys (uncontrolled). `Key[]` when `selectionMode="multiple"`                                                                                                                                                        |
+| `onChange`              | `(value: Key \| null \| Key[]) => void`                                            | -           | Handler called when the selection changes                                                                                                                                                                                                |
+| `items`                 | `Iterable<T>`                                                                      | -           | The items to display in the listbox                                                                                                                                                                                                      |
+| `disabledKeys`          | `Iterable<Key>`                                                                    | -           | Keys of disabled items                                                                                                                                                                                                                   |
+| `defaultFilter`         | `(text: string, inputValue: string) => boolean`                                    | -           | Custom filter function for filtering items                                                                                                                                                                                               |
+| `isDisabled`            | `boolean`                                                                          | -           | Whether the ComboBox is disabled                                                                                                                                                                                                         |
+| `isReadOnly`            | `boolean`                                                                          | -           | Whether the input can be selected but not changed by the user                                                                                                                                                                            |
+| `isRequired`            | `boolean`                                                                          | -           | Whether user input is required                                                                                                                                                                                                           |
+| `isInvalid`             | `boolean`                                                                          | -           | Whether the ComboBox value is invalid                                                                                                                                                                                                    |
+| `validate`              | `(value: ComboBoxValidationValue) => ValidationError \| true \| null \| undefined` | -           | A function that returns an error message if a given value is invalid. Validation errors are displayed to the user when the form is submitted if `validationBehavior="native"`. For realtime validation, use the `isInvalid` prop instead |
+| `validationBehavior`    | `"native" \| "aria"`                                                               | `"native"`  | Whether to use native HTML form validation to prevent form submission when the value is missing or invalid, or mark the field as required or invalid via ARIA                                                                            |
+| `name`                  | `string`                                                                           | -           | The name of the input, used when submitting an HTML form                                                                                                                                                                                 |
+| `form`                  | `string`                                                                           | -           | The id of a `<form>` element to associate the input with                                                                                                                                                                                 |
+| `formValue`             | `"text" \| "key"`                                                                  | `"key"`     | Whether the text or key of the selected item is submitted as part of an HTML form. When `allowsCustomValue` is `true`, this option does not apply and the text is always submitted                                                       |
+| `autoComplete`          | `string`                                                                           | -           | Describes the type of autocomplete functionality                                                                                                                                                                                         |
+| `autoFocus`             | `boolean`                                                                          | -           | Whether the element should receive focus on render                                                                                                                                                                                       |
+| `allowsCustomValue`     | `boolean`                                                                          | -           | Whether the ComboBox allows custom values not in the list                                                                                                                                                                                |
+| `allowsEmptyCollection` | `boolean`                                                                          | -           | Whether the ComboBox allows an empty collection                                                                                                                                                                                          |
+| `menuTrigger`           | `"focus" \| "input" \| "manual"`                                                   | `"focus"`   | The interaction required to display the ComboBox menu                                                                                                                                                                                    |
+| `shouldFocusWrap`       | `boolean`                                                                          | -           | Whether keyboard navigation is circular                                                                                                                                                                                                  |
+| `fullWidth`             | `boolean`                                                                          | `false`     | Whether the ComboBox should take full width of its container                                                                                                                                                                             |
+| `variant`               | `"primary" \| "secondary"`                                                         | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces.                                                                       |
+| `label`                 | `Content`                                                                          | -           | Rivet shorthand: the Label (with `label` / `placeholder` / `description` / `errorMessage` / `items` the root renders the parts)                                                                                                          |
+| `placeholder`           | `string`                                                                           | -           | Rivet shorthand: the input placeholder                                                                                                                                                                                                   |
+| `description`           | `Content`                                                                          | -           | Rivet shorthand: the Description under the input group                                                                                                                                                                                   |
+| `errorMessage`          | `Content`                                                                          | -           | Rivet shorthand: the FieldError (shown while invalid)                                                                                                                                                                                    |
+| `class`                 | `string`                                                                           | -           | Additional CSS classes                                                                                                                                                                                                                   |
+| `children`              | `Content \| RenderFunction`                                                        | -           | ComboBox content or render function                                                                                                                                                                                                      |
+| `render`                | `DOMRenderFunction<keyof JSX.IntrinsicElements, ComboBoxRenderProps>`              | -           | Overrides the default DOM element with a custom render function.                                                                                                                                                                         |
 
 ### ComboBox.Item
 
@@ -310,46 +318,47 @@ Rivet addition: `ListBox.Item` props (`id`, `textValue`, `isDisabled`, …) plus
 
 ### ComboBox.InputGroup
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | InputGroup content |
+| Prop       | Type      | Default | Description            |
+| ---------- | --------- | ------- | ---------------------- |
+| `class`    | `string`  | -       | Additional CSS classes |
+| `children` | `Content` | -       | InputGroup content     |
 
 ### ComboBox.Value
 
 Renders the selected values of a ComboBox, or a placeholder if no value is selected. By default the selected items are rendered as a comma separated list. Use the render function to customize this (for example, to display tags).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `placeholder` | `Content` | - | A value to display when no items are selected |
-| `class` | `string \| (values: ComboBoxValueRenderProps) => string` | - | Additional CSS classes |
-| `children` | `Content \| (values: ComboBoxValueRenderProps) => Content` | - | Custom render function for the selected values |
+| Prop          | Type                                                       | Default | Description                                    |
+| ------------- | ---------------------------------------------------------- | ------- | ---------------------------------------------- |
+| `placeholder` | `Content`                                                  | -       | A value to display when no items are selected  |
+| `class`       | `string \| (values: ComboBoxValueRenderProps) => string`   | -       | Additional CSS classes                         |
+| `children`    | `Content \| (values: ComboBoxValueRenderProps) => Content` | -       | Custom render function for the selected values |
 
 ### ComboBox.Trigger
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Custom trigger content |
+| Prop       | Type      | Default | Description            |
+| ---------- | --------- | ------- | ---------------------- |
+| `class`    | `string`  | -       | Additional CSS classes |
+| `children` | `Content` | -       | Custom trigger content |
 
 ### ComboBox.Popover
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop        | Type                                                                                                                                                                                                                                                                                                                     | Default    | Description                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------ |
 | `placement` | `"bottom" \| "bottom left" \| "bottom right" \| "bottom start" \| "bottom end" \| "top" \| "top left" \| "top right" \| "top start" \| "top end" \| "left" \| "left top" \| "left bottom" \| "start" \| "start top" \| "start bottom" \| "right" \| "right top" \| "right bottom" \| "end" \| "end top" \| "end bottom"` | `"bottom"` | Placement of the popover relative to the trigger |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Content children |
+| `class`     | `string`                                                                                                                                                                                                                                                                                                                 | -          | Additional CSS classes                           |
+| `children`  | `Content`                                                                                                                                                                                                                                                                                                                | -          | Content children                                 |
 
 ### Render Props
 
 When using render functions with ComboBox, these values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `state` | `ComboBoxState` | The state of the ComboBox |
-| `inputValue` | `string` | The current input value |
-| `selectedKey` | `Key \| null` | The currently selected key |
-| `selectedItem` | `Node \| null` | The currently selected item |
+| Prop         | Type            | Description                             |
+| ------------ | --------------- | --------------------------------------- |
+| `isDisabled` | `() => boolean` | Whether the combobox is disabled.       |
+| `isInvalid`  | `() => boolean` | Whether the combobox is invalid.        |
+| `isOpen`     | `() => boolean` | Whether the combobox is currently open. |
+| `isReadOnly` | `() => boolean` | Whether the combobox is read only.      |
+| `isRequired` | `() => boolean` | Whether the combobox is required.       |
 
 ::api{symbol="@rivetjs/ui/combo-box#ComboBoxRoot"}
 

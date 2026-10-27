@@ -8,8 +8,6 @@ related: [components/chat-conversation, components/chat-message-actions, compone
 
 `ChatMessage` lays out a single turn. `ChatMessage.Assistant` is a full-width row with an avatar column and a body; `ChatMessage.User` is a right-aligned bubble. The body takes any content: plain text in `Content`, a [Markdown](/components/markdown/) answer, tools, sources, loaders, and an `Actions` row.
 
-Accessibility: turns are plain `div`s with `data-role` (`assistant` / `user`) inside the conversation `log`; `Avatar` without `src` is decorative. Put a visually hidden sender name in `Meta` if the conversation needs one.
-
 ## Usage
 
 ```tsx
@@ -35,17 +33,29 @@ import { ChatMessage } from "@rivetjs/ui/chat-message";
 
 `actionsVisibility` sets when the `Actions` row shows: `"always"` (assistant default) or `"hover"` (user default: pointer over or focus within the turn). `isStreaming` on `Assistant` (value or accessor) hides the `Actions` row while the reply streams and fades it in when it ends. `Avatar` with `src` is the ui [Avatar](/components/avatar/); without it the fallback renders as static markup.
 
-## With Markdown
+Additional exported parts: `ChatMessage.Meta`.
+
+## Examples
+
+### With Markdown
 
 ::example{id=chat-message-with-markdown}
 
-## Loading
+### Loading
 
 Render a [ChatLoader](/components/chat-loader/) in the body until the first token arrives.
 
 ::example{id=chat-message-loading}
 
-## CSS Classes
+### Resumability
+
+Static layout; nothing runs at load. An `Avatar` with `src` uses the ui Avatar (image load tracking), which boots its small load effect.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chat-message-avatar`, `avatar-fallback`.
+
+### CSS Classes
 
 | Class                                | Applied                                                                       |
 | ------------------------------------ | ----------------------------------------------------------------------------- |
@@ -64,6 +74,8 @@ Render a [ChatLoader](/components/chat-loader/) in the body until the first toke
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/chat-message/) for every named export and part prop type.
+
 | Prop                                       | Type                       | Default                          |
 | ------------------------------------------ | -------------------------- | -------------------------------- |
 | `actionsVisibility` (`Assistant` / `User`) | `"always" \| "hover"`      | assistant `always`, user `hover` |
@@ -78,6 +90,12 @@ Every part takes `class` and `div` attributes.
 
 ::api{symbol="@rivetjs/ui/chat-message#ChatMessageAvatarProps"}
 
-## Resumability
+## Accessibility
 
-Static layout; nothing runs at load. An `Avatar` with `src` uses the ui Avatar (image load tracking), which boots its small load effect.
+turns are plain `div`s with `data-role` (`assistant` / `user`) inside the conversation `log`; `Avatar` without `src` is decorative. Put a visually hidden sender name in `Meta` if the conversation needs one.
+
+## Related Components
+
+- [ChatConversation](/components/chat-conversation/)
+- [ChatMessageActions](/components/chat-message-actions/)
+- [Markdown](/components/markdown/)

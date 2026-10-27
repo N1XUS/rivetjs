@@ -14,8 +14,6 @@ Notes:
 - Each Avatar registers with the group through the context, also Avatars nested deeper than direct children.
 - An explicit `Count` renders where you write it.
 
-Accessibility: Plain markup. Name the group (`aria-label="Team"`, `role="group"`) when it stands for a list of people, and keep the hidden people reachable elsewhere: the `+N` count is only text.
-
 ## Usage
 
 ```tsx
@@ -42,6 +40,8 @@ export default () => (
 );
 ```
 
+Additional exported parts: `AvatarGroup.Root`.
+
 ## Examples
 
 ### Max
@@ -63,6 +63,15 @@ export default () => (
 ### Overlap
 
 ::example{id=avatar-group-overlap}
+
+### Note
+
+- AvatarGroup uses React Context to pass `size`, `color`, and `variant` to **direct Avatar children only**
+- `max` truncates visible avatars when set and auto-counts remaining children; omit to show all
+- For a known total (e.g. from the server), render an explicit `AvatarGroup.Count` — it is not truncated by `max` and suppresses the auto count. Prefer `Count` over the removed v2 `total` prop
+- `isGrid` disables overlap and uses a wrapping grid layout instead
+- `overlap` defaults to `"clip"` (crescent seam); use `"ring"` for the solid outline; no effect with `isGrid`
+- No default `role="group"` — when the stack is meaningful (assignees, viewers), pass `role="group"` with `aria-label` or `aria-labelledby`
 
 ## Customization
 
@@ -108,6 +117,8 @@ Stacked layout uses negative margin between siblings (`--avatar-group-overlap`, 
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/avatar-group/) for every named export and part prop type.
+
 ### AvatarGroup
 
 | Prop       | Type                                                          | Default  | Description                                                                                       |
@@ -135,14 +146,9 @@ Composes `Avatar` + `Avatar.Fallback` for the overflow indicator. Not truncated 
 
 ::api{symbol="@rivetjs/ui/avatar-group#AvatarGroupRootProps"}
 
-## Note
+## Accessibility
 
-- AvatarGroup uses React Context to pass `size`, `color`, and `variant` to **direct Avatar children only**
-- `max` truncates visible avatars when set and auto-counts remaining children; omit to show all
-- For a known total (e.g. from the server), render an explicit `AvatarGroup.Count` — it is not truncated by `max` and suppresses the auto count. Prefer `Count` over the removed v2 `total` prop
-- `isGrid` disables overlap and uses a wrapping grid layout instead
-- `overlap` defaults to `"clip"` (crescent seam); use `"ring"` for the solid outline; no effect with `isGrid`
-- No default `role="group"` — when the stack is meaningful (assignees, viewers), pass `role="group"` with `aria-label` or `aria-labelledby`
+Plain markup. Name the group (`aria-label="Team"`, `role="group"`) when it stands for a list of people, and keep the hidden people reachable elsewhere: the `+N` count is only text.
 
 ## Related Components
 

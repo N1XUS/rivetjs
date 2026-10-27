@@ -8,8 +8,6 @@ related: [components/select, components/cell-slider, components/inline-select]
 
 `CellSelect` fits pickers into settings lists and preference panels. The cell is the trigger button: the label sits on the left, the selected value and a chevron on the right, and the list opens below, aligned to the end of the cell. It is built on the [cdk Select](site:cdk/components/select/) parts, so single and multiple selection, `value` / `defaultValue`, `onChange`, `disabledKeys`, `name` (form submission), keyboard and typeahead work as in [Select](/components/select/); the options are a [ListBox](/components/list-box/).
 
-Accessibility: the trigger is a button with `aria-haspopup="listbox"`. `CellSelect.Label` renders a `span` inside it and names the trigger together with the value. Without a label, give the root an `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -51,6 +49,8 @@ export default function Appearance() {
 ```
 
 `CellSelect.Value` shows the selected item's content (its `ListBox.ItemIndicator` is hidden there).
+
+Additional exported parts: `CellSelect.Root`.
 
 ## Examples
 
@@ -98,11 +98,11 @@ The default `CellSelect.Indicator` is a morph chevron: two CSS bars drawn like l
 
 Style hooks, on the CellSelect or any ancestor (Tailwind: `[--cell-select-indicator-size:20px]`):
 
-| Variable | Default | |
-| --- | --- | --- |
-| `--cell-select-indicator-size` | `1rem` | Box size; the chevron scales with it |
-| `--cell-select-indicator-stroke` | size / 12 | Bar thickness |
-| `--cell-select-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off |
+| Variable                           | Default                                  |                                      |
+| ---------------------------------- | ---------------------------------------- | ------------------------------------ |
+| `--cell-select-indicator-size`     | `1rem`                                   | Box size; the chevron scales with it |
+| `--cell-select-indicator-stroke`   | size / 12                                | Bar thickness                        |
+| `--cell-select-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off             |
 
 Theme tokens for every morph chevron: `--duration-morph-chevron`, `--ease-morph-chevron-open`, `--ease-morph-chevron-close`. Children replace the morph; a custom indicator rotates 180° while open, or animate it yourself with `.cell-select__indicator[data-open="true"]`.
 
@@ -134,6 +134,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/cell-select/) for every named export and part prop type.
+
 ### CellSelect
 
 | Prop            | Type                                       | Default     | Description                                                                   |
@@ -150,8 +152,6 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `label`         | `Content`                                  | -           | Shorthand: the row label (with `label` or `items` the root renders the parts) |
 | `items`         | `Iterable<T>`                              | -           | Shorthand: the list items; `children` is then a render function of one item   |
 | `class`         | `string` \| render-prop function           | -           | Additional CSS classes                                                        |
-
-::api{symbol="@rivetjs/ui/cell-select#CellSelectRootProps"}
 
 ### CellSelect.Item
 
@@ -172,6 +172,12 @@ Takes the cdk `Popover` props.
 ### CellSelect.Trigger / .Label / .Value
 
 Take the cdk `Button` / `Label` / `SelectValue` props.
+
+::api{symbol="@rivetjs/ui/cell-select#CellSelectRootProps"}
+
+## Accessibility
+
+the trigger is a button with `aria-haspopup="listbox"`. `CellSelect.Label` renders a `span` inside it and names the trigger together with the value. Without a label, give the root an `aria-label`.
 
 ## Related Components
 

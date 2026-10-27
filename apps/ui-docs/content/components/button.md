@@ -17,8 +17,6 @@ Notes:
 - `variant="brand"` (Rivet addition): the logo gradient for the one primary call to action of a page (white label ≥ 4.5:1 on every stop).
 - `radius="concentric"` (Rivet addition): the padded parent's inner radius instead of the pill, for a Button in a Card corner ([Styling](/start/styling/)).
 
-Accessibility: A native `<button>` with the cdk Button behaviour: Enter and Space press it, a disabled button is `disabled`, a pending one is announced and keeps focus. Focus rings follow `data-focus-visible` (keyboard only); a Button without behaviour is a plain `<button>` whose ring follows `:focus-visible`.
-
 ## Usage
 
 ```tsx
@@ -26,6 +24,12 @@ import { Button } from "@rivetjs/ui/button";
 ```
 
 ::example{id=button-basic}
+
+## Anatomy
+
+`Button` exposes `Button.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -158,6 +162,8 @@ The button supports both CSS pseudo-classes and data attributes for flexibility:
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/button/) for every named export and part prop type.
+
 ### Button
 
 | Prop         | Type                                                                                                     | Default     | Description                                                          |
@@ -165,8 +171,8 @@ The button supports both CSS pseudo-classes and data attributes for flexibility:
 | `variant`    | `'primary' \| 'secondary' \| 'tertiary' \| 'outline' \| 'ghost' \| 'danger' \| 'danger-soft' \| 'brand'` | `'primary'` | Visual style variant                                                 |
 | `size`       | `'sm' \| 'md' \| 'lg'`                                                                                   | `'md'`      | Size of the button                                                   |
 | `fullWidth`  | `boolean`                                                                                                | `false`     | Whether the button should take full width of its container           |
-| `isDisabled` | `boolean`                                                                                                | `false`     | Whether the button is disabled                                       |
-| `isPending`  | `boolean`                                                                                                | `false`     | Whether the button is in a loading state                             |
+| `isDisabled` | `boolean \| (() => boolean)`                                                                             | `false`     | Whether the button is disabled                                       |
+| `isPending`  | `boolean \| (() => boolean)`                                                                             | `false`     | Whether the button is in a loading state                             |
 | `isIconOnly` | `boolean`                                                                                                | `false`     | Whether the button contains only an icon                             |
 | `radius`     | `'concentric'`                                                                                           | -           | The padded parent's inner radius instead of the pill (`data-radius`) |
 | `onPress`    | `(e: PressEvent) => void`                                                                                | -           | Handler called when the button is pressed                            |
@@ -177,16 +183,20 @@ The button supports both CSS pseudo-classes and data attributes for flexibility:
 
 When using the render prop pattern, these values are provided:
 
-| Prop             | Type      | Description                                    |
-| ---------------- | --------- | ---------------------------------------------- |
-| `isPending`      | `boolean` | Whether the button is in a loading state       |
-| `isPressed`      | `boolean` | Whether the button is currently pressed        |
-| `isHovered`      | `boolean` | Whether the button is hovered                  |
-| `isFocused`      | `boolean` | Whether the button is focused                  |
-| `isFocusVisible` | `boolean` | Whether the button should show focus indicator |
-| `isDisabled`     | `boolean` | Whether the button is disabled                 |
+| Prop             | Type            | Description                                    |
+| ---------------- | --------------- | ---------------------------------------------- |
+| `isPending`      | `() => boolean` | Whether the button is in a loading state       |
+| `isPressed`      | `() => boolean` | Whether the button is currently pressed        |
+| `isHovered`      | `() => boolean` | Whether the button is hovered                  |
+| `isFocused`      | `() => boolean` | Whether the button is focused                  |
+| `isFocusVisible` | `() => boolean` | Whether the button should show focus indicator |
+| `isDisabled`     | `() => boolean` | Whether the button is disabled                 |
 
 ::api{symbol="@rivetjs/ui/button#ButtonRootProps"}
+
+## Accessibility
+
+A native `<button>` with the cdk Button behaviour: Enter and Space press it, a disabled button is `disabled`, a pending one is announced and keeps focus. Focus rings follow `data-focus-visible` (keyboard only); a Button without behaviour is a plain `<button>` whose ring follows `:focus-visible`.
 
 ## Related Components
 

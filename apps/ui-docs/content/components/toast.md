@@ -16,8 +16,6 @@ Notes:
 - A custom render function (`Toast.Provider` children) runs once per toast; read `toast.content` there, update a toast's look through `toast.update` / the default layout.
 - Enter and exit animations are CSS (`data-entering` / `data-exiting`); closing toasts stay mounted for `exitDuration`.
 
-Accessibility: toasts sit in a labelled landmark region (`F6`, `Alt` + `T`), each one an `alertdialog` labelled by its title; timers pause while the stack is hovered or focused and while the page is hidden.
-
 ## Usage
 
 ```tsx
@@ -47,6 +45,8 @@ export default () => (
   </Toast.Provider>
 );
 ```
+
+Additional exported parts: `Toast.Queue`, `Toast.toast`.
 
 ## Examples
 
@@ -130,6 +130,8 @@ To customize the Toast component classes, you can use the `@layer components` di
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `toast-default-icon`, `toast-content`, `toast-indicator`, `toast-title`, `toast-description`, `toast-close`, `toast-action-button`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -168,6 +170,8 @@ The component supports various states:
 - **Hidden**: `[data-hidden]` - Applied to toasts beyond `maxVisibleToasts`
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/toast/) for every named export and part prop type.
 
 ### Toast.Provider
 
@@ -358,6 +362,8 @@ Each toast implements the [WAI-ARIA alertdialog pattern](https://www.w3.org/WAI/
 - **Keyboard**: `Tab` reaches the controls of visible toasts, `Escape` collapses the expanded stack, and dismissing a focused toast moves focus to the nearest remaining toast
 - **Screen readers**: Each toast uses `role="alertdialog"` with its title and description linked; new toasts are announced automatically
 - **Timers**: Auto-dismiss pauses while the stack is hovered or focused, and while the page is in a background tab
+
+toasts sit in a labelled landmark region (`F6`, `Alt` + `T`), each one an `alertdialog` labelled by its title; timers pause while the stack is hovered or focused and while the page is hidden.
 
 ## Related Components
 

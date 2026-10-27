@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - `isSelected` is a two-way signal, not a React controlled value with `onChange`; a live boolean `isSelected={x()}` is not supported.
 
-Accessibility: A `<button aria-pressed>`; inside a single-selection [ToggleButtonGroup](toggle-button-group.md) it becomes `role="radio"` with `aria-checked`. Icon-only buttons need an `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -22,6 +20,12 @@ import { ToggleButton } from "@rivetjs/ui/toggle-button";
 ```
 
 ::example{id=toggle-button-basic}
+
+## Anatomy
+
+`ToggleButton` exposes `ToggleButton.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -106,6 +110,8 @@ The toggle button supports both CSS pseudo-classes and data attributes for flexi
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/toggle-button/) for every named export and part prop type.
+
 ### ToggleButton
 
 Inherits from [React Aria ToggleButton](https://react-spectrum.adobe.com/react-aria/ToggleButton.html).
@@ -115,7 +121,7 @@ Inherits from [React Aria ToggleButton](https://react-spectrum.adobe.com/react-a
 | `variant`         | `'default' \| 'ghost'`                                    | `'default'` | Visual style variant                      |
 | `size`            | `'sm' \| 'md' \| 'lg'`                                    | `'md'`      | Size of the toggle button                 |
 | `isIconOnly`      | `boolean`                                                 | `false`     | Whether the button contains only an icon  |
-| `isSelected`      | `boolean`                                                 | -           | Controlled selected state                 |
+| `isSelected`      | `boolean \| Signal<boolean>`                              | -           | Controlled selected state                 |
 | `defaultSelected` | `boolean`                                                 | `false`     | Default selected state (uncontrolled)     |
 | `isDisabled`      | `boolean`                                                 | `false`     | Whether the toggle button is disabled     |
 | `onChange`        | `(isSelected: boolean) => void`                           | -           | Handler called when selection changes     |
@@ -126,16 +132,20 @@ Inherits from [React Aria ToggleButton](https://react-spectrum.adobe.com/react-a
 
 When using the render prop pattern, these values are provided:
 
-| Prop             | Type      | Description                                    |
-| ---------------- | --------- | ---------------------------------------------- |
-| `isSelected`     | `boolean` | Whether the button is currently selected       |
-| `isPressed`      | `boolean` | Whether the button is currently pressed        |
-| `isHovered`      | `boolean` | Whether the button is hovered                  |
-| `isFocused`      | `boolean` | Whether the button is focused                  |
-| `isFocusVisible` | `boolean` | Whether the button should show focus indicator |
-| `isDisabled`     | `boolean` | Whether the button is disabled                 |
+| Prop             | Type            | Description                                    |
+| ---------------- | --------------- | ---------------------------------------------- |
+| `isSelected`     | `() => boolean` | Whether the button is currently selected       |
+| `isPressed`      | `() => boolean` | Whether the button is currently pressed        |
+| `isHovered`      | `() => boolean` | Whether the button is hovered                  |
+| `isFocused`      | `() => boolean` | Whether the button is focused                  |
+| `isFocusVisible` | `() => boolean` | Whether the button should show focus indicator |
+| `isDisabled`     | `() => boolean` | Whether the button is disabled                 |
 
 ::api{symbol="@rivetjs/ui/toggle-button#ToggleButtonRootProps"}
+
+## Accessibility
+
+A `<button aria-pressed>`; inside a single-selection [ToggleButtonGroup](toggle-button-group.md) it becomes `role="radio"` with `aria-checked`. Icon-only buttons need an `aria-label`.
 
 ## Related Components
 

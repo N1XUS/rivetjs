@@ -8,8 +8,6 @@ related: [components/slider, components/carousel, components/lightbox]
 
 `Compare` puts two versions of the same thing on top of each other, such as a photo before and after an edit or a card in the light and the dark theme, and splits them with a divider. Drag the round handle to move the split, press the arrow keys when it is focused, or, with `dragAnywhere`, press anywhere on the frame.
 
-Accessibility: the handle is an ARIA `slider` (`aria-valuenow` 0–100, `aria-valuetext` "50%", `aria-orientation`) named "Comparison position" by default: give it an `aria-label` that says what is compared. Images keep their own `alt` text. The thumb and the divider line are decorative (`aria-hidden`).
-
 ## Usage
 
 ```tsx
@@ -24,13 +22,21 @@ import { Compare } from "@rivetjs/ui/compare";
 - `Compare.Label` puts a badge in a corner of its layer: `placement="start"` in the before layer, `"end"` in the after layer, so each is clipped with its own layer.
 - Resumable: nothing runs before the first pointer or key event. The root preloads its chunks once it is visible, so the first drag is not a network round trip.
 
-## Vertical
+## Anatomy
+
+`Compare` exposes `Compare.Root`, `Compare.Before`, `Compare.After`, `Compare.Handle`, `Compare.Divider`, `Compare.Thumb`, `Compare.Label`.
+
+Use the composition in the live example above; the API reference below describes the props.
+
+## Examples
+
+### Vertical
 
 ::example{id=compare-vertical}
 
 `orientation="vertical"` turns the divider horizontal: the before layer is on top. ArrowDown / ArrowRight / PageDown move the divider down (the value grows downward), and the default thumb icon turns to `ChevronsUpDown`. The end label sits in the bottom start corner.
 
-## Custom Handle
+### Custom Handle
 
 ::example{id=compare-custom-handle}
 
@@ -39,7 +45,7 @@ import { Compare } from "@rivetjs/ui/compare";
 - `--compare-divider-color` / `--compare-divider-width` restyle the line; `--compare-handle-size` sizes the round thumb.
 - `dragAnywhere` jumps the divider to a press on the frame (animated), then the drag follows the pointer. The root then sets `touch-action: pan-y` (`pan-x` when vertical), so a touch drag across the frame moves the divider and a vertical swipe still scrolls the page.
 
-## Controlled
+### Controlled
 
 ::example{id=compare-controlled}
 
@@ -48,7 +54,7 @@ import { Compare } from "@rivetjs/ui/compare";
 - A value set from outside moves the divider at once (no animation).
 - `step` (1) sets the arrow-key step and `pageStep` (10) sets the PageUp / PageDown / Shift+Arrow step. Keyed values snap to `step`; drags are continuous (2 decimals).
 
-## Content
+### Content
 
 ::example{id=compare-content}
 
@@ -69,13 +75,13 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ### CSS Variables
 
-| Variable                  | Default                     | Description                                 |
-| ------------------------- | --------------------------- | ------------------------------------------- |
-| `--compare-divider-color` | `var(--white)`              | Divider line colour                         |
-| `--compare-divider-width` | `2px`                       | Divider line thickness                      |
-| `--compare-handle-size`   | `2.5rem`                    | Thumb diameter                              |
-| `--compare-hit-size`      | `2.75rem`                   | Width of the hit strip around the line      |
-| `--rv-compare-position`   | written by the cdk (`50%`)  | Current position, readable in your own CSS |
+| Variable                  | Default                    | Description                                |
+| ------------------------- | -------------------------- | ------------------------------------------ |
+| `--compare-divider-color` | `var(--white)`             | Divider line colour                        |
+| `--compare-divider-width` | `2px`                      | Divider line thickness                     |
+| `--compare-handle-size`   | `2.5rem`                   | Thumb diameter                             |
+| `--compare-hit-size`      | `2.75rem`                  | Width of the hit strip around the line     |
+| `--rv-compare-position`   | written by the cdk (`50%`) | Current position, readable in your own CSS |
 
 ### Data Attributes
 
@@ -85,47 +91,53 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/compare/) for every named export and part prop type.
+
 ### Compare
 
-| Prop           | Type                                                          | Default        | Description                                                            |
-| -------------- | ------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------- |
-| `value`        | `number` \| `() => number` \| `Signal<number>`                | -              | Before share in percent (controlled; a Signal is two-way)              |
-| `defaultValue` | `number`                                                      | `50`           | Initial value (uncontrolled)                                           |
-| `onChange`     | `(value: number) => void`                                     | -              | Every pointer move and key                                             |
-| `onChangeEnd`  | `(value: number) => void`                                     | -              | Pointer release, each key                                              |
-| `orientation`  | `"horizontal"` \| `"vertical"`                                | `"horizontal"` | Divider direction                                                      |
-| `isDisabled`   | `boolean`                                                     | `false`        | No pointer or keyboard interaction (live prop)                         |
-| `step`         | `number`                                                      | `1`            | Arrow key step                                                         |
-| `pageStep`     | `number`                                                      | `10`           | PageUp / PageDown / Shift+Arrow step                                   |
-| `dragAnywhere` | `boolean`                                                     | `false`        | A press on the frame jumps the divider there and drags                 |
-| `animation`    | `boolean` \| `{ duration?: number; friction?: number }`       | `true`         | Settle for keys and frame presses (house motion); `false` jumps        |
-| `dir`          | `"ltr"` \| `"rtl"`                                            | locale         | Writing direction (horizontal start edge)                              |
-| `state`        | `CompareState`                                                | -              | A state from `createCompareState` (the options above are then ignored) |
-| `class`        | `string`                                                      | -              | Additional CSS classes                                                 |
+| Prop           | Type                                                    | Default        | Description                                                            |
+| -------------- | ------------------------------------------------------- | -------------- | ---------------------------------------------------------------------- |
+| `value`        | `number` \| `() => number` \| `Signal<number>`          | -              | Before share in percent (controlled; a Signal is two-way)              |
+| `defaultValue` | `number`                                                | `50`           | Initial value (uncontrolled)                                           |
+| `onChange`     | `(value: number) => void`                               | -              | Every pointer move and key                                             |
+| `onChangeEnd`  | `(value: number) => void`                               | -              | Pointer release, each key                                              |
+| `orientation`  | `"horizontal"` \| `"vertical"`                          | `"horizontal"` | Divider direction                                                      |
+| `isDisabled`   | `boolean`                                               | `false`        | No pointer or keyboard interaction (live prop)                         |
+| `step`         | `number`                                                | `1`            | Arrow key step                                                         |
+| `pageStep`     | `number`                                                | `10`           | PageUp / PageDown / Shift+Arrow step                                   |
+| `dragAnywhere` | `boolean`                                               | `false`        | A press on the frame jumps the divider there and drags                 |
+| `animation`    | `boolean` \| `{ duration?: number; friction?: number }` | `true`         | Settle for keys and frame presses (house motion); `false` jumps        |
+| `dir`          | `"ltr"` \| `"rtl"`                                      | locale         | Writing direction (horizontal start edge)                              |
+| `state`        | `CompareState`                                          | -              | A state from `createCompareState` (the options above are then ignored) |
+| `class`        | `string`                                                | -              | Additional CSS classes                                                 |
 
 ### Compare.Handle
 
-| Prop               | Type                                       | Default                 | Description                                |
-| ------------------ | ------------------------------------------ | ----------------------- | ------------------------------------------ |
-| `aria-label`       | `string`                                   | `"Comparison position"` | Accessible name                            |
-| `aria-labelledby`  | `string`                                   | -                       | Labelled by another element                |
-| `aria-valuetext`   | `string` \| `(value: number) => string`    | percent of the locale   | Announced value                            |
-| `children`         | `Content`                                  | Divider + Thumb         | Custom handle look                         |
-| `class`            | `string`                                   | -                       | Additional CSS classes                     |
+| Prop              | Type                                    | Default                 | Description                 |
+| ----------------- | --------------------------------------- | ----------------------- | --------------------------- |
+| `aria-label`      | `string`                                | `"Comparison position"` | Accessible name             |
+| `aria-labelledby` | `string`                                | -                       | Labelled by another element |
+| `aria-valuetext`  | `string` \| `(value: number) => string` | percent of the locale   | Announced value             |
+| `children`        | `Content`                               | Divider + Thumb         | Custom handle look          |
+| `class`           | `string`                                | -                       | Additional CSS classes      |
 
 `Compare.Before` / `Compare.After` / `Compare.Divider` take `class`, `style` and DOM attributes. `Compare.Thumb` takes `class` and `children` (replaces the icon). `Compare.Label` takes `placement` (`"start"` \| `"end"`, default `"start"`), `class` and `children`.
 
 ### Keyboard
 
-| Key                                   | Action                                         |
-| ------------------------------------- | ---------------------------------------------- |
-| :kbd[ArrowRight] / :kbd[ArrowUp]      | +`step` (RTL: :kbd[ArrowLeft] / :kbd[ArrowUp]) |
-| :kbd[ArrowLeft] / :kbd[ArrowDown]     | −`step`                                        |
-| :kbd[Shift] + arrow                   | ±`pageStep`                                    |
-| :kbd[PageUp] / :kbd[PageDown]         | ±`pageStep`                                    |
-| :kbd[Home] / :kbd[End]                | 0 / 100                                        |
+| Key                               | Action                                         |
+| --------------------------------- | ---------------------------------------------- |
+| :kbd[ArrowRight] / :kbd[ArrowUp]  | +`step` (RTL: :kbd[ArrowLeft] / :kbd[ArrowUp]) |
+| :kbd[ArrowLeft] / :kbd[ArrowDown] | −`step`                                        |
+| :kbd[Shift] + arrow               | ±`pageStep`                                    |
+| :kbd[PageUp] / :kbd[PageDown]     | ±`pageStep`                                    |
+| :kbd[Home] / :kbd[End]            | 0 / 100                                        |
 
 Vertical: :kbd[ArrowDown] / :kbd[ArrowRight] / :kbd[PageDown] move the divider down (increase).
+
+## Accessibility
+
+the handle is an ARIA `slider` (`aria-valuenow` 0–100, `aria-valuetext` "50%", `aria-orientation`) named "Comparison position" by default: give it an `aria-label` that says what is compared. Images keep their own `alt` text. The thumb and the divider line are decorative (`aria-hidden`).
 
 ## Related Components
 

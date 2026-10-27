@@ -24,6 +24,12 @@ import { FieldError } from "@rivetjs/ui/field-error";
 
 The FieldError component displays validation error messages for form fields. It automatically appears when the parent field is marked as invalid and provides smooth opacity transitions.
 
+## Anatomy
+
+`FieldError` exposes `FieldError.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
+
 ## Examples
 
 ### Basic Validation
@@ -117,6 +123,8 @@ The FieldError component uses these CSS classes ([View source styles](https://gi
 - Text is truncated with ellipsis for long messages
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/field-error/) for every named export and part prop type.
 
 ### FieldError
 

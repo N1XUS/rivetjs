@@ -51,35 +51,39 @@ export default function Anatomy() {
 }
 ```
 
-## Clean
+Additional exported parts: `Command.Root`.
+
+## Examples
+
+### Clean
 
 ::example{id=command-clean}
 
-## Dev Toolbar
+### Dev Toolbar
 
 ::example{id=command-dev-toolbar}
 
-## Launcher
+### Launcher
 
 ::example{id=command-launcher}
 
-## Minimal
+### Minimal
 
 ::example{id=command-minimal}
 
-## Split View
+### Split View
 
 ::example{id=command-split-view}
 
-## Multiple Search Terms
+### Multiple Search Terms
 
 ::example{id=command-multiple-search-terms}
 
-## Sizes
+### Sizes
 
 ::example{id=command-sizes}
 
-## Backdrop Variants
+### Backdrop Variants
 
 ::example{id=command-backdrop-variants}
 
@@ -102,6 +106,8 @@ export default function Anatomy() {
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/command/) for every named export and part prop type.
+
 ### Command
 
 | Prop           | Type                         | Default | Description                               |
@@ -113,26 +119,26 @@ export default function Anatomy() {
 
 ### Command.Backdrop
 
-| Prop            | Type                                    | Default    | Description                        |
-| --------------- | --------------------------------------- | ---------- | ---------------------------------- |
-| `variant`       | `"opaque" \| "blur" \| "transparent"`   | `"opaque"` | Backdrop look                      |
-| `isDismissable` | `boolean`                               | `true`     | Close on a press outside           |
+| Prop            | Type                                  | Default    | Description              |
+| --------------- | ------------------------------------- | ---------- | ------------------------ |
+| `variant`       | `"opaque" \| "blur" \| "transparent"` | `"opaque"` | Backdrop look            |
+| `isDismissable` | `boolean`                             | `true`     | Close on a press outside |
 
 ### Command.Container
 
-| Prop   | Type                   | Default | Description                     |
-| ------ | ---------------------- | ------- | ------------------------------- |
+| Prop   | Type                   | Default | Description                      |
+| ------ | ---------------------- | ------- | -------------------------------- |
 | `size` | `"sm" \| "md" \| "lg"` | `"md"`  | Palette width and maximum height |
 
 ### Command.Dialog
 
-| Prop                | Type                                            | Default                     | Description                          |
-| ------------------- | ----------------------------------------------- | --------------------------- | ------------------------------------ |
-| `inputValue`        | `string \| Signal<string>`                      | -                           | Search text (controlled, or two-way) |
-| `defaultInputValue` | `string`                                        | -                           | Initial search text                  |
-| `onInputChange`     | `(value: string) => void`                       | -                           | Called as the text changes           |
-| `filter`            | `(textValue: string, inputValue: string) => boolean` | case- and accent-insensitive substring | Which items stay visible |
-| `aria-label`        | `string`                                        | `"Command palette"`         | Name of the dialog                   |
+| Prop                | Type                                                 | Default                                | Description                          |
+| ------------------- | ---------------------------------------------------- | -------------------------------------- | ------------------------------------ |
+| `inputValue`        | `string \| Signal<string>`                           | -                                      | Search text (controlled, or two-way) |
+| `defaultInputValue` | `string`                                             | -                                      | Initial search text                  |
+| `onInputChange`     | `(value: string) => void`                            | -                                      | Called as the text changes           |
+| `filter`            | `(textValue: string, inputValue: string) => boolean` | case- and accent-insensitive substring | Which items stay visible             |
+| `aria-label`        | `string`                                             | `"Command palette"`                    | Name of the dialog                   |
 
 ### Command.InputGroup
 

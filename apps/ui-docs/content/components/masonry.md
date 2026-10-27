@@ -8,8 +8,6 @@ related: [components/bento, components/card, components/lightbox]
 
 `Masonry` puts items of different heights in columns of equal width, each item in the shortest column (photo walls, card feeds, mood boards), or in justified rows that fill the width. The rule: **sizes known → the server lays out**. With an aspect ratio, `width` / `height` (an `?image` import) or a fixed `height` per item, the server places every item in every breakpoint and the page paints in its final layout. Items of unknown height are measured and placed on the client; in a mixed list the server places the known leading run.
 
-Accessibility: the grid is a `role="grid"` with one tab stop; arrow keys move by visual position and the DOM order stays the data order, so screen readers read the items in their logical order. Name it with `aria-label`. `semantics="list"` renders a plain list for content that is only read.
-
 ## Usage
 
 ```tsx
@@ -28,7 +26,13 @@ import { Masonry } from "@rivetjs/ui/masonry";
 - Rows are keyed by `id` (or `key`, or `getKey`): reorder and removal move the same nodes. Cloning every item on refetch re-renders every row; items without a key fall back to the index, so a reorder looks like changed items.
 - Direct images and videos fill the item (`object-fit: cover`).
 
-## Justified
+## Anatomy
+
+`Masonry` takes an items source and a render-function child. There are no compound parts: layout and item state come from the root props, while each child supplies its own content. `Bento` is exported from the same subpath for span-based tiles.
+
+## Examples
+
+### Justified
 
 ::example{id=masonry-justified}
 
@@ -39,7 +43,7 @@ import { Masonry } from "@rivetjs/ui/masonry";
 - Items without a ratio wait hidden in a provisional row below the placed rows until their image (or box) is measured, then join the rows; lazy images past the row stay unloaded.
 - Set `maxWidth` (the example uses 768): it bounds the width breakpoints (see Performance).
 
-## Expand
+### Expand
 
 ::example{id=masonry-expand}
 
@@ -48,13 +52,13 @@ import { Masonry } from "@rivetjs/ui/masonry";
 - `handleRef` gives `relayout()`, `scrollToItem(key)` and `getPosition(key)`.
 - `masonrySizes({ columns, gap, span, inset, maxWidth })` returns the `sizes` attribute for the image's srcset. Breakpoints are container widths, media queries viewport widths: the grid is `min(100vw − inset, maxWidth)` (`inset` = page padding outside the grid), so a breakpoint at `min` starts at viewport `min + inset`. Pass the card's current span for a per-card `sizes` (the example switches between one and two columns).
 
-## Responsive
+### Responsive
 
 - Every breakpoint (columns, gaps, row heights) is in the server CSS: the grid follows its own width without JavaScript.
 - Measured items reflow from one `ResizeObserver` in one animation frame per change, with no layout reads after a write and no `window.resize` listener.
 - `fit="both"` stretches the last item of each column so the bottom edge is flush.
 
-## Feed with load more
+### Feed with load more
 
 ::example{id=masonry-feed}
 
@@ -62,7 +66,7 @@ import { Masonry } from "@rivetjs/ui/masonry";
 - `onLoadMore` runs when the end comes into view; `isLoading` shows `renderLoader` below the grid.
 - `semantics="list"` gives a `role="list"`: no arrow keys, Tab moves through the content of the cards.
 
-## Selection
+### Selection
 
 ::example{id=masonry-selection}
 
@@ -70,11 +74,11 @@ import { Masonry } from "@rivetjs/ui/masonry";
 - Selected items get a ring (`[data-selected]`), keyboard focus the focus ring (`[data-focus-visible]`).
 - `onAction(key)` runs on Enter, and on a click while nothing is selected.
 
-## Large collections
+### Large collections
 
 `virtualize` with a `height` renders only the items in view (the cdk Virtualizer). 10 000 items render about 40 at a time; keys and selection reach items outside the window.
 
-## Performance
+### Performance
 
 - Known sizes: positions are inline CSS from the server; a resize or an item change writes only the items whose box changed.
 - Justified CSS size grows with the width breakpoints. On 1 000 photos (tolerance 0.25): uncapped, 5 breakpoints = 13.8 terms / 667 B per item; `maxWidth={1400}`, 3 breakpoints = 8.0 terms / 431 B; `maxWidth={768}`, 2 breakpoints = 5.1 terms / 312 B.
@@ -96,8 +100,8 @@ The stylesheet also registers the grid variables with `@property`, which makes s
 
 ### CSS Variables
 
-| Variable           | Default                       | Description         |
-| ------------------ | ----------------------------- | ------------------- |
+| Variable           | Default                        | Description        |
+| ------------------ | ------------------------------ | ------------------ |
 | `--masonry-radius` | `min(24px, var(--radius-3xl))` | Item corner radius |
 
 ### Data Attributes
@@ -107,56 +111,62 @@ The stylesheet also registers the grid variables with `@property`, which makes s
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/masonry/) for every named export and part prop type.
+
 ### Masonry
 
-| Prop                 | Type                                                | Default                     | Description                                                   |
-| -------------------- | --------------------------------------------------- | --------------------------- | ------------------------------------------------------------- |
-| `items`              | `T[]` \| `() => T[]` \| `Signal<T[]>`               | -                           | The items (live)                                              |
-| `children`           | `(item: T, state: MasonryItemState) => Content`     | -                           | Item renderer                                                 |
-| `getKey`             | `(item: T, index: number) => Key`                   | `id` / `key` / index        | Item key                                                      |
-| `getAspectRatio`     | `(item: T) => number \| null` (or an accessor)      | `aspectRatio` / `width ÷ height` | Width ÷ height; `null` = unknown (measured)              |
-| `getItemHeight`      | `(item: T) => number \| null` (or an accessor)      | `height`                    | Fixed px height of an item without a ratio                    |
-| `getSpan`            | `(item: T) => number` (or an accessor)              | `span` / `1`                | Columns spanned (justified: width weight); live with an accessor |
-| `extraItemHeight`    | `number`                                            | `0`                         | px added below every item (a caption row)                     |
-| `referenceWidth`     | `number`                                            | middle of each range        | Container width the columns are assigned at                   |
-| `maxWidth`           | `number`                                            | -                           | Root max width in px; bounds the last breakpoint              |
-| `layout`             | `"auto"` \| `"exact"` \| `"measure"` \| `"justified"` | `"auto"`                 | Server-placed when sizes are known                            |
-| `fit`                | `"none"` \| `"both"`                                | `"none"`                    | Stretch column ends to a flush bottom                         |
-| `rowHeight`          | `number` \| `Record<number, number>`                | `240`                       | Justified target row height                                   |
-| `rowHeightTolerance`, `minRowHeight`, `maxRowHeight` | `number`                      | `0.25`, 0.5× / 2×           | Justified row height bounds                                   |
-| `lastRow`            | `"fill"` \| `"justify"` \| `"left"` \| `"center"`     | `"fill"`                    | Justified last row                                            |
-| `motion`             | `boolean` \| `{ duration?, friction? }`             | `true`                      | Relayout animation                                            |
-| `handleRef`          | `(handle: MasonryHandle) => void`                   | -                           | `relayout`, `scrollToItem`, `getPosition`                     |
-| `columns`            | `number` \| `Record<number, number>`                | `{ 0: 2, 640: 3, 1024: 4 }` | Column count, or per container width                          |
-| `minItemWidth`       | `number`                                            | -                           | Derive the columns from a minimum width (with `maxColumns`)   |
-| `gap`                | `number` \| `[number, number]` (or a map)           | `16`                        | Gaps in px                                                    |
-| `virtualize`         | `boolean`                                           | `false`                     | Render only the items in view (needs `height`)                |
-| `height`             | `number` \| `string`                                | -                           | Scroll viewport height when virtualized                       |
-| `selectionMode`      | `"none"` \| `"single"` \| `"multiple"`              | `"none"`                    | Selection                                                     |
-| `selectionBehavior`  | `"toggle"` \| `"replace"`                           | `"toggle"`                  | Click toggles, or replaces                                    |
-| `selectedKeys`       | `Selection` \| `Signal<Selection>`                  | -                           | Selected keys (`"all"` or a Set)                              |
-| `onSelectionChange`  | `(keys: Selection) => void`                         | -                           | Selection changed                                             |
-| `disabledKeys`       | `Iterable<Key>`                                     | -                           | Items that cannot be focused or selected                      |
-| `onAction`           | `(key: Key) => void`                                | -                           | Enter / click action                                          |
-| `onLoadMore`         | `() => void`                                        | -                           | The end came into view                                        |
-| `isLoading`          | `boolean`                                           | `false`                     | Shows `renderLoader`                                          |
-| `renderLoader`       | `() => Content`                                     | -                           | Loader content                                                |
-| `renderEmptyState`   | `() => Content`                                     | -                           | Shown without items                                           |
-| `semantics`          | `"grid"` \| `"list"`                                | `"grid"`                    | Grid with keys and selection, or a plain list                 |
-| `class`, `gridClass`, `itemClass`, `loaderClass`, `emptyClass` | `string` (`itemClass`: or `(state) => string`) | - | Additional CSS classes                    |
+| Prop                                                           | Type                                                  | Default                          | Description                                                      |
+| -------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------- |
+| `items`                                                        | `T[]` \| `() => T[]` \| `Signal<T[]>`                 | -                                | The items (live)                                                 |
+| `children`                                                     | `(item: T, state: MasonryItemState) => Content`       | -                                | Item renderer                                                    |
+| `getKey`                                                       | `(item: T, index: number) => Key`                     | `id` / `key` / index             | Item key                                                         |
+| `getAspectRatio`                                               | `(item: T) => number \| null` (or an accessor)        | `aspectRatio` / `width ÷ height` | Width ÷ height; `null` = unknown (measured)                      |
+| `getItemHeight`                                                | `(item: T) => number \| null` (or an accessor)        | `height`                         | Fixed px height of an item without a ratio                       |
+| `getSpan`                                                      | `(item: T) => number` (or an accessor)                | `span` / `1`                     | Columns spanned (justified: width weight); live with an accessor |
+| `extraItemHeight`                                              | `number`                                              | `0`                              | px added below every item (a caption row)                        |
+| `referenceWidth`                                               | `number`                                              | middle of each range             | Container width the columns are assigned at                      |
+| `maxWidth`                                                     | `number`                                              | -                                | Root max width in px; bounds the last breakpoint                 |
+| `layout`                                                       | `"auto"` \| `"exact"` \| `"measure"` \| `"justified"` | `"auto"`                         | Server-placed when sizes are known                               |
+| `fit`                                                          | `"none"` \| `"both"`                                  | `"none"`                         | Stretch column ends to a flush bottom                            |
+| `rowHeight`                                                    | `number` \| `Record<number, number>`                  | `240`                            | Justified target row height                                      |
+| `rowHeightTolerance`, `minRowHeight`, `maxRowHeight`           | `number`                                              | `0.25`, 0.5× / 2×                | Justified row height bounds                                      |
+| `lastRow`                                                      | `"fill"` \| `"justify"` \| `"left"` \| `"center"`     | `"fill"`                         | Justified last row                                               |
+| `motion`                                                       | `boolean` \| `{ duration?, friction? }`               | `true`                           | Relayout animation                                               |
+| `handleRef`                                                    | `(handle: MasonryHandle) => void`                     | -                                | `relayout`, `scrollToItem`, `getPosition`                        |
+| `columns`                                                      | `number` \| `Record<number, number>`                  | `{ 0: 2, 640: 3, 1024: 4 }`      | Column count, or per container width                             |
+| `minItemWidth`                                                 | `number`                                              | -                                | Derive the columns from a minimum width (with `maxColumns`)      |
+| `gap`                                                          | `number` \| `[number, number]` (or a map)             | `16`                             | Gaps in px                                                       |
+| `virtualize`                                                   | `boolean`                                             | `false`                          | Render only the items in view (needs `height`)                   |
+| `height`                                                       | `number` \| `string`                                  | -                                | Scroll viewport height when virtualized                          |
+| `selectionMode`                                                | `"none"` \| `"single"` \| `"multiple"`                | `"none"`                         | Selection                                                        |
+| `selectionBehavior`                                            | `"toggle"` \| `"replace"`                             | `"toggle"`                       | Click toggles, or replaces                                       |
+| `selectedKeys`                                                 | `Selection` \| `Signal<Selection>`                    | -                                | Selected keys (`"all"` or a Set)                                 |
+| `onSelectionChange`                                            | `(keys: Selection) => void`                           | -                                | Selection changed                                                |
+| `disabledKeys`                                                 | `Iterable<Key>`                                       | -                                | Items that cannot be focused or selected                         |
+| `onAction`                                                     | `(key: Key) => void`                                  | -                                | Enter / click action                                             |
+| `onLoadMore`                                                   | `() => void`                                          | -                                | The end came into view                                           |
+| `isLoading`                                                    | `boolean`                                             | `false`                          | Shows `renderLoader`                                             |
+| `renderLoader`                                                 | `() => Content`                                       | -                                | Loader content                                                   |
+| `renderEmptyState`                                             | `() => Content`                                       | -                                | Shown without items                                              |
+| `semantics`                                                    | `"grid"` \| `"list"`                                  | `"grid"`                         | Grid with keys and selection, or a plain list                    |
+| `class`, `gridClass`, `itemClass`, `loaderClass`, `emptyClass` | `string` (`itemClass`: or `(state) => string`)        | -                                | Additional CSS classes                                           |
 
 ### Keyboard
 
-| Key                                      | Action                                    |
-| ---------------------------------------- | ----------------------------------------- |
-| :kbd[ArrowUp] / :kbd[ArrowDown]          | Item above / below in the column          |
-| :kbd[ArrowLeft] / :kbd[ArrowRight]       | Item beside it                            |
-| :kbd[Home] / :kbd[End]                   | First / last item                         |
-| :kbd[Space]                              | Toggle selection                          |
-| :kbd[Enter]                              | Action                                    |
-| :kbd[Shift] + arrow                      | Extend the selection                      |
-| :kbd[Ctrl] / :kbd[Cmd] + :kbd[A]         | Select all                                |
-| :kbd[Escape]                             | Clear the selection                       |
+| Key                                | Action                           |
+| ---------------------------------- | -------------------------------- |
+| :kbd[ArrowUp] / :kbd[ArrowDown]    | Item above / below in the column |
+| :kbd[ArrowLeft] / :kbd[ArrowRight] | Item beside it                   |
+| :kbd[Home] / :kbd[End]             | First / last item                |
+| :kbd[Space]                        | Toggle selection                 |
+| :kbd[Enter]                        | Action                           |
+| :kbd[Shift] + arrow                | Extend the selection             |
+| :kbd[Ctrl] / :kbd[Cmd] + :kbd[A]   | Select all                       |
+| :kbd[Escape]                       | Clear the selection              |
+
+## Accessibility
+
+the grid is a `role="grid"` with one tab stop; arrow keys move by visual position and the DOM order stays the data order, so screen readers read the items in their logical order. Name it with `aria-label`. `semantics="list"` renders a plain list for content that is only read.
 
 ## Related Components
 

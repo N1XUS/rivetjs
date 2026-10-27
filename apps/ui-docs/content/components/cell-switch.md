@@ -35,27 +35,31 @@ export default function Anatomy() {
 
 Shorthand: with no children, `label` and `description` build the same row, as in `<CellSwitch label="Wi-Fi" description="Connected to Home" />`.
 
-## Controlled
+Additional exported parts: `CellSwitch.Root`.
+
+## Examples
+
+### Controlled
 
 ::example{id=cell-switch-controlled}
 
-## Disabled
+### Disabled
 
 ::example{id=cell-switch-disabled}
 
-## Feature Announcement
+### Feature Announcement
 
 ::example{id=cell-switch-feature-announcement}
 
-## Secondary Group
+### Secondary Group
 
 ::example{id=cell-switch-secondary-group}
 
-## Settings Group
+### Settings Group
 
 ::example{id=cell-switch-settings-group}
 
-## Variants
+### Variants
 
 ::example{id=cell-switch-variants}
 
@@ -75,6 +79,8 @@ Shorthand: with no children, `label` and `description` build the same row, as in
 - State, from Switch: `[data-selected]`, `[data-disabled]`, `[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/cell-switch/) for every named export and part prop type.
 
 ### CellSwitch
 

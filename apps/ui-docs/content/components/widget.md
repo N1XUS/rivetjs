@@ -38,37 +38,41 @@ export default function Anatomy() {
 }
 ```
 
-## With Bar Chart
+Additional exported parts: `Widget.Root`.
+
+## Examples
+
+### With Bar Chart
 
 ::example{id=widget-bar-chart}
 
-## With Line Chart
+### With Line Chart
 
 ::example{id=widget-line-chart}
 
-## With Pie Chart
+### With Pie Chart
 
 ::example{id=widget-pie-chart}
 
-## With KPIs
+### With KPIs
 
 Combine Widget with [KpiGroup](/components/kpi-group/) for a metrics overview with inline sparklines. `class="p-0"` on the content lets the group fill it.
 
 ::example{id=widget-kpis}
 
-## Usage Summary
+### Usage Summary
 
 No chart: rows with [ProgressCircle](/components/progress-circle/) indicators.
 
 ::example{id=widget-usage-summary}
 
-## With Table
+### With Table
 
 Use `variant="secondary"` on the [Table](/components/table/) to drop its own background, and `class="p-0"` on the content for edge-to-edge rows.
 
 ::example{id=widget-table}
 
-## Dashboard Grid
+### Dashboard Grid
 
 ::example{id=widget-dashboard-grid}
 
@@ -94,6 +98,8 @@ Use `variant="secondary"` on the [Table](/components/table/) to drop its own bac
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/widget/) for every named export and part prop type.
+
 ### Widget
 
 | Prop     | Type                       | Default | Description                        |
@@ -113,6 +119,10 @@ Also takes `div` props.
 ### Other parts
 
 `Widget.Header`, `Widget.Content`, `Widget.Footer`, `Widget.Legend` take `div` props and `class`; `Widget.Title` and `Widget.Description` are `span`s.
+
+## Accessibility
+
+The shell and layout parts are plain markup. Supply an appropriate heading for the region and accessible names for embedded charts, tables and controls. Legend dots are decorative; keep the corresponding text labels.
 
 ## Related Components
 

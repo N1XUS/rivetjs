@@ -38,37 +38,43 @@ export default function Anatomy() {
 }
 ```
 
-## Selection Modes
+Additional exported parts: `ListView.Root`, `ListView.EmptyState`.
+
+## Examples
+
+### Selection Modes
 
 `selectionMode="multiple"` or `"single"` adds a selection checkbox to each row. Bind `selectedKeys` to a signal for two-way selection, or use `defaultSelectedKeys` and `onSelectionChange`.
 
 ::example{id=list-view-selection}
 
-## Variants
+### Variants
 
 ::example{id=list-view-variants}
 
-## Disabled Items
+### Disabled Items
 
 ::example{id=list-view-disabled}
 
-## With Action Bar
+### With Action Bar
 
 Combine a multiple-selection list with an [ActionBar](/components/action-bar/) for bulk actions. Per-row actions go in `ItemAction`.
 
 ::example{id=list-view-action-bar}
 
-## Empty State
+### Empty State
 
 ::example{id=list-view-empty}
 
-## Virtualized
+### Virtualized
 
 `virtualized` renders only the rows in view (cdk `CollectionVirtualizer` with a list layout). Give the list a fixed height and set `rowHeight` to the row height in pixels; `initialSize` sets the window the server renders.
 
 ::example{id=list-view-virtualized}
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `list-view-item`, `list-view-selection-cell`, `list-view-item-content`, `list-view-title`, `list-view-description`, `list-view-item-action`, `list-view-empty-state`.
 
 ### CSS Classes
 
@@ -89,25 +95,27 @@ Combine a multiple-selection list with an [ActionBar](/components/action-bar/) f
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/list-view/) for every named export and part prop type.
+
 ### ListView
 
 The cdk `GridList` (stack layout).
 
-| Prop                  | Type                                    | Default     | Description                                              |
-| --------------------- | --------------------------------------- | ----------- | -------------------------------------------------------- |
-| `variant`             | `"primary" \| "secondary"`              | `"primary"` | Card of surface rows, or flat rows with separators       |
-| `selectionMode`       | `"none" \| "single" \| "multiple"`      | `"none"`    | Selection; adds a checkbox per row                       |
-| `selectedKeys`        | `Signal<Selection> \| Iterable<Key>`    | -           | Selected rows (a signal is two-way)                      |
-| `defaultSelectedKeys` | `Iterable<Key> \| "all"`                | -           | Initial selection                                        |
-| `onSelectionChange`   | `(keys: Selection) => void`             | -           | Selection changed                                        |
-| `disabledKeys`        | `Iterable<Key>`                         | -           | Rows that cannot be focused or selected                  |
-| `onAction`            | `(key: Key) => void`                    | -           | A row was pressed (or Enter)                             |
-| `items`               | `Iterable<T>`                           | -           | Items for a dynamic list (children = render function)    |
-| `renderEmptyState`    | `() => Content`                         | -           | Content when there are no rows                           |
-| `virtualized`         | `boolean`                               | `false`     | Render only the rows in view                             |
-| `rowHeight`           | `number`                                | `48`        | Row height in px when virtualized                        |
-| `initialSize`         | `{ width: number; height: number }`     | -           | Server-rendered window when virtualized                  |
-| `class`               | `string \| (values) => string`          | -           | Class, or a function of the render props                 |
+| Prop                  | Type                                 | Default     | Description                                           |
+| --------------------- | ------------------------------------ | ----------- | ----------------------------------------------------- |
+| `variant`             | `"primary" \| "secondary"`           | `"primary"` | Card of surface rows, or flat rows with separators    |
+| `selectionMode`       | `"none" \| "single" \| "multiple"`   | `"none"`    | Selection; adds a checkbox per row                    |
+| `selectedKeys`        | `Signal<Selection> \| Iterable<Key>` | -           | Selected rows (a signal is two-way)                   |
+| `defaultSelectedKeys` | `Iterable<Key> \| "all"`             | -           | Initial selection                                     |
+| `onSelectionChange`   | `(keys: Selection) => void`          | -           | Selection changed                                     |
+| `disabledKeys`        | `Iterable<Key>`                      | -           | Rows that cannot be focused or selected               |
+| `onAction`            | `(key: Key) => void`                 | -           | A row was pressed (or Enter)                          |
+| `items`               | `Iterable<T>`                        | -           | Items for a dynamic list (children = render function) |
+| `renderEmptyState`    | `() => Content`                      | -           | Content when there are no rows                        |
+| `virtualized`         | `boolean`                            | `false`     | Render only the rows in view                          |
+| `rowHeight`           | `number`                             | `48`        | Row height in px when virtualized                     |
+| `initialSize`         | `{ width: number; height: number }`  | -           | Server-rendered window when virtualized               |
+| `class`               | `string \| (values) => string`       | -           | Class, or a function of the render props              |
 
 ### ListView.Item
 
@@ -116,3 +124,13 @@ The cdk `GridListItem`: `id`, `textValue`, `isDisabled`, `onAction`, `href`, `cl
 ### ListView.ItemContent / Title / Description / ItemAction / EmptyState
 
 Plain parts (`div` / `span` props and `class`).
+
+## Accessibility
+
+The cdk GridList supplies grid rows, keyboard navigation and selection. Give the list an `aria-label` or `aria-labelledby`, provide stable item ids and `textValue` for rich content, and label controls inside each row. [ListBox](/components/list-box/) is the simpler choice for options without nested actions.
+
+## Related Components
+
+- [ListBox](/components/list-box/)
+- [ActionBar](/components/action-bar/)
+- [Table](/components/table/)

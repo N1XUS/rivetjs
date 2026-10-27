@@ -16,23 +16,31 @@ import { RadarChart } from "@rivetjs/ui/radar-chart";
 
 ::example{id=radar-chart-basic}
 
-## Comparison
+## Anatomy
+
+`RadarChart` is a single data-driven component. `data`, `index` and `series` determine spokes and series shapes; grid, labels, legend and tooltip slots are rendered by the component.
+
+## Examples
+
+### Comparison
 
 ::example{id=radar-chart-comparison}
 
-## Dots Only
+### Dots Only
 
 ::example{id=radar-chart-dots-only}
 
-## Multi Series
+### Multi Series
 
 ::example{id=radar-chart-multi-series}
 
-## With Radius Axis
+### With Radius Axis
 
 ::example{id=radar-chart-with-radius-axis}
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chart-plot`.
 
 ### CSS Classes
 
@@ -57,6 +65,8 @@ import { RadarChart } from "@rivetjs/ui/radar-chart";
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/radar-chart/) for every named export and part prop type.
+
 ### RadarChart
 
 | Prop                                         | Type                                 | Default        | Description                                      |
@@ -73,6 +83,10 @@ import { RadarChart } from "@rivetjs/ui/radar-chart";
 | `valueFormatter`                             | `(value: number) => string`          | grouped number | Tooltip and tick values                          |
 | `tooltip`                                    | `(point: ChartPoint) => JSX.Element` | -              | Custom tooltip content                           |
 | `aria-label`                                 | `string`                             | all values     | Accessible name of the figure                    |
+
+## Accessibility
+
+When tooltips are enabled, category slots are focusable groups labelled with their values. The SVG geometry is hidden from assistive technology. Supply a meaningful `aria-label` and a text summary or table for comparisons that matter.
 
 ## Related Components
 

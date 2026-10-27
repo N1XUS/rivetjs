@@ -44,33 +44,37 @@ export default function Anatomy() {
 
 `Timeline.Rail` is optional: an item without one renders a default rail (dot marker + connector), hidden by CSS when you add your own. A rail without a `Timeline.Marker` gets a default dot. The last item's connector is hidden (`force` keeps it). Alternate sides come from the item position (CSS), so no index is needed.
 
-## Centered Milestones
+Additional exported parts: `Timeline.Root`.
+
+## Examples
+
+### Centered Milestones
 
 `axis="center"` puts the rail in the middle; `placement` sets the content side (`end`, `start`, `alternate`), an item's `side` overrides it.
 
 ::example{id=timeline-centered-milestones}
 
-## Studio Review
+### Studio Review
 
 ::example{id=timeline-studio-review}
 
-## Compact Log
+### Compact Log
 
 ::example{id=timeline-compact-log}
 
-## Incident Response
+### Incident Response
 
 ::example{id=timeline-incident-response}
 
-## Version History
+### Version History
 
 ::example{id=timeline-version-history}
 
-## Repository Activity
+### Repository Activity
 
 ::example{id=timeline-repository-activity}
 
-## Split Content
+### Split Content
 
 Two `Timeline.Content` parts with `side="start"` / `side="end"` share one item on a centred axis.
 
@@ -98,6 +102,8 @@ Two `Timeline.Content` parts with `side="start"` / `side="end"` share one item o
 - `[data-side]` (`start` / `end`) on items / content, `[data-align]` (`start` / `center`) on items, `[data-force]` on connectors, `[data-axis]` / `[data-item-align]` on the root.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/timeline/) for every named export and part prop type.
 
 ### Timeline
 

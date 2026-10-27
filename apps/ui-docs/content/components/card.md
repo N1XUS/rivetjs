@@ -38,6 +38,8 @@ export default () => (
 );
 ```
 
+Additional exported parts: `Card.Root`.
+
 ## Examples
 
 ### Variants
@@ -92,6 +94,8 @@ To customize the Card component classes, you can use the `@layer components` dir
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `card-header`, `card-description`, `card-content`, `card-footer`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -115,6 +119,8 @@ Card uses [BEM](https://getbem.com/) naming for predictable styling ([View sourc
 - `.card--tertiary` - Higher prominence with surface-tertiary (maps to `tertiary` variant)
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/card/) for every named export and part prop type.
 
 ### Card
 

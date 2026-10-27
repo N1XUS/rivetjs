@@ -14,8 +14,6 @@ Notes:
 - `value` takes a two-way signal of the value array (`value={selected}`) or an array; `onChange` receives the array.
 - Shorthand (Rivet addition): `label` / `description` / `errorMessage` / `items` render the Label, Description, FieldError and one Checkbox per item.
 
-Accessibility: `role="group"` labelled by its `Label`, described by `Description` / `FieldError`; each Checkbox keeps its own label.
-
 ## Usage
 
 ```tsx
@@ -129,40 +127,46 @@ The CheckboxGroup component uses these CSS classes ([View source styles](https:/
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/checkbox-group/) for every named export and part prop type.
+
 ### CheckboxGroup
 
 Inherits from [React Aria CheckboxGroup](https://react-spectrum.adobe.com/react-aria/CheckboxGroup.html).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string[]` | - | The current selected values (controlled) |
-| `defaultValue` | `string[]` | - | The default selected values (uncontrolled) |
-| `onChange` | `(value: string[]) => void` | - | Handler called when the selected values change |
-| `isDisabled` | `boolean` | `false` | Whether the checkbox group is disabled |
-| `isRequired` | `boolean` | `false` | Whether the checkbox group is required |
-| `isReadOnly` | `boolean` | `false` | Whether the checkbox group is read only |
-| `isInvalid` | `boolean` | `false` | Whether the checkbox group is in an invalid state |
-| `name` | `string` | - | The name of the checkbox group, used when submitting an HTML form |
-| `children` | `Content \| (values: CheckboxGroupRenderProps) => Content` | - | Checkbox group content or render prop |
-| `label` | `Content` | - | Shorthand: the group Label (before the children). |
-| `description` | `Content` | - | Shorthand: the group Description (after the Label). |
-| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content` | - | Shorthand: a FieldError after the options, shown while invalid. |
-| `items` | `{ value: string; label: Content; description?: Content; isDisabled?: boolean }[]` | - | Shorthand: one Checkbox per item instead of children. Read once at mount. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, CheckboxGroupRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                               | Default | Description                                                               |
+| -------------- | ---------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `value`        | `string[]`                                                                         | -       | The current selected values (controlled)                                  |
+| `defaultValue` | `string[]`                                                                         | -       | The default selected values (uncontrolled)                                |
+| `onChange`     | `(value: string[]) => void`                                                        | -       | Handler called when the selected values change                            |
+| `isDisabled`   | `boolean \| (() => boolean)`                                                       | `false` | Whether the checkbox group is disabled                                    |
+| `isRequired`   | `boolean \| (() => boolean)`                                                       | `false` | Whether the checkbox group is required                                    |
+| `isReadOnly`   | `boolean \| (() => boolean)`                                                       | `false` | Whether the checkbox group is read only                                   |
+| `isInvalid`    | `boolean \| (() => boolean)`                                                       | `false` | Whether the checkbox group is in an invalid state                         |
+| `name`         | `string`                                                                           | -       | The name of the checkbox group, used when submitting an HTML form         |
+| `children`     | `Content \| (values: CheckboxGroupRenderProps) => Content`                         | -       | Checkbox group content or render prop                                     |
+| `label`        | `Content`                                                                          | -       | Shorthand: the group Label (before the children).                         |
+| `description`  | `Content`                                                                          | -       | Shorthand: the group Description (after the Label).                       |
+| `errorMessage` | `Content \| (values: FieldErrorRenderProps) => Content`                            | -       | Shorthand: a FieldError after the options, shown while invalid.           |
+| `items`        | `{ value: string; label: Content; description?: Content; isDisabled?: boolean }[]` | -       | Shorthand: one Checkbox per item instead of children. Read once at mount. |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, CheckboxGroupRenderProps>`         | -       | Overrides the default DOM element with a custom render function.          |
 
 ### Render Props
 
 When using the render prop pattern, these values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `value` | `string[]` | The currently selected values |
-| `isDisabled` | `boolean` | Whether the checkbox group is disabled |
-| `isReadOnly` | `boolean` | Whether the checkbox group is read only |
-| `isInvalid` | `boolean` | Whether the checkbox group is in an invalid state |
-| `isRequired` | `boolean` | Whether the checkbox group is required |
+| Prop         | Type            | Description                                       |
+| ------------ | --------------- | ------------------------------------------------- |
+| `value`      | `string[]`      | The currently selected values                     |
+| `isDisabled` | `() => boolean` | Whether the checkbox group is disabled            |
+| `isReadOnly` | `() => boolean` | Whether the checkbox group is read only           |
+| `isInvalid`  | `() => boolean` | Whether the checkbox group is in an invalid state |
+| `isRequired` | `() => boolean` | Whether the checkbox group is required            |
 
 ::api{symbol="@rivetjs/ui/checkbox-group#CheckboxGroupProps"}
+
+## Accessibility
+
+`role="group"` labelled by its `Label`, described by `Description` / `FieldError`; each Checkbox keeps its own label.
 
 ## Related Components
 

@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - React's `onChange` on a native textarea fires per keystroke; in Rivet that is `onInput`.
 
-Accessibility: A native `<textarea>`; give it a label (`aria-label`, a `Label`, or a TextField).
-
 ## Usage
 
 ```tsx
@@ -26,6 +24,12 @@ import { TextArea } from "@rivetjs/ui/textarea";
 :::note
 For validation, labels, and error messages, see **[TextField](/components/text-field/)**.
 :::
+
+## Anatomy
+
+`TextArea` exposes `TextArea.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -107,33 +111,39 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/textarea/) for every named export and part prop type.
+
 ### TextArea
 
 TextArea accepts all standard HTML `<textarea>` attributes plus the following:
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Tailwind classes merged with the base styles. |
-| `rows` | `number` | `3` | Number of visible text lines. |
-| `cols` | `number` | - | Visible width of the text control. |
-| `value` | `string` | - | Controlled value for the textarea. |
-| `defaultValue` | `string` | - | Initial uncontrolled value. |
-| `onChange` | `(event: React.ChangeEvent<HTMLTextAreaElement>) => void` | - | Change handler. |
-| `placeholder` | `string` | - | Placeholder text. |
-| `disabled` | `boolean` | `false` | Disables the textarea. |
-| `readOnly` | `boolean` | `false` | Makes the textarea read-only. |
-| `required` | `boolean` | `false` | Marks the textarea as required. |
-| `name` | `string` | - | Name for form submission. |
-| `autoComplete` | `string` | - | Autocomplete hint for the browser. |
-| `maxLength` | `number` | - | Maximum number of characters. |
-| `minLength` | `number` | - | Minimum number of characters. |
-| `wrap` | `'soft' \| 'hard'` | - | How text wraps when submitted. |
-| `fullWidth` | `boolean` | `false` | Whether the textarea should take full width of its container |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| Prop           | Type                                           | Default         | Description                                                                                                                                                        |
+| -------------- | ---------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `class`        | `string`                                       | -               | Tailwind classes merged with the base styles.                                                                                                                      |
+| `rows`         | `number`                                       | browser default | Number of visible text lines.                                                                                                                                      |
+| `cols`         | `number`                                       | -               | Visible width of the text control.                                                                                                                                 |
+| `value`        | `string`                                       | -               | Controlled value for the textarea.                                                                                                                                 |
+| `defaultValue` | `string`                                       | -               | Initial uncontrolled value.                                                                                                                                        |
+| `onInput`      | `JSX.IntrinsicElements["textarea"]["onInput"]` | -               | Fires while the user edits. Read `event.currentTarget.value`.                                                                                                      |
+| `placeholder`  | `string`                                       | -               | Placeholder text.                                                                                                                                                  |
+| `disabled`     | `boolean`                                      | `false`         | Disables the textarea.                                                                                                                                             |
+| `readOnly`     | `boolean`                                      | `false`         | Makes the textarea read-only.                                                                                                                                      |
+| `required`     | `boolean`                                      | `false`         | Marks the textarea as required.                                                                                                                                    |
+| `name`         | `string`                                       | -               | Name for form submission.                                                                                                                                          |
+| `autoComplete` | `string`                                       | -               | Autocomplete hint for the browser.                                                                                                                                 |
+| `maxLength`    | `number`                                       | -               | Maximum number of characters.                                                                                                                                      |
+| `minLength`    | `number`                                       | -               | Minimum number of characters.                                                                                                                                      |
+| `wrap`         | `'soft' \| 'hard'`                             | -               | How text wraps when submitted.                                                                                                                                     |
+| `fullWidth`    | `boolean`                                      | `false`         | Whether the textarea should take full width of its container                                                                                                       |
+| `variant`      | `"primary" \| "secondary"`                     | `"primary"`     | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
 
 > For validation props like `isInvalid`, `isRequired`, and error handling, use **[TextField](/components/text-field/)** with TextArea as a child component.
 
 ::api{symbol="@rivetjs/ui/textarea#TextAreaRootProps"}
+
+## Accessibility
+
+A native `<textarea>`; give it a label (`aria-label`, a `Label`, or a TextField).
 
 ## Related Components
 

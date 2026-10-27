@@ -14,8 +14,6 @@ Notes:
 - Controlled values: put the two-way signal on the TextField (`value={value}`); render props are accessors (`({ isPending }) => isPending()`).
 - Buttons in a prefix / suffix sit concentric inside the field: the same 3 px inset on every side, height = field height − 2 × inset, radius = field radius − inset (a circle in a pill field, a small rounding in a square one), 16 px icon; ghost / tertiary buttons rest without fill in the muted icon colour and fill on hover / press; the focus ring stays inside the field. No `pe-0` on the suffix needed. Use a `primary` button only for a submit action. Textarea groups keep their own toolbar spacing. Built-in clear buttons and trigger chevrons of other fields are not affected.
 
-Accessibility: The group is `role=group`; the input inside keeps the TextField's label and description; decorative prefix / suffix icons are `aria-hidden`.
-
 ## Usage
 
 ```tsx
@@ -40,7 +38,7 @@ export default () => (
       <InputGroup.Suffix />
     </InputGroup>
   </TextField>
-)
+);
 ```
 
 > **InputGroup** wraps an input field with optional prefix and suffix elements, creating a visually cohesive group. It's typically used within **[TextField](/components/text-field/)** to add icons, text, buttons, or other elements before or after the input. Use **InputGroup.Input** for single-line inputs or **InputGroup.TextArea** for multiline text inputs.
@@ -169,7 +167,7 @@ import { Button } from "@rivetjs/ui/button";
 import { InputGroup } from "@rivetjs/ui/input-group";
 import { Label } from "@rivetjs/ui/label";
 import { TextField } from "@rivetjs/ui/textfield";
-import {Icon} from '@iconify/react';
+import { Icon } from "@iconify/react";
 
 function Example() {
   return (
@@ -194,13 +192,13 @@ function Example() {
 ### TextArea Usage Example
 
 ```tsx
-import {Envelope} from "@gravity-ui/icons";
+import { Envelope } from "@gravity-ui/icons";
 import { Description } from "@rivetjs/ui/description";
 import { FieldError } from "@rivetjs/ui/field-error";
 import { InputGroup } from "@rivetjs/ui/input-group";
 import { Label } from "@rivetjs/ui/label";
 import { TextField } from "@rivetjs/ui/textfield";
-import {useState} from "react";
+import { useState } from "react";
 
 function TextAreaExample() {
   const [feedback, setFeedback] = useState("");
@@ -212,12 +210,7 @@ function TextAreaExample() {
         <InputGroup.Prefix>
           <Envelope class="size-4 text-muted" />
         </InputGroup.Prefix>
-        <InputGroup.TextArea
-          class="resize-none"
-          placeholder="Share your thoughts, suggestions, or issues..."
-          rows={5}
-          value={feedback}
-        />
+        <InputGroup.TextArea class="resize-none" placeholder="Share your thoughts, suggestions, or issues..." rows={5} value={feedback} />
       </InputGroup>
       <Description class="flex w-full items-center justify-between px-1">
         <span>Maximum 500 characters.</span>
@@ -267,6 +260,8 @@ InputGroup uses CSS classes that can be customized. Override the component class
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `input-group-input`, `input-group-prefix`, `input-group-suffix`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -296,35 +291,37 @@ InputGroup automatically manages these data attributes based on its state:
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/input-group/) for every named export and part prop type.
+
 ### InputGroup
 
 InputGroup inherits all props from React Aria's [Group](https://react-spectrum.adobe.com/react-aria/Group.html) component.
 
 #### Base Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| (values: GroupRenderProps) => Content` | - | Child components (Input, TextArea, Prefix, Suffix) or render function. |
-| `class` | `string \| (values: GroupRenderProps) => string` | - | CSS classes for styling, supports render props. |
-| `style` | `StyleObject \| (values: GroupRenderProps) => StyleObject` | - | Inline styles, supports render props. |
-| `fullWidth` | `boolean` | `false` | Whether the input group should take full width of its container |
-| `id` | `string` | - | The element's unique identifier. |
+| Prop        | Type                                                       | Default | Description                                                            |
+| ----------- | ---------------------------------------------------------- | ------- | ---------------------------------------------------------------------- |
+| `children`  | `Content \| (values: GroupRenderProps) => Content`         | -       | Child components (Input, TextArea, Prefix, Suffix) or render function. |
+| `class`     | `string \| (values: GroupRenderProps) => string`           | -       | CSS classes for styling, supports render props.                        |
+| `style`     | `StyleObject \| (values: GroupRenderProps) => StyleObject` | -       | Inline styles, supports render props.                                  |
+| `fullWidth` | `boolean`                                                  | `false` | Whether the input group should take full width of its container        |
+| `id`        | `string`                                                   | -       | The element's unique identifier.                                       |
 
 #### Variant Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop      | Type                       | Default     | Description                                                                                                                                                        |
+| --------- | -------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
 
 #### Accessibility Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `aria-label` | `string` | - | Accessibility label when no visible label is present. |
-| `aria-labelledby` | `string` | - | ID of elements that label this group. |
-| `aria-describedby` | `string` | - | ID of elements that describe this group. |
-| `aria-details` | `string` | - | ID of elements with additional details. |
-| `role` | `'group' \| 'region' \| 'presentation'` | `'group'` | Accessibility role for the group. Use 'region' for important content, 'presentation' for visual-only grouping. |
+| Prop               | Type                                    | Default   | Description                                                                                                    |
+| ------------------ | --------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------- |
+| `aria-label`       | `string`                                | -         | Accessibility label when no visible label is present.                                                          |
+| `aria-labelledby`  | `string`                                | -         | ID of elements that label this group.                                                                          |
+| `aria-describedby` | `string`                                | -         | ID of elements that describe this group.                                                                       |
+| `aria-details`     | `string`                                | -         | ID of elements with additional details.                                                                        |
+| `role`             | `'group' \| 'region' \| 'presentation'` | `'group'` | Accessibility role for the group. Use 'region' for important content, 'presentation' for visual-only grouping. |
 
 ### Composition Components
 
@@ -340,47 +337,51 @@ InputGroup works with these subcomponents:
 
 InputGroup.Input inherits all props from React Aria's [Input](https://react-spectrum.adobe.com/react-aria/Input.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | CSS classes for styling. |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the input. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `type` | `string` | `'text'` | Input type (text, password, email, etc.). |
-| `value` | `string` | - | Current value (controlled). |
-| `defaultValue` | `string` | - | Default value (uncontrolled). |
-| `placeholder` | `string` | - | Placeholder text. |
-| `disabled` | `boolean` | - | Whether the input is disabled. |
-| `readOnly` | `boolean` | - | Whether the input is read-only. |
+| Prop           | Type                       | Default     | Description                                                                                                                                                    |
+| -------------- | -------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `class`        | `string`                   | -           | CSS classes for styling.                                                                                                                                       |
+| `variant`      | `"primary" \| "secondary"` | `"primary"` | Visual variant of the input. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `type`         | `string`                   | `'text'`    | Input type (text, password, email, etc.).                                                                                                                      |
+| `value`        | `string`                   | -           | Current value (controlled).                                                                                                                                    |
+| `defaultValue` | `string`                   | -           | Default value (uncontrolled).                                                                                                                                  |
+| `placeholder`  | `string`                   | -           | Placeholder text.                                                                                                                                              |
+| `disabled`     | `boolean`                  | -           | Whether the input is disabled.                                                                                                                                 |
+| `readOnly`     | `boolean`                  | -           | Whether the input is read-only.                                                                                                                                |
 
 #### InputGroup.TextArea Props
 
 InputGroup.TextArea inherits all props from React Aria's [TextArea](https://react-spectrum.adobe.com/react-aria/TextArea.html) component.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | CSS classes for styling. |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the textarea. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `value` | `string` | - | Current value (controlled). |
-| `defaultValue` | `string` | - | Default value (uncontrolled). |
-| `placeholder` | `string` | - | Placeholder text. |
-| `rows` | `number` | - | Number of visible text lines. |
-| `disabled` | `boolean` | - | Whether the textarea is disabled. |
-| `readOnly` | `boolean` | - | Whether the textarea is read-only. |
+| Prop           | Type                       | Default     | Description                                                                                                                                                       |
+| -------------- | -------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `class`        | `string`                   | -           | CSS classes for styling.                                                                                                                                          |
+| `variant`      | `"primary" \| "secondary"` | `"primary"` | Visual variant of the textarea. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `value`        | `string`                   | -           | Current value (controlled).                                                                                                                                       |
+| `defaultValue` | `string`                   | -           | Default value (uncontrolled).                                                                                                                                     |
+| `placeholder`  | `string`                   | -           | Placeholder text.                                                                                                                                                 |
+| `rows`         | `number`                   | -           | Number of visible text lines.                                                                                                                                     |
+| `disabled`     | `boolean`                  | -           | Whether the textarea is disabled.                                                                                                                                 |
+| `readOnly`     | `boolean`                  | -           | Whether the textarea is read-only.                                                                                                                                |
 
 #### InputGroup.Prefix Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content` | - | Content to display in the prefix (icons, text, etc.). |
-| `class` | `string` | - | CSS classes for styling. |
+| Prop       | Type      | Default | Description                                           |
+| ---------- | --------- | ------- | ----------------------------------------------------- |
+| `children` | `Content` | -       | Content to display in the prefix (icons, text, etc.). |
+| `class`    | `string`  | -       | CSS classes for styling.                              |
 
 #### InputGroup.Suffix Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content` | - | Content to display in the suffix (icons, buttons, badges, etc.). |
-| `class` | `string` | - | CSS classes for styling. |
+| Prop       | Type      | Default | Description                                                      |
+| ---------- | --------- | ------- | ---------------------------------------------------------------- |
+| `children` | `Content` | -       | Content to display in the suffix (icons, buttons, badges, etc.). |
+| `class`    | `string`  | -       | CSS classes for styling.                                         |
 
 ::api{symbol="@rivetjs/ui/input-group#InputGroupRootProps"}
+
+## Accessibility
+
+The group is `role=group`; the input inside keeps the TextField's label and description; decorative prefix / suffix icons are `aria-hidden`.
 
 ## Related Components
 

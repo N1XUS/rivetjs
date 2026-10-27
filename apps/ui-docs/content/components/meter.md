@@ -3,7 +3,7 @@ title: Meter
 description: "A meter represents a quantity within a known range, or a fractional value."
 template: reference
 status: experimental
-related: []
+related: [components/progress-bar, components/progress-circle]
 ---
 
 `Meter` shows a known quantity inside a range (storage used, battery, a score). For task progress use a [ProgressBar](progress-bar.md). The root is the [cdk Meter](site:cdk/components/meter/) (`role="meter"`, `aria-valuenow`, `aria-valuetext`); the parts are styled elements.
@@ -14,8 +14,6 @@ Notes:
 - Value props also accept accessors (a cdk superset).
 - Context `state` fields are accessors, not React snapshot values.
 - SVG / style attributes keep their DOM names (`stroke-dasharray`, `width: 60%`); same output.
-
-Accessibility: `role="meter"` with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and `aria-valuetext` from the cdk. A [Label](label.md) child labels it (`aria-labelledby`).
 
 ## Usage
 
@@ -42,6 +40,8 @@ export default () => (
   </Meter>
 );
 ```
+
+Additional exported parts: `Meter.Root`.
 
 ## Examples
 
@@ -94,6 +94,8 @@ To customize the Meter component classes, you can use the `@layer components` di
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `meter-output`, `meter-track`, `meter-fill`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -123,6 +125,8 @@ The Meter component uses these CSS classes ([View source styles](https://github.
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/meter/) for every named export and part prop type.
+
 ### Meter
 
 Inherits from [React Aria Meter](https://react-spectrum.adobe.com/react-aria/Meter.html).
@@ -142,11 +146,18 @@ Inherits from [React Aria Meter](https://react-spectrum.adobe.com/react-aria/Met
 
 When using the render prop pattern, these values are provided:
 
-| Prop         | Type     | Description                         |
-| ------------ | -------- | ----------------------------------- |
-| `percentage` | `number` | The percentage of the meter (0-100) |
-| `valueText`  | `string` | The formatted value text            |
+| Prop         | Type                        | Description                         |
+| ------------ | --------------------------- | ----------------------------------- |
+| `percentage` | `() => number`              | The percentage of the meter (0-100) |
+| `valueText`  | `() => string \| undefined` | The formatted value text            |
 
 ::api{symbol="@rivetjs/ui/meter#MeterRootProps"}
 
+## Accessibility
+
+`role="meter"` with `aria-valuemin`, `aria-valuemax`, `aria-valuenow` and `aria-valuetext` from the cdk. A [Label](label.md) child labels it (`aria-labelledby`).
+
 ## Related Components
+
+- [ProgressBar](/components/progress-bar/)
+- [ProgressCircle](/components/progress-circle/)

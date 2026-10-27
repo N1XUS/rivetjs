@@ -8,8 +8,6 @@ related: [components/drawer, components/modal, components/popover]
 
 `Sheet` slides in from an edge of the screen and follows the pointer: drag it towards the edge to dismiss, or between snap points to resize it. It runs on the cdk overlay layer (the same focus trap, scroll lock and Escape handling as [Drawer](/components/drawer/) and [Modal](/components/modal/)). The gesture is [`@rivetjs/cdk/sheet-motion`](site:cdk/foundations/sheet-motion/) on the shared motion physics.
 
-Accessibility: the dialog is a modal `dialog` (focus trapped, page inert and scroll locked) unless `isModal={false}`. Give it a `Sheet.Heading` or an `aria-label`. Drag is a pointer extra: Escape, the backdrop and close buttons always work, and `prefers-reduced-motion` turns the settle animation into a jump.
-
 ## Usage
 
 ```tsx
@@ -50,49 +48,53 @@ export default function Anatomy() {
 
 The first pressable child of `Sheet` (or a `Sheet.Trigger`) opens it. `Sheet.Close` and any `slot="close"` button close it; `Sheet.CloseTrigger` is the corner close button.
 
-## Backdrop Variants
+Additional exported parts: `Sheet.Root`.
+
+## Examples
+
+### Backdrop Variants
 
 ::example{id=sheet-backdrop-variants}
 
-## Controlled
+### Controlled
 
 Pass a two-way `Signal<boolean>` as `isOpen` (or `state` from `useOverlayState`). Drag, Escape and the backdrop write `false` back.
 
 ::example{id=sheet-controlled}
 
-## Detached
+### Detached
 
 ::example{id=sheet-detached}
 
-## Emoji Picker Sheet
+### Emoji Picker Sheet
 
 ::example{id=sheet-emoji-picker}
 
-## Handle Only
+### Handle Only
 
 With `isHandleOnly` a drag starts only on `Sheet.Handle`, so the body can hold sliders, maps or other draggable content.
 
 ::example{id=sheet-handle-only}
 
-## Nested
+### Nested
 
 `Sheet.NestedRoot` inside an open sheet opens a child sheet; the parent gets `data-sheet-nested-open` and steps back (CSS on `--sheet-nested-progress` while the child is dragged).
 
 ::example{id=sheet-nested}
 
-## Non Dismissable
+### Non Dismissable
 
 ::example{id=sheet-non-dismissable}
 
-## Placements
+### Placements
 
 ::example{id=sheet-placements}
 
-## Professions Picker
+### Professions Picker
 
 ::example{id=sheet-professions-picker}
 
-## Scrollable Content
+### Scrollable Content
 
 Dragging an open sheet past fully shown rubber-bands and springs back; the surface stays attached to its edge (its background extends past the edge, no gap). A detached sheet has no such extension.
 
@@ -100,31 +102,39 @@ A scrollable `Sheet.Body` scrolls with wheel and touch; mouse drags still start 
 
 ::example{id=sheet-scrollable-content}
 
-## Slack Message Actions
+### Slack Message Actions
 
 ::example{id=sheet-slack-message-actions}
 
-## Snap Points
+### Snap Points
 
 `snapPoints` takes fractions of the viewport (`0.4`) or CSS lengths (`"320px"`). The sheet rests on the active point (`activeSnapPoint`: a value or a two-way signal, `defaultActiveSnapPoint`, `onActiveSnapPointChange`); a release settles on the nearest point after the fling projection, and pressing the handle cycles the points (`preventCycle` turns that off).
 
 ::example{id=sheet-snap-points}
 
-## Snap Points Custom Fade
+### Snap Points Custom Fade
 
 `fadeFromIndex` picks the snap point from which the backdrop fades in (default: the last point).
 
 ::example{id=sheet-snap-points-custom-fade}
 
-## Snap Points Sequential
+### Snap Points Sequential
 
 ::example{id=sheet-snap-points-sequential}
 
-## With Form
+### With Form
 
 ::example{id=sheet-with-form}
 
-## CSS Classes
+### Resumability
+
+Server-rendered closed (or open with `defaultOpen`). Nothing runs at load for a closed sheet; the gesture attaches when the dialog mounts (a server-rendered open sheet attaches it at load).
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `sheet-root`, `sheet-trigger`, `sheet-close`, `sheet-content`, `sheet-dialog`, `sheet-header`, `sheet-body`, `sheet-footer`, `sheet-heading`, `sheet-close-trigger`.
+
+### CSS Classes
 
 ### Base & Variant Classes
 
@@ -186,6 +196,8 @@ None: enter / exit are CSS transitions on `translate` and `opacity` (they compos
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/sheet/) for every named export and part prop type.
+
 ### Sheet
 
 | Prop                                                                     | Type                                                        | Default     |
@@ -205,8 +217,6 @@ None: enter / exit are CSS transitions on `translate` and `opacity` (they compos
 | `shouldScaleBackground`                                                  | `boolean`                                                   | `false`     |
 | `shouldAutoFocus`                                                        | `boolean`                                                   | `false`     |
 | `onDrag` / `onRelease` / `onAnimationEnd` / `onClose`                    | callbacks                                                   | —           |
-
-::api{symbol="@rivetjs/ui/sheet#SheetRootProps"}
 
 ### Sheet.Trigger
 
@@ -250,6 +260,14 @@ The ui `CloseButton` in the `close` slot (CloseButton props).
 
 A `Sheet` root that marks itself as nested in the surrounding sheet.
 
-## Resumability
+::api{symbol="@rivetjs/ui/sheet#SheetRootProps"}
 
-Server-rendered closed (or open with `defaultOpen`). Nothing runs at load for a closed sheet; the gesture attaches when the dialog mounts (a server-rendered open sheet attaches it at load).
+## Accessibility
+
+the dialog is a modal `dialog` (focus trapped, page inert and scroll locked) unless `isModal={false}`. Give it a `Sheet.Heading` or an `aria-label`. Drag is a pointer extra: Escape, the backdrop and close buttons always work, and `prefers-reduced-motion` turns the settle animation into a jump.
+
+## Related Components
+
+- [Drawer](/components/drawer/)
+- [Modal](/components/modal/)
+- [Popover](/components/popover/)

@@ -8,8 +8,6 @@ related: [components/prompt-input, components/card]
 
 `PromptSuggestion` offers prompts to start from. The default `pill` variant is a row of rounded buttons; `card` lays items out in a grid with `ItemTitle`, `ItemDescription`, `ItemTags`, `ItemMeta` and `ItemFooter`. An optional `Header` holds a `Title` and `Description`.
 
-Accessibility: items are native buttons in tab order; `Header` text is not a label, so name the group with `aria-label` when there is no visible title.
-
 ## Usage
 
 ```tsx
@@ -33,11 +31,23 @@ import { PromptSuggestion } from "@rivetjs/ui/prompt-suggestion";
 </PromptSuggestion>
 ```
 
-## Cards
+Additional exported parts: `PromptSuggestion.Root`, `PromptSuggestion.Description`, `PromptSuggestion.ItemDescription`, `PromptSuggestion.ItemMeta`, `PromptSuggestion.ItemTags`, `PromptSuggestion.ItemFooter`.
+
+## Examples
+
+### Cards
 
 ::example{id=prompt-suggestion-cards}
 
-## CSS Classes
+### Resumability
+
+Static markup; items resume on first press.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `prompt-suggestion-item`.
+
+### CSS Classes
 
 | Class                                                                            | Applied              |
 | -------------------------------------------------------------------------------- | -------------------- |
@@ -50,6 +60,8 @@ import { PromptSuggestion } from "@rivetjs/ui/prompt-suggestion";
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/prompt-suggestion/) for every named export and part prop type.
+
 | Prop                  | Type               | Default  |
 | --------------------- | ------------------ | -------- |
 | `variant`             | `"pill" \| "card"` | `"pill"` |
@@ -60,6 +72,11 @@ import { PromptSuggestion } from "@rivetjs/ui/prompt-suggestion";
 
 ::api{symbol="@rivetjs/ui/prompt-suggestion#PromptSuggestionRootProps"}
 
-## Resumability
+## Accessibility
 
-Static markup; items resume on first press.
+items are native buttons in tab order; `Header` text is not a label, so name the group with `aria-label` when there is no visible title.
+
+## Related Components
+
+- [PromptInput](/components/prompt-input/)
+- [Card](/components/card/)

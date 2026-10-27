@@ -15,8 +15,6 @@ Notes:
 - Parts inside read the picker color through context: leave their `value` / `color` unset.
 - Icons are lucide (`Shuffle`).
 
-Accessibility: the trigger is a button (`aria-expanded`); the popover is a dialog labelled by the trigger; Escape or an outside press closes it and focus returns to the trigger.
-
 ## Usage
 
 ```tsx
@@ -60,6 +58,8 @@ export default () => (
   </ColorPicker>
 );
 ```
+
+Additional exported parts: `ColorPicker.Root`.
 
 ## Examples
 
@@ -112,6 +112,8 @@ To customize the ColorPicker component classes, you can use the `@layer componen
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `color-picker-trigger`, `color-picker-popover`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -119,6 +121,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The ColorPicker component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/color-picker.css)):
 
 #### Base Classes
+
 - `.color-picker` - Base container
 - `.color-picker__trigger` - Trigger button
 - `.color-picker__popover` - Popover container
@@ -132,32 +135,34 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/color-picker/) for every named export and part prop type.
+
 ### ColorPicker
 
 Inherits from [cdk ColorPicker](site:cdk/components/color-picker/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string \| Color \| Signal<string \| Color>` | - | The current color value (controlled; Rivet: a signal is two-way) |
-| `defaultValue` | `string \| Color` | - | The default color value (uncontrolled) |
-| `onChange` | `(color: Color) => void` | - | Handler called when the color changes |
-| `children` | `Content` | - | Content of the color picker (Trigger, Popover, etc.) |
-| `class` | `string` | - | Additional CSS classes |
+| Prop           | Type                                         | Default | Description                                                      |
+| -------------- | -------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| `value`        | `string \| Color \| Signal<string \| Color>` | -       | The current color value (controlled; Rivet: a signal is two-way) |
+| `defaultValue` | `string \| Color`                            | -       | The default color value (uncontrolled)                           |
+| `onChange`     | `(color: Color) => void`                     | -       | Handler called when the color changes                            |
+| `children`     | `Content`                                    | -       | Content of the color picker (Trigger, Popover, etc.)             |
+| `class`        | `string`                                     | -       | Additional CSS classes                                           |
 
 ### ColorPicker.Trigger
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `children` | `Content \| ((renderProps) => Content)` | - | Trigger content or render prop |
-| `class` | `string` | - | Additional CSS classes |
+| Prop       | Type                                    | Default | Description                    |
+| ---------- | --------------------------------------- | ------- | ------------------------------ |
+| `children` | `Content \| ((renderProps) => Content)` | -       | Trigger content or render prop |
+| `class`    | `string`                                | -       | Additional CSS classes         |
 
 ### ColorPicker.Popover
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop        | Type        | Default         | Description              |
+| ----------- | ----------- | --------------- | ------------------------ |
 | `placement` | `Placement` | `"bottom left"` | Placement of the popover |
-| `children` | `Content` | - | Popover content |
-| `class` | `string` | - | Additional CSS classes |
+| `children`  | `Content`   | -               | Popover content          |
+| `class`     | `string`    | -               | Additional CSS classes   |
 
 ### Related Types
 
@@ -165,12 +170,12 @@ Inherits from [cdk ColorPicker](site:cdk/components/color-picker/).
 
 Represents a color value (`@rivetjs/cdk/color`, the React Stately port). See [React Aria Color](https://react-spectrum.adobe.com/react-aria/ColorPicker.html#color) for the full API.
 
-| Method | Description |
-|--------|-------------|
-| `toString(format)` | Converts the color to a string in the given format (hex, rgb, hsl, hsb, css) |
-| `toFormat(format)` | Converts the color to the given format and returns a new Color object |
-| `getChannelValue(channel)` | Returns the numeric value for a given channel |
-| `withChannelValue(channel, value)` | Sets the numeric value for a channel and returns a new Color |
+| Method                             | Description                                                                  |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
+| `toString(format)`                 | Converts the color to a string in the given format (hex, rgb, hsl, hsb, css) |
+| `toFormat(format)`                 | Converts the color to the given format and returns a new Color object        |
+| `getChannelValue(channel)`         | Returns the numeric value for a given channel                                |
+| `withChannelValue(channel, value)` | Sets the numeric value for a channel and returns a new Color                 |
 
 #### parseColor
 
@@ -178,11 +183,15 @@ Represents a color value (`@rivetjs/cdk/color`, the React Stately port). See [Re
 import { parseColor } from "@rivetjs/cdk/color";
 
 // Parse from string
-const color = parseColor('#ff0000');
-const hslColor = parseColor('hsl(0, 100%, 50%)');
+const color = parseColor("#ff0000");
+const hslColor = parseColor("hsl(0, 100%, 50%)");
 ```
 
 ::api{symbol="@rivetjs/ui/color-picker#ColorPicker"}
+
+## Accessibility
+
+the trigger is a button (`aria-expanded`); the popover is a dialog labelled by the trigger; Escape or an outside press closes it and focus returns to the trigger.
 
 ## Related Components
 

@@ -8,8 +8,6 @@ related: [components/chat-message, components/tooltip, components/disclosure]
 
 `ChatSource` is an inline pill linking to a source: favicon (or the domain initial), title (default: the domain of `href`). A URL source shows a preview card on hover and focus (the ui [Tooltip](/components/tooltip/)): site, title (falls back to the URL) and the `description` when given. A source without `href` is a document (file icon, no link). `ChatSources` collects sources in a [Disclosure](/components/disclosure/).
 
-Accessibility: a URL pill is a link (opens in a new tab with `rel="noopener noreferrer"`); the preview is a tooltip, so it never holds interactive content.
-
 ## Usage
 
 ```tsx
@@ -30,27 +28,39 @@ import { ChatSource, ChatSources } from "@rivetjs/ui/chat-source";
 </ChatSources>
 ```
 
-## Document
+Additional exported parts: `ChatSource.Root`, `ChatSource.Trigger`, `ChatSource.Icon`, `ChatSource.Title`, `ChatSource.Preview`, `ChatSources.Root`.
+
+## Examples
+
+### Document
 
 ::example{id=chat-source-document}
 
-## Grouped
+### Grouped
 
 ::example{id=chat-source-grouped}
 
-## Stacked Favicons
+### Stacked Favicons
 
 `ChatSources.Favicons` (Rivet extra) stacks up to `max` source icons in the trigger.
 
 ::example{id=chat-source-stacked-favicons}
 
-## Composable
+### Composable
 
 Children replace the preset pill: compose `Trigger`, `Icon`, `Title` and `Preview`; `enablePreview` turns the composed preview on.
 
 ::example{id=chat-source-composable}
 
-## CSS Classes
+### Resumability
+
+Pills are links: nothing runs at load. The preview tooltip resumes on first hover or focus; the group on first toggle.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chat-source-trigger`, `chat-source-trigger-link`, `chat-source-icon`, `chat-source-title`, `chat-source-preview`, `chat-sources-trigger`, `chat-sources-content`, `chat-sources-list`, `chat-sources-favicons`.
+
+### CSS Classes
 
 | Class                                                                   | Applied                           |
 | ----------------------------------------------------------------------- | --------------------------------- |
@@ -64,6 +74,8 @@ Children replace the preset pill: compose `Trigger`, `Icon`, `Title` and `Previe
 | `chat-sources__favicons` / `__favicon`                                  | `Favicons`                        |
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/chat-source/) for every named export and part prop type.
 
 | Prop                                       | Type                                          | Default                                                                   |
 | ------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------- |
@@ -81,6 +93,12 @@ Children replace the preset pill: compose `Trigger`, `Icon`, `Title` and `Previe
 
 ::api{symbol="@rivetjs/ui/chat-source#ChatSourcesFaviconsProps"}
 
-## Resumability
+## Accessibility
 
-Pills are links: nothing runs at load. The preview tooltip resumes on first hover or focus; the group on first toggle.
+a URL pill is a link (opens in a new tab with `rel="noopener noreferrer"`); the preview is a tooltip, so it never holds interactive content.
+
+## Related Components
+
+- [ChatMessage](/components/chat-message/)
+- [Tooltip](/components/tooltip/)
+- [Disclosure](/components/disclosure/)

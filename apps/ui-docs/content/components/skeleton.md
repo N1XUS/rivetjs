@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - `--skeleton-animation` is read once, when a skeleton is created on the client.
 
-Accessibility: Decorative markup: no text, no role. Tell screen-reader users about loading with `aria-busy` on the region or a [Spinner](spinner.md).
-
 ## Usage
 
 ```tsx
@@ -22,6 +20,12 @@ import { Skeleton } from "@rivetjs/ui/skeleton";
 ```
 
 ::example{id=skeleton-basic}
+
+## Anatomy
+
+`Skeleton` exposes `Skeleton.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -180,6 +184,8 @@ For static skeletons without any animation:
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/skeleton/) for every named export and part prop type.
+
 ### Skeleton
 
 | Prop            | Type                             | Default                     | Description                                                                                             |
@@ -188,6 +194,10 @@ For static skeletons without any animation:
 | `class`         | `string`                         | -                           | Additional CSS classes                                                                                  |
 
 ::api{symbol="@rivetjs/ui/skeleton#SkeletonRootProps"}
+
+## Accessibility
+
+Decorative markup: no text, no role. Tell screen-reader users about loading with `aria-busy` on the region or a [Spinner](spinner.md).
 
 ## Related Components
 

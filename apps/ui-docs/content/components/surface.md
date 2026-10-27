@@ -12,8 +12,6 @@ Notes:
 
 - `class`, not `className`.
 
-Accessibility: Plain markup, no role.
-
 ## Usage
 
 ```tsx
@@ -21,6 +19,12 @@ import { Surface } from "@rivetjs/ui/surface";
 ```
 
 ::example{id=surface-basic}
+
+## Anatomy
+
+`Surface` exposes `Surface.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -39,6 +43,22 @@ Surface comes in semantic variants that describe their prominence level:
 When using form components inside a Surface, use the `variant="secondary"` prop to apply the lower emphasis variant suitable for surface backgrounds.
 
 ::example{id=surface-with-form-components}
+
+### Context API
+
+#### SurfaceContext
+
+Child components can access the Surface context to get the current variant:
+
+```tsx
+import { useContext } from "react";
+import { SurfaceContext } from "@rivetjs/ui/surface";
+
+function MyComponent() {
+  const { variant } = useContext(SurfaceContext);
+  // variant will be "transparent" | "default" | "secondary" | "tertiary" | undefined
+}
+```
 
 ## Customization
 
@@ -83,6 +103,8 @@ The Surface component uses these CSS classes ([View source styles](https://githu
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/surface/) for every named export and part prop type.
+
 ### Surface
 
 | Prop       | Type                                                       | Default     | Description                       |
@@ -93,21 +115,9 @@ The Surface component uses these CSS classes ([View source styles](https://githu
 
 ::api{symbol="@rivetjs/ui/surface#SurfaceRootProps"}
 
-## Context API
+## Accessibility
 
-### SurfaceContext
-
-Child components can access the Surface context to get the current variant:
-
-```tsx
-import { useContext } from "react";
-import { SurfaceContext } from "@rivetjs/ui/surface";
-
-function MyComponent() {
-  const { variant } = useContext(SurfaceContext);
-  // variant will be "transparent" | "default" | "secondary" | "tertiary" | undefined
-}
-```
+Plain markup, no role.
 
 ## Related Components
 

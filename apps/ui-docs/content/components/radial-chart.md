@@ -6,7 +6,7 @@ status: experimental
 related: [components/chart, components/pie-chart, components/progress-circle]
 ---
 
-`RadialChart` draws one ring per entry, from the outside in. A ring's sweep is its share of `maxValue` (100 by default), over a background track. Open sweeps make gauges; one full ring with centre content is a progress ring. It renders on the server with no script; each ring is focusable and shows its value on hover and focus with CSS.
+`RadialChart` draws one ring per entry, from the outside in. A ring's sweep is its share of `maxValue` (100 by default), over a background track. Open sweeps make gauges; one full ring with centre content is a progress ring. It renders on the server with no script; each ring is focusable and shows its value on hover and focus with CSS when tooltips are enabled.
 
 ## Usage
 
@@ -16,23 +16,31 @@ import { RadialChart } from "@rivetjs/ui/radial-chart";
 
 ::example{id=radial-chart-basic}
 
-## Gauge
+## Anatomy
+
+`RadialChart` is a single data-driven component. It creates a ring per datum, with track, optional center content and legend; customize tooltip content with `tooltip`.
+
+## Examples
+
+### Gauge
 
 ::example{id=radial-chart-gauge}
 
-## Gauge Grid
+### Gauge Grid
 
 ::example{id=radial-chart-gauge-grid}
 
-## Progress Ring
+### Progress Ring
 
 ::example{id=radial-chart-progress-ring}
 
-## With Legend
+### With Legend
 
 ::example{id=radial-chart-with-legend}
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chart-plot`, `chart-slot`, `chart-legend`.
 
 ### CSS Classes
 
@@ -53,6 +61,8 @@ import { RadialChart } from "@rivetjs/ui/radial-chart";
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/radial-chart/) for every named export and part prop type.
+
 ### RadialChart
 
 | Prop                          | Type                                 | Default        | Description                                       |
@@ -69,6 +79,10 @@ import { RadialChart } from "@rivetjs/ui/radial-chart";
 | `valueFormatter`              | `(value: number) => string`          | grouped number | Tooltip and legend values                         |
 | `tooltip`                     | `(point: ChartPoint) => JSX.Element` | -              | Custom tooltip content                            |
 | `children` / `centerLabel`    | `Content` / `string`                 | -              | Centre value and caption                          |
+
+## Accessibility
+
+With tooltips enabled, rings are focusable groups with text labels; `showTooltip={false}` removes them from the tab order. Supply a meaningful `aria-label` and keep units and target values understandable without color.
 
 ## Related Components
 

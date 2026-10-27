@@ -15,8 +15,6 @@ Notes:
 - The custom-separator demo uses the lucide `Play` icon instead of the hand-written caret SVG.
 - Extras: an [InlineSelect](inline-select.md) as a breadcrumb ([Inline Select](#inline-select)), and collapsing the breadcrumbs that do not fit ([Overflow](#overflow)).
 
-Accessibility: an ordered list of links; the last item gets `aria-current="page"` and is not interactive; `isDisabled` disables every link (`aria-disabled`).
-
 ## Usage
 
 ```tsx
@@ -38,6 +36,8 @@ export default () => (
   </Breadcrumbs>
 );
 ```
+
+Additional exported parts: `Breadcrumbs.Root`.
 
 ## Examples
 
@@ -133,6 +133,8 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/breadcrumbs/) for every named export and part prop type.
+
 ### Breadcrumbs
 
 | Prop                  | Type                                                        | Default            | Description                                                                                |
@@ -143,7 +145,7 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 | `maxVisibleItems`     | `number \| "auto"`                                          | `4`                | Rivet addition: at most this many visible, the overflow item counted                       |
 | `defaultVisibleItems` | `number`                                                    | every item         | Rivet addition: visible breadcrumbs before the browser measures (server render)            |
 | `renderOverflow`      | `(items: BreadcrumbsOverflowItem[]) => Content`             | -                  | Rivet addition: content of the overflow item (e.g. a Dropdown)                             |
-| `isDisabled`          | `boolean`                                                   | `false`            | Whether all breadcrumb links are disabled                                                  |
+| `isDisabled`          | `boolean \| (() => boolean)`                                | `false`            | Whether all breadcrumb links are disabled                                                  |
 | `class`               | `string`                                                    | -                  | Additional CSS classes                                                                     |
 | `items`               | `Iterable<BreadcrumbsItemData \| T>`                        | -                  | Rivet addition: data items; without children one `Breadcrumbs.Item` each ([Items](#items)) |
 | `children`            | `Content \| (item: T) => Content`                           | -                  | The breadcrumb items, or a render function of one item                                     |
@@ -170,6 +172,8 @@ Breadcrumbs uses React Aria Components' Breadcrumbs primitive, which provides:
 - Screen reader announcements for navigation context
 
 The last breadcrumb item (without `href`) automatically becomes the current page indicator.
+
+an ordered list of links; the last item gets `aria-current="page"` and is not interactive; `isDisabled` disables every link (`aria-disabled`).
 
 ## Related Components
 

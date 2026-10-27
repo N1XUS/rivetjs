@@ -8,8 +8,6 @@ related: [components/separator, components/app-layout, showcase/mail]
 
 Accessible resizable panel groups and layouts with keyboard support. The API is the [shadcn/ui Resizable](https://ui.shadcn.com/docs/components/resizable) one; behaviour is the [cdk Resizable](site:cdk/components/resizable/), a port of react-resizable-panels.
 
-Accessibility: each handle is a WAI-ARIA window splitter (`role="separator"`, `aria-valuenow` / `aria-valuemin` / `aria-valuemax`, `aria-controls`). Arrow keys resize by 5%, Home / End jump to the limits, Enter collapses or expands a collapsible panel, F6 moves between handles. Give a handle an `aria-label` when the panes have no visible headings.
-
 ## Usage
 
 ```tsx
@@ -131,36 +129,40 @@ const nav = usePanelRef();
 
 ::example{id=resizable-collapsible}
 
-## Styling
+### Resumability
 
-| Part | Class | `data-slot` |
-| --- | --- | --- |
-| Group | `resizable` | `resizable-panel-group` |
-| Panel (inner element) | `resizable__panel` | `resizable-panel` (outer element) |
-| Handle | `resizable__handle` | `resizable-handle` |
-| Grip | `resizable__grip` | `resizable-handle-grip` |
-| Indicator | `resizable__indicator`, `resizable__indicator--pill` / `--drag` | `resizable-indicator` |
+The server renders every panel at its default (or stored) size. A resumed page runs no resizable code until a handle is hovered, focused or pressed; the first key or drag is not lost.
+
+## Styling Reference
+
+### Styling
+
+| Part                  | Class                                                           | `data-slot`                       |
+| --------------------- | --------------------------------------------------------------- | --------------------------------- |
+| Group                 | `resizable`                                                     | `resizable-panel-group`           |
+| Panel (inner element) | `resizable__panel`                                              | `resizable-panel` (outer element) |
+| Handle                | `resizable__handle`                                             | `resizable-handle`                |
+| Grip                  | `resizable__grip`                                               | `resizable-handle-grip`           |
+| Indicator             | `resizable__indicator`, `resizable__indicator--pill` / `--drag` | `resizable-indicator`             |
 
 The handle carries `resizable__handle--<type>` and `resizable__handle--<variant>`, `data-type`, `data-separator` (`inactive`, `hover`, `active`, `focus`, `disabled`) and `aria-orientation`; the default styles show `col-resize` / `row-resize`, the accent colour while hovered or dragged and the focus ring. Panel flex sizes are inline styles of the cdk parts.
 
 The group (`.resizable`) sets these variables; override them on a group or any ancestor (nested groups inherit them):
 
-| Variable | Default | |
-| --- | --- | --- |
-| `--resizable-handle-size` | `1px` | Line thickness. |
-| `--resizable-handle-hit-area` | `8px` | Grab area around the line (cursor). |
-| `--resizable-handle-color` | `var(--color-separator)` | Line colour (set by `variant`). |
-| `--resizable-handle-color-hover` | `var(--color-accent)` | While hovered. |
-| `--resizable-handle-color-active` | `var(--color-accent)` | While dragged or focused. |
-| `--resizable-indicator-pill-width` | `6px` | Pill short axis. |
-| `--resizable-indicator-pill-height` | `32px` | Pill long axis. |
-| `--resizable-indicator-drag-size` | `12px` | Drag dots icon size. |
-
-## Resumability
-
-The server renders every panel at its default (or stored) size. A resumed page runs no resizable code until a handle is hovered, focused or pressed; the first key or drag is not lost.
+| Variable                            | Default                  |                                     |
+| ----------------------------------- | ------------------------ | ----------------------------------- |
+| `--resizable-handle-size`           | `1px`                    | Line thickness.                     |
+| `--resizable-handle-hit-area`       | `8px`                    | Grab area around the line (cursor). |
+| `--resizable-handle-color`          | `var(--color-separator)` | Line colour (set by `variant`).     |
+| `--resizable-handle-color-hover`    | `var(--color-accent)`    | While hovered.                      |
+| `--resizable-handle-color-active`   | `var(--color-accent)`    | While dragged or focused.           |
+| `--resizable-indicator-pill-width`  | `6px`                    | Pill short axis.                    |
+| `--resizable-indicator-pill-height` | `32px`                   | Pill long axis.                     |
+| `--resizable-indicator-drag-size`   | `12px`                   | Drag dots icon size.                |
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/resizable/) for every named export and part prop type.
 
 ::api{symbol="@rivetjs/ui/resizable#ResizablePanelGroup"}
 
@@ -169,3 +171,13 @@ The server renders every panel at its default (or stored) size. A resumed page r
 ::api{symbol="@rivetjs/ui/resizable#ResizableHandle"}
 
 ::api{symbol="@rivetjs/ui/resizable#ResizableIndicator"}
+
+## Accessibility
+
+each handle is a WAI-ARIA window splitter (`role="separator"`, `aria-valuenow` / `aria-valuemin` / `aria-valuemax`, `aria-controls`). Arrow keys resize by 5%, Home / End jump to the limits, Enter collapses or expands a collapsible panel, F6 moves between handles. Give a handle an `aria-label` when the panes have no visible headings.
+
+## Related Components
+
+- [Separator](/components/separator/)
+- [AppLayout](/components/app-layout/)
+- [Mail](/showcase/mail/)

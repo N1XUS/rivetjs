@@ -62,6 +62,8 @@ export default () => (
 );
 ```
 
+Additional exported parts: `Autocomplete.Root`.
+
 ## Examples
 
 ### Shorthand
@@ -126,9 +128,7 @@ To display selected values as plain text, use the `selectedText` render prop, wh
 `textValue` of each selected item:
 
 ```tsx
-<Autocomplete.Value>
-  {({ isPlaceholder, defaultChildren, selectedText }) => (isPlaceholder() ? defaultChildren : selectedText())}
-</Autocomplete.Value>
+<Autocomplete.Value>{({ isPlaceholder, defaultChildren, selectedText }) => (isPlaceholder() ? defaultChildren : selectedText())}</Autocomplete.Value>
 ```
 
 For richer layouts such as removable tags, render your own content from `selectedKeys(state)`
@@ -158,11 +158,11 @@ The default `Autocomplete.Indicator` is a morph chevron: two CSS bars drawn like
 
 Style hooks, on the Autocomplete or any ancestor (Tailwind: `[--autocomplete-indicator-size:20px]`):
 
-| Variable | Default | |
-| --- | --- | --- |
-| `--autocomplete-indicator-size` | `1rem` | Box size; the chevron scales with it |
-| `--autocomplete-indicator-stroke` | size / 12 | Bar thickness |
-| `--autocomplete-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off |
+| Variable                            | Default                                  |                                      |
+| ----------------------------------- | ---------------------------------------- | ------------------------------------ |
+| `--autocomplete-indicator-size`     | `1rem`                                   | Box size; the chevron scales with it |
+| `--autocomplete-indicator-stroke`   | size / 12                                | Bar thickness                        |
+| `--autocomplete-indicator-duration` | `var(--duration-morph-chevron)` (320 ms) | `0s` turns the morph off             |
 
 Theme tokens for every morph chevron: `--duration-morph-chevron`, `--ease-morph-chevron-open`, `--ease-morph-chevron-close`. Children replace the morph (next section); a custom indicator rotates 180° while open, or animate it yourself with `.autocomplete__indicator[data-open="true"]`.
 
@@ -188,25 +188,25 @@ Autocomplete supports virtualization through [Virtualizer](https://react-aria.ad
 
 ::example{id=autocomplete-virtualization}
 
-## Advanced Examples
+### Advanced Examples
 
-### User Selection
+#### User Selection
 
 ::example{id=autocomplete-user-selection}
 
-### User Selection Multiple
+#### User Selection Multiple
 
 ::example{id=autocomplete-user-selection-multiple}
 
-### Location Search
+#### Location Search
 
 ::example{id=autocomplete-location-search}
 
-### Tag Group Selection
+#### Tag Group Selection
 
 ::example{id=autocomplete-tag-group-selection}
 
-### Email Recipients
+#### Email Recipients
 
 ::example{id=autocomplete-email-recipients}
 
@@ -252,6 +252,8 @@ To customize the Autocomplete component classes, you can use the `@layer compone
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `autocomplete-clear-button`, `autocomplete-trigger`, `autocomplete-value`, `autocomplete-default-indicator`, `autocomplete-popover`, `autocomplete-filter`, `autocomplete-clear-button-icon`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -293,32 +295,34 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/autocomplete/) for every named export and part prop type.
+
 ### Autocomplete
 
-| Prop            | Type                                    | Default            | Description                                              |
-| --------------- | --------------------------------------- | ------------------ | -------------------------------------------------------- |
-| `placeholder`   | `string`                                | `'Select an item'` | Temporary text that occupies the autocomplete when it is empty |
-| `selectionMode` | `"single" \| "multiple"`                | `"single"`         | Whether single or multiple selection is enabled          |
-| `allowsEmptyCollection` | `boolean`                        | `false`            | Whether the autocomplete allows an empty collection. When true, the autocomplete can function even with no items. |
-| `isOpen`        | `boolean \| Signal<boolean>`            | -                  | Sets the open state of the popover (controlled; a signal is two-way) |
-| `defaultOpen`   | `boolean`                               | -                  | Sets the default open state of the popover (uncontrolled)   |
-| `onOpenChange`  | `(isOpen: boolean) => void`             | -                  | Handler called when the open state changes               |
-| `disabledKeys`  | `Iterable<Key>`                         | -                  | Keys of disabled items                                   |
-| `isDisabled`    | `boolean`                               | -                  | Whether the autocomplete is disabled                           |
-| `value`         | `Key \| Key[] \| null \| Signal`         | -                  | Current value (controlled; a signal is two-way)          |
-| `defaultValue`  | `Key \| Key[] \| null`                  | -                  | Default value (uncontrolled)                             |
-| `onChange`      | `(value: Key \| Key[] \| null) => void` | -                  | Handler called when the value changes                    |
-| `isRequired`    | `boolean`                               | -                  | Whether user input is required                           |
-| `isInvalid`     | `boolean`                               | -                  | Whether the autocomplete value is invalid                      |
-| `name`          | `string`                                | -                  | The name of the input, used when submitting an HTML form |
-| `fullWidth`     | `boolean`                               | `false`             | Whether the autocomplete should take full width of its container |
-| `variant`       | `"primary" \| "secondary"`             | `"primary"`         | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `label`         | `Content`                               | -                  | Rivet shorthand: the Label (with `label` or `items` the root renders the parts) |
-| `items`         | `Iterable<T>`                           | -                  | Rivet shorthand: the list items; `children` is then a render function of one item |
-| `filter`        | `(textValue: string, inputValue: string) => boolean` | contains, case / accent insensitive | Rivet shorthand: the search filter |
-| `searchLabel`   | `string`                                | `"Search"`         | Rivet shorthand: accessible name of the search field     |
-| `class`     | `string`                                | -                  | Additional CSS classes                                   |
-| `children`      | `Content \| RenderFunction`           | -                  | Autocomplete content or render function                        |
+| Prop                    | Type                                                 | Default                             | Description                                                                                                                                                        |
+| ----------------------- | ---------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `placeholder`           | `string`                                             | `'Select an item'`                  | Temporary text that occupies the autocomplete when it is empty                                                                                                     |
+| `selectionMode`         | `"single" \| "multiple"`                             | `"single"`                          | Whether single or multiple selection is enabled                                                                                                                    |
+| `allowsEmptyCollection` | `boolean`                                            | `false`                             | Whether the autocomplete allows an empty collection. When true, the autocomplete can function even with no items.                                                  |
+| `isOpen`                | `boolean \| Signal<boolean>`                         | -                                   | Sets the open state of the popover (controlled; a signal is two-way)                                                                                               |
+| `defaultOpen`           | `boolean`                                            | -                                   | Sets the default open state of the popover (uncontrolled)                                                                                                          |
+| `onOpenChange`          | `(isOpen: boolean) => void`                          | -                                   | Handler called when the open state changes                                                                                                                         |
+| `disabledKeys`          | `Iterable<Key>`                                      | -                                   | Keys of disabled items                                                                                                                                             |
+| `isDisabled`            | `boolean`                                            | -                                   | Whether the autocomplete is disabled                                                                                                                               |
+| `value`                 | `Key \| Key[] \| null \| Signal`                     | -                                   | Current value (controlled; a signal is two-way)                                                                                                                    |
+| `defaultValue`          | `Key \| Key[] \| null`                               | -                                   | Default value (uncontrolled)                                                                                                                                       |
+| `onChange`              | `(value: Key \| Key[] \| null) => void`              | -                                   | Handler called when the value changes                                                                                                                              |
+| `isRequired`            | `boolean`                                            | -                                   | Whether user input is required                                                                                                                                     |
+| `isInvalid`             | `boolean`                                            | -                                   | Whether the autocomplete value is invalid                                                                                                                          |
+| `name`                  | `string`                                             | -                                   | The name of the input, used when submitting an HTML form                                                                                                           |
+| `fullWidth`             | `boolean`                                            | `false`                             | Whether the autocomplete should take full width of its container                                                                                                   |
+| `variant`               | `"primary" \| "secondary"`                           | `"primary"`                         | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `label`                 | `Content`                                            | -                                   | Rivet shorthand: the Label (with `label` or `items` the root renders the parts)                                                                                    |
+| `items`                 | `Iterable<T>`                                        | -                                   | Rivet shorthand: the list items; `children` is then a render function of one item                                                                                  |
+| `filter`                | `(textValue: string, inputValue: string) => boolean` | contains, case / accent insensitive | Rivet shorthand: the search filter                                                                                                                                 |
+| `searchLabel`           | `string`                                             | `"Search"`                          | Rivet shorthand: accessible name of the search field                                                                                                               |
+| `class`                 | `string`                                             | -                                   | Additional CSS classes                                                                                                                                             |
+| `children`              | `Content \| RenderFunction`                          | -                                   | Autocomplete content or render function                                                                                                                            |
 
 ### Autocomplete.Item
 
@@ -326,49 +330,49 @@ Rivet addition: `ListBox.Item` props (`id`, `textValue`, `isDisabled`, …) plus
 
 ### Autocomplete.Trigger
 
-| Prop        | Type                          | Default | Description                        |
-| ----------- | ----------------------------- | ------- | ---------------------------------- |
-| `class` | `string`                      | -       | Additional CSS classes             |
-| `children`  | `Content \| RenderFunction` | -       | Trigger content or render function |
+| Prop       | Type                        | Default | Description                        |
+| ---------- | --------------------------- | ------- | ---------------------------------- |
+| `class`    | `string`                    | -       | Additional CSS classes             |
+| `children` | `Content \| RenderFunction` | -       | Trigger content or render function |
 
 ### Autocomplete.Value
 
-| Prop        | Type                          | Default | Description                      |
-| ----------- | ----------------------------- | ------- | -------------------------------- |
-| `class` | `string`                      | -       | Additional CSS classes           |
-| `children`  | `Content \| RenderFunction` | -       | Value content or render function |
+| Prop       | Type                        | Default | Description                      |
+| ---------- | --------------------------- | ------- | -------------------------------- |
+| `class`    | `string`                    | -       | Additional CSS classes           |
+| `children` | `Content \| RenderFunction` | -       | Value content or render function |
 
 ### Autocomplete.Indicator
 
-| Prop        | Type        | Default | Description              |
-| ----------- | ----------- | ------- | ------------------------ |
-| `class` | `string`    | -       | Additional CSS classes   |
-| `children`  | `Content` | -       | Custom indicator content |
+| Prop       | Type      | Default | Description              |
+| ---------- | --------- | ------- | ------------------------ |
+| `class`    | `string`  | -       | Additional CSS classes   |
+| `children` | `Content` | -       | Custom indicator content |
 
 ### Autocomplete.ClearButton
 
-| Prop        | Type                          | Default | Description                      |
-| ----------- | ----------------------------- | ------- | -------------------------------- |
-| `class` | `string`                      | -       | Additional CSS classes           |
-| `onClick`   | `(e: MouseEvent) => void`     | -       | Handler called when button is clicked |
-| `ref`       | `RefObject<HTMLButtonElement>` | -       | Ref to the clear button element  |
+| Prop      | Type                                     | Default | Description                           |
+| --------- | ---------------------------------------- | ------- | ------------------------------------- |
+| `class`   | `string`                                 | -       | Additional CSS classes                |
+| `onClick` | `(e: MouseEvent) => void`                | -       | Handler called when button is clicked |
+| `ref`     | `JSX.IntrinsicElements["button"]["ref"]` | -       | Ref to the clear button element       |
 
 ### Autocomplete.Popover
 
 | Prop        | Type                                                                                                                                                                                                                                                                                                                     | Default    | Description                                      |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------------------------------------------------ |
 | `placement` | `"bottom" \| "bottom left" \| "bottom right" \| "bottom start" \| "bottom end" \| "top" \| "top left" \| "top right" \| "top start" \| "top end" \| "left" \| "left top" \| "left bottom" \| "start" \| "start top" \| "start bottom" \| "right" \| "right top" \| "right bottom" \| "end" \| "end top" \| "end bottom"` | `"bottom"` | Placement of the popover relative to the trigger |
-| `class` | `string`                                                                                                                                                                                                                                                                                                                 | -          | Additional CSS classes                           |
-| `children`  | `Content`                                                                                                                                                                                                                                                                                                              | -          | Content children                                 |
+| `class`     | `string`                                                                                                                                                                                                                                                                                                                 | -          | Additional CSS classes                           |
+| `children`  | `Content`                                                                                                                                                                                                                                                                                                                | -          | Content children                                 |
 
 ### Autocomplete.Filter
 
-| Prop         | Type                                           | Default | Description                      |
-| ------------ | ---------------------------------------------- | ------- | -------------------------------- |
-| `filter`     | `(text: string, input: string) => boolean`     | -       | Custom filter function           |
-| `inputValue` | `string`                                       | -       | Controlled input value          |
-| `onInputChange` | `(value: string) => void`                  | -       | Handler called when input value changes |
-| `children`   | `Content`                                    | -       | Filter content (SearchField and ListBox) |
+| Prop            | Type                                       | Default | Description                              |
+| --------------- | ------------------------------------------ | ------- | ---------------------------------------- |
+| `filter`        | `(text: string, input: string) => boolean` | -       | Custom filter function                   |
+| `inputValue`    | `string`                                   | -       | Controlled input value                   |
+| `onInputChange` | `(value: string) => void`                  | -       | Handler called when input value changes  |
+| `children`      | `Content`                                  | -       | Filter content (SearchField and ListBox) |
 
 ### useFilter Hook
 
@@ -382,34 +386,34 @@ const { contains } = createFilter({ sensitivity: "base" });
 <Autocomplete.Filter filter={(text, input) => contains(text, input)}>
   <SearchField>...</SearchField>
   <ListBox>...</ListBox>
-</Autocomplete.Filter>
+</Autocomplete.Filter>;
 ```
 
 **Options:**
 
-| Option        | Type                                                         | Default      | Description                     |
-| ------------- | ------------------------------------------------------------ | ------------ | ------------------------------- |
-| `sensitivity` | `"base" \| "accent" \| "case" \| "variant"`                  | `"base"`     | Locale sensitivity for matching |
+| Option        | Type                                        | Default  | Description                     |
+| ------------- | ------------------------------------------- | -------- | ------------------------------- |
+| `sensitivity` | `"base" \| "accent" \| "case" \| "variant"` | `"base"` | Locale sensitivity for matching |
 
 **Returns:**
 
-| Function        | Type                                                | Description                     |
-| --------------- | --------------------------------------------------- | ------------------------------- |
-| `contains`      | `(string: string, substring: string) => boolean`          | Returns whether a string contains a given substring |
-| `startsWith`    | `(string: string, substring: string) => boolean`          | Returns whether a string starts with a given substring    |
-| `endsWith`      | `(string: string, substring: string) => boolean`          | Returns whether a string ends with a given substring     |
+| Function     | Type                                             | Description                                            |
+| ------------ | ------------------------------------------------ | ------------------------------------------------------ |
+| `contains`   | `(string: string, substring: string) => boolean` | Returns whether a string contains a given substring    |
+| `startsWith` | `(string: string, substring: string) => boolean` | Returns whether a string starts with a given substring |
+| `endsWith`   | `(string: string, substring: string) => boolean` | Returns whether a string ends with a given substring   |
 
 ### Render Props
 
 When using render functions with Autocomplete.Value, these values are provided:
 
-| Prop              | Type            | Description                                                                                                                     |
-| ----------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `defaultChildren` | `Content`     | The default rendered value. In multiple mode this is a copy of each selected item's children joined with locale-aware separators |
-| `isPlaceholder`   | `() => boolean` | Whether the value is a placeholder                                                                                              |
-| `state`           | `SelectState`   | The state of the autocomplete. Use `selectedKeys(state)` (`@rivetjs/cdk/select`) for the selected keys                           |
-| `selectedItems`   | `() => (T \| null)[]` | The values of the currently selected items                                                                                      |
-| `selectedText`    | `() => string`  | The `textValue` of the selected items joined with locale-aware separators                                                        |
+| Prop              | Type                  | Description                                                                                                                      |
+| ----------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `defaultChildren` | `Content`             | The default rendered value. In multiple mode this is a copy of each selected item's children joined with locale-aware separators |
+| `isPlaceholder`   | `() => boolean`       | Whether the value is a placeholder                                                                                               |
+| `state`           | `SelectState`         | The state of the autocomplete. Use `selectedKeys(state)` (`@rivetjs/cdk/select`) for the selected keys                           |
+| `selectedItems`   | `() => (T \| null)[]` | The values of the currently selected items                                                                                       |
+| `selectedText`    | `() => string`        | The `textValue` of the selected items joined with locale-aware separators                                                        |
 
 ::api{symbol="@rivetjs/ui/autocomplete#AutocompleteRoot"}
 

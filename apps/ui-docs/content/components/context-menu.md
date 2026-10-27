@@ -48,39 +48,43 @@ export default function Anatomy() {
 }
 ```
 
-## Controlled
+Additional exported parts: `ContextMenu.Root`.
+
+## Examples
+
+### Controlled
 
 `isOpen` takes a value or a two-way signal. `onOpenChange` reports changes.
 
 ::example{id=context-menu-controlled}
 
-## Disabled
+### Disabled
 
 `isDisabled` turns the custom menu off: the browser's own context menu appears.
 
 ::example{id=context-menu-disabled}
 
-## Long Press
+### Long Press
 
 On iOS a touch long press (500 ms) opens the menu. Elsewhere touch browsers fire `contextmenu` on a long press themselves.
 
 ::example{id=context-menu-long-press}
 
-## Sections
+### Sections
 
 ::example{id=context-menu-sections}
 
-## Selection
+### Selection
 
 `selectionMode` and `selectedKeys` on `.Menu`, as in a Dropdown.
 
 ::example{id=context-menu-selection}
 
-## Submenus
+### Submenus
 
 ::example{id=context-menu-submenus}
 
-## Table and List Rows
+### Table and List Rows
 
 One `ContextMenu` around the whole table serves every row: `onContextMenu` on the row records which one was clicked (it runs before the trigger opens the menu), and the menu's `onAction` reads it. Controls inside the trigger (row checkboxes, buttons, a row `Dropdown`) keep their own press behaviour. The same works for `GridList` items and `Tree` items.
 
@@ -158,15 +162,17 @@ export default function OrdersTable() {
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/context-menu/) for every named export and part prop type.
+
 ### ContextMenu
 
-| Prop           | Type                         | Default | Description                                          |
-| -------------- | ---------------------------- | ------- | ---------------------------------------------------- |
-| `isOpen`       | `boolean \| Signal<boolean>` | -       | Open state (controlled, or two-way)                  |
-| `defaultOpen`  | `boolean`                    | -       | Initial open state (uncontrolled)                    |
-| `onOpenChange` | `(isOpen: boolean) => void`  | -       | Called when the menu opens or closes                 |
+| Prop           | Type                         | Default | Description                                             |
+| -------------- | ---------------------------- | ------- | ------------------------------------------------------- |
+| `isOpen`       | `boolean \| Signal<boolean>` | -       | Open state (controlled, or two-way)                     |
+| `defaultOpen`  | `boolean`                    | -       | Initial open state (uncontrolled)                       |
+| `onOpenChange` | `(isOpen: boolean) => void`  | -       | Called when the menu opens or closes                    |
 | `isDisabled`   | `boolean`                    | `false` | No custom menu: the browser's own menu shows. Read once |
-| `children`     | `Content`                    | -       | The trigger and the popover                          |
+| `children`     | `Content`                    | -       | The trigger and the popover                             |
 
 ### ContextMenu.Trigger
 
@@ -174,10 +180,10 @@ A `div` that receives the right click and the iOS long press. Not focusable unle
 
 ### ContextMenu.Popover
 
-| Prop        | Type        | Default          | Description                        |
-| ----------- | ----------- | ---------------- | ---------------------------------- |
-| `placement` | `Placement` | `"bottom start"` | Side of the pointer                |
-| `offset`    | `number`    | `0`              | Distance from the pointer          |
+| Prop        | Type        | Default          | Description               |
+| ----------- | ----------- | ---------------- | ------------------------- |
+| `placement` | `Placement` | `"bottom start"` | Side of the pointer       |
+| `offset`    | `number`    | `0`              | Distance from the pointer |
 
 Also takes the cdk Popover props, except the open state ones and `triggerRef`.
 

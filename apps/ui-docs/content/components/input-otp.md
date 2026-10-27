@@ -15,8 +15,6 @@ Notes:
 - No `<noscript>` CSS fallback: Rivet JSX rejects inline `<style>` content (the `noScriptCSSFallback` prop is accepted and ignored).
 - Shorthand (Rivet addition): no children renders one Group with a Slot per `maxLength` position.
 
-Accessibility: A single native `<input>` holds the value (`inputmode="numeric"` by default, `maxlength`, `pattern`), so screen readers, autofill and paste see one text field; the slots are presentational. Label it with `aria-label` / `aria-labelledby` or a visible `Label`.
-
 ## Usage
 
 ```tsx
@@ -43,10 +41,12 @@ export default () => (
       {/* ...rest of the slots */}
     </InputOTP.Group>
   </InputOTP>
-)
+);
 ```
 
 > **InputOTP** is built on top of [input-otp](https://github.com/guilhermerodz/input-otp) by [@guilherme_rodz](https://twitter.com/guilherme_rodz), providing a flexible and accessible foundation for OTP input components.
+
+Additional exported parts: `InputOTP.Root`.
 
 ## Examples
 
@@ -142,6 +142,8 @@ To customize the InputOTP component classes, you can use the `@layer components`
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `input-otp-group`, `input-otp-slot`, `input-otp-slot-value`, `input-otp-caret`, `input-otp-separator`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -149,8 +151,9 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The InputOTP component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/input-otp.css)):
 
 #### Base Classes
+
 - `.input-otp` - Base container
-- `.input-otp__container` - Inner container from input-otp library
+- `.input-otp__input` - The visually transparent native input; the outer `.input-otp` wrapper carries `[data-input-otp-container]`.
 - `.input-otp__group` - Group of slots
 - `.input-otp__slot` - Individual input slot
 - `.input-otp__slot-value` - The character inside a slot
@@ -158,86 +161,89 @@ The InputOTP component uses these CSS classes ([View source styles](https://gith
 - `.input-otp__separator` - Visual separator between groups
 
 #### State Classes
+
 - `.input-otp__slot[data-active="true"]` - Currently active slot
 - `.input-otp__slot[data-filled="true"]` - Slot with a character
 - `.input-otp__slot[data-disabled="true"]` - Disabled slot
 - `.input-otp__slot[data-invalid="true"]` - Invalid slot
-- `.input-otp__container[data-disabled="true"]` - Disabled container
+- `.input-otp__input[data-disabled="true"]` - Disabled input
 
 ### Interactive States
 
 The component supports both CSS pseudo-classes and data attributes for flexibility:
 
-- **Hover**: `:hover` or `[data-hovered="true"]` on slot
+- **Hover**: `:hover` on a slot; the slots do not emit `data-hovered`
 - **Active**: `[data-active="true"]` on slot (currently focused)
 - **Filled**: `[data-filled="true"]` on slot (contains a character)
-- **Disabled**: `[data-disabled="true"]` on container and slots
+- **Disabled**: `[data-disabled="true"]` on the input and slots
 - **Invalid**: `[data-invalid="true"]` on slots
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/input-otp/) for every named export and part prop type.
+
 ### InputOTP
 
-InputOTP is built on top of the [input-otp](https://github.com/guilhermerodz/input-otp) library with additional features.
+InputOTP uses Rivet’s in-tree signals implementation of input-otp, with styled groups, slots and validation state.
 
 #### Base Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `maxLength` | `number` | - | **Required.** Number of input slots. |
-| `value` | `string` | - | Controlled value (uncontrolled if not provided). |
-| `onChange` | `(value: string) => void` | - | Handler called when the value changes. |
-| `onComplete` | `(value: string) => void` | - | Handler called when all slots are filled. |
-| `class` | `string` | - | Additional CSS classes for the container. |
-| `containerClassName` | `string` | - | CSS classes for the inner container. |
-| `variant` | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
-| `children` | `Content` | - | InputOTP.Group, InputOTP.Slot, and InputOTP.Separator components. Omitted: one Group with a Slot per `maxLength` position. |
+| Prop                 | Type                       | Default     | Description                                                                                                                                                        |
+| -------------------- | -------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `maxLength`          | `number`                   | -           | **Required.** Number of input slots.                                                                                                                               |
+| `value`              | `string`                   | -           | Controlled value (uncontrolled if not provided).                                                                                                                   |
+| `onChange`           | `(value: string) => void`  | -           | Handler called when the value changes.                                                                                                                             |
+| `onComplete`         | `(value: string) => void`  | -           | Handler called when all slots are filled.                                                                                                                          |
+| `class`              | `string`                   | -           | Additional CSS classes for the container.                                                                                                                          |
+| `containerClassName` | `string`                   | -           | CSS classes for the inner container.                                                                                                                               |
+| `variant`            | `"primary" \| "secondary"` | `"primary"` | Visual variant of the component. `primary` is the default style with shadow. `secondary` is a lower emphasis variant without shadow, suitable for use in surfaces. |
+| `children`           | `Content`                  | -           | InputOTP.Group, InputOTP.Slot, and InputOTP.Separator components. Omitted: one Group with a Slot per `maxLength` position.                                         |
 
 #### Validation Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isDisabled` | `boolean` | `false` | Whether the input is disabled. |
-| `isInvalid` | `boolean` | `false` | Whether the input is in an invalid state. |
-| `validationErrors` | `string[]` | - | Server-side or custom validation errors. |
-| `validationDetails` | `ValidityState` | - | HTML5 validation details. |
+| Prop                | Type            | Default | Description                               |
+| ------------------- | --------------- | ------- | ----------------------------------------- |
+| `isDisabled`        | `boolean`       | `false` | Whether the input is disabled.            |
+| `isInvalid`         | `boolean`       | `false` | Whether the input is in an invalid state. |
+| `validationErrors`  | `string[]`      | -       | Server-side or custom validation errors.  |
+| `validationDetails` | `ValidityState` | -       | HTML5 validation details.                 |
 
 #### Input Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `pattern` | `string` | - | Regex pattern for allowed characters (e.g., `REGEXP_ONLY_DIGITS`). |
-| `textAlign` | `'left' \| 'center' \| 'right'` | `'left'` | Text alignment within slots. |
-| `inputMode` | `'numeric' \| 'text' \| 'decimal' \| 'tel' \| 'search' \| 'email' \| 'url'` | `'numeric'` | Virtual keyboard type on mobile devices. |
-| `placeholder` | `string` | - | Placeholder text for empty slots. |
-| `pasteTransformer` | `(text: string) => string` | - | Transform pasted text (e.g., remove hyphens). |
+| Prop               | Type                                                                        | Default     | Description                                                        |
+| ------------------ | --------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------ |
+| `pattern`          | `string`                                                                    | -           | Regex pattern for allowed characters (e.g., `REGEXP_ONLY_DIGITS`). |
+| `textAlign`        | `'left' \| 'center' \| 'right'`                                             | `'left'`    | Text alignment within slots.                                       |
+| `inputMode`        | `'numeric' \| 'text' \| 'decimal' \| 'tel' \| 'search' \| 'email' \| 'url'` | `'numeric'` | Virtual keyboard type on mobile devices.                           |
+| `placeholder`      | `string`                                                                    | -           | Placeholder text for empty slots.                                  |
+| `pasteTransformer` | `(text: string) => string`                                                  | -           | Transform pasted text (e.g., remove hyphens).                      |
 
 #### Form Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `name` | `string` | - | Name attribute for form submission. |
-| `autoFocus` | `boolean` | - | Whether to focus the first slot on mount. |
+| Prop        | Type      | Default | Description                               |
+| ----------- | --------- | ------- | ----------------------------------------- |
+| `name`      | `string`  | -       | Name attribute for form submission.       |
+| `autoFocus` | `boolean` | -       | Whether to focus the first slot on mount. |
 
 ### InputOTP.Group
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes for the group. |
-| `children` | `Content` | - | InputOTP.Slot components. |
+| Prop       | Type      | Default | Description                           |
+| ---------- | --------- | ------- | ------------------------------------- |
+| `class`    | `string`  | -       | Additional CSS classes for the group. |
+| `children` | `Content` | -       | InputOTP.Slot components.             |
 
 ### InputOTP.Slot
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `index` | `number` | - | **Required.** Zero-based index of the slot. |
-| `class` | `string` | - | Additional CSS classes for the slot. |
+| Prop    | Type     | Default | Description                                 |
+| ------- | -------- | ------- | ------------------------------------------- |
+| `index` | `number` | -       | **Required.** Zero-based index of the slot. |
+| `class` | `string` | -       | Additional CSS classes for the slot.        |
 
 ### InputOTP.Separator
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes for the separator. |
+| Prop    | Type     | Default | Description                               |
+| ------- | -------- | ------- | ----------------------------------------- |
+| `class` | `string` | -       | Additional CSS classes for the separator. |
 
 ### Exported Patterns
 
@@ -249,7 +255,7 @@ import { REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS } f
 // Use with pattern prop
 <InputOTP pattern={REGEXP_ONLY_DIGITS} maxLength={6}>
   {/* ... */}
-</InputOTP>
+</InputOTP>;
 ```
 
 - **REGEXP_ONLY_DIGITS** - Only numeric characters (0-9)
@@ -257,6 +263,10 @@ import { REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS } f
 - **REGEXP_ONLY_DIGITS_AND_CHARS** - Alphanumeric characters (0-9, a-z, A-Z)
 
 ::api{symbol="@rivetjs/ui/input-otp#InputOTPRootProps"}
+
+## Accessibility
+
+A single native `<input>` holds the value (`inputmode="numeric"` by default, `maxlength`, `pattern`), so screen readers, autofill and paste see one text field; the slots are presentational. Label it with `aria-label` / `aria-labelledby` or a visible `Label`.
 
 ## Related Components
 

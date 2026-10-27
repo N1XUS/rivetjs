@@ -10,12 +10,6 @@ related: [components/progress-bar, components/pagination, components/button]
 
 ::example{id=stepper-usage}
 
-## Import
-
-```tsx
-import { Stepper } from "@rivetjs/ui/stepper";
-```
-
 ## Usage
 
 ```tsx
@@ -59,6 +53,8 @@ export default function Checkout() {
 | `Stepper.Separator`   | `span` track + fill (hidden after the last step)                                                  | `stepper-separator`                    |
 
 `data-status` on each step: `complete` (before the current step), `active`, `inactive` (after it).
+
+Additional exported parts: `Stepper.Root`.
 
 ## Examples
 
@@ -114,7 +110,21 @@ Without `onStepChange` and without a Signal `currentStep`, steps are plain eleme
 
 ::example{id=stepper-display-only}
 
-## Styling
+### Import
+
+```tsx
+import { Stepper } from "@rivetjs/ui/stepper";
+```
+
+### Resumability
+
+Server-rendered; nothing runs at load. A display-only stepper ships no JavaScript; an interactive one fetches its handlers when it scrolls into view.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `stepper-separator-track`, `stepper-separator-fill`.
+
+### Styling
 
 | CSS variable                | Default                 | What                                  |
 | --------------------------- | ----------------------- | ------------------------------------- |
@@ -132,6 +142,8 @@ Without `onStepChange` and without a Signal `currentStep`, steps are plain eleme
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/stepper/) for every named export and part prop type.
+
 | Prop (`Stepper`) | Type                                       | Default        |
 | ---------------- | ------------------------------------------ | -------------- |
 | `currentStep`    | `number \| Signal<number> \| () => number` | —              |
@@ -141,8 +153,6 @@ Without `onStepChange` and without a Signal `currentStep`, steps are plain eleme
 | `size`           | `"sm" \| "md" \| "lg"`                     | `"md"`         |
 | `aria-label`     | `string`                                   | —              |
 
-::api{symbol="@rivetjs/ui/stepper#StepperRootProps"}
-
 | Prop (`Stepper.Step`) | Type      | Default |
 | --------------------- | --------- | ------- |
 | `title`               | `Content` | —       |
@@ -150,12 +160,16 @@ Without `onStepChange` and without a Signal `currentStep`, steps are plain eleme
 
 `title` / `description` are the shorthand (no children): Indicator + Content(Title, Description) + Separator.
 
+::api{symbol="@rivetjs/ui/stepper#StepperRootProps"}
+
 ## Accessibility
 
 - `ol` / `li` list; the current step has `aria-current="step"`.
 - Interactive steppers render each step as a native `button` (Tab order, Enter / Space); give the stepper an `aria-label`.
 - Completed indicators show a check icon; the status is also exposed by the step's position and `aria-current`, never by colour alone.
 
-## Resumability
+## Related Components
 
-Server-rendered; nothing runs at load. A display-only stepper ships no JavaScript; an interactive one fetches its handlers when it scrolls into view.
+- [ProgressBar](/components/progress-bar/)
+- [Pagination](/components/pagination/)
+- [Button](/components/button/)

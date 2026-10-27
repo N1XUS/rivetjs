@@ -17,8 +17,6 @@ Notes:
 - `Slider.Fill` is the cdk `SliderFill`: right-to-left layouts work.
 - Shorthand (Rivet addition): `label` without children renders Label / Output / Track / Fill / Thumb(s).
 
-Accessibility: Each thumb is a visually hidden native `<input type="range">` labelled by the slider's `Label` (Tab focuses; arrows step, Page Up / Down page, Home / End jump; React Aria). `Slider.Output` is an `<output>` tied to the inputs.
-
 ## Usage
 
 ```tsx
@@ -42,8 +40,10 @@ export default () => (
       <Slider.Thumb />
     </Slider.Track>
   </Slider>
-)
+);
 ```
+
+Additional exported parts: `Slider.Root`, `Slider.Marks`.
 
 ## Examples
 
@@ -78,7 +78,7 @@ export default () => (
       )}
     </Slider.Track>
   </Slider>
-)
+);
 ```
 
 ### Vertical
@@ -148,6 +148,8 @@ To customize the Slider component classes, you can use the `@layer components` d
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `slider-output`, `slider-marks`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -155,6 +157,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The Slider component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/slider.css)):
 
 #### Base Classes
+
 - `.slider` - Base slider container
 - `.slider__output` - Output element displaying current value(s)
 - `.slider-track` - Track element containing fill and thumbs
@@ -162,6 +165,7 @@ The Slider component uses these CSS classes ([View source styles](https://github
 - `.slider-thumb` - Individual thumb element
 
 #### State Classes
+
 - `.slider[data-disabled="true"]` - Disabled slider state
 - `.slider[data-orientation="vertical"]` - Vertical orientation
 - `.slider-thumb[data-dragging="true"]` - Thumb being dragged
@@ -182,71 +186,73 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/slider/) for every named export and part prop type.
+
 ### Slider
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `number \| number[] \| Signal<number \| number[]>` | - | The current value (controlled; a signal is two-way) |
-| `defaultValue` | `number \| number[]` | - | The default value (uncontrolled) |
-| `onChange` | `(value: number \| number[]) => void` | - | Handler called when the value changes |
-| `onChangeEnd` | `(value: number \| number[]) => void` | - | Handler called when dragging ends |
-| `minValue` | `number` | `0` | The slider's minimum value |
-| `maxValue` | `number` | `100` | The slider's maximum value |
-| `step` | `number` | `1` | The slider's step value |
-| `formatOptions` | `Intl.NumberFormatOptions` | - | The display format of the value label |
-| `orientation` | `"horizontal" \| "vertical"` | `"horizontal"` | The orientation of the slider |
-| `isDisabled` | `boolean` | - | Whether the slider is disabled |
-| `snap` | `"release" \| "drag"` | `"release"` | Rivet: with a `step`, `"release"` lets the thumb follow the pointer and animates it to the closest step on release; `"drag"` steps during the drag (React Aria) |
-| `aria-label` | `string` | - | Accessibility label for the slider |
-| `aria-labelledby` | `string` | - | ID of element that labels the slider |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Slider content or render function |
-| `label` | `Content` | - | Shorthand (no children): the Label; Output, Track, Fill and Thumb(s) render too. |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, SliderRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop              | Type                                                                | Default        | Description                                                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`           | `number \| number[] \| Signal<number \| number[]>`                  | -              | The current value (controlled; a signal is two-way)                                                                                                             |
+| `defaultValue`    | `number \| number[]`                                                | -              | The default value (uncontrolled)                                                                                                                                |
+| `onChange`        | `(value: number \| number[]) => void`                               | -              | Handler called when the value changes                                                                                                                           |
+| `onChangeEnd`     | `(value: number \| number[]) => void`                               | -              | Handler called when dragging ends                                                                                                                               |
+| `minValue`        | `number`                                                            | `0`            | The slider's minimum value                                                                                                                                      |
+| `maxValue`        | `number`                                                            | `100`          | The slider's maximum value                                                                                                                                      |
+| `step`            | `number`                                                            | `1`            | The slider's step value                                                                                                                                         |
+| `formatOptions`   | `Intl.NumberFormatOptions`                                          | -              | The display format of the value label                                                                                                                           |
+| `orientation`     | `"horizontal" \| "vertical"`                                        | `"horizontal"` | The orientation of the slider                                                                                                                                   |
+| `isDisabled`      | `boolean`                                                           | -              | Whether the slider is disabled                                                                                                                                  |
+| `snap`            | `"release" \| "drag"`                                               | `"release"`    | Rivet: with a `step`, `"release"` lets the thumb follow the pointer and animates it to the closest step on release; `"drag"` steps during the drag (React Aria) |
+| `aria-label`      | `string`                                                            | -              | Accessibility label for the slider                                                                                                                              |
+| `aria-labelledby` | `string`                                                            | -              | ID of element that labels the slider                                                                                                                            |
+| `class`           | `string`                                                            | -              | Additional CSS classes                                                                                                                                          |
+| `children`        | `Content \| RenderFunction`                                         | -              | Slider content or render function                                                                                                                               |
+| `label`           | `Content`                                                           | -              | Shorthand (no children): the Label; Output, Track, Fill and Thumb(s) render too.                                                                                |
+| `render`          | `DOMRenderFunction<keyof JSX.IntrinsicElements, SliderRenderProps>` | -              | Overrides the default DOM element with a custom render function.                                                                                                |
 
 ### Slider.Output
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Output content or render function |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, SliderOutputRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop       | Type                                                                      | Default | Description                                                      |
+| ---------- | ------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| `class`    | `string`                                                                  | -       | Additional CSS classes                                           |
+| `children` | `Content \| RenderFunction`                                               | -       | Output content or render function                                |
+| `render`   | `DOMRenderFunction<keyof JSX.IntrinsicElements, SliderOutputRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ### Slider.Track
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Track content or render function |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, SliderTrackRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop       | Type                                                                     | Default | Description                                                      |
+| ---------- | ------------------------------------------------------------------------ | ------- | ---------------------------------------------------------------- |
+| `class`    | `string`                                                                 | -       | Additional CSS classes                                           |
+| `children` | `Content \| RenderFunction`                                              | -       | Track content or render function                                 |
+| `render`   | `DOMRenderFunction<keyof JSX.IntrinsicElements, SliderTrackRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ### Slider.Fill
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `style` | `CSSProperties` | - | Inline styles |
+| Prop    | Type            | Default | Description            |
+| ------- | --------------- | ------- | ---------------------- |
+| `class` | `string`        | -       | Additional CSS classes |
+| `style` | `CSSProperties` | -       | Inline styles          |
 
 ### Slider.Thumb
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `index` | `number` | `0` | Index of the thumb within the slider |
-| `isDisabled` | `boolean` | - | Whether this thumb is disabled |
-| `name` | `string` | - | The name of the input element, used when submitting an HTML form |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Thumb content or render function |
-| `render` | `DOMRenderFunction<keyof React.JSX.IntrinsicElements, SliderThumbRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop         | Type                                                                     | Default | Description                                                      |
+| ------------ | ------------------------------------------------------------------------ | ------- | ---------------------------------------------------------------- |
+| `index`      | `number`                                                                 | `0`     | Index of the thumb within the slider                             |
+| `isDisabled` | `boolean`                                                                | -       | Whether this thumb is disabled                                   |
+| `name`       | `string`                                                                 | -       | The name of the input element, used when submitting an HTML form |
+| `class`      | `string`                                                                 | -       | Additional CSS classes                                           |
+| `children`   | `Content \| RenderFunction`                                              | -       | Thumb content or render function                                 |
+| `render`     | `DOMRenderFunction<keyof JSX.IntrinsicElements, SliderThumbRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ### Render Props
 
 When using render functions with Slider.Output or Slider.Track, these values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `state` | `SliderState` | The cdk state of the slider. Read it with `sliderValues(state)` (values by thumb index), `getThumbValueLabel(state, index)` and `state.defaultValues` (thumb count) from `@rivetjs/cdk/slider` |
-| `orientation` | `() => "horizontal" \| "vertical"` | The orientation of the slider |
-| `isDisabled` | `() => boolean` | Whether the slider is disabled |
+| Prop          | Type                | Description                                                                                                                                                                                    |
+| ------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state`       | `SliderState`       | The cdk state of the slider. Read it with `sliderValues(state)` (values by thumb index), `getThumbValueLabel(state, index)` and `state.defaultValues` (thumb count) from `@rivetjs/cdk/slider` |
+| `orientation` | `() => Orientation` | The orientation of the slider                                                                                                                                                                  |
+| `isDisabled`  | `() => boolean`     | Whether the slider is disabled                                                                                                                                                                 |
 
 ::api{symbol="@rivetjs/ui/slider#SliderRootProps"}
 
@@ -263,6 +269,8 @@ The Slider component implements the ARIA slider pattern and provides:
 - Right-to-left (RTL) language support
 
 For more information, see the [React Aria Slider documentation](https://react-spectrum.adobe.com/react-aria/Slider.html).
+
+Each thumb is a visually hidden native `<input type="range">` labelled by the slider's `Label` (Tab focuses; arrows step, Page Up / Down page, Home / End jump; React Aria). `Slider.Output` is an `<output>` tied to the inputs.
 
 ## Related Components
 

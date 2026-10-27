@@ -34,33 +34,37 @@ export default function Anatomy() {
 
 Without children the root renders the formatted value alone, or with the `prefix` / `suffix` shorthand props. With compound children, place `NumberValue.Value` where the number goes (children are rendered in order). A function child receives the formatted string.
 
-## Compact
+Additional exported parts: `NumberValue.Root`.
+
+## Examples
+
+### Compact
 
 ::example{id=number-value-compact}
 
-## Currency
+### Currency
 
 ::example{id=number-value-currency}
 
-## Format Options
+### Format Options
 
 `formatOptions` takes any `Intl.NumberFormatOptions` and wins over the convenience props.
 
 ::example{id=number-value-format-options}
 
-## Percent
+### Percent
 
 ::example{id=number-value-percent}
 
-## Sign Display
+### Sign Display
 
 ::example{id=number-value-sign-display}
 
-## Tabular Nums
+### Tabular Nums
 
 ::example{id=number-value-tabular-nums}
 
-## With Prefix Suffix
+### With Prefix Suffix
 
 ::example{id=number-value-prefix-suffix}
 
@@ -77,6 +81,8 @@ Without children the root renders the formatted value alone, or with the `prefix
 - `[data-slot]`: `number-value`, `number-value-prefix`, `number-value-value`, `number-value-suffix`.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/number-value/) for every named export and part prop type.
 
 ### NumberValue
 

@@ -35,27 +35,33 @@ export default function Anatomy() {
 }
 ```
 
-## With Presets
+Additional exported parts: `CellColorPicker.Root`.
+
+## Examples
+
+### With Presets
 
 ::example{id=cell-color-picker-presets}
 
-## Controlled
+### Controlled
 
 ::example{id=cell-color-picker-controlled}
 
-## Variants
+### Variants
 
 ::example{id=cell-color-picker-variants}
 
-## Disabled
+### Disabled
 
 ::example{id=cell-color-picker-disabled}
 
-## Settings Group
+### Settings Group
 
 ::example{id=cell-color-picker-settings}
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `cell-color-picker-trigger`, `cell-color-picker-label`, `cell-color-picker-value-display`, `cell-color-picker-swatch`.
 
 ### CSS Classes
 
@@ -72,17 +78,19 @@ export default function Anatomy() {
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/cell-color-picker/) for every named export and part prop type.
+
 ### CellColorPicker
 
 The ui `ColorPicker` (cdk ColorPicker + DialogTrigger).
 
-| Prop           | Type                              | Default     | Description                                  |
-| -------------- | --------------------------------- | ----------- | -------------------------------------------- |
-| `variant`      | `"default" \| "secondary"`        | `"default"` | Cell style                                   |
-| `value`        | `string \| Color \| Signal`       | -           | Controlled color (a signal is two-way)       |
-| `defaultValue` | `string \| Color`                 | -           | Initial color                                |
-| `onChange`     | `(color: Color) => void`          | -           | Color changed                                |
-| `isDisabled`   | `boolean`                         | -           | Disable the trigger                          |
+| Prop           | Type                        | Default     | Description                            |
+| -------------- | --------------------------- | ----------- | -------------------------------------- |
+| `variant`      | `"default" \| "secondary"`  | `"default"` | Cell style                             |
+| `value`        | `string \| Color \| Signal` | -           | Controlled color (a signal is two-way) |
+| `defaultValue` | `string \| Color`           | -           | Initial color                          |
+| `onChange`     | `(color: Color) => void`    | -           | Color changed                          |
+| `isDisabled`   | `boolean`                   | -           | Disable the trigger                    |
 
 ### CellColorPicker.Trigger
 
@@ -99,3 +107,13 @@ A ui [ColorSwatch](/components/color-swatch/) (size `sm`) showing the picker col
 ### CellColorPicker.Popover
 
 The ui `ColorPicker.Popover` (`placement` `"bottom end"`).
+
+## Accessibility
+
+The trigger uses the cdk Button and the popover belongs to [ColorPicker](/components/color-picker/). Give the trigger an accessible name, and label the color area, sliders and swatches inside it. Keep the textual value alongside the swatch.
+
+## Related Components
+
+- [ColorPicker](/components/color-picker/)
+- [CellSelect](/components/cell-select/)
+- [CellSwitch](/components/cell-switch/)

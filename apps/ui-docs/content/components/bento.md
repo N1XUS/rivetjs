@@ -8,8 +8,6 @@ related: [components/masonry, components/card, components/kpi]
 
 `Bento` is a grid of tiles that span several columns and rows: dashboards, feature sections, portfolios. The server packs the tiles (like CSS grid's dense flow) and writes their positions, so nothing shifts and no script runs at load.
 
-Accessibility: the same grid model as [Masonry](/components/masonry/): one tab stop, arrow keys by visual position across spans, the DOM order stays the data order. Name it with `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -23,7 +21,13 @@ import { Bento } from "@rivetjs/ui/masonry";
 - `pack="dense"` (default) fills holes with later tiles; `pack="skyline"` keeps the visual order closer to the reading order.
 - Put a [Card](/components/card/) or any content in the render function; the tile is the focusable, selectable surface.
 
-## Feature highlights
+## Anatomy
+
+`Bento` is exported from `@rivetjs/ui/masonry`. It takes an items source and a render-function child; there are no compound parts. Use span data to describe the tile layout, and render each tile with UI components.
+
+## Examples
+
+### Feature highlights
 
 ::example{id=bento-features}
 
@@ -40,8 +44,8 @@ import { Bento } from "@rivetjs/ui/masonry";
 
 ### CSS Variables
 
-| Variable         | Default                        | Description         |
-| ---------------- | ------------------------------ | ------------------- |
+| Variable         | Default                        | Description        |
+| ---------------- | ------------------------------ | ------------------ |
 | `--bento-radius` | `min(28px, var(--radius-3xl))` | Tile corner radius |
 
 ### Data Attributes
@@ -51,17 +55,23 @@ import { Bento } from "@rivetjs/ui/masonry";
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/masonry/) for every named export and part prop type.
+
 ### Bento
 
 `Bento` takes the props of [Masonry](/components/masonry/#api-reference) except the masonry sizing (`getAspectRatio`, `extraItemHeight`, `layout`, `virtualize`), plus:
 
-| Prop         | Type                                              | Default         | Description                        |
-| ------------ | ------------------------------------------------- | --------------- | ---------------------------------- |
-| `getColSpan` | `(item: T) => number \| Record<number, number>`   | `item.colSpan`  | Columns a tile spans               |
-| `getRowSpan` | `(item: T) => number \| Record<number, number>`   | `item.rowSpan`  | Rows a tile spans                  |
-| `columns`    | `number` \| `Record<number, number>`              | `4`             | Column count, or per container width |
-| `rowHeight`  | `number` \| `{ aspectRatio: number }` \| `"auto"` | `160`           | Row height                         |
-| `pack`       | `"dense"` \| `"skyline"`                          | `"dense"`       | Packing                            |
+| Prop         | Type                                              | Default        | Description                          |
+| ------------ | ------------------------------------------------- | -------------- | ------------------------------------ |
+| `getColSpan` | `(item: T) => number \| Record<number, number>`   | `item.colSpan` | Columns a tile spans                 |
+| `getRowSpan` | `(item: T) => number \| Record<number, number>`   | `item.rowSpan` | Rows a tile spans                    |
+| `columns`    | `number` \| `Record<number, number>`              | `4`            | Column count, or per container width |
+| `rowHeight`  | `number` \| `{ aspectRatio: number }` \| `"auto"` | `160`          | Row height                           |
+| `pack`       | `"dense"` \| `"skyline"`                          | `"dense"`      | Packing                              |
+
+## Accessibility
+
+the same grid model as [Masonry](/components/masonry/): one tab stop, arrow keys by visual position across spans, the DOM order stays the data order. Name it with `aria-label`.
 
 ## Related Components
 

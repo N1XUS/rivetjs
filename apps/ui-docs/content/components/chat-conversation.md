@@ -8,8 +8,6 @@ related: [components/chat-message, components/prompt-input, components/scroll-sh
 
 `ChatConversation` is the scroll container of a thread. It is a `column-reverse` scroller, so the browser itself starts at the bottom and keeps it pinned while content grows: no scroll script runs at load or while tokens stream. With `scrollButton`, `data-at-bottom` goes away when the user scrolls up and `ScrollButton` appears; without it the root has no scroll handler and a conversation is static markup.
 
-Accessibility: the root is a focusable `role="log"` (default name "Conversation"), so new messages are announced politely and keyboard users can scroll it; `isStreaming` sets `aria-busy`. The scroll button is named "Scroll to bottom".
-
 ## Usage
 
 ```tsx
@@ -29,17 +27,29 @@ import { ChatConversation } from "@rivetjs/ui/chat-conversation";
 
 `ScrollAnchor` is an optional zero-height marker at the end of the content (e.g. for your own `scrollIntoView`).
 
-## Full Chat
+Additional exported parts: `ChatConversation.Root`, `ChatConversation.ScrollAnchor`.
+
+## Examples
+
+### Full Chat
 
 Every AI component together: a keyed `For` thread of [ChatMessage](/components/chat-message/) turns with [Markdown](/components/markdown/) answers, a [ChatLoader](/components/chat-loader/) until the first word, [ChatMessageActions](/components/chat-message-actions/), [PromptSuggestion](/components/prompt-suggestion/) pills and a [PromptInput](/components/prompt-input/) with Stop. Answers are canned and stream from a local timer (`simulateStream` from `@rivetjs/cdk/chat`): no network calls.
 
 ::example{id=ai-chat}
 
-## Scroll Button
+### Scroll Button
 
 ::example{id=chat-conversation-scroll-button}
 
-## CSS Classes
+### Resumability
+
+Pinning is CSS. Without `scrollButton` the root has no handler: a conversation without the button ships no JS at all. With it, the scroll handler (button visibility) resumes on the first user scroll; a resumed chat page runs no code until the user interacts.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chat-conversation-content`, `chat-conversation-scroll-anchor`, `chat-conversation-scroll-button-container`.
+
+### CSS Classes
 
 | Class                                                            | Applied                                                               |
 | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
@@ -55,6 +65,8 @@ Every AI component together: a keyed `For` thread of [ChatMessage](/components/c
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/chat-conversation/) for every named export and part prop type.
+
 | Prop                          | Type                       | Default              |
 | ----------------------------- | -------------------------- | -------------------- |
 | `aria-label`                  | `string`                   | `"Conversation"`     |
@@ -69,6 +81,12 @@ Other `div` attributes pass to the root; `ScrollButton` takes the [Button](/comp
 
 ::api{symbol="@rivetjs/ui/chat-conversation#ChatConversationScrollButtonProps"}
 
-## Resumability
+## Accessibility
 
-Pinning is CSS. Without `scrollButton` the root has no handler: a conversation without the button ships no JS at all. With it, the scroll handler (button visibility) resumes on the first user scroll; a resumed chat page runs no code until the user interacts.
+the root is a focusable `role="log"` (default name "Conversation"), so new messages are announced politely and keyboard users can scroll it; `isStreaming` sets `aria-busy`. The scroll button is named "Scroll to bottom".
+
+## Related Components
+
+- [ChatMessage](/components/chat-message/)
+- [PromptInput](/components/prompt-input/)
+- [ScrollShadow](/components/scroll-shadow/)

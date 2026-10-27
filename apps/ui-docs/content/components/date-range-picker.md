@@ -16,8 +16,6 @@ Notes:
 - After the popover closes following keyboard input, focus returns to the trigger in a frame, found by the cdk trigger id (`<picker id>-button`).
 - Icons are lucide (`Calendar` default indicator, `ChevronDown`).
 
-Accessibility: the group is `role="group"` labelled by the `Label`; the trigger has `aria-haspopup="dialog"` / `aria-expanded`; the popover is a dialog holding the calendar grid (arrow keys, Page Up / Down, Enter to select, Escape to close).
-
 ## Usage
 
 ```tsx
@@ -44,13 +42,9 @@ export default () => (
     <Label />
     <DateField.Group>
       <DateField.InputContainer>
-        <DateField.Input slot="start">
-          {(segment) => <DateField.Segment segment={segment} />}
-        </DateField.Input>
+        <DateField.Input slot="start">{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
         <DateRangePicker.RangeSeparator />
-        <DateField.Input slot="end">
-          {(segment) => <DateField.Segment segment={segment} />}
-        </DateField.Input>
+        <DateField.Input slot="end">{(segment) => <DateField.Segment segment={segment} />}</DateField.Input>
       </DateField.InputContainer>
       <DateField.Suffix>
         <DateRangePicker.Trigger>
@@ -69,15 +63,13 @@ export default () => (
           <RangeCalendar.NavButton slot="next" />
         </RangeCalendar.Header>
         <RangeCalendar.Grid>
-          <RangeCalendar.GridHeader>
-            {(day) => <RangeCalendar.HeaderCell>{day}</RangeCalendar.HeaderCell>}
-          </RangeCalendar.GridHeader>
+          <RangeCalendar.GridHeader>{(day) => <RangeCalendar.HeaderCell>{day}</RangeCalendar.HeaderCell>}</RangeCalendar.GridHeader>
           <RangeCalendar.GridBody>{(date) => <RangeCalendar.Cell date={date} />}</RangeCalendar.GridBody>
         </RangeCalendar.Grid>
       </RangeCalendar>
     </DateRangePicker.Popover>
   </DateRangePicker>
-)
+);
 ```
 
 ## Examples
@@ -125,6 +117,7 @@ The example below shows the Indian calendar system:
 **Note:** The `onChange` event always returns dates in the same calendar system as the `value` or `defaultValue` (Gregorian if no value is provided), regardless of the displayed locale.
 
 For a complete list of supported calendar systems and their identifiers, see:
+
 - [React Aria Calendar Implementations](https://react-aria.adobe.com/internationalized/date/Calendar#implementations)
 - [React Aria International Calendars](https://react-aria.adobe.com/Calendar#international-calendars)
 
@@ -164,6 +157,8 @@ To customize DateRangePicker base classes, use `@layer components`.
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `date-range-picker-trigger`, `date-range-picker-trigger-indicator`, `date-range-picker-range-separator`, `date-range-picker-popover`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -187,43 +182,50 @@ DateRangePicker supports React Aria data attributes and pseudo states:
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/date-range-picker/) for every named export and part prop type.
+
 ### DateRangePicker
 
 DateRangePicker inherits all props from the [cdk DateRangePicker](site:cdk/components/date-range-picker/) (React Aria `DateRangePicker`).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `{ start: DateValue; end: DateValue } \| null` | - | Controlled selected date range value. |
-| `defaultValue` | `{ start: DateValue; end: DateValue } \| null` | - | Default selected range in uncontrolled mode. |
-| `onChange` | `(value: { start: DateValue; end: DateValue } \| null) => void` | - | Called when selected range changes. |
-| `isOpen` | `boolean` | - | Controlled popover open state. |
-| `defaultOpen` | `boolean` | `false` | Initial popover open state. |
-| `onOpenChange` | `(isOpen: boolean) => void` | - | Called when popover open state changes. |
-| `isDisabled` | `boolean` | `false` | Disables range selection and trigger interactions. |
-| `isInvalid` | `boolean` | - | Marks the field as invalid for validation state. |
-| `minValue` | `DateValue` | - | Minimum selectable date. |
-| `maxValue` | `DateValue` | - | Maximum selectable date. |
-| `startName` | `string` | - | Name used for the start date in HTML form submission. |
-| `endName` | `string` | - | Name used for the end date in HTML form submission. |
-| `children` | `Content \| (values: DateRangePickerRenderProps) => Content` | - | Composed content or render function. |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, DateRangePickerRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                         | Default | Description                                                      |
+| -------------- | ---------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| `value`        | `{ start: DateValue; end: DateValue } \| null`                               | -       | Controlled selected date range value.                            |
+| `defaultValue` | `{ start: DateValue; end: DateValue } \| null`                               | -       | Default selected range in uncontrolled mode.                     |
+| `onChange`     | `(value: { start: DateValue; end: DateValue } \| null) => void`              | -       | Called when selected range changes.                              |
+| `isOpen`       | `boolean`                                                                    | -       | Controlled popover open state.                                   |
+| `defaultOpen`  | `boolean`                                                                    | `false` | Initial popover open state.                                      |
+| `onOpenChange` | `(isOpen: boolean) => void`                                                  | -       | Called when popover open state changes.                          |
+| `isDisabled`   | `boolean`                                                                    | `false` | Disables range selection and trigger interactions.               |
+| `isInvalid`    | `boolean`                                                                    | -       | Marks the field as invalid for validation state.                 |
+| `minValue`     | `DateValue`                                                                  | -       | Minimum selectable date.                                         |
+| `maxValue`     | `DateValue`                                                                  | -       | Maximum selectable date.                                         |
+| `startName`    | `string`                                                                     | -       | Name used for the start date in HTML form submission.            |
+| `endName`      | `string`                                                                     | -       | Name used for the end date in HTML form submission.              |
+| `children`     | `Content \| (values: DateRangePickerRenderProps) => Content`                 | -       | Composed content or render function.                             |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, DateRangePickerRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ### Composition Parts
 
-| Component | Description |
-|-----------|-------------|
-| `DateRangePicker.Root` | Root date range picker container and state owner. |
-| `DateRangePicker.Trigger` | Trigger button, usually rendered inside `DateField.Suffix`. |
-| `DateRangePicker.TriggerIndicator` | Indicator slot with default calendar icon. |
-| `DateRangePicker.RangeSeparator` | Separator part between start and end date inputs. |
-| `DateRangePicker.Popover` | Popover wrapper for `RangeCalendar` content. |
+| Component                          | Description                                                 |
+| ---------------------------------- | ----------------------------------------------------------- |
+| `DateRangePicker.Root`             | Root date range picker container and state owner.           |
+| `DateRangePicker.Trigger`          | Trigger button, usually rendered inside `DateField.Suffix`. |
+| `DateRangePicker.TriggerIndicator` | Indicator slot with default calendar icon.                  |
+| `DateRangePicker.RangeSeparator`   | Separator part between start and end date inputs.           |
+| `DateRangePicker.Popover`          | Popover wrapper for `RangeCalendar` content.                |
 
 ### Related packages
+
 - `@rivetjs/cdk/date` (port of [`@internationalized/date`](https://react-aria.adobe.com/internationalized/date/)) — date types (`CalendarDate`, `CalendarDateTime`, `ZonedDateTime`) and utilities used by all date components
 - `I18nProvider` (`@rivetjs/cdk/i18n-provider`) — override locale for a subtree
 - `useLocale` (`@rivetjs/cdk/i18n`) — read the current locale and layout direction
 
 ::api{symbol="@rivetjs/ui/date-range-picker#DateRangePicker"}
+
+## Accessibility
+
+the group is `role="group"` labelled by the `Label`; the trigger has `aria-haspopup="dialog"` / `aria-expanded`; the popover is a dialog holding the calendar grid (arrow keys, Page Up / Down, Enter to select, Escape to close).
 
 ## Related Components
 

@@ -14,8 +14,6 @@ Notes:
 - No Radix `asChild`: parts render fixed elements.
 - An `Avatar.Image` outside an `Avatar` gets a status of its own (Radix throws).
 
-Accessibility: Markup without cdk behaviour. Give `Avatar.Image` an `alt`. Initials are read as text; put an `aria-label` on the root when they say nothing (or for an icon fallback).
-
 ## Usage
 
 ```tsx
@@ -36,6 +34,8 @@ export default () => (
   </Avatar>
 );
 ```
+
+Additional exported parts: `Avatar.Root`.
 
 ## Examples
 
@@ -122,6 +122,8 @@ The Avatar component uses these CSS classes ([View source styles](https://github
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/avatar/) for every named export and part prop type.
+
 ### Avatar
 
 | Prop      | Type                                                          | Default     | Description            |
@@ -155,6 +157,10 @@ The Avatar component uses these CSS classes ([View source styles](https://github
 | `class`   | `string`                                                      | -       | Additional CSS classes                         |
 
 ::api{symbol="@rivetjs/ui/avatar#AvatarRootProps"}
+
+## Accessibility
+
+Markup without cdk behaviour. Give `Avatar.Image` an `alt`. Initials are read as text; put an `aria-label` on the root when they say nothing (or for an icon fallback).
 
 ## Related Components
 

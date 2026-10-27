@@ -31,17 +31,21 @@ export default function Anatomy() {
 }
 ```
 
-## Disabled
+Additional exported parts: `EmojiReactionButton.Root`.
+
+## Examples
+
+### Disabled
 
 ::example{id=emoji-reaction-button-disabled}
 
-## Read-only
+### Read-only
 
 `isReadOnly` keeps the selection and ignores presses. The button stays focusable, so screen readers still announce it.
 
 ::example{id=emoji-reaction-button-read-only}
 
-## Sizes
+### Sizes
 
 ::example{id=emoji-reaction-button-sizes}
 
@@ -60,6 +64,8 @@ export default function Anatomy() {
 - `[data-hovered]`, `[data-pressed]`, `[data-focus-visible]`, `[data-disabled]`.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/emoji-reaction-button/) for every named export and part prop type.
 
 ### EmojiReactionButton
 

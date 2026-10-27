@@ -17,8 +17,6 @@ Notes:
 - Navigation icons are lucide `ChevronLeft` / `ChevronRight`.
 - The Week View / Day View demos hold the Select value in a two-way key signal (`signal<Key | null>("1")`) and re-create the calendar per count with `<Show keyed>`.
 
-Accessibility: the root is `role="application"` labelled by `aria-label` + the visible month; the grid is a `role="grid"` with roving focus (arrow keys, Page Up / Down, Home / End). The year picker trigger has `aria-expanded`; its grid takes arrow keys, Home / End, Enter and Escape.
-
 ## Usage
 
 ```tsx
@@ -40,15 +38,11 @@ export default () => (
       <RangeCalendar.NavButton slot="next" />
     </RangeCalendar.Header>
     <RangeCalendar.Grid>
-      <RangeCalendar.GridHeader>
-        {(day) => <RangeCalendar.HeaderCell>{day}</RangeCalendar.HeaderCell>}
-      </RangeCalendar.GridHeader>
-      <RangeCalendar.GridBody>
-        {(date) => <RangeCalendar.Cell date={date} />}
-      </RangeCalendar.GridBody>
+      <RangeCalendar.GridHeader>{(day) => <RangeCalendar.HeaderCell>{day}</RangeCalendar.HeaderCell>}</RangeCalendar.GridHeader>
+      <RangeCalendar.GridBody>{(date) => <RangeCalendar.Cell date={date} />}</RangeCalendar.GridBody>
     </RangeCalendar.Grid>
   </RangeCalendar>
-)
+);
 ```
 
 ## Examples
@@ -175,6 +169,8 @@ The example below shows the Indian calendar system:
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `range-calendar-header`, `range-calendar-heading`, `range-calendar-nav-button`, `range-calendar-nav-button-icon`, `range-calendar-grid`, `range-calendar-grid-header`, `range-calendar-grid-body`, `range-calendar-header-cell`, `range-calendar-cell`, `range-calendar-cell-button`, `range-calendar-cell-indicator`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -216,88 +212,96 @@ RangeCalendar supports both pseudo-classes and React Aria data attributes:
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/range-calendar/) for every named export and part prop type.
+
 ### RangeCalendar
 
 RangeCalendar inherits all props from the [cdk RangeCalendar](site:cdk/components/range-calendar/) (React Aria `RangeCalendar`).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `Signal<{ start: string; end: string } \| null>` | - | Controlled selected range, a two-way signal of the string forms (Rivet). |
-| `defaultValue` | `RangeValue<DateValue> \| null` | - | Initial selected range (uncontrolled). |
-| `onChange` | `(value: RangeValue<DateValue>) => void` | - | Called when selection changes. |
-| `focusedValue` | `Signal<string>` | - | Controlled focused date (two-way signal of the string form). |
-| `onFocusChange` | `(value: DateValue) => void` | - | Called when focus moves to another date. |
-| `minValue` | `DateValue` | Calendar-aware `1900-01-01` | Earliest selectable date. |
-| `maxValue` | `DateValue` | Calendar-aware `2099-12-31` | Latest selectable date. |
-| `weeksInMonth` | `number` | - | The number of weeks in a month. This overrides the default set by the locale. |
-| `isDateUnavailable` | `(date: DateValue, anchorDate: CalendarDate \| null) => boolean` | - | Marks dates as unavailable. When `anchorDate` is set, it is the first date the user selected in the current range gesture. |
-| `firstDayOfWeek` | `'sun' \| 'mon' \| 'tue' \| 'wed' \| 'thu' \| 'fri' \| 'sat'` | - | Overrides the locale default for the first day of the week. |
-| `pageBehavior` | `'visible' \| 'single'` | `'visible'` | Whether paging advances by the visible duration or one unit at a time. |
-| `selectionAlignment` | `'start' \| 'center' \| 'end'` | `'center'` | Aligns the visible range to the selection on initial render. |
-| `allowsNonContiguousRanges` | `boolean` | `false` | Allows ranges that span unavailable dates. |
-| `isDisabled` | `boolean` | `false` | Disables interaction and selection. |
-| `isReadOnly` | `boolean` | `false` | Keeps content readable but prevents selection changes. |
-| `isInvalid` | `boolean` | `false` | Marks the calendar as invalid for validation UI. |
-| `visibleDuration` | `{months?: number; weeks?: number; days?: number}` | `{months: 1}` | Visible time range. Use `{ months: n }` for month view, `{ weeks: n }` for week view, or `{ days: n }` for day view. |
-| `defaultYearPickerOpen` | `boolean` | `false` | Initial open state of internal year picker. |
-| `isYearPickerOpen` | `boolean \| Signal<boolean>` | - | Controlled year picker open state (a signal is two-way). |
-| `onYearPickerOpenChange` | `(isOpen: boolean) => void` | - | Called when year picker open state changes. |
+| Prop                        | Type                                                             | Default                     | Description                                                                                                                |
+| --------------------------- | ---------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `value`                     | `Signal<{ start: string; end: string } \| null>`                 | -                           | Controlled selected range, a two-way signal of the string forms (Rivet).                                                   |
+| `defaultValue`              | `RangeValue<DateValue> \| null`                                  | -                           | Initial selected range (uncontrolled).                                                                                     |
+| `onChange`                  | `(value: RangeValue<DateValue>) => void`                         | -                           | Called when selection changes.                                                                                             |
+| `focusedValue`              | `Signal<string>`                                                 | -                           | Controlled focused date (two-way signal of the string form).                                                               |
+| `onFocusChange`             | `(value: DateValue) => void`                                     | -                           | Called when focus moves to another date.                                                                                   |
+| `minValue`                  | `DateValue`                                                      | Calendar-aware `1900-01-01` | Earliest selectable date.                                                                                                  |
+| `maxValue`                  | `DateValue`                                                      | Calendar-aware `2099-12-31` | Latest selectable date.                                                                                                    |
+| `weeksInMonth`              | `number`                                                         | -                           | The number of weeks in a month. This overrides the default set by the locale.                                              |
+| `isDateUnavailable`         | `(date: DateValue, anchorDate: CalendarDate \| null) => boolean` | -                           | Marks dates as unavailable. When `anchorDate` is set, it is the first date the user selected in the current range gesture. |
+| `firstDayOfWeek`            | `'sun' \| 'mon' \| 'tue' \| 'wed' \| 'thu' \| 'fri' \| 'sat'`    | -                           | Overrides the locale default for the first day of the week.                                                                |
+| `pageBehavior`              | `'visible' \| 'single'`                                          | `'visible'`                 | Whether paging advances by the visible duration or one unit at a time.                                                     |
+| `selectionAlignment`        | `'start' \| 'center' \| 'end'`                                   | `'center'`                  | Aligns the visible range to the selection on initial render.                                                               |
+| `allowsNonContiguousRanges` | `boolean`                                                        | `false`                     | Allows ranges that span unavailable dates.                                                                                 |
+| `isDisabled`                | `boolean`                                                        | `false`                     | Disables interaction and selection.                                                                                        |
+| `isReadOnly`                | `boolean`                                                        | `false`                     | Keeps content readable but prevents selection changes.                                                                     |
+| `isInvalid`                 | `boolean`                                                        | `false`                     | Marks the calendar as invalid for validation UI.                                                                           |
+| `visibleDuration`           | `{months?: number; weeks?: number; days?: number}`               | `{months: 1}`               | Visible time range. Use `{ months: n }` for month view, `{ weeks: n }` for week view, or `{ days: n }` for day view.       |
+| `defaultYearPickerOpen`     | `boolean`                                                        | `false`                     | Initial open state of internal year picker.                                                                                |
+| `isYearPickerOpen`          | `boolean \| Signal<boolean>`                                     | -                           | Controlled year picker open state (a signal is two-way).                                                                   |
+| `onYearPickerOpenChange`    | `(isOpen: boolean) => void`                                      | -                           | Called when year picker open state changes.                                                                                |
 
 ### Composition Parts
 
-| Component | Description |
-|-----------|-------------|
-| `RangeCalendar.Header` | Header container for navigation and heading. |
-| `RangeCalendar.Heading` | Formatted heading for the visible range. Supports `offset` (for multi-month layouts) and `format` (month/year/day options). |
-| `RangeCalendar.NavButton` | Previous/next navigation control (`slot="previous"` or `slot="next"`). |
-| `RangeCalendar.Grid` | Day grid for one month (`offset` supported for multi-month layouts). |
-| `RangeCalendar.GridHeader` | Weekday header container. |
-| `RangeCalendar.GridBody` | Date cell body container. |
-| `RangeCalendar.HeaderCell` | Weekday label cell. |
-| `RangeCalendar.Cell` | Individual date cell. |
-| `RangeCalendar.CellIndicator` | Optional indicator element for custom metadata. |
-| `RangeCalendar.YearPickerTrigger` | Trigger to toggle year-picker mode. |
-| `RangeCalendar.YearPickerTriggerHeading` | Localized heading content inside the year-picker trigger. |
-| `RangeCalendar.YearPickerTriggerIndicator` | Toggle icon inside the year-picker trigger. |
-| `RangeCalendar.YearPickerGrid` | Overlay year selection grid container. |
-| `RangeCalendar.YearPickerGridBody` | Body renderer for year grid cells. |
-| `RangeCalendar.YearPickerCell` | Individual year option cell. |
+| Component                                  | Description                                                                                                                 |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `RangeCalendar.Header`                     | Header container for navigation and heading.                                                                                |
+| `RangeCalendar.Heading`                    | Formatted heading for the visible range. Supports `offset` (for multi-month layouts) and `format` (month/year/day options). |
+| `RangeCalendar.NavButton`                  | Previous/next navigation control (`slot="previous"` or `slot="next"`).                                                      |
+| `RangeCalendar.Grid`                       | Day grid for one month (`offset` supported for multi-month layouts).                                                        |
+| `RangeCalendar.GridHeader`                 | Weekday header container.                                                                                                   |
+| `RangeCalendar.GridBody`                   | Date cell body container.                                                                                                   |
+| `RangeCalendar.HeaderCell`                 | Weekday label cell.                                                                                                         |
+| `RangeCalendar.Cell`                       | Individual date cell.                                                                                                       |
+| `RangeCalendar.CellIndicator`              | Optional indicator element for custom metadata.                                                                             |
+| `RangeCalendar.YearPickerTrigger`          | Trigger to toggle year-picker mode.                                                                                         |
+| `RangeCalendar.YearPickerTriggerHeading`   | Localized heading content inside the year-picker trigger.                                                                   |
+| `RangeCalendar.YearPickerTriggerIndicator` | Toggle icon inside the year-picker trigger.                                                                                 |
+| `RangeCalendar.YearPickerGrid`             | Overlay year selection grid container.                                                                                      |
+| `RangeCalendar.YearPickerGridBody`         | Body renderer for year grid cells.                                                                                          |
+| `RangeCalendar.YearPickerCell`             | Individual year option cell.                                                                                                |
 
 ### Year Picker Parts
 
 Year picker subcomponents inherit formatting props from React Aria [`useCalendarHeading`](https://react-aria.adobe.com/useCalendar#usecalendarheading) and [`useCalendarYearPicker`](https://react-aria.adobe.com/useCalendar#usecalendaryearpicker).
 
-| Component | Prop | Type | Default | Description |
-|-----------|------|------|---------|-------------|
-| `RangeCalendar.YearPickerTriggerHeading` | `format` | `DateFormatterOptions` | - | Customize month/year label (e.g. `{month: 'short'}`). |
-| `RangeCalendar.YearPickerTriggerHeading` | `offset` | `{months?: number}` | - | Shift the heading relative to the focused date (multi-month layouts). |
-| `RangeCalendar.YearPickerGrid` | `format` | `DateFormatterOptions` | `{year: 'numeric'}` | Customize year cell labels (era, calendar system, etc.). |
-| `RangeCalendar.YearPickerGrid` | `visibleYears` | `number` | min–max span or `20` | Number of years shown in the sliding window. Defaults to the full range between `minValue` and `maxValue` when both are set. |
+| Component                                | Prop           | Type                   | Default              | Description                                                                                                                  |
+| ---------------------------------------- | -------------- | ---------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `RangeCalendar.YearPickerTriggerHeading` | `format`       | `DateFormatterOptions` | -                    | Customize month/year label (e.g. `{month: 'short'}`).                                                                        |
+| `RangeCalendar.YearPickerTriggerHeading` | `offset`       | `{months?: number}`    | -                    | Shift the heading relative to the focused date (multi-month layouts).                                                        |
+| `RangeCalendar.YearPickerGrid`           | `format`       | `DateFormatterOptions` | `{year: 'numeric'}`  | Customize year cell labels (era, calendar system, etc.).                                                                     |
+| `RangeCalendar.YearPickerGrid`           | `visibleYears` | `number`               | min–max span or `20` | Number of years shown in the sliding window. Defaults to the full range between `minValue` and `maxValue` when both are set. |
 
 ### RangeCalendar.Cell Render Props
 
 When `RangeCalendar.Cell` children is a function, the cdk render props are available (accessors except `formattedDate`: call them, e.g. `isSelected()`):
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `formattedDate` | `string` | Localized day label for the cell. |
-| `isSelected` | `() => boolean` | Whether the date is selected. |
+| Prop               | Type            | Description                                          |
+| ------------------ | --------------- | ---------------------------------------------------- |
+| `formattedDate`    | `string`        | Localized day label for the cell.                    |
+| `isSelected`       | `() => boolean` | Whether the date is selected.                        |
 | `isSelectionStart` | `() => boolean` | Whether the date is the start of the selected range. |
-| `isSelectionEnd` | `() => boolean` | Whether the date is the end of the selected range. |
-| `isUnavailable` | `() => boolean` | Whether the date is unavailable. |
-| `isDisabled` | `() => boolean` | Whether the cell is disabled. |
-| `isOutsideMonth` | `() => boolean` | Whether the date belongs to adjacent month. |
+| `isSelectionEnd`   | `() => boolean` | Whether the date is the end of the selected range.   |
+| `isUnavailable`    | `() => boolean` | Whether the date is unavailable.                     |
+| `isDisabled`       | `() => boolean` | Whether the cell is disabled.                        |
+| `isOutsideMonth`   | `() => boolean` | Whether the date belongs to adjacent month.          |
 
 For a complete list of supported calendar systems and their identifiers, see:
+
 - [React Aria Calendar Implementations](https://react-aria.adobe.com/internationalized/date/Calendar#implementations)
 - [React Aria International Calendars](https://react-aria.adobe.com/Calendar#international-calendars)
 
 ### Related packages
+
 - `@rivetjs/cdk/date` (port of [`@internationalized/date`](https://react-aria.adobe.com/internationalized/date/)) — date types (`CalendarDate`, `CalendarDateTime`, `ZonedDateTime`) and utilities used by all date components
 - `I18nProvider` (`@rivetjs/cdk/i18n-provider`) — override locale for a subtree
 - `useLocale` (`@rivetjs/cdk/i18n`) — read the current locale and layout direction
 
 ::api{symbol="@rivetjs/ui/range-calendar#RangeCalendar"}
+
+## Accessibility
+
+the root is `role="application"` labelled by `aria-label` + the visible month; the grid is a `role="grid"` with roving focus (arrow keys, Page Up / Down, Home / End). The year picker trigger has `aria-expanded`; its grid takes arrow keys, Home / End, Enter and Escape.
 
 ## Related Components
 

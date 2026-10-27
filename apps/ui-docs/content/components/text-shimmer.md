@@ -8,8 +8,6 @@ related: [components/chain-of-thought, components/chat-loader, components/skelet
 
 `TextShimmer` animates a highlight across a short label to show that something is running: a reasoning step, a tool call, a search. It is one element: a gradient from the dimmed text colour to full `currentColor` is clipped to the glyphs (`background-clip: text`) and slides across them, so the text exists once and nothing is positioned outside the label.
 
-Accessibility: the label is ordinary text, read once (no duplicated copy). With `prefers-reduced-motion: reduce` the text is solid and nothing moves.
-
 ## Usage
 
 ```tsx
@@ -24,17 +22,27 @@ import { TextShimmer } from "@rivetjs/ui/text-shimmer";
 <TextShimmer isActive={() => running()}>Thinking…</TextShimmer>
 ```
 
-## Color
+Additional exported parts: `TextShimmer.Root`.
+
+## Examples
+
+### Color
 
 The shimmer uses `currentColor`: text colour and size utilities on the root restyle it. `isActive` (value or accessor) stops the sweep and renders the text solid.
 
 ::example{id=text-shimmer-color}
 
-## Performance
+### Performance
 
 The sweep is a CSS `background-position` animation on one short label: no layers, no JavaScript at load or while it runs, and `data-active="false"` drops the gradient entirely.
 
-## CSS Classes
+### Resumability
+
+Server-rendered, CSS-animated: nothing runs at load. An `isActive` accessor is an attribute binding.
+
+## Styling Reference
+
+### CSS Classes
 
 | Class          | Applied                                            |
 | -------------- | -------------------------------------------------- |
@@ -48,6 +56,8 @@ The sweep is a CSS `background-position` animation on one short label: no layers
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/text-shimmer/) for every named export and part prop type.
+
 | Prop       | Type                       | Default |
 | ---------- | -------------------------- | ------- |
 | `children` | `Content`                  | —       |
@@ -58,6 +68,12 @@ Other `span` attributes pass to the root.
 
 ::api{symbol="@rivetjs/ui/text-shimmer#TextShimmerProps"}
 
-## Resumability
+## Accessibility
 
-Server-rendered, CSS-animated: nothing runs at load. An `isActive` accessor is an attribute binding.
+the label is ordinary text, read once (no duplicated copy). With `prefers-reduced-motion: reduce` the text is solid and nothing moves.
+
+## Related Components
+
+- [ChainOfThought](/components/chain-of-thought/)
+- [ChatLoader](/components/chat-loader/)
+- [Skeleton](/components/skeleton/)

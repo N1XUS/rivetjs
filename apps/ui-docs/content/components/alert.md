@@ -14,8 +14,6 @@ Notes:
 - Default icons are lucide (stroked).
 - Any `Alert.Indicator` child replaces the default icon; omit children to keep it.
 
-Accessibility: Alert is markup without cdk behaviour and adds no `role`. For a message that appears after an action, set `role="alert"` (urgent) or `role="status"` (polite) on the root.
-
 ## Usage
 
 ```tsx
@@ -39,6 +37,8 @@ export default () => (
   </Alert>
 );
 ```
+
+Additional exported parts: `Alert.Root`.
 
 ## Customization
 
@@ -69,6 +69,8 @@ To customize the Alert component classes, you can use the `@layer components` di
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `alert-default-icon`, `alert-root`, `alert-indicator`, `alert-content`, `alert-title`, `alert-description`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -96,6 +98,8 @@ The Alert component uses these CSS classes ([View source styles](https://github.
 The Alert component is primarily informational and doesn't have interactive states on the base component. However, it can contain interactive elements like buttons or close buttons.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/alert/) for every named export and part prop type.
 
 ### Alert
 
@@ -134,6 +138,10 @@ The Alert component is primarily informational and doesn't have interactive stat
 | `children` | `Content` | -       | The alert description text |
 
 ::api{symbol="@rivetjs/ui/alert#AlertRootProps"}
+
+## Accessibility
+
+Alert is markup without cdk behaviour and adds no `role`. For a message that appears after an action, set `role="alert"` (urgent) or `role="status"` (polite) on the root.
 
 ## Related Components
 

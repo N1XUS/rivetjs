@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`; render props are accessors (`orientation()`).
 - `orientation` is read once (it picks the ARIA attributes and arrow keys); `isAttached` and `class` update live.
 
-Accessibility: `role="toolbar"` with `aria-orientation`; Tab enters the toolbar once and the arrow keys move between its controls.
-
 ## Usage
 
 ```tsx
@@ -22,6 +20,12 @@ import { Toolbar } from "@rivetjs/ui/toolbar";
 ```
 
 ::example{id=toolbar-basic}
+
+## Anatomy
+
+`Toolbar` exposes `Toolbar.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
 
 ## Examples
 
@@ -71,6 +75,8 @@ The Toolbar component uses these CSS classes ([View source styles](https://githu
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/toolbar/) for every named export and part prop type.
+
 ### Toolbar
 
 Inherits from [cdk Toolbar](site:cdk/components/toolbar/).
@@ -88,11 +94,15 @@ Inherits from [cdk Toolbar](site:cdk/components/toolbar/).
 
 When using the render prop pattern, these values are provided:
 
-| Prop          | Type                         | Description                            |
-| ------------- | ---------------------------- | -------------------------------------- |
-| `orientation` | `"horizontal" \| "vertical"` | The current orientation of the toolbar |
+| Prop          | Type                | Description                            |
+| ------------- | ------------------- | -------------------------------------- |
+| `orientation` | `() => Orientation` | The current orientation of the toolbar |
 
 ::api{symbol="@rivetjs/ui/toolbar#ToolbarRootProps"}
+
+## Accessibility
+
+`role="toolbar"` with `aria-orientation`; Tab enters the toolbar once and the arrow keys move between its controls.
 
 ## Related Components
 

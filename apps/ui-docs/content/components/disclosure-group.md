@@ -14,8 +14,6 @@ Notes:
 - `useDisclosureGroupNavigation` returns accessors for `currentIndex`, `isPrevDisabled` and `isNextDisabled` (pass them as `isDisabled={isPrevDisabled}`); `expandedKeys` may be a signal, and `onPrevious` / `onNext` read the latest keys when pressed.
 - The demos' brand icons come from lucide (`QrCode`, `Apple`; the Expo logo → `Smartphone`).
 
-Accessibility: Each Disclosure keeps its own trigger `button` (`aria-expanded`, `aria-controls`) and labelled panel; the group adds no role. `isDisabled` on the group disables every trigger.
-
 ## Usage
 
 ```tsx
@@ -43,6 +41,8 @@ export default () => (
   </DisclosureGroup>
 );
 ```
+
+Additional exported parts: `DisclosureGroup.Root`.
 
 ## Examples
 
@@ -95,17 +95,19 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/disclosure-group/) for every named export and part prop type.
+
 ### DisclosureGroup
 
-| Prop                     | Type                           | Default | Description                                                    |
-| ------------------------ | ------------------------------ | ------- | -------------------------------------------------------------- |
-| `expandedKeys`           | `Set<Key> \| Signal<Set<Key>>` | -       | The currently expanded items (controlled; a signal is two-way) |
-| `defaultExpandedKeys`    | `Iterable<Key>`                | -       | The initially expanded items (uncontrolled)                    |
-| `onExpandedChange`       | `(keys: Set<Key>) => void`     | -       | Handler called when expanded items change                      |
-| `allowsMultipleExpanded` | `boolean`                      | `false` | Whether multiple items can be expanded simultaneously          |
-| `isDisabled`             | `boolean`                      | `false` | Whether all disclosures in the group are disabled              |
-| `children`               | `Content \| RenderFunction`    | -       | Disclosure items to render                                     |
-| `class`                  | `string`                       | -       | Additional CSS classes                                         |
+| Prop                     | Type                                                         | Default | Description                                                    |
+| ------------------------ | ------------------------------------------------------------ | ------- | -------------------------------------------------------------- |
+| `expandedKeys`           | `Set<Key> \| Signal<Set<Key>>`                               | -       | The currently expanded items (controlled; a signal is two-way) |
+| `defaultExpandedKeys`    | `Iterable<Key>`                                              | -       | The initially expanded items (uncontrolled)                    |
+| `onExpandedChange`       | `(keys: Set<Key>) => void`                                   | -       | Handler called when expanded items change                      |
+| `allowsMultipleExpanded` | `boolean \| Signal<boolean> \| (() => boolean \| undefined)` | `false` | Whether multiple items can be expanded simultaneously          |
+| `isDisabled`             | `boolean`                                                    | `false` | Whether all disclosures in the group are disabled              |
+| `children`               | `Content \| RenderFunction`                                  | -       | Disclosure items to render                                     |
+| `class`                  | `string`                                                     | -       | Additional CSS classes                                         |
 
 ### Render Props
 
@@ -117,6 +119,10 @@ When using the render prop pattern, these values are provided:
 | `isDisabled` | `boolean`              | Whether the group is disabled                                 |
 
 ::api{symbol="@rivetjs/ui/disclosure-group#DisclosureGroupRootProps"}
+
+## Accessibility
+
+Each Disclosure keeps its own trigger `button` (`aria-expanded`, `aria-controls`) and labelled panel; the group adds no role. `isDisabled` on the group disables every trigger.
 
 ## Related Components
 

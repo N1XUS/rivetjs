@@ -14,15 +14,6 @@ Notes:
 - `selectedKeys` may be a two-way signal.
 - A live `isDisabled` / `orientation` restyles the group but the cdk reads them once for state, ARIA and keys: re-create the group to change them.
 
-Accessibility: | Key | Action |
-| --- | --- |
-| :kbd[Tab] | Moves focus into and out of the group (one stop). |
-| :kbd[ArrowLeft] / :kbd[ArrowRight] | Previous / next button (horizontal). |
-| :kbd[ArrowUp] / :kbd[ArrowDown] | Previous / next button (vertical). |
-| :kbd[Space] / :kbd[Enter] | Toggle the focused button. |
-
-Name the group with `aria-label`.
-
 ## Usage
 
 ```tsx
@@ -52,6 +43,8 @@ export default () => (
   </ToggleButtonGroup>
 );
 ```
+
+Additional exported parts: `ToggleButtonGroup.Root`.
 
 ## Examples
 
@@ -93,6 +86,15 @@ Use `selectionMode="single"` for mutually exclusive choices or `selectionMode="m
 
 ::example{id=toggle-button-group-controlled}
 
+### Note
+
+- ToggleButtonGroup uses React Context to pass `size` to all child ToggleButton components
+- Each ToggleButton must have a unique `id` prop that corresponds to the keys used in `selectedKeys` / `defaultSelectedKeys`
+- The `isDisabled` prop is handled natively by React Aria and disables all child ToggleButtons — individual buttons can override this by setting `isDisabled={false}`
+- The component automatically handles border radius between buttons
+- Add `<ToggleButtonGroup.Separator />` inside each ToggleButton (except the first) to show dividers between buttons
+- Use `disallowEmptySelection` with `selectionMode="single"` to ensure one option is always selected
+
 ## Customization
 
 ### Tailwind CSS
@@ -122,6 +124,8 @@ To customize the ToggleButtonGroup component classes, you can use the `@layer co
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `toggle-button-group-separator`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -141,6 +145,8 @@ The ToggleButtonGroup component uses these CSS classes ([View source styles](htt
 - `.toggle-button-group--detached` - Detached mode (separated buttons with gaps)
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/toggle-button-group/) for every named export and part prop type.
 
 ### ToggleButtonGroup
 
@@ -168,14 +174,16 @@ Inherits from [React Aria ToggleButtonGroup](https://react-aria.adobe.com/Toggle
 
 ::api{symbol="@rivetjs/ui/toggle-button-group#ToggleButtonGroupRootProps"}
 
-## Note
+## Accessibility
 
-- ToggleButtonGroup uses React Context to pass `size` to all child ToggleButton components
-- Each ToggleButton must have a unique `id` prop that corresponds to the keys used in `selectedKeys` / `defaultSelectedKeys`
-- The `isDisabled` prop is handled natively by React Aria and disables all child ToggleButtons — individual buttons can override this by setting `isDisabled={false}`
-- The component automatically handles border radius between buttons
-- Add `<ToggleButtonGroup.Separator />` inside each ToggleButton (except the first) to show dividers between buttons
-- Use `disallowEmptySelection` with `selectionMode="single"` to ensure one option is always selected
+| Key                                | Action                                            |
+| ---------------------------------- | ------------------------------------------------- |
+| :kbd[Tab]                          | Moves focus into and out of the group (one stop). |
+| :kbd[ArrowLeft] / :kbd[ArrowRight] | Previous / next button (horizontal).              |
+| :kbd[ArrowUp] / :kbd[ArrowDown]    | Previous / next button (vertical).                |
+| :kbd[Space] / :kbd[Enter]          | Toggle the focused button.                        |
+
+Name the group with `aria-label`.
 
 ## Related Components
 

@@ -10,12 +10,6 @@ related: [components/sidebar, components/drawer, components/toolbar]
 
 ::example{id=app-layout-usage}
 
-## Import
-
-```tsx
-import { AppLayout } from "@rivetjs/ui/app-layout";
-```
-
 ## Usage
 
 ```tsx
@@ -66,6 +60,8 @@ export default function App() {
 | `AppLayout.AsideTrigger` | icon button (`aria-expanded`, `aria-controls`)                                    | `app-layout-aside-trigger`                              |
 | `AppLayout.MobileAside`  | renders its children only in the mobile aside sheet                               | —                                                       |
 | resize handles           | `div role=separator` (`aria-valuenow` / `-min` / `-max` in %)                     | `app-layout-sidebar-handle` / `app-layout-aside-handle` |
+
+Additional exported parts: `AppLayout.Root`.
 
 ## Examples
 
@@ -155,7 +151,21 @@ Below 1024px the aside column is hidden (`asideMobile="hidden"`, default) or ope
 
 ::example{id=app-layout-routing}
 
-## Styling
+### Import
+
+```tsx
+import { AppLayout } from "@rivetjs/ui/app-layout";
+```
+
+### Resumability
+
+Server-rendered with the cookie-picked open states. The aside shortcut listener is registered only when `asideToggleShortcut` is set; restoring persisted sizes runs at idle only with `resizableAutoSaveId`.
+
+## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `sidebar-gap`, `app-layout-aside-inner`, `app-layout-menu-toggle`, `app-layout-menu-toggle-icon`, `app-layout-aside-trigger-icon`.
+
+### Styling
 
 | CSS variable                  | Default  | What                                        |
 | ----------------------------- | -------- | ------------------------------------------- |
@@ -167,6 +177,8 @@ Below 1024px the aside column is hidden (`asideMobile="hidden"`, default) or ope
 `reduceMotion` (or `prefers-reduced-motion`) turns the transitions off. `class` / `style` land on the wrapper.
 
 ## API Reference
+
+See the [full module API](/api/rivetjs/ui/app-layout/) for every named export and part prop type.
 
 | Prop                                                         | Type                                                        | Default            |
 | ------------------------------------------------------------ | ----------------------------------------------------------- | ------------------ |
@@ -196,6 +208,8 @@ Below 1024px the aside column is hidden (`asideMobile="hidden"`, default) or ope
 - `AppLayout.AsideTrigger` has `aria-expanded` + `aria-controls` and a "Show panel" / "Hide panel" label; a closed aside is `inert`.
 - Resize handles are focusable window splitters (`role="separator"`, `aria-orientation="vertical"`, value in percent).
 
-## Resumability
+## Related Components
 
-Server-rendered with the cookie-picked open states. The aside shortcut listener is registered only when `asideToggleShortcut` is set; restoring persisted sizes runs at idle only with `resizableAutoSaveId`.
+- [Sidebar](/components/sidebar/)
+- [Drawer](/components/drawer/)
+- [Toolbar](/components/toolbar/)

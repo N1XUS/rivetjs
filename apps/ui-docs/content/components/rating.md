@@ -8,8 +8,6 @@ related: [components/radio-group, components/slider]
 
 `Rating` lets people score something from 1 to `maxValue` stars, or shows an average like 4.6 with the last star partly filled. Interactive ratings are a group of native radio inputs, so they submit with a form, work without JavaScript and follow the platform's arrow-key behaviour.
 
-Accessibility: the interactive rating is a `radiogroup` named by `aria-label`; each star is a visually hidden native radio labelled "N stars", so Tab reaches the group, arrow keys change the value and Space selects. The read-only rating is a single `img` whose label reads the value ("4.6 out of 5").
-
 ## Usage
 
 ```tsx
@@ -20,57 +18,65 @@ import { Rating } from "@rivetjs/ui/rating";
 
 `value` takes a number, an accessor or a two-way Signal; `defaultValue` keeps the state inside; `onChange` is called with the new score. With `name`, the score is submitted with the surrounding form.
 
-## Read Only
+## Anatomy
+
+`Rating` exposes `Rating.Root`.
+
+Use the composition in the live example above; the API reference below describes the props.
+
+## Examples
+
+### Read Only
 
 ::example{id=rating-read-only}
 
 `isReadOnly` renders a display, not an input: fractional values fill the last star partially (`--rating-fill`), `showValue` prints the value with one decimal, and nothing runs in the browser.
 
-### Read Only Fractional
+#### Read Only Fractional
 
 ::example{id=rating-read-only-fractional}
 
-## Controlled
+### Controlled
 
 ::example{id=rating-controlled}
 
-## Sizes
+### Sizes
 
 ::example{id=rating-sizes}
 
-## Disabled
+### Disabled
 
 ::example{id=rating-disabled}
 
-## With Label
+### With Label
 
 ::example{id=rating-with-label}
 
 Name the group with `aria-labelledby` pointing at a visible label, or with `aria-label`.
 
-## Custom Color
+### Custom Color
 
 ::example{id=rating-custom-color}
 
-## Custom Icon Heart
+### Custom Icon Heart
 
 ::example{id=rating-custom-icon-heart}
 
 `icon` takes any lucide icon; both layers (empty and filled) use it.
 
-## Custom Icon Per Item
+### Custom Icon Per Item
 
 ::example{id=rating-custom-icon-per-item}
 
 `icon` as a function returns the icon of each value (1…`maxValue`).
 
-## Render Function
+### Render Function
 
 ::example{id=rating-render-function}
 
 `renderItem` replaces a star's two icon layers with your content. It gets `{ value, isActive, isPartial, partialPercent }` and re-renders when the score changes; the CSS hover preview does not apply to custom content, so style hover yourself if you need it.
 
-## Product Review
+### Product Review
 
 ::example{id=rating-product-review}
 
@@ -102,6 +108,8 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/rating/) for every named export and part prop type.
+
 ### Rating
 
 | Prop           | Type                                           | Default | Description                                 |
@@ -128,6 +136,10 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `isActive`       | `boolean` | The score is at or above this star        |
 | `isPartial`      | `boolean` | Read-only fractional score: partly filled |
 | `partialPercent` | `number`  | Fill of this star, 0…100                  |
+
+## Accessibility
+
+the interactive rating is a `radiogroup` named by `aria-label`; each star is a visually hidden native radio labelled "N stars", so Tab reaches the group, arrow keys change the value and Space selects. The read-only rating is a single `img` whose label reads the value ("4.6 out of 5").
 
 ## Related Components
 

@@ -13,8 +13,6 @@ Notes:
 - `class`, not `className`.
 - A child expression that reads a signal is not wrapped in `Chip.Label` in the server markup: wrap it yourself (`<Chip.Label>{text()}</Chip.Label>`).
 
-Accessibility: Plain markup without behaviour. For a removable chip, put a [CloseButton](close-button.md) with an `aria-label` ("Remove tag") inside or next to it.
-
 ## Usage
 
 ```tsx
@@ -30,6 +28,8 @@ import { Chip } from "@rivetjs/ui/chip";
 ```tsx
 <Chip>Label text</Chip>
 ```
+
+Additional exported parts: `Chip.Root`.
 
 ## Examples
 
@@ -79,6 +79,8 @@ To customize the Chip component classes, you can use the `@layer components` dir
 ```
 
 ## Styling Reference
+
+The component’s parts emit these additional `data-slot` values: `chip-label`.
 
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
@@ -134,6 +136,8 @@ Chips support combining variant and color classes (e.g., `.chip--secondary.chip-
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/chip/) for every named export and part prop type.
+
 ### Chip
 
 | Prop       | Type                                                          | Default       | Description                                 |
@@ -152,6 +156,10 @@ Chips support combining variant and color classes (e.g., `.chip--secondary.chip-
 | `class`    | `string`  | -       | Additional CSS classes for the label slot |
 
 ::api{symbol="@rivetjs/ui/chip#ChipRootProps"}
+
+## Accessibility
+
+Plain markup without behaviour. For a removable chip, put a [CloseButton](close-button.md) with an `aria-label` ("Remove tag") inside or next to it.
 
 ## Related Components
 

@@ -15,8 +15,6 @@ Notes:
 - The default `ColorSwatchPicker.Indicator` is the lucide `Check` icon; a function child gets the item render props (accessors: `isSelected()`).
 - `layout` selects the variant class only (the listbox keeps its default grid keyboard layout).
 
-Accessibility: the root is a `role="listbox"` (default label "Color swatches"), each item a `role="option"` named by its color description; arrow keys move between items, Enter / Space select.
-
 ## Usage
 
 ```tsx
@@ -48,6 +46,8 @@ export default () => (
   </ColorSwatchPicker>
 );
 ```
+
+Additional exported parts: `ColorSwatchPicker.Root`.
 
 ## Examples
 
@@ -112,6 +112,8 @@ To customize the ColorSwatchPicker component classes, you can use the `@layer co
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `color-swatch-picker-checkmark`, `color-swatch-picker-item`, `color-swatch-picker-swatch`, `color-swatch-picker-indicator`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -119,11 +121,13 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The ColorSwatchPicker component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/color-swatch-picker.css)):
 
 #### Base & Structure
+
 - `.color-swatch-picker` - Base container (flex layout)
 - `.color-swatch-picker__item` - Individual swatch item wrapper
 - `.color-swatch-picker__swatch` - The color swatch visual element
 
 #### Size Classes
+
 - `.color-swatch-picker--xs` - Extra small (16px)
 - `.color-swatch-picker--sm` - Small (24px)
 - `.color-swatch-picker--md` - Medium (32px, default)
@@ -131,10 +135,12 @@ The ColorSwatchPicker component uses these CSS classes ([View source styles](htt
 - `.color-swatch-picker--xl` - Extra large (40px)
 
 #### Shape Variants
+
 - `.color-swatch-picker--circle` - Circle shape (default)
 - `.color-swatch-picker--square` - Square shape with rounded corners
 
 #### Layout Classes
+
 - `.color-swatch-picker--grid` - Horizontal wrapping layout (default)
 - `.color-swatch-picker--stack` - Vertical stacked layout
 
@@ -149,43 +155,45 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/color-swatch-picker/) for every named export and part prop type.
+
 ### ColorSwatchPicker
 
 Inherits from [cdk ColorSwatchPicker](site:cdk/components/color-swatch-picker/).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `value` | `string \| Color \| Signal<string \| Color>` | - | The current selected color (controlled; Rivet: a signal is two-way) |
-| `defaultValue` | `string \| Color` | - | The default selected color (uncontrolled) |
-| `onChange` | `(value: Color) => void` | - | Handler called when selection changes |
-| `size` | `"xs" \| "sm" \| "md" \| "lg" \| "xl"` | `"md"` | Size of the swatches |
-| `variant` | `"circle" \| "square"` | `"circle"` | Shape of the swatches |
-| `layout` | `"grid" \| "stack"` | `"grid"` | Layout direction (variant class; the listbox keeps its grid keyboard layout) |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | ColorSwatchPicker.Item elements |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorSwatchPickerRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop           | Type                                                                           | Default    | Description                                                                  |
+| -------------- | ------------------------------------------------------------------------------ | ---------- | ---------------------------------------------------------------------------- |
+| `value`        | `string \| Color \| Signal<string \| Color>`                                   | -          | The current selected color (controlled; Rivet: a signal is two-way)          |
+| `defaultValue` | `string \| Color`                                                              | -          | The default selected color (uncontrolled)                                    |
+| `onChange`     | `(value: Color) => void`                                                       | -          | Handler called when selection changes                                        |
+| `size`         | `"xs" \| "sm" \| "md" \| "lg" \| "xl"`                                         | `"md"`     | Size of the swatches                                                         |
+| `variant`      | `"circle" \| "square"`                                                         | `"circle"` | Shape of the swatches                                                        |
+| `layout`       | `"grid" \| "stack"`                                                            | `"grid"`   | Layout direction (variant class; the listbox keeps its grid keyboard layout) |
+| `class`        | `string`                                                                       | -          | Additional CSS classes                                                       |
+| `children`     | `Content`                                                                      | -          | ColorSwatchPicker.Item elements                                              |
+| `render`       | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorSwatchPickerRenderProps>` | -          | Overrides the default DOM element with a custom render function.             |
 
 ### ColorSwatchPicker.Item
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `color` | `string \| Color` | **Required** | The color of the swatch |
-| `isDisabled` | `boolean` | `false` | Whether the item is disabled |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | ColorSwatchPicker.Swatch element |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorSwatchPickerItemRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop         | Type                                                                               | Default      | Description                                                      |
+| ------------ | ---------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `color`      | `string \| Color`                                                                  | **Required** | The color of the swatch                                          |
+| `isDisabled` | `boolean`                                                                          | `false`      | Whether the item is disabled                                     |
+| `class`      | `string`                                                                           | -            | Additional CSS classes                                           |
+| `children`   | `Content`                                                                          | -            | ColorSwatchPicker.Swatch element                                 |
+| `render`     | `DOMRenderFunction<keyof JSX.IntrinsicElements, ColorSwatchPickerItemRenderProps>` | -            | Overrides the default DOM element with a custom render function. |
 
 ### ColorSwatchPicker.Swatch
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
+| Prop    | Type     | Default | Description            |
+| ------- | -------- | ------- | ---------------------- |
+| `class` | `string` | -       | Additional CSS classes |
 
 **ColorSwatchPicker.Indicator**
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
+| Prop       | Type                                                                | Default        | Description                                                                           |
+| ---------- | ------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------- |
+| `class`    | `string`                                                            | -              | Additional CSS classes                                                                |
 | `children` | `Content \| ((props: ColorSwatchPickerItemRenderProps) => Content)` | lucide `Check` | Indicator content, or a function of the item render props (accessors: `isSelected()`) |
 
 ### parseColor
@@ -196,16 +204,20 @@ Inherits from [cdk ColorSwatchPicker](site:cdk/components/color-swatch-picker/).
 import { parseColor } from "@rivetjs/cdk/color";
 
 // Parse hex color
-const red = parseColor('#ff0000');
+const red = parseColor("#ff0000");
 
 // Parse RGB
-const green = parseColor('rgb(0, 255, 0)');
+const green = parseColor("rgb(0, 255, 0)");
 
 // Parse HSL
-const blue = parseColor('hsl(240, 100%, 50%)');
+const blue = parseColor("hsl(240, 100%, 50%)");
 ```
 
 ::api{symbol="@rivetjs/ui/color-swatch-picker#ColorSwatchPicker"}
+
+## Accessibility
+
+the root is a `role="listbox"` (default label "Color swatches"), each item a `role="option"` named by its color description; arrow keys move between items, Enter / Space select.
 
 ## Related Components
 

@@ -15,8 +15,6 @@ Notes:
 - A custom `Tag.RemoveButton` replaces the default one but renders where it is written.
 - List state: the cdk `createListData` (`@rivetjs/cdk/data`).
 
-Accessibility: a `grid` of `row`s with arrow-key navigation; Delete / Backspace remove the focused tag when `onRemove` is set; the remove button is labelled "Remove tag …".
-
 ## Usage
 
 ```tsx
@@ -45,8 +43,10 @@ export default () => (
     <Description />
     <ErrorMessage />
   </TagGroup>
-)
+);
 ```
+
+Additional exported parts: `TagGroup.Root`.
 
 ## Examples
 
@@ -131,6 +131,8 @@ To customize the TagGroup component classes, you can use the `@layer components`
 
 ## Styling Reference
 
+The component’s parts emit these additional `data-slot` values: `tag-group-list`.
+
 Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component variants and states are reusable and easy to customize.
 
 ### CSS Classes
@@ -138,25 +140,30 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The TagGroup component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/tag-group.css) and [tag.css](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/tag.css)):
 
 #### Base Classes
+
 - `.tag-group` - Base tag group container
 - `.tag-group__list` - Container for the list of tags
 - `.tag` - Base tag styles
 - `.tag__remove-button` - Remove button trigger
 
 #### Slot Classes
+
 - `.tag-group [slot="description"]` - Description slot styles
 - `.tag-group [slot="errorMessage"]` - ErrorMessage slot styles
 
 #### Size Classes
+
 - `.tag--sm` - Small size tag
 - `.tag--md` - Medium size tag (default)
 - `.tag--lg` - Large size tag
 
 #### Variant Classes
+
 - `.tag--default` - Default variant
 - `.tag--surface` - Surface variant with surface background
 
 #### State Classes
+
 - `.tag[data-selected="true"]` - Selected tag state
 - `.tag[data-disabled="true"]` - Disabled tag state
 - `.tag[data-hovered="true"]` - Hovered tag state
@@ -175,56 +182,58 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/tag-group/) for every named export and part prop type.
+
 ### TagGroup
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `selectionMode` | `"none" \| "single" \| "multiple"` | `"none"` | The type of selection that is allowed |
-| `selectedKeys` | `Selection` | - | The currently selected keys (controlled) |
-| `defaultSelectedKeys` | `Selection` | - | The initial selected keys (uncontrolled) |
-| `onSelectionChange` | `(keys: Selection) => void` | - | Handler called when the selection changes |
-| `disabledKeys` | `Iterable<Key>` | - | Keys of disabled tags |
-| `isDisabled` | `boolean` | - | Whether the tag group is disabled |
-| `onRemove` | `(keys: Set<Key>) => void` | - | Handler called when tags are removed |
-| `size` | `"sm" \| "md" \| "lg"` | `"md"` | Size of the tags in the group |
-| `variant` | `"default" \| "surface"` | `"default"` | Visual variant of the tags |
-| `label` | `Content` | - | Rivet shorthand: the Label before the list (the root then renders the List) |
-| `description` | `Content` | - | Rivet shorthand: the Description after the list |
-| `errorMessage` | `Content` | - | Rivet shorthand: the ErrorMessage after the Description |
-| `items` | `Iterable<T>` | - | Rivet shorthand: the list items; `children` is then a render function of one item |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | TagGroup content or render function |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, undefined>` | - | Overrides the default DOM element with a custom render function.|
+| Prop                  | Type                                                        | Default     | Description                                                                       |
+| --------------------- | ----------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------- |
+| `selectionMode`       | `"none" \| "single" \| "multiple"`                          | `"none"`    | The type of selection that is allowed                                             |
+| `selectedKeys`        | `Selection`                                                 | -           | The currently selected keys (controlled)                                          |
+| `defaultSelectedKeys` | `Selection`                                                 | -           | The initial selected keys (uncontrolled)                                          |
+| `onSelectionChange`   | `(keys: Selection) => void`                                 | -           | Handler called when the selection changes                                         |
+| `disabledKeys`        | `Iterable<Key>`                                             | -           | Keys of disabled tags                                                             |
+| `isDisabled`          | `boolean`                                                   | -           | Whether the tag group is disabled                                                 |
+| `onRemove`            | `(keys: Set<Key>) => void`                                  | -           | Handler called when tags are removed                                              |
+| `size`                | `"sm" \| "md" \| "lg"`                                      | `"md"`      | Size of the tags in the group                                                     |
+| `variant`             | `"default" \| "surface"`                                    | `"default"` | Visual variant of the tags                                                        |
+| `label`               | `Content`                                                   | -           | Rivet shorthand: the Label before the list (the root then renders the List)       |
+| `description`         | `Content`                                                   | -           | Rivet shorthand: the Description after the list                                   |
+| `errorMessage`        | `Content`                                                   | -           | Rivet shorthand: the ErrorMessage after the Description                           |
+| `items`               | `Iterable<T>`                                               | -           | Rivet shorthand: the list items; `children` is then a render function of one item |
+| `class`               | `string`                                                    | -           | Additional CSS classes                                                            |
+| `children`            | `Content \| RenderFunction`                                 | -           | TagGroup content or render function                                               |
+| `render`              | `DOMRenderFunction<keyof JSX.IntrinsicElements, undefined>` | -           | Overrides the default DOM element with a custom render function.                  |
 
 ### TagGroup.List
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `items` | `Iterable<T>` | - | The items to display in the tag list |
-| `renderEmptyState` | `() => Content` | - | Function to render when the list is empty |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | TagList content or render function |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, TagListRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop               | Type                                                                 | Default | Description                                                      |
+| ------------------ | -------------------------------------------------------------------- | ------- | ---------------------------------------------------------------- |
+| `items`            | `Iterable<T>`                                                        | -       | The items to display in the tag list                             |
+| `renderEmptyState` | `() => Content`                                                      | -       | Function to render when the list is empty                        |
+| `class`            | `string`                                                             | -       | Additional CSS classes                                           |
+| `children`         | `Content \| RenderFunction`                                          | -       | TagList content or render function                               |
+| `render`           | `DOMRenderFunction<keyof JSX.IntrinsicElements, TagListRenderProps>` | -       | Overrides the default DOM element with a custom render function. |
 
 ### Tag
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `id` | `Key` | - | The unique identifier for the tag |
-| `textValue` | `string` | - | A string representation of the tag's content, used for accessibility |
-| `isDisabled` | `boolean` | - | Whether the tag is disabled |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Tag content or render function |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, TagRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop         | Type                                                             | Default | Description                                                          |
+| ------------ | ---------------------------------------------------------------- | ------- | -------------------------------------------------------------------- |
+| `id`         | `Key`                                                            | -       | The unique identifier for the tag                                    |
+| `textValue`  | `string`                                                         | -       | A string representation of the tag's content, used for accessibility |
+| `isDisabled` | `boolean`                                                        | -       | Whether the tag is disabled                                          |
+| `class`      | `string`                                                         | -       | Additional CSS classes                                               |
+| `children`   | `Content \| RenderFunction`                                      | -       | Tag content or render function                                       |
+| `render`     | `DOMRenderFunction<keyof JSX.IntrinsicElements, TagRenderProps>` | -       | Overrides the default DOM element with a custom render function.     |
 
 **Note**: `size`, `variant` are inherited from the parent `TagGroup` component and cannot be set directly on individual `Tag` components.
 
 ### Tag.RemoveButton
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Custom remove button content (defaults to close icon) |
+| Prop       | Type      | Default | Description                                           |
+| ---------- | --------- | ------- | ----------------------------------------------------- |
+| `class`    | `string`  | -       | Additional CSS classes                                |
+| `children` | `Content` | -       | Custom remove button content (defaults to close icon) |
 
 **Note**: The `Tag.RemoveButton` component supports customization similar to `SearchField.ClearButton`. When `onRemove` is provided to `TagGroup`:
 
@@ -233,6 +242,7 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 - **Custom icon**: You can pass custom content (like icons) to `Tag.RemoveButton` children to customize the appearance.
 
 **Example - Auto-rendered (default)**:
+
 ```tsx
 <TagGroup onRemove={handleRemove}>
   <TagGroup.List>
@@ -243,6 +253,7 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 ```
 
 **Example - Custom RemoveButton with icon**:
+
 ```tsx
 <TagGroup onRemove={handleRemove}>
   <TagGroup.List>
@@ -257,6 +268,7 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 ```
 
 **Example - Custom RemoveButton in render props**:
+
 ```tsx
 <Tag id="news">
   {(renderProps) => (
@@ -276,16 +288,20 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 When using render functions with TagGroup.List, these values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isSelected` | `() => boolean` | Whether the tag is selected |
-| `isDisabled` | `() => boolean` | Whether the tag is disabled |
-| `isHovered` | `() => boolean` | Whether the tag is hovered |
-| `isPressed` | `() => boolean` | Whether the tag is pressed |
-| `isFocused` | `() => boolean` | Whether the tag is focused |
+| Prop             | Type            | Description                        |
+| ---------------- | --------------- | ---------------------------------- |
+| `isSelected`     | `() => boolean` | Whether the tag is selected        |
+| `isDisabled`     | `() => boolean` | Whether the tag is disabled        |
+| `isHovered`      | `() => boolean` | Whether the tag is hovered         |
+| `isPressed`      | `() => boolean` | Whether the tag is pressed         |
+| `isFocused`      | `() => boolean` | Whether the tag is focused         |
 | `isFocusVisible` | `() => boolean` | Whether the tag has keyboard focus |
 
 ::api{symbol="@rivetjs/ui/tag-group#TagGroupRootProps"}
+
+## Accessibility
+
+a `grid` of `row`s with arrow-key navigation; Delete / Backspace remove the focused tag when `onRemove` is set; the remove button is labelled "Remove tag …".
 
 ## Related Components
 

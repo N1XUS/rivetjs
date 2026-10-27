@@ -15,8 +15,6 @@ Notes:
 - Virtualization: wrap the ListBox in the cdk `CollectionVirtualizer` with a `ListLayout` (`@rivetjs/cdk/virtualizer`). Give the ListBox a fixed size and `p-0` (the layout's `padding` replaces the list's own), and set `initialSize` to that size: the server renders the first window at it.
 - `ListBox.Item` `render` renders a `div` (Rivet types the item attributes as `div`).
 
-Accessibility: ARIA `listbox` with `option`s (`aria-selected`), keyboard navigation (arrows, Home / End, Page Up / Down), typeahead on `textValue`, sections as labelled `group`s.
-
 ## Usage
 
 ```tsx
@@ -47,8 +45,10 @@ export default () => (
       </ListBox.Item>
     </ListBox.Section>
   </ListBox>
-)
+);
 ```
+
+Additional exported parts: `ListBox.Root`.
 
 ## Examples
 
@@ -117,8 +117,6 @@ A settings list (no selection) opens each row's settings in place with `trigger:
 
 ::example{id=list-box-item-morph-settings}
 
-::api{symbol="@rivetjs/ui/item-morph#ItemMorphRootProps"}
-
 ## Customization
 
 ### Tailwind CSS
@@ -159,18 +157,21 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 The ListBox component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/list-box.css)):
 
 #### Base Classes
+
 - `.list-box` - Base listbox container
 - `.list-box-item` - Individual listbox item
 - `.list-box-item__indicator` - Selection indicator icon
 - `.list-box-section` - Section container for grouping items
 
 #### Variant Classes
+
 - `.list-box--default` - Default variant styling
 - `.list-box--danger` - Danger variant styling
 - `.list-box-item--default` - Default item variant
 - `.list-box-item--danger` - Danger item variant
 
 #### State Classes
+
 - `.list-box-item[data-selected="true"]` - Selected item state
 - `.list-box-item[data-focus-visible="true"]` - Focused item state
 - `.list-box-item[data-disabled="true"]` - Disabled item state
@@ -187,63 +188,67 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 
 ## API Reference
 
+See the [full module API](/api/rivetjs/ui/list-box/) for every named export and part prop type.
+
 ### ListBox
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `aria-label` | `string` | - | Accessibility label for the listbox |
-| `aria-labelledby` | `string` | - | ID of element that labels the listbox |
-| `selectionMode` | `"none" \| "single" \| "multiple"` | `"single"` | Selection behavior |
-| `selectedKeys` | `Selection` | - | Controlled selected keys |
-| `defaultSelectedKeys` | `Selection` | - | Initial selected keys |
-| `onSelectionChange` | `(keys: Selection) => void` | - | Handler called when selection changes |
-| `disabledKeys` | `Iterable<Key>` | - | Keys of disabled items |
-| `onAction` | `(key: Key) => void` | - | Handler called when an item is activated |
-| `variant` | `"default" \| "danger"` | `"default"` | Visual variant |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | ListBox items and sections |
-| `render` | `DOMRenderFunction<keyof JSX.IntrinsicElements, ListBoxRenderProps>` | - | Overrides the default DOM element with a custom render function.|
+| Prop                  | Type                                                                 | Default     | Description                                                      |
+| --------------------- | -------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| `aria-label`          | `string`                                                             | -           | Accessibility label for the listbox                              |
+| `aria-labelledby`     | `string`                                                             | -           | ID of element that labels the listbox                            |
+| `selectionMode`       | `"none" \| "single" \| "multiple"`                                   | `"single"`  | Selection behavior                                               |
+| `selectedKeys`        | `Selection`                                                          | -           | Controlled selected keys                                         |
+| `defaultSelectedKeys` | `Selection`                                                          | -           | Initial selected keys                                            |
+| `onSelectionChange`   | `(keys: Selection) => void`                                          | -           | Handler called when selection changes                            |
+| `disabledKeys`        | `Iterable<Key>`                                                      | -           | Keys of disabled items                                           |
+| `onAction`            | `(key: Key) => void`                                                 | -           | Handler called when an item is activated                         |
+| `variant`             | `"default" \| "danger"`                                              | `"default"` | Visual variant                                                   |
+| `class`               | `string`                                                             | -           | Additional CSS classes                                           |
+| `children`            | `Content`                                                            | -           | ListBox items and sections                                       |
+| `render`              | `DOMRenderFunction<keyof JSX.IntrinsicElements, ListBoxRenderProps>` | -           | Overrides the default DOM element with a custom render function. |
 
 ### ListBox.Item
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `id` | `Key` | - | Unique identifier for the item |
-| `textValue` | `string` | - | Text value for accessibility and typeahead |
-| `isDisabled` | `boolean` | `false` | Whether this item is disabled |
-| `variant` | `"default" \| "danger"` | `"default"` | Visual variant |
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Item content or render function |
-| `render` | `(props: DetailedHTMLProps<LinkWithRequiredHref, HTMLAnchorElement> \| JSX.IntrinsicElements[keyof JSX.IntrinsicElements], renderProps: ListBoxItemRenderProps) => JSX.Element` | - | Overrides the default DOM element with a custom render function.|
+| Prop         | Type                                                                                                                                                                            | Default     | Description                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| `id`         | `Key`                                                                                                                                                                           | -           | Unique identifier for the item                                   |
+| `textValue`  | `string`                                                                                                                                                                        | -           | Text value for accessibility and typeahead                       |
+| `isDisabled` | `boolean`                                                                                                                                                                       | `false`     | Whether this item is disabled                                    |
+| `variant`    | `"default" \| "danger"`                                                                                                                                                         | `"default"` | Visual variant                                                   |
+| `class`      | `string`                                                                                                                                                                        | -           | Additional CSS classes                                           |
+| `children`   | `Content \| RenderFunction`                                                                                                                                                     | -           | Item content or render function                                  |
+| `render`     | `(props: DetailedHTMLProps<LinkWithRequiredHref, HTMLAnchorElement> \| JSX.IntrinsicElements[keyof JSX.IntrinsicElements], renderProps: ListBoxItemRenderProps) => JSX.Element` | -           | Overrides the default DOM element with a custom render function. |
 
 ### ListBox.ItemIndicator
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content \| RenderFunction` | - | Custom indicator content or render function |
+| Prop       | Type                        | Default | Description                                 |
+| ---------- | --------------------------- | ------- | ------------------------------------------- |
+| `class`    | `string`                    | -       | Additional CSS classes                      |
+| `children` | `Content \| RenderFunction` | -       | Custom indicator content or render function |
 
 ### ListBox.Section
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | - | Additional CSS classes |
-| `children` | `Content` | - | Section content including Header and Items |
+| Prop       | Type      | Default | Description                                |
+| ---------- | --------- | ------- | ------------------------------------------ |
+| `class`    | `string`  | -       | Additional CSS classes                     |
+| `children` | `Content` | -       | Section content including Header and Items |
 
 ### Render Props
 
 When using render functions with ListBox.Item or ListBox.ItemIndicator, these values are provided:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `isSelected` | `() => boolean` | Whether the item is selected |
-| `isFocused` | `() => boolean` | Whether the item is focused |
-| `isDisabled` | `() => boolean` | Whether the item is disabled |
-| `isPressed` | `() => boolean` | Whether the item is being pressed |
+| Prop         | Type            | Description                       |
+| ------------ | --------------- | --------------------------------- |
+| `isSelected` | `() => boolean` | Whether the item is selected      |
+| `isFocused`  | `() => boolean` | Whether the item is focused       |
+| `isDisabled` | `() => boolean` | Whether the item is disabled      |
+| `isPressed`  | `() => boolean` | Whether the item is being pressed |
 
 ### ListLayout
 
 `ListLayout` and `CollectionVirtualizer` come from `@rivetjs/cdk/virtualizer`. The options go in the `CollectionVirtualizer`'s `layoutOptions`: `rowHeight` / `estimatedRowHeight`, `headingHeight` / `estimatedHeadingHeight`, `loaderHeight`, `gap`, `padding`. See the [cdk Virtualizer](site:cdk/foundations/virtualizer/#layouts) for the full list.
+
+::api{symbol="@rivetjs/ui/item-morph#ItemMorphRootProps"}
 
 ::api{symbol="@rivetjs/ui/list-box#ListBoxRootProps"}
 
@@ -258,6 +263,8 @@ The ListBox component implements the ARIA listbox pattern and provides:
 - Typeahead search functionality
 
 For more information, see the [cdk ListBox page](site:cdk/components/listbox/).
+
+ARIA `listbox` with `option`s (`aria-selected`), keyboard navigation (arrows, Home / End, Page Up / Down), typeahead on `textValue`, sections as labelled `group`s.
 
 ## Related Components
 
