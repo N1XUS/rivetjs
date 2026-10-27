@@ -12,6 +12,7 @@ react-stately data hooks as signal factories. Subpath: `data` (index.tsx).
 
 ## Invariants / gotchas
 - Members reactive (signal-backed); selection two-way signals.
+- Bulk list moves use a stable partition for more than 16 distinct present indices; small moves and duplicate/missing indices retain the upstream splice algorithm. Key lookup order and `getKey` calls are unchanged. `data-list-data.test.ts` covers selected targets, source order and fallback edge cases.
 - Resumability: user fns (`getKey`, `getChildren`) wrapped in const holder objects (`keys.get`, `fns`); dispatch via `io = { dispatch }`; request counter `const requests = { next: 0 }` (module `let` → ASSIGN_TO_IMPORT).
 
 ## Tests

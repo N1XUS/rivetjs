@@ -209,6 +209,35 @@ function insert<T>(state: ListState<T>, index: number, ...values: T[]): ListStat
 }
 
 function move<T>(state: ListState<T>, indices: number[], toIndex: number): ListState<T> {
+  // Bulk moves of distinct, present indices are a stable partition. Keep the upstream
+  // splice algorithm for small moves and its duplicate / missing-key edge cases.
+  if (indices.length > 16 && indices.every((index, i) => index >= 0 && (i === 0 || index > indices[i - 1]))) {
+    const copy = state.items.slice();
+    const moved: T[] = [];
+    let next = 0;
+    let kept = 0;
+    let target = toIndex;
+    for (let i = 0; i < copy.length; i++) {
+      if (i === indices[next]) {
+        moved.push(copy[i]);
+        next++;
+        if (i < toIndex) target--;
+      } else {
+        if (i in copy) copy[kept] = copy[i];
+        else delete copy[kept];
+        kept++;
+      }
+    }
+    copy.length = kept;
+    // One gap for the moved items; preserve holes and avoid a spread-argument limit.
+    for (let i = kept - 1; i >= target; i--) {
+      if (i in copy) copy[i + moved.length] = copy[i];
+      else delete copy[i + moved.length];
+    }
+    copy.length = kept + moved.length;
+    for (let i = 0; i < moved.length; i++) copy[target + i] = moved[i];
+    return { ...state, items: copy };
+  }
   // Shift the target down by the number of items being moved from before the target.
   toIndex -= indices.filter((index) => index < toIndex).length;
   const moves = indices.map((from) => ({ from, to: toIndex++ }));

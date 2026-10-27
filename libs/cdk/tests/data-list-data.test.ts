@@ -921,3 +921,47 @@ describe('createListData', function () {
     expect(result.current.items[0]).toEqual({name: 'David'});
   });
 });
+
+
+it('bulk moves preserve source order when the target is selected', () => {
+  const items = Array.from({length: 40}, (_, id) => ({id}));
+  const list = createListData({initialItems: items});
+  const keys = Array.from({length: 20}, (_, i) => i * 2).reverse();
+  list.moveBefore(21, keys);
+  expect(list.items().map(x => x.id)).toEqual([
+    1,3,5,7,9,11,13,15,17,19,
+    0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,
+    21,23,25,27,29,31,33,35,37,39
+  ]);
+  const another = createListData({initialItems: items});
+  another.moveAfter(20, keys);
+  expect(another.items()).toEqual(list.items());
+});
+
+it('bulk move fallback retains duplicate and missing key behavior', () => {
+  const list = createListData({initialItems: [{id: 0}, {id: 1}, {id: 2}]});
+  list.moveBefore(2, Array(20).fill(0));
+  expect(list.items().map(x => x?.id)).toEqual([...Array(15).fill(undefined), 2, undefined, 1, undefined, 0]);
+  const missing = createListData({initialItems: [{id: 0}, {id: 1}, {id: 2}]});
+  missing.moveAfter(0, [-1]);
+  expect(missing.items().map(x => x.id)).toEqual([2,0,1]);
+});
+
+it('bulk moves preserve sparse kept slots and array species', () => {
+  class Items extends Array {}
+  const items = Items.from({length: 40}, (_, id) => ({id}));
+  delete items[1];
+  delete items[3];
+  delete items[5];
+  const list = createListData({initialItems: items, getKey: item => item?.id ?? 'hole'});
+  list.moveBefore(39, Array.from({length: 20}, (_, i) => i * 2));
+  expect(list.items()).toBeInstanceOf(Items);
+  expect(list.items()).toHaveLength(40);
+  expect(0 in list.items()).toBe(false);
+  expect(1 in list.items()).toBe(false);
+  expect(2 in list.items()).toBe(false);
+  expect(list.items().slice(3).map(item => item.id)).toEqual([
+    ...Array.from({length: 16}, (_, i) => 7 + i * 2),
+    ...Array.from({length: 20}, (_, i) => i * 2), 39
+  ]);
+});
