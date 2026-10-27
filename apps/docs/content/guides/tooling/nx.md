@@ -297,6 +297,10 @@ Rename targets with the plugin options in `nx.json`:
 
 To turn inference off, set `NX_ADD_PLUGINS=false` or `"useInferencePlugins": false` in `nx.json` before you generate: the generators then write the same targets into `project.json`.
 
+### Diagnostic output
+
+The `check` executor accepts `format: "json"`, `quiet: true` (errors only) and `verbose: true` (error stacks). JSON mode suppresses successful prerequisite `rivet sync` output and executor headings, leaving one result on the child stdout. Nx's own task runner may add its status output; use `rivet-check --json` directly when piping into a JSON parser. Other executor steps print their working directory, elapsed time and a concise failure hint on stderr.
+
 ## Caching
 
 `build`, `test`, `check` and `typecheck` are cached. When nothing a target reads has changed, Nx prints the old output and restores the files instead of running it again:

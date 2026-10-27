@@ -37,9 +37,14 @@ npm create rivet@latest my-app -- --template server --yes --no-git
 | `--no-git` | skip `git init` |
 | `--pm <name>` | `npm`, `pnpm`, `yarn` or `bun` (default: the one running the command) |
 | `-f`, `--force` | write into a folder that is not empty |
+| `--quiet` | errors only, no questions |
+| `--json` | one JSON result, no questions |
+| `--verbose` | error stacks and successful install output (also `DEBUG=rivet`) |
 | `-h`, `--help` | all options |
 
 With npm, options go after `--`.
+
+Install and git steps show progress and duration. CI/pipes use plain periodic lines; `NO_COLOR` disables color and wins over `FORCE_COLOR`. Exit codes: 0 success, 1 failure (including install/git failure), 2 invalid arguments, 130 cancelled. The created folder remains available after a failed install. `installDependencies()` is asynchronous and returns `Promise<boolean>`.
 
 ## Nx monorepos
 

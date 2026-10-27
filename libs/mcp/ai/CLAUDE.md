@@ -19,3 +19,7 @@ Single source of the instructions Rivet apps ship for AI assistants. `sync.ts` g
 - Claude Code plugin `libs/mcp/plugin/` (`.claude-plugin/plugin.json`, `.mcp.json` = `npx -y @rivetjs/mcp`, `skills/<name>/SKILL.md`) + marketplace `libs/mcp/.claude-plugin/marketplace.json` (`/plugin marketplace add <repo>/libs/mcp`; never published by us).
 - `.md` / `.json` outputs formatted with the repo Prettier config (so `format:check` passes); `--check` reports `missing` / `differs` / `stale` (removed skill/resource leftovers; write mode deletes them). Public and starter `rivet-*` skill namespaces are generated-owned; unrelated skill namespaces are preserved. CI `gates` runs `--check`.
 - Tests: `libs/mcp/tests/ai.test.ts` (in sync, starters complete, plugin, only real MCP tool names; public/plugin/starter bundle equality + every local reference resolves + license + nested resources + stale cleanup), `libs/create-rivet/tests/ai-files.test.ts` (created apps carry complete design bundles). docs-kit StackBlitz payloads skip them; nx `application` copies them (snapshot `libs/nx/tests/__snapshots__/generators.test.ts.snap`).
+
+## CLI output (CLI-UX)
+
+CLI-UX: agents.md records rivet sync and rivet-check JSON/quiet/verbose flags, warning grouping, and exit status contracts. Regenerate starter AGENTS.md/CLAUDE.md with sync.ts after changing those commands.

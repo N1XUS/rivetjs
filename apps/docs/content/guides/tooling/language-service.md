@@ -121,6 +121,34 @@ rivet-check -p tsconfig.json
 
 Each diagnostic starts with a line like `src/routes/index.tsx:4:17 - error RV2001: …`, followed by a code frame, a `fix:` line and a `docs:` link (`--format json` adds a `fix` field). The command exits with code 1 when there are errors; warnings do not fail it.
 
+Warnings with the same code and file share one report with an occurrence count. The summary counts every occurrence. `--json` (alias of `--format json`) writes one object to stdout with `files`, `errors`, `warnings`, `skipped` and `diagnostics`; a grouped diagnostic has `count` and, when repeated, `occurrences` containing its locations and messages. `--quiet` prints only errors; with JSON it filters the diagnostic list but keeps the totals. Usage/setup failures return `{ error, fix, exitCode }`.
+
+Use `--verbose` or `DEBUG=rivet` to include an error stack. Exit codes: **0** for success or warnings, **1** for diagnostics with errors or a setup/operational failure (including an unreadable tsconfig or missing compiler), **2** for invalid arguments. A missing `-p` value is a usage error.
+
+### Generate route types without a build
+
+```bash
+rivet sync --root ./my-app
+rivet sync --json
+rivet migrate server-exports --dry-run
+```
+
+`rivet sync` uses the app's Vite config to generate `.rivet/`. `--config <file>` selects a config relative to `--root`; `--mode <mode>` defaults to `production`. `rivet migrate server-exports` converts legacy route server exports; `--routes <dir>` defaults to `src/routes`, and `--dry-run` previews changes. Both accept `--quiet`, `--json` and `--verbose`. `rivet --help` lists commands, options and examples. These commands exit **0** on success, **1** on failure (including a missing config/plugin), and **2** for invalid arguments.
+
+Progress uses one updating line on a terminal, periodic plain lines in CI/pipes, and a final duration. `NO_COLOR` disables color; `FORCE_COLOR` enables it outside CI unless `NO_COLOR` is set. `rivet mcp` reserves stdout for the MCP protocol and forwards its arguments to the installed server.
+
+### Create and prerender output
+
+`create-rivet` accepts `--quiet` (errors only), `--json` (one result), and `--verbose` (error stacks and successful install output). Quiet/JSON modes take defaults without asking questions, like `--yes`. With npm, put flags after `--`:
+
+```bash
+npm create rivet@latest my-app -- --template server --yes --json
+```
+
+Install and git steps show progress and elapsed time. Exit codes: 0 success, 1 operational failure (including install/git failure), 2 invalid arguments, 130 cancellation. A failed install keeps the created project so you can retry there. JSON reports the directory, template, install status, error/warning counts and duration; argument/setup failures include `error`, `fix`, and `exitCode`.
+
+`prerenderBuild` and `prerender` report the current page and its running count, then a final page count and duration. Dynamic `entries()` results are discovered while rendering, so no total is guessed in advance. Pass `progress: false` when a custom logger owns the output. CI/pipes receive plain periodic lines; interactive terminals use one updating line.
+
 ## Error codes
 
 Every code has its own page with the message, the fix, a before / after pair and the quick fix, if there is one: [Diagnostic codes](../../errors/index.md) lists them all, and the `docs:` link of each diagnostic opens its page. Most codes come from the compiler; the language service adds [RV3101](../../errors/RV3101.md), and `rivet-check` adds [RV7101](../../errors/RV7101.md) and [RV7102](../../errors/RV7102.md).

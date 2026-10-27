@@ -47,6 +47,8 @@ All generators write through the Nx tree: `--dry-run` shows the files without wr
 | `@rivetjs/nx:typecheck` | `rivet sync` + `tsc --noEmit`. |
 | `@rivetjs/nx:package` | Publishable library: `.js` / `.jsx` (JSX preserved) + `.d.ts`, mapped `package.json`. |
 
+The `check` executor also accepts `format: "json"`, `quiet: true` and `verbose: true`. JSON mode hides successful sync output and executor headings; Nx can still add its own task summary. Use `rivet-check --json` directly for a pipe consumed by a JSON parser. Step headings, durations and failure hints use stderr.
+
 ## Inferred targets
 
 ```json

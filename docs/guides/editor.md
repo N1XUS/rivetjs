@@ -35,12 +35,14 @@ Design: [superpowers/specs/2026-10-03-language-service-design.md](../design/spec
 
 ## `rivet check`
 
-- `node libs/language-core/cli.ts [-p tsconfig.json|dir]... [--no-types] [--no-manifest] [--format text|json]` (bin `rivet-check`; `--help` / `-h` prints usage; `-p <dir>` = `<dir>/tsconfig.json`; solution configs follow `references`); `npm run rivet:check` runs every `rivet-check` nx target (playground).
+- `node libs/language-core/cli.ts [-p tsconfig.json|dir]... [--no-types] [--no-manifest] [--format text|json] [--json] [--quiet] [--verbose]` (bin `rivet-check`; `--help` / `-h` prints usage; `-p <dir>` = `<dir>/tsconfig.json`; solution configs follow `references`); `npm run rivet:check` runs every `rivet-check` nx target (playground).
 - Text output per diagnostic: header `file:line:col - error|warning RVxxxx: message`, then a code frame, `  fix: <explain.json fix>` and `  docs: <url>` (`@rivetjs/compiler/format`); plus `rivet check: skipped <tsconfig> (<reason>)` for projects not checked (unreadable tsconfig, other `jsxImportSource`, no Rivet files).
-- `--format json`: one object `{ files, errors, warnings, skipped: [{ config, reason }], diagnostics: [{ …diagnostic, file, docs, fix }] }`.
-- Exit codes: `0` clean / warnings only, `1` errors, `2` usage or setup error (unknown flag, bad `--format`, compiler wasm not found, missing / unparsable tsconfig); in JSON mode setup errors print `{ "error": "…" }`.
+- `--format json`: one object `{ files, errors, warnings, skipped: [{ config, reason }], diagnostics: [{ …diagnostic, file, docs, fix, count, occurrences? }] }`.
+- Exit codes: `0` clean / warnings only, `1` errors/setup failure (compiler wasm not found, missing / unparsable tsconfig), `2` usage error (unknown flag, bad `--format`, non-tsconfig project path); in JSON mode usage/setup errors print `{ error, fix, exitCode }`.
 - Manifest check (off with `--no-manifest`): each Vite app root reached (nearest `vite.config.*` above a checked file) without `.rivet/editor.json` → RV7101 error; `vite.config.*` or a routes directory newer than it → RV7102 warning. Fix: `rivet sync`.
 - Every diagnostic carries a `docs` URL (`docsUrl(code)` from `@rivetjs/compiler/codes`); Vite build errors print `[RVxxxx] file:line:col: message` with the same URL as `url`.
+
+Warnings group by code + filename (count and every location retained in JSON); errors keep each location. `--quiet` prints errors only; JSON retains totals. `--verbose` / `DEBUG=rivet` includes exception stacks. Missing flag values and unknown flags are usage errors with help hints/suggestions. `rivet sync` / `migrate` also accept `--quiet`, `--json`, `--verbose`; sync config/plugin failures now exit 1, usage errors 2.
 
 ## Codes
 
