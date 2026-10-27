@@ -17,6 +17,8 @@ export interface ViteBuildOptions {
   graph?: boolean;
   /** Extra environment for the child (e.g. the frames-only switch of `check-examples`). */
   env?: Record<string, string>;
+  /** Build only the client bundle (co-load pass 2, `coload.ts`: the server bundle reads the client's files at run time). */
+  clientOnly?: boolean;
 }
 
 /** V8 old-space cap of the build child in MB (env `DOCS_KIT_VITE_HEAP_MB` overrides). */
@@ -35,7 +37,7 @@ interface ChildOptions {
 /** Run the docs app's Vite build (client, then server bundle) in child processes (stdio inherited); rejects when one fails. */
 export async function viteBuild(root: string, options: ViteBuildOptions): Promise<void> {
   await child(root, { dist: options.dist, graph: !!options.graph, environment: "client" }, options.env);
-  await child(root, { dist: options.dist, graph: !!options.graph, environment: "ssr" }, { ...options.env, [GENERATED_ENV]: "1" });
+  if (!options.clientOnly) await child(root, { dist: options.dist, graph: !!options.graph, environment: "ssr" }, { ...options.env, [GENERATED_ENV]: "1" });
 }
 
 function child(root: string, options: ChildOptions, env: Record<string, string> | undefined): Promise<void> {

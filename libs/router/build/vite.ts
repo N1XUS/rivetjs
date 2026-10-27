@@ -37,6 +37,7 @@ import { compileRoutes } from "@rivetjs/runtime/router/server";
 import type { createApp as CreateApp, GeneratedEntry } from "../server/app.ts";
 import type { DocumentShell } from "../server/render.ts";
 import { adapterOptions, targetBuildConfig, targetEntryPlugin, type AdapterName, type AdapterOptions } from "../adapters/target-build.ts";
+import { coloadPlugin } from "./coload.ts";
 
 /** The router's own base-path module (its `BASE` reads Vite's `BASE_URL`). */
 const BASE_MODULE = fileURLToPath(new URL("../shared/base.ts", import.meta.url));
@@ -997,6 +998,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     router,
     ...plugins,
     headStrip,
+    // Co-load chunk groups (two-pass builds, env `RIVET_COLOAD`; inert otherwise): `coload.ts`.
+    coloadPlugin(),
     ...(adapter ? [targetEntryPlugin(adapter, { serverEntry: () => resolve(root, outDir, "entry.server.tsx"), mode: () => mode })] : []),
   ];
 }

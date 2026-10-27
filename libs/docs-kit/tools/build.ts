@@ -1,5 +1,5 @@
-// Full docs build: content routes + example frames → app build (client + server: the examples are part of it) →
-// prerender (docs pages and example frame pages) → example checks in Chromium (measures written into the pages) →
+// Full docs build: content routes + example frames → app build (client + server: the examples are part of it; co-load
+// passes, `coload.ts`) → prerender (docs pages and example frame pages) → example checks in Chromium (measures written into the pages) →
 // critical CSS inlined per page (tools/critical-css.ts) → search index → link check (host files + AI outputs after
 // prerender). Output: dist/client (the site), dist/server.
 import { constants, existsSync } from "node:fs";
@@ -13,7 +13,7 @@ import { EXAMPLES_JSON } from "./examples.ts";
 import { mb, memoryBudget, watchMemory } from "./memory.ts";
 import { loadApp } from "./app.ts";
 import type { ExampleData } from "../components/types.ts";
-import { viteBuild } from "./vite-build.ts";
+import { coloadBuild } from "./coload.ts";
 
 export interface BuildOptions {
   /** Example checks in Chromium (default true; `false` = `--no-checks`: the "What loaded" paragraphs stay empty). */
@@ -111,7 +111,8 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
   };
   for (const dir of ["client", "server"]) await rm(resolve(dist, dir), { recursive: true, force: true });
   // In a child process: its ~1.9 GB (rolldown + module graph) is released before prerender and the Chromium checks.
-  await viteBuild(root, { dist, graph: true });
+  // Co-load passes (`coload.ts`): shared chunks the pages always fetch together are merged (incremental: the previous plan).
+  await coloadBuild(root, { dist, graph: true, lean: true, log, ...(options.incremental ? { reuse: options.incremental.previous } : {}) });
   lap("vite");
   const client = resolve(dist, "client");
   // One server bundle instance per process: the incremental path and its full fallback share it.

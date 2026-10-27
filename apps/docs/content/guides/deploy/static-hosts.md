@@ -74,6 +74,28 @@ When no page resumes at all:
 
 A content site (articles, tags, listing pages) then deploys only HTML, CSS and images.
 
+## Fewer script files
+
+A bundler splits shared code by which entry chunks use it. A page loads several entries, so two shared chunks can end up loaded by exactly the same pages. An optional second build pass merges them. It needs the prerendered pages of a first pass:
+
+```js title="build.js"
+import { execSync } from "node:child_process";
+import { mkdirSync, rmSync } from "node:fs";
+
+const dir = "dist/coload";
+rmSync(dir, { recursive: true, force: true });
+mkdirSync(dir, { recursive: true });
+const env = { ...process.env, RIVET_COLOAD: dir };
+execSync("vite build && vite build --ssr && node prerender.js", { env, stdio: "inherit" });
+// Groups the shared chunks the pages always load together, from the prerendered pages.
+execSync(`node -e "import('@rivetjs/router/static').then((m) => m.planCoload({ dir: '${dir}', client: 'dist/client' }))"`, { stdio: "inherit" });
+execSync("vite build && node prerender.js", { env, stdio: "inherit" });
+```
+
+With `RIVET_COLOAD` set, the browser build records its chunks there, and the second build applies the `plan.json` that `planCoload` wrote. A chunk joins a group only when every page that loads it before input loads the others too, and when no page reaches one without the others later on. So no page loads more code than before, and there are fewer files to fetch. The docs sites build this way: on the UI docs, pages over 100 KB of JavaScript load 3.5 % less.
+
+The first build also records which components get both a `class` and a slot class (for example `classNames.base`) from some caller. In the second build, a `@rivetjs/ui` component that joins the two no longer loads `tailwind-merge` when no caller passes both. On the UI docs this takes 10 KB off each Scheduler page.
+
 ## Site origin
 
 Pass your site's address as `origin` when pages build absolute URLs from the request URL, for example a canonical link or `og:url`:

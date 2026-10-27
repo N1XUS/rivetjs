@@ -18,7 +18,7 @@ Every component takes a `class` prop. Your classes are merged with the component
 <Card class="border-2 border-gray-200 rounded-xl">{/* content */}</Card>
 ```
 
-In the browser, `tailwind-merge` loads only on pages whose code can pass a class it would change (two conflicting utilities, a class built at run time); other pages ship without it and render the same classes. A class string that comes from run-time data (JSON, a loader) is not seen by the build: write conflicting utilities in the code, or keep such strings free of conflicts.
+In the browser, `tailwind-merge` loads only on pages whose code can pass a class it would change (two conflicting utilities, a class built at run time); other pages ship without it and render the same classes. A class string that comes from run-time data (JSON, a loader) is not seen by the build: write conflicting utilities in the code, or keep such strings free of conflicts. With a two-pass static build ("Fewer script files" in the Rivet static hosting guide), a component that joins `class` with one of its `classNames` slots (Scheduler) loads it only when some page passes both.
 
 `style` takes an object. Keys can be camelCase, kebab-case or custom properties (`--name`); style strings are not accepted:
 

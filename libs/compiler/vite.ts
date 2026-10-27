@@ -21,7 +21,7 @@ import { matchesServerOnly, type ServerOnlyPattern } from "./server-only.ts";
 import { nameRegistry, scopedName, type ClassNames } from "./styles.ts";
 import type { ImagesConfig } from "./images/options.ts";
 import { comptimeCandidate, createComptime, MERGE_PREFIX, type Comptime, type ComptimeOptions } from "./comptime.ts";
-import { classJoinDeclarations, classOverrideCandidate, classOverrideSites } from "./class-merge.ts";
+import { classJoinDeclarations, classModuleInfo, classOverrideCandidate, classPropUse, type ClassModuleInfo, type ClassPropTarget } from "./class-merge.ts";
 import { entriesText, keptEntries, languagesOf, localeTables, LOCALE_TABLE_MARK, type LocaleTable } from "./locale-tables.ts";
 
 /** Browser-side `@rivetjs/*` packages (`optimizeDeps.exclude` takes names, not patterns). */
@@ -497,6 +497,14 @@ export const _MERGE_ONLY = "?rivet-tw-merge";
 export const _UI_TV = /[/\\]ui[/\\]styles[/\\]src[/\\]utils[/\\](?:tv|tv-merge|merge-on)\.[jt]s$/;
 /** @internal `@rivetjs/ui`'s tailwind-merge provider (ZERO UI-JS2): imported by client modules `class-merge.ts` flags. */
 export const _UI_TV_MERGE = "@rivetjs/ui/tv-merge";
+/** A module with an import (it may render a prop-join component, `class-merge.ts` `classPropUse`). */
+const IMPORTS = /\bimport\s*[\w{*(`"']|\bimport\.meta\.glob\b/;
+/**
+ * Dynamic imports the bundler resolves: a literal specifier (group 1 / 2), an `import(\`…\`)` template (group 3: with
+ * `${…}` the dynamic-import-vars expansion, not provable here) or `import.meta.glob` (no group). `import(expr)` of an
+ * expression loads a URL outside the bundle (no group either: skipped by the caller).
+ */
+const DYNAMIC = /\bimport\.meta\.glob\b|\bimport\s*\(\s*(?:(["'])([^"'\n]+)\1|`([^`]*)`|(?=[^\s"'`]))/g;
 
 /**
  * @internal ZERO B3: a project module importing only `cn` / `cx` from `tailwind-variants` takes them from the merge-only
@@ -757,8 +765,15 @@ function rivetPlugin(
     out: Out | Promise<Out>,
   ): Out | Promise<Out> => {
     const consumer = ctx.environment?.config?.consumer;
-    // Synchronous unless the module can hold an override at all (the scan resolves the provider: async).
-    if (!built || serve || (options?.ssr ?? (consumer ? consumer === "server" : ssrBuild)) || !classOverrideCandidate(original) || !classMergeScope(filename))
+    // Synchronous unless the module can hold an override (a class-like name) or, in a prop-join recording pass, import a
+    // prop-join component (the scan resolves the provider and the imports: async).
+    if (
+      !built ||
+      serve ||
+      (options?.ssr ?? (consumer ? consumer === "server" : ssrBuild)) ||
+      !(classOverrideCandidate(original) || (joinsRecord && IMPORTS.test(original))) ||
+      !classMergeScope(filename)
+    )
       return out;
     return Promise.resolve(out).then((value) => classMergeImport(ctx, filename, original, value));
   };
@@ -947,9 +962,148 @@ function rivetPlugin(
   };
   const mergeProviders = new Map<string, Promise<string | null>>(); // package dir → resolved provider id
   let twMergeFn: ((value: string) => string) | null | undefined;
+  // Prop joins (BIG-UI-3, `class-merge.ts` `conditional`): a component whose only override sources join two forwarded
+  // class props (ui Scheduler: `classNames.base` + `class`) needs the merge only when some caller passes two of them.
+  // Who calls it is a whole-build fact, so it is decided across the two passes of a co-load build (env `RIVET_COLOAD`,
+  // `@rivetjs/router` `build/coload.ts`): pass 1 imports the merge as for any source and records every client module's
+  // uses (`class-joins.json` in that dir); pass 2 (same sources) imports it into a prop-join module only when pass 1
+  // found a caller that may pass two (or a use it cannot follow). One-pass builds treat prop joins as sources.
+  // Module facts are read from disk (a caller may be transformed before the component), cached per build.
+  const joinsDir = process.env.RIVET_COLOAD || null;
+  const JOINS_FILE = "class-joins.json";
+  type JoinsFile = { v: 1; joins: string[]; needed: string[]; all: boolean };
+  const joinsPlan: { needed: Set<string>; all: boolean } | null = (() => {
+    const file = joinsDir && join(joinsDir, JOINS_FILE);
+    if (!file || !existsSync(file)) return null;
+    const data = JSON.parse(readFileSync(file, "utf8")) as JoinsFile;
+    return { needed: new Set(data.needed), all: data.all };
+  })();
+  const joinsRecord = joinsDir && !joinsPlan ? { joins: new Set<string>(), needed: new Set<string>(), all: false } : null;
+  const joinKey = (file: string) => relative(root, file).split(sep).join("/");
+  const classInfos = new Map<string, ClassModuleInfo | null>();
+  const classInfoOf = (file: string, merge: (value: string) => string): ClassModuleInfo | null => {
+    let info = classInfos.get(file);
+    if (info === undefined) {
+      const path = file.split("?", 1)[0]!;
+      const readable = classMergeScope(path) && existsSync(path);
+      const code = readable ? readFileSync(path, "utf8") : null;
+      info = code === null ? null : classModuleInfo(code, path, { merge, joins: importedJoins(path, code) });
+      classInfos.set(file, info);
+    }
+    return info;
+  };
+  const classResolved = new Map<string, Promise<string | null>>();
+  const classResolve = (ctx: Rollup.TransformPluginContext, spec: string, importer: string): Promise<string | null> => {
+    const key = (spec.startsWith(".") ? importer : dirname(importer)) + "\0" + spec;
+    let hit = classResolved.get(key);
+    if (!hit)
+      classResolved.set(
+        key,
+        (hit = ctx.resolve(spec, importer, { skipSelf: true }).then(
+          (r) => (r && !r.external && !r.id.startsWith("\0") ? r.id.split("?", 1)[0]! : null),
+          () => null,
+        )),
+      );
+    return hit;
+  };
+  type Join = { file: string; sets: string[][][] };
+  // The prop join behind export `name` of `file`, through re-exports and `export *` (null: none). Modules outside the
+  // merge scope (virtual, plain packages) hold no override sources and re-export none.
+  const classJoinOf = async (
+    ctx: Rollup.TransformPluginContext,
+    file: string,
+    name: string,
+    merge: (value: string) => string,
+    depth = 0,
+  ): Promise<Join | null> => {
+    const info = depth > 16 ? null : classInfoOf(file, merge);
+    if (!info) return null;
+    const own = info.conditional.get(name);
+    if (own) return { file, sets: own };
+    if (info.locals.has(name)) return null;
+    for (const re of info.reexports)
+      if (re.exported === name && re.imported !== "*") {
+        const to = await classResolve(ctx, re.from, file);
+        return to ? classJoinOf(ctx, to, re.imported, merge, depth + 1) : null;
+      }
+    if (name === "default") return null;
+    for (const star of info.stars) {
+      const to = await classResolve(ctx, star, file);
+      const hit = to ? await classJoinOf(ctx, to, name, merge, depth + 1) : null;
+      if (hit) return hit;
+    }
+    return null;
+  };
+  // Every prop-join module a module's namespace reaches (re-exports, `export *`, `export * as`).
+  const classJoinFiles = async (
+    ctx: Rollup.TransformPluginContext,
+    file: string,
+    merge: (value: string) => string,
+    out = new Set<string>(),
+    seen = new Set<string>(),
+  ) => {
+    if (seen.has(file) || seen.size > 4096) return out;
+    seen.add(file);
+    const info = classInfoOf(file, merge);
+    if (!info) return out;
+    if (info.conditional.size) out.add(file);
+    for (const from of [...info.reexports.map((re) => re.from), ...info.stars]) {
+      const to = await classResolve(ctx, from, file);
+      if (to) await classJoinFiles(ctx, to, merge, out, seen);
+    }
+    return out;
+  };
+  // Pass 1: the prop-join modules a module's uses may pass two joined props to (static imports via `classPropUse`;
+  // dynamic imports: a literal specifier = its whole namespace, `import.meta.glob` / `import(\`…${…}\`)` = unknown).
+  const classRecordUses = async (
+    ctx: Rollup.TransformPluginContext,
+    filename: string,
+    original: string,
+    info: ClassModuleInfo,
+    merge: (value: string) => string,
+  ) => {
+    const record = joinsRecord!;
+    if (info.conditional.size) record.joins.add(joinKey(filename));
+    for (const m of original.matchAll(DYNAMIC)) {
+      const spec = m[2] ?? (m[3] !== undefined && !m[3].includes("${") ? m[3] : undefined);
+      if (spec === undefined) {
+        if (m[0].startsWith("import.meta") || m[3] !== undefined) record.all = true;
+        continue;
+      }
+      const to = await classResolve(ctx, spec, filename);
+      if (to) for (const file of await classJoinFiles(ctx, to, merge)) record.needed.add(joinKey(file));
+    }
+    if (!info.imports.size) return;
+    const targets = new Map<string, ClassPropTarget>();
+    const files = new Map<string, string[]>(); // hit key → prop-join modules
+    for (const [local, { from, imported }] of info.imports) {
+      const to = await classResolve(ctx, from, filename);
+      if (!to) continue;
+      if (imported === "*") {
+        const all = await classJoinFiles(ctx, to, merge);
+        if (!all.size) continue;
+        files.set(local + ".*", [...all]);
+        const members = new Map<string, Join | null>();
+        // Member lookups happen during the synchronous scan: resolve every member the module names first.
+        for (const [, name] of original.matchAll(new RegExp(`\\b${local}\\s*\\.\\s*([A-Za-z_$][\\w$]*)`, "g"))) {
+          if (members.has(name!)) continue;
+          const join = await classJoinOf(ctx, to, name!, merge);
+          members.set(name!, join);
+          if (join) files.set(`${local}.${name}`, [join.file]);
+        }
+        targets.set(local, { members: (name) => members.get(name)?.sets ?? null });
+        continue;
+      }
+      const join = await classJoinOf(ctx, to, imported, merge);
+      if (!join) continue;
+      targets.set(local, { sets: join.sets });
+      files.set(local, [join.file]);
+    }
+    if (!targets.size) return;
+    for (const key of classPropUse(original, filename, targets, { merge })) for (const file of files.get(key) ?? []) record.needed.add(joinKey(file));
+  };
   const classMergeImport = async (ctx: Rollup.TransformPluginContext, filename: string, original: string, out: Out): Promise<Out> => {
     const code = out ? out.code : original;
-    if (!classOverrideCandidate(original)) return out;
     const dir = packageOf(dirname(filename)) ?? dirname(filename);
     let provider = mergeProviders.get(dir);
     if (!provider)
@@ -967,7 +1121,17 @@ function rivetPlugin(
     }
     // Without tailwind-merge at build time every override counts as one that may change.
     const merge = twMergeFn ?? (() => "\0");
-    if (!classOverrideSites(original, filename, { merge, joins: importedJoins(filename, original) }).length) return out;
+    if (joinsRecord) {
+      const info = classInfoOf(filename, merge) ?? classModuleInfo(original, filename, { merge, joins: importedJoins(filename, original) });
+      await classRecordUses(ctx, filename, original, info, merge);
+      if (!info.hard && !info.conditional.size) return out;
+    } else if (!classOverrideCandidate(original)) return out;
+    else {
+      const info = classInfoOf(filename, merge) ?? classModuleInfo(original, filename, { merge, joins: importedJoins(filename, original) });
+      if (!info.hard && !info.conditional.size) return out;
+      // Pass 2: a module whose only sources are prop joins no caller may pass two of.
+      if (!info.hard && joinsPlan && !joinsPlan.all && !joinsPlan.needed.has(joinKey(filename))) return out;
+    }
     // Same line (maps and line numbers stay): ES imports are hoisted.
     return { code: `import ${JSON.stringify(id)};` + code, map: out ? out.map : null };
   };
@@ -1777,6 +1941,10 @@ function rivetPlugin(
       order: "post",
       handler(_options, bundle) {
         if (ssrBuild || this.environment?.config?.consumer === "server") return;
+        if (joinsRecord && joinsDir) {
+          const data: JoinsFile = { v: 1, joins: [...joinsRecord.joins].sort(), needed: [...joinsRecord.needed].sort(), all: joinsRecord.all };
+          writeFileSync(join(joinsDir, JOINS_FILE), JSON.stringify(data) + "\n");
+        }
         _hintEagerCompile(bundle, (output) => output.isEntry);
         if (resume) derivedManifest.call(this, bundle);
       },

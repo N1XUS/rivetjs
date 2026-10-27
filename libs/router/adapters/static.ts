@@ -10,6 +10,7 @@ import type { AppConfig } from "../server/app.ts";
 import type { CSPOptions } from "../shared/csp.ts";
 import { hashPolicy, inlineSources } from "../shared/csp-hash.ts";
 export type { CSPDirectives, CSPOptions } from "../shared/csp.ts";
+export { COLOAD_ENV, pageScripts, planCoload, type ColoadPlan, type ColoadReport } from "../build/coload.ts";
 export { buildDictionary, writeDictionaries, type DictionaryBuildOptions, type DictionaryManifest, type WriteDictionariesOptions } from "./dictionary.ts";
 import { normalizeBase } from "../shared/base.ts";
 import { slashPath, type TrailingSlash } from "../shared/slash.ts";

@@ -13,7 +13,7 @@ import { loadApp } from "./app.ts";
 import { generateContent } from "./content/generate.ts";
 import { EXAMPLES_JSON, generateExamples } from "./examples.ts";
 import { mb, memoryBudget, watchMemory } from "./memory.ts";
-import { viteBuild } from "./vite-build.ts";
+import { coloadBuild } from "./coload.ts";
 
 export const CHECK_EXAMPLES_DIST = ".artifacts/check-examples";
 
@@ -52,7 +52,8 @@ export async function buildFrames(root: string, ids: readonly string[], options:
   await generateContent(root, { lenient: (message) => log(`docs: ${message}`) });
   for (const dir of ["client", "server"]) await rm(resolve(dist, dir), { recursive: true, force: true });
   // Child process (`vite-build.ts`): the build's memory is released before the Chromium checks.
-  await viteBuild(root, { dist, env: { [FRAMES_ONLY_ENV]: ids.join(",") } });
+  // Co-load passes as in the site build (`coload.ts`): the frames ship what a site build of these frames would.
+  await coloadBuild(root, { dist, env: { [FRAMES_ONLY_ENV]: ids.join(",") }, lean: false, log });
   const vite = performance.now();
   const build = await loadBuild(dist);
   const report = await prerender({

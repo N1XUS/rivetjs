@@ -2213,9 +2213,19 @@ const hidden = (event: Event): void => {
     for (const type of ["focus", "blur", "focusin", "focusout"]) (on ? nativeAdd : nativeRemove).call(window, type, hidden, true);
     on || (back = undefined);
   };
+// The latest form state a held `input` / `change` recorded per control (value, checked): what a replay puts back after
+// writing an earlier event's state. Not the live state at the replay: a replayed event before it may re-assert a
+// controlled value that still lags the held input (a focus replay's spread re-run wrote a TextArea's "" over the typed
+// "hey"; the input replay then restored "", so Enter typed into an empty field). Only events the browser fired after the
+// change landed: a held click's state is its pre-activation `checked`, which the canceled default reverted (the replayed
+// default toggles it again). Every event is held while the queue drains (`on`), so no newer state is skipped; reset when
+// the queue is empty.
+let typed = new WeakMap<EventTarget, [unknown, unknown]>();
 // A cold event as it is queued (dom-resume `cold`'s synchronous part): link a press's pointerdown + mousedown, mark the
 // focus events of a pre-boot press's native move, hide the move of a press queued while it dispatches.
 function queued([event, , , state]: HeldEvent): void {
+  const t = event.target as HTMLInputElement | null;
+  if (t && "value" in t && /^(input|change)$/.test(event.type)) typed.set(t, [state[0], state[1]]);
   if (event.type === "pointerdown") down = (event as PointerEvent).pointerType !== "touch" ? event : undefined;
   else if (event.type === "mousedown" && down?.target === event.target) (linked.add(down).add(event), (down = undefined));
   const dispatching = event.eventPhase !== 0;
@@ -2277,10 +2287,13 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
   // later typing). Not for focus events: their handlers read no value, and writing a date input's value while focus is
   // in its fields focuses it (a trusted focusin) — each replayed focusin queued two more (cdk /date-picker autofill hung).
   const control = target && "value" in target && target.localName !== "button" && !/^(focus|blur)/.test(type),
-    now = control ? [target.value, target.checked] : null,
-    // The state is put back afterwards only when it was written here (later typing): otherwise a value the handlers wrote
-    // stays (a number field's step — restoring the pre-replay value over it left a cold ArrowUp's input on the old number).
-    wrote = now && (now[0] !== state[0] || now[1] !== state[1]);
+    at = control ? [target.value, target.checked] : null,
+    // Put back afterwards: the latest held state of the control (later typing), else the live one (`typed`).
+    now = at && (typed.get(target) ?? at),
+    // The state is put back afterwards only when it was written here (later typing, or a value re-asserted since): otherwise
+    // a value the handlers wrote stays (a number field's step — restoring the pre-replay value over it left a cold
+    // ArrowUp's input on the old number).
+    wrote = at && (at[0] !== state[0] || at[1] !== state[1]);
   Object.defineProperty(event, "composedPath", { configurable: true, value: () => path });
   Object.defineProperty(event, "defaultPrevented", { configurable: true, get: () => canceled });
   Object.defineProperty(event, "preventDefault", { configurable: true, value: () => void (canceled = true) });
@@ -2365,6 +2378,7 @@ async function drain(): Promise<void> {
     }
     pending.shift();
   }
+  typed = new WeakMap();
   record(0);
 }
 
