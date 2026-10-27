@@ -180,6 +180,24 @@ export { x as y } from "./other.ts";
   assert.equal(facts.compounds.get("Meter")!.root, "Root");
 });
 
+it("COLD-FIX-A: compounds seen through TS wrappers and a const alias (`const X = Compound as T`)", () => {
+  const facts = moduleFacts(
+    `
+export function Root(props) { return <b>{props.children}</b>; }
+export function Part(props) { return <i>{props.x}</i>; }
+const Compound = Object.assign(Root, { Part });
+export const Alias = Compound as unknown as typeof Compound;
+export const Cast = Object.assign(Root as typeof Root, { Part: Part }) satisfies object;
+`,
+    "c.tsx",
+    { boundaries: true },
+  );
+  for (const name of ["Compound", "Alias", "Cast"]) {
+    assert.equal(facts.compounds.get(name)?.root, "Root", name);
+    assert.deepEqual([...facts.compounds.get(name)!.parts], [["Part", "Part"]], name);
+  }
+});
+
 it("STATIC-ZERO T3: a conditional handler is a per-instance source (`listens`, `_rHandler`), an in-place one a source", () => {
   const source = `
 import { signal } from "@rivetjs/reactivity";
@@ -222,6 +240,46 @@ export function Mixed(props) { return <p onClick={() => 1} onPointerEnter={props
   // DOM target: unchanged handlers.
   const dom = compile(source, { target: "dom", filename: "m.tsx", resume });
   assert.ok(!dom.code.includes("_rHandler"), dom.code);
+});
+
+it("FACTS-GAP: a spread object the component builds with an `on*` key listens; forwarded / opaque spreads do not", () => {
+  const source = `
+import { mergeProps } from "./merge.ts";
+function onKeyDown() {}
+export function Holo(props) {
+  const { isStatic, ...rest } = props;
+  const handlers = isStatic ? {} : { onPointerMove: () => 1, onPointerLeave() {} };
+  const attrs = { ...rest, ...handlers };
+  return <div class="holo" {...attrs}>{props.children}</div>;
+}
+export function Gate(props) { return <div {...(props.on && { onKeyDown })}>x</div>; }
+export function Literal() { return <p {...{ "onClick": () => 1 }}>x</p>; }
+export function Forward(props) { return <div {...props}>x</div>; }
+export function Rest(props) { const { a, ...rest } = props; return <div {...rest}>x</div>; }
+export function Nothing() { const none = { onClick: undefined, onKeyUp: null }; return <div {...none}>x</div>; }
+export function Merged(props) { return <div {...mergeProps(props, { onClick: () => 1 })}>x</div>; }
+export function Lower(props) { return <div>{link({ onClick: () => 1 })}</div>; }
+function link(bag) { const attrs = { ...bag, onFocus: () => 1 }; return <a {...attrs}>a</a>; }
+`;
+  const facts = moduleFacts(source, "m.tsx", { boundaries: true });
+  const names = ["Holo", "Gate", "Literal", "Forward", "Rest", "Nothing", "Merged", "Lower"];
+  assert.deepEqual(
+    names.map((n) => [n, facts.boundaries.get(n)?.listens ?? false]),
+    [
+      ["Holo", true],
+      ["Gate", true],
+      ["Literal", true],
+      ["Forward", false],
+      ["Rest", false],
+      ["Nothing", false],
+      ["Merged", false],
+      ["Lower", false],
+    ],
+  );
+  // The COND verdict wraps the spread object: the instance that installs a function is the one that is kept.
+  const out = server(source, { boundaries: ["Holo"], independent: [], conditional: ["Holo"] });
+  assert.deepEqual(out.diagnostics, []);
+  assert.ok(/__rivetR_handlers\(__rivetB, \{\s*"class": "holo",\s*\.\.\.attrs\s*\}\)/.test(out.code), out.code);
 });
 
 it("STATIC-ZERO T1: module data (literal trees, asset imports) is not browser state", () => {

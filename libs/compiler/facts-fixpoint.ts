@@ -9,8 +9,9 @@
 //
 // Interactivity = change sources (M6-PARITY 6b, user ruling 2026-10-22): a component is a boundary when it has a change
 // source of its own (`source`: handler, client effect / event, keyed state, resource, Async / clientOnly, a read of module
-// state; a handler whose value is conditional — `cond ? f : undefined`, `props.onX` — counts per instance: `listens`,
-// conditional, STATIC-ZERO T3), when it renders a boundary, or when live data flows into a component whose sites read its
+// state; a handler whose value is conditional — `cond ? f : undefined`, `props.onX`, or an `on[A-Z]` key of a spread object
+// the component body builds itself (FACTS-GAP 2026-10-27: object literal / `?:` / `&&` of such / a local binding of one) —
+// counts per instance: `listens`, conditional, STATIC-ZERO T3), when it renders a boundary, or when live data flows into a component whose sites read its
 // inputs (a caller passes a function, or passes non-data while its own data is live; or it reads a context whose
 // provider's data is live) and some instance may render outside every boundary (ORPHAN-B 2026-10-26: an `enclosed` one —
 // every call site's caller a boundary or enclosed — is `live` but no boundary: the boundary around it runs its code
