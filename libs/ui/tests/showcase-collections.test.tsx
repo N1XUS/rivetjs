@@ -1,5 +1,5 @@
 // DOM-target suite (SHOWCASE-1 2026-10-27, Rivet additions): ItemCardGroupCollection on the cdk GridList (grid /
-// rows, selection signal, live isUnread / isCurrent, empty state; a static group stays a plain role=group), ItemCard
+// rows, selection signal, live isCurrent + a conditional indicator slot, empty state; a static group stays a plain role=group), ItemCard
 // Indicator, Kanban keyboard moves (pick up / move across columns / drop / Escape restore, focus kept on the moved card)
 // and KanbanComposer (open, submit, Escape), Sidebar.Provider contained.
 import { test } from "vitest";
@@ -50,13 +50,11 @@ test("item card group: collection mode = grid of rows with selection, unread, cu
   const r = render(() => (
     <ItemCardGroupCollection aria-label="Inbox" selectionMode="single" selectedKeys={selected}>
       {["a", "b"].map((id) => (
-        <ItemCard id={id} textValue={`Message ${id}`} isUnread={unread().has(id)} isCurrent={() => id === "b"}>
+        <ItemCard id={id} textValue={`Message ${id}`} isCurrent={() => id === "b"}>
           <ItemCard.Content>
-            <ItemCard.Title>{id}</ItemCard.Title>
+            <ItemCard.Title class={unread().has(id) ? "font-semibold" : undefined}>{id}</ItemCard.Title>
           </ItemCard.Content>
-          <ItemCard.Action>
-            <ItemCard.Indicator aria-label="Unread" />
-          </ItemCard.Action>
+          <ItemCard.Action>{unread().has(id) ? <ItemCard.Indicator aria-label="Unread" /> : null}</ItemCard.Action>
         </ItemCard>
       ))}
     </ItemCardGroupCollection>
@@ -69,8 +67,8 @@ test("item card group: collection mode = grid of rows with selection, unread, cu
   assert.ok(rows.every((row) => row.classList.contains("item-card")));
   const a = grid.querySelector('[data-key="a"]')!;
   const b = grid.querySelector('[data-key="b"]')!;
-  assert.equal(a.getAttribute("data-unread"), "true");
-  assert.equal(b.getAttribute("data-unread"), null);
+  assert.ok(a.querySelector("[data-slot=item-card-indicator]"));
+  assert.equal(b.querySelector("[data-slot=item-card-indicator]"), null);
   assert.equal(b.getAttribute("aria-current"), "true");
   assert.equal(b.getAttribute("data-current"), "true");
   assert.equal(a.getAttribute("aria-current"), null);
@@ -79,11 +77,13 @@ test("item card group: collection mode = grid of rows with selection, unread, cu
   const dot = a.querySelector("[data-slot=item-card-indicator]")!;
   assert.equal(dot.className, "item-card__indicator");
   assert.equal(dot.getAttribute("role"), "img");
-  // Live props update in place.
+  assert.equal(dot.querySelector("[data-slot=status]")!.className, "status status--accent status--md");
+  // The caller's condition updates in place.
   unread.set(new Set(["b"]));
   await tick();
-  assert.equal(a.getAttribute("data-unread"), null);
-  assert.equal(b.getAttribute("data-unread"), "true");
+  assert.equal(a.querySelector("[data-slot=item-card-indicator]"), null);
+  assert.ok(b.querySelector("[data-slot=item-card-indicator]"));
+  assert.match(b.querySelector("[data-slot=item-card-title]")!.className, /font-semibold/);
   selected.set(new Set(["a"]));
   await tick();
   assert.equal(a.getAttribute("aria-selected"), "true");

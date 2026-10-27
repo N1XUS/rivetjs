@@ -1,5 +1,5 @@
 // Server-target suite (SHOWCASE-1 2026-10-27): ItemCardGroupCollection SSR (grid + rows with item-card classes,
-// unread / current / selected state in the server HTML), Kanban keyboard markup (focusable described cards, keyed lists,
+// current / selected state + the indicator slot in the server HTML), Kanban keyboard markup (focusable described cards, keyed lists,
 // hidden instructions) + Composer trigger, Sidebar.Provider contained wrapper class.
 import { test } from "vitest";
 import assert from "node:assert/strict";
@@ -13,7 +13,7 @@ import { Sidebar } from "../src/components/sidebar/index.ts";
 test("item card group SSR: collection mode renders a grid of item-card rows with state", async () => {
   const html = await renderToString(() => (
     <ItemCardGroupCollection aria-label="Inbox" selectionMode="single" defaultSelectedKeys={["b"]}>
-      <ItemCard id="a" textValue="A" isUnread>
+      <ItemCard id="a" textValue="A">
         <ItemCard.Content>
           <ItemCard.Title>A</ItemCard.Title>
         </ItemCard.Content>
@@ -29,16 +29,35 @@ test("item card group SSR: collection mode renders a grid of item-card rows with
   assert.match(html, /role="grid"/);
   assert.match(html, /class="item-card-group item-card-group--list item-card-group--default"/);
   assert.equal((html.match(/role="row"/g) ?? []).length, 2);
-  assert.match(html, /<div[^>]*data-key="a"[^>]*data-unread="true"|<div[^>]*data-unread="true"[^>]*data-key="a"/);
   assert.match(html, /aria-current="true"/);
   assert.match(html, /data-selected="true"/);
-  assert.match(html, /class="item-card__indicator"/);
+  // The indicator slot without children = a Status dot inside the named span.
+  assert.match(
+    html,
+    /<span class="item-card__indicator" data-slot="item-card-indicator" role="img" aria-label="Unread"><span class="status status--accent status--md" data-slot="status" aria-hidden="true"><\/span><\/span>/,
+  );
+  assert.doesNotMatch(html, /data-unread/);
+});
+
+test("item card SSR: the indicator slot renders any content (Badge count, icon) instead of the dot", async () => {
+  const html = await renderToString(() => (
+    <ItemCard>
+      <ItemCard.Content>
+        <ItemCard.Title>A</ItemCard.Title>
+      </ItemCard.Content>
+      <ItemCard.Indicator>
+        <b class="count">3</b>
+      </ItemCard.Indicator>
+    </ItemCard>
+  ));
+  assert.match(html, /<span class="item-card__indicator" data-slot="item-card-indicator"><b class="count">3<\/b><\/span>/);
+  assert.doesNotMatch(html, /data-slot="status"/);
 });
 
 test("item card group SSR: without collection props the group stays a static role=group", async () => {
   const html = await renderToString(() => (
     <ItemCardGroup aria-label="Static">
-      <ItemCard isUnread>
+      <ItemCard isCurrent>
         <ItemCard.Content>
           <ItemCard.Title>A</ItemCard.Title>
         </ItemCard.Content>
@@ -47,7 +66,7 @@ test("item card group SSR: without collection props the group stays a static rol
   ));
   assert.match(html, /role="group"/);
   assert.doesNotMatch(html, /role="grid"|role="row"/);
-  assert.match(html, /data-unread="true"/);
+  assert.match(html, /data-current="true"/);
 });
 
 test("kanban SSR: onCardMove = focusable described keyed cards; Composer trigger", async () => {

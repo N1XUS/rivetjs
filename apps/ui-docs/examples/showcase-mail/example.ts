@@ -5,7 +5,7 @@ const ROW = (id: string) => `#mail-list-items [data-key="${id}"]`;
 export default defineExample({
   title: "Showcase: Mail",
   summary:
-    "An inbox in a contained Sidebar (collapsible to an icon rail, a sheet on phones) with resizable panes: a searchable ItemCardGroupCollection message list (single selection, unread state, arrow keys, Delete) with an unread filter, a reading pane with a Toolbar (star toggle, mark unread, archive, delete confirmed in an alert dialog), toasts, and a validated compose dialog that files the message under Sent. One pane at a time below 768 px.",
+    "An inbox in a contained Sidebar (collapsible to an icon rail, a sheet on phones) with resizable panes: a searchable ItemCardGroupCollection message list (single selection, unread dot and bold sender, arrow keys, Delete) with an unread filter, a reading pane with a Toolbar (star toggle, mark unread, archive, delete confirmed in an alert dialog), toasts, and a validated compose dialog that files the message under Sent. One pane at a time below 768 px.",
   tags: [
     "showcase",
     "sidebar",
@@ -27,8 +27,9 @@ export default defineExample({
   show: ["src/routes/index.tsx"],
   test: [
     { expect: ["#unread-count", "3"] },
-    { matches: `${ROW("m1")}[data-unread]` },
+    { matches: `${ROW("m1")} [data-slot=item-card-indicator][aria-label=Unread] [data-slot=status]` },
     { click: ROW("m1") },
+    { absent: `${ROW("m1")} [data-slot=item-card-indicator]` },
     { expect: ["#reader-subject", "Packaging proofs for the autumn line"] },
     { attr: [ROW("m1"), "aria-selected", "true"] },
     { expect: ["#unread-count", "2"] },

@@ -6,7 +6,7 @@ status: experimental
 related: [components/item-card-group, components/card, components/switch]
 ---
 
-`ItemCard` is the row of settings pages, device lists and wallets: an icon, a title with a description, and an action at the end. Render it as a link or button with `render` to make the whole row pressable. Pure markup: the controls inside bring their own behaviour. Inside an [ItemCardGroupCollection](/components/item-card-group/#collection-mode) (the interactive group: selection, `onAction`, `items`) each card is a row of the group's cdk GridList: arrow keys, selection, `isCurrent` / `isUnread` state.
+`ItemCard` is the row of settings pages, device lists and wallets: an icon, a title with a description, and an action at the end. Render it as a link or button with `render` to make the whole row pressable. Pure markup: the controls inside bring their own behaviour. Inside an [ItemCardGroupCollection](/components/item-card-group/#collection-mode) (the interactive group: selection, `onAction`, `items`) each card is a row of the group's cdk GridList: arrow keys, selection, `isCurrent` state.
 
 ## Usage
 
@@ -83,6 +83,12 @@ Label each control: the row title is not its label (`aria-label` on the Switch /
 
 ::example{id=item-card-without-icon}
 
+## Indicator
+
+`ItemCard.Indicator` is a slot: whatever it holds sits in the indicator position, and without children it renders an accent [Status](/components/status/) dot. There is no unread prop: render the indicator while it applies (`{unread() ? <ItemCard.Indicator aria-label="Unread" /> : null}`) and style the emphasis yourself (a `font-semibold` title). Name a dot or an icon with `aria-label` (it gets `role="img"`).
+
+::example{id=item-card-indicator}
+
 ## Styling Reference
 
 ### CSS Classes
@@ -91,7 +97,7 @@ Label each control: the row title is not its label (`aria-label` on the Switch /
 - `.item-card__icon` - Leading icon box; its radius is concentric with the card's.
 - `.item-card__content`, `.item-card__title`, `.item-card__description` - Text column (truncated).
 - `.item-card__action` - Trailing controls.
-- `.item-card__indicator` - The unread dot (`ItemCard.Indicator`), shown only under `[data-unread]`.
+- `.item-card__indicator` - The indicator slot (`ItemCard.Indicator`): layout only (`inline-flex`, centred, no shrink); its content brings the look.
 
 ### CSS Variables
 
@@ -100,9 +106,9 @@ Label each control: the row title is not its label (`aria-label` on the Switch /
 
 ### Data Attributes
 
-- `[data-slot]`: `item-card`, `item-card-icon`, `item-card-content`, `item-card-title`, `item-card-description`, `item-card-action`.
+- `[data-slot]`: `item-card`, `item-card-icon`, `item-card-content`, `item-card-title`, `item-card-description`, `item-card-action`, `item-card-indicator`.
 - `[data-pressable]` on the root: pressable look on a non-link root.
-- `[data-current]` (with `aria-current="true"`) from `isCurrent`; `[data-unread]` from `isUnread` (bold title, indicator shown).
+- `[data-current]` (with `aria-current="true"`) from `isCurrent`.
 - As a row of an interactive group: `[data-selected]`, `[data-focused]`, `[data-focus-visible]`, `[data-hovered]`, `[data-pressed]`, `[data-disabled]`.
 
 ## API Reference
@@ -115,16 +121,16 @@ Label each control: the row title is not its label (`aria-label` on the Switch /
 | `render`    | `DOMRenderFunction<"div">`                                             | -           | Render a link / button as the root |
 | `class`     | `string`                                                               | -           | Additional CSS classes             |
 | `isCurrent` | `boolean \| (() => boolean)`                                           | `false`     | Current row: `aria-current="true"` |
-| `isUnread`  | `boolean \| (() => boolean)`                                           | `false`     | Unread emphasis + indicator        |
 
 Also takes `div` props. Row-only props (inside an `ItemCardGroupCollection`; ignored elsewhere): `id` (the row key), `textValue` (typeahead / accessible name), `isDisabled`, `onAction`, `href`.
 
 ### Other parts
 
-`ItemCard.Icon`, `ItemCard.Content`, `ItemCard.Action` take `div` props and `class`; `ItemCard.Title` and `ItemCard.Description` are `span`s. `ItemCard.Indicator` is a `span` dot shown while the card is unread; name it with `aria-label` (it gets `role="img"`).
+`ItemCard.Icon`, `ItemCard.Content`, `ItemCard.Action` take `div` props and `class`; `ItemCard.Title` and `ItemCard.Description` are `span`s. `ItemCard.Indicator` is a `span` slot: its children, or a `Status` dot (`color="accent"`) without children; name it with `aria-label` (it gets `role="img"`).
 
 ## Related Components
 
 - [ItemCardGroup](/components/item-card-group/): Item cards as a list or grid.
 - [Card](/components/card/): General purpose surface.
 - [Switch](/components/switch/): Toggles inside the action slot.
+- [Status](/components/status/): The default indicator dot.

@@ -5,8 +5,8 @@
 //   runtime (pure markup, 0 JS).
 // - `ItemCardCollectionContext` (`item-card-collection.ts`) `{ inCollection: true }` is provided by the collection group; a
 //   row resets it for its children (a card nested in a row's content is a plain card again).
-// - `isCurrent` → `aria-current="true"` + `data-current`, `isUnread` → `data-unread` (value, accessor or live expression; accessors are
-//   built in the body so they resume).
+// - `isCurrent` → `aria-current="true"` + `data-current` (value, accessor or live expression; the accessor is built in the
+//   body so it resumes). Unread / new marks are content: the caller renders `ItemCard.Indicator` while they apply.
 import { GridListItem as GridListItemPrimitive } from "@rivetjs/cdk/grid-list";
 import type { GridListItemProps as GridListItemPrimitiveProps, GridListItemRenderProps } from "@rivetjs/cdk/grid-list";
 import { Provider } from "@rivetjs/runtime/dom";
@@ -26,17 +26,14 @@ interface ItemCardRowProps<T extends object = object> extends Omit<GridListItemP
   style?: GridListItemPrimitiveProps<T>["style"];
   /** The open / playing / current item (value or accessor): `aria-current="true"` + `data-current`. */
   isCurrent?: boolean | (() => boolean);
-  /** Unread-style emphasis (value or accessor): `data-unread` (bold title, shows `ItemCard.Indicator`). */
-  isUnread?: boolean | (() => boolean);
   children?: Content;
 }
 
 function ItemCardRow<T extends object>(props: ItemCardRowProps<T>): JSX.Element {
-  const [local, rest] = splitLive(props, ["class", "variant", "isCurrent", "isUnread", "children"]);
-  // A live prop (`isUnread={unread().has(id)}`) arrives as a getter: read it through an accessor so the binding tracks it.
+  const [local, rest] = splitLive(props, ["class", "variant", "isCurrent", "children"]);
+  // A live prop (`isCurrent={open() === id}`) arrives as a getter: read it through an accessor so the binding tracks it.
   const isCurrent = accessorIfLive(local, "isCurrent");
-  const isUnread = accessorIfLive(local, "isUnread");
-  // In the body: the accessors close over component locals, so they resume.
+  // In the body: the accessor closes over component locals, so it resumes.
   const current =
     typeof isCurrent === "function"
       ? () => {
@@ -46,22 +43,12 @@ function ItemCardRow<T extends object>(props: ItemCardRowProps<T>): JSX.Element 
       : isCurrent
         ? "true"
         : undefined;
-  const unread =
-    typeof isUnread === "function"
-      ? () => {
-          const v: unknown = isUnread();
-          return (typeof v === "function" ? v() : v) ? "true" : undefined;
-        }
-      : isUnread
-        ? "true"
-        : undefined;
   const cls = itemCardVariants({ variant: local.variant }).base({ class: local.class });
   const children = local.children;
   return (
     <GridListItemPrimitive
       data-slot="item-card"
       data-current={current as never}
-      data-unread={unread as never}
       {...(rest as GridListItemPrimitiveProps<T>)}
       class={cls}
       render={(attrs: Record<string, any>) => <div {...attrs} aria-current={current as never} />}

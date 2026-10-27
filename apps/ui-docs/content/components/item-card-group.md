@@ -102,9 +102,9 @@ import { ItemCardGroupCollection } from "@rivetjs/ui/item-card-group-collection"
 
 ::example{id=item-card-group-actions}
 
-### Dynamic items, unread state and empty state
+### Dynamic items, unread marks and empty state
 
-`items` (array or accessor) + a function child renders one card per item (keyed by the card's `id`). `isUnread` sets `data-unread` (bold title, shows `ItemCard.Indicator`). `renderEmptyState` fills the group while it has no rows.
+`items` (array or accessor) + a function child renders one card per item (keyed by the card's `id`). An unread row renders `ItemCard.Indicator` (a [Status](/components/status/) dot by default) and a `font-semibold` title while it is unread: the indicator is content the caller shows, not a prop. `renderEmptyState` fills the group while it has no rows.
 
 ::example{id=item-card-group-unread}
 
@@ -123,7 +123,7 @@ import { ItemCardGroupCollection } from "@rivetjs/ui/item-card-group-collection"
 
 - `[data-slot]`: `item-card-group`, `item-card-group-header`, `item-card-group-title`, `item-card-group-description`.
 - `[data-layout]`: `list` / `grid`.
-- Collection mode: the root is `[role="grid"]`; rows carry `[data-selected]`, `[data-focused]`, `[data-focus-visible]`, `[data-hovered]`, `[data-pressed]`, `[data-disabled]` (cdk) and `[data-current]`, `[data-unread]` (ItemCard).
+- Collection mode: the root is `[role="grid"]`; rows carry `[data-selected]`, `[data-focused]`, `[data-focus-visible]`, `[data-hovered]`, `[data-pressed]`, `[data-disabled]` (cdk) and `[data-current]` (ItemCard).
 
 ## API Reference
 

@@ -4,8 +4,10 @@
 // - `ItemCard` takes `render` (the `dom.div` contract): render an `<a>` / `<button>` for a pressable card (hover / pressed
 //   tints + focus ring come from CSS on `a` / `button` / `[data-pressable]`).
 // - Pure markup: no state, no script (a Switch / Select inside brings its own behaviour).
-// - `isCurrent` → `aria-current="true"` + `data-current`, `isUnread` → `data-unread` (value or accessor; bold title, shows
-//   `ItemCard.Indicator`). `ItemCard.Indicator` = the unread dot (`span`; CSS shows it only on an unread card).
+// - `isCurrent` → `aria-current="true"` + `data-current` (value or accessor).
+// - `ItemCard.Indicator` = a slot (user ruling 2026-10-27: "with slots instead of custom css and prop"): a layout-only `span`
+//   holding any content (a Badge count, an icon); with no children it renders a `Status` dot. The caller renders it while
+//   it applies (`{unread() ? <ItemCard.Indicator /> : null}`) and styles the emphasis itself (title class).
 // - Inside an `ItemCardGroupCollection` (the interactive group) the card renders as a cdk `GridListItem` row
 //   (`item-card-row.tsx`, registered through `item-card-collection.ts`: this module never imports the GridList): `id` is the
 //   item key, `textValue` / `isDisabled` / `onAction` / `href` are row props, `render` is ignored.
@@ -18,6 +20,7 @@ import { composeSlotClassName } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
 import { splitLive } from "../../utils/live.tsx";
+import { StatusRoot } from "../status/status.tsx";
 import { ITEM_CARD_ROW, ItemCardCollectionContext } from "./item-card-collection.ts";
 
 const SLOTS = itemCardVariants();
@@ -28,8 +31,6 @@ type SpanProps = Omit<JSX.IntrinsicElements["span"], "class"> & { class?: string
 interface ItemCardRootProps extends DivProps, ItemCardVariants, DOMRenderProps<"div", undefined> {
   /** The open / playing / current item (value or accessor): `aria-current="true"` + `data-current`. */
   isCurrent?: boolean | (() => boolean);
-  /** Unread-style emphasis (value or accessor): `data-unread` (bold title, shows `ItemCard.Indicator`). */
-  isUnread?: boolean | (() => boolean);
   /** Collection mode (inside an `ItemCardGroupCollection`): typeahead / accessible text of the row. */
   textValue?: string;
   /** Collection mode: the row is disabled. */
@@ -48,14 +49,13 @@ const ItemCardRoot = (props: ItemCardRootProps): JSX.Element => {
   // Collection mode: the row form, registered by `ItemCardGroupCollection` (this module never imports the GridList).
   const Row = useContext(ItemCardCollectionContext).inCollection ? ITEM_CARD_ROW.Row : undefined;
   if (Row) return <Row {...props} />;
-  const [local, rest] = splitLive(props, ["class", "variant", "isCurrent", "isUnread", "textValue", "isDisabled", "onAction", "href"]);
+  const [local, rest] = splitLive(props, ["class", "variant", "isCurrent", "textValue", "isDisabled", "onAction", "href"]);
   return (
     <dom.div
       class={itemCardVariants({ variant: local.variant }).base({ class: local.class })}
       data-slot="item-card"
       aria-current={flag(local.isCurrent) as never}
       data-current={flag(local.isCurrent) as never}
-      data-unread={flag(local.isUnread) as never}
       {...rest}
     />
   );
@@ -88,12 +88,15 @@ const ItemCardContent = divPart("content", "item-card-content");
 const ItemCardAction = divPart("action", "item-card-action");
 const ItemCardTitle = spanPart("title", "item-card-title");
 const ItemCardDescription = spanPart("description", "item-card-description");
-/** The unread dot: shown only while its card is unread (`isUnread`, CSS). Name it with `aria-label` (e.g. "Unread"). */
+/**
+ * The indicator slot (unread, new, a count): any content in the indicator position, a `Status` dot (accent) without
+ * children. Render it only while it applies; name a dot or icon with `aria-label` (e.g. "Unread": `role="img"`).
+ */
 const ItemCardIndicator = (props: SpanProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class"]);
   return (
     <span class={composeSlotClassName(SLOTS.indicator, local.class)} data-slot="item-card-indicator" role={rest["aria-label"] ? "img" : undefined} {...rest}>
-      {local.children}
+      {local.children ?? <StatusRoot color="accent" />}
     </span>
   );
 };

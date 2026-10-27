@@ -127,11 +127,6 @@
     overflow: hidden;
   }
 
-  .item-card[data-unread] .item-card__title {
-    --tw-font-weight: var(--font-weight-semibold, 600);
-    font-weight: var(--font-weight-semibold, 600);
-  }
-
   .item-card__description {
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -149,16 +144,10 @@
   }
 
   .item-card__indicator {
-    width: calc(var(--spacing, .25rem) * 2);
-    height: calc(var(--spacing, .25rem) * 2);
-    background-color: var(--accent);
-    border-radius: 3.40282e38px;
     flex-shrink: 0;
-    display: none;
-  }
-
-  .item-card[data-unread] .item-card__indicator {
-    display: inline-block;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
   }
 }
 @property --tw-gradient-from {

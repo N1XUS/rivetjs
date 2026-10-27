@@ -364,18 +364,18 @@ export default function MailShowcase() {
                     )}
                   >
                     {(m: Message) => (
-                      <ItemCard id={m.id} textValue={`${m.from}: ${m.subject}`} isUnread={unread().has(m.id)} class="mail-row items-start">
+                      <ItemCard id={m.id} textValue={`${m.from}: ${m.subject}`} class="items-start">
                         <Avatar size="sm">
                           <Avatar.Fallback>{initials(m.from)}</Avatar.Fallback>
                         </Avatar>
                         <ItemCard.Content>
-                          <ItemCard.Title>{m.from}</ItemCard.Title>
-                          <span class="mail-row__subject truncate">{m.subject}</span>
+                          <ItemCard.Title class={unread().has(m.id) ? "font-semibold" : undefined}>{m.from}</ItemCard.Title>
+                          <span class={`truncate text-sm ${unread().has(m.id) ? "font-medium text-foreground" : "text-foreground/80"}`}>{m.subject}</span>
                           <ItemCard.Description class="line-clamp-2">{m.preview}</ItemCard.Description>
                         </ItemCard.Content>
                         <ItemCard.Action class="flex-col items-end gap-2 self-stretch">
                           <span class="text-xs text-muted">{m.time}</span>
-                          <ItemCard.Indicator aria-label="Unread" />
+                          {unread().has(m.id) ? <ItemCard.Indicator aria-label="Unread" /> : null}
                         </ItemCard.Action>
                       </ItemCard>
                     )}

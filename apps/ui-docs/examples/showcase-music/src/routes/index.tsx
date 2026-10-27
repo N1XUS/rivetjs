@@ -9,6 +9,7 @@ import { ItemCardGroupCollection } from "@rivetjs/ui/item-card-group-collection"
 import { ScrollShadow } from "@rivetjs/ui/scroll-shadow";
 import { Sidebar } from "@rivetjs/ui/sidebar";
 import { Slider } from "@rivetjs/ui/slider";
+import { Status } from "@rivetjs/ui/status";
 import { ToggleButton } from "@rivetjs/ui/toggle-button";
 import { Compass, Heart, House, ListMusic, Pause, Play, Radio, Repeat, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide";
 
@@ -296,6 +297,11 @@ export default function MusicShowcase() {
                       <ItemCard.Title>{row.title}</ItemCard.Title>
                     </ItemCard.Content>
                     <ItemCard.Action>
+                      {/* Every row keeps its indicator and the playing one shows it (`hidden` toggles): rows adopt lazily, so
+                          a structural change in a row not yet adopted when playback moves would not match its server nodes. */}
+                      <ItemCard.Indicator hidden={!isCurrent(row)} aria-label={isPlaying() ? "Playing" : "Paused"}>
+                        <Status color="accent" size="sm" pulse={isCurrent(row) && isPlaying()} />
+                      </ItemCard.Indicator>
                       <span class="text-xs text-muted tabular-nums">{clock(row.seconds)}</span>
                       <ToggleButton
                         id={`like-${row.key}`}

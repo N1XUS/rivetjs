@@ -9,15 +9,6 @@
   }
 }
 
-/* Message rows: the subject line between the sender (ItemCard.Title) and the preview; brighter while unread. */
-.mail-row__subject {
-  @apply text-sm text-foreground/80;
-
-  .mail-row[data-unread] & {
-    @apply font-medium text-foreground;
-  }
-}
-
 /* The star toggle fills while selected. */
 .mail-star[aria-pressed="true"] svg {
   @apply fill-warning text-warning;

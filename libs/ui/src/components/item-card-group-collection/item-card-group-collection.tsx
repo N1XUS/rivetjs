@@ -9,7 +9,7 @@
 // - Provides `ItemCardCollectionContext` `{ inCollection: true }` (plain data) and registers the row form
 //   (`ITEM_CARD_ROW.Row = ItemCardRow`, in the body: before any row renders): every `ItemCard` inside renders as a
 //   GridList row (`../item-card/item-card-row.tsx`). Rows carry `data-selected` / `data-focused` / `data-focus-visible` /
-//   `data-disabled` (cdk) + `data-current` / `data-unread` (ItemCard); CSS `item-card-group.css` styles them.
+//   `data-disabled` (cdk) + `data-current` (ItemCard); CSS `item-card-group.css` styles them.
 // - No selection checkbox is added (a ui `Checkbox slot="selection"` placed in the card gets the row's state, cdk
 //   GridListItem slot); `ItemCardGroup.Header` belongs outside (a grid has only rows): label with `aria-label` /
 //   `aria-labelledby`.

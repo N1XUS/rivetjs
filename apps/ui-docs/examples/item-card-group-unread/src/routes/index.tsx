@@ -51,17 +51,17 @@ export function Unread() {
         )}
       >
         {(n: Note) => (
-          <ItemCard id={n.id} textValue={`${n.from}: ${n.text}`} isUnread={() => unread().has(n.id)}>
+          <ItemCard id={n.id} textValue={`${n.from}: ${n.text}`}>
             <Avatar size="sm">
               <Avatar.Fallback>{n.initials}</Avatar.Fallback>
             </Avatar>
             <ItemCard.Content>
-              <ItemCard.Title>{n.from}</ItemCard.Title>
+              <ItemCard.Title class={unread().has(n.id) ? "font-semibold" : undefined}>{n.from}</ItemCard.Title>
               <ItemCard.Description>{n.text}</ItemCard.Description>
             </ItemCard.Content>
             <ItemCard.Action>
               <span class="text-xs text-muted">{n.time}</span>
-              <ItemCard.Indicator aria-label="Unread" />
+              {unread().has(n.id) ? <ItemCard.Indicator aria-label="Unread" /> : null}
             </ItemCard.Action>
           </ItemCard>
         )}
