@@ -1,0 +1,218 @@
+[
+  {
+    "id": "calendar-day-view",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "calendar-week-view",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "cell-select-disabled",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "cell-select-indicator",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "cell-select-settings-group",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "color-area-space-and-channels",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "date-field-granularity",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "date-picker-format-options",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "date-range-picker-format-options",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "inline-select-placements",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "inline-select-sentence",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "range-calendar-day-view",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "range-calendar-week-view",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "select-indicator",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "select-shorthand",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (touch only; WebKit mouse passes)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "autocomplete-indicator",
+    "cells": "webkit",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (mouse and touch)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "showcase-dashboard",
+    "cells": "webkit",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (mouse and touch)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "showcase-music",
+    "cells": "webkit",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (mouse and touch)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "showcase-storefront",
+    "cells": "webkit",
+    "reason": "WebKit: cold tap/click on the trigger throws \"Rivet resume: an adopt run diverged from its probe\" (dom-derived adoptUnit); the popup / list never works (mouse and touch)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "calendar-basic",
+    "cells": "webkit",
+    "reason": "cold click on a Calendar control (next / year picker) re-renders the calendar without data-slot attributes or its label and does not apply the action, in every engine; Chromium passes only because the step's assertion already holds on the server markup (vacuous)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "calendar-year-picker",
+    "cells": "webkit",
+    "reason": "cold click on a Calendar control (next / year picker) re-renders the calendar without data-slot attributes or its label and does not apply the action, in every engine; Chromium passes only because the step's assertion already holds on the server markup (vacuous)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "range-calendar-year-picker",
+    "cells": "webkit",
+    "reason": "cold click on a Calendar control (next / year picker) re-renders the calendar without data-slot attributes or its label and does not apply the action, in every engine; Chromium passes only because the step's assertion already holds on the server markup (vacuous)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "combo-box-indicator",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit touch: cold tap on the trigger throws \"Signal writes are not allowed during computed evaluation\" + NotFoundError",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "scheduler-views",
+    "cells": "webkit",
+    "reason": "WebKit: cold click on a view radio throws \"Cannot create a child of a disposed owner\"",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "scheduler-context-menus",
+    "cells": "webkit",
+    "reason": "Shift+F10 menu: clicking \"rename-event\" times out (WebKit mouse + touch)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "scheduler-context-menus",
+    "cells": "chromium/touch|phone",
+    "reason": "Shift+F10 menu: tapping \"rename-event\" times out (Chromium touch)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "item-card-pressable",
+    "cells": "webkit",
+    "reason": "platform: WebKit's Tab skips links by default (macOS \"Tab to links\" off) — the step expects a link focused; not a Rivet bug",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "showcase-mail",
+    "cells": "*/*/throws",
+    "reason": "storage writes not guarded: QuotaExceededError logged as console errors when localStorage / sessionStorage writes throw (iOS private mode)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "table-selection",
+    "cells": "*/touch|phone",
+    "reason": "touch: tapping a row's checkbox label selects nothing (Chromium + WebKit); mouse click works",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "action-bar-responsive-labels",
+    "cells": "chromium/touch|phone",
+    "reason": "touch: tapping a row's checkbox label selects nothing (Chromium; WebKit touch passes); mouse click works",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "date-field-with-validation",
+    "cells": "*/*/*/early",
+    "reason": "cold typing: keys typed while the page's chunks still load are lost (month=1 day=1 year=2 for 0 1 0 1 2 0 2 0); passes when typed after idle",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "input-otp-on-complete",
+    "cells": "*/touch|phone",
+    "reason": "cold fill right after load: onComplete never enables submit in touch cells (flaky in mouse cells)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "input-otp-on-complete",
+    "cells": "webkit",
+    "reason": "cold fill right after load: onComplete never enables submit (WebKit; flaky)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "autocomplete-shorthand",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit touch: tapping a filtered option does not commit it (value stays / input keeps the typed text)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "combo-box-shorthand",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit touch: tapping a filtered option does not commit it (value stays / input keeps the typed text)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "toast-callbacks",
+    "cells": "webkit/touch|phone",
+    "reason": "WebKit touch: tapping a toast's close button does not close it (onClose not called)",
+    "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  }
+]

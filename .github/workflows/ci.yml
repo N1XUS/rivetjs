@@ -86,6 +86,34 @@ jobs:
         env:
           RIVET_FUZZ_SHARD: ${{ matrix.shard }}
 
+  # Cold first-interaction matrix (COLD-HARNESS, libs/docs-kit/tools/cold.ts): every ui-docs example with an input step,
+  # first interaction on a cold page, chromium + webkit × mouse + touch × normal + throwing storage, against a frames-only
+  # build of the shard's examples. Own job, not in the test shards; known reds: apps/ui-docs/examples/_cold-reds.json.
+  cold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1/6, 2/6, 3/6, 4/6, 5/6, 6/6]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node libs/docs-kit/cli.ts cold apps/ui-docs --frames
+        env:
+          RIVET_COLD_SHARD: ${{ matrix.shard }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cold-ui-docs-${{ strategy.job-index }}
+          path: apps/ui-docs/.artifacts/cold/cold.*
+          if-no-files-found: ignore
+
   zero-cost:
     runs-on: ubuntu-latest
     steps:

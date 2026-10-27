@@ -7,6 +7,11 @@ description: Use when a Rivet bug involves the first interaction on a resumed pa
 
 Most missed bugs share one blind spot: the FIRST event on a cold resumed page, tested only in headless Chromium with a mouse. Examples fixed: cold right click showed the native menu (a50839f0c), textarea value lost on cold Enter (64a5565d3), co-load cycle only in one-page builds (e2e7b3e3e), iOS private-mode theme switch.
 
+## Harness (run it first)
+
+- `node libs/docs-kit/cli.ts cold <app> [--only id,…] [--engines chromium,webkit] [--inputs mouse,touch] [--storage normal,throws,denied] [--timing early,idle] [--frames] [--shard i/n]` (`libs/docs-kit/tools/cold.ts`): every example's own steps, cold, per cell; report `<app>/.artifacts/cold/cold.md`. Needs a site build (`build --no-checks --no-search`) or `--frames` (one frames build of the ids). Known reds: `<app>/examples/_cold-reds.json` (reason + owner). CI job `cold`.
+- A red row = one repro: rerun it with `--only <id>` and that cell's flags.
+
 ## Matrix (try every cell the bug could touch)
 
 - Build: production (`<app>:build` + serve dist), and one-page frames build; dev mode is different (module-local boundary verdicts) — say which one reproduces.

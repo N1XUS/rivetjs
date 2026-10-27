@@ -101,7 +101,7 @@ export async function serveClient(client: string): Promise<{ url: string; close(
 }
 
 /** Same-origin requests of a page seen by Playwright: in flight now, started so far, and how many were not main-frame navigations. */
-interface Traffic {
+export interface Traffic {
   inflight: number;
   total: number;
   resources: number;
@@ -117,7 +117,7 @@ interface Traffic {
  * The resume loader chains idle → preload → onload → idle; cross-origin requests (embeds, players) are not counted.
  * Replaces `networkidle` + 300 ms.
  */
-async function quiet(page: import("playwright").Page, traffic: Traffic): Promise<void> {
+export async function quiet(page: import("playwright").Page, traffic: Traffic): Promise<void> {
   const start = Date.now();
   let calm = 0;
   let entries = -1;
@@ -129,7 +129,8 @@ async function quiet(page: import("playwright").Page, traffic: Traffic): Promise
         (timeout) =>
           new Promise<[entries: number, pending: number, clock: number]>((done) =>
             requestAnimationFrame(() =>
-              requestIdleCallback(
+              // WebKit has no requestIdleCallback (cold matrix, `cold.ts`): a 1 ms timer stands in.
+              (self.requestIdleCallback ?? ((callback: () => void) => setTimeout(callback, 1)))(
                 () =>
                   setTimeout(() => {
                     const same = (url: string) => new URL(url).origin === location.origin;
@@ -284,11 +285,18 @@ async function contextMenu(page: import("playwright").Page, selector: string): P
   if (!prevented.every(Boolean)) throw new Error("the browser's own context menu was not canceled (contextmenu default not prevented)");
 }
 
-/** Run one test step (exported for tests/steps.test.ts). */
-export async function run(page: import("playwright").Page, step: Step, id: string): Promise<void> {
+/** Options of `run`. */
+export interface RunOptions {
+  /** Touch context (`hasTouch`; the cold matrix's touch cells, `cold.ts`): `click` and `tap` steps are Playwright taps. */
+  touch?: boolean;
+}
+
+/** Run one test step (exported for tests/steps.test.ts and the cold matrix, `cold.ts`). */
+export async function run(page: import("playwright").Page, step: Step, id: string, options: RunOptions = {}): Promise<void> {
   const where = `example ${id}: step ${JSON.stringify(step)}`;
   try {
-    if ("click" in step) await page.click(step.click, { timeout: 5000 });
+    if (options.touch && ("click" in step || "tap" in step)) await page.tap("click" in step ? step.click : step.tap, { timeout: 5000 });
+    else if ("click" in step) await page.click(step.click, { timeout: 5000 });
     else if ("dblclick" in step) await page.dblclick(step.dblclick, { timeout: 5000 });
     else if ("rightclick" in step) await page.click(step.rightclick, { button: "right", timeout: 5000 });
     else if ("contextmenu" in step) await contextMenu(page, step.contextmenu);
