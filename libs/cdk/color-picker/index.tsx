@@ -17,12 +17,12 @@ import {
 } from "@rivetjs/cdk/color";
 import { mergeProps } from "../interactions/merge-props.tsx";
 import { Provider, renderProps, slottedContext, type ChildrenOrFunction, type SlotProps, type SlottedContextValue } from "../slots/index.tsx";
-import { ColorAreaContext } from "../color-area/index.tsx";
-import { ColorFieldContext } from "../color-field/index.tsx";
-import { ColorSliderContext } from "../color-slider/index.tsx";
-import { ColorSwatchContext } from "../color-swatch/index.tsx";
-import { ColorSwatchPickerContext } from "../color-swatch-picker/index.tsx";
-import { ColorWheelContext } from "../color-wheel/index.tsx";
+import { ColorAreaContext } from "../color-area/contexts.ts";
+import { ColorFieldContext } from "../color-field/contexts.ts";
+import { ColorSliderContext } from "../color-slider/contexts.ts";
+import { ColorSwatchContext } from "../color-swatch/contexts.ts";
+import { ColorSwatchPickerContext } from "../color-swatch-picker/contexts.ts";
+import { ColorWheelContext } from "../color-wheel/contexts.ts";
 import { liveOptions } from "../utils/live.tsx";
 
 export interface ColorPickerRenderProps {

@@ -46,7 +46,7 @@ import { For, Provider } from "@rivetjs/runtime/dom";
 import type { RefProp } from "@rivetjs/runtime/jsx-runtime";
 import { _rUnrecorded } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
-import { HiddenContext } from "./hidden.ts";
+import { BuildContext, HiddenContext, type BuildRun, type BuildScope } from "./hidden.ts";
 import { domRowItem } from "#server";
 import { hasLive } from "../utils/live.tsx";
 import { mergeProps as mergeLive, splitProps } from "@rivetjs/runtime/props";
@@ -66,22 +66,6 @@ export type { CollectionNodeClass, CollectionNodeSpec } from "./base.ts";
 // ---------------------------------------------------------------------------------------------
 // Contexts
 // ---------------------------------------------------------------------------------------------
-
-/** Build scope (internal, synchronous; never resumed): where parts register their node specs. */
-interface BuildScope {
-  readonly specs: CollectionNodeSpec<any>[];
-  readonly parentKey: Key | null;
-  /** Ordinal of the next id-less part under this parent (`generatedId`). */
-  readonly ids: { n: number };
-  /** The build's observer (shared by the nested scopes of one build; cleared when the build ends). */
-  readonly run: BuildRun;
-  /** `probeCollection` (an id probe): collection roots merge their own id and register nothing. */
-  readonly probe?: true;
-}
-interface BuildRun {
-  o: object | null;
-}
-const BuildContext = createContext<BuildScope | null>(null);
 
 /** Live scope: parent / level / id scope of the parts rendered below (plain data, resumable). */
 export interface CollectionScope {
@@ -137,10 +121,8 @@ const CollectionContext = createContext<CollectionContextValue | null>(null);
  */
 const tracked = <R,>(build: BuildScope, fn: () => R): R => _reobserve(build.run.o, fn);
 
-/** RAC `useIsHidden`: whether the caller renders in build mode (render nothing visible, register only). */
-export function isHidden(): boolean {
-  return useContext(HiddenContext) || useContext(BuildContext) != null;
-}
+// `isHidden` / `isCollectionProbe` / `BuildContext` live in the leaf `./hidden.ts` (overlays and fields ask without the builder).
+export { isCollectionProbe, isHidden } from "./hidden.ts";
 
 // ---------------------------------------------------------------------------------------------
 // Building
@@ -224,11 +206,6 @@ function probeWalk(value: unknown, depth: number): void {
     const inner = record.value;
     runWithOwner(record.owner ?? null, () => probeWalk(inner, depth + 1));
   }
-}
-
-/** Whether the caller renders inside `probeCollection`: a collection root merges the context id and renders nothing. */
-export function isCollectionProbe(): boolean {
-  return useContext(BuildContext)?.probe === true;
 }
 
 /**

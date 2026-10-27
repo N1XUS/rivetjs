@@ -11,6 +11,7 @@
 // - `InternalCheckboxContext` is resumable (`rv-checkbox-internal`): CheckboxButton reads the field's
 //   behaviour bags from it.
 // `render` (RAC DOMRenderProps): given, the attributes go to `render(attrs, <part>RenderProps)` instead of the default element (CheckboxGroup / CheckboxField `<div>`, CheckboxButton / Checkbox `<label>` with the hidden input inside `children`). Deviations: `inputRef` is a Rivet `ref()` (or callback).
+import { CheckboxContext, CheckboxFieldContext, CheckboxGroupContext, CheckboxGroupStateContext } from "./contexts.ts";
 import { probeSlots, slotProbing } from "#server";
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { mergeProps as mergeLive } from "@rivetjs/runtime/props";
@@ -42,7 +43,6 @@ import {
   createSlot,
   renderProps,
   renderPropsOf,
-  type ContextValue,
   type ProviderValue,
   type RACValidation,
   type RefValue,
@@ -231,15 +231,6 @@ export interface CheckboxRenderProps extends CheckboxFieldRenderProps {
 }
 
 export interface CheckboxButtonRenderProps extends CheckboxRenderProps {}
-
-/** RAC `CheckboxContext`. */
-export const CheckboxContext = createContext<ContextValue<CheckboxProps, HTMLLabelElement>>(null);
-/** RAC `CheckboxFieldContext`. */
-export const CheckboxFieldContext = createContext<ContextValue<CheckboxFieldProps, HTMLDivElement>>(null);
-/** RAC `CheckboxGroupContext`. */
-export const CheckboxGroupContext = createContext<ContextValue<CheckboxGroupProps, HTMLDivElement>>(null);
-/** RAC `CheckboxGroupStateContext`. */
-export const CheckboxGroupStateContext = createContext<CheckboxGroupState | null>(null);
 
 const DOM_OWNED = ["style", "onClick", "render"] as const;
 
@@ -574,3 +565,5 @@ export function CheckboxButton(props: CheckboxButtonProps) {
     </label>
   );
 }
+
+export { CheckboxContext, CheckboxFieldContext, CheckboxGroupContext, CheckboxGroupStateContext };

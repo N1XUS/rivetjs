@@ -8,6 +8,7 @@ RAC `ColorField` + react-aria `useColorField` / `useColorChannelField`: hex text
 - `@rivetjs/cdk/color-field/behaviour` -> `behaviour.tsx`: `colorFieldProps`, `colorFieldSpinProps`, handlers `colorFieldInput` / `Change` / `Invalid` / `BeforeInput` / `CompositionStart` / `CompositionEnd` / `Scroll` / `KeyDown` / `KeyUp` / `Focus` / `Blur` / `Dispose`; `colorChannelFieldProps`, `colorChannelFieldNumberProps` (channel field = number-field handlers over `numberFieldView(state)`)
 - state: `@rivetjs/cdk/color` `createColorFieldState`, `createColorChannelFieldState`
 
+- `contexts.ts` (BIG-UI 2026-10-27): `ColorFieldContext`, `ColorFieldStateContext` live in this leaf (re-exported by `index.tsx`), so `color-picker` and siblings read them without importing the component and its behaviour closure (color-picker-basic −28 % JS gz)
 ## Rules / invariants
 - Parts provided: `InputContext`, `LabelContext`, `GroupContext` (`role="presentation"`), `TextContext` slots description / errorMessage (`createSlotId`), `FieldErrorContext`; channel field adds hidden `<input type=hidden name form value>`.
 - Root `data-channel` / `data-disabled` / `data-invalid` / `data-readonly` / `data-required`; default class `rv-ColorField`.

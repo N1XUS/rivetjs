@@ -7,6 +7,7 @@ RAC `ColorSwatch` + react-aria `useColorSwatch`: `role="img"` color preview with
 - `@rivetjs/cdk/color-swatch` -> `index.tsx`: `ColorSwatch`, `ColorSwatchContext` (rv-color-swatch), `ColorSwatchProps`, `ColorSwatchRenderProps`; re-exports `behaviour.ts` (`export *`: named re-exports trip "Duplicated export")
 - `@rivetjs/cdk/color-swatch/behaviour` -> `behaviour.ts`: `colorSwatchProps`, `colorSwatchColor`
 
+- `contexts.ts` (BIG-UI 2026-10-27): `ColorSwatchContext` live in this leaf (re-exported by `index.tsx`), so `color-picker` and siblings read them without importing the component and its behaviour closure (color-picker-basic −28 % JS gz)
 ## Rules / invariants
 - `color` may be an accessor (ColorPicker / ColorSwatchPickerItem pass one or a string through `ColorSwatchContext`).
 - Default class `rv-ColorSwatch`; background (checkerboard + color) inline style; `children` render prop (Rivet: RAC renders children untyped).

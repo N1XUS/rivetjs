@@ -25,7 +25,7 @@ export type { TextFieldRootProps, TextFieldRootProps as TextFieldProps } from ".
 /* -------------------------------------------------------------------------------------------------
  * Context
  * -----------------------------------------------------------------------------------------------*/
-export { TextFieldContext } from "./textfield.tsx";
+export { TextFieldContext } from "./textfield-context.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Variants

@@ -19,7 +19,7 @@
 import { computed, signal, untrack } from "@rivetjs/reactivity";
 import { clientEffect } from "@rivetjs/runtime/dom";
 import { chain } from "../interactions/merge-props.tsx";
-import { setStyle } from "./dom.ts";
+import { setStyle } from "./dom-core.ts";
 
 /** An element accessor: a `ref()` from `@rivetjs/runtime/dom`, or a function returning the element. */
 export type AnimationRef = () => HTMLElement | null | undefined;

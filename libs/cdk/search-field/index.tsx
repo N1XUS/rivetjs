@@ -12,7 +12,7 @@
 // - description / error ids are slot ids (RA `useSlotId`): part of `aria-describedby` while that part renders (server: a slot
 //   probe, `probeSlots`, marks them before the input renders, as Select / TextField).
 // `render` (RAC DOMRenderProps): given, the attributes go to `render(attrs, SearchFieldRenderProps)` instead of the default `<div>`.
-import { isHidden } from "../collections/components.tsx";
+import { isHidden } from "../collections/hidden.ts";
 import { probeSlots, slotProbing } from "#server";
 import { createContext, untrack } from "@rivetjs/reactivity";
 import { ref as createRef } from "@rivetjs/runtime/dom";

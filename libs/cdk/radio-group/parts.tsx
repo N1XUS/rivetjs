@@ -41,7 +41,8 @@ import { pressProps, type PressEvents } from "../interactions/press.tsx";
 import { mergeProps } from "../interactions/merge-props.tsx";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { mergeInputRefs, type InputRef, type PropBag } from "../checkbox/behaviour.tsx";
+import type { InputRef, PropBag } from "../checkbox/behaviour.tsx";
+import { mergeInputRefs } from "../checkbox/input-ref.tsx";
 import { SharedElementTransition } from "../shared-element-transition/transition.tsx";
 import { SelectionIndicatorContext } from "../selection-indicator/context.ts";
 import {

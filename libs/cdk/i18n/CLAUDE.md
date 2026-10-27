@@ -12,7 +12,7 @@ Locale resolution, RTL detection, cached date formatters, localized string table
 - `./i18n-provider` -> `i18n-provider.tsx`: `<I18nProvider locale>`, `I18nProviderProps`; re-exports `LocaleContext`, `useLocale`, `Locale`
 
 ## Layout
-- `index.ts` - plain TS (no JSX); imports `../date/DateFormatter.ts`
+- `index.ts` - plain TS (no JSX); re-exports `getDateFormatter` from the leaf `date-formatter.ts` (BIG-UI 2026-10-27: the only `../date/DateFormatter.ts` importer, so `useLocale` callers ship no date formatter; date modules import the leaf)
 - `i18n-provider.tsx` - Provider wrapper
 - consumers: `calendar/`, `date-field/`, `state/{calendar,date-field,date-picker,date-intl}.ts`, `select/index.tsx`, `_adapters/intl.ts`, `*/intl.ts` (generated string tables)
 - tests: `tests/i18n-filter.test.ts` (filter.ts, list-formatter.ts, intl-cache.ts; Rivet tests, upstream has none); otherwise covered via date widgets `tests-components/{calendar-keyboard,calendar-parts,calendar-state,date-picker-state}.test.ts`

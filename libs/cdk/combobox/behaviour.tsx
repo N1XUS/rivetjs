@@ -38,7 +38,7 @@ import { isAppleDevice } from "../platform/index.ts";
 import { ListKeyboardDelegate } from "../selection/list-keyboard-delegate.ts";
 import { selectableCollectionKeyDown, syncFocus, type AriaSelectableCollectionOptions } from "../selection/selectable-collection.ts";
 import { dispatchVirtualFocus } from "../selection/dom-utils.ts";
-import { nodeContains, cssEscape } from "../utils/dom.ts";
+import { nodeContains, cssEscape } from "../utils/dom-core.ts";
 import { createId } from "../utils/id.ts";
 import { routerOpen, type Router, type RouterOptions } from "../utils/links.tsx";
 import { displayValidation, read, type MaybeAccessor, type ValidationResult } from "../state/form-validation.ts";

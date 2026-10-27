@@ -1,6 +1,6 @@
 // Accessibility helpers: live announcements, focusability / visibility checks, the visually hidden
 // styles. No import-time work: the fallback live regions are created by the first `announce()`.
-import { cssEscape } from "../utils/dom.ts";
+import { cssEscape } from "../utils/dom-core.ts";
 
 /**
  * Styles of visually hidden but accessible content (react-aria `useVisuallyHidden`): `style={visuallyHidden}`.

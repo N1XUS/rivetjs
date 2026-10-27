@@ -11,7 +11,6 @@
 // - `I18nProvider` lives in `@rivetjs/cdk/i18n-provider` (JSX); this module is plain TypeScript.
 // - Localized strings are plain `{name}` templates (react-aria compiles its JSON to functions).
 import { createContext, useContext } from "@rivetjs/reactivity";
-import { DateFormatter } from "../date/DateFormatter.ts";
 
 export type { Direction } from "../collections/types.ts";
 import type { Direction } from "../collections/types.ts";
@@ -131,17 +130,9 @@ export function resolveLocale(locale?: string | null): string {
   return locale || useLocale().locale;
 }
 
-const formatters = new Map<string, DateFormatter>();
-/** Cached `DateFormatter` for `locale` + `options` (react-aria `useDateFormatter`). */
-export function getDateFormatter(locale: string, options: Intl.DateTimeFormatOptions = {}): DateFormatter {
-  const key = locale + JSON.stringify(options);
-  let formatter = formatters.get(key);
-  if (!formatter) {
-    if (formatters.size > 256) formatters.clear();
-    formatters.set(key, (formatter = new DateFormatter(locale, options)));
-  }
-  return formatter;
-}
+// `getDateFormatter` is the leaf `./date-formatter.ts` (BIG-UI: `useLocale` callers — every overlay — do not ship the
+// date formatter).
+export { getDateFormatter } from "./date-formatter.ts";
 
 /** Localized string tables: locale → key → `{name}` template. */
 export type LocalizedStrings<K extends string = string> = Record<string, Record<K, string>>;

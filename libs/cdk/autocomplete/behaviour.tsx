@@ -30,7 +30,7 @@ import type { Node } from "../collections/types.ts";
 import { CLEAR_FOCUS_EVENT, FOCUS_EVENT } from "../selection/selectable-collection.ts";
 import { dispatchVirtualBlur, dispatchVirtualFocus, getVirtuallyFocusedElement, moveVirtualFocus } from "../selection/dom-utils.ts";
 import { getInteractionModality, getPointerType } from "../interactions/focus-visible.tsx";
-import { getActiveElement, getEventTarget, getOwnerDocument } from "../utils/dom.ts";
+import { getActiveElement, getEventTarget, getOwnerDocument } from "../utils/dom-core.ts";
 import { isAndroid, isCtrlKeyPressed, isIOS } from "../platform/index.ts";
 import { createMergedId, type MergedId } from "../slots/index.tsx";
 import { labelsProps } from "../label/behaviour.ts";

@@ -15,20 +15,19 @@ import { keyboardKeyDown } from "../interactions/keyboard.tsx";
 import { getOwnerWindow, read, type MaybeAccessor } from "../interactions/utils.ts";
 import { moveKeyDown, movePointerDown, type MoveMoveEvent } from "../interactions/move.tsx";
 import {
-  decrement,
-  getDefaultValue,
-  getThumbPosition,
-  getValue,
-  increment,
-  isDragging,
-  setDragging,
+  colorWheelDefaultValue,
+  colorWheelValue,
+  decrementHue,
+  getColorWheelThumbPosition,
+  incrementHue,
+  setColorWheelDragging,
+  setColorWheelValue,
   setHue,
   setHueFromPoint,
-  setValue,
-  type Color,
   type ColorWheelProps,
   type ColorWheelState,
-} from "@rivetjs/cdk/color";
+} from "../color/wheel-state.ts";
+import { type Color } from "../color/color.ts";
 import { colorAreaInputStyle } from "../color-area/behaviour.tsx";
 
 export interface AriaColorWheelProps extends ColorWheelProps {
@@ -111,22 +110,22 @@ function focusInput(props: ColorWheelAriaOptions): void {
 // moveHandler
 function moveStart(props: ColorWheelAriaOptions, state: ColorWheelState): void {
   props.interaction.refs.position = null;
-  setDragging(state, true);
+  setColorWheelDragging(state, true);
 }
 
 function moveMove(props: ColorWheelAriaOptions, state: ColorWheelState, { deltaX, deltaY, pointerType, shiftKey }: MoveMoveEvent): void {
   const refs = props.interaction.refs;
   const radius = thumbRadius(props);
   if (refs.position == null) {
-    refs.position = untrack(() => getThumbPosition(state, radius));
+    refs.position = untrack(() => getColorWheelThumbPosition(state, radius));
   }
   refs.position.x += deltaX;
   refs.position.y += deltaY;
   if (pointerType === "keyboard") {
     if (deltaX > 0 || deltaY < 0) {
-      increment(state, shiftKey ? state.pageStep : state.step);
+      incrementHue(state, shiftKey ? state.pageStep : state.step);
     } else if (deltaX < 0 || deltaY > 0) {
-      decrement(state, shiftKey ? state.pageStep : state.step);
+      decrementHue(state, shiftKey ? state.pageStep : state.step);
     }
   } else {
     setHueFromPoint(state, refs.position.x, refs.position.y, radius);
@@ -135,7 +134,7 @@ function moveMove(props: ColorWheelAriaOptions, state: ColorWheelState, { deltaX
 
 function moveEnd(props: ColorWheelAriaOptions, state: ColorWheelState): void {
   props.interaction.refs.onTrack = false;
-  setDragging(state, false);
+  setColorWheelDragging(state, false);
   focusInput(props);
 }
 
@@ -182,10 +181,10 @@ function removeUp(props: ColorWheelAriaOptions): void {
 }
 
 function onThumbDown(props: ColorWheelAriaOptions, state: ColorWheelState, id: number | null): void {
-  if (!untrack(() => isDragging(state))) {
+  if (!untrack(() => state.dragging())) {
     props.interaction.refs.pointer = { active: true, id };
     focusInput(props);
-    setDragging(state, true);
+    setColorWheelDragging(state, true);
     addUp(props, state, "thumb");
   }
 }
@@ -194,7 +193,7 @@ function onThumbUp(props: ColorWheelAriaOptions, state: ColorWheelState, e: Poin
   const refs = props.interaction.refs;
   if (refs.pointer.active && e.pointerId === refs.pointer.id) {
     focusInput(props);
-    setDragging(state, false);
+    setColorWheelDragging(state, false);
     refs.pointer = { active: false, id: null };
     refs.onTrack = false;
     removeUp(props);
@@ -207,13 +206,13 @@ function onTrackDown(props: ColorWheelAriaOptions, state: ColorWheelState, track
   const x = pageX - rect.x - rect.width / 2;
   const y = pageY - rect.y - rect.height / 2;
   const radius = Math.sqrt(x * x + y * y);
-  if (props.innerRadius < radius && radius < props.outerRadius && !untrack(() => isDragging(state)) && !refs.pointer.active) {
+  if (props.innerRadius < radius && radius < props.outerRadius && !untrack(() => state.dragging()) && !refs.pointer.active) {
     refs.onTrack = true;
     refs.pointer = { active: true, id };
     setHueFromPoint(state, x, y, radius);
 
     focusInput(props);
-    setDragging(state, true);
+    setColorWheelDragging(state, true);
     addUp(props, state, "track");
   }
 }
@@ -223,7 +222,7 @@ function onTrackUp(props: ColorWheelAriaOptions, state: ColorWheelState, e: Poin
   if (refs.onTrack && refs.pointer.active && e.pointerId === refs.pointer.id) {
     refs.onTrack = false;
     refs.pointer = { active: false, id: null };
-    setDragging(state, false);
+    setColorWheelDragging(state, false);
     focusInput(props);
     removeUp(props);
   }
@@ -255,14 +254,14 @@ export function colorWheelThumbKeyDown(e: KeyboardEvent, props: ColorWheelAriaOp
     {
       shortcuts: {
         PageUp: () => {
-          setDragging(state, true);
-          increment(state, state.pageStep);
-          setDragging(state, false);
+          setColorWheelDragging(state, true);
+          incrementHue(state, state.pageStep);
+          setColorWheelDragging(state, false);
         },
         PageDown: () => {
-          setDragging(state, true);
-          decrement(state, state.pageStep);
-          setDragging(state, false);
+          setColorWheelDragging(state, true);
+          decrementHue(state, state.pageStep);
+          setColorWheelDragging(state, false);
         },
       },
       allowRepeats: true,
@@ -281,8 +280,8 @@ export function colorWheelInputChange(e: Event, _props: ColorWheelAriaOptions, s
 export function colorWheelInputFocus(_e: FocusEvent, props: ColorWheelAriaOptions, state: ColorWheelState): void {
   if (props.interaction.refs.formReset) return;
   props.interaction.refs.formReset = true;
-  const defaultValue = untrack(() => getDefaultValue(state));
-  useFormReset(props.inputRef(), defaultValue, (value: Color) => setValue(state, value));
+  const defaultValue = untrack(() => colorWheelDefaultValue(state));
+  useFormReset(props.inputRef(), defaultValue, (value: Color) => setColorWheelValue(state, value));
 }
 
 // Creates an SVG path string for a circle.
@@ -323,7 +322,7 @@ export function colorWheelTrackStyle(props: Omit<AriaColorWheelOptions, "isDisab
 
 /** Thumb style: absolute position on the ring (reads the state). */
 export function colorWheelThumbStyle(props: Omit<AriaColorWheelOptions, "isDisabled">, state: ColorWheelState): Record<string, string> {
-  const { x, y } = getThumbPosition(state, thumbRadius(props));
+  const { x, y } = getColorWheelThumbPosition(state, thumbRadius(props));
   return {
     position: "absolute",
     left: (props.outerRadius + x).toFixed(3) + "px",
@@ -341,25 +340,25 @@ export function colorWheelInputLabels(
 ): { id?: string; "aria-label"?: string; "aria-labelledby"?: string } {
   let ariaLabel = props["aria-label"];
   if (ariaLabel == null && props["aria-labelledby"] == null) {
-    ariaLabel = untrack(() => getValue(state)).getChannelName("hue", props.locale);
+    ariaLabel = untrack(() => colorWheelValue(state)).getChannelName("hue", props.locale);
   }
   return useLabels({ id: props.id, "aria-label": ariaLabel, "aria-labelledby": props["aria-labelledby"] });
 }
 
 /** Input range attributes (strings, as upstream). */
 export function colorWheelInputRange(state: ColorWheelState): { min: string; max: string; step: string } {
-  const { minValue, maxValue, step } = getValue(state).getChannelRange("hue");
+  const { minValue, maxValue, step } = colorWheelValue(state).getChannelRange("hue");
   return { min: String(minValue), max: String(maxValue), step: String(step) };
 }
 
 /** Input `aria-valuetext` ("<hue>°, <hue name>"). */
 export function colorWheelInputValueText(props: { locale: string }, state: ColorWheelState): string {
-  const value = getValue(state);
+  const value = colorWheelValue(state);
   return `${value.formatChannelValue("hue", props.locale)}, ${value.getHueName(props.locale)}`;
 }
 
 /** Input value. */
-export const colorWheelInputValue = (state: ColorWheelState): string => `${getValue(state).getChannelValue("hue")}`;
+export const colorWheelInputValue = (state: ColorWheelState): string => `${colorWheelValue(state).getChannelValue("hue")}`;
 
 /** The visually hidden input style (same as the color area inputs). */
 export const colorWheelInputStyle = colorAreaInputStyle;

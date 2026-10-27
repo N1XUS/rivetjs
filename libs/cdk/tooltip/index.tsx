@@ -32,7 +32,7 @@ import { createEnterAnimation, createExitAnimationState, watchExitAnimation, typ
 import { dataBool } from "../utils/data-attrs.tsx";
 import { createId } from "../utils/id.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { isHidden } from "../collections/components.tsx";
+import { isHidden } from "../collections/hidden.ts";
 import { FocusableProvider } from "../focus/focusable.tsx";
 import { OverlayArrowContext, type ArrowOffset } from "../overlay/contexts.ts";
 import { Portal, PortalContext } from "../portal/index.tsx";

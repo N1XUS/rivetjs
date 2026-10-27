@@ -12,7 +12,7 @@ import {
   type FocusableElement,
 } from "../interactions/utils.ts";
 import { getInteractionModality } from "../interactions/focus-visible.tsx";
-import { cssEscape } from "../utils/dom.ts";
+import { cssEscape } from "../utils/dom-core.ts";
 
 /**
  * Rivet: the mount effect of a server-rendered element (auto focus of a Dialog / FocusScope / `autoFocus`)

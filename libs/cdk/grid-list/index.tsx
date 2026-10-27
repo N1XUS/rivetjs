@@ -95,7 +95,7 @@ import {
   type RenderProps,
 } from "../slots/index.tsx";
 import { ButtonContext } from "../button/index.tsx";
-import { CheckboxContext, CheckboxFieldContext } from "../checkbox/index.tsx";
+import { CheckboxContext, CheckboxFieldContext } from "../checkbox/contexts.ts";
 import { createId } from "../utils/id.ts";
 import { TextContext } from "../text/index.tsx";
 import { SelectionIndicatorContext } from "../selection-indicator/context.ts";

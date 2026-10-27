@@ -23,28 +23,25 @@ import { getOwnerWindow, read, type MaybeAccessor } from "../interactions/utils.
 import { moveKeyDown, movePointerDown, type MoveMoveEvent } from "../interactions/move.tsx";
 import { focusWithinBlur, focusWithinFocus } from "../interactions/focus.tsx";
 import {
+  colorAreaDefaultValue,
+  colorAreaValue,
   decrementX,
   decrementY,
-  getChannels,
   getChannelSteps,
-  getDefaultValue,
-  getDisplayColor,
-  getThumbPosition,
-  getValue,
+  getChannels,
+  getColorAreaDisplayColor,
+  getColorAreaThumbPosition,
   incrementX,
   incrementY,
-  isDragging,
-  parseColor,
+  setColorAreaDragging,
+  setColorAreaValue,
   setColorFromPoint,
-  setDragging,
-  setValue,
   setXValue,
   setYValue,
-  type Color,
   type ColorAreaProps,
   type ColorAreaState,
-  type ColorChannel,
-} from "@rivetjs/cdk/color";
+} from "../color/area-state.ts";
+import { parseColor, type Color, type ColorChannel } from "../color/color.ts";
 import { colorAriaMessages, type ColorAriaMessageKey } from "../color/aria-intl.ts";
 
 export interface AriaColorAreaProps extends ColorAreaProps {
@@ -155,10 +152,10 @@ function keyboardUpdate(
   inputRef: () => HTMLInputElement | undefined,
   input: "x" | "y",
 ): void {
-  setDragging(state, true);
+  setColorAreaDragging(state, true);
   props.interaction.valueChangedViaKeyboard.set(true);
   cb();
-  setDragging(state, false);
+  setColorAreaDragging(state, false);
   focusInput(props, inputRef);
   props.interaction.focusedInput.set(input);
 }
@@ -166,7 +163,7 @@ function keyboardUpdate(
 // moveHandler
 function moveStart(props: AriaColorAreaOptions, state: ColorAreaState): void {
   props.interaction.refs.position = null;
-  setDragging(state, true);
+  setColorAreaDragging(state, true);
 }
 
 function moveMove(props: AriaColorAreaOptions, state: ColorAreaState, { deltaX, deltaY, pointerType, shiftKey }: MoveMoveEvent): void {
@@ -174,7 +171,7 @@ function moveMove(props: AriaColorAreaOptions, state: ColorAreaState, { deltaX, 
   const refs = interaction.refs;
   const { xChannelPageStep, xChannelStep, yChannelPageStep, yChannelStep } = untrack(() => getChannelSteps(state));
   if (refs.position == null) {
-    refs.position = untrack(() => getThumbPosition(state));
+    refs.position = untrack(() => getColorAreaThumbPosition(state));
   }
   const { width, height } = props.containerRef()?.getBoundingClientRect() || { width: 0, height: 0 };
   const valueChanged = deltaX !== 0 || deltaY !== 0;
@@ -202,7 +199,7 @@ function moveMove(props: AriaColorAreaOptions, state: ColorAreaState, { deltaX, 
 
 function moveEnd(props: AriaColorAreaOptions, state: ColorAreaState): void {
   props.interaction.refs.onArea = false;
-  setDragging(state, false);
+  setColorAreaDragging(state, false);
   const input = untrack(props.interaction.focusedInput) === "x" ? props.inputXRef : props.inputYRef;
   focusInput(props, input);
 }
@@ -253,11 +250,11 @@ function removeUp(props: AriaColorAreaOptions): void {
 
 function onThumbDown(props: AriaColorAreaOptions, state: ColorAreaState, id: number | null): void {
   const { interaction } = props;
-  if (!untrack(() => isDragging(state))) {
+  if (!untrack(() => state.dragging())) {
     interaction.refs.pointer = { active: true, id };
     interaction.valueChangedViaKeyboard.set(false);
     focusInput(props);
-    setDragging(state, true);
+    setColorAreaDragging(state, true);
     addUp(props, state, "thumb");
   }
 }
@@ -268,7 +265,7 @@ function onThumbUp(props: AriaColorAreaOptions, state: ColorAreaState, e: Pointe
   if (pointer.active && e.pointerId === pointer.id) {
     interaction.valueChangedViaKeyboard.set(false);
     focusInput(props);
-    setDragging(state, false);
+    setColorAreaDragging(state, false);
     interaction.refs.pointer = { active: false, id: null };
     interaction.refs.onArea = false;
     removeUp(props);
@@ -284,14 +281,14 @@ function onColorAreaDown(props: AriaColorAreaOptions, state: ColorAreaState, col
   if (props.direction === "rtl") {
     x = 1 - x;
   }
-  if (x >= 0 && x <= 1 && y >= 0 && y <= 1 && !untrack(() => isDragging(state)) && !interaction.refs.pointer.active) {
+  if (x >= 0 && x <= 1 && y >= 0 && y <= 1 && !untrack(() => state.dragging()) && !interaction.refs.pointer.active) {
     interaction.refs.onArea = true;
     interaction.valueChangedViaKeyboard.set(false);
     interaction.refs.pointer = { active: true, id };
     setColorFromPoint(state, x, y);
 
     focusInput(props);
-    setDragging(state, true);
+    setColorAreaDragging(state, true);
     addUp(props, state, "area");
   }
 }
@@ -303,7 +300,7 @@ function onColorAreaUp(props: AriaColorAreaOptions, state: ColorAreaState, e: Po
     interaction.refs.onArea = false;
     interaction.valueChangedViaKeyboard.set(false);
     interaction.refs.pointer = { active: false, id: null };
-    setDragging(state, false);
+    setColorAreaDragging(state, false);
     focusInput(props);
     removeUp(props);
   }
@@ -374,8 +371,8 @@ export function colorAreaInputFocus(_e: FocusEvent, props: AriaColorAreaOptions,
   props.interaction.focusedInput.set(input);
   if (!props.interaction.refs.formReset) {
     props.interaction.refs.formReset = true;
-    const defaultValue = untrack(() => getDefaultValue(state));
-    useFormReset(props.inputXRef(), defaultValue, (value: Color) => setValue(state, value));
+    const defaultValue = untrack(() => colorAreaDefaultValue(state));
+    useFormReset(props.inputXRef(), defaultValue, (value: Color) => setColorAreaValue(state, value));
   }
 }
 
@@ -394,7 +391,7 @@ export function colorAreaInputChange(e: Event, props: AriaColorAreaOptions, stat
 export function colorAreaInputValueText(props: AriaColorAreaOptions, state: ColorAreaState, axis: "x" | "y"): string {
   const { locale, interaction } = props;
   const s = strings(locale);
-  const value = getDisplayColor(state);
+  const value = getColorAreaDisplayColor(state);
   const { xChannel, yChannel, zChannel } = getChannels(state);
   const channel = axis === "x" ? xChannel : yChannel;
   const isAfterInput = interaction.valueChangedViaInputChangeEvent() || interaction.valueChangedViaKeyboard();
@@ -445,7 +442,7 @@ export function colorAreaGroupLabels(props: AriaColorAreaOptions): { id?: string
 
 /** Static input attributes (min / max / step / orientation / roledescription) for `axis`. */
 export function colorAreaInputRange(props: AriaColorAreaOptions, state: ColorAreaState, axis: "x" | "y"): { min: number; max: number; step: number } {
-  const value = getValue(state);
+  const value = colorAreaValue(state);
   const { xChannel, yChannel } = getChannels(state);
   const range = value.getChannelRange(axis === "x" ? xChannel : yChannel);
   const steps = getChannelSteps(state);
@@ -455,7 +452,7 @@ export function colorAreaInputRange(props: AriaColorAreaOptions, state: ColorAre
 /** The input's value for `axis`. */
 export function colorAreaInputValue(state: ColorAreaState, axis: "x" | "y"): number {
   const { xChannel, yChannel } = getChannels(state);
-  return getValue(state).getChannelValue(axis === "x" ? xChannel : yChannel);
+  return colorAreaValue(state).getChannelValue(axis === "x" ? xChannel : yChannel);
 }
 
 /** `aria-roledescription` of both inputs ("2D slider"). */
@@ -489,7 +486,7 @@ export function colorAreaStyle(props: { direction: Direction }, state: ColorArea
   const { xChannel, yChannel, zChannel } = getChannels(state);
   const end = direction === "rtl" ? "left" : "right";
   let colorAreaStyles: Record<string, string> = {};
-  const value = getValue(state);
+  const value = colorAreaValue(state);
   const zValue = value.getChannelValue(zChannel);
 
   switch (value.getColorSpace()) {
@@ -530,7 +527,7 @@ export function colorAreaStyle(props: { direction: Direction }, state: ColorArea
 
 /** RA `useColorAreaGradient` → `thumbStyleProps.style` (absolute position at the value). */
 export function colorAreaThumbStyle(props: { direction: Direction }, state: ColorAreaState): Record<string, string> {
-  let { x, y } = getThumbPosition(state);
+  let { x, y } = getColorAreaThumbPosition(state);
   if (props.direction === "rtl") {
     x = 1 - x;
   }

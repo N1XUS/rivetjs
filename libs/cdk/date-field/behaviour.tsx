@@ -28,7 +28,8 @@ import {
 } from "@rivetjs/cdk/date";
 import { announce, visuallyHidden } from "@rivetjs/cdk/a11y";
 import { createFocusManager, getFocusableTreeWalker, type FocusManager } from "@rivetjs/cdk/focus";
-import { formatString, getDateFormatter, getStringsForLocale, isRTL } from "@rivetjs/cdk/i18n";
+import { formatString, getStringsForLocale, isRTL } from "@rivetjs/cdk/i18n";
+import { getDateFormatter } from "../i18n/date-formatter.ts";
 import { isMac } from "@rivetjs/cdk/platform";
 import {
   clearServerErrors,

@@ -10,7 +10,7 @@
 //   (`react-aria-landmark-navigation`, public API).
 // - `useLandmarkManager` (useSyncExternalStore) → `registerLandmark` subscribes to the manager-change
 //   event and re-registers with the new manager.
-import { DEV, getEventTarget, nodeContains } from "../utils/dom.ts";
+import { DEV, getEventTarget, nodeContains } from "../utils/dom-core.ts";
 
 type FocusableElement = HTMLElement | SVGElement;
 export type LandmarkRef = () => FocusableElement | null | undefined;

@@ -11,14 +11,14 @@
 // They are re-exported here for the hooks. Leaves only (DOCS-COLD 2026-10-20): `chain` (`./merge-props.tsx`)
 // and `openLink` (`../utils/links.tsx`) are imported from their modules, so a focus / overlay helper
 // importing this file does not pull prop merging or the router module into its chunk.
-import { getEventTarget as domEventTarget } from "../utils/dom.ts";
+import { getEventTarget as domEventTarget } from "../utils/dom-core.ts";
 import { isIOS, isWebKit } from "../platform/index.ts";
-import { getOwnerDocument, getOwnerWindow } from "../utils/dom.ts";
+import { getOwnerDocument, getOwnerWindow } from "../utils/dom-core.ts";
 import { runAfterTransition } from "../utils/transitions.ts";
-export { DEV } from "../utils/dom.ts";
+export { DEV } from "../utils/dom-core.ts";
 
 export { isAndroid, isChrome, isFirefox, isIOS, isIPad, isIPhone, isMac, isWebKit, isVirtualClick, isVirtualPointerEvent } from "../platform/index.ts";
-export { getActiveElement, getOwnerDocument, getOwnerWindow, isFocusWithin, isShadowRoot, nodeContains } from "../utils/dom.ts";
+export { getActiveElement, getOwnerDocument, getOwnerWindow, isFocusWithin, isShadowRoot, nodeContains } from "../utils/dom-core.ts";
 export { focusWithoutScrolling, runAfterTransition } from "../utils/transitions.ts";
 export { linkState } from "../utils/link-state.ts";
 

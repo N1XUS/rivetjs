@@ -8,6 +8,7 @@ RAC `ColorArea` + react-aria `useColorArea` / `useColorAreaGradient`: 2D (x/y ch
 - `@rivetjs/cdk/color-area/behaviour` -> `behaviour.tsx`: `colorAreaProps(opts, state)` bags, free handlers `colorAreaPointerDown` / `colorAreaThumbPointerDown` / `colorAreaThumbKeyDown` / `colorAreaInputChange` / `colorAreaInputFocus` / focus-within, styles `colorAreaStyle` / `colorAreaThumbStyle` / `colorAreaInputStyle`, `createColorAreaInteraction()` (JSON move state)
 - state: `@rivetjs/cdk/color` `createColorAreaState`; thumb: `../color-thumb` (`InternalColorThumbContext`)
 
+- `contexts.ts` (BIG-UI 2026-10-27): `ColorAreaContext`, `ColorAreaStateContext` live in this leaf (re-exported by `index.tsx`), so `color-picker` and siblings read them without importing the component and its behaviour closure (color-picker-basic −28 % JS gz)
 ## Rules / invariants
 - Default class `rv-ColorArea`; root `role="group"`, inputs `aria-roledescription="2D slider"`; style bound explicitly (OWNED `style`), never in a spread.
 - Window listeners via `getOwnerWindow(containerRef())` (no bare `window` in .tsx).

@@ -32,7 +32,7 @@ import { controllable, controlledValue, setControlledValue, type ControlledState
 import { ariaHideOutside } from "../overlay/aria-hide-outside.ts";
 import { preventScroll } from "../overlay/prevent-scroll.ts";
 import { Portal } from "../portal/index.tsx";
-import { getOwnerDocument, getOwnerWindow } from "../utils/dom.ts";
+import { getOwnerDocument, getOwnerWindow } from "../utils/dom-core.ts";
 import { createId } from "../utils/id.ts";
 import { morphRectTo, morphReducesMotion, type MorphMotionOptions, type MorphRect } from "./index.tsx";
 

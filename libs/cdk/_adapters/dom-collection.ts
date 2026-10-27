@@ -18,7 +18,7 @@
 //   row with a lower level (flat treegrid markup); DOM nesting gives the parent otherwise.
 import type { Collection, Key, LayoutDelegate, Node, Rect, Size } from "./collection.ts";
 import { domKey, keyAttrs } from "../collections/dom.ts";
-import { cssEscape } from "../utils/dom.ts";
+import { cssEscape } from "../utils/dom-core.ts";
 
 const ROLE_TYPES: Record<string, string> = {
   row: "item",

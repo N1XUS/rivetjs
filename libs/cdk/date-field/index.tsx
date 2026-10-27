@@ -26,7 +26,7 @@ import { LabelContext } from "../label/index.tsx";
 import { TextContext } from "../text/index.tsx";
 import { probeSlots, slotProbing } from "#server";
 import { dataBool } from "../utils/data-attrs.tsx";
-import { nodeContains } from "../utils/dom.ts";
+import { nodeContains } from "../utils/dom-core.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import type { MaybeAccessor, ValidationResult } from "../state/form-validation.ts";
 import {

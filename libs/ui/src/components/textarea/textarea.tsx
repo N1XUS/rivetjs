@@ -14,7 +14,7 @@ import type { TextAreaVariants } from "../../../styles/src/components/textarea/i
 import { textAreaVariants } from "../../../styles/src/components/textarea/index.ts";
 import { composeTwRenderProps } from "../../utils/compose.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
-import { TextFieldContext } from "../textfield/textfield.tsx";
+import { TextFieldContext } from "../textfield/textfield-context.ts";
 import { slotProbing } from "@rivetjs/cdk/slot-probe";
 
 /* -------------------------------------------------------------------------------------------------

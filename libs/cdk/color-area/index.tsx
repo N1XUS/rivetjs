@@ -8,13 +8,14 @@
 //   resumed page); the gradient background is an inline style from JS (`colorAreaStyle`).
 // - render props are accessors (`isDisabled()`); `state` is the serializable state object.
 // `render` (RAC DOMRenderProps): given, the attributes object (reactive entries are accessors) goes to `render(attrs, renderProps)` instead of the default element.
-import { createContext, untrack } from "@rivetjs/reactivity";
+import { ColorAreaContext, ColorAreaStateContext } from "./contexts.ts";
+import { untrack } from "@rivetjs/reactivity";
 import { ref as createRef } from "@rivetjs/runtime/dom";
-import { createColorAreaState, getDisplayColor, isDragging, type ColorAreaState } from "@rivetjs/cdk/color";
+import { createColorAreaState, getColorAreaDisplayColor, type ColorAreaState } from "../color/area-state.ts";
 import { useLocale } from "@rivetjs/cdk/i18n";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { Provider, mergeRefValues, contextProps, renderPropsOf, type ContextValue, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
+import { Provider, mergeRefValues, contextProps, renderPropsOf, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
 import { InternalColorThumbContext } from "../color-thumb/index.tsx";
 import {
   colorAreaGroupLabels,
@@ -72,11 +73,6 @@ export interface ColorAreaProps
   class?: RenderProps<ColorAreaRenderProps>["class"];
   ref?: RefValue<HTMLDivElement>;
 }
-
-/** RAC `ColorAreaContext`. */
-export const ColorAreaContext = createContext<ContextValue<Partial<ColorAreaProps>, HTMLDivElement>>(null);
-/** RAC `ColorAreaStateContext`. */
-export const ColorAreaStateContext = createContext<ColorAreaState | null>(null);
 
 const OWNED = ["style", "id", "onPointerDown", "render"] as const;
 
@@ -188,8 +184,8 @@ function colorArea(merged: ColorAreaProps, forwarded: RefValue<HTMLDivElement> |
         onFocusOut: (e: FocusEvent) => colorAreaThumbFocusOut(e, opts),
       };
   const thumbContext = {
-    displayColor: () => getDisplayColor(state),
-    isDragging: () => isDragging(state),
+    displayColor: () => getColorAreaDisplayColor(state),
+    isDragging: () => state.dragging(),
     thumbProps,
     thumbStyle: () => colorAreaThumbStyle(opts, state),
     inputXRef,
@@ -266,3 +262,5 @@ function colorArea(merged: ColorAreaProps, forwarded: RefValue<HTMLDivElement> |
     </div>
   );
 }
+
+export { ColorAreaContext, ColorAreaStateContext };

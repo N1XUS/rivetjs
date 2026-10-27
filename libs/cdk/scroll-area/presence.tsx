@@ -16,7 +16,7 @@
 // - `useStableComposedRefs` / `getElementRef` (React 19 ref plumbing) not needed.
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { clientEffect } from "@rivetjs/runtime/dom";
-import { cssEscape } from "../utils/dom.ts";
+import { cssEscape } from "../utils/dom-core.ts";
 
 export type PresenceState = "mounted" | "unmountSuspended" | "unmounted";
 type PresenceEvent = "MOUNT" | "UNMOUNT" | "ANIMATION_OUT" | "ANIMATION_END";

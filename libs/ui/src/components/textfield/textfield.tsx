@@ -13,7 +13,7 @@
 //   it through the cdk Form's `validationErrors`).
 import { TextField as TextFieldPrimitive } from "@rivetjs/cdk/text-field";
 import type { TextFieldProps as TextFieldPrimitiveProps, TextFieldRenderProps } from "@rivetjs/cdk/text-field";
-import { createContext, useContext } from "@rivetjs/reactivity";
+import { useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot } from "@rivetjs/runtime/slot";
@@ -28,15 +28,7 @@ import { LabelRoot } from "../label/label.tsx";
 import { FormFieldsContext } from "../../utils/form-fields.ts";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { DEV } from "#dev";
-
-/* ------------------------------------------------------------------------------------------------
- * TextField Context
- * --------------------------------------------------------------------------------------------- */
-type TextFieldContext = {
-  variant?: "primary" | "secondary";
-};
-
-const TextFieldContext = createContext<TextFieldContext>({});
+import { TextFieldContext, type TextFieldContextValue } from "./textfield-context.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * TextField Root
@@ -74,7 +66,7 @@ const TextFieldRoot = (props: TextFieldRootProps): JSX.Element => {
     <TextFieldPrimitive data-slot="textfield" {...rest} {...echo} class={cls as never}>
       {(values: TextFieldRenderProps) => {
         // Getter only when `variant` is live (readers then take the render-prop class path), plain data otherwise.
-        const contextValue: TextFieldContext = hasLiveProp(local, ["variant"])
+        const contextValue: TextFieldContextValue = hasLiveProp(local, ["variant"])
           ? {
               get variant() {
                 return local.variant;

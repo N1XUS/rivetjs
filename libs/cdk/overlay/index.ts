@@ -11,7 +11,7 @@
 // imperative (element + cleanup) form of `useInteractOutside` (`../interactions/interact-outside.tsx`)
 // and shares its `isValidOutsideEvent`.
 import { isValidOutsideEvent } from "../interactions/interact-outside.tsx";
-import { getEventTarget } from "../utils/dom.ts";
+import { getEventTarget } from "../utils/dom-core.ts";
 
 export type { Placement } from "./position.ts";
 

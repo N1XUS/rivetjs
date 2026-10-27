@@ -9,14 +9,15 @@
 // - `ColorSwatchContext` gets the item's color as a string (Color instances are not serializable); item render props
 //   carry `color` as an accessor.
 // `render` (RAC DOMRenderProps) on the picker (`<div>`) and item (`<div>`): passed to ListBox / ListBoxItem (render props of the list parts; the item's lack `color`).
+import { ColorSwatchPickerContext } from "./contexts.ts";
 import { createContext, onCleanup, provide, useContext } from "@rivetjs/reactivity";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { createColorPickerState, getColor, parseColor, setColor, toColor, type Color, type ColorInput } from "@rivetjs/cdk/color";
 import { getStringsForLocale, useLocale } from "@rivetjs/cdk/i18n";
 import type { Key, Selection } from "../collections/types.ts";
-import { ColorSwatchContext } from "../color-swatch/index.tsx";
+import { ColorSwatchContext } from "../color-swatch/contexts.ts";
 import { ListBox, ListBoxItem, type ListBoxItemRenderProps, type ListBoxRenderProps } from "../listbox/index.tsx";
-import { contextProps, type ChildrenOrFunction, type ContextValue, type RefValue, type SlotProps, type StyleRenderProps } from "../slots/index.tsx";
+import { contextProps, type ChildrenOrFunction, type RefValue, type SlotProps, type StyleRenderProps } from "../slots/index.tsx";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import type { HoverEvents, PressEvents } from "../utils/types.ts";
@@ -59,8 +60,6 @@ export interface ColorSwatchPickerProps
   ref?: RefValue<HTMLDivElement>;
 }
 
-/** RAC `ColorSwatchPickerContext`. */
-export const ColorSwatchPickerContext = createContext<ContextValue<ColorSwatchPickerProps, HTMLDivElement>>(null);
 /** RAC `ColorMapContext` (internal): `toString("hexa")` key → the item's color string. */
 const ColorMapContext = createContext<Record<string, string> | null>(null);
 
@@ -163,3 +162,5 @@ export function ColorSwatchPickerItem(props: ColorSwatchPickerItemProps) {
   delete (itemProps as { color?: unknown }).color;
   return <ListBoxItem {...(itemProps as {})} />;
 }
+
+export { ColorSwatchPickerContext };

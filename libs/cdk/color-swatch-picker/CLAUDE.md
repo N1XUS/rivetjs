@@ -7,6 +7,7 @@ RAC `ColorSwatchPicker` / `ColorSwatchPickerItem` on the RAC ListBox port (`../l
 - `@rivetjs/cdk/color-swatch-picker` -> `index.tsx`: `ColorSwatchPicker`, `ColorSwatchPickerItem`, `ColorSwatchPickerContext` (rv-color-swatch-picker), props / render-prop types
 - `intl.ts` generated (RAC `colorSwatchPicker` string, default aria-label "Color swatches"); do not edit
 
+- `contexts.ts` (BIG-UI 2026-10-27): `ColorSwatchPickerContext` live in this leaf (re-exported by `index.tsx`), so `color-picker` and siblings read them without importing the component and its behaviour closure (color-picker-basic −28 % JS gz)
 ## Rules / invariants
 - Selection = color state: ListBox gets `selectedKey: () => getColor(state).toString("hexa")` + `selectedKeyControlled: true` (single-key backing, never written) and `onSelectionChange` → `setColor`.
 - Item key = `toString("hexa")`; `ColorMapContext` (rv-color-swatch-picker-map) = plain record key → color string (keeps the item's color space); missing entry → `parseColor(key)`.

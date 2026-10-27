@@ -49,6 +49,8 @@ import { createSlotId, slotIdRef, type SlotId } from "../slots/index.tsx";
 export type PropBag = Record<string, unknown>;
 /** The input element ref (`ref()` from `@rivetjs/runtime/dom`). */
 export type InputRef = Ref<HTMLInputElement>;
+// `mergeInputRefs` lives in a leaf (BIG-UI) so radio / switch parts do not ship the toggle behaviour through it.
+export { mergeInputRefs } from "./input-ref.tsx";
 
 /** RA `AriaToggleProps` (+ `ToggleProps`, `InputDOMProps`, `AriaValidationProps`, `PressEvents`, `FocusableProps`). */
 export interface AriaToggleProps extends ToggleStateOptions, PressEvents {
@@ -129,31 +131,6 @@ export interface ItemValidation {
   /** The item's own validation (behaviour "aria": realtime only). */
   own: FormValidationState;
   behavior: ValidationBehavior;
-}
-
-/**
- * One input ref from the component's own ref and the user's (`inputRef` prop, context `inputRef`): a
- * callback ref for the element that is also readable (`ref()` → the element), like RA `useObjectRef(mergeRefs(…))`.
- */
-export function mergeInputRefs(
-  ...refs: (InputRef | ((el: HTMLInputElement | null) => unknown) | { current: HTMLInputElement | null } | undefined)[]
-): InputRef {
-  const own = createRef<HTMLInputElement>();
-  const targets = refs.filter((r) => r != null);
-  if (!targets.length) return own;
-  const merged = (...args: [HTMLInputElement | null]) => {
-    if (!args.length) return own();
-    const el = args[0];
-    (own as unknown as { set(v: HTMLInputElement | undefined): void }).set(el ?? undefined);
-    for (const target of targets) {
-      if (typeof target === "function") {
-        const signalRef = target as { set?: (value: HTMLInputElement | undefined) => void };
-        if (signalRef.set) signalRef.set(el ?? undefined);
-        else (target as (el: HTMLInputElement | null) => unknown)(el);
-      } else target.current = el;
-    }
-  };
-  return merged as unknown as InputRef;
 }
 
 /** What the input handlers act on. */

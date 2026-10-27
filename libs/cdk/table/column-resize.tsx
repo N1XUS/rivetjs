@@ -21,7 +21,7 @@ import { keyboardProps as keyboardPropsOf } from "../interactions/keyboard.tsx";
 import { moveProps as movePropsOf } from "../interactions/move.tsx";
 import { pressProps as pressPropsOf } from "../interactions/press.tsx";
 import { visuallyHidden } from "../a11y/index.ts";
-import { getActiveElement, getEventTarget } from "../utils/dom.ts";
+import { getActiveElement, getEventTarget } from "../utils/dom-core.ts";
 import { direction as elementDirection } from "../bidi/index.ts";
 import type { GridNode } from "../collections/grid.ts";
 import type { Key } from "../collections/types.ts";

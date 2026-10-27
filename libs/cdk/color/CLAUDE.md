@@ -13,6 +13,7 @@ React Stately color model + color states (`@react-stately/color`), state only. C
 - `createColorChannelFieldState` + `numberFieldView` (transient `NumberFieldState` for `@rivetjs/cdk/number` functions)
 - `createColorPickerState` + `getColor`, `setColor`
 - dispatch on `state.kind` (members shared by several upstream states): `getValue`, `getDefaultValue`, `setValue`, `getDisplayColor`, `isDragging`, `setDragging`, `getThumbPosition`, `increment`, `decrement`, `colorValue`, `defaultColorValue`, `setColorValue`
+  - the dispatchers import every state module: cdk components import their own kind's functions from `area-state.ts` / `wheel-state.ts` / `slider-state.tsx` (and `color.ts`) directly, not the barrel (BIG-UI 2026-10-27: a color-area page shipped the slider / channel-field states through `getDisplayColor`, ~9.5 KB gz); the barrel stays the public API
 
 ## Layout
 - `color.ts` Color.ts + types.ts + useColor.ts · `intl.ts` generated from react-stately `intl/color/*.json` (34 locales; do not edit) · `value.ts` Rivet controlled-color cell (useControlledState over signals)

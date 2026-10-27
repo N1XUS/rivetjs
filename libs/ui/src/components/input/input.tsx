@@ -16,7 +16,7 @@ import { inputVariants } from "../../../styles/src/components/input/index.ts";
 import { composeTwRenderProps } from "../../utils/compose.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { ComboBoxContext } from "../combo-box/combo-box-context.ts";
-import { TextFieldContext } from "../textfield/textfield.tsx";
+import { TextFieldContext } from "../textfield/textfield-context.ts";
 import { slotProbing } from "@rivetjs/cdk/slot-probe";
 
 /* -------------------------------------------------------------------------------------------------

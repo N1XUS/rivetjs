@@ -9,13 +9,14 @@
 //   clip path are inline styles from JS (`colorWheelTrackStyle`).
 // - render props are accessors (`isDisabled()`); `state` is the serializable state object.
 // `render` (RAC DOMRenderProps): given, the attributes object (reactive entries are accessors) goes to `render(attrs, renderProps)` instead of the default element.
+import { ColorWheelContext, ColorWheelStateContext } from "./contexts.ts";
 import { createContext, useContext, untrack } from "@rivetjs/reactivity";
 import { hasLive, liveAssign, liveOptions } from "../utils/live.tsx";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
 import { isColorWheelDisabled } from "../color/wheel-state.ts";
 import { liveRenderProps } from "../slots/index.tsx";
 import { ref as createRef } from "@rivetjs/runtime/dom";
-import { createColorWheelState, getDisplayColor, isDragging, type ColorWheelState } from "@rivetjs/cdk/color";
+import { createColorWheelState, getColorWheelDisplayColor, type ColorWheelState } from "../color/wheel-state.ts";
 import { useLocale } from "@rivetjs/cdk/i18n";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
@@ -78,11 +79,6 @@ export interface ColorWheelProps
   class?: RenderProps<ColorWheelRenderProps>["class"];
   ref?: RefValue<HTMLDivElement>;
 }
-
-/** RAC `ColorWheelContext`. */
-export const ColorWheelContext = createContext<ContextValue<Partial<ColorWheelProps>, HTMLDivElement>>(null);
-/** RAC `ColorWheelStateContext`. */
-export const ColorWheelStateContext = createContext<ColorWheelState | null>(null);
 
 const OWNED = ["style", "id", "render"] as const;
 
@@ -159,8 +155,8 @@ function colorWheel(merged: ColorWheelProps, ref: RefValue<HTMLDivElement> | und
         onKeyDown: (e: KeyboardEvent) => colorWheelThumbKeyDown(e, opts, state),
       };
   const thumbContext = {
-    displayColor: () => getDisplayColor(state),
-    isDragging: () => isDragging(state),
+    displayColor: () => getColorWheelDisplayColor(state),
+    isDragging: () => state.dragging(),
     thumbProps,
     thumbStyle: () => colorWheelThumbStyle(opts, state),
     inputXRef: inputRef,
@@ -260,3 +256,5 @@ export function ColorWheelTrack(props: ColorWheelTrackProps) {
   }
   return <div {...attrs} slot={s} ref={ref as never} class={rp.class()} style={rp.style()} />;
 }
+
+export { ColorWheelContext, ColorWheelStateContext };

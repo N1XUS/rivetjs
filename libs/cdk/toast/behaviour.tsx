@@ -24,7 +24,7 @@ import { focusWithinBlur, focusWithinFocus } from "../interactions/focus.tsx";
 import { hoverProps } from "../interactions/hover.tsx";
 import { mergeProps } from "../interactions/merge-props.tsx";
 import { landmarkProps } from "../landmark/index.tsx";
-import { getEventTarget, getOwnerDocument } from "../utils/dom.ts";
+import { getEventTarget, getOwnerDocument } from "../utils/dom-core.ts";
 import { createId } from "../utils/id.ts";
 import { focusWithoutScrolling } from "../utils/index.ts";
 import type { QueuedToast, ToastState } from "../state/toast.ts";

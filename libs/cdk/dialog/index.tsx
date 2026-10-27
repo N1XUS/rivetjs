@@ -25,7 +25,7 @@ import { untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { createId, idSignal } from "../utils/id.ts";
-import { DEV, isFocusWithin } from "../utils/dom.ts";
+import { DEV, isFocusWithin } from "../utils/dom-core.ts";
 import { focusMovedByUser, focusSafely } from "../focus/index.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
@@ -33,7 +33,7 @@ import { read, type MaybeAccessor } from "../interactions/utils.ts";
 import { PressResponder, type PressResponderProps } from "../interactions/pressable.tsx";
 import { OverlayTriggerStateContext, PopoverContext } from "../overlay/contexts.ts";
 import { closeOverlay, openOverlay, type OverlayTriggerProps } from "../state/overlays.ts";
-import { createMenuTriggerState, toggleMenu, type MenuTriggerState } from "../state/menu.ts";
+import { createMenuTriggerState, toggleMenu, type MenuTriggerState } from "../state/menu-trigger.ts";
 import type { PressEvent } from "../interactions/press.tsx";
 import { longPressEnd, longPressStart } from "../interactions/long-press.tsx";
 import {
@@ -47,7 +47,7 @@ import {
   type HoverTriggerProps,
   type OverlayTriggerMode,
 } from "../overlay/hover-trigger.tsx";
-import { isHidden } from "../collections/components.tsx";
+import { isHidden } from "../collections/hidden.ts";
 import { ButtonContext } from "../button/index.tsx";
 import { HeadingContext } from "../heading/index.tsx";
 import { TextContext } from "../text/index.tsx";

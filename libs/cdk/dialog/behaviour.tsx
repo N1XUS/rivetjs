@@ -11,7 +11,7 @@
 import { createId } from "../utils/id.ts";
 import { slotIdRef, type SlotId } from "../slots/index.tsx";
 import { focusSafely } from "../focus/index.ts";
-import { DEV, getActiveElement, isFocusWithin } from "../utils/dom.ts";
+import { DEV, getActiveElement, isFocusWithin } from "../utils/dom-core.ts";
 
 export interface AriaDialogProps {
   id?: string;

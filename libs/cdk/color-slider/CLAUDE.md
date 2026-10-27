@@ -8,6 +8,7 @@ RAC `ColorSlider` + react-aria `useColorSlider`: one-channel slider over the sli
 - `@rivetjs/cdk/color-slider/behaviour` -> `behaviour.tsx`: `colorSliderProps`, `colorSliderAriaLabel`, `colorSliderThumbOptions`, styles `colorSliderTrackBackground` / `colorSliderTrackStyle` / `colorSliderThumbStyle` / `colorSliderInputStyle`, `colorSliderInputValueText`, handlers `colorSliderTrackPointerDown` / `colorSliderThumbPointerDown` / `colorSliderThumbKeyDown` / `colorSliderInputChange` / `colorSliderInputFocus` / `colorSliderInputBlur`, `createColorSliderInteraction()`
 - state: `@rivetjs/cdk/color` `createColorSliderState`, `sliderView` (in `../color/slider-state.tsx`)
 
+- `contexts.ts` (BIG-UI 2026-10-27): `ColorSliderContext`, `ColorSliderStateContext` live in this leaf (re-exported by `index.tsx`), so `color-picker` and siblings read them without importing the component and its behaviour closure (color-picker-basic −28 % JS gz)
 ## Rules / invariants
 - Provides `SliderStateContext` = `sliderView(state)` (with color `format`, `step`, `pageSize`), `SliderTrackContext` (style accessor + pointer handler), `SliderOutputContext`, `LabelContext` (children = channel name), `InternalColorThumbContext`.
 - `aria-labelledby` / `aria-label` on the track are unconditional arrows (conditional arrows are not resumable).

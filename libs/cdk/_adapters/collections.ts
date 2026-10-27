@@ -139,7 +139,7 @@ export const COLLECTION_ATTR = "data-collection";
 /** `data-key` (+ `data-key-type="number"`) encoding: ONE implementation in `../collections/dom.ts`. */
 export { domKey, keyAttrs } from "../collections/dom.ts";
 import { domKey } from "../collections/dom.ts";
-import { cssEscape } from "../utils/dom.ts";
+import { cssEscape } from "../utils/dom-core.ts";
 
 const hidden = (el: Element, root: Element): boolean => {
   for (let node: Element | null = el; node && node !== root; node = node.parentElement) if ((node as HTMLElement).hidden) return true;

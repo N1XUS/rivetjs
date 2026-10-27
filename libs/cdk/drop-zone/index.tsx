@@ -28,7 +28,7 @@ import { useLocale } from "../i18n/index.ts";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
 import { hoverStateOver, setDataAttr, type InteractionStateOptions } from "../utils/data-attrs.tsx";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { getEventTarget, nodeContains } from "../utils/dom.ts";
+import { getEventTarget, nodeContains } from "../utils/dom-core.ts";
 import { createId } from "../utils/id.ts";
 import { isFocusable } from "../interactions/utils.ts";
 import { focusWithoutScrolling } from "../utils/transitions.ts";

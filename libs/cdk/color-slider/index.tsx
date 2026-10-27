@@ -10,9 +10,10 @@
 // - the `<Label>` children default to the channel name (RAC `LabelContext` `children`).
 // - render props are accessors (`isDisabled()`, `orientation()`); `state` is the serializable state object.
 // `render` (RAC DOMRenderProps): given, the attributes object (reactive entries are accessors) goes to `render(attrs, renderProps)` instead of the default element.
-import { createContext, untrack } from "@rivetjs/reactivity";
+import { ColorSliderContext, ColorSliderStateContext } from "./contexts.ts";
+import { untrack } from "@rivetjs/reactivity";
 import { ref as createRef } from "@rivetjs/runtime/dom";
-import { createColorSliderState, getDisplayColor, getValue, sliderView, type ColorSliderState } from "@rivetjs/cdk/color";
+import { colorSliderValue, createColorSliderState, getColorSliderDisplayColor, sliderView, type ColorSliderState } from "../color/slider-state.tsx";
 import { isThumbSnapping, type Orientation } from "../slider/state.ts";
 import { isColorSliderDragging } from "../color/slider-state.tsx";
 import { useLocale } from "@rivetjs/cdk/i18n";
@@ -21,17 +22,7 @@ import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts"
 import { LabelContext } from "../label/index.tsx";
 import { sliderProps, sliderThumbProps } from "../slider/behaviour.tsx";
 import { SliderOutputContext, SliderStateContext, SliderTrackContext } from "../slider/index.tsx";
-import {
-  Provider,
-  contextProps,
-  createSlot,
-  renderPropsOf,
-  type ContextValue,
-  type ProviderValue,
-  type RefValue,
-  type RenderProps,
-  type SlotProps,
-} from "../slots/index.tsx";
+import { Provider, contextProps, createSlot, renderPropsOf, type ProviderValue, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
 import { InternalColorThumbContext } from "../color-thumb/index.tsx";
 import {
   colorSliderAriaLabel,
@@ -87,11 +78,6 @@ export interface ColorSliderProps
   class?: RenderProps<ColorSliderRenderProps>["class"];
   ref?: RefValue<HTMLDivElement>;
 }
-
-/** RAC `ColorSliderContext`. */
-export const ColorSliderContext = createContext<ContextValue<Partial<ColorSliderProps>, HTMLDivElement>>(null);
-/** RAC `ColorSliderStateContext`. */
-export const ColorSliderStateContext = createContext<ColorSliderState | null>(null);
 
 const OWNED = ["style", "id", "render"] as const;
 
@@ -153,7 +139,7 @@ function colorSlider(merged: ColorSliderProps, ref: RefValue<HTMLDivElement> | u
   const labelledBy = groupProps["aria-labelledby"] as string | undefined;
   const ownLabelledBy = merged["aria-labelledby"];
   const ownLabel = merged["aria-label"];
-  const channelName = untrack(() => getValue(state)).getChannelName(merged.channel, locale);
+  const channelName = untrack(() => colorSliderValue(state)).getChannelName(merged.channel, locale);
   const { style: _trackStyle, ...trackAttrs } = trackProps as Record<string, unknown>;
   const track = {
     ...groupProps,
@@ -182,7 +168,7 @@ function colorSlider(merged: ColorSliderProps, ref: RefValue<HTMLDivElement> | u
         onPointerDown: (e: PointerEvent) => colorSliderThumbPointerDown(e, opts, state),
       };
   const thumbContext = {
-    displayColor: () => getDisplayColor(state),
+    displayColor: () => getColorSliderDisplayColor(state),
     isDragging: () => isColorSliderDragging(state),
     isSnapping: () => isThumbSnapping(state.slider, 0),
     thumbProps,
@@ -234,3 +220,5 @@ function colorSlider(merged: ColorSliderProps, ref: RefValue<HTMLDivElement> | u
     </div>
   );
 }
+
+export { ColorSliderContext, ColorSliderStateContext };

@@ -4,7 +4,7 @@
 // share data = YARL `resolveShareData` (`share: { url, text, title }` | URL string | the image `src`).
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
-import { getOwnerWindow } from "../../utils/dom.ts";
+import { getOwnerWindow } from "../../utils/dom-core.ts";
 import { LightboxButton, useLightbox } from "../index.tsx";
 import { isImageSlide, lightboxSlide, translateLabel, type LightboxSlide, type LightboxState } from "../state.ts";
 

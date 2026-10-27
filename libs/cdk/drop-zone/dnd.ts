@@ -10,7 +10,7 @@
 //   `useDrag`, global dragging-collection state). `globalAllowedDropOperations` is `none` (no in-page Rivet drag
 //   source sets it yet), so `getAllowedOperations` reads `effectAllowed` + the platform modifier keys only.
 import { isIPad, isMac } from "../platform/index.ts";
-import { getEventTarget, nodeContains } from "../utils/dom.ts";
+import { getEventTarget, nodeContains } from "../utils/dom-core.ts";
 
 export type DropOperation = "copy" | "link" | "move" | "cancel";
 export type DragType = string | symbol;

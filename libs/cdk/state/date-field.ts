@@ -37,7 +37,8 @@ import {
 import type { Calendar, CalendarIdentifier } from "@rivetjs/cdk/date";
 import { controllable } from "@rivetjs/cdk/interactions";
 import { createId } from "@rivetjs/cdk/id";
-import { formatString, getDateFormatter, getStringsForLocale, resolveLocale, type LocalizedStrings } from "@rivetjs/cdk/i18n";
+import { formatString, getStringsForLocale, resolveLocale, type LocalizedStrings } from "@rivetjs/cdk/i18n";
+import { getDateFormatter } from "../i18n/date-formatter.ts";
 import {
   VALID_VALIDITY_STATE,
   createFormValidationState,

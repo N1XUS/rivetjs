@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] fce54ab4d97c 461018 css fc8564cd2657 1096483
-@rivetjs/ui [server] 0dffeb20f9a9 408220 css fc8564cd2657 1096483
+@rivetjs/ui [dom] 2490256d26c1 461018 css fc8564cd2657 1096483
+@rivetjs/ui [server] 02ec48c452f4 408220 css fc8564cd2657 1096483
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -127,12 +127,12 @@
 @rivetjs/ui/stepper [server] 8561e93bccb0 8186 css fc8564cd2657 1096483
 @rivetjs/ui/tooltip [dom] 6ea57c8318d3 7330 css fc8564cd2657 1096483
 @rivetjs/ui/tooltip [server] e295ecbe1028 6995 css fc8564cd2657 1096483
-@rivetjs/ui/input [dom] f269078889f3 4376 css fc8564cd2657 1096483
-@rivetjs/ui/input [server] 98ac6982074a 4346 css fc8564cd2657 1096483
-@rivetjs/ui/textarea [dom] 96e5cedb48cb 4367 css fc8564cd2657 1096483
-@rivetjs/ui/textarea [server] e137c1247a1e 4337 css fc8564cd2657 1096483
-@rivetjs/ui/textfield [dom] cb85ba2b8577 7253 css fc8564cd2657 1096483
-@rivetjs/ui/textfield [server] f416111dc5de 6663 css fc8564cd2657 1096483
+@rivetjs/ui/input [dom] 522d86cbe618 4314 css fc8564cd2657 1096483
+@rivetjs/ui/input [server] fbea1267a56b 4252 css fc8564cd2657 1096483
+@rivetjs/ui/textarea [dom] 202a48adfe2b 4305 css fc8564cd2657 1096483
+@rivetjs/ui/textarea [server] f9c5a728a128 4243 css fc8564cd2657 1096483
+@rivetjs/ui/textfield [dom] 64664da04a03 7253 css fc8564cd2657 1096483
+@rivetjs/ui/textfield [server] be0f3a181f72 6663 css fc8564cd2657 1096483
 @rivetjs/ui/form [dom] a943ba385007 1403
 @rivetjs/ui/form [server] a79a8469c764 1222
 @rivetjs/ui/fieldset [dom] de8345655e3d 5937 css fc8564cd2657 1096483
@@ -143,8 +143,8 @@
 @rivetjs/ui/toolbar [server] 9f7497c2affb 4508 css fc8564cd2657 1096483
 @rivetjs/ui/modal [dom] 773e7aa5b9d6 12074 css fc8564cd2657 1096483
 @rivetjs/ui/modal [server] 10a180f886f9 11011 css fc8564cd2657 1096483
-@rivetjs/ui/input-group [dom] 40eea9661a4c 6546 css fc8564cd2657 1096483
-@rivetjs/ui/input-group [server] 5d6c14006d89 6318 css fc8564cd2657 1096483
+@rivetjs/ui/input-group [dom] dc8e8dabc4e5 6514 css fc8564cd2657 1096483
+@rivetjs/ui/input-group [server] db8a483f6de6 6286 css fc8564cd2657 1096483
 @rivetjs/ui/search-field [dom] 620eefbd8a14 10307 css fc8564cd2657 1096483
 @rivetjs/ui/search-field [server] 3c77d799a212 9354 css fc8564cd2657 1096483
 @rivetjs/ui/number-field [dom] 5219c0d4b25d 8471 css fc8564cd2657 1096483
@@ -215,8 +215,8 @@
 @rivetjs/ui/slider [server] b7208f7bfedb 6975 css fc8564cd2657 1096483
 @rivetjs/ui/disclosure [dom] c9ab47bbe37a 6928 css fc8564cd2657 1096483
 @rivetjs/ui/disclosure [server] 85f98a65a372 6419 css fc8564cd2657 1096483
-@rivetjs/ui/combo-box [dom] d57d19e21724 12706 css fc8564cd2657 1096483
-@rivetjs/ui/combo-box [server] d268e42d113c 11641 css fc8564cd2657 1096483
+@rivetjs/ui/combo-box [dom] dda1fc2259f4 12674 css fc8564cd2657 1096483
+@rivetjs/ui/combo-box [server] 2aa85942ab8b 11609 css fc8564cd2657 1096483
 @rivetjs/ui/color-swatch [dom] 024bc3909ae3 4565 css fc8564cd2657 1096483
 @rivetjs/ui/color-swatch [server] 3511f9da39bd 4502 css fc8564cd2657 1096483
 @rivetjs/ui/color-area [dom] b882b450e2d8 5266 css fc8564cd2657 1096483
@@ -365,6 +365,6 @@
 @rivetjs/cdk/masonry [server] ff56f4df6349 80504
 @rivetjs/cdk/masonry/behaviour 9a3cc9e6aabd 16055
 @rivetjs/cdk/flip 94e1c39bc99c 3782
-@rivetjs/cdk/scheduler [dom] fb36799a9fea 230839
-@rivetjs/cdk/scheduler [server] cf4e03be7441 213649
+@rivetjs/cdk/scheduler [dom] b53616cd75c4 230860
+@rivetjs/cdk/scheduler [server] c04ac4255ea8 213680
 @rivetjs/cdk/scheduler/layout f4c2c747b346 23962

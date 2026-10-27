@@ -26,7 +26,7 @@ import { inputGroupVariants } from "../../../styles/src/components/input-group/i
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
-import { TextFieldContext } from "../textfield/textfield.tsx";
+import { TextFieldContext } from "../textfield/textfield-context.ts";
 import { slotProbing } from "@rivetjs/cdk/slot-probe";
 
 /* -------------------------------------------------------------------------------------------------

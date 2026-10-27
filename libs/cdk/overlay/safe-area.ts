@@ -8,7 +8,7 @@
 // - `useSafeArea(options)` (an effect while `isOpen`) → `safeArea(options)`: call when the overlay
 //   opens (browser only), it returns the release (call on close). `isOpen` is implied.
 // - refs are `ElementSource`s; `isPointInSafeArea` is exported for tests.
-import { getOwnerDocument, getOwnerWindow } from "../utils/dom.ts";
+import { getOwnerDocument, getOwnerWindow } from "../utils/dom-core.ts";
 import type { ElementSource } from "./position.ts";
 
 interface Point {

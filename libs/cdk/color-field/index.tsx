@@ -9,7 +9,8 @@
 // - description / error ids are slot ids (RA `useSlotId`): part of `aria-describedby` while that part renders.
 // - render props are accessors (`isInvalid()`); `state` is the serializable state object.
 // `render` (RAC DOMRenderProps): given, the attributes go to `render(attrs, ColorFieldRenderProps)` instead of the default `<div>` (the hidden form input stays a sibling).
-import { createContext, untrack } from "@rivetjs/reactivity";
+import { ColorFieldContext, ColorFieldStateContext } from "./contexts.ts";
+import { untrack } from "@rivetjs/reactivity";
 import {
   createColorChannelFieldState,
   numberFieldView,
@@ -58,7 +59,6 @@ import {
   createSlotId,
   renderPropsOf,
   slotIdRef,
-  type ContextValue,
   type ProviderValue,
   type RACValidation,
   type RefValue,
@@ -151,11 +151,6 @@ export interface ColorFieldProps
   class?: RenderProps<ColorFieldRenderProps>["class"];
   ref?: RefValue<HTMLDivElement>;
 }
-
-/** RAC `ColorFieldContext`. */
-export const ColorFieldContext = createContext<ContextValue<Partial<ColorFieldProps>, HTMLDivElement>>(null);
-/** RAC `ColorFieldStateContext`. */
-export const ColorFieldStateContext = createContext<ColorFieldState | ColorChannelFieldState | null>(null);
 
 const OWNED = ["style", "id", "render"] as const;
 
@@ -472,3 +467,5 @@ function renderField(parts: Parts) {
     </>
   );
 }
+
+export { ColorFieldContext, ColorFieldStateContext };

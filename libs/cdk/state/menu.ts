@@ -9,19 +9,18 @@
 // - the menu's collection is the rendered DOM (items need no serialized model): MenuItem / MenuSection /
 //   SubmenuTrigger register their callbacks, disabled flags, section selection and submenu states into
 //   the menu state at render (`registerMenuItem`, `registerMenuSection`, `registerSubmenu`).
-import { computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
-import { createId } from "@rivetjs/cdk/id";
+import { signal, type Signal } from "@rivetjs/reactivity";
 import { createMultipleSelectionState, type FocusStrategy, type MultipleSelectionState } from "../_adapters/collections.ts";
 import type { PressEvent } from "../interactions/press.tsx";
 import type { HoverEvent } from "../interactions/hover.tsx";
 import type { VirtualCollection } from "../_adapters/selection.ts";
-import { closeOverlay, createOverlayTriggerState, openOverlay, toggleOverlay, type OverlayTriggerProps, type OverlayTriggerState } from "./overlays.ts";
+import { createMenuTriggerState, type MenuTriggerState, type SubmenuTriggerState } from "./menu-trigger.ts";
 import { createListState, getItemId, type Key, type ListProps, type ListState, type Selection, type SelectionMode } from "./list.ts";
 
 export type { Key, Selection, SelectionMode, FocusStrategy };
-
-/** RAC `MenuTriggerType`. */
-export type MenuTriggerType = "press" | "longPress" | "contextMenu";
+// The trigger half (`createMenuTriggerState`, submenu trigger states) is the leaf `./menu-trigger.ts` (BIG-UI: a
+// DialogTrigger needs it without the menu's list / selection state).
+export * from "./menu-trigger.ts";
 
 /** Per-item callbacks / options of a rendered MenuItem (RAC `MenuItem` props), registered at render by key. */
 export interface MenuItemCallbacks {
@@ -57,129 +56,6 @@ export interface MenuItemStateSignals {
 export interface MenuSectionOptions {
   shouldCloseOnSelect?: boolean;
 }
-
-// --- useMenuTriggerState ------------------------------------------------------------------------
-
-export interface MenuTriggerStateProps extends OverlayTriggerProps {
-  /** RAC `trigger`: "press" (default), "longPress" or "contextMenu". */
-  trigger?: MenuTriggerType;
-}
-
-/** react-stately `RootMenuTriggerState` (methods: `openMenu`, `toggleMenu`, `closeMenu`, `openSubmenuKey`, `closeSubmenuKey`). */
-export interface MenuTriggerState extends OverlayTriggerState {
-  /** Trigger element id. */
-  readonly triggerId: string;
-  /** Root menu element id. */
-  readonly menuId: string;
-  readonly trigger: MenuTriggerType;
-  /** Where focus goes when the menu opens (RAC `focusStrategy`; null: the menu / its selection). */
-  readonly focusStrategy: Signal<FocusStrategy | null>;
-  /** Trigger keys of the open submenus, by level (RAC `expandedKeysStack`). */
-  readonly expandedKeysStack: Signal<readonly Key[]>;
-}
-
-/** react-stately `useMenuTriggerState`. */
-export function createMenuTriggerState(props: MenuTriggerStateProps & { id?: string } = {}): MenuTriggerState {
-  // Region state: a resumed page re-creating the menu's region (its first open) keeps it.
-  const menuId = props.id ?? createId();
-  return {
-    ...createOverlayTriggerState(props),
-    triggerId: menuId + "-trigger",
-    menuId,
-    trigger: props.trigger ?? "press",
-    focusStrategy: signal<FocusStrategy | null>(null),
-    expandedKeysStack: signal<readonly Key[]>([]),
-  };
-}
-
-/** `open(focusStrategy = null)`. */
-export function openMenu(state: MenuTriggerState, focusStrategy: FocusStrategy | null = null): void {
-  state.focusStrategy.set(focusStrategy);
-  openOverlay(state);
-}
-
-/** `toggle(focusStrategy = null)`. */
-export function toggleMenu(state: MenuTriggerState, focusStrategy: FocusStrategy | null = null): void {
-  state.focusStrategy.set(focusStrategy);
-  toggleOverlay(state);
-}
-
-/** `close()` = `closeAll`: closes every submenu and the menu. */
-export function closeMenu(state: MenuTriggerState): void {
-  state.expandedKeysStack.set([]);
-  closeOverlay(state);
-}
-
-/** `openSubmenu(triggerKey, level)`: the stack keeps levels below `level`, then this key. */
-export function openSubmenuKey(state: MenuTriggerState, triggerKey: Key, level: number): void {
-  const stack = untrack(state.expandedKeysStack);
-  if (level > stack.length) return;
-  state.expandedKeysStack.set([...stack.slice(0, level), triggerKey]);
-}
-
-/** `closeSubmenu(triggerKey, level)`: closes this level (and the ones above) when it is open. */
-export function closeSubmenuKey(state: MenuTriggerState, triggerKey: Key, level: number): void {
-  const stack = untrack(state.expandedKeysStack);
-  if (stack[level] === triggerKey) state.expandedKeysStack.set(stack.slice(0, level));
-}
-
-/** Whether the submenu of `triggerKey` at `level` is open (binding accessor). */
-export const isSubmenuOpen = (state: MenuTriggerState, triggerKey: Key, level: number): boolean => state.expandedKeysStack()[level] === triggerKey;
-
-// --- useSubmenuTriggerState ---------------------------------------------------------------------
-
-/** react-stately `SubmenuTriggerState` (methods: `openSubmenu`, `closeSubmenu`, `toggleSubmenu`, `closeAllSubmenus`). */
-export interface SubmenuTriggerState {
-  readonly root: MenuTriggerState;
-  /** The trigger item's key (Rivet: set by the trigger MenuItem when it renders, `bindSubmenuTrigger`). */
-  triggerKey: Key;
-  /** The level of the submenu (the stack length when the trigger was created). */
-  readonly submenuLevel: number;
-  /** Whether the submenu is open (accessor). */
-  readonly isOpen: () => boolean;
-  readonly focusStrategy: Signal<FocusStrategy | null>;
-}
-
-/** react-stately `useSubmenuTriggerState({ triggerKey }, rootState)`; `level` defaults to the current stack length. */
-export function createSubmenuTriggerState(props: { triggerKey: Key }, root: MenuTriggerState, level?: number): SubmenuTriggerState {
-  const submenuLevel = level ?? untrack(root.expandedKeysStack).length;
-  const sub: SubmenuTriggerState = {
-    root,
-    triggerKey: props.triggerKey,
-    submenuLevel,
-    // Reads `triggerKey` at evaluation: the trigger item may bind its own key after creation.
-    isOpen: computed(() => String(root.expandedKeysStack()[submenuLevel]) === String(sub.triggerKey)),
-    focusStrategy: signal<FocusStrategy | null>(null),
-  };
-  return sub;
-}
-
-/** Rivet: the trigger item of a SubmenuTrigger renders with its own key: bind it (before anything opens). */
-export function bindSubmenuTrigger(state: SubmenuTriggerState, triggerKey: Key): void {
-  state.triggerKey = triggerKey;
-}
-
-/** Submenu `open(focusStrategy)`. */
-export function openSubmenu(state: SubmenuTriggerState, focusStrategy?: FocusStrategy | null): void {
-  state.focusStrategy.set(focusStrategy ?? null);
-  openSubmenuKey(state.root, state.triggerKey, state.submenuLevel);
-}
-
-/** Submenu `close()`. */
-export function closeSubmenu(state: SubmenuTriggerState): void {
-  state.focusStrategy.set(null);
-  closeSubmenuKey(state.root, state.triggerKey, state.submenuLevel);
-}
-
-/** Submenu `toggle(focusStrategy)`. */
-export function toggleSubmenu(state: SubmenuTriggerState, focusStrategy?: FocusStrategy | null): void {
-  state.focusStrategy.set(focusStrategy ?? null);
-  if (untrack(state.isOpen)) closeSubmenu(state);
-  else openSubmenu(state, focusStrategy);
-}
-
-/** Submenu `closeAll()`: the root `close`. */
-export const closeAllSubmenus = (state: SubmenuTriggerState): void => closeMenu(state.root);
 
 // --- Menu (tree) state --------------------------------------------------------------------------
 

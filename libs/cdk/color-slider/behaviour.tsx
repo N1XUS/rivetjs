@@ -25,7 +25,14 @@
  * governing permissions and limitations under the License.
  */
 
-import { getDisplayColor, getThumbValueLabel, getValue, sliderView, type ColorSliderProps, type ColorSliderState } from "@rivetjs/cdk/color";
+import {
+  colorSliderValue,
+  getColorSliderDisplayColor,
+  getColorSliderThumbValueLabel,
+  sliderView,
+  type ColorSliderProps,
+  type ColorSliderState,
+} from "../color/slider-state.tsx";
 import { getThumbMaxValue, getThumbMinValue, getThumbPositionPercent } from "../slider/state.ts";
 import {
   sliderProps,
@@ -114,7 +121,7 @@ export interface ColorSliderAria {
 export function colorSliderAriaLabel(opts: AriaColorSliderOptions, state: ColorSliderState): string | undefined {
   // Provide a default aria-label if there is no other label provided.
   if (!opts.label && !opts["aria-label"] && !opts["aria-labelledby"]) {
-    return getValue(state).getChannelName(state.channel, opts.locale);
+    return colorSliderValue(state).getChannelName(state.channel, opts.locale);
   }
   return opts["aria-label"];
 }
@@ -135,7 +142,7 @@ export function colorSliderThumbOptions(opts: AriaColorSliderOptions): AriaSlide
 
 /** RA `generateBackground`: the channel gradient of the track. */
 export function colorSliderTrackBackground(opts: Pick<AriaColorSliderOptions, "orientation" | "direction">, state: ColorSliderState): string {
-  const value = getDisplayColor(state);
+  const value = getColorSliderDisplayColor(state);
   const channel = state.channel;
   const view = sliderView(state);
   let to: string;
@@ -203,8 +210,8 @@ export const colorSliderInputStyle = colorAreaInputStyle;
 
 /** `aria-valuetext` of the input: the channel value, then the hue name (hue) or color name (not alpha). */
 export function colorSliderInputValueText(opts: Pick<AriaColorSliderOptions, "locale">, state: ColorSliderState): string {
-  const value = getDisplayColor(state);
-  let text = getThumbValueLabel(state);
+  const value = getColorSliderDisplayColor(state);
+  let text = getColorSliderThumbValueLabel(state);
   if (state.channel === "hue") {
     text += `, ${value.getHueName(opts.locale)}`;
   } else if (state.channel !== "alpha") {

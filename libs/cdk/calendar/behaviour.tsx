@@ -32,7 +32,8 @@ import {
 import { announce } from "@rivetjs/cdk/a11y";
 import { dataBool } from "../utils/data-attrs.tsx";
 import { direction } from "@rivetjs/cdk/bidi";
-import { getDateFormatter, isRTL } from "@rivetjs/cdk/i18n";
+import { isRTL } from "@rivetjs/cdk/i18n";
+import { getDateFormatter } from "../i18n/date-formatter.ts";
 import { cachedIntl } from "../i18n/intl-cache.ts";
 import { listFormatter } from "../i18n/list-formatter.ts";
 import {
@@ -79,7 +80,7 @@ import {
   type AnyCalendarState,
   type RangeCalendarState,
 } from "../state/calendar.ts";
-import { cssEscape } from "../utils/dom.ts";
+import { cssEscape } from "../utils/dom-core.ts";
 
 /** Keys the grid handles (`data-rk`: held while the handler chunk loads). */
 export const GRID_KEYS = "ArrowUp ArrowDown ArrowLeft ArrowRight Home End PageUp PageDown Enter Space";

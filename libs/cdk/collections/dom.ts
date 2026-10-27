@@ -16,7 +16,7 @@
 //   hidden      `[hidden]` subtrees (not popovers) are left out, like RAC's hidden nodes
 import { BaseCollection, buildCollection, type CollectionNodeSpec } from "./base.ts";
 import type { Key, Node } from "./types.ts";
-import { cssEscape } from "../utils/dom.ts";
+import { cssEscape } from "../utils/dom-core.ts";
 
 /** Attributes that encode `key` for `domKey` (numeric keys keep their type). */
 export function keyAttrs(key: Key): { "data-key": string; "data-key-type"?: "number" } {

@@ -8,6 +8,7 @@ RAC `ColorWheel` / `ColorWheelTrack` + react-aria `useColorWheel`: circular hue 
 - `@rivetjs/cdk/color-wheel/behaviour` -> `behaviour.tsx`: `colorWheelProps`, handlers `colorWheelTrackPointerDown` / `colorWheelThumbPointerDown` / `colorWheelThumbKeyDown` / `colorWheelInputChange` / `colorWheelInputFocus`, styles `colorWheelTrackStyle` / `colorWheelThumbStyle` / `colorWheelInputStyle`, `createColorWheelInteraction()`
 - state: `@rivetjs/cdk/color` `createColorWheelState`
 
+- `contexts.ts` (BIG-UI 2026-10-27): `ColorWheelContext`, `ColorWheelStateContext` live in this leaf (re-exported by `index.tsx`), so `color-picker` and siblings read them without importing the component and its behaviour closure (color-picker-basic −28 % JS gz)
 ## Rules / invariants
 - Default classes `rv-ColorWheel` (default style `position: relative`), `rv-ColorWheelTrack`; RA puts `id` on the input, not the root.
 - Window listeners via `getOwnerWindow(inputRef())`.

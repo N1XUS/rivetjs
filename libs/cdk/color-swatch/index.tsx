@@ -5,21 +5,14 @@
 //   `ColorSwatchContext`): name, label and background are bindings over it.
 // - render props are accessors (`color()`); `style` may be a function of them (`({ color, defaultStyle }) => …`).
 // `render` (RAC DOMRenderProps): given, the attributes object (reactive entries are accessors) goes to `render(attrs, renderProps)` instead of the default element.
-import { createContext, untrack } from "@rivetjs/reactivity";
+import { ColorSwatchContext } from "./contexts.ts";
+import { untrack } from "@rivetjs/reactivity";
 import type { Color } from "@rivetjs/cdk/color";
 import { useLocale } from "@rivetjs/cdk/i18n";
 import { createId } from "@rivetjs/cdk/id";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import {
-  contextProps,
-  renderProps,
-  type ChildrenOrFunction,
-  type ContextValue,
-  type RefValue,
-  type SlotProps,
-  type StyleRenderProps,
-} from "../slots/index.tsx";
+import { contextProps, renderProps, type ChildrenOrFunction, type RefValue, type SlotProps, type StyleRenderProps } from "../slots/index.tsx";
 import { colorSwatchColor, colorSwatchProps, type AriaColorSwatchProps } from "./behaviour.ts";
 import { hasLive, liveOptions } from "../utils/live.tsx";
 import { liveRenderProps } from "../slots/index.tsx";
@@ -51,9 +44,6 @@ export interface ColorSwatchProps
   children?: ChildrenOrFunction<ColorSwatchRenderProps>;
   ref?: RefValue<HTMLDivElement>;
 }
-
-/** RAC `ColorSwatchContext`. */
-export const ColorSwatchContext = createContext<ContextValue<ColorSwatchProps, HTMLDivElement>>(null);
 
 const OWNED = ["style", "id", "children", "render"] as const;
 
@@ -138,3 +128,5 @@ function colorSwatch(props: ColorSwatchProps) {
     </div>
   );
 }
+
+export { ColorSwatchContext };

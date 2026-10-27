@@ -30,7 +30,7 @@ import {
   nodeContains,
   type FocusableElement,
 } from "../interactions/utils.ts";
-import { cssEscape } from "../utils/dom.ts";
+import { cssEscape } from "../utils/dom-core.ts";
 
 export type { FocusManager, FocusManagerOptions } from "./index.ts";
 

@@ -120,7 +120,7 @@ import {
   type PressOptions,
 } from "../button/press.ts";
 import { ButtonContext } from "../button/index.tsx";
-import { CheckboxContext, CheckboxFieldContext } from "../checkbox/index.tsx";
+import { CheckboxContext, CheckboxFieldContext } from "../checkbox/contexts.ts";
 import { SelectionIndicatorContext } from "../selection-indicator/context.ts";
 import { SharedElementContext, type SharedElementScope } from "../shared-element-transition/transition.tsx";
 import { FieldInputContext, SelectableCollectionContext, type SelectableCollectionContextValue } from "../autocomplete/contexts.ts";

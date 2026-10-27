@@ -67,7 +67,7 @@ import {
   type GridListShared,
 } from "../grid-list/behaviour.ts";
 import { ButtonContext } from "../button/index.tsx";
-import { CheckboxContext, CheckboxFieldContext } from "../checkbox/index.tsx";
+import { CheckboxContext, CheckboxFieldContext } from "../checkbox/contexts.ts";
 import { SelectionIndicatorContext } from "../selection-indicator/context.ts";
 import { selectableCollectionKeys } from "../selection/selectable-collection.ts";
 import { SharedElementContext, type SharedElementScope } from "../shared-element-transition/transition.tsx";

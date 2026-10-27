@@ -31,7 +31,8 @@ import {
   type SlotProps,
   renderPropsOf,
 } from "../slots/index.tsx";
-import { mergeInputRefs, type InputRef } from "../checkbox/behaviour.tsx";
+import type { InputRef } from "../checkbox/behaviour.tsx";
+import { mergeInputRefs } from "../checkbox/input-ref.tsx";
 import { switchProps, type AriaSwitchProps, type SwitchAria } from "./behaviour.tsx";
 import { probeSlots, slotProbing } from "#server";
 
