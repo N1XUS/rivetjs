@@ -81,7 +81,7 @@ The `preload="…"` attribute is typed as `eager | idle | visible | intent | int
 
 ### Route links
 
-For a `Link` component whose `to` prop takes a route path, the plugin completes route paths, warns with `RV3101` when a literal path matches no route, and offers go to route file and hover with the route id, file and params. The plugin option `linkModules` lists the modules whose `Link` export it checks.
+For a `Link` component whose `to` prop takes a route path, the plugin completes route paths, warns with `RV3101` when a literal path matches no route, and offers go to route file and hover with the route id, file and params. The plugin option `linkModules` lists the modules whose `Link` export it checks. When `to` is typed with the generated route union (`rivet sync` writes it to `.rivet/routes.d.ts`), TypeScript itself rejects a path that matches no route (TS2820) and `RV3101` stays silent, so run `tsc` too: the starters' `npm run check` is `rivet sync && rivet-check && tsc`.
 
 ## Plugin options
 
@@ -117,6 +117,7 @@ rivet-check -p tsconfig.json
 
 - `-p` takes a tsconfig; repeat it for several projects.
 - `--no-types` turns off the type-based warnings (route links, `RV3101`).
+- `rivet-check` does not run TypeScript's own type check: run `tsc` after it (typed route links fail there, TS2820).
 
 Each diagnostic starts with a line like `src/routes/index.tsx:4:17 - error RV2001: …`, followed by a code frame, a `fix:` line and a `docs:` link (`--format json` adds a `fix` field). The command exits with code 1 when there are errors; warnings do not fail it.
 

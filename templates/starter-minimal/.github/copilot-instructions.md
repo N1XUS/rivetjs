@@ -18,4 +18,4 @@ This project uses Rivet, a compiled, resumable JSX framework. It is NOT React an
 - i18n: `t("key", { param })` from `@rivetjs/i18n`, compile-time; key a string literal.
 - Icons: `<Icon icon={Check} />` from `@rivetjs/kit/icon` with lucide (`import { Check } from "lucide"`). Never inline SVG paths, never Unicode glyphs as icons.
 - UI: `@rivetjs/ui/<component>` (styled compound parts `Select.Trigger`, `onPress`, two-way props take a signal); headless `@rivetjs/cdk/<module>`.
-- After every change: `npm run check` (`rivet sync && rivet-check`) and fix every `RVnnnn` diagnostic; never edit `.rivet/` or `Generated … Do not edit` files.
+- After every change: `npm run check` (`rivet sync && rivet-check && tsc`) and fix every `RVnnnn` diagnostic; never edit `.rivet/` or `Generated … Do not edit` files.

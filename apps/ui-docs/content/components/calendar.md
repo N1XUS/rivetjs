@@ -51,6 +51,8 @@ export default () => (
 )
 ```
 
+The month and year text comes from `Calendar.Heading` (with the year picker, from `Calendar.YearPickerTrigger`, which shows it as a button). A `Calendar.Header` with only the two `NavButton`s shows arrows and no title.
+
 ## Examples
 
 ### Disabled

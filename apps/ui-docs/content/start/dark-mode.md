@@ -118,6 +118,25 @@ export function ThemeSwitcher() {
 
 It stores the choice under the same key `<ThemeScript>` reads, so the next page load starts in the right theme. The buttons work on a resumed page without hydration: the first press runs the component over the server HTML ([resuming](site:docs/learn/resuming/)).
 
+The colours are right from the first paint, but the switcher itself starts at `"system"` (what the server rendered). To show the stored choice after a reload, read it once the page has loaded:
+
+```tsx
+import { clientEffect } from "@rivetjs/runtime/dom";
+
+// inside ThemeSwitcher, after `const theme = signal("system")`:
+clientEffect(
+  () => {
+    try {
+      const stored = localStorage.getItem("theme");
+      if (stored === "light" || stored === "dark") theme.set(stored);
+    } catch {}
+  },
+  { when: "load" },
+);
+```
+
+The effect makes the switcher's code run at load instead of on the first press. A switcher that shows icons only can skip it: render every icon and let CSS pick one with the `dark:` variant. The full pattern (system changes, CSP) is the [dark mode recipe](site:docs/recipes/dark-mode-toggle/).
+
 :::warning
 Keep a single theme controller per app: your own switcher or the one your site shell ships, not both. On this site the top bar sets `data-theme` on `<html>`, and the examples follow it.
 :::

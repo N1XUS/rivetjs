@@ -130,7 +130,7 @@ npm run preview
 Open the preview address and the browser's developer tools, on the Network tab:
 
 1. Reload the page. The text and the button are there right away: they are in the HTML.
-2. Look at the scripts. After the page has loaded, a few files arrive at low priority (such as `derived-runtime-….js`, `dom-derived-abi-….js` and the home page's own chunk): the resume runtime and the page's code are fetched ahead, but none of it runs yet.
+2. Look at the scripts. After the page has loaded, a few files arrive at low priority: the page's own code and the part of the Rivet runtime it needs (the names depend on the page: a small page like this one gets `dom-lite-….js`, larger ones `derived-runtime-….js` and `dom-derived-abi-….js`). They are fetched ahead, but none of it runs yet.
 3. Click the button. The runtime starts, runs the home page's code (`src/routes/index.tsx`) over the HTML that is already there, and the click reaches the counter's handler: the count goes up.
 
 Nothing ran in the browser until you used the page, and the click reused the server's nodes instead of rendering new ones. [Resuming](../learn/resuming.md) explains how.
@@ -150,7 +150,7 @@ The `templates` folder has four starters. `npm create rivet` copies the one you 
 
 Every starter also has:
 
-- `npm run check`: runs `rivet-check`, the Rivet compiler's checks for all `.tsx` files, for example a handler that cannot resume. It exits with code 1 on an error, so you can run it in CI. See [language service](../guides/tooling/language-service.md#check-in-ci).
+- `npm run check`: runs `rivet sync`, then `rivet-check`, the Rivet compiler's checks for all `.tsx` files (for example a browser global read during server rendering), then `tsc` for the types, typed route links included. It exits with code 1 on an error, so you can run it in CI. See [language service](../guides/tooling/language-service.md#check-in-ci).
 - `@rivetjs/devtools` as a dev dependency: `npm run dev` shows the [DevTools](../guides/tooling/devtools.md) panel (:kbd[Alt]+:kbd[Shift]+:kbd[R]). Builds never include it.
 - `@rivetjs/typescript-plugin` in `tsconfig.json`: compiler errors in your editor while you type. See [editor setup](editor-setup.md).
 - `"engines": { "node": ">=24" }` in `package.json`.

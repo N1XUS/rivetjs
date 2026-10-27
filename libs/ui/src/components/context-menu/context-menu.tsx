@@ -8,7 +8,9 @@
 //   cancels the browser's menu for a cold first right click and the replay opens this one). `isDisabled` (read once): no
 //   MenuTrigger at all, so the browser's own context menu appears and `.Popover` renders nothing.
 // - `.Trigger` = a `div` (not focusable unless `tabIndex` is passed) taking the MenuTrigger's press-responder props through cdk
-//   `pressProps` (the `<Pressable>` wrapper would warn about a non-focusable child) and its `ref`. iOS fires no `contextmenu`:
+//   `pressProps` (the `<Pressable>` wrapper would warn about a non-focusable child) and its `ref`. Its children render inside
+//   `ClearPressResponder` (RA): a Button / Checkbox / table cell inside the trigger keeps its own props (before, each one took
+//   the trigger's `data-cm`, aria-haspopup and id: duplicate ids, B4 2026-10-27). iOS fires no `contextmenu`:
 //   the trigger runs a touch long press (500 ms) there (`contextMenuUsesLongPress`, cdk `menuTriggerContextMenuLongPress`).
 // - `.Popover` = cdk Popover with the dropdown surface (placement / offset from the trigger's PopoverContext: `bottom start` at
 //   the pointer, offset 0; a submenu's from its SubmenuTrigger; pass `placement` / `offset` to override); `.Menu` = `Dropdown.Menu` (closes
@@ -19,7 +21,7 @@ import type { MenuTriggerProps } from "@rivetjs/cdk/menu";
 import { contextMenuUsesLongPress, menuTriggerContextMenuLongPress } from "@rivetjs/cdk/menu/behaviour";
 import { longPressEnd, longPressStart } from "@rivetjs/cdk/interactions/long-press";
 import { pressProps } from "@rivetjs/cdk/interactions/press";
-import { PressResponderContext } from "@rivetjs/cdk/interactions/pressable";
+import { ClearPressResponder, PressResponderContext } from "@rivetjs/cdk/interactions/pressable";
 import { Popover as PopoverPrimitive } from "@rivetjs/cdk/popover";
 import type { PopoverProps as PopoverPrimitiveProps, PopoverRenderProps } from "@rivetjs/cdk/popover";
 import { createContext, useContext } from "@rivetjs/reactivity";
@@ -101,7 +103,7 @@ const ContextMenuTrigger = (props: ContextMenuTriggerProps): JSX.Element => {
   });
   return (
     <div class={cls()} data-slot="context-menu-trigger" {...(press.pressProps as object)} {...rest} ref={responder?.ref as never}>
-      {local.children}
+      <ClearPressResponder>{local.children}</ClearPressResponder>
     </div>
   );
 };

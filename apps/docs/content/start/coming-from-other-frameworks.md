@@ -34,7 +34,7 @@ Three rules follow from it, whatever framework you come from:
 | Next.js `app/` folders, Remix routes | `src/routes` files; `_layout.tsx` for layouts; see [file routes](../guides/routing/file-routes.md) |
 | `getServerSideProps`, Remix `loader` | `export const loader = load(…)` in the page file |
 | Server actions, Remix `action` | `export const forms = actions({ … })` in the page file |
-| `useRouter().push`, `useSearchParams` | `navigate()`, `useSearchParams()` / `setSearchParams()` from `@rivetjs/router/client` |
+| `useRouter().push`, `useSearchParams` | `navigate()`, `useSearchParams()` / `setSearchParams()` from `@rivetjs/router/client`. `useSearchParams()` returns a function, not a `[params, setParams]` tuple: `const search = useSearchParams(); search().get("q")`, and `setSearchParams(update)` to change the query |
 
 What to unlearn:
 

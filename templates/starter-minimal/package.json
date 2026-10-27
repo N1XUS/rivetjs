@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && vite build --ssr && node prerender.js",
-    "check": "rivet sync && rivet-check"
+    "check": "rivet sync && rivet-check && tsc"
   },
   "dependencies": {
     "@rivetjs/reactivity": "experimental",

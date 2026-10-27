@@ -80,6 +80,66 @@ On iOS a touch long press (500 ms) opens the menu. Elsewhere touch browsers fire
 
 ::example{id=context-menu-submenus}
 
+## Table and List Rows
+
+One `ContextMenu` around the whole table serves every row: `onContextMenu` on the row records which one was clicked (it runs before the trigger opens the menu), and the menu's `onAction` reads it. Controls inside the trigger (row checkboxes, buttons, a row `Dropdown`) keep their own press behaviour. The same works for `GridList` items and `Tree` items.
+
+Windows browsers fire `contextmenu` for Shift+F10 and the context-menu key at the focused row; macOS browsers do not. The trigger's `onKeyDown` below opens the menu at the focused row on every platform. Escape (or running an item) returns focus to the row the menu was opened from.
+
+```tsx
+import { signal } from "@rivetjs/reactivity";
+import { ContextMenu } from "@rivetjs/ui/context-menu";
+import { Table } from "@rivetjs/ui/table";
+
+const ORDERS = [
+  { id: 1001, customer: "Ada" },
+  { id: 1002, customer: "Linus" },
+];
+
+export default function OrdersTable() {
+  const row = signal<number | null>(null);
+  // Shift+F10 / the context-menu key on a focused row: open the menu at that row.
+  const openFromKeyboard = (e: KeyboardEvent) => {
+    if (e.key !== "ContextMenu" && !(e.key === "F10" && e.shiftKey)) return;
+    const el = (e.target as Element).closest<HTMLElement>("[role=row]");
+    if (!el) return;
+    e.preventDefault();
+    const r = el.getBoundingClientRect();
+    el.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: r.x + 16, clientY: r.y + r.height / 2 }));
+  };
+  return (
+    <ContextMenu>
+      <ContextMenu.Trigger onKeyDown={openFromKeyboard}>
+        <Table>
+          <Table.ScrollContainer>
+            <Table.Content aria-label="Orders">
+              <Table.Header>
+                <Table.Column isRowHeader>Order</Table.Column>
+                <Table.Column>Customer</Table.Column>
+              </Table.Header>
+              <Table.Body items={ORDERS}>
+                {(o) => (
+                  <Table.Row id={o.id} onContextMenu={() => row.set(o.id)}>
+                    <Table.Cell>#{o.id}</Table.Cell>
+                    <Table.Cell>{o.customer}</Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+        </Table>
+      </ContextMenu.Trigger>
+      <ContextMenu.Popover>
+        <ContextMenu.Menu aria-label="Order actions" onAction={(key) => console.log(key, row())}>
+          <ContextMenu.Item id="open">Open</ContextMenu.Item>
+          <ContextMenu.Item id="archive">Archive</ContextMenu.Item>
+        </ContextMenu.Menu>
+      </ContextMenu.Popover>
+    </ContextMenu>
+  );
+}
+```
+
 ## Styling Reference
 
 ### CSS Classes
@@ -110,7 +170,7 @@ On iOS a touch long press (500 ms) opens the menu. Elsewhere touch browsers fire
 
 ### ContextMenu.Trigger
 
-A `div` that receives the right click and the iOS long press. Not focusable unless you pass `tabIndex`; a focusable trigger also opens on Shift+F10 and the context-menu key. Takes `div` props and `class`.
+A `div` that receives the right click and the iOS long press. Not focusable unless you pass `tabIndex`; on Windows a focusable trigger also opens on Shift+F10 and the context-menu key (macOS: see [Table and List Rows](#table-and-list-rows)). Its children keep their own press props: a Button or Checkbox inside does not take the trigger's id or attributes. Takes `div` props and `class`.
 
 ### ContextMenu.Popover
 
@@ -132,7 +192,7 @@ A `Separator` that the menu treats as a collection leaf.
 ## Accessibility
 
 - Mouse: right click opens the menu at the pointer; a right click elsewhere closes it.
-- Keyboard: on a focusable trigger, Shift+F10 or the context-menu key opens it. Arrows move, Enter runs, Escape closes and focus returns to the trigger.
+- Keyboard: on a focusable trigger, Shift+F10 or the context-menu key opens it where the browser fires `contextmenu` for them (Windows); [Table and List Rows](#table-and-list-rows) opens it on every platform. Arrows move, Enter runs, Escape closes and focus returns to the element it was opened from.
 - Touch: a long press opens it.
 - The list is a `role="menu"`; name it with `aria-label` on `.Menu`.
 

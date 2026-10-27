@@ -60,7 +60,11 @@ The compiler removes `actions(…)` from the browser build, and `@rivetjs/forms/
 2. refuses wrong content types (`415`) and too-large bodies (`413`; 1 MiB for normal forms, 10 MiB for file uploads);
 3. checks the values with the schema. On failure it answers `400` with the problems and the values the user typed (except passwords and files).
 
-Your function can also reject the input itself, for example when an email is already taken: return `invalid({ email: "This email is already registered" })`.
+Your function can also reject the input itself, for example when an email is already taken: return `invalid({ email: "This email is already registered" })`. `invalid` comes from the same module as `action`:
+
+```tsx
+import { action, invalid } from "@rivetjs/forms/server";
+```
 
 ## Render the form
 

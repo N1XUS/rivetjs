@@ -1,6 +1,6 @@
 import { signal } from "@rivetjs/reactivity";
 
-/** A button that counts clicks. Its code loads when you first point at it. */
+/** A button that counts clicks. The browser fetches its code when idle after load and runs it on the first click. */
 export function Counter() {
   const count = signal(0);
   return (

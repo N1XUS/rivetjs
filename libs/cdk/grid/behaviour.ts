@@ -468,7 +468,10 @@ export function gridRowGroupProps(): GridRowGroupAria {
 /**
  * react-aria's usePress stops propagation of the events of a press it handles, so a pressable cell
  * keeps its row from pressing too. The selectable-item port leaves propagation alone: stop it here
- * when the item takes press events (allows selection or has an action).
+ * when the item takes press events (allows selection or has an action). Never on `pointerup`: usePress
+ * lets it bubble, and a nested press (a selection checkbox, a sortable column's sort press) ends through
+ * its document `pointerup` listener — stopped here (the runtime's delegated stop is immediate at the
+ * document), a touch tap's `pointerleave` before the click ended that press without `onPress` (B1).
  */
 function stopPress(options: SelectableItemOptions, e: Event): void {
   // usePress ignores the click a synthetic link dispatches (`openLink.isOpening`): let it reach the document.
@@ -558,7 +561,6 @@ export function gridRowPointerDown<T>(e: Ev<PointerEvent>, props: GridRowProps<T
 export function gridRowPointerUp<T>(e: Ev<PointerEvent>, props: GridRowProps<T>, state: GridStateLike<T, any>): void {
   const options = rowItemOptions(props, state, e);
   withSelectionAnnouncement(props, state, () => selectableItemPointerUp(options, e));
-  stopPress(options, e);
 }
 /** pointercancel on the row. */
 export function gridRowPointerCancel<T>(e: Ev<PointerEvent>, props: GridRowProps<T>, state: GridStateLike<T, any>): void {
@@ -888,9 +890,7 @@ export function gridCellPointerDown(e: Ev<PointerEvent>, props: GridCellProps, s
 }
 /** pointerup on the cell. */
 export function gridCellPointerUp(e: Ev<PointerEvent>, props: GridCellProps, state: GridStateLike<any, any>): void {
-  const options = cellItemOptions(props, state, e);
-  selectableItemPointerUp(options, e);
-  stopPress(options, e);
+  selectableItemPointerUp(cellItemOptions(props, state, e), e);
 }
 /** click on the cell (the press). */
 export function gridCellClick(e: Ev<MouseEvent>, props: GridCellProps, state: GridStateLike<any, any>): void {

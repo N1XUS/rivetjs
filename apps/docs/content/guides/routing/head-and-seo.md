@@ -59,11 +59,16 @@ The router escapes every value, so text from your database cannot break out of t
 Make `head` a function to build tags from the page's data. It receives `{ data, params, url }`:
 
 ```tsx title="src/routes/posts/[slug].tsx"
-import type { PageProps } from "@rivetjs/router";
+import { load, notFound, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { posts } from "../../posts.server.ts";
 
-type Post = { title: string; summary: string; slug: string };
+export const loader = load(async ({ params }: RequestEvent<"posts/[slug]">) => {
+  const post = await posts.find(params.slug);
+  if (!post) throw notFound();
+  return post;
+});
 
-export const head = ({ data }: { data: Post }) => ({
+export const head = ({ data }: PageProps<typeof loader>) => ({
   title: data.title,
   meta: [
     { name: "description", content: data.summary },
@@ -72,12 +77,12 @@ export const head = ({ data }: { data: Post }) => ({
   links: [{ rel: "canonical", href: "https://example.com/posts/" + data.slug }],
 });
 
-export default function PostPage({ data }: PageProps<Post>) {
+export default function PostPage({ data }: PageProps<typeof loader>) {
   return <h1>{data.title}</h1>;
 }
 ```
 
-`data` is the result of this file's own `load(…)`. A layout's `head` function gets the layout's data.
+`data` is the result of this file's own `load(…)`; `PageProps<typeof loader>` takes its type from the loader, so you never write it by hand. A layout's `head` function gets the layout's data.
 
 ## Layouts and pages combine
 

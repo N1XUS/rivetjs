@@ -465,9 +465,9 @@
       "code": "RV3101",
       "messages": ["No route matches \"{path}\" (routes from {routesDir ?? \"the router\"})."],
       "fix": "Point the Link at an existing route path (check src/routes), or add the missing route file.",
-      "avoid": "import { Link } from \"@rivetjs/router/client\";\nexport const A = () => <Link to=\"/abuot\">About</Link>;",
-      "prefer": "import { Link } from \"@rivetjs/router/client\";\nexport const A = () => <Link to=\"/about\">About</Link>;",
-      "note": "Language service only; warning; TS-side text (not Rust). Could suggest nearest route."
+      "avoid": "import { Link } from \"@rivetjs/router/link\";\nexport const A = () => <Link to=\"/abuot\">About</Link>;",
+      "prefer": "import { Link } from \"@rivetjs/router/link\";\nexport const A = () => <Link to=\"/about\">About</Link>;",
+      "note": "Reported by the language service and rivet-check, not by the build; a warning. Silent when the Link's to is typed with the generated route union (.rivet/routes.d.ts, written by rivet sync): TypeScript itself then rejects a path that matches no route (TS2820), so run tsc as well; the starters' npm run check is rivet sync && rivet-check && tsc."
     },
     {
       "code": "RV4001",

@@ -217,3 +217,51 @@ test("command: opens from the button, parts + defaults, filters, empty state, a 
   await flush();
   assert.equal(document.querySelector("[role=dialog]"), null);
 });
+
+test("context menu: trigger props stay on .Trigger, nested pressables keep their own (ClearPressResponder, B4)", async () => {
+  const { Checkbox } = await import("../src/components/checkbox/index.ts");
+  const pressed: string[] = [];
+  const r = render(() => (
+    <ContextMenu>
+      <ContextMenu.Trigger id="nest-area">
+        <Button id="nest-button" onPress={() => pressed.push("button")}>
+          Inner
+        </Button>
+        <Checkbox id="nest-check" aria-label="Pick">
+          <Checkbox.Content>
+            <Checkbox.Control>
+              <Checkbox.Indicator />
+            </Checkbox.Control>
+          </Checkbox.Content>
+        </Checkbox>
+      </ContextMenu.Trigger>
+      <ContextMenu.Popover>
+        <ContextMenu.Menu aria-label="Actions">
+          <ContextMenu.Item id="copy">Copy</ContextMenu.Item>
+        </ContextMenu.Menu>
+      </ContextMenu.Popover>
+    </ContextMenu>
+  ));
+  const area = document.getElementById("nest-area")!;
+  assert.equal(area.getAttribute("data-cm"), "", "the trigger carries the cold right-click marker");
+  // Before the fix every pressable below the trigger took the MenuTrigger's props: `data-cm`, aria-haspopup / -expanded
+  // and the trigger's own id (duplicate ids on every checkbox / button inside a table).
+  for (const el of area.querySelectorAll("*")) {
+    assert.equal(el.hasAttribute("data-cm"), false, el.outerHTML.slice(0, 80));
+    assert.equal(el.hasAttribute("aria-haspopup"), false, el.outerHTML.slice(0, 80));
+  }
+  assert.equal(document.getElementById("nest-button")!.getAttribute("id"), "nest-button");
+  const ids = [...document.querySelectorAll("[id]")].map((el) => el.id);
+  assert.equal(new Set(ids).size, ids.length, "ids are unique: " + ids.join(","));
+  press(document.getElementById("nest-button")!);
+  await flush();
+  assert.deepEqual(pressed, ["button"]);
+  assert.equal(document.querySelector("[role=menu]"), null, "a press on a nested button does not open the menu");
+  // A right click anywhere in the trigger, nested controls included, still opens the menu.
+  document
+    .getElementById("nest-button")!
+    .dispatchEvent(new W.MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2, clientX: 10, clientY: 10 }));
+  await flush();
+  assert.ok(document.querySelector("[role=menu]"), "menu open");
+  cleanup(r as never);
+});

@@ -45,6 +45,11 @@ export interface LanguageCore {
   routeFile(project: ProjectManifest, route: EditorRoute): string;
 }
 
+/** Never resume-compiled by the build: test files (not in a page graph) and bridge-owned island modules (adapter suffixes). */
+const NOT_RESUME_FILE = /\.(test|spec|react|preact|solid|vue|svelte)\.[jt]sx$/;
+/** A `@jsxImportSource` pragma naming another runtime: a framework bridge owns the module (pragma ownership). */
+const FOREIGN_JSX = /@jsxImportSource\s+(?!@rivetjs\/runtime\b)[\w@]/;
+
 /** Files whose last check result a core keeps (least recently checked evicted first). */
 export const CHECK_CACHE_SIZE = 500;
 
@@ -63,7 +68,11 @@ export function createLanguageCore({ compiler, manifests = new ManifestCache() }
         return hit.result;
       }
       const id = project ? moduleId(project.root, fileName) : null;
-      const resume = Boolean(id && project!.manifest.resumeModules?.includes(id));
+      // A resume app (its manifest lists resume seeds) compiles every Rivet file of the app in resume mode: the manifest names
+      // the seeds (route modules), the build walks the resume graph from them, so an imported component module is checked
+      // like a route (RV2001 in `src/components/*.tsx`; D2 2026-10-27). Not resume: test files (`*.test.tsx` /
+      // `*.spec.tsx`, never in the page graph) and modules a framework bridge owns (`*.react.tsx`, a foreign pragma).
+      const resume = Boolean(id && project!.manifest.resumeModules?.length && !NOT_RESUME_FILE.test(fileName) && !FOREIGN_JSX.test(text.slice(0, 2048)));
       const sourcePackages = resume ? sourcePackagesOf(fileName, text) : [];
       const { diagnostics, sites } = compiler.check(text, {
         filename: fileName,

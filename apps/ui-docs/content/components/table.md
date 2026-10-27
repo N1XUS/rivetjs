@@ -128,6 +128,16 @@ Not yet ported: TanStack Table has no Rivet adapter (`@tanstack/react-table`); t
 
 ::example{id=table-custom-cells}
 
+### Keyboard
+
+The table is one tab stop (a grid, as in React Aria): Tab enters at the focused row and the next Tab leaves the table.
+
+- Arrow Up / Down move between rows; Home / End and Page Up / Down jump.
+- Arrow Right / Left move from the row into its cells and back; a cell with a button, link or menu trigger is reached this way, then Tab (or Enter on the control itself) uses it. Enter on the cell does not press a control inside it.
+- Space toggles the focused row's selection; Shift + arrows extend it; Ctrl / Cmd + A selects all; Escape clears it.
+- Enter runs the row action (`onRowAction`) when the table has one.
+- A row context menu (right click, Shift+F10, the context-menu key): see [ContextMenu: Table and List Rows](/components/context-menu/#table-and-list-rows).
+
 ## Customization
 
 ### Tailwind CSS

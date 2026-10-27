@@ -304,6 +304,7 @@ import { t } from "@rivetjs/i18n";
 
 - Key = string literal; params = inline object literal. Unknown key RV4001, missing / extra param RV4002, bad args RV4003, tags in attributes RV4004.
 - Server code outside rendering (emails in actions): `t.in("de", "cart.title")`. Never `String(t(…))` on the server.
+- Current language: `locale()` from `@rivetjs/i18n` (call during render; loaders / actions: `event.locals.locale`). `t()` values work in attributes (`Picture alt`), route `head` and kit `<Title>` / `<Meta>`.
 - Generated types: `src/rivet-i18n.d.ts` (do not edit). Locale URLs: `[[lang]]` route folder.
 
 ## 6. Styles
@@ -379,11 +380,11 @@ import { Select } from "@rivetjs/ui/select";
 | `npm run build`   | all        | `vite build && vite build --ssr` (+ `node prerender.js` for static / ui / minimal) |
 | `npm start`       | server     | `node serve.js` (`PORT`, `HOST`)                                                   |
 | `npm run preview` | static, ui | serve `dist/client`                                                                |
-| `npm run check`   | all        | `rivet sync && rivet-check`                                                        |
+| `npm run check`   | all        | `rivet sync && rivet-check && tsc`                                                 |
 
 - Create: `npm create rivet@latest my-app -- --template static|server|ui|minimal --yes`.
 - `rivet sync` (bin of `@rivetjs/router`): regenerates `.rivet/` (route types + `.rivet/editor.json`). Run on a fresh clone before `tsc`.
-- `rivet-check` (bin of `@rivetjs/language-core`): compiler diagnostics for both targets + type-aware checks for every `.tsx` / `.jsx` of `tsconfig.json`. Flags: `-p <tsconfig|dir>` (repeatable), `--no-types`, `--no-manifest`, `--format text|json`. Exit 0 clean (warnings ok), 1 errors, 2 setup error. Run it after every change and before reporting done; also `npx tsc -p .`.
+- `rivet-check` (bin of `@rivetjs/language-core`): compiler diagnostics for both targets + type-aware checks for every `.tsx` / `.jsx` of `tsconfig.json`. Flags: `-p <tsconfig|dir>` (repeatable), `--no-types`, `--no-manifest`, `--format text|json`. Exit 0 clean (warnings ok), 1 errors, 2 setup error. Run it after every change and before reporting done. RV3101 (a link matching no route) stands down when `to` is typed with the generated route union: `tsc` (part of `npm run check`) reports TS2820 then.
 - Editor: `@rivetjs/typescript-plugin` in `tsconfig.json` shows the same diagnostics + quick fixes while typing.
 - Measure in a build (`npm run build` + start/preview), not dev.
 - Tests (optional setup): `rivetTest()` from `@rivetjs/testing/vite`; `render`, `fire`, `flush` from `@rivetjs/runtime/testing`; `renderToString` from `@rivetjs/runtime/testing/server`.

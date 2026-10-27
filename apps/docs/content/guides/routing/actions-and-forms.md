@@ -136,6 +136,40 @@ The same check runs for every `POST`, `PUT`, `PATCH` and `DELETE` request, on pa
 The router does not limit the size of request bodies. Check `File.size` and text lengths in your action and set a body size limit in your proxy, or use the forms library's `action()`, which caps body size.
 :::
 
+## Confirm before deleting
+
+`confirm()` in `onSubmit` asks only when JavaScript runs; without it the post goes straight through. For a confirmation that always asks, give the destructive action its own page: the list links to it, and its form posts to its own action.
+
+```tsx title="src/routes/tasks/[id]/delete.tsx"
+import { load, notFound, redirect, type PageProps, type RequestEvent, actions } from "@rivetjs/router";
+import { db } from "../../../db.server.ts";
+
+export const loader = load(async ({ params }: RequestEvent<"tasks/[id]/delete">) => {
+  const task = await db.tasks.find(params.id);
+  if (!task) throw notFound();
+  return task;
+});
+
+export const forms = actions({
+  delete: async ({ params }: RequestEvent<"tasks/[id]/delete">) => {
+    await db.tasks.remove(params.id);
+    return redirect("/");
+  },
+});
+
+export default function ConfirmDelete({ data }: PageProps<typeof loader>) {
+  return (
+    <form method="post" action="?/delete">
+      <p>Delete “{data.title}”? This cannot be undone.</p>
+      <button>Delete</button>
+      <a href={"/tasks/" + data.id}>Cancel</a>
+    </form>
+  );
+}
+```
+
+On the task page, link to it: `<a href={"/tasks/" + task.id + "/delete"}>Delete</a>`. With JavaScript you can still open the same question in a dialog first; the page stays the fallback.
+
 ## Common mistakes
 
 - **`<form action="/add">`.** That posts to a different URL. Use `action="?/add"`, the page's own URL plus the action name.

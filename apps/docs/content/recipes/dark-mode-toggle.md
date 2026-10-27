@@ -55,7 +55,7 @@ Remember that a component renders on the server, and in the browser only once it
 
 ### 4. What loads, and when
 
-The click handler is in its own small chunk. It loads when the visitor points at the button or focuses it. The effect and the media listener need the Rivet runtime, which starts when the page has loaded.
+The click handler is in its own small chunk. The browser fetches it at low priority when idle after the page has loaded (or as soon as the visitor points at or focuses the button) and runs it on the first click. The effect and the media listener need the Rivet runtime, which starts when the page has loaded.
 
 ## Variations
 

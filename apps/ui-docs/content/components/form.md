@@ -154,6 +154,18 @@ The `validationBehavior` prop controls how validation is displayed:
 
 This behavior can be set at the form level or overridden at individual field level.
 
+Messages for the native constraints (`isRequired`, `minLength`, `type="email"`, …) are the browser's own: their wording and language differ per browser ("Please fill out this field." in Chrome, "Fill out this field" in Safari). For your own text, give the `FieldError` (or the `errorMessage` shorthand) a function of the render props and pick the message from `validationDetails()`, or return your message from `validate`:
+
+```tsx
+<TextField name="email" type="email" isRequired>
+  <Label>Email</Label>
+  <Input />
+  <FieldError>
+    {({ validationDetails }) => (validationDetails().valueMissing ? "Enter your email." : validationDetails().typeMismatch ? "This is not an email address." : "")}
+  </FieldError>
+</TextField>
+```
+
 ### Form Submission
 
 Forms can be submitted in several ways:

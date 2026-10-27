@@ -68,6 +68,8 @@ Anything else stops the compiler with `Unsupported model binding: model:value`.
 
 For other input types, read the value in a handler and write a `value`, `checked` or `selected` attribute. Read the element from `event.target` (see [events](./events.md#read-the-element)).
 
+`onChange` is the browser's own `change` event, not React's: on a text field it fires when the field loses focus after an edit, not on every key. Use `onInput` (or `model:value`) to react while the user types.
+
 ### Number and range
 
 ```tsx

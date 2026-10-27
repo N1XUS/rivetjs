@@ -31,6 +31,24 @@ test("rivet check prints file:line:col diagnostics and fails on errors", () => {
   }
 });
 
+test("rivet check: an imported component module is resume-checked like its route (RV2001, D2)", () => {
+  const root = tempApp({
+    "tsconfig.json": "",
+    "src/routes/index.tsx": `import { Bad } from "../components/Bad.tsx";\nexport default function Page() {\n  return <Bad />;\n}\n`,
+    "src/components/Bad.tsx": `export function Bad() {\n  const w = window.innerWidth;\n  return <p>{w}</p>;\n}\n`,
+    ".rivet/editor.json": JSON.stringify({ version: 1, resumeModules: ["src/routes/index.tsx"] }),
+  });
+  try {
+    write(root);
+    const run = spawnSync("node", [cli, "-p", "tsconfig.json", "--no-manifest"], { cwd: root, encoding: "utf8" });
+    assert.equal(run.status, 1, run.stdout + run.stderr);
+    assert.match(run.stdout, /^src\/components\/Bad\.tsx:2:13 - error RV2001: Browser global `window`/m);
+    assert.match(run.stdout, /rivet check: 2 files, 1 error, 0 warnings/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("rivet check: warnings (RV2104) do not fail", () => {
   const root = app(
     `import { signal } from "@rivetjs/reactivity";\nexport function Counter(props: { list: number[] }) {\n  const all = [];\n  for (const v of props.list) all.push(signal(v));\n  return <p onClick={() => all[0]?.set(1)}>{all.length}</p>;\n}\n`,

@@ -61,6 +61,7 @@ test("manifest: nearest .rivet/editor.json, re-read when it changes", () => {
 test("check: resume mode per manifest, both targets, cached per text", () => {
   const source = `export function A() { const w = window.innerWidth; return <p>{w}</p>; }\n`;
   const root = tempApp({ "src/a.tsx": source, "src/b.tsx": source, ".rivet/editor.json": JSON.stringify({ version: 1, resumeModules: ["src/a.tsx"] }) });
+  const plain = tempApp({ "src/a.tsx": source, ".rivet/editor.json": JSON.stringify({ version: 1 }) });
   try {
     const core = createLanguageCore({ compiler });
     const a = core.check(join(root, "src/a.tsx"), source);
@@ -71,13 +72,26 @@ test("check: resume mode per manifest, both targets, cached per text", () => {
       ["RV2001"],
     );
     assert.equal(core.check(join(root, "src/a.tsx"), source), a);
+    // An imported component module (not a seed): the build resume-compiles every module its graph reaches (D2).
     const b = core.check(join(root, "src/b.tsx"), source);
-    assert.equal(b.resume, false);
-    assert.deepEqual(b.diagnostics, []);
+    assert.equal(b.resume, true);
+    assert.deepEqual(
+      b.diagnostics.map((d) => d.code),
+      ["RV2001"],
+    );
+    // Never in a page graph: test files, bridge-owned islands (adapter suffix or a foreign pragma).
+    for (const file of ["src/a.test.tsx", "src/chart.react.tsx", "src/pre.preact.tsx"]) assert.equal(core.check(join(root, file), source).resume, false, file);
+    assert.equal(core.check(join(root, "src/c.tsx"), `/** @jsxImportSource react */\n${source}`).resume, false);
+    assert.equal(core.check(join(root, "src/d.tsx"), `/** @jsxImportSource @rivetjs/runtime */\n${source}`).resume, true);
+    // No resume seeds (resume off): no file is resume-compiled.
+    const off = core.check(join(plain, "src/a.tsx"), source);
+    assert.equal(off.resume, false);
+    assert.deepEqual(off.diagnostics, []);
     assert.ok(core.isRivetFile("/x/a.tsx") && core.isRivetFile("/x/a.jsx"));
     assert.ok(!core.isRivetFile("/x/a.ts") && !core.isRivetFile("/x/node_modules/p/a.tsx"));
   } finally {
     rmSync(root, { recursive: true, force: true });
+    rmSync(plain, { recursive: true, force: true });
   }
 });
 

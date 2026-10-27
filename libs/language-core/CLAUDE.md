@@ -35,7 +35,7 @@ Editor-agnostic Rivet language features over source text + `.rivet/editor.json`:
 
 ## Rules / invariants
 
-- Editor diagnostics must match the build: same compiler WASM (workspace's own first), same resume mode (manifest `resumeModules`), same `sourcePackages` rule as the Vite plugin.
+- Editor diagnostics must match the build: same compiler WASM (workspace's own first), same resume mode (a manifest with `resumeModules` = resume app: every `.tsx`/`.jsx` of it checks in resume mode, the seeds are routes but the build resume-compiles every module they reach, so RV2001 shows in imported components too (D2 2026-10-27); not resume: `*.test`/`*.spec` and bridge-owned modules (`*.react|preact|solid|vue|svelte.tsx`, a non-Rivet `@jsxImportSource` pragma)), same `sourcePackages` rule as the Vite plugin.
 - `ts` is always the host's TypeScript module, passed in (`typeof TS`, type-only import). Never `import ts from "typescript"` outside `cli.ts`; tsserver supplies its own.
 - `fixes.ts` uses parser APIs (works on any `SourceFile`); only `rivetReconstruct` / `rivetWrapServerExport` build a one-file checker over a fresh parse of the text (binding resolution, no host program).
 - Editor never generates `.rivet/*` files; they come from `vite` / `vite build` / `rivet sync` (`rivet({ resume })`, `rivetRouter()`). Staleness = editor.json mtime (writers bump it even when content is unchanged).
