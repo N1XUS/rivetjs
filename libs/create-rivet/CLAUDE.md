@@ -29,6 +29,12 @@
 - Extension point: `createProject({ overlays: [{ name, dir?: overlayDir("<x>"), manifest?, edit? }] })` — files over the template, then a `package.json` edit, then in-place file edits. `--deploy` is the first user (`deploy.ts`, edits only); static overlay files would go in `templates/_<name>/` (bundled automatically, none yet).
 - No runtime dependencies (installs in a second with `npm create`).
 
+## Starter examples
+
+Copied without special handling: static has `components/ReadingPlan.tsx` plus the `/about` build-time loader; server has `components/NoteForm.tsx` (native POST with signal-backed draft); UI has `components/ReadingPreferences.tsx` (two-way Switch). Minimal keeps one route and one signal. See `templates/CLAUDE.md` for the complete layout.
+
+Deploy documentation distinguishes Netlify server functions from static output and explains that Bun/Deno replace the Node/Docker instructions. The Deno prompt hint includes the permissions used by the generated start script.
+
 ## Commands
 
 - Run in-repo: `node libs/create-rivet/cli.ts <dir> --template <id> [--no-install --no-git]` (inside the repo the project resolves the workspace packages).

@@ -3,11 +3,12 @@ import { Avatar } from "@rivetjs/ui/avatar";
 import { Card } from "@rivetjs/ui/card";
 import { Chip } from "@rivetjs/ui/chip";
 import { Sparkles } from "lucide";
+import { ReadingPreferences } from "../components/ReadingPreferences.tsx";
 import { LikeButton } from "../components/LikeButton.tsx";
 
 export const head = { title: "Rivet UI starter" };
 
-/** The page at `/`: @rivetjs/ui components rendered to HTML at build time. Only the button's handler runs in the browser. */
+/** The page at `/`: @rivetjs/ui components rendered to HTML at build time. Interactive components run over the existing HTML on first use. */
 export default function Home() {
   return (
     <main class="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-6 p-6">
@@ -34,6 +35,7 @@ export default function Home() {
           <LikeButton />
         </Card.Footer>
       </Card>
+      <ReadingPreferences />
     </main>
   );
 }

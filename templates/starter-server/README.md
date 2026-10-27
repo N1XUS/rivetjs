@@ -11,11 +11,12 @@ npm run check   # Rivet compiler diagnostics + tsc (CI)
 ```
 
 - `docker build -t notes . && docker run -p 3000:3000 notes` runs the production server in a container.
-- `npm run dev` resumes pages like production until you edit a file; after an edit the page renders in the browser so hot reload keeps state. Code is not bundled, and client-rendered parts use the dev DOM output (production builds use a faster one). `npm run build && npm start` shows the production behaviour.
+- `npm run dev` resumes pages by default; a code edit reloads a resumed page. DevTools inspection or `dev: { resume: false }` switches to client rendering, where components can hot-replace with state kept. Dev serves unbundled modules; production builds optimize the same DOM lowering. `npm run build && npm start` shows the production behaviour.
 
 ## Next steps
 
 - Edit `src/routes/index.tsx`: the `load(…)` export reads data, the `actions(…)` export handles the form, the component renders both. Swap the in-memory notes for your database there.
+- `src/components/NoteForm.tsx` uses `signal` and `model:value` for a live character count; its native POST works without JavaScript. Notes are shared in this process and reset when it restarts.
 - Add a page or an API route: a new file in `src/routes/`. Docs "File routes" (`guides/routing/file-routes`), "Actions and forms" (`guides/routing/actions-and-forms`).
 - Deploy: `npm run build && npm start` on any Node 24 host, or the `Dockerfile` (docs `guides/deploy/node`, `guides/deploy/docker`). Vercel / Netlify / Cloudflare / Bun / Deno: docs `guides/deploy/<target>` (one `adapter` option in `vite.config.ts`; new projects: `npm create rivet@latest -- --deploy <target>`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).
@@ -24,7 +25,7 @@ npm run check   # Rivet compiler diagnostics + tsc (CI)
 ## Tooling
 
 - Node.js 24 or newer (`engines` in `package.json`).
-- `npm run check` runs `rivet sync` (writes the gitignored `.rivet/` route types + editor manifest from `vite.config.ts`; also run it before `tsc` on a fresh clone), `rivet-check` the Rivet compiler's diagnostics (browser globals read during server rendering, handlers that cannot resume, …) for every `.tsx` file of `tsconfig.json`, then `tsc` (types, incl. typed route links: a `Link` path that matches no route is TS2820). Exits 1 on an error; use it in CI.
+- `npm run check` runs `rivet sync` (writes the gitignored `.rivet/` route types + editor manifest from `vite.config.ts`; also run it before `tsc` on a fresh clone), `rivet-check` the Rivet compiler's diagnostics (browser globals read during server rendering, non-deterministic renders, …) for every `.tsx` / `.jsx` file of `tsconfig.json`, then `tsc` (types, incl. typed route links: a `Link` path that matches no route is TS2820). Exits 1 on an error; use it in CI.
 - `@rivetjs/devtools` is a dev dependency, so `npm run dev` shows the DevTools panel (Alt+Shift+R or the round **R** button). Builds never include it. Turn it off with `rivetRouter({ devtools: false })`.
 - `tsconfig.json` lists `@rivetjs/typescript-plugin`: editors that use the project's TypeScript show compiler errors while you type. `tsc` ignores the entry.
 - `vite.config.ts` passes options to `rivetRouter()`: `mode`, `styles`, `resume`, `devtools`, `dev.resume`, `transitions`, … All options: the docs page "Configuration" (`reference/config`).

@@ -1,7 +1,7 @@
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
 
-/** A @rivetjs/ui Button with a click count. The browser fetches its code when idle after load and runs it on the first press. */
+/** A @rivetjs/ui Button with a click count. The default loader fetches code ahead at idle; the component adopts its HTML on first use. */
 export function LikeButton() {
   const likes = signal(0);
   return (

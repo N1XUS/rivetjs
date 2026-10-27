@@ -21,7 +21,8 @@ my-app/
 │   ├── document.ts     the HTML around every page
 │   ├── styles.css      global styles (Tailwind)
 │   ├── components/
-│   │   └── Counter.tsx a component used by a page
+│   │   ├── Counter.tsx a component used by the home page
+│   │   └── ReadingPlan.tsx store-backed checklist on /about
 │   └── routes/
 │       ├── _layout.tsx wraps every page
 │       ├── index.tsx   the page at /
@@ -34,12 +35,12 @@ my-app/
 
 Each `.tsx` file in `src/routes` is a page. The file path is the URL:
 
-| File | URL |
-| --- | --- |
-| `src/routes/index.tsx` | `/` |
-| `src/routes/about.tsx` | `/about` |
-| `src/routes/books/index.tsx` | `/books` |
-| `src/routes/books/[id].tsx` | `/books/1`, `/books/2`, … |
+| File                         | URL                       |
+| ---------------------------- | ------------------------- |
+| `src/routes/index.tsx`       | `/`                       |
+| `src/routes/about.tsx`       | `/about`                  |
+| `src/routes/books/index.tsx` | `/books`                  |
+| `src/routes/books/[id].tsx`  | `/books/1`, `/books/2`, … |
 
 A page file has a default export: the page component. It can also export `head` for the page title:
 
@@ -53,7 +54,7 @@ export default function About() {
 
 Files that start with `_` are special. `_layout.tsx` wraps every page in its folder and in the folders below. `_404.tsx` and `_error.tsx` show "not found" and error pages. [File routes](../guides/routing/file-routes.md) lists all the rules.
 
-A page file can also hold code that runs only on the server: exports wrapped in a call from `@rivetjs/router`, such as `load(…)` (loading data), `guard(…)` (checking access) and `actions(…)` (handling forms). The compiler removes them from the browser build. The static starter has none; the server starter (`templates/starter-server`) has a `load(…)` and `actions(…)` in `src/routes/index.tsx`. See [loading data](../guides/routing/loading-data.md) and [server code in route files](../guides/routing/server-code-in-routes.md).
+A page file can also hold code that runs only on the server: exports wrapped in a call from `@rivetjs/router`, such as `load(…)` (loading data), `guard(…)` (checking access) and `actions(…)` (handling forms). The compiler removes them from the browser build. The static starter loads the reading topics at build time in `src/routes/about.tsx`; `src/components/ReadingPlan.tsx` uses `createStore`, `read`, `write` and keyed `For` rows for local checklist progress. The server starter (`templates/starter-server`) has a `load(…)` and `actions(…)` in `src/routes/index.tsx`. Its `src/components/NoteForm.tsx` adds a signal-backed character count to the native POST form. The UI starter demonstrates two-way `Switch` state in `src/components/ReadingPreferences.tsx`. See [loading data](../guides/routing/loading-data.md) and [server code in route files](../guides/routing/server-code-in-routes.md).
 
 ## Components: `src/components`
 
@@ -99,20 +100,24 @@ export default defineConfig({
 The HTML around every page: `<html>`, `<head>`, `<body>`. Rivet puts the page between `start` and `end`. The page's `head` export (title, meta tags, links) and the stylesheets are passed in:
 
 ```ts title="src/document.ts"
-import { headTags, type DocumentShell } from "@rivetjs/router/server";
+import { bodyAttributes, bodyTags, headTags, htmlAttributes, type DocumentShell } from "@rivetjs/router/server";
 
-const document: DocumentShell = ({ head, styles }) => ({
+/**
+ * The HTML around every page. The route `head` (title, meta, links, scripts, `<html>` / `<body>` attributes, end-of-body
+ * scripts) is written in full; `input` carries the stylesheets, the CSP nonce (server pages) and the client-managed
+ * marks of `@rivetjs/kit` head components.
+ */
+const document: DocumentShell = (input) => ({
   start:
-    '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
-    headTags({ title: head?.title ?? "Rivet app" }) +
-    styles.map((href) => `<link rel="stylesheet" href="${href}">`).join("") +
-    "</head><body>",
-  end: "</body></html>",
+    `<!doctype html><html${htmlAttributes(input.head, { lang: "en" })}><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
+    headTags({ ...input.head, title: input.head?.title ?? "Rivet app" }, input) +
+    `</head><body${bodyAttributes(input.head)}>`,
+  end: bodyTags(input.head, input) + "</body></html>",
 });
 export default document;
 ```
 
-The starter's version also passes `meta` and `links` from `head` and sets the viewport.
+Pass the complete route head and document input so scripts, stylesheets, CSP nonces and client-managed head marks survive. `htmlAttributes`, `bodyAttributes` and `bodyTags` preserve document attributes and end-of-body scripts.
 
 ## `src/styles.css`
 

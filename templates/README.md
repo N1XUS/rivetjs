@@ -2,15 +2,15 @@
 
 What `npm create rivet@latest` copies (`libs/create-rivet` bundles this folder into its npm package) and what the docs offer ("Try in browser", examples). Outside the npm workspaces: each template depends on published `@rivetjs/*` versions (`experimental` here; `create-rivet` rewrites them to the release it belongs to).
 
-| Template | `--template` | What it is |
-| --- | --- | --- |
-| `starter-static` | `static` | Static site: pages prerendered at build, Tailwind, two routes, one interactive component. Docs examples use its config files. |
-| `starter-server` | `server` | Node server: loader + form action, `serve.js`, Dockerfile. |
-| `starter-ui` | `ui` | Static site with `@rivetjs/ui` (Card, Avatar, Chip, Button) + Tailwind v4 + `@rivetjs/ui/styles` (Rivet theme). |
-| `starter-minimal` | `minimal` | One route, one signal, no Tailwind. |
+| Template          | `--template` | What it is                                                                                                                                                                  |
+| ----------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `starter-static`  | `static`     | Static site: pages prerendered at build, Tailwind, two routes, a counter and a build-time loader with a store-backed reading checklist. Docs examples use its config files. |
+| `starter-server`  | `server`     | Node server: loader + form action, signal-backed note draft, `serve.js`, Dockerfile.                                                                                        |
+| `starter-ui`      | `ui`         | Static site with `@rivetjs/ui` (Card, Avatar, Chip, Button, Switch) + Tailwind v4 + `@rivetjs/ui/styles` (Rivet theme).                                                     |
+| `starter-minimal` | `minimal`    | One route, one signal, no Tailwind.                                                                                                                                         |
 
 ```sh
-npm create rivet@latest my-app                              # asks: name, template, install, git
+npm create rivet@latest my-app                              # asks for missing folder/template, deploy target, install, git
 npm create rivet@latest my-app -- --template ui --yes       # no questions
 ```
 

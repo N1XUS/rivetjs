@@ -1,6 +1,6 @@
 # Rivet UI starter
 
-A static site built with [`@rivetjs/ui`](https://github.com/N1XUS/rivetjs/tree/main/libs/ui) (styled, resumable components) and Tailwind CSS v4. Pages in `src/routes` become HTML files at build time; the button keeps working in the browser without re-running your components.
+A static site built with [`@rivetjs/ui`](https://github.com/N1XUS/rivetjs/tree/main/libs/ui) (styled, resumable components) and Tailwind CSS v4. Pages in `src/routes` become HTML files at build time; the button keeps working in the browser by running the interactive boundary over its existing HTML on first use.
 
 ```sh
 npm install
@@ -18,7 +18,8 @@ npm run check     # Rivet compiler diagnostics + tsc (CI)
 ## Next steps
 
 - Edit `src/routes/index.tsx` and `src/components/LikeButton.tsx`. `npm run dev` reloads them.
-- Add components from `@rivetjs/ui/<name>` (button, card, dialog, tabs, …): docs "UI components" (`ui/components`).
+- `src/components/ReadingPreferences.tsx` pairs a `Switch` with `isSelected={showTips}` (two-way signal state) and live text from `showTips()`. The preference resets on reload.
+- Add components from `@rivetjs/ui/<name>` (button, card, modal, tabs, …): docs "UI components" (`ui/components`).
 - Add a page: a new file in `src/routes/`. Docs "File routes" (`guides/routing/file-routes`).
 - Deploy: `npm run build`, then upload `dist/client` to any static host (docs `guides/deploy/static-hosts`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).
@@ -27,6 +28,6 @@ npm run check     # Rivet compiler diagnostics + tsc (CI)
 ## Tooling
 
 - Node.js 24 or newer (`engines` in `package.json`).
-- `npm run check` runs `rivet sync` (writes the gitignored `.rivet/` route types + editor manifest from `vite.config.ts`; also run it before `tsc` on a fresh clone), `rivet-check` the Rivet compiler's diagnostics for every `.tsx` file of `tsconfig.json`, then `tsc` (types, incl. typed route links: a `Link` path that matches no route is TS2820). Exits 1 on an error; use it in CI.
+- `npm run check` runs `rivet sync` (writes the gitignored `.rivet/` route types + editor manifest from `vite.config.ts`; also run it before `tsc` on a fresh clone), `rivet-check` the Rivet compiler's diagnostics for every `.tsx` / `.jsx` file of `tsconfig.json`, then `tsc` (types, incl. typed route links: a `Link` path that matches no route is TS2820). Exits 1 on an error; use it in CI.
 - `@rivetjs/devtools` is a dev dependency, so `npm run dev` shows the DevTools panel (Alt+Shift+R). Builds never include it.
 - `tsconfig.json` lists `@rivetjs/typescript-plugin`: editors that use the project's TypeScript show compiler errors while you type.
