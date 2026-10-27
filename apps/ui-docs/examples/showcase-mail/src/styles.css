@@ -9,10 +9,23 @@
   }
 }
 
-/* Below 768 px: one pane at a time (the list, or the open message); the folder pane and the resize handles hide and
-   the visible pane takes the full width (`!important`: the cdk panels carry inline `display` / flex sizes). */
+/* Message rows: the subject line between the sender (ItemCard.Title) and the preview; brighter while unread. */
+.mail-row__subject {
+  @apply text-sm text-foreground/80;
+
+  .mail-row[data-unread] & {
+    @apply font-medium text-foreground;
+  }
+}
+
+/* The star toggle fills while selected. */
+.mail-star[aria-pressed="true"] svg {
+  @apply fill-warning text-warning;
+}
+
+/* Below 768 px: one pane at a time (the list, or the open message); the folders become the sidebar sheet, the resize
+   handle hides and the visible pane takes the full width (`!important`: the cdk panels carry inline `display` / flex sizes). */
 @media (width < 48rem) {
-  .mail-panes > [data-pane="nav"],
   .mail-panes > [data-separator] {
     display: none !important;
   }

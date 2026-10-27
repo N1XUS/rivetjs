@@ -5,6 +5,8 @@
  * Layout: item-card-group--list (one surface, cards divided by hairlines) / --grid (spaced cards, --item-card-group-columns)
  * Modifiers: item-card-group--default / --secondary / --tertiary / --outline / --transparent
  * In a list the group is the surface: the cards inside drop their own background, shadow and border.
+ * Collection mode (a cdk GridList root, role=grid): rows get hover / pressed / selected / current tints, an inset
+ * focus ring and the disabled look; the root has no focus outline of its own (focus moves to a row).
  * -----------------------------------------------------------------------------------------------*/
 
 .item-card-group {
@@ -82,4 +84,42 @@
   @media (width < 40rem) {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Collection mode: the group is a GridList (role=grid), its cards are rows. */
+.item-card-group[role="grid"] {
+  @apply outline-none;
+
+  & > .item-card[role="row"] {
+    @apply outline-none select-none;
+    cursor: var(--cursor-interactive);
+
+    @media (hover: hover) {
+      &[data-hovered="true"]:not([data-disabled="true"]) {
+        @apply bg-default-soft;
+      }
+    }
+
+    &[data-pressed="true"] {
+      @apply bg-default-soft;
+    }
+
+    &:is([data-selected="true"], [data-current]) {
+      @apply bg-default;
+    }
+
+    &[data-focus-visible="true"] {
+      box-shadow: inset 0 0 0 2px var(--focus);
+    }
+
+    &[data-disabled="true"] {
+      @apply status-disabled;
+    }
+  }
+}
+
+/* A list collection: the hairline under a tinted row hides (no line between two filled rows). */
+.item-card-group--list[role="grid"] > .item-card[role="row"]:is([data-selected="true"], [data-current]) + .item-card::before,
+.item-card-group--list[role="grid"] > .item-card[role="row"]:is([data-selected="true"], [data-current])::before {
+  @apply opacity-0;
 }

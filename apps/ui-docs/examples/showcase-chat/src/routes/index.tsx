@@ -147,11 +147,10 @@ export default function ChatShowcase() {
   };
 
   return (
-    // A card-sized app shell: the provider is the bordered box; the sidebar panel is absolute inside it (not the
-    // viewport-fixed default) and keeps the card's surface colour.
-    <Sidebar.Provider class="relative mx-auto h-[760px] min-h-0 max-w-6xl overflow-hidden rounded-2xl border border-separator bg-surface text-sm [&_[data-slot=sidebar-inner]]:bg-surface">
+    // A card-sized app shell: `contained` keeps the sidebar inside the bordered box (not the viewport) on the box's surface.
+    <Sidebar.Provider contained class="mx-auto h-[760px] max-w-6xl rounded-2xl border border-separator bg-surface text-sm">
       {/* History: drag the edge to resize (below half the minimum it collapses; double-click resets); a sheet below 768 px */}
-      <Sidebar id="chat-history" role="navigation" aria-label="Conversations" class="absolute h-full" resizable minWidth="13rem" maxWidth="24rem">
+      <Sidebar id="chat-history" role="navigation" aria-label="Conversations" resizable minWidth="13rem" maxWidth="24rem">
         <Sidebar.Header class="p-3 pb-0">
           <Button
             id="new-chat"

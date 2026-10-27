@@ -1,12 +1,14 @@
 ---
 title: ItemCardGroup
-description: "Item cards grouped as one divided list surface or a 2 / 3 column grid, with an optional section header."
+description: "Item cards as one divided list surface or a 2 / 3 column grid with an optional header; optionally interactive (selection, arrow keys, row actions)."
 template: reference
 status: experimental
-related: [components/item-card, components/card]
+related: [components/item-card, components/card, components/list-view]
 ---
 
 `ItemCardGroup` arranges [ItemCard](/components/item-card/)s. In the `list` layout the group is the surface (its `variant`) and the cards become transparent rows with hairline dividers; in the `grid` layout each card keeps its own surface and the grid has `columns` columns (one below 40rem). Pure markup: no script.
+
+`ItemCardGroupCollection` is the interactive form: a cdk [GridList](https://cdk.rivetjs.severyn.pro/components/grid-list/) with the same keyboard and screen reader behaviour, every `ItemCard` in it a row (selection, arrow keys, row actions). It is a separate export, so a static group ships no GridList code. See [Collection mode](#collection-mode).
 
 ## Usage
 
@@ -80,6 +82,32 @@ export default function Anatomy() {
 
 ::example{id=item-card-group-with-header}
 
+## Collection mode
+
+```tsx
+import { ItemCardGroupCollection } from "@rivetjs/ui/item-card-group-collection";
+```
+
+`ItemCardGroupCollection` takes the group's `layout` / `variant` / `columns` / `class` and renders a cdk `GridList` (`role="grid"`; `layout="grid"` = 2-D arrow keys) instead of the static `div`. Its `ItemCard`s become rows: one tab stop, arrow keys / Home / End / Page keys and typeahead (`textValue`) move between them, Space / click selects, Enter / click runs `onAction`. Controls inside a card (a `ToggleButton`, a `Switch`) stay their own tab stops. `ItemCardGroup` itself stays markup-only and ships no JavaScript (dev builds warn when it gets a collection prop).
+
+### Selection
+
+`selectionMode="single"` / `"multiple"`, `selectedKeys` (value or two-way Signal) / `defaultSelectedKeys` / `onSelectionChange`, `disallowEmptySelection`, `selectionBehavior` (`"toggle"`, or `"replace"`: arrow keys move the selection, as in a mail list). A ui `Checkbox slot="selection"` in a card follows its row.
+
+::example{id=item-card-group-selection}
+
+### Row actions and the current row
+
+`onAction(key)` runs on press / Enter. `isCurrent` on an `ItemCard` (value, accessor or live expression) marks the open / playing row: `aria-current="true"` + `data-current`.
+
+::example{id=item-card-group-actions}
+
+### Dynamic items, unread state and empty state
+
+`items` (array or accessor) + a function child renders one card per item (keyed by the card's `id`). `isUnread` sets `data-unread` (bold title, shows `ItemCard.Indicator`). `renderEmptyState` fills the group while it has no rows.
+
+::example{id=item-card-group-unread}
+
 ## Styling Reference
 
 ### CSS Classes
@@ -95,6 +123,7 @@ export default function Anatomy() {
 
 - `[data-slot]`: `item-card-group`, `item-card-group-header`, `item-card-group-title`, `item-card-group-description`.
 - `[data-layout]`: `list` / `grid`.
+- Collection mode: the root is `[role="grid"]`; rows carry `[data-selected]`, `[data-focused]`, `[data-focus-visible]`, `[data-hovered]`, `[data-pressed]`, `[data-disabled]` (cdk) and `[data-current]`, `[data-unread]` (ItemCard).
 
 ## API Reference
 
@@ -109,13 +138,32 @@ export default function Anatomy() {
 
 Also takes `div` props.
 
+### ItemCardGroupCollection
+
+The `ItemCardGroup` props (`layout`, `variant`, `columns`, `class`) plus the cdk `GridList` props (every one passes through):
+
+| Prop                     | Type                                          | Default    | Description                                       |
+| ------------------------ | --------------------------------------------- | ---------- | ------------------------------------------------- |
+| `selectionMode`          | `"none" \| "single" \| "multiple"`            | `"none"`   | Row selection                                     |
+| `selectedKeys`           | `Iterable<Key> \| "all" \| Signal<Selection>` | -          | Selected rows (controlled or two-way)             |
+| `defaultSelectedKeys`    | `Iterable<Key> \| "all"`                      | -          | Initial selection (uncontrolled)                  |
+| `onSelectionChange`      | `(keys: Selection) => void`                   | -          | Selection changed                                 |
+| `selectionBehavior`      | `"toggle" \| "replace"`                       | `"toggle"` | `replace`: focus moves the selection              |
+| `disallowEmptySelection` | `boolean`                                     | `false`    | Keep one row selected                             |
+| `disabledKeys`           | `Iterable<Key>`                               | -          | Rows that cannot be focused, selected or actioned |
+| `onAction`               | `(key: Key) => void`                          | -          | Row action (press, Enter)                         |
+| `items`                  | `T[] \| (() => T[])`                          | -          | Dynamic rows (with a function child)              |
+| `renderEmptyState`       | `() => Content`                               | -          | Shown while there are no rows                     |
+
 ### Other parts
 
 `ItemCardGroup.Header` is a `div`, `ItemCardGroup.Title` an `h3`, `ItemCardGroup.Description` a `p`; all take `class`.
 
 ## Accessibility
 
-The root is a `div role="group"`. Label it: `aria-labelledby` pointing at the title's `id`, or `aria-label`.
+The static root is a `div role="group"`. Label it: `aria-labelledby` pointing at the title's `id`, or `aria-label`.
+
+`ItemCardGroupCollection`'s root is a `role="grid"` (cdk GridList: rows `role="row"`, one tab stop, roving focus, `aria-selected` on selectable rows, `aria-multiselectable` for `multiple`). A grid has only rows: put `ItemCardGroup.Header` outside it and label the group with `aria-label` / `aria-labelledby`. Give each card a `textValue` for typeahead and the row's accessible name.
 
 ## Related Components
 

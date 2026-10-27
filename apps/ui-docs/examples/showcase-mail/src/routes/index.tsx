@@ -1,23 +1,29 @@
 // Rivet-authored showcase (own content: an invented design studio's inbox).
+import type { Selection } from "@rivetjs/cdk/collections/types";
 import { Icon } from "@rivetjs/kit/icon";
 import { computed, signal } from "@rivetjs/reactivity";
-import { For } from "@rivetjs/runtime/dom";
-import { Avatar } from "@rivetjs/ui/avatar";
 import { AlertDialog } from "@rivetjs/ui/alert-dialog";
+import { Avatar } from "@rivetjs/ui/avatar";
 import { Button } from "@rivetjs/ui/button";
 import { Chip } from "@rivetjs/ui/chip";
+import { EmptyState } from "@rivetjs/ui/empty-state";
 import { FieldError } from "@rivetjs/ui/field-error";
 import { Form } from "@rivetjs/ui/form";
 import { Input } from "@rivetjs/ui/input";
+import { ItemCard } from "@rivetjs/ui/item-card";
+import { ItemCardGroupCollection } from "@rivetjs/ui/item-card-group-collection";
 import { Label } from "@rivetjs/ui/label";
 import { Modal } from "@rivetjs/ui/modal";
-import { NativeSelect } from "@rivetjs/ui/native-select";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup, useDefaultLayout, usePanelRef } from "@rivetjs/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup, useDefaultLayout } from "@rivetjs/ui/resizable";
 import { SearchField } from "@rivetjs/ui/search-field";
 import { Segment } from "@rivetjs/ui/segment";
+import { Sidebar } from "@rivetjs/ui/sidebar";
 import { TextArea } from "@rivetjs/ui/textarea";
 import { TextField } from "@rivetjs/ui/textfield";
-import { Archive, ArrowLeft, File, Inbox, MailCheck, PanelLeftClose, PanelLeftOpen, PenLine, Reply, Send, Star, Trash2 } from "lucide";
+import { Toast, toast } from "@rivetjs/ui/toast";
+import { ToggleButton } from "@rivetjs/ui/toggle-button";
+import { Toolbar } from "@rivetjs/ui/toolbar";
+import { Archive, ArrowLeft, File, Inbox, MailCheck, MailOpen, PenLine, Reply, Send, Star, Trash2 } from "lucide";
 
 export const head = { title: "Showcase: Mail" };
 
@@ -161,18 +167,21 @@ const initials = (name: string) =>
     .slice(0, 2);
 
 export default function MailShowcase() {
-  const folder = signal<string>("inbox");
-  const folderKey = () => folder() as Folder;
+  const folder = signal<Folder>("inbox");
   const filter = signal<string | null>("all");
   const query = signal("");
-  const selectedId = signal<string | null>(null);
+  // The open message = the list's single selection (ItemCardGroup on the cdk GridList: click / arrow keys select).
+  const selection = signal<Selection>(new Set());
+  const selectedId = () => {
+    const keys = selection();
+    return keys === "all" ? null : ((keys.values().next().value as string | undefined) ?? null);
+  };
   // Mutable state lives in small signals next to the static messages, so the list rows keep their nodes.
   const unread = signal(new Set(["m1", "m2", "m3"]));
   const starred = signal(new Set(["m3"]));
   const moved = signal<Record<string, Folder>>({});
   const deleted = signal(new Set<string>());
   const sent = signal<Message[]>([]);
-  const status = signal("");
   const composeOpen = signal(false);
   const draftTo = signal("");
   const draftSubject = signal("");
@@ -180,11 +189,8 @@ export default function MailShowcase() {
   const confirmOpen = signal(false);
   const pendingId = signal<string | null>(null);
 
-  // Pane sizes persist in localStorage (restored once the page is idle); the folder pane collapses to an icon rail.
+  // Pane sizes persist in localStorage (restored once the page is idle).
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({ id: "mail-panes" });
-  const navPanel = usePanelRef();
-  const rail = signal<boolean | null>(null);
-  const isRail = () => rail() ?? (defaultLayout()?.["mail-nav"] ?? 20) < 10;
 
   const all = computed(() => [...sent(), ...MESSAGES].filter((m) => !deleted().has(m.id)));
   const folderOf = (m: Message) => moved()[m.id] ?? m.folder;
@@ -192,14 +198,13 @@ export default function MailShowcase() {
   const visible = computed(() => {
     const q = query().trim().toLowerCase();
     return all().filter(
-      (m) =>
-        inFolder(m, folderKey()) && (filter() !== "unread" || unread().has(m.id)) && (!q || `${m.from} ${m.subject} ${m.preview}`.toLowerCase().includes(q)),
+      (m) => inFolder(m, folder()) && (filter() !== "unread" || unread().has(m.id)) && (!q || `${m.from} ${m.subject} ${m.preview}`.toLowerCase().includes(q)),
     );
   });
   const selected = computed(() => all().find((m) => m.id === selectedId()) ?? null);
   const pending = computed(() => all().find((m) => m.id === pendingId()) ?? null);
   const pendingIsTrash = () => (pending() ? folderOf(pending()!) === "trash" : false);
-  const count = (f: Folder) => (f === "inbox" ? all().filter((m) => folderOf(m) === "inbox" && unread().has(m.id)).length : 0);
+  const unreadInbox = () => all().filter((m) => folderOf(m) === "inbox" && unread().has(m.id)).length;
   const folderLabel = () => FOLDERS.find((f) => f.key === folder())?.label ?? "";
 
   const toggle = (set: Set<string>, id: string, on: boolean) => {
@@ -208,14 +213,14 @@ export default function MailShowcase() {
     else next.delete(id);
     return next;
   };
-  const open = (id: string) => {
-    selectedId.set(id);
-    unread.set(toggle(unread(), id, false));
+  const open = (id: string | null) => {
+    selection.set(id ? new Set([id]) : new Set());
+    if (id) unread.set(toggle(unread(), id, false));
   };
   const moveTo = (id: string, to: Folder) => {
     moved.set({ ...moved(), [id]: to });
-    selectedId.set(null);
-    status.set(to === "archive" ? "Conversation archived." : "Conversation moved to Trash.");
+    open(null);
+    toast(to === "archive" ? "Conversation archived." : "Conversation moved to Trash.");
   };
   const askDelete = (id: string) => {
     pendingId.set(id);
@@ -233,9 +238,8 @@ export default function MailShowcase() {
     if (permanent) deleted.set(toggle(deleted(), id, true));
     else moved.set({ ...moved(), [id]: "trash" });
     pendingId.set(null);
-    if (next && selectedId() === id) open(next.id);
-    else if (selectedId() === id) selectedId.set(null);
-    status.set(permanent ? `Deleted "${message.subject}".` : `Moved "${message.subject}" to Trash.`);
+    if (selectedId() === id) open(next?.id ?? null);
+    toast(permanent ? `Deleted "${message.subject}".` : `Moved "${message.subject}" to Trash.`);
   };
   const compose = (to = "", subject = "") => {
     draftTo.set(to);
@@ -245,233 +249,229 @@ export default function MailShowcase() {
   };
   const pickFolder = (f: Folder) => {
     folder.set(f);
-    selectedId.set(null);
-  };
-  const toggleRail = () => {
-    const panel = navPanel.current;
-    if (!panel) return;
-    if (panel.isCollapsed()) panel.expand();
-    else panel.collapse();
+    open(null);
   };
 
   return (
     <div class="mx-auto h-[760px] max-w-6xl">
-      <ResizablePanelGroup
-        id="mail-panes"
-        defaultLayout={defaultLayout}
-        onLayoutChanged={onLayoutChanged}
-        class="mail-panes overflow-hidden rounded-2xl border border-separator bg-surface text-sm"
-      >
-        {/* Folders (from 768 px); drag the handle to the left (or press Enter on it) to collapse it to an icon rail */}
-        <ResizablePanel
-          id="mail-nav"
-          data-pane="nav"
-          defaultSize="20%"
-          minSize="180px"
-          maxSize="30%"
-          collapsible
-          collapsedSize="64px"
-          panelRef={navPanel}
-          onResize={(size) => rail.set(size.inPixels < 120)}
-          class="flex flex-col"
-        >
-          <nav aria-label="Folders" data-rail={isRail() ? "true" : undefined} class="group/nav flex flex-1 flex-col gap-1 p-3">
-            <div class="flex items-center gap-2 px-2 pt-1 pb-3 group-data-[rail=true]/nav:flex-col group-data-[rail=true]/nav:px-0">
-              <Avatar size="sm" color="accent">
-                <Avatar.Fallback>TV</Avatar.Fallback>
-              </Avatar>
-              <div class="min-w-0 flex-1 group-data-[rail=true]/nav:sr-only">
-                <p class="truncate font-medium">Theo Varga</p>
-                <p class="truncate text-xs text-muted">theo@fieldnote.studio</p>
-              </div>
-              <Button
-                id="rail-toggle"
-                isIconOnly
-                size="sm"
-                variant="ghost"
-                aria-label={isRail() ? "Expand folders" : "Collapse folders"}
-                onPress={() => toggleRail()}
-              >
-                <Icon icon={PanelLeftClose} size={16} class="group-data-[rail=true]/nav:hidden" />
-                <Icon icon={PanelLeftOpen} size={16} class="hidden group-data-[rail=true]/nav:block" />
-              </Button>
-            </div>
-            <Button
-              id="compose"
-              class="mb-2 group-data-[rail=true]/nav:size-10 group-data-[rail=true]/nav:self-center group-data-[rail=true]/nav:px-0"
-              onPress={() => compose()}
-            >
-              <Icon icon={PenLine} size={16} />
-              <span class="group-data-[rail=true]/nav:sr-only">Compose</span>
-            </Button>
-            {FOLDERS.map((f) => (
-              <button
-                id={`folder-${f.key}`}
-                type="button"
-                title={f.label}
-                aria-current={folder() === f.key ? "page" : undefined}
-                class="flex cursor-(--cursor-interactive) items-center gap-3 rounded-xl px-3 py-2 text-left text-muted transition-colors duration-150 ease-out outline-none focus-visible:status-focused motion-reduce:transition-none group-data-[rail=true]/nav:justify-center group-data-[rail=true]/nav:px-0 hover:bg-default aria-[current=page]:bg-default aria-[current=page]:font-medium aria-[current=page]:text-foreground"
-                onClick={() => pickFolder(f.key)}
-              >
-                <Icon icon={f.icon} size={16} />
-                <span class="flex-1 group-data-[rail=true]/nav:sr-only">{f.label}</span>
-                {f.key === "inbox" ? (
-                  <span id="unread-count" class="text-xs tabular-nums group-data-[rail=true]/nav:sr-only">
-                    {count("inbox")}
+      <Toast.Provider />
+      {/* A card-sized app shell: `contained` keeps the sidebar inside the bordered box (an icon rail when collapsed, a sheet below 768 px). */}
+      <Sidebar.Provider contained class="h-full rounded-2xl border border-separator bg-surface text-sm">
+        <Sidebar id="mail-folders" collapsible="icon" aria-label="Folders">
+          <Sidebar.Header>
+            <Sidebar.Menu>
+              <Sidebar.MenuItem>
+                <Sidebar.MenuButton size="lg" tooltip="Theo Varga">
+                  <Avatar size="sm" color="accent">
+                    <Avatar.Fallback>TV</Avatar.Fallback>
+                  </Avatar>
+                  <span class="flex min-w-0 flex-col leading-tight">
+                    <span class="truncate font-medium">Theo Varga</span>
+                    <span class="truncate text-xs text-muted">theo@fieldnote.studio</span>
                   </span>
-                ) : null}
-              </button>
-            ))}
-          </nav>
-        </ResizablePanel>
-        <ResizableHandle id="mail-handle-nav" aria-label="Resize folders" withHandle />
-
-        {/* Message list */}
-        <ResizablePanel id="mail-list" data-pane="list" defaultSize="34%" minSize="260px" class="flex flex-col">
-          <section aria-label="Messages" class={`flex min-h-0 min-w-0 flex-1 flex-col ${selectedId() ? "mail-mobile-hidden" : ""}`}>
-            <div class="flex flex-col gap-3 border-b border-separator p-3">
-              <div class="flex items-center gap-2">
-                <h2 class="hidden flex-1 text-lg font-semibold md:block">{folderLabel()}</h2>
-                <NativeSelect value={folder} class="flex-1 md:hidden" aria-label="Folder">
-                  <NativeSelect.Trigger>
-                    {FOLDERS.map((f) => (
-                      <NativeSelect.Option value={f.key}>{f.label}</NativeSelect.Option>
-                    ))}
-                  </NativeSelect.Trigger>
-                </NativeSelect>
-                <Button id="compose-mobile" isIconOnly variant="secondary" aria-label="Compose" class="md:hidden" onPress={() => compose()}>
+                </Sidebar.MenuButton>
+              </Sidebar.MenuItem>
+              <Sidebar.MenuItem>
+                <Sidebar.MenuButton id="compose" variant="outline" tooltip="Compose" onPress={() => compose()}>
                   <Icon icon={PenLine} size={16} />
-                </Button>
-                <Segment id="mail-filter" aria-label="Show" selectedKey={filter} size="sm">
-                  <Segment.Item id="all">All</Segment.Item>
-                  <Segment.Item id="unread">Unread</Segment.Item>
-                </Segment>
-              </div>
-              <SearchField id="mail-search" aria-label="Search mail" value={query} fullWidth>
-                <SearchField.Group>
-                  <SearchField.SearchIcon />
-                  <SearchField.Input placeholder="Search mail" />
-                  <SearchField.ClearButton />
-                </SearchField.Group>
-              </SearchField>
-              <p id="mail-status" role="status" class="text-xs text-muted empty:hidden">
-                {status()}
-              </p>
-            </div>
-            <ul id="mail-list-items" class="flex-1 overflow-y-auto">
-              <For each={visible()} by={(m) => m.id}>
-                {(m) => (
-                  <li>
-                    <button
-                      id={`msg-${m().id}`}
-                      type="button"
-                      aria-current={selectedId() === m().id ? "true" : undefined}
-                      aria-keyshortcuts="Delete"
-                      class="flex w-full cursor-(--cursor-interactive) gap-3 border-b border-separator px-3 py-3 text-left transition-colors duration-150 ease-out outline-none focus-visible:status-focused motion-reduce:transition-none hover:bg-default/60 aria-[current=true]:bg-default"
-                      onClick={() => open(m().id)}
-                      onKeyDown={(event: KeyboardEvent) => {
-                        if (event.key !== "Delete" && event.key !== "Backspace") return;
-                        event.preventDefault();
-                        askDelete(m().id);
-                      }}
-                    >
-                      <Avatar size="sm">
-                        <Avatar.Fallback>{initials(m().from)}</Avatar.Fallback>
-                      </Avatar>
-                      <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span class="flex items-center gap-2">
-                          <span class={`flex-1 truncate ${unread().has(m().id) ? "font-semibold" : ""}`}>{m().from}</span>
-                          <span class="shrink-0 text-xs text-muted">{m().time}</span>
-                        </span>
-                        <span class={`truncate ${unread().has(m().id) ? "font-medium text-foreground" : "text-foreground/80"}`}>{m().subject}</span>
-                        <span class="line-clamp-2 text-xs text-muted">{m().preview}</span>
-                      </span>
-                      {unread().has(m().id) ? <span aria-label="Unread" class="mt-1.5 size-2 shrink-0 rounded-full bg-accent" /> : null}
-                    </button>
-                  </li>
-                )}
-              </For>
-              {visible().length === 0 ? (
-                <li class="flex flex-col items-center gap-2 px-6 py-16 text-center text-muted">
-                  <Icon icon={MailCheck} size={28} />
-                  <p>Nothing here.</p>
-                </li>
-              ) : null}
-            </ul>
-          </section>
-        </ResizablePanel>
-        <ResizableHandle id="mail-handle-list" aria-label="Resize message list" withHandle />
-
-        {/* Reading pane */}
-        <ResizablePanel id="mail-reader" data-pane="reader" minSize="320px" class="flex flex-col">
-          <article aria-label="Message" class={`flex min-h-0 min-w-0 flex-1 flex-col ${selectedId() ? "" : "mail-mobile-hidden"}`}>
-            {selected() ? (
-              <>
-                <div class="flex items-center gap-1 border-b border-separator p-2">
-                  <Button id="back" isIconOnly variant="ghost" aria-label="Back to list" class="md:hidden" onPress={() => selectedId.set(null)}>
-                    <Icon icon={ArrowLeft} size={16} />
-                  </Button>
-                  <div class="flex-1" />
-                  <Button
-                    id="star"
-                    isIconOnly
-                    variant="ghost"
-                    aria-label={starred().has(selected()!.id) ? "Unstar" : "Star"}
-                    aria-pressed={starred().has(selected()!.id) ? "true" : "false"}
-                    onPress={() => starred.set(toggle(starred(), selected()!.id, !starred().has(selected()!.id)))}
-                  >
-                    <Icon icon={Star} size={16} class={starred().has(selected()!.id) ? "fill-warning text-warning" : ""} />
-                  </Button>
-                  <Button id="archive" isIconOnly variant="ghost" aria-label="Archive" onPress={() => moveTo(selected()!.id, "archive")}>
-                    <Icon icon={Archive} size={16} />
-                  </Button>
-                  <Button id="trash" isIconOnly variant="ghost" aria-label="Delete" onPress={() => askDelete(selected()!.id)}>
-                    <Icon icon={Trash2} size={16} />
-                  </Button>
-                </div>
-                <div class="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
-                  <div class="flex flex-col gap-2">
-                    <h2 id="reader-subject" class="text-xl font-semibold text-balance">
-                      {selected()!.subject}
-                    </h2>
-                    {selected()!.label ? (
-                      <Chip size="sm" variant="soft" class="self-start">
-                        {selected()!.label}
-                      </Chip>
+                  <span>Compose</span>
+                </Sidebar.MenuButton>
+              </Sidebar.MenuItem>
+            </Sidebar.Menu>
+          </Sidebar.Header>
+          <Sidebar.Content>
+            <Sidebar.Group>
+              <Sidebar.Menu>
+                {FOLDERS.map((f) => (
+                  <Sidebar.MenuItem>
+                    <Sidebar.MenuButton id={`folder-${f.key}`} tooltip={f.label} isCurrent={() => folder() === f.key} onPress={() => pickFolder(f.key)}>
+                      <Icon icon={f.icon} size={16} />
+                      <span>{f.label}</span>
+                    </Sidebar.MenuButton>
+                    {f.key === "inbox" ? (
+                      <Sidebar.MenuBadge id="unread-count" aria-label="unread">
+                        {unreadInbox()}
+                      </Sidebar.MenuBadge>
                     ) : null}
-                  </div>
-                  <div class="flex items-center gap-3">
-                    <Avatar>
-                      <Avatar.Fallback>{initials(selected()!.from)}</Avatar.Fallback>
-                    </Avatar>
-                    <div class="min-w-0 flex-1">
-                      <p class="truncate font-medium">{selected()!.from}</p>
-                      <p class="truncate text-xs text-muted">{selected()!.email}</p>
-                    </div>
-                    <span class="text-xs text-muted">{selected()!.time}</span>
-                  </div>
-                  <div class="flex flex-col gap-3 leading-relaxed">
-                    {selected()!.body.map((p) => (
-                      <p>{p}</p>
-                    ))}
-                  </div>
-                  <div>
-                    <Button id="reply" variant="secondary" onPress={() => compose(selected()!.email, `Re: ${selected()!.subject.replace(/^Re: /, "")}`)}>
-                      <Icon icon={Reply} size={16} />
-                      Reply
+                  </Sidebar.MenuItem>
+                ))}
+              </Sidebar.Menu>
+            </Sidebar.Group>
+          </Sidebar.Content>
+          <Sidebar.Rail />
+        </Sidebar>
+
+        <Sidebar.Inset class="min-w-0">
+          <ResizablePanelGroup id="mail-panes" defaultLayout={defaultLayout} onLayoutChanged={onLayoutChanged} class="mail-panes h-full min-h-0">
+            {/* Message list */}
+            <ResizablePanel id="mail-list" data-pane="list" defaultSize="42%" minSize="280px" class="flex flex-col">
+              <section aria-label="Messages" class={`flex min-h-0 min-w-0 flex-1 flex-col ${selectedId() ? "mail-mobile-hidden" : ""}`}>
+                <div class="flex flex-col gap-3 border-b border-separator p-3">
+                  <div class="flex items-center gap-2">
+                    <Sidebar.Trigger id="rail-toggle" aria-label="Toggle folders" class="-ms-1" />
+                    <h2 class="flex-1 truncate text-lg font-semibold">{folderLabel()}</h2>
+                    <Button id="compose-mobile" isIconOnly variant="secondary" aria-label="Compose" class="md:hidden" onPress={() => compose()}>
+                      <Icon icon={PenLine} size={16} />
                     </Button>
+                    <Segment id="mail-filter" aria-label="Show" selectedKey={filter} size="sm">
+                      <Segment.Item id="all">All</Segment.Item>
+                      <Segment.Item id="unread">Unread</Segment.Item>
+                    </Segment>
                   </div>
+                  <SearchField id="mail-search" aria-label="Search mail" value={query} fullWidth>
+                    <SearchField.Group>
+                      <SearchField.SearchIcon />
+                      <SearchField.Input placeholder="Search mail" />
+                      <SearchField.ClearButton />
+                    </SearchField.Group>
+                  </SearchField>
                 </div>
-              </>
-            ) : (
-              <div class="flex flex-1 flex-col items-center justify-center gap-2 text-muted">
-                <Icon icon={Inbox} size={32} />
-                <p>Select a message to read it.</p>
-              </div>
-            )}
-          </article>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+                {/* Delete / Backspace on a focused row asks to delete it (one listener for the whole list). */}
+                <div
+                  id="mail-list-items"
+                  class="min-h-0 flex-1 overflow-y-auto"
+                  onKeyDown={(event: KeyboardEvent) => {
+                    if (event.key !== "Delete" && event.key !== "Backspace") return;
+                    const id = (event.target as Element).closest?.("[data-key]")?.getAttribute("data-key");
+                    if (!id) return;
+                    event.preventDefault();
+                    askDelete(id);
+                  }}
+                >
+                  <ItemCardGroupCollection
+                    id="mail-list-group"
+                    aria-label={folderLabel()}
+                    aria-keyshortcuts="Delete"
+                    variant="transparent"
+                    selectionMode="single"
+                    selectionBehavior="replace"
+                    selectedKeys={selection}
+                    onSelectionChange={(keys: Selection) => {
+                      const id = keys === "all" ? undefined : (keys.values().next().value as string | undefined);
+                      if (id) unread.set(toggle(unread(), id, false));
+                    }}
+                    items={visible}
+                    renderEmptyState={() => (
+                      <EmptyState size="sm" class="py-16">
+                        <EmptyState.Header>
+                          <EmptyState.Media variant="icon">
+                            <Icon icon={MailCheck} size={20} />
+                          </EmptyState.Media>
+                          <EmptyState.Title>Nothing here</EmptyState.Title>
+                          <EmptyState.Description>No messages match this folder and filter.</EmptyState.Description>
+                        </EmptyState.Header>
+                      </EmptyState>
+                    )}
+                  >
+                    {(m: Message) => (
+                      <ItemCard id={m.id} textValue={`${m.from}: ${m.subject}`} isUnread={unread().has(m.id)} class="mail-row items-start">
+                        <Avatar size="sm">
+                          <Avatar.Fallback>{initials(m.from)}</Avatar.Fallback>
+                        </Avatar>
+                        <ItemCard.Content>
+                          <ItemCard.Title>{m.from}</ItemCard.Title>
+                          <span class="mail-row__subject truncate">{m.subject}</span>
+                          <ItemCard.Description class="line-clamp-2">{m.preview}</ItemCard.Description>
+                        </ItemCard.Content>
+                        <ItemCard.Action class="flex-col items-end gap-2 self-stretch">
+                          <span class="text-xs text-muted">{m.time}</span>
+                          <ItemCard.Indicator aria-label="Unread" />
+                        </ItemCard.Action>
+                      </ItemCard>
+                    )}
+                  </ItemCardGroupCollection>
+                </div>
+              </section>
+            </ResizablePanel>
+            <ResizableHandle id="mail-handle-list" aria-label="Resize message list" withHandle />
+
+            {/* Reading pane */}
+            <ResizablePanel id="mail-reader" data-pane="reader" minSize="320px" class="flex flex-col">
+              <article aria-label="Message" class={`flex min-h-0 min-w-0 flex-1 flex-col ${selectedId() ? "" : "mail-mobile-hidden"}`}>
+                {selected() ? (
+                  <>
+                    <Toolbar id="reader-actions" aria-label="Message actions" class="gap-1 border-b border-separator p-2">
+                      <Button id="back" isIconOnly variant="ghost" aria-label="Back to list" class="md:hidden" onPress={() => open(null)}>
+                        <Icon icon={ArrowLeft} size={16} />
+                      </Button>
+                      <div class="flex-1" />
+                      <ToggleButton
+                        id="star"
+                        isIconOnly
+                        variant="ghost"
+                        aria-label="Star"
+                        isSelected={starred().has(selected()!.id)}
+                        onChange={(on: boolean) => starred.set(toggle(starred(), selected()!.id, on))}
+                        class="mail-star"
+                      >
+                        <Icon icon={Star} size={16} />
+                      </ToggleButton>
+                      <Button
+                        id="unread"
+                        isIconOnly
+                        variant="ghost"
+                        aria-label="Mark as unread"
+                        onPress={() => unread.set(toggle(unread(), selected()!.id, true))}
+                      >
+                        <Icon icon={MailOpen} size={16} />
+                      </Button>
+                      <Button id="archive" isIconOnly variant="ghost" aria-label="Archive" onPress={() => moveTo(selected()!.id, "archive")}>
+                        <Icon icon={Archive} size={16} />
+                      </Button>
+                      <Button id="trash" isIconOnly variant="ghost" aria-label="Delete" onPress={() => askDelete(selected()!.id)}>
+                        <Icon icon={Trash2} size={16} />
+                      </Button>
+                    </Toolbar>
+                    <div class="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
+                      <div class="flex flex-col gap-2">
+                        <h2 id="reader-subject" class="text-xl font-semibold text-balance">
+                          {selected()!.subject}
+                        </h2>
+                        {selected()!.label ? (
+                          <Chip size="sm" variant="soft" class="self-start">
+                            {selected()!.label}
+                          </Chip>
+                        ) : null}
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <Avatar>
+                          <Avatar.Fallback>{initials(selected()!.from)}</Avatar.Fallback>
+                        </Avatar>
+                        <div class="min-w-0 flex-1">
+                          <p class="truncate font-medium">{selected()!.from}</p>
+                          <p class="truncate text-xs text-muted">{selected()!.email}</p>
+                        </div>
+                        <span class="text-xs text-muted">{selected()!.time}</span>
+                      </div>
+                      <div class="flex flex-col gap-3 leading-relaxed">
+                        {selected()!.body.map((p) => (
+                          <p>{p}</p>
+                        ))}
+                      </div>
+                      <div>
+                        <Button id="reply" variant="secondary" onPress={() => compose(selected()!.email, `Re: ${selected()!.subject.replace(/^Re: /, "")}`)}>
+                          <Icon icon={Reply} size={16} />
+                          Reply
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <EmptyState id="reader-empty" class="flex-1">
+                    <EmptyState.Header>
+                      <EmptyState.Media variant="icon">
+                        <Icon icon={Inbox} size={20} />
+                      </EmptyState.Media>
+                      <EmptyState.Title>No message selected</EmptyState.Title>
+                      <EmptyState.Description>Select a message to read it.</EmptyState.Description>
+                    </EmptyState.Header>
+                  </EmptyState>
+                )}
+              </article>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </Sidebar.Inset>
+      </Sidebar.Provider>
 
       <AlertDialog.Backdrop isOpen={confirmOpen} isDismissable isKeyboardDismissDisabled={false}>
         <AlertDialog.Container>
@@ -527,7 +527,7 @@ export default function MailShowcase() {
                 },
                 ...sent(),
               ]);
-              status.set(`Sent to ${draftTo()}.`);
+              toast.success(`Sent to ${draftTo()}.`);
               composeOpen.set(false);
             }}
           >

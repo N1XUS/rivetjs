@@ -23,16 +23,16 @@ Rivet-authored screens with invented content (shops, people, numbers). Product p
 
 ## Communication
 
-- [Mail](/showcase/mail/): folders, a searchable message list with an unread filter, a reading pane with star / archive / trash, and a compose dialog with validation.
+- [Mail](/showcase/mail/): a sidebar of folders that collapses to an icon rail, a searchable message list with selection and an unread filter, a reading pane with a toolbar (star / archive / trash), toasts, and a compose dialog with validation.
 - [AI chat](/showcase/chat/): an assistant thread with history, copy and feedback actions, suggestions, a pending state and a composer that sends on Enter.
 
 ## Productivity
 
-- [Kanban](/showcase/kanban/): task cards sorted and moved between connected drop lists (Angular CDK drag-drop), move buttons for keyboard users, per-column add forms and a done progress bar.
+- [Kanban](/showcase/kanban/): task cards dragged (mouse or touch) or moved with the keyboard between columns, per-column composers and a done progress bar.
 
 ## Media
 
-- [Music](/showcase/music/): a library sidebar, a scrolling album row, a track list with likes and a player bar with play / pause, skip, shuffle, repeat, seek and volume.
+- [Music](/showcase/music/): a library sidebar, a scrolling album row, an interactive track list with likes and a player bar with play / pause, skip, shuffle, repeat, seek and volume.
 
 ## Account
 

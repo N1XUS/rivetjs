@@ -512,6 +512,10 @@
       "types": "./src/components/item-card-group/index.ts",
       "default": "./src/components/item-card-group/index.ts"
     },
+    "./item-card-group-collection": {
+      "types": "./src/components/item-card-group-collection/index.ts",
+      "default": "./src/components/item-card-group-collection/index.ts"
+    },
     "./timeline": {
       "types": "./src/components/timeline/index.ts",
       "default": "./src/components/timeline/index.ts"

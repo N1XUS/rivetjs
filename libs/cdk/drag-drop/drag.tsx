@@ -10,7 +10,7 @@ import { effect, onCleanup, useContext } from "@rivetjs/reactivity";
 import { ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
-import { hostDOMProps, type AriaDOMAttributes, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
+import { hostDOMProps, type GlobalDOMAttributes, type HostDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { DirectionalityContext } from "../bidi/index.ts";
 import { getTransform } from "./dom/styling.ts";
 import { DragDropConfigContext } from "./directives/config.ts";
@@ -29,7 +29,7 @@ const OWNED = ["onMouseDown", "onTouchStart", "style"] as const;
 /** Preload the drag-drop handlers when a draggable scrolls into view (first press runs synchronously). */
 export const preload = "visible";
 
-export interface DragProps<T = any> extends DragInputs<T>, GlobalDOMAttributes<HTMLElement>, AriaDOMAttributes {
+export interface DragProps<T = any> extends DragInputs<T>, GlobalDOMAttributes<HTMLElement>, HostDOMAttributes<HTMLElement> {
   /** Element to render. @default "div" */
   elementType?: "div" | "li" | "tr" | "span" | "section" | "article";
   id?: string;

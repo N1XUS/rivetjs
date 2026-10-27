@@ -8,6 +8,7 @@ import {tv} from "../../utils/tv.ts";
 
 export const sidebarVariants = tv({
   defaultVariants: {
+    contained: false,
     size: "default",
     subSize: "md",
     variant: "default",
@@ -54,6 +55,12 @@ export const sidebarVariants = tv({
     wrapper: "sidebar-wrapper",
   },
   variants: {
+    contained: {
+      false: {},
+      true: {
+        wrapper: "sidebar-wrapper--contained",
+      },
+    },
     size: {
       default: {},
       lg: {

@@ -16,6 +16,7 @@ import {
   KanbanRoot,
   KanbanScrollShadow,
 } from "./kanban.tsx";
+import type { KanbanComposerProps } from "./kanban-composer.tsx";
 import type { KanbanCardListProps, KanbanCardProps, KanbanColumnIndicatorProps, KanbanDropIndicatorProps, KanbanRootProps } from "./kanban.tsx";
 
 /* -------------------------------------------------------------------------------------------------
@@ -45,12 +46,14 @@ export type Kanban = {
   CardListProps: KanbanCardListProps;
   CardProps: KanbanCardProps;
   DropIndicatorProps: KanbanDropIndicatorProps;
+  ComposerProps: KanbanComposerProps;
 };
 
 /* -------------------------------------------------------------------------------------------------
  * Named Component
  * -----------------------------------------------------------------------------------------------*/
 export {
+  KanbanContext,
   KanbanRoot,
   KanbanColumn,
   KanbanColumnHeader,
@@ -67,7 +70,13 @@ export {
   KanbanDropIndicator,
   createKanban,
 } from "./kanban.tsx";
+export { KanbanComposer } from "./kanban-composer.tsx";
+export type { KanbanComposerProps } from "./kanban-composer.tsx";
+export { KANBAN_MESSAGES } from "./messages.ts";
 export type {
+  KanbanCardMove,
+  KanbanContextValue,
+  KanbanMessages,
   KanbanRootProps,
   KanbanRootProps as KanbanProps,
   KanbanColumnIndicatorProps,

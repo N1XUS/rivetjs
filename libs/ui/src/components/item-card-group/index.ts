@@ -28,6 +28,7 @@ export { ItemCardGroupRoot, ItemCardGroupHeader, ItemCardGroupTitle, ItemCardGro
 export type {
   ItemCardGroupRootProps,
   ItemCardGroupRootProps as ItemCardGroupProps,
+  ItemCardGroupStaticProps,
   ItemCardGroupHeaderProps,
   ItemCardGroupTitleProps,
   ItemCardGroupDescriptionProps,

@@ -12,6 +12,21 @@
     background-color: var(--background-secondary);
   }
 
+  .sidebar-wrapper--contained {
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sidebar-wrapper--contained > .sidebar > .sidebar__container {
+    height: 100%;
+    position: absolute;
+  }
+
+  .sidebar-wrapper--contained > .sidebar:not([data-variant="floating"]) .sidebar__inner, .sidebar-wrapper--contained > .sidebar:not([data-state]), .sidebar-wrapper--contained > .sidebar__inset {
+    background-color: #0000;
+  }
+
   .sidebar {
     color: var(--foreground);
   }

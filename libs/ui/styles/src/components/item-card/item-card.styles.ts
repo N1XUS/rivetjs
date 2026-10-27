@@ -16,6 +16,7 @@ export const itemCardVariants = tv({
     content: "item-card__content",
     description: "item-card__description",
     icon: "item-card__icon",
+    indicator: "item-card__indicator",
     title: "item-card__title",
   },
   variants: {

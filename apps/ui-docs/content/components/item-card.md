@@ -6,7 +6,7 @@ status: experimental
 related: [components/item-card-group, components/card, components/switch]
 ---
 
-`ItemCard` is the row of settings pages, device lists and wallets: an icon, a title with a description, and an action at the end. Render it as a link or button with `render` to make the whole row pressable. Pure markup: the controls inside bring their own behaviour.
+`ItemCard` is the row of settings pages, device lists and wallets: an icon, a title with a description, and an action at the end. Render it as a link or button with `render` to make the whole row pressable. Pure markup: the controls inside bring their own behaviour. Inside an [ItemCardGroupCollection](/components/item-card-group/#collection-mode) (the interactive group: selection, `onAction`, `items`) each card is a row of the group's cdk GridList: arrow keys, selection, `isCurrent` / `isUnread` state.
 
 ## Usage
 
@@ -91,6 +91,7 @@ Label each control: the row title is not its label (`aria-label` on the Switch /
 - `.item-card__icon` - Leading icon box; its radius is concentric with the card's.
 - `.item-card__content`, `.item-card__title`, `.item-card__description` - Text column (truncated).
 - `.item-card__action` - Trailing controls.
+- `.item-card__indicator` - The unread dot (`ItemCard.Indicator`), shown only under `[data-unread]`.
 
 ### CSS Variables
 
@@ -101,22 +102,26 @@ Label each control: the row title is not its label (`aria-label` on the Switch /
 
 - `[data-slot]`: `item-card`, `item-card-icon`, `item-card-content`, `item-card-title`, `item-card-description`, `item-card-action`.
 - `[data-pressable]` on the root: pressable look on a non-link root.
+- `[data-current]` (with `aria-current="true"`) from `isCurrent`; `[data-unread]` from `isUnread` (bold title, indicator shown).
+- As a row of an interactive group: `[data-selected]`, `[data-focused]`, `[data-focus-visible]`, `[data-hovered]`, `[data-pressed]`, `[data-disabled]`.
 
 ## API Reference
 
 ### ItemCard
 
-| Prop      | Type                                                                   | Default     | Description                        |
-| --------- | ---------------------------------------------------------------------- | ----------- | ---------------------------------- |
-| `variant` | `"default" \| "secondary" \| "tertiary" \| "outline" \| "transparent"` | `"default"` | Surface                            |
-| `render`  | `DOMRenderFunction<"div">`                                             | -           | Render a link / button as the root |
-| `class`   | `string`                                                               | -           | Additional CSS classes             |
+| Prop        | Type                                                                   | Default     | Description                        |
+| ----------- | ---------------------------------------------------------------------- | ----------- | ---------------------------------- |
+| `variant`   | `"default" \| "secondary" \| "tertiary" \| "outline" \| "transparent"` | `"default"` | Surface                            |
+| `render`    | `DOMRenderFunction<"div">`                                             | -           | Render a link / button as the root |
+| `class`     | `string`                                                               | -           | Additional CSS classes             |
+| `isCurrent` | `boolean \| (() => boolean)`                                           | `false`     | Current row: `aria-current="true"` |
+| `isUnread`  | `boolean \| (() => boolean)`                                           | `false`     | Unread emphasis + indicator        |
 
-Also takes `div` props.
+Also takes `div` props. Row-only props (inside an `ItemCardGroupCollection`; ignored elsewhere): `id` (the row key), `textValue` (typeahead / accessible name), `isDisabled`, `onAction`, `href`.
 
 ### Other parts
 
-`ItemCard.Icon`, `ItemCard.Content`, `ItemCard.Action` take `div` props and `class`; `ItemCard.Title` and `ItemCard.Description` are `span`s.
+`ItemCard.Icon`, `ItemCard.Content`, `ItemCard.Action` take `div` props and `class`; `ItemCard.Title` and `ItemCard.Description` are `span`s. `ItemCard.Indicator` is a `span` dot shown while the card is unread; name it with `aria-label` (it gets `role="img"`).
 
 ## Related Components
 

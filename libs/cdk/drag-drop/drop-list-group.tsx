@@ -5,10 +5,10 @@
 // (directives/drop-list-group.ts): no code ships for it.
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
-import { hostDOMProps, type AriaDOMAttributes, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
+import { hostDOMProps, type GlobalDOMAttributes, type HostDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { read, type MaybeAccessor } from "./directives/registry.ts";
 
-export interface DropListGroupProps extends GlobalDOMAttributes<HTMLElement>, AriaDOMAttributes {
+export interface DropListGroupProps extends GlobalDOMAttributes<HTMLElement>, HostDOMAttributes<HTMLElement> {
   /** Whether starting a dragging sequence from inside this group is disabled. */
   disabled?: MaybeAccessor<boolean | undefined>;
   /** Element to render. @default "div" */

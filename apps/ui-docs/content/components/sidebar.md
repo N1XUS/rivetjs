@@ -236,6 +236,21 @@ Any content goes in a menu button: an `Avatar` in a `size="lg"` header or footer
 </Sidebar>
 ```
 
+### Contained in a panel
+
+By default the sidebar panel is fixed to the viewport. `contained` on `Sidebar.Provider` keeps it inside the provider instead: the provider becomes the positioning box (`relative`, clipped), the panel fills its height, and the sidebar and inset take the provider's background. Use it for an app shell inside a card or a page section (the mail, music and chat showcases). Give the provider (or its parent) a height. The mobile sheet is unchanged.
+
+::example{id=sidebar-contained}
+
+```tsx
+<Card class="h-80 overflow-hidden p-0">
+  <Sidebar.Provider contained class="h-full">
+    <Sidebar collapsible="icon">…</Sidebar>
+    <Sidebar.Inset>…</Sidebar.Inset>
+  </Sidebar.Provider>
+</Card>
+```
+
 ### Floating and inset (variants)
 
 `variant="sidebar"` (default, edge panel with a separator border), `"floating"` (raised surface card), `"inset"` (content sits in an inset surface card; use with `Sidebar.Inset`). `side="right"` mirrors.
@@ -373,7 +388,7 @@ BEM classes (Rivet-authored, `libs/ui/styles/components/sidebar.css`).
 
 #### Layout
 
-- `.sidebar-wrapper` - Provider wrapper (CSS variables; secondary background when it holds an `inset` sidebar)
+- `.sidebar-wrapper` - Provider wrapper (CSS variables; secondary background when it holds an `inset` sidebar); `.sidebar-wrapper--contained` with `contained` (panel absolute inside it, transparent sidebar / inset backgrounds)
 - `.sidebar` - Root (`data-state`, `data-collapsible`, `data-variant`, `data-side`; static panel when `collapsible="none"`)
 - `.sidebar__gap` - Space reserved in the layout flow (animates width)
 - `.sidebar__container` - Fixed panel
@@ -420,6 +435,7 @@ BEM classes (Rivet-authored, `libs/ui/styles/components/sidebar.css`).
 | `toggleShortcut`                   | `string \| false`                               | `"mod+b"` | Toggle chord (`mod` = Cmd/Ctrl, `shift`, `alt`); `false` = off        |
 | `reduceMotion`                     | `boolean`                                       | `false`   | No sidebar transitions (collapse, sheet, sub menus, pages)            |
 | `closeMobileOnAction`              | `boolean`                                       | `true`    | Close the mobile sheet when a menu item is pressed                    |
+| `contained`                        | `boolean`                                       | `false`   | Panel inside the provider (not the viewport); read once               |
 | `side` / `variant` / `collapsible` | as `Sidebar`                                    | -         | Defaults for every `Sidebar` inside (its own props win)               |
 | `navigate`                         | `(href, routerOptions) => void`                 | -         | Client router for the subtree's links (inline arrow / local function) |
 | `useHref`                          | `(href) => string`                              | -         | Maps router hrefs to DOM hrefs (with `navigate`)                      |

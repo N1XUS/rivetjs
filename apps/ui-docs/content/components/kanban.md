@@ -1,12 +1,12 @@
 ---
 title: Kanban
-description: "A drag-and-drop board: columns with a header, count and actions, card lists, cards with an optional drag handle, an empty state and three sizes."
+description: "A drag-and-drop board: columns, card lists, cards with an optional drag handle, keyboard moves, an add-a-card composer and three sizes."
 template: reference
 status: experimental
 related: [showcase/kanban, components/scroll-shadow, components/chip]
 ---
 
-`Kanban` lays out columns of cards you drag within and between columns. Drag and drop comes from `@rivetjs/cdk/drag-drop` (the Angular CDK port): every card list in a board is connected. `createKanban` keeps the cards in one signal and moves a card where it was dropped. Nothing drag-related loads until the first press on a card.
+`Kanban` lays out columns of cards you drag within and between columns. Drag and drop comes from `@rivetjs/cdk/drag-drop` (the Angular CDK port): every card list in a board is connected. `createKanban` keeps the cards in one signal and moves a card where it was dropped. Mouse and touch drags work out of the box; pass `onCardMove` for keyboard moves. Nothing drag-related loads until the first press on a card.
 
 ## Usage
 
@@ -19,7 +19,7 @@ import { Kanban, createKanban } from "@rivetjs/ui/kanban";
 ## Anatomy
 
 ```tsx
-import { Kanban } from "@rivetjs/ui/kanban";
+import { Kanban, KanbanComposer } from "@rivetjs/ui/kanban";
 
 export default function Anatomy() {
   return (
@@ -40,6 +40,7 @@ export default function Anatomy() {
               </Kanban.Card>
             </Kanban.CardList>
           </Kanban.ScrollShadow>
+          <KanbanComposer />
         </Kanban.ColumnBody>
       </Kanban.Column>
     </Kanban>
@@ -59,15 +60,27 @@ export default function Anatomy() {
 
 ::example{id=kanban-sizes}
 
+## Keyboard Moves
+
+`onCardMove` on the board makes every card focusable (`tabindex="0"`, described by visually hidden instructions). Space or Enter picks the focused card up, Up / Down move it within its column, Left / Right to the neighbouring column (mirrored in RTL), Space or Enter drops it and Escape puts it back where it was picked up; Tab away drops it in place. Each step is announced (cdk live announcer, polite); change the texts with `messages`. The board calls `onCardMove({ key, column, index, from })` for every step: `createKanban().onCardMove` applies it.
+
+::example{id=kanban-keyboard}
+
+## Add a Card
+
+`KanbanComposer` (its own export, so a board without one loads no form code) is the "add a card" row of a column: a ghost trigger that opens an inline title field. Enter or the Add button calls `onSubmit(title)` (trimmed, never empty) and closes it (`keepOpen` keeps it open for the next card); Escape or Cancel closes it and focus returns to the trigger.
+
+::example{id=kanban-composer}
+
 ## Accessibility
 
 - Columns are `section`s; name each with `aria-labelledby` pointing at its `Kanban.ColumnTitle` (an `h3`).
 - Name every card with `textValue` (its `aria-label`).
-- Dragging needs a pointer: give keyboard and screen reader users another way to move a card, for example move buttons per card and a polite status message (see the [Kanban showcase](/showcase/kanban/)).
+- Pass `onCardMove` so keyboard and screen reader users can move cards: each card gets `tabindex="0"` and `aria-describedby` pointing at the instructions; every pick up, move, drop and cancel is announced with the card's name, column and position.
+- `KanbanComposer`'s field is named by its `label`; Escape closes it and returns focus to the trigger.
 
 ## Not Yet Supported
 
-- Keyboard drag and drop (the cdk keyboard drag engine is pending).
 - Card selection (`selectionMode`).
 
 ## Styling Reference
@@ -78,7 +91,8 @@ export default function Anatomy() {
 - `.kanban__column`, `.kanban__column-header`, `.kanban__column-indicator` (`[data-icon]` with children), `.kanban__column-title`, `.kanban__column-count`, `.kanban__column-actions` (revealed on header hover / focus) - Columns.
 - `.kanban__column-body`, `.kanban__scroll-shadow` - Column container and its optional scroll wrapper.
 - `.kanban__card-list` - The drop list (`.cdk-drop-list-dragging` / `-receiving` while dragging).
-- `.kanban__card`, `.kanban__card-content` - Cards (`.cdk-drag-preview` = the dragged copy, `.cdk-drag-placeholder` = the slot it left).
+- `.kanban__card`, `.kanban__card-content` - Cards (`.cdk-drag-preview` = the dragged copy, `.cdk-drag-placeholder` = the slot it left, `[data-grabbed]` = picked up with the keyboard).
+- `.kanban__composer`, `.kanban__composer-trigger`, `.kanban__composer-form`, `.kanban__composer-actions` - `KanbanComposer`.
 - `.kanban__drag-handle` - The grip (`Kanban.DragHandle`), shown on card hover / focus.
 - `.kanban__drop-indicator` - A custom landing slot (`Kanban.DropIndicator`).
 - `.kanban__empty` - Empty column state, shown while the list has no cards.
@@ -96,16 +110,20 @@ export default function Anatomy() {
 ### Data Attributes
 
 - `[data-size]` on the board: `sm` / `md` / `lg`.
-- `[data-slot]`: `kanban`, `kanban-column`, `kanban-column-header`, `kanban-card-list`, `kanban-card`, `kanban-card-content`, `kanban-empty`, …
+- `[data-slot]`: `kanban`, `kanban-column`, `kanban-column-header`, `kanban-card-list`, `kanban-card`, `kanban-card-content`, `kanban-empty`, `kanban-composer`, `kanban-composer-trigger`, `kanban-composer-form`, …
+- `[data-kanban-column]` on each card list (its `data`), `[data-kanban-key]` on each card (its `data`).
+- Keyboard moves: `[data-grabbed]` on the picked-up card; `[data-kanban-grabbed]` (the card key) on the board.
 
 ## API Reference
 
 ### Kanban
 
-| Prop       | Type                       | Default | Description                        |
-| ---------- | -------------------------- | ------- | ---------------------------------- |
-| `size`     | `"sm"` \| `"md"` \| `"lg"` | `"md"`  | Column width, gap and card density |
-| `disabled` | `boolean`                  | `false` | Disable dragging on every list     |
+| Prop         | Type                             | Default | Description                                                         |
+| ------------ | -------------------------------- | ------- | ------------------------------------------------------------------- |
+| `size`       | `"sm"` \| `"md"` \| `"lg"`       | `"md"`  | Column width, gap and card density                                  |
+| `disabled`   | `boolean`                        | `false` | Disable dragging on every list                                      |
+| `onCardMove` | `(move: KanbanCardMove) => void` | -       | Keyboard moves: `{ key, column, index, from }` per step (read once) |
+| `messages`   | `Partial<KanbanMessages>`        | English | Instructions and announcement texts of keyboard moves               |
 
 Also supports the cdk `DropListGroup` props and native attributes.
 
@@ -132,13 +150,28 @@ Also supports every cdk `DropList` prop (`orientation`, `disabled`, `sortingDisa
 
 ### Kanban.Card
 
-| Prop        | Type      | Default | Description                                |
-| ----------- | --------- | ------- | ------------------------------------------ |
-| `data`      | `string`  | -       | The card key                               |
+| Prop        | Type      | Default | Description                                                 |
+| ----------- | --------- | ------- | ----------------------------------------------------------- |
+| `data`      | `string`  | -       | The card key                                                |
 | `textValue` | `string`  | -       | Accessible name (`role="group"` + `aria-label` on the card) |
-| `disabled`  | `boolean` | `false` | Not draggable                              |
+| `disabled`  | `boolean` | `false` | Not draggable                                               |
 
 Also supports every cdk `Drag` prop.
+
+### KanbanComposer
+
+| Prop           | Type                                          | Default        | Description                                                  |
+| -------------- | --------------------------------------------- | -------------- | ------------------------------------------------------------ |
+| `onSubmit`     | `(title: string) => void`                     | -              | Called with the trimmed title                                |
+| `label`        | `string`                                      | `"Add a card"` | Trigger text and the field's accessible name                 |
+| `placeholder`  | `string`                                      | `"Card title"` | Field placeholder                                            |
+| `submitLabel`  | `string`                                      | `"Add card"`   | Submit button text                                           |
+| `cancelLabel`  | `string`                                      | `"Cancel"`     | Cancel button text                                           |
+| `isOpen`       | `boolean \| Signal<boolean> \| () => boolean` | -              | Open state (controlled or two-way)                           |
+| `defaultOpen`  | `boolean`                                     | `false`        | Initial open state                                           |
+| `onOpenChange` | `(isOpen: boolean) => void`                   | -              | Open state changed                                           |
+| `keepOpen`     | `boolean`                                     | `false`        | Stay open after a submit                                     |
+| `id`           | `string`                                      | -              | Trigger id; the field gets `${id}-input`, Add `${id}-submit` |
 
 ### Kanban.DragHandle
 
@@ -171,10 +204,10 @@ const board = createKanban({
 | `setColumn`    | `(item: T, column: string) => T`                   | The card with its new column          |
 | `onMove`       | `(item: T, column: string, index: number) => void` | After a move                          |
 
-Returns `{ items, itemsOf(column), move(key, column, index), onDropped }`.
+Returns `{ items, itemsOf(column), move(key, column, index), onDropped, onCardMove }` (`onCardMove` = `Kanban onCardMove`).
 
 ## Related Components
 
-- [Kanban showcase](/showcase/kanban/): A full board with move buttons and add forms.
+- [Kanban showcase](/showcase/kanban/): A full board with keyboard moves and composers.
 - [ScrollShadow](/components/scroll-shadow/): Scroll wrapper for tall columns.
 - [Chip](/components/chip/): Tags on cards.

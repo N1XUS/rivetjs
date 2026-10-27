@@ -16,6 +16,25 @@
 }
 
 /**
+ * Modifier: contained - the sidebar lives in a bounded box (a card / panel of the page) instead of the viewport: the
+ * wrapper fills the height its parent gives it and clips, the desktop panel is absolute inside it (not `fixed`), and the
+ * panel + inset take the wrapper's background (no `bg-background` slab inside a card). The mobile sheet is unchanged.
+ */
+.sidebar-wrapper--contained {
+  @apply relative min-h-0 overflow-hidden;
+
+  & > .sidebar > .sidebar__container {
+    @apply absolute h-full;
+  }
+
+  & > .sidebar:not([data-variant="floating"]) .sidebar__inner,
+  & > .sidebar:not([data-state]),
+  & > .sidebar__inset {
+    @apply bg-transparent;
+  }
+}
+
+/**
  * Block: sidebar - the desktop root (collapsible offcanvas / icon) or the static panel (collapsible none)
  */
 .sidebar {

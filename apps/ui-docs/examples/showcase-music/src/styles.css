@@ -8,3 +8,44 @@
     @apply m-0 bg-background font-sans text-foreground antialiased;
   }
 }
+
+/* Album cards: a ui ToggleButton stretched over the card is the press target (pressed = the open album). */
+.album-card__press {
+  @apply absolute inset-0 size-auto min-w-0 rounded-2xl bg-transparent p-0;
+
+  &:hover,
+  &[data-pressed="true"] {
+    @apply bg-transparent;
+  }
+}
+.album-card:has(.album-card__press[aria-pressed="true"]) .album-card__cover {
+  @apply ring-2 ring-accent;
+}
+.album-card__cover img {
+  @apply duration-200 ease-out motion-reduce:transition-none;
+}
+@media (hover: hover) {
+  .album-card:has(.album-card__press:hover) .album-card__cover img {
+    @apply scale-105;
+  }
+}
+
+/* The playing track: accent tint; a liked track's heart fills. */
+.music-track[data-current] {
+  @apply bg-accent-soft;
+
+  & .item-card__title {
+    @apply text-accent;
+  }
+}
+.music-like {
+  @apply text-muted;
+
+  &[aria-pressed="true"] {
+    @apply text-danger;
+
+    & svg {
+      @apply fill-current;
+    }
+  }
+}

@@ -2869,6 +2869,21 @@
     background-color: var(--background-secondary);
   }
 
+  .sidebar-wrapper--contained {
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sidebar-wrapper--contained > .sidebar > .sidebar__container {
+    height: 100%;
+    position: absolute;
+  }
+
+  .sidebar-wrapper--contained > .sidebar:not([data-variant="floating"]) .sidebar__inner, .sidebar-wrapper--contained > .sidebar:not([data-state]), .sidebar-wrapper--contained > .sidebar__inset {
+    background-color: #0000;
+  }
+
   .sidebar {
     color: var(--foreground);
   }
@@ -21330,6 +21345,16 @@
     opacity: .6;
   }
 
+  .kanban__card[data-grabbed] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    rotate: 1deg;
+  }
+
+  .kanban__card[data-grabbed] .kanban__card-content {
+    box-shadow: var(--overlay-shadow);
+  }
+
   .kanban__card.cdk-drag-animating, .kanban__card-list.cdk-drop-list-dragging .kanban__card:not(.cdk-drag-placeholder) {
     transition: transform var(--duration-base) var(--ease-smooth);
   }
@@ -21451,12 +21476,34 @@
     display: flex;
   }
 
+  .kanban__composer {
+    flex-direction: column;
+    display: flex;
+  }
+
+  .kanban__composer-trigger {
+    width: 100%;
+    color: var(--muted);
+    justify-content: flex-start;
+  }
+
+  .kanban__composer-form {
+    gap: calc(var(--spacing, .25rem) * 2);
+    flex-direction: column;
+    display: flex;
+  }
+
+  .kanban__composer-actions {
+    gap: calc(var(--spacing, .25rem) * 2);
+    display: flex;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .kanban__card, .kanban__card-content, .kanban__card-list, .kanban__column-actions, .kanban__drag-handle {
       transition: none;
     }
 
-    .kanban__card.cdk-drag-preview {
+    .kanban__card.cdk-drag-preview, .kanban__card[data-grabbed] {
       rotate: none;
     }
   }
@@ -23662,6 +23709,11 @@
     overflow: hidden;
   }
 
+  .item-card[data-unread] .item-card__title {
+    --tw-font-weight: var(--font-weight-semibold, 600);
+    font-weight: var(--font-weight-semibold, 600);
+  }
+
   .item-card__description {
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -23676,6 +23728,19 @@
     gap: calc(var(--spacing, .25rem) * 2);
     flex-shrink: 0;
     display: flex;
+  }
+
+  .item-card__indicator {
+    width: calc(var(--spacing, .25rem) * 2);
+    height: calc(var(--spacing, .25rem) * 2);
+    background-color: var(--accent);
+    border-radius: 3.40282e38px;
+    flex-shrink: 0;
+    display: none;
+  }
+
+  .item-card[data-unread] .item-card__indicator {
+    display: inline-block;
   }
 }
 @layer components {
@@ -23779,6 +23844,47 @@
     .item-card-group--grid {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+
+  .item-card-group[role="grid"] {
+    --tw-outline-style: none;
+    outline-style: none;
+  }
+
+  .item-card-group[role="grid"] > .item-card[role="row"] {
+    --tw-outline-style: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: var(--cursor-interactive);
+    outline-style: none;
+  }
+
+  @media (hover: hover) {
+    .item-card-group[role="grid"] > .item-card[role="row"][data-hovered="true"]:not([data-disabled="true"]) {
+      background-color: var(--default-soft);
+    }
+  }
+
+  .item-card-group[role="grid"] > .item-card[role="row"][data-pressed="true"] {
+    background-color: var(--default-soft);
+  }
+
+  .item-card-group[role="grid"] > .item-card[role="row"]:is([data-selected="true"], [data-current]) {
+    background-color: var(--default);
+  }
+
+  .item-card-group[role="grid"] > .item-card[role="row"][data-focus-visible="true"] {
+    box-shadow: inset 0 0 0 2px var(--focus);
+  }
+
+  .item-card-group[role="grid"] > .item-card[role="row"][data-disabled="true"] {
+    opacity: var(--disabled-opacity);
+    cursor: var(--cursor-disabled);
+    pointer-events: none;
+  }
+
+  .item-card-group--list[role="grid"] > .item-card[role="row"]:is([data-selected="true"], [data-current]) + .item-card:before, .item-card-group--list[role="grid"] > .item-card[role="row"]:is([data-selected="true"], [data-current]):before {
+    opacity: 0;
   }
 }
 @layer components {

@@ -10,7 +10,7 @@ import { ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
 import { createId } from "@rivetjs/cdk/id";
-import { hostDOMProps, type AriaDOMAttributes, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
+import { hostDOMProps, type GlobalDOMAttributes, type HostDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { DirectionalityContext } from "../bidi/index.ts";
 import { DragDropConfigContext } from "./directives/config.ts";
 import { listHost, read } from "./directives/registry.ts";
@@ -31,7 +31,7 @@ const OWNED = ["onMouseDown", "onTouchStart"] as const;
 /** Preload the drag-drop handlers when a list scrolls into view (first press runs synchronously). */
 export const preload = "visible";
 
-export interface DropListProps<T = any> extends DropListInputs<T>, GlobalDOMAttributes<HTMLElement>, AriaDOMAttributes {
+export interface DropListProps<T = any> extends DropListInputs<T>, GlobalDOMAttributes<HTMLElement>, HostDOMAttributes<HTMLElement> {
   /** Element to render. @default "div" */
   elementType?: "div" | "ul" | "ol" | "tbody" | "section";
   /** Unique ID for the drop zone. Can be used as a reference in the `connectedTo` of another `DropList`. */

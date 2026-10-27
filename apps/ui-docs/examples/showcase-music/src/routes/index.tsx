@@ -1,9 +1,13 @@
 // Rivet-authored showcase (own content: invented artists and albums; covers are AI-generated sample images; no audio plays).
 import { Icon } from "@rivetjs/kit/icon";
 import { signal } from "@rivetjs/reactivity";
-import { For } from "@rivetjs/runtime/dom";
 import { Picture } from "@rivetjs/runtime/image";
 import { Button } from "@rivetjs/ui/button";
+import { Card } from "@rivetjs/ui/card";
+import { ItemCard } from "@rivetjs/ui/item-card";
+import { ItemCardGroupCollection } from "@rivetjs/ui/item-card-group-collection";
+import { ScrollShadow } from "@rivetjs/ui/scroll-shadow";
+import { Sidebar } from "@rivetjs/ui/sidebar";
 import { Slider } from "@rivetjs/ui/slider";
 import { ToggleButton } from "@rivetjs/ui/toggle-button";
 import { Compass, Heart, House, ListMusic, Pause, Play, Radio, Repeat, Shuffle, SkipBack, SkipForward, Volume2 } from "lucide";
@@ -19,7 +23,7 @@ export const head = { title: "Showcase: Music" };
 
 // #region demo
 type Track = { title: string; seconds: number };
-type Row = { key: string; album: string; index: number; title: string; seconds: number };
+type Row = { id: string; key: string; album: string; index: number; title: string; seconds: number };
 type Album = { id: string; title: string; artist: string; year: number; cover: typeof tideCover; tracks: Track[] };
 
 const ALBUMS: Album[] = [
@@ -117,7 +121,15 @@ export default function MusicShowcase() {
 
   const albumOf = (id: string) => ALBUMS.find((a) => a.id === id)!;
   const album = () => albumOf(albumId());
-  const rows = () => album().tracks.map((t, index): Row => ({ key: `${album().id}-${index}`, album: album().id, index, title: t.title, seconds: t.seconds }));
+  const rows = () =>
+    album().tracks.map((t, index): Row => ({
+      id: `${album().id}-${index}`,
+      key: `${album().id}-${index}`,
+      album: album().id,
+      index,
+      title: t.title,
+      seconds: t.seconds,
+    }));
   const current = () => albumOf(playing().album);
   const track = () => current().tracks[playing().index];
 
@@ -148,147 +160,163 @@ export default function MusicShowcase() {
     position.set(0);
     start();
   };
-  const toggleLike = (key: string) => liked.set(liked().includes(key) ? liked().filter((k) => k !== key) : [...liked(), key]);
+  const setLike = (key: string, on: boolean) => liked.set(on ? [...liked().filter((k) => k !== key), key] : liked().filter((k) => k !== key));
+  const isCurrent = (row: Row) => playing().album === row.album && playing().index === row.index;
 
   return (
     <div class="grid h-dvh grid-rows-[1fr_auto] overflow-hidden">
-      <div class="grid min-h-0 md:grid-cols-[14rem_1fr]">
-        <aside class="hidden flex-col gap-6 overflow-y-auto border-e border-separator p-4 md:flex">
-          <nav aria-label="Library" class="flex flex-col gap-1 text-sm">
-            <a href="#listen" aria-current="page" class="flex items-center gap-3 rounded-xl bg-default px-3 py-2 font-medium">
-              <Icon icon={House} size={16} />
-              Listen now
-            </a>
-            <a
-              href="#listen"
-              class="flex items-center gap-3 rounded-xl px-3 py-2 text-muted transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-default"
-            >
-              <Icon icon={Compass} size={16} />
-              Browse
-            </a>
-            <a
-              href="#listen"
-              class="flex items-center gap-3 rounded-xl px-3 py-2 text-muted transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-default"
-            >
-              <Icon icon={Radio} size={16} />
-              Radio
-            </a>
-          </nav>
-          <div class="flex flex-col gap-1 text-sm">
-            <h2 class="px-3 pb-1 text-xs font-medium tracking-wide text-muted uppercase">Playlists</h2>
-            {PLAYLISTS.map((name) => (
-              <a
-                href="#listen"
-                class="flex items-center gap-3 rounded-xl px-3 py-2 text-muted transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-default"
-              >
-                <Icon icon={ListMusic} size={16} />
-                {name}
-              </a>
-            ))}
-          </div>
-        </aside>
+      {/* The library sidebar lives in the top row (`contained`): an icon rail when collapsed, a sheet below 768 px. */}
+      <Sidebar.Provider contained class="min-h-0">
+        <Sidebar id="library" collapsible="icon" aria-label="Library">
+          <Sidebar.Content>
+            <Sidebar.Group>
+              <Sidebar.Menu>
+                <Sidebar.MenuItem>
+                  <Sidebar.MenuButton href="#listen" isCurrent tooltip="Listen now">
+                    <Icon icon={House} size={16} />
+                    <span>Listen now</span>
+                  </Sidebar.MenuButton>
+                </Sidebar.MenuItem>
+                <Sidebar.MenuItem>
+                  <Sidebar.MenuButton href="#listen" tooltip="Browse">
+                    <Icon icon={Compass} size={16} />
+                    <span>Browse</span>
+                  </Sidebar.MenuButton>
+                </Sidebar.MenuItem>
+                <Sidebar.MenuItem>
+                  <Sidebar.MenuButton href="#listen" tooltip="Radio">
+                    <Icon icon={Radio} size={16} />
+                    <span>Radio</span>
+                  </Sidebar.MenuButton>
+                </Sidebar.MenuItem>
+              </Sidebar.Menu>
+            </Sidebar.Group>
+            <Sidebar.Group>
+              <Sidebar.GroupLabel>Playlists</Sidebar.GroupLabel>
+              <Sidebar.Menu>
+                {PLAYLISTS.map((name) => (
+                  <Sidebar.MenuItem>
+                    <Sidebar.MenuButton href="#listen" tooltip={name}>
+                      <Icon icon={ListMusic} size={16} />
+                      <span>{name}</span>
+                    </Sidebar.MenuButton>
+                  </Sidebar.MenuItem>
+                ))}
+              </Sidebar.Menu>
+            </Sidebar.Group>
+          </Sidebar.Content>
+          <Sidebar.Rail />
+        </Sidebar>
 
-        <main id="listen" class="flex min-w-0 flex-col gap-8 overflow-y-auto p-4 sm:p-8">
-          <section aria-labelledby="made-for-you" class="flex flex-col gap-3">
-            <div>
-              <h1 id="made-for-you" class="text-2xl font-semibold">
-                Listen now
-              </h1>
-              <p class="text-sm text-muted">Albums picked from what you played this week.</p>
-            </div>
-            {/* The row scrolls on its own; the page never scrolls sideways. 4px padding (offset by a negative margin) keeps the cover / focus rings inside the scroller's clip. */}
-            <ul class="-mx-4 -mt-1 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pt-1 pb-2 sm:-mx-1 sm:scroll-px-1 sm:px-1">
-              {ALBUMS.map((a) => (
-                <li class="w-36 shrink-0 snap-start sm:w-40">
-                  <button
-                    id={`album-${a.id}`}
-                    type="button"
-                    class="group flex w-full flex-col gap-2 rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-focus"
-                    aria-pressed={albumId() === a.id}
-                    onClick={() => albumId.set(a.id)}
-                  >
-                    <span class={albumId() === a.id ? "overflow-hidden rounded-2xl ring-2 ring-accent" : "overflow-hidden rounded-2xl"}>
-                      <Picture image={a.cover} alt="" sizes="10rem" class="aspect-square w-full object-cover transition-transform group-hover:scale-105" />
-                    </span>
-                    <span class="flex flex-col">
-                      <span class="truncate text-sm font-medium">{a.title}</span>
-                      <span class="truncate text-xs text-muted">{a.artist}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* The picked album's page: its texts update in place, the track rows are one keyed For (a new album swaps every row). */}
-          <section id="album-page" aria-label={album().title} class="flex flex-col gap-4">
-            <div class="flex items-end gap-4">
-              <Picture image={album().cover} alt="" sizes="10rem" class="size-24 shrink-0 rounded-2xl object-cover shadow-surface sm:size-40" />
-              <div class="flex min-w-0 flex-col gap-2">
-                <p class="text-xs font-medium tracking-wide text-muted uppercase">Album</p>
-                <h2 class="album-title text-2xl font-semibold">{album().title}</h2>
-                <p class="text-sm text-muted">
-                  {album().artist} · {album().year} · {album().tracks.length} songs
-                </p>
-                <div class="flex gap-2">
-                  <Button id="play-album" onPress={() => playAt(albumId(), 0)}>
-                    <Icon icon={Play} size={16} />
-                    Play
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onPress={() => {
-                      shuffle.set(true);
-                      playAt(albumId(), Math.floor(Math.random() * album().tracks.length));
-                    }}
-                  >
-                    <Icon icon={Shuffle} size={16} />
-                    Shuffle
-                  </Button>
+        <Sidebar.Inset class="min-w-0">
+          <main id="listen" class="flex h-full min-w-0 flex-col gap-8 overflow-y-auto p-4 sm:p-8">
+            <section aria-labelledby="made-for-you" class="flex flex-col gap-3">
+              <div class="flex items-start gap-2">
+                <Sidebar.Trigger id="library-toggle" aria-label="Toggle library" class="-ms-1 mt-0.5" />
+                <div>
+                  <h1 id="made-for-you" class="text-2xl font-semibold">
+                    Listen now
+                  </h1>
+                  <p class="text-sm text-muted">Albums picked from what you played this week.</p>
                 </div>
               </div>
-            </div>
+              {/* The row scrolls on its own (edge shadows while there is more); the page never scrolls sideways. */}
+              <ScrollShadow orientation="horizontal" class="-mx-4 sm:-mx-1">
+                <ul class="flex snap-x scroll-px-4 gap-4 px-4 pt-1 pb-2 sm:scroll-px-1 sm:px-1">
+                  {ALBUMS.map((a) => (
+                    <li class="w-36 shrink-0 snap-start sm:w-40">
+                      <Card variant="transparent" class="album-card relative gap-2 p-0">
+                        <span class="album-card__cover overflow-hidden rounded-2xl">
+                          <Picture image={a.cover} alt="" sizes="10rem" class="aspect-square w-full object-cover transition-transform" />
+                        </span>
+                        <Card.Header class="gap-0">
+                          <Card.Title class="truncate text-sm">{a.title}</Card.Title>
+                          <Card.Description class="truncate text-xs">{a.artist}</Card.Description>
+                        </Card.Header>
+                        {/* The press target covers the card (stretched toggle): one tab stop, pressed = the open album. */}
+                        <ToggleButton
+                          id={`album-${a.id}`}
+                          variant="ghost"
+                          aria-label={`${a.title} by ${a.artist}`}
+                          isSelected={albumId() === a.id}
+                          onChange={() => albumId.set(a.id)}
+                          class="album-card__press"
+                        />
+                      </Card>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollShadow>
+            </section>
 
-            <ol class="flex flex-col">
-              <For each={rows} by={(row: Row) => row.key}>
-                {(row: () => Row) => (
-                  <li
-                    class={
-                      playing().album === row().album && playing().index === row().index
-                        ? "flex items-center gap-1 rounded-xl bg-accent-soft text-accent transition-colors duration-150 ease-out motion-reduce:transition-none"
-                        : "flex items-center gap-1 rounded-xl transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-default"
-                    }
-                  >
-                    <button
-                      id={`track-${row().key}`}
-                      type="button"
-                      class="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left text-sm"
-                      onClick={() => playAt(row().album, row().index)}
-                    >
-                      <span class="w-5 text-right text-xs text-muted tabular-nums">{row().index + 1}</span>
-                      <span class="flex-1 truncate font-medium">{row().title}</span>
-                      <span class="text-xs text-muted tabular-nums">{clock(row().seconds)}</span>
-                    </button>
-                    {/* Like: an icon-only ui Button whose aria-pressed follows the shared `liked` signal. */}
-                    <Button
-                      id={`like-${row().key}`}
-                      isIconOnly
-                      size="sm"
-                      variant="ghost"
-                      aria-label={`Like ${row().title}`}
-                      aria-pressed={() => liked().includes(row().key)}
-                      class="me-1 text-muted aria-pressed:text-danger aria-pressed:[&_svg]:fill-current [&_svg]:transition-colors [&_svg]:duration-150 [&_svg]:ease-out motion-reduce:[&_svg]:transition-none"
-                      onPress={() => toggleLike(row().key)}
-                    >
-                      <Icon icon={Heart} size={16} />
+            {/* The picked album's page: its texts update in place, the track rows are one keyed collection (a new album swaps every row). */}
+            <section id="album-page" aria-label={album().title} class="flex flex-col gap-4">
+              <div class="flex items-end gap-4">
+                <Picture image={album().cover} alt="" sizes="10rem" class="size-24 shrink-0 rounded-2xl object-cover shadow-surface sm:size-40" />
+                <div class="flex min-w-0 flex-col gap-2">
+                  <p class="text-xs font-medium tracking-wide text-muted uppercase">Album</p>
+                  <h2 class="album-title text-2xl font-semibold">{album().title}</h2>
+                  <p class="text-sm text-muted">
+                    {album().artist} · {album().year} · {album().tracks.length} songs
+                  </p>
+                  <div class="flex gap-2">
+                    <Button id="play-album" onPress={() => playAt(albumId(), 0)}>
+                      <Icon icon={Play} size={16} />
+                      Play
                     </Button>
-                  </li>
+                    <Button
+                      variant="secondary"
+                      onPress={() => {
+                        shuffle.set(true);
+                        playAt(albumId(), Math.floor(Math.random() * album().tracks.length));
+                      }}
+                    >
+                      <Icon icon={Shuffle} size={16} />
+                      Shuffle
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tracks: an interactive ItemCardGroup (arrow keys between rows; Enter / click plays; the like toggle is its own tab stop). */}
+              <ItemCardGroupCollection
+                id="album-tracks"
+                aria-label={`${album().title} tracks`}
+                variant="transparent"
+                items={rows}
+                onAction={(key) => {
+                  const row = rows().find((r) => r.key === key);
+                  if (row) playAt(row.album, row.index);
+                }}
+              >
+                {(row: Row) => (
+                  <ItemCard id={row.key} textValue={row.title} isCurrent={isCurrent(row)} class="music-track py-1.5">
+                    <span class="w-5 text-right text-xs text-muted tabular-nums">{row.index + 1}</span>
+                    <ItemCard.Content>
+                      <ItemCard.Title>{row.title}</ItemCard.Title>
+                    </ItemCard.Content>
+                    <ItemCard.Action>
+                      <span class="text-xs text-muted tabular-nums">{clock(row.seconds)}</span>
+                      <ToggleButton
+                        id={`like-${row.key}`}
+                        isIconOnly
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Like ${row.title}`}
+                        isSelected={liked().includes(row.key)}
+                        onChange={(on: boolean) => setLike(row.key, on)}
+                        class="music-like"
+                      >
+                        <Icon icon={Heart} size={16} />
+                      </ToggleButton>
+                    </ItemCard.Action>
+                  </ItemCard>
                 )}
-              </For>
-            </ol>
-          </section>
-        </main>
-      </div>
+              </ItemCardGroupCollection>
+            </section>
+          </main>
+        </Sidebar.Inset>
+      </Sidebar.Provider>
 
       <footer aria-label="Player" class="flex flex-col gap-2 border-t border-separator bg-surface px-4 py-3 sm:px-6">
         <div class="flex items-center gap-3">

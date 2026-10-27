@@ -12,12 +12,12 @@ import { effect, onCleanup } from "@rivetjs/reactivity";
 import { ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
-import { hostDOMProps, type AriaDOMAttributes, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
+import { hostDOMProps, type GlobalDOMAttributes, type HostDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { read, type MaybeAccessor } from "./directives/registry.ts";
 import { handleChanged, handleOwner } from "./lazy-refs.ts";
 import { nativeDragInteractionStyles } from "./dom/styling.ts";
 
-export interface DragHandleProps extends GlobalDOMAttributes<HTMLElement>, AriaDOMAttributes {
+export interface DragHandleProps extends GlobalDOMAttributes<HTMLElement>, HostDOMAttributes<HTMLElement> {
   /** Whether starting to drag through this handle is disabled (Angular `cdkDragHandleDisabled`). */
   disabled?: MaybeAccessor<boolean | undefined>;
   /** Element to render. @default "div" */

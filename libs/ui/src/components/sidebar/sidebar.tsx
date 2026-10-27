@@ -115,11 +115,19 @@ interface SidebarProviderProps extends Omit<SidebarProviderPrimitiveProps, "clas
   class?: string;
   /** Close the mobile sheet when a menu button / sub button is pressed (groups, menus and items override it). @default true */
   closeMobileOnAction?: boolean;
+  /**
+   * The sidebar lives in a bounded box (a card or panel of the page) instead of the viewport: the provider fills the
+   * height you give it and clips, the desktop panel is positioned inside it (not `fixed`), and the panel + inset take the
+   * provider's background (`sidebar-wrapper--contained`). The mobile sheet is unchanged. Read once. @default false
+   */
+  contained?: boolean;
 }
 
 const SidebarProvider = (props: SidebarProviderProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class"]);
-  const cls = hasLiveProp(local, ["class"]) ? () => SLOTS.wrapper({ class: local.class }) : SLOTS.wrapper({ class: local.class });
+  const [local, rest] = splitLive(props, ["class", "contained"]);
+  const contained = !!local.contained;
+  const wrapper = contained ? sidebarVariants({ contained }).wrapper : SLOTS.wrapper;
+  const cls = hasLiveProp(local, ["class"]) ? () => wrapper({ class: local.class }) : wrapper({ class: local.class });
   // Rivet ui: an app-shell sidebar closes its mobile sheet on navigation (HeroUI Pro); the cdk default (= shadcn) keeps it.
   return (
     <SidebarProviderPrimitive

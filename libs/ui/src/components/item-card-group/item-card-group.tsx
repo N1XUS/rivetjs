@@ -6,22 +6,31 @@
 //   column below 40rem).
 // - `role="group"`, labelled by its `ItemCardGroup.Title` when the caller gives the title an `id` and the group
 //   `aria-labelledby` (no generated ids: pure markup, no state, no script).
+// - The interactive form is `ItemCardGroupCollection` (`@rivetjs/ui/item-card-group-collection`, SHOWCASE-1 2026-10-27: cdk GridList,
+//   roving focus, arrow keys, typeahead, selection, row actions), a separate export so this group stays markup-only and
+//   never imports the GridList. Dev builds warn when this group gets a collection prop.
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import type { ItemCardGroupVariants } from "../../../styles/src/components/item-card-group/index.ts";
 import { itemCardGroupVariants } from "../../../styles/src/components/item-card-group/index.ts";
 import { composeSlotClassName } from "../../utils/compose.tsx";
 import { splitLive } from "../../utils/live.tsx";
+import { DEV } from "#dev";
 
 const SLOTS = itemCardGroupVariants();
 
-interface ItemCardGroupRootProps extends Omit<JSX.IntrinsicElements["div"], "class">, ItemCardGroupVariants {
+interface ItemCardGroupStaticProps extends Omit<JSX.IntrinsicElements["div"], "class">, ItemCardGroupVariants {
   /** Grid columns (`layout="grid"`). @default 2 */
   columns?: 2 | 3 | 4;
   class?: string;
 }
 
+/** Markup-only group (`div role="group"`); the interactive form is `ItemCardGroupCollection`. */
+type ItemCardGroupRootProps = ItemCardGroupStaticProps;
+
 const ItemCardGroupRoot = (props: ItemCardGroupRootProps): JSX.Element => {
+  if (DEV && ["selectionMode", "selectedKeys", "onSelectionChange", "onAction", "items", "renderEmptyState"].some((key) => key in props))
+    console.warn("[rivet:ui] ItemCardGroup is markup only: use ItemCardGroupCollection for selection, onAction or items.");
   const [local, rest] = splitLive(props, ["children", "class", "layout", "variant", "columns"]);
   return (
     <div
@@ -71,6 +80,7 @@ const ItemCardGroupDescription = (props: ParagraphProps): JSX.Element => {
 export { ItemCardGroupRoot, ItemCardGroupHeader, ItemCardGroupTitle, ItemCardGroupDescription };
 export type {
   ItemCardGroupRootProps,
+  ItemCardGroupStaticProps,
   DivProps as ItemCardGroupHeaderProps,
   HeadingProps as ItemCardGroupTitleProps,
   ParagraphProps as ItemCardGroupDescriptionProps,

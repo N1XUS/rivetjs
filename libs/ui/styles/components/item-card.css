@@ -5,6 +5,8 @@
  * Modifiers: item-card--default / --secondary / --tertiary / --outline / --transparent
  * Pressable: a link / button root (`render`) or `[data-pressable]` gets hover + pressed tints and the focus ring.
  * Variables: --item-card-padding, --item-card-radius (the icon's radius is concentric with it)
+ * States: [data-unread] (bold title, shows the indicator), [data-current] (aria-current); as a row of an interactive
+ *   ItemCardGroup also [data-hovered] [data-pressed] [data-selected] [data-focus-visible] [data-disabled] (cdk GridList)
  * -----------------------------------------------------------------------------------------------*/
 
 .item-card {
@@ -74,6 +76,10 @@
 
 .item-card__title {
   @apply truncate text-sm font-medium text-foreground;
+
+  .item-card[data-unread] & {
+    @apply font-semibold;
+  }
 }
 
 .item-card__description {
@@ -82,4 +88,13 @@
 
 .item-card__action {
   @apply flex shrink-0 items-center gap-2;
+}
+
+/* The unread dot: only on an unread card. */
+.item-card__indicator {
+  @apply hidden size-2 shrink-0 rounded-full bg-accent;
+
+  .item-card[data-unread] & {
+    @apply inline-block;
+  }
 }

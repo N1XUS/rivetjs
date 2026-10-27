@@ -83,14 +83,32 @@ export function globalDOMProps(props: object, owned?: readonly string[]): Record
 /** `aria-*` attributes and `role`: what a directive's host element keeps (Angular `cdkDrag` / `cdkDragHandle`). */
 export type AriaDOMAttributes = { [K in `aria-${string}`]?: string | number | boolean | undefined } & { role?: string };
 
-const HOST = new RegExp(`${GLOBAL.source.slice(0, -2)}|role|aria-[a-z]+)$`);
+/**
+ * Keyboard / focus listeners and `tabIndex` on an Angular CDK directive host (`Drag`, `DropList`, …): a template's
+ * `(keydown)` / `(focus)` / `tabindex` on the host element stay there, so the Rivet components forward them too.
+ */
+export type HostDOMAttributes<E extends Element = Element> = AriaDOMAttributes & {
+  onKeyDown?: (event: KeyboardEvent & { currentTarget: E }) => void;
+  onKeyUp?: (event: KeyboardEvent & { currentTarget: E }) => void;
+  onFocus?: (event: FocusEvent & { currentTarget: E }) => void;
+  onBlur?: (event: FocusEvent & { currentTarget: E }) => void;
+  onFocusIn?: (event: FocusEvent & { currentTarget: E }) => void;
+  onFocusOut?: (event: FocusEvent & { currentTarget: E }) => void;
+  tabIndex?: number;
+};
+
+// Built on first use: a module-level `new RegExp(…)` call is never tree-shaken (it stayed in every bundle importing
+// this module); here it goes with `hostDOMProps` when an app has no drag-drop.
+let HOST: RegExp | undefined;
 
 /**
- * `globalDOMProps` + every `aria-*` attribute and `role`: for components ported from Angular CDK directives (`Drag`,
- * `DragHandle`), where attributes the app writes stay on the host element. RAC's `filterDOMProps` `labelable` set
- * (`aria-label` / `-labelledby` / `-describedby` / `-details`) is a subset.
+ * `globalDOMProps` + every `aria-*` attribute, `role`, keyboard / focus listeners and `tabIndex`: for components ported
+ * from Angular CDK directives (`Drag`, `DragHandle`, `DropList`, `DropListGroup`), where attributes and listeners the app
+ * writes stay on the host element. RAC's `filterDOMProps` `labelable` set (`aria-label` / `-labelledby` /
+ * `-describedby` / `-details`) is a subset.
  */
 export function hostDOMProps(props: object, owned?: readonly string[]): Record<string, unknown> {
+  HOST ??= new RegExp(`${GLOBAL.source.slice(0, -2)}|role|aria-[a-z]+|onKey(?:Down|Up)|onFocus(?:In|Out)?|onBlur|tabIndex)$`);
   return pick(props, HOST, HOST_KEYS, owned);
 }
 

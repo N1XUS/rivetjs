@@ -170,6 +170,7 @@ export * from "./src/components/item-card/index.ts";
 
 // Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): item cards as a list or grid.
 export * from "./src/components/item-card-group/index.ts";
+export * from "./src/components/item-card-group-collection/index.ts";
 
 // Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): read-only chronology.
 export * from "./src/components/timeline/index.ts";

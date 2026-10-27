@@ -10,12 +10,22 @@
 //   of the target column and writes its column with `setColumn`.
 // - `.CardList` renders `renderEmptyState()` once; CSS shows it while the list has no `.kanban__card` (`:has()`), so an
 //   emptied column needs no script.
-// - Context `rv-ui-kanban` `{ size }` (plain data).
+// - Keyboard moves (SHOWCASE-1 2026-10-27; the cdk drag-drop port has no keyboard drag): `Kanban onCardMove` turns every
+//   `.Card` into a focusable card (`tabindex=0`, `aria-describedby` = the board's visually hidden instructions) and the
+//   root handles Space / Enter (pick up, drop), arrows (move), Escape (cancel) with one delegated `keydown`
+//   (`keyboard.ts`, loaded on the first handled key: a sync guard here calls `preventDefault`, so boards without
+//   `onCardMove` ship none of it; texts in `messages.ts`; state in DOM attributes, announcements through the cdk live announcer). `createKanban().onCardMove`
+//   plugs in directly. `.CardList` writes `data-kanban-column`, `.Card` `data-kanban-key` (String of their `data`).
+// - `KanbanComposer` (`kanban-composer.tsx`): the "add a card" row (ghost trigger → inline TextField form): its own export,
+//   not a compound part, so a board without one loads no Button / TextField code (measured +33 KB gz on kanban-basic as a part).
+// - Context `KanbanContext` `{ keyboard, describedBy }` (plain data) from the root to its cards.
 import { DragHandle as DragHandlePrimitive, DragPlaceholder, DropList, DropListGroup, Drag } from "@rivetjs/cdk/drag-drop";
 import type { DragDrop, DragHandleProps as DragHandlePrimitiveProps, DragProps, DropListGroupProps, DropListProps } from "@rivetjs/cdk/drag-drop";
+import { createId } from "@rivetjs/cdk/id";
 import { Icon } from "@rivetjs/kit/icon";
-import { signal } from "@rivetjs/reactivity";
+import { createContext, signal, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
+import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { GripVertical } from "lucide";
 
@@ -24,6 +34,9 @@ import { kanbanVariants } from "../../../styles/src/components/kanban/index.ts";
 import { composeSlotClassName } from "../../utils/compose.tsx";
 import { ScrollShadowRoot } from "../scroll-shadow/scroll-shadow.tsx";
 import type { ScrollShadowRootProps } from "../scroll-shadow/scroll-shadow.tsx";
+import type { KanbanCardMove } from "./keyboard.ts";
+import { KANBAN_MESSAGES } from "./messages.ts";
+import type { KanbanMessages } from "./messages.ts";
 
 type DivProps = Omit<JSX.IntrinsicElements["div"], "children" | "class"> & { class?: string; children?: Content };
 type SectionProps = Omit<JSX.IntrinsicElements["section"], "children" | "class"> & { class?: string; children?: Content };
@@ -38,13 +51,81 @@ const S = slotsFor("md");
 /* -------------------------------------------------------------------------------------------------
  * Kanban Root
  * -----------------------------------------------------------------------------------------------*/
-interface KanbanRootProps extends DropListGroupProps, KanbanVariants {}
+interface KanbanContextValue {
+  /** Cards are focusable and move with the keyboard (the root has `onCardMove`). */
+  keyboard?: boolean;
+  /** Id of the board's keyboard instructions (`aria-describedby` of every card). */
+  describedBy?: string;
+}
+
+const KanbanContext = createContext<KanbanContextValue>({});
+
+interface KanbanRootProps extends DropListGroupProps, KanbanVariants {
+  /**
+   * Keyboard moves: a focused card is picked up with Space / Enter, moved with the arrow keys, dropped with Space / Enter
+   * and put back with Escape; every step calls this with the target (`createKanban().onCardMove`). Read once.
+   */
+  onCardMove?: (move: KanbanCardMove) => void;
+  /** Screen reader texts of keyboard moves (English defaults). */
+  messages?: Partial<KanbanMessages>;
+}
+
+const CARD = '[data-slot="kanban-card"]';
+// The keyboard move logic, loaded on the first handled key (boards without `onCardMove` never load it), then called
+// synchronously.
+let keyboard: typeof import("./keyboard.ts") | undefined;
+let loading: Promise<typeof import("./keyboard.ts")> | undefined;
+const MOVE_KEY = /^( |Enter|Escape|ArrowUp|ArrowDown|ArrowLeft|ArrowRight)$/;
 
 const KanbanRoot = (props: KanbanRootProps): JSX.Element => {
-  const { size, class: cls, children, ...rest } = props;
+  const { size, class: cls, children, onCardMove, messages, ...rest } = props;
+  if (!onCardMove)
+    return (
+      <DropListGroup {...rest} class={slotsFor(size).base({ class: cls })} data-size={size ?? "md"} data-slot="kanban">
+        {children}
+      </DropListGroup>
+    );
+  const describedBy = createId();
+  const context: KanbanContextValue = { keyboard: true, describedBy };
   return (
-    <DropListGroup {...rest} class={slotsFor(size).base({ class: cls })} data-size={size ?? "md"} data-slot="kanban">
-      {children}
+    <DropListGroup
+      {...rest}
+      class={slotsFor(size).base({ class: cls })}
+      data-size={size ?? "md"}
+      data-slot="kanban"
+      onKeyDown={(event: KeyboardEvent) => {
+        const root = event.currentTarget as HTMLElement;
+        const target = event.target as HTMLElement;
+        if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || !MOVE_KEY.test(event.key) || !target.matches?.(CARD)) return;
+        // Space / Enter pick up or drop; Escape / arrows only while this card is picked up (or while the first key's
+        // module load is pending: that key may be the pick-up).
+        if (event.key !== " " && event.key !== "Enter" && root.dataset.kanbanGrabbed !== target.dataset.kanbanKey && !(loading && !keyboard)) return;
+        event.preventDefault();
+        const key = event.key;
+        if (keyboard) keyboard.kanbanKey(root, target, key, onCardMove, messages);
+        // In order: every key queued during the load runs after it, first to last.
+        else
+          void (loading ??= import("./keyboard.ts")).then((m) => {
+            keyboard = m;
+            m.kanbanKey(root, target, key, onCardMove, messages);
+          });
+      }}
+      onFocusOut={(event: FocusEvent) => {
+        // A picked-up card that loses focus (Tab, click elsewhere) is dropped where it is.
+        const root = event.currentTarget as HTMLElement;
+        const key = root.dataset.kanbanGrabbed;
+        if (!key || root.dataset.kanbanMoving !== undefined || (event.relatedTarget as HTMLElement | null)?.dataset?.kanbanKey === key) return;
+        delete root.dataset.kanbanGrabbed;
+        delete root.dataset.kanbanFrom;
+        root.querySelector(`[data-kanban-key="${CSS.escape(key)}"]`)?.removeAttribute("data-grabbed");
+      }}
+    >
+      <Provider token={KanbanContext} value={context}>
+        {children as never}
+      </Provider>
+      <span id={describedBy} hidden>
+        {messages?.instructions ?? KANBAN_MESSAGES.instructions}
+      </span>
     </DropListGroup>
   );
 };
@@ -142,8 +223,10 @@ interface KanbanCardListProps<T = string> extends DropListProps<T> {
 
 const KanbanCardList = <T,>(props: KanbanCardListProps<T>): JSX.Element => {
   const { class: cls, children, renderEmptyState, ...rest } = props;
+  const data = rest.data as unknown;
+  const column = typeof data === "function" ? () => String((data as () => unknown)()) : data === undefined ? undefined : String(data);
   return (
-    <DropList {...(rest as DropListProps<T>)} class={composeSlotClassName(S.cardList, cls)} data-slot="kanban-card-list">
+    <DropList {...(rest as DropListProps<T>)} class={composeSlotClassName(S.cardList, cls)} data-slot="kanban-card-list" data-kanban-column={column as never}>
       {children}
       {renderEmptyState ? (
         <div class={S.empty()} data-slot="kanban-empty">
@@ -161,13 +244,19 @@ interface KanbanCardProps<T = string> extends DragProps<T> {
 
 const KanbanCard = <T,>(props: KanbanCardProps<T>): JSX.Element => {
   const { class: cls, children, textValue, ...rest } = props;
+  const board = useContext(KanbanContext);
+  const data = rest.data as unknown;
+  const key = typeof data === "function" ? () => String((data as () => unknown)()) : data === undefined ? undefined : String(data);
   return (
     <Drag
       role={textValue ? "group" : undefined}
       aria-label={textValue}
+      tabIndex={board.keyboard ? 0 : undefined}
+      aria-describedby={board.keyboard ? board.describedBy : undefined}
       {...(rest as DragProps<T>)}
       class={composeSlotClassName(S.card, cls)}
       data-slot="kanban-card"
+      data-kanban-key={key as never}
     >
       {children}
     </Drag>
@@ -242,6 +331,8 @@ interface Kanban<T> {
   move: (key: string, column: string, index: number) => void;
   /** `.CardList` `onDropped`. */
   onDropped: (event: DragDrop<string, string, string>) => void;
+  /** `Kanban onCardMove` (keyboard moves): `move(key, column, index)`. */
+  onCardMove: (move: KanbanCardMove) => void;
 }
 
 function createKanban<T>(options: KanbanOptions<T>): Kanban<T> {
@@ -261,10 +352,12 @@ function createKanban<T>(options: KanbanOptions<T>): Kanban<T> {
     options.onMove?.(moved, column, clamped);
   };
   const onDropped = (event: DragDrop<string, string, string>) => move(event.item.data, event.container.data, event.currentIndex);
-  return { items, itemsOf, move, onDropped };
+  const onCardMove = (request: KanbanCardMove) => move(request.key, request.column, request.index);
+  return { items, itemsOf, move, onDropped, onCardMove };
 }
 
 export {
+  KanbanContext,
   KanbanRoot,
   KanbanColumn,
   KanbanColumnHeader,
@@ -282,6 +375,9 @@ export {
   createKanban,
 };
 export type {
+  KanbanCardMove,
+  KanbanContextValue,
+  KanbanMessages,
   KanbanRootProps,
   KanbanColumnIndicatorProps,
   KanbanCardListProps,

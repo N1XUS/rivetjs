@@ -55,6 +55,12 @@ describe("hostDOMProps (Angular CDK directive hosts: Drag, DragHandle, DropList,
     };
     expect(hostDOMProps(props)).toEqual(props);
   });
+  test("forwards keyboard / focus listeners and tabIndex (Angular host listeners)", () => {
+    const fn = () => {};
+    const props = { onKeyDown: fn, onKeyUp: fn, onFocus: fn, onBlur: fn, onFocusIn: fn, onFocusOut: fn, tabIndex: 0 };
+    expect(hostDOMProps(props)).toEqual(props);
+    expect(globalDOMProps(props)).toEqual({});
+  });
   test("drops non-attribute keys and owned names", () => {
     expect(hostDOMProps({ ariaLabel: "x", roles: "y", lockAxis: "x", style: "a", onMouseDown: () => {} }, ["style", "onMouseDown"])).toEqual({});
   });
