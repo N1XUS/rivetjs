@@ -1,0 +1,146 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no file tree). Feature set inspired by HeroUI Pro's public File Tree docs; independent implementation on HeroUI tokens (--default, --accent-soft, --border, --muted, focus / disabled status utilities). Behaviour = @rivetjs/cdk/tree. */
+/* -------------------------------------------------------------------------------------------------
+ * FileTree Component Styles
+ * Block: file-tree (modifiers: sm / md / lg; [data-guide-lines="always | hover | none"]; parts: item / content / indent /
+ *   indicator / indicator-icon / selection-cell / icon / title)
+ * States: item [data-hovered] [data-selected] [data-focus-visible] [data-disabled] [data-expanded]
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: file-tree - the tree
+ */
+.file-tree {
+  @apply flex w-full min-w-0 flex-col gap-px text-foreground outline-none;
+
+  --file-tree-indent: 1.25rem;
+  --file-tree-row: 2rem;
+  --file-tree-guide: var(--border);
+  --file-tree-guide-current: var(--file-tree-guide);
+}
+
+.file-tree--sm {
+  @apply text-xs;
+
+  --file-tree-indent: 1rem;
+  --file-tree-row: 1.75rem;
+}
+
+.file-tree--md {
+  @apply text-sm;
+}
+
+.file-tree--lg {
+  @apply text-base;
+
+  --file-tree-indent: 1.5rem;
+  --file-tree-row: 2.5rem;
+}
+
+.file-tree[data-guide-lines="none"] {
+  --file-tree-guide-current: transparent;
+}
+
+.file-tree[data-guide-lines="hover"] {
+  --file-tree-guide-current: transparent;
+
+  &:hover,
+  &:focus-within {
+    --file-tree-guide-current: var(--file-tree-guide);
+  }
+}
+
+/**
+ * Element: item - one row (TreeItem)
+ */
+.file-tree__item {
+  @apply relative rounded-lg px-1 outline-none select-none;
+
+  min-height: var(--file-tree-row);
+  cursor: var(--cursor-interactive);
+  transition: background-color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &[data-hovered="true"]:not([data-disabled="true"]) {
+      background-color: var(--default);
+    }
+  }
+
+  &[data-selected="true"] {
+    background-color: var(--accent-soft);
+  }
+
+  &[data-focus-visible="true"] {
+    box-shadow: inset 0 0 0 2px var(--focus);
+  }
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  &[data-expanded="true"] .file-tree__indicator-icon {
+    rotate: 90deg;
+  }
+}
+
+/**
+ * Element: content - the row's flex line
+ */
+.file-tree__content {
+  @apply flex items-center gap-1.5;
+
+  min-height: var(--file-tree-row);
+}
+
+/**
+ * Element: indent - one guide column per ancestor level
+ */
+.file-tree__indent {
+  @apply shrink-0 self-stretch;
+
+  width: calc((var(--tree-item-level, 1) - 1) * var(--file-tree-indent));
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(var(--file-tree-indent) / 2 - 0.5px),
+    var(--file-tree-guide-current) calc(var(--file-tree-indent) / 2 - 0.5px),
+    var(--file-tree-guide-current) calc(var(--file-tree-indent) / 2 + 0.5px),
+    transparent calc(var(--file-tree-indent) / 2 + 0.5px),
+    transparent var(--file-tree-indent)
+  );
+}
+
+/**
+ * Element: indicator - expand button (or an empty spacer on leaves)
+ */
+.file-tree__indicator {
+  @apply grid shrink-0 place-items-center rounded-md border-0 bg-transparent p-0 text-muted outline-none;
+
+  width: var(--file-tree-indent);
+  height: var(--file-tree-indent);
+  cursor: var(--cursor-interactive);
+
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+}
+
+.file-tree__indicator-icon {
+  transition: rotate var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+}
+
+/**
+ * Element: selection-cell / icon / title
+ */
+.file-tree__selection-cell {
+  @apply flex shrink-0 items-center;
+}
+
+.file-tree__icon {
+  @apply flex shrink-0 items-center text-muted;
+}
+
+.file-tree__title {
+  @apply min-w-0 truncate;
+}

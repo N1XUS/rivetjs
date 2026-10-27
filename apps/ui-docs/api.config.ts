@@ -313,6 +313,19 @@ export const entries: ApiEntryConfig[] = [
     summary: "Command (Rivet addition): a modal command palette; search field filtering grouped commands, sizes, backdrops.",
   },
   {
+    entry: "@rivetjs/ui/list-view",
+    file: "ui/src/components/list-view/index.ts",
+    runsOn: "both",
+    summary:
+      "ListView (Rivet addition): a single-column interactive list on GridList (variants, selection checkboxes, row actions, empty state, virtualization).",
+  },
+  {
+    entry: "@rivetjs/ui/file-tree",
+    file: "ui/src/components/file-tree/index.ts",
+    runsOn: "both",
+    summary: "FileTree (Rivet addition): a file / folder tree on Tree (sizes, guide lines, icons, custom indicator, selection).",
+  },
+  {
     entry: "@rivetjs/ui/drop-zone",
     file: "ui/src/components/drop-zone/index.ts",
     runsOn: "both",

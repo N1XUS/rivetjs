@@ -183,6 +183,8 @@
  * ------------------------------------------------------------------------------------------------ */
 @import "./kbd.css";
 @import "./kpi.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./file-tree.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./list-view.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./drop-zone.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./command.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./context-menu.css"; /* Rivet-authored (TWEAKS.md) */

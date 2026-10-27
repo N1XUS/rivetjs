@@ -1,0 +1,123 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no list view). Feature set inspired by HeroUI Pro's public List View docs; independent implementation on HeroUI tokens (--default, --surface, --accent-soft, --border, focus / disabled status utilities). Behaviour = @rivetjs/cdk/grid-list. */
+/* -------------------------------------------------------------------------------------------------
+ * ListView Component Styles
+ * Block: list-view (modifiers: primary / secondary; parts: item / item-content / title / description / item-action /
+ *   selection-cell / empty-state)
+ * States: item [data-hovered] [data-pressed] [data-selected] [data-focus-visible] [data-disabled] [data-dragging]
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: list-view - the list (GridList)
+ */
+.list-view {
+  @apply flex min-h-0 w-full flex-col outline-none;
+
+  --list-view-item-bg: transparent;
+  --list-view-item-bg-hover: transparent;
+  --list-view-item-bg-selected: transparent;
+
+  /* Virtualized: the virtualizer's content box holds the full height; it must not shrink in the flex column. */
+  > .rv-Virtualizer-content {
+    flex: none;
+  }
+}
+
+/* Primary: a grey card holding surface rows */
+.list-view--primary {
+  @apply gap-1 rounded-3xl bg-default p-1;
+
+  --list-view-item-bg: var(--surface);
+  --list-view-item-bg-hover: color-mix(in oklab, var(--surface) 70%, var(--default));
+  --list-view-item-bg-selected: color-mix(in oklab, var(--surface) 85%, var(--accent));
+
+  .list-view__item {
+    @apply rounded-2xl;
+  }
+}
+
+/* Secondary: transparent rows with separators */
+.list-view--secondary {
+  --list-view-item-bg-hover: var(--default);
+  --list-view-item-bg-selected: var(--accent-soft);
+
+  .list-view__item {
+    @apply rounded-none border-b border-separator;
+  }
+}
+
+/**
+ * Element: item - one row
+ */
+.list-view__item {
+  @apply relative flex w-full items-center gap-3 px-3 py-2 text-start outline-none select-none;
+
+  background-color: var(--list-view-item-bg);
+  cursor: var(--cursor-interactive);
+  transition: background-color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &[data-hovered="true"]:not([data-disabled="true"]) {
+      background-color: var(--list-view-item-bg-hover);
+    }
+  }
+
+  &[data-selected="true"] {
+    background-color: var(--list-view-item-bg-selected);
+  }
+
+  &[data-focus-visible="true"] {
+    box-shadow: inset 0 0 0 2px var(--focus);
+  }
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  &[data-dragging="true"] {
+    opacity: 0.5;
+  }
+}
+
+/**
+ * Element: item-content - icon / avatar + text
+ */
+.list-view__item-content {
+  @apply flex min-w-0 flex-1 items-center gap-3;
+
+  > div {
+    @apply flex min-w-0 flex-col;
+  }
+}
+
+/**
+ * Element: title / description
+ */
+.list-view__title {
+  @apply truncate text-sm font-medium text-foreground;
+}
+
+.list-view__description {
+  @apply truncate text-xs text-muted;
+}
+
+/**
+ * Element: item-action - trailing actions
+ */
+.list-view__item-action {
+  @apply ms-auto flex shrink-0 items-center gap-1;
+}
+
+/**
+ * Element: selection-cell - the selection checkbox
+ */
+.list-view__selection-cell {
+  @apply flex w-5 shrink-0 items-center justify-center;
+}
+
+/**
+ * Element: empty-state - centred placeholder
+ */
+.list-view__empty-state {
+  @apply flex flex-col items-center justify-center gap-1 px-4 py-6 text-center text-sm text-muted;
+}

@@ -45,6 +45,8 @@ export const groups: NavGroup[] = [
       "components/trend-chip",
       "components/chart",
       "components/table",
+      "components/list-view",
+      "components/file-tree",
     ],
   },
   {

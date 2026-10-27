@@ -540,6 +540,14 @@
       "types": "./src/components/drop-zone/index.ts",
       "default": "./src/components/drop-zone/index.ts"
     },
+    "./list-view": {
+      "types": "./src/components/list-view/index.ts",
+      "default": "./src/components/list-view/index.ts"
+    },
+    "./file-tree": {
+      "types": "./src/components/file-tree/index.ts",
+      "default": "./src/components/file-tree/index.ts"
+    },
     "./text-shimmer": {
       "types": "./src/components/text-shimmer/index.ts",
       "default": "./src/components/text-shimmer/index.ts"

@@ -192,6 +192,12 @@ export * from "./src/components/command/index.ts";
 // Rivet addition (feature set inspired by HeroUI Pro's public Drop Zone docs; behaviour = @rivetjs/cdk/drop-zone)
 export * from "./src/components/drop-zone/index.ts";
 
+// Rivet addition (feature set inspired by HeroUI Pro's public List View docs; behaviour = @rivetjs/cdk/grid-list)
+export * from "./src/components/list-view/index.ts";
+
+// Rivet addition: file tree on cdk tree (inspired by HeroUI Pro File Tree docs)
+export * from "./src/components/file-tree/index.ts";
+
 // Rivet additions (no HeroUI OSS counterpart; feature sets inspired by HeroUI Pro's public AI docs; independent implementations): AI chat components.
 export * from "./src/components/text-shimmer/index.ts";
 export * from "./src/components/chat-loader/index.ts";

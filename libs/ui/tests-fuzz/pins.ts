@@ -76,6 +76,25 @@ export const pins: FuzzPin[] = [
     ),
     step: 7,
   },
+  // UI-PORT S4b (2026-10-27, 3/3 runs each).
+  pin(
+    "/list-view",
+    "load",
+    'resumed only [aria-labelledby="lv-select-ada"]',
+    "cdk",
+    "GridList rows: the server writes aria-labelledby = row id + description slot id (`grid-list/row.ts` slotRef: the slot id on the server), a client render none when no Text slot=description renders",
+  ),
+  {
+    ...pin(
+      "/list-view",
+      "mismatch",
+      /data-rv-view="19\d\d"/,
+      "cdk",
+      "virtualized GridList: End on a resumed page renders an earlier window (row 1992) than a client render (row 2000)",
+    ),
+    step: 17,
+  },
+  { ...pin("/file-tree", "recreated", "svg, path", "cdk", "Tree rows (lucide icons in TreeItemContent) " + NO_REGION), step: 1 },
   pin("/resume", "recreated", "span#l-surface", "ui", "surface span " + NO_REGION),
   pin("/selection-indicator", "recreated", "segment__indicator", "cdk", "SelectionIndicator " + NO_REGION),
   pin("/visual/segment", "recreated", "segment__indicator", "cdk", "SelectionIndicator " + NO_REGION),

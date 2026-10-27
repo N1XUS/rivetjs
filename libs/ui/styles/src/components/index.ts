@@ -53,6 +53,8 @@ export * from "./input-group/index.ts";
 export * from "./input-otp/index.ts";
 export * from "./kbd/index.ts";
 export * from "./kpi/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./file-tree/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./list-view/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./drop-zone/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./command/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./context-menu/index.ts"; // Rivet-authored (TWEAKS.md)
