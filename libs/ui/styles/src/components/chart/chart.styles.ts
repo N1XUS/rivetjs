@@ -33,6 +33,8 @@ export const chartVariants = tv({
     legendValue: "chart__legend-value",
     line: "chart__line",
     plot: "chart__plot",
+    point: "chart__point",
+    points: "chart__points",
     polar: "chart__polar",
     polarCenter: "chart__polar-center",
     polarGrid: "chart__polar-grid",
@@ -54,6 +56,9 @@ export const chartVariants = tv({
     yLabel: "chart__y-label",
   },
   variants: {
+    orientation: {
+      horizontal: {base: "chart--horizontal"},
+    },
     kind: {
       area: {base: "chart--area"},
       bar: {base: "chart--bar"},

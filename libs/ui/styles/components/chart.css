@@ -1,9 +1,9 @@
 /* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no charts). Feature set (area / line / bar / donut charts with tooltips, legend, grid, axes) inspired by HeroUI Pro's public chart docs; independent implementation on HeroUI tokens: data-driven server-rendered SVG / HTML, CSS-only tooltips (`:hover` / `:focus-visible` on per-point slots), no script. */
 /* -------------------------------------------------------------------------------------------------
  * Chart Component Styles
- * Block: chart (parts: legend / frame / y-axis / plot / grid / svg / area / line / bars / slot / guide / dot / tooltip /
+ * Block: chart (parts: legend / frame / y-axis / plot / grid / svg / area / line / points / bars / slot / guide / dot / tooltip /
  * x-axis / donut)
- * Modifiers: chart--area / --line / --bar / --donut / --sparkline
+ * Modifiers: chart--area / --line / --bar / --donut / --sparkline; chart--horizontal (horizontal bars)
  * Variables: --chart-1 … --chart-6 (palette), --chart-color (per series), --chart-height (plot), --chart-y-axis-width
  * -----------------------------------------------------------------------------------------------*/
 
@@ -386,7 +386,64 @@
   box-shadow: none;
 }
 
-/* Dashed line series (`@rivetjs/ui/composed-chart` `dashed`). */
+/* Point dots (area / line `showDots`, TW-165): always visible, under the hover slots. */
+.chart__points {
+  @apply pointer-events-none absolute inset-0;
+}
+
+.chart__point {
+  @apply absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full;
+  background-color: var(--chart-color);
+  box-shadow: 0 0 0 2px var(--background);
+}
+
+/* Horizontal bars (`orientation="horizontal"`, TW-165): category labels in the y axis column, value ticks along the bottom,
+   bars from the inline start. */
+.chart--horizontal {
+  .chart__y-label {
+    @apply truncate;
+    max-width: calc(var(--chart-y-axis-width) - 0.5rem);
+  }
+
+  .chart__grid-line {
+    @apply inset-x-auto inset-y-0 border-t-0 border-s border-dashed;
+
+    &[data-baseline] {
+      @apply border-solid;
+    }
+  }
+
+  .chart__bars {
+    @apply flex-col;
+  }
+
+  .chart__bar-group {
+    @apply flex-col items-stretch justify-center gap-[3px] px-0 py-1;
+  }
+
+  .chart__bar {
+    @apply max-h-8 max-w-none flex-1 rounded-none rounded-e-md;
+  }
+
+  .chart__bar-stack {
+    @apply h-auto max-h-10 w-full max-w-none flex-1 flex-row;
+
+    .chart__bar {
+      @apply h-full max-h-none flex-none rounded-none;
+
+      &:last-child {
+        @apply rounded-e-md;
+      }
+    }
+  }
+
+  .chart__bar-group > .chart__tooltip {
+    top: 50%;
+    translate: 0 -50%;
+  }
+}
+
+/* Dashed line series (series `dashed`: area / line / composed). */
 .chart__line[data-dashed] {
   stroke-dasharray: 6 4;
 }

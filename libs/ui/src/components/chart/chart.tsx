@@ -9,6 +9,11 @@
 //   the chart to show other data (`<Show keyed when={period()}>`).
 // - `tooltip` (every chart): a render function `(point: ChartPoint) => JSX` replacing the default tooltip rows (e.g. a
 //   `@rivetjs/ui/chart-tooltip` card); still server-rendered, still shown by CSS.
+// - Missing values (`null` / absent key, UI-PORT-C): area / line series break into separate runs (a gap) unless
+//   `connectNulls`; a bar is left out; tooltips and slot names skip the series. Stacked series count a gap as 0.
+// - `showDots` (area / line) draws a dot on every point; a series `dashed` draws its line dashed; a bar chart with
+//   `orientation="horizontal"` lays the categories down the side and grows the bars along the inline axis (HeroUI Pro's
+//   `layout="vertical"`).
 // - The helpers below (`prepare`, `renderFrame`, `renderTooltip`, `colorOf`, …) are shared with `../pie-chart`,
 //   `../radar-chart`, `../radial-chart` and `../composed-chart` (not part of the `@rivetjs/ui/chart` entry).
 import { createId } from "@rivetjs/cdk/id";
@@ -25,7 +30,8 @@ const SLOTS = chartVariants();
 export const STOP_TOP = { offset: "0%", "stop-color": "currentColor", "stop-opacity": "0.32" } as Record<string, string>;
 export const STOP_BOTTOM = { offset: "100%", "stop-color": "currentColor", "stop-opacity": "0.02" } as Record<string, string>;
 
-type ChartDatum = Record<string, string | number>;
+/** One x value: the index key + a value per series (`null` / absent = no value: a gap in a line or area, no bar). */
+type ChartDatum = Record<string, string | number | null | undefined>;
 
 /** One hovered index (cartesian / radar) or segment (pie / radial), handed to a chart's `tooltip` render function. */
 interface ChartPoint {
@@ -44,6 +50,8 @@ interface ChartSeries {
   label?: string;
   /** Any CSS colour (default: the palette `var(--chart-N)`). */
   color?: string;
+  /** Dashed line (area / line outline; comparisons, targets). */
+  dashed?: boolean;
 }
 
 interface CartesianChartProps extends Omit<JSX.IntrinsicElements["figure"], "children" | "class"> {
@@ -78,12 +86,23 @@ interface AreaChartProps extends CartesianChartProps {
   curve?: "monotone" | "linear";
   /** Stack the series (areas on top of each other). */
   stacked?: boolean;
+  /** A dot on every data point (not only on hover). */
+  showDots?: boolean;
+  /** Draw a line straight across missing values instead of leaving a gap. @default false */
+  connectNulls?: boolean;
 }
 
 type LineChartProps = Omit<AreaChartProps, "stacked">;
 
 interface BarChartProps extends CartesianChartProps {
   stacked?: boolean;
+  /**
+   * `vertical` (default): categories along the x axis, bars grow up. `horizontal`: categories down the side, bars grow
+   * along the inline axis (HeroUI Pro / Recharts `layout="vertical"`).
+   */
+  orientation?: "vertical" | "horizontal";
+  /** Width of the category labels of a horizontal bar chart (any CSS length). @default "6rem" */
+  categoryWidth?: string;
 }
 
 export const colorOf = (s: ChartSeries, i: number) => s.color ?? `var(--chart-${(i % 6) + 1})`;
@@ -91,7 +110,8 @@ export const defaultFormat = (v: number) => cachedIntl(Intl.NumberFormat, "en-US
 export const pct = (n: number) => `${Math.round(n * 1000) / 1000}%`;
 
 export interface Prepared {
-  rows: { label: string; values: number[]; sums: number[] }[];
+  /** `values`: a missing value is 0 there, `has[i]` false. */
+  rows: { label: string; values: number[]; sums: number[]; has?: boolean[] }[];
   ticks: number[];
   min: number;
   max: number;
@@ -105,12 +125,14 @@ export function prepare(props: CartesianChartProps, stacked: boolean): Prepared 
   const format = props.valueFormatter ?? defaultFormat;
   const indexFormat = props.indexFormatter ?? ((v: string | number) => String(v));
   const rows = props.data.map((d) => {
-    const values = props.series.map((s) => Number(d[s.key] ?? 0));
+    const has = props.series.map((s) => d[s.key] != null && d[s.key] !== "");
+    const values = props.series.map((s, i) => (has[i] ? Number(d[s.key]) : 0));
     let acc = 0;
     const sums = values.map((v) => (acc += v));
-    return { label: indexFormat(d[props.index] ?? ""), values, sums };
+    return { label: indexFormat(d[props.index] ?? ""), values, sums, has };
   });
-  const all = rows.flatMap((r) => (stacked ? r.sums : r.values));
+  // Missing values do not widen the range (stacked: the sums still count them as 0).
+  const all = rows.flatMap((r) => (stacked ? r.sums : r.values.filter((_, i) => r.has[i])));
   const lo = Math.min(props.minValue ?? 0, ...all);
   const hi = props.maxValue ?? Math.max(...all, lo + 1);
   const ticks = niceTicks(lo, hi, 4);
@@ -132,17 +154,42 @@ export function prepare(props: CartesianChartProps, stacked: boolean): Prepared 
 /** Legend items (plain data). */
 const legendOf = (p: Prepared) => p.labels.map((label, i) => ({ label, color: p.colors[i]! }));
 
-/** The point handed to a `tooltip` render function. */
+/** Whether series `i` has a value in `row` (prepared rows of other charts carry no `has`). */
+export const hasValue = (row: Prepared["rows"][number], i: number) => row.has?.[i] !== false;
+
+/** The point handed to a `tooltip` render function (series without a value left out). */
 function pointOf(p: Prepared, row: Prepared["rows"][number], index: number, keys: string[]): ChartPoint {
   return {
     index,
     label: row.label,
-    items: row.values.map((v, i) => ({ key: keys[i]!, name: p.labels[i]!, value: v, formatted: p.format(v), color: p.colors[i]! })),
+    items: row.values.flatMap((v, i) =>
+      hasValue(row, i) ? [{ key: keys[i]!, name: p.labels[i]!, value: v, formatted: p.format(v), color: p.colors[i]! }] : [],
+    ),
   };
 }
 
 function tooltipLabel(p: Prepared, row: Prepared["rows"][number]): string {
-  return `${row.label}: ${row.values.map((v, i) => `${p.labels[i]} ${p.format(v)}`).join(", ")}`;
+  const values = row.values.flatMap((v, i) => (hasValue(row, i) ? [`${p.labels[i]} ${p.format(v)}`] : []));
+  return values.length ? `${row.label}: ${values.join(", ")}` : `${row.label}: no data`;
+}
+
+/** Default tooltip rows of a prepared row (series without a value left out). */
+const rowsOf = (p: Prepared, row: Prepared["rows"][number]) =>
+  row.values.flatMap((v, si) => (hasValue(row, si) ? [{ label: p.labels[si]!, value: p.format(v), color: p.colors[si]! }] : []));
+
+/** Index runs of consecutive values of series `si` (one run over every value when `connect`). */
+function runsOf(p: Prepared, si: number, connect: boolean): number[][] {
+  const runs: number[][] = [];
+  let run: number[] = [];
+  p.rows.forEach((r, i) => {
+    if (hasValue(r, si)) run.push(i);
+    else if (!connect && run.length) {
+      runs.push(run);
+      run = [];
+    }
+  });
+  if (run.length) runs.push(run);
+  return runs;
 }
 
 /* -------------------------------------------------------------------------------------------------
@@ -156,19 +203,36 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
   const xOf = (i: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100);
   const curve = props.curve === "linear" ? linearPath : monotonePath;
   const baseline = p.y(Math.max(p.min, 0));
-  const paths = props.series.map((_, si) => {
-    const points: Point[] = p.rows.map((r, i) => ({ x: xOf(i), y: p.y(stacked ? r.sums[si]! : r.values[si]!) }));
-    const line = curve(points);
+  const connect = props.connectNulls === true;
+  const paths = props.series.map((s, si) => {
+    let line: string;
     let area = "";
-    if (props.kind === "area") {
-      if (stacked && si > 0) {
-        const below: Point[] = p.rows.map((r, i) => ({ x: xOf(i), y: p.y(r.sums[si - 1]!) })).reverse();
-        const back = curve(below).replace(/^M/, "L");
-        area = `${line} ${back} Z`;
-      } else area = areaPath(line, points, baseline);
+    if (stacked) {
+      // Stacked: a gap counts as 0, so the layers stay closed shapes.
+      const points: Point[] = p.rows.map((r, i) => ({ x: xOf(i), y: p.y(r.sums[si]!) }));
+      line = curve(points);
+      if (props.kind === "area") {
+        if (si > 0) {
+          const below: Point[] = p.rows.map((r, i) => ({ x: xOf(i), y: p.y(r.sums[si - 1]!) })).reverse();
+          area = `${line} ${curve(below).replace(/^M/, "L")} Z`;
+        } else area = areaPath(line, points, baseline);
+      }
+    } else {
+      // One path per run of values: a missing value leaves a gap (`connectNulls` joins the runs).
+      const runs = runsOf(p, si, connect).map((run) => run.map((i) => ({ x: xOf(i), y: p.y(p.rows[i]!.values[si]!) })));
+      const lines = runs.map((points) => curve(points));
+      line = lines.join(" ");
+      if (props.kind === "area") area = runs.map((points, k) => areaPath(lines[k]!, points, baseline)).join(" ");
     }
-    return { line, area, color: p.colors[si]!, gradient: `${id}-g${si}` };
+    return { line, area, color: p.colors[si]!, gradient: `${id}-g${si}`, dashed: s.dashed === true };
   });
+  const points = props.showDots
+    ? p.rows.flatMap((r, i) =>
+        r.values.flatMap((v, si) =>
+          hasValue(r, si) || stacked ? [{ left: pct(xOf(i)), top: pct(p.y(stacked ? r.sums[si]! : v)), color: p.colors[si]! }] : [],
+        ),
+      )
+    : [];
   const step = n <= 1 ? 100 : 100 / (n - 1);
   const slots = p.rows.map((r, i) => {
     const x = xOf(i);
@@ -182,8 +246,8 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
       side: x > 60 ? "start" : "end",
       label: tooltipLabel(p, r),
       title: r.label,
-      dots: r.values.map((v, si) => ({ top: pct(p.y(stacked ? r.sums[si]! : v)), color: p.colors[si]! })),
-      rows: r.values.map((v, si) => ({ label: p.labels[si]!, value: p.format(v), color: p.colors[si]! })),
+      dots: r.values.flatMap((v, si) => (hasValue(r, si) ? [{ top: pct(p.y(stacked ? r.sums[si]! : v)), color: p.colors[si]! }] : [])),
+      rows: rowsOf(p, r),
       custom: props.tooltip?.(
         pointOf(
           p,
@@ -213,10 +277,17 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
         {paths.map((path) => (
           <g style={{ "--chart-color": path.color }}>
             {props.kind === "area" ? <path class={SLOTS.area()} d={path.area} fill={`url(#${path.gradient})`} /> : null}
-            <path class={SLOTS.line()} d={path.line} vector-effect="non-scaling-stroke" />
+            <path class={SLOTS.line()} d={path.line} data-dashed={path.dashed ? "" : undefined} vector-effect="non-scaling-stroke" />
           </g>
         ))}
       </svg>
+      {points.length ? (
+        <div class={SLOTS.points()} aria-hidden="true">
+          {points.map((point) => (
+            <span class={SLOTS.point()} style={{ left: point.left, top: point.top, "--chart-color": point.color }} />
+          ))}
+        </div>
+      ) : null}
       {props.showTooltip === false ? null : (
         <div class={SLOTS.slots()}>
           {slots.map((slot) => (
@@ -301,7 +372,16 @@ export function renderFrame(props: CartesianChartProps, p: Prepared, kind: strin
     class: cls,
     ...rest
   } = props as CartesianChartProps & Record<string, unknown>;
-  const { kind: _k, curve: _c, stacked: _st, ...figureProps } = rest as Record<string, unknown>;
+  const {
+    kind: _k,
+    curve: _c,
+    stacked: _st,
+    showDots: _sd,
+    connectNulls: _cn,
+    orientation: _o,
+    categoryWidth: _cw,
+    ...figureProps
+  } = rest as Record<string, unknown>;
   return (
     <figure
       class={chartVariants({ kind: kind as never }).base({ class: cls as string | undefined })}
@@ -399,6 +479,7 @@ const Sparkline = (props: Omit<AreaChartProps, "showLegend" | "showGrid" | "show
  * Bar
  * -----------------------------------------------------------------------------------------------*/
 const BarChart = (props: BarChartProps): JSX.Element => {
+  if (props.orientation === "horizontal") return horizontalBars(props);
   const stacked = props.stacked === true;
   const p = prepare(props, stacked);
   const n = p.rows.length;
@@ -416,8 +497,12 @@ const BarChart = (props: BarChartProps): JSX.Element => {
     label: tooltipLabel(p, r),
     title: r.label,
     side: xOf(i) > 60 ? "start" : "end",
-    bars: r.values.map((v, si) => ({ height: pct(stacked ? (v / (p.max - p.min || 1)) * 100 : base - p.y(v)), color: p.colors[si]! })),
-    rows: r.values.map((v, si) => ({ label: p.labels[si]!, value: p.format(v), color: p.colors[si]! })),
+    // A missing value keeps its place in the group as an empty bar (the other bars do not shift).
+    bars: r.values.map((v, si) => ({
+      height: hasValue(r, si) ? pct(stacked ? (v / (p.max - p.min || 1)) * 100 : base - p.y(v)) : "0%",
+      color: p.colors[si]!,
+    })),
+    rows: rowsOf(p, r),
   }));
   return renderFrame(
     props,
@@ -449,6 +534,146 @@ const BarChart = (props: BarChartProps): JSX.Element => {
     xOf,
   );
 };
+
+/**
+ * Horizontal bar chart: categories down the side (the y axis column holds their labels at the band centres), value ticks
+ * along the bottom, bars grow from the inline start (mirrored in RTL). Same slots / tooltips as the vertical layout.
+ */
+function horizontalBars(props: BarChartProps): JSX.Element {
+  const stacked = props.stacked === true;
+  const p = prepare(props, stacked);
+  const n = p.rows.length;
+  const span = p.max - p.min || 1;
+  /** Inline position (%) of a value. */
+  const xv = (v: number) => ((v - p.min) / span) * 100;
+  const base = xv(Math.max(p.min, 0));
+  const yOf = (i: number) => ((i + 0.5) / Math.max(1, n)) * 100;
+  const groups = p.rows.map((r, i) => {
+    const ends = r.values.map((v, si) => (stacked ? xv(r.sums[si]!) : xv(v)));
+    const end = Math.max(base, ...ends.filter((_, si) => hasValue(r, si)));
+    return {
+      custom: props.tooltip?.(
+        pointOf(
+          p,
+          r,
+          i,
+          props.series.map((s) => s.key),
+        ),
+      ),
+      label: tooltipLabel(p, r),
+      title: r.label,
+      anchor: pct(end),
+      side: end > 60 ? "start" : "end",
+      bars: r.values.map((v, si) => ({
+        width: hasValue(r, si) ? pct(stacked ? (v / span) * 100 : Math.max(0, xv(v) - base)) : "0%",
+        color: p.colors[si]!,
+      })),
+      rows: rowsOf(p, r),
+    };
+  });
+  const showY = props.showYAxis !== false;
+  const showX = props.showXAxis !== false;
+  const showGrid = props.showGrid !== false;
+  const showLegend = props.showLegend ?? props.series.length > 1;
+  const ticks = p.ticks.map((t) => ({ at: pct(xv(t)), label: p.format(t), baseline: t === 0 || t === p.min }));
+  const categories = p.rows.map((r, i) => ({ top: pct(yOf(i)), label: r.label }));
+  const legend = legendOf(p);
+  const {
+    data: _d,
+    index: _i,
+    series: _s,
+    height,
+    valueFormatter: _v,
+    indexFormatter: _f,
+    minValue: _mi,
+    maxValue: _ma,
+    showLegend: _l,
+    showGrid: _g,
+    showXAxis: _x,
+    showYAxis: _y,
+    showTooltip,
+    tooltip: _tt,
+    stacked: _st,
+    orientation: _o,
+    categoryWidth,
+    class: cls,
+    ...figureProps
+  } = props;
+  return (
+    <figure
+      class={chartVariants({ kind: "bar", orientation: "horizontal" }).base({ class: cls })}
+      data-slot="chart"
+      data-orientation="horizontal"
+      data-hide-y-axis={showY ? undefined : ""}
+      style={{ "--chart-height": `${height ?? 240}px`, "--chart-y-axis-width": categoryWidth ?? "6rem" }}
+      {...(figureProps as object)}
+    >
+      {showLegend ? (
+        <ul class={SLOTS.legend()} data-slot="chart-legend">
+          {legend.map((item) => (
+            <li class={SLOTS.legendItem()}>
+              <span class={SLOTS.swatch()} style={{ "--chart-color": item.color }} />
+              {item.label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div class={SLOTS.frame()}>
+        {showY ? (
+          <div class={SLOTS.yAxis()} aria-hidden="true">
+            {categories.map((c) => (
+              <span class={SLOTS.yLabel()} style={{ top: c.top }}>
+                {c.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div class={SLOTS.plot()} data-slot="chart-plot">
+          {showGrid ? (
+            <div class={SLOTS.grid()} aria-hidden="true">
+              {ticks.map((t) => (
+                <span class={SLOTS.gridLine()} style={{ "inset-inline-start": t.at }} data-baseline={t.baseline ? "" : undefined} />
+              ))}
+            </div>
+          ) : null}
+          <div class={SLOTS.bars()}>
+            {groups.map((g) => (
+              <div
+                class={SLOTS.barGroup()}
+                data-slot="chart-slot"
+                data-side={g.side}
+                role="group"
+                tabIndex={showTooltip === false ? undefined : 0}
+                aria-label={g.label}
+                style={base > 0 ? { "padding-inline-start": pct(base) } : undefined}
+              >
+                {stacked ? (
+                  <div class={SLOTS.barStack()}>
+                    {g.bars.map((bar) => (
+                      <span class={SLOTS.bar()} style={{ width: bar.width, "--chart-color": bar.color }} />
+                    ))}
+                  </div>
+                ) : (
+                  g.bars.map((bar) => <span class={SLOTS.bar()} style={{ width: bar.width, "--chart-color": bar.color }} />)
+                )}
+                {showTooltip === false ? null : renderTooltip(g.title, g.rows, g.anchor, g.custom)}
+              </div>
+            ))}
+          </div>
+        </div>
+        {showX ? (
+          <div class={SLOTS.xAxis()} aria-hidden="true">
+            {ticks.map((t) => (
+              <span class={SLOTS.xLabel()} style={{ "inset-inline-start": t.at }}>
+                {t.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </figure>
+  );
+}
 
 /* -------------------------------------------------------------------------------------------------
  * Donut

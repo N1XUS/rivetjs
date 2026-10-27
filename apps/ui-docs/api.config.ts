@@ -396,7 +396,8 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/ui/chart",
     file: "ui/src/components/chart/index.ts",
     runsOn: "both",
-    summary: "Charts (Rivet addition): area, line, bar, donut and sparkline charts rendered on the server, CSS-only tooltips.",
+    summary:
+      "Charts (Rivet addition): area, line, bar (grouped, stacked, horizontal), donut and sparkline charts rendered on the server, gaps for missing values, dots, CSS-only tooltips.",
   },
   {
     entry: "@rivetjs/ui/chart-tooltip",

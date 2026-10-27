@@ -21,8 +21,6 @@ const COMPOSED = composedChartVariants();
 
 interface ComposedSeries extends ChartSeries {
   type: "bar" | "line" | "area";
-  /** Dashed line (`line` / `area` outline). */
-  dashed?: boolean;
 }
 
 interface ComposedChartProps extends Omit<CartesianChartProps, "series"> {
