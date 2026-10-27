@@ -29,7 +29,11 @@ Ported into:
   utils/id.ts (useId, mergeIds, useSlotId), platform (isMac, isIPhone, isIPad, isIOS, isAppleDevice, isWebKit,
   isChrome, isAndroid, isFirefox), utils/index.ts (chain, mergeProps, runAfterTransition, isVirtualClick,
   focusWithoutScrolling, useLabels, useDescription, useFormReset, ...), utils/dom.ts (getScrollParent,
-  scrollIntoView, scrollIntoViewport, shadow DOM helpers), observers (useResizeObserver), utils/links.tsx
+  scrollIntoView, scrollIntoViewport, shadow DOM helpers), utils/shadow-tree-walker.ts
+  (react-aria/src/utils/shadowdom/ShadowTreeWalker.ts; original Microsoft Tabster source attribution
+  retained in the file), tests/aria-hide-outside-shadow-cases.ts,
+  tests/aria-hide-outside-shadow.test.ts, tests/aria-hide-outside-shadow.browser.test.tsx
+  (react-aria/test/overlays/ariaHideOutside.test.js shadow DOM suite), observers (useResizeObserver), utils/links.tsx
   (openLink, RouterProvider), utils/dom-props.ts (GlobalDOMEvents, filterDOMProps), i18n (useLocale, useCollator, useDateFormatter, useNumberFormatter,
   useFilter, useMessageFormatter, useListFormatter, LocalizedStringDictionary /
   LocalizedStringFormatter, and the @internationalized/date, @internationalized/number,
@@ -42,7 +46,10 @@ Ported into:
   table/ (index.tsx, column-resize.tsx, behaviour.ts, collection.ts, keyboard-delegate.ts, intl.ts, rac-intl.ts:
   RAC Table + @react-aria/table), grid/ (behaviour.ts, keyboard-delegate.ts, intl.ts: @react-aria/grid),
   state/table.ts, state/table-column-resize.ts, state/grid.ts (@react-stately/table, @react-stately/grid);
-  and the corresponding tests under tests/.
+  and the corresponding tests under tests/, including public-focus-visible.test.ts
+  (react-aria/test/interactions/useFocusVisible.test.js at 06891de; owned signals + happy-dom)
+  and public-scroll-adapters.test.ts (scroll-lock cases from react-aria/test/overlays/usePreventScroll.test.js
+  at 06891de; imperative release functions replace hook unmounts).
 
 --------------------------------------------------------------------------------
 Angular Components (@angular/cdk) — https://github.com/angular/components

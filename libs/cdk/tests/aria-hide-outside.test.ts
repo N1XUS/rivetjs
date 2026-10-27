@@ -1,5 +1,5 @@
-// Port of React Aria's ariaHideOutside.test.js (light DOM part; Apache-2.0, © Adobe). Shadow DOM
-// cases are not ported: the Rivet port does not observe shadow roots (see the spec). happy-dom.
+// Port of React Aria's ariaHideOutside.test.js (light DOM part; Apache-2.0, © Adobe).
+// Shadow DOM cases: aria-hide-outside-shadow-cases.ts (happy-dom and Chromium).
 import { describe, test, beforeEach } from "vitest";
 import assert from "node:assert/strict";
 import { installDom } from "./install-dom.ts";

@@ -49,7 +49,8 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | virtualizer-sections.browser (project `cdk-browser`) | virtualizer nested section rows kept across a scroll (client render) |
 | menu-trigger-modality | menu/behaviour `menuTriggerKeyDown` (keyboard modality before opening; resumed-page regression) |
 | angular-overlay | overlay-service/* (overlay-ref, overlay-container, overlay-dispatchers, scroll-strategies, global-position, connected-position, overlay-viewport, index), portal/portal-outlet (browser.ts) |
-| aria-hide-outside | overlay/aria-hide-outside |
+| aria-hide-outside | overlay/aria-hide-outside (light DOM) |
+| aria-hide-outside-shadow / aria-hide-outside-shadow.browser | shared `aria-hide-outside-shadow-cases.ts`: all nine upstream shadow DOM cases (React Aria 06891de), plus explicit-root observer boundary and cleanup checks; happy-dom and Chromium |
 | calculate-position | overlay/position |
 | cdk | collections, interactions, keys, overlay/position, platform |
 | coercion | coercion |
@@ -177,6 +178,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | scheduler-chunks | scheduler chunk graph (source static value imports: `behaviour.ts` = `#dev` + `selection.ts` only, never `state.ts` / `intl.ts` / layout / drag; `keys-month.ts` / `keys-time-grid.ts` = `keys.ts` + `behaviour.ts` + `selection.ts` only; `time-grid-client.tsx` never state / intl / drag / pointer) |
 | scheduler-menu.browser / scheduler-root.browser | scheduler/menus, toolbar, root (ports of malva `scheduler-context-menu.spec.ts` (event / slot menus, ranges incl. maxTime clamp, pending selection handed + released, keyboard opens + focus return, key claim without def, re-target, no def = native menu) and the root toolbar / header def / hiddenDays / RTL toolbar cases of `scheduler.spec.ts`) |
 | scheduler-dev | scheduler dev warnings (`cdk-dev`): server-rendered state without `timeZone` (once), event dates that do not parse (once per event object) |
+- Public-export coverage (TEST-COV 2026-10-27): `public-collection-helpers`, `public-state-adapters`, `public-focus-dom`, `public-focus-visible`, `public-portal-outlet`, `public-scroll-adapters`, `public-color-aria`, `public-date-conversions`, `public-date-state`, `public-platform-probes` run in project `cdk`. Focus-visible and scroll-lock cases port React Aria tests at `06891de`; all run without Chromium.
 
 ## Rules / invariants
 - `tests/date/*`: ports of `@internationalized/date` tests; header "Changes: imports point at @rivetjs/cdk/date; Jest globals come from @rivetjs/testing/jest" — keep Jest-style API via `@rivetjs/testing/jest`.

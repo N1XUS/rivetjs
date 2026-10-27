@@ -3,9 +3,14 @@
 // elements that contain none of the targets, reference counted per element, with a
 // MutationObserver hiding elements added later. Live announcers and top-layer content (toasts:
 // `[data-rv-top-layer]`) stay visible. Nested calls stack: the newest observer is active.
+// Shadow DOM: traverses open roots and observes enclosing roots up to the root tree.
+// As upstream, default root / observer stack / mutation constructors remain global.
 // The overlay layer uses it for every modal surface (modals, modal popovers, menus).
 //
 // Ported from @react-aria/overlays (ariaHideOutside.ts), Apache-2.0, © Adobe.
+
+import { isShadowRoot, nodeContains } from "../utils/dom-core.ts";
+import { createShadowTreeWalker } from "../utils/shadow-tree-walker.ts";
 
 export interface AriaHideOutsideOptions {
   /** Nothing above this element is hidden. @default document.body */
@@ -49,6 +54,18 @@ export function ariaHideOutside(targets: Element[], options?: AriaHideOutsideOpt
     }
   };
 
+  // MutationObserver does not cross shadow boundaries. Watch every enclosing
+  // shadow root up to the tree containing the explicit root (React Aria).
+  const shadowRootsToWatch = new Set<ShadowRoot>();
+  const boundary = root.getRootNode();
+  for (const target of targets) {
+    let current = target.getRootNode();
+    while (isShadowRoot(current) && current !== boundary) {
+      shadowRootsToWatch.add(current);
+      current = current.host.getRootNode();
+    }
+  }
+
   const walk = (walkRoot: Element) => {
     // Live announcers and top-layer content stay visible.
     for (const element of walkRoot.querySelectorAll(ALWAYS_VISIBLE)) visibleNodes.add(element);
@@ -62,10 +79,10 @@ export function ariaHideOutside(targets: Element[], options?: AriaHideOutsideOpt
       )
         return NodeFilter.FILTER_REJECT;
       // Descend into nodes containing a target.
-      for (const target of visibleNodes) if (node.contains(target)) return NodeFilter.FILTER_SKIP;
+      for (const target of visibleNodes) if (nodeContains(node, target)) return NodeFilter.FILTER_SKIP;
       return NodeFilter.FILTER_ACCEPT;
     };
-    const walker = walkRoot.ownerDocument.createTreeWalker(walkRoot, NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => acceptNode(node as Element) });
+    const walker = createShadowTreeWalker(walkRoot.ownerDocument, walkRoot, NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => acceptNode(node as Element) });
     // The walker skips its root.
     const acceptRoot = acceptNode(walkRoot);
     if (acceptRoot === NodeFilter.FILTER_ACCEPT) hide(walkRoot);
@@ -91,19 +108,33 @@ export function ariaHideOutside(targets: Element[], options?: AriaHideOutsideOpt
   if (observerStack.length) observerStack[observerStack.length - 1]!.disconnect();
   walk(root);
 
-  const observer = new MutationObserver((changes) => {
+  const onMutation: MutationCallback = (changes) => {
     for (const change of changes) {
       if (change.type !== "childList") continue;
       // Added outside every target and every hidden node: hide the new children.
-      if (change.target.isConnected && ![...visibleNodes, ...hiddenNodes].some((node) => node.contains(change.target))) {
+      if (change.target.isConnected && ![...visibleNodes, ...hiddenNodes].some((node) => nodeContains(node, change.target))) {
         for (const node of change.addedNodes) {
           if ((node instanceof HTMLElement || node instanceof SVGElement) && isAlwaysVisibleNode(node)) visibleNodes.add(node);
           else if (node instanceof Element) walk(node);
         }
       }
+      // As upstream, losing an enclosing host disconnects the main observer.
+      for (const shadowRoot of shadowRootsToWatch) {
+        if (!shadowRoot.isConnected) {
+          observer.disconnect();
+          break;
+        }
+      }
     }
-  });
+  };
+  const observer = new MutationObserver(onMutation);
   observer.observe(root, { childList: true, subtree: true });
+  const shadowObservers = new Set<MutationObserver>();
+  for (const shadowRoot of shadowRootsToWatch) {
+    const shadowObserver = new MutationObserver(onMutation);
+    shadowObserver.observe(shadowRoot, { childList: true, subtree: true });
+    shadowObservers.add(shadowObserver);
+  }
 
   const observerWrapper: ObserverWrapper = {
     visibleNodes,
@@ -115,6 +146,7 @@ export function ariaHideOutside(targets: Element[], options?: AriaHideOutsideOpt
 
   return () => {
     observer.disconnect();
+    for (const shadowObserver of shadowObservers) shadowObserver.disconnect();
     for (const node of hiddenNodes) {
       const count = refCountMap.get(node);
       if (count == null) continue;
