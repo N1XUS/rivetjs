@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/overlays, foundations/portal]
 ---
 
-A port of `@angular/cdk/overlay`: `overlayService().create(config)` makes an `OverlayRef`, a floating **pane** (`.cdk-overlay-pane`) inside a host in the shared **overlay container** (`<div class="cdk-overlay-container">` at the end of body). Content is attached as a [portal](portal.md#portals-and-outlets-angular-cdk); a **position strategy** places the pane and a **scroll strategy** decides what scrolling does. Imperative and browser only: create overlays from event handlers. The React Aria based components do not use it; it is for Angular-style code (Material ports, custom pickers) and sits beside the [div overlay layer](overlays.md).
+`overlayService().create(config)` makes an `OverlayRef`, a floating **pane** (`.cdk-overlay-pane`) inside a host in the shared **overlay container** (`<div class="cdk-overlay-container">` at the end of body). Content is attached as a [portal](portal.md#portals-and-outlets-angular-cdk); a **position strategy** places the pane and a **scroll strategy** decides what scrolling does. Imperative and browser only: create overlays from event handlers. Use it for imperative overlays and custom pickers; the declarative components use the [div overlay layer](overlays.md).
 
 Import the structural styles once: `@import "@rivetjs/cdk/overlay.css";` (container, pane, backdrop, scroll block; customizable values in `@layer cdk-overlay`). No style injection, CSP-safe.
 
@@ -123,7 +123,6 @@ A strategy instance belongs to one overlay; attaching it to a second throws.
 
 ## What does not work yet
 
-- The cdk's own browser spec port (`libs/cdk/tests/angular-overlay.test.ts`) currently fails: its fixture creates a `DomPortal` of an element that is not in the document, which `DomPortalOutlet` rejects ("DOM portal content must be attached to a parent node", as Angular does). The examples above attach a `TemplatePortal` and an in-page `DomPortal` and pass.
 - `RepositionScrollStrategy` with `autoClose` checks the viewport only (Angular also checks the origin's scroll containers).
 - Not ported: the `CdkConnectedOverlay` / `CdkOverlayOrigin` directives, `Overlay` injection tokens.
 

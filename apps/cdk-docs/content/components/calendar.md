@@ -6,7 +6,7 @@ status: experimental
 related: [components/range-calendar, components/date-picker, components/date-field, foundations/dates, foundations/i18n, foundations/announcements]
 ---
 
-A calendar displays one or more date grids and allows users to select a single date. `Calendar` is a port of React Aria Components `Calendar` and its parts (`CalendarGrid`, `CalendarGridHeader`, `CalendarHeaderCell`, `CalendarGridBody`, `CalendarCell`, `CalendarHeading`, `CalendarMonthPicker`, `CalendarYearPicker`), on react-aria `useCalendar` / `useCalendarGrid` / `useCalendarCell` and react-stately `useCalendarState`. Click or :kbd[Enter] selects a day, arrow keys move focus, :kbd[PageUp] / :kbd[PageDown] page. The value is the ISO string of the date in a signal (`"2026-10-14"`), or an array of strings with `selectionMode="multiple"`. The server renders the whole grid; no calendar code runs until the first interaction. For a range of dates use [RangeCalendar](range-calendar.md); in a field with a popover, [DatePicker](date-picker.md).
+A calendar displays one or more date grids and allows users to select a single date. `Calendar` is composed from grid, heading, cell and month/year picker parts. Click or :kbd[Enter] selects a day, arrow keys move focus, :kbd[PageUp] / :kbd[PageDown] page. The value is the ISO string of the date in a signal (`"2026-10-14"`), or an array of strings with `selectionMode="multiple"`. The server renders the whole grid; no calendar code runs until the first interaction. For a range of dates use [RangeCalendar](range-calendar.md); in a field with a popover, [DatePicker](date-picker.md).
 
 ::example{id=calendar-basic}
 

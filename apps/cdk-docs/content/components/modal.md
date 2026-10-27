@@ -6,7 +6,7 @@ status: experimental
 related: [components/dialog, components/popover, components/menu, foundations/overlays, foundations/portal, foundations/focus]
 ---
 
-A modal is an overlay element which blocks interaction with elements outside it. It is a port of React Aria Components `Modal` and `ModalOverlay`: put a `Modal` holding a `Dialog` in a `DialogTrigger` next to a `Button`, or open it standalone with `isOpen`. While it is open the page behind is `inert` and does not scroll, :kbd[Tab] stays inside, :kbd[Escape] closes it and focus returns to the element that opened it. `ModalOverlay` is the underlay (the backdrop); a `Modal` without one wraps itself in a `ModalOverlay`. A closed modal renders nothing.
+A modal is an overlay element which blocks interaction with elements outside it. Put a `Modal` holding a `Dialog` in a `DialogTrigger` next to a `Button`, or open it standalone with `isOpen`. While it is open the page behind is `inert` and does not scroll, :kbd[Tab] stays inside, :kbd[Escape] closes it and focus returns to the element that opened it. `ModalOverlay` is the underlay (the backdrop); a `Modal` without one wraps itself in a `ModalOverlay`. A closed modal renders nothing.
 
 ::example{id=modal-basic}
 

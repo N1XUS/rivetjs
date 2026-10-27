@@ -1,12 +1,12 @@
 ---
 title: Dates
-description: Calendar-aware date values from @rivetjs/cdk/date, a port of @internationalized/date - CalendarDate, time zones, calendar systems, string forms for state.
+description: Calendar-aware date values, time zones, calendar systems and string forms for state from @rivetjs/cdk/date.
 template: guide
 status: experimental
 related: [components/date-picker, foundations/i18n, foundations/utilities]
 ---
 
-`@rivetjs/cdk/date` is a port of `@internationalized/date`, the value library behind React Aria's date components: immutable date and time objects, arithmetic that respects month lengths and daylight saving time, thirteen calendar systems, and locale-aware queries. The [DatePicker](../components/date-picker.md) and calendar components take and return these values. Rivet adds string forms for resumable state.
+`@rivetjs/cdk/date` provides calendar-aware values: immutable date and time objects, arithmetic that respects month lengths and daylight saving time, thirteen calendar systems, and locale-aware queries. The [DatePicker](../components/date-picker.md) and calendar components take and return these values. Rivet adds string forms for resumable state.
 
 ::example{id=date-arithmetic}
 

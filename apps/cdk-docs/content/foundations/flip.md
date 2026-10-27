@@ -6,7 +6,7 @@ status: experimental
 related: [components/masonry, foundations/motion]
 ---
 
-`@rivetjs/cdk/flip` is the layout-animation core the [Masonry](../components/masonry.md) and Bento relayouts use: **F**irst (capture the boxes), **L**ast (the new boxes), **I**nvert (offset each element back), **P**lay (animate the offset away). It is Rivet-authored, not a port. The animation itself comes from a driver: the house [motion](./motion.md) spring by default, or any object with a `play` method, such as `layoutDriver` from `@rivetjs/motion/layout`. Apps that do not import it pay nothing.
+`@rivetjs/cdk/flip` is the layout-animation core the [Masonry](../components/masonry.md) and Bento relayouts use: **F**irst (capture the boxes), **L**ast (the new boxes), **I**nvert (offset each element back), **P**lay (animate the offset away). The animation itself comes from a driver: the house [motion](./motion.md) spring by default, or any object with a `play` method, such as `layoutDriver` from `@rivetjs/motion/layout`. Apps that do not import it pay nothing.
 
 ## Import
 

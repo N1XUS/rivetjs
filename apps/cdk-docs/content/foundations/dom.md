@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/utilities, foundations/platform, foundations/props-and-values]
 ---
 
-`@rivetjs/cdk/dom` ports React Aria's DOM helpers. The shadow-DOM-aware variants are always on (React Aria gates them behind a feature flag); in the light DOM they behave like the plain versions. Owner document and window are server-safe; everything else is for handlers and client effects.
+`@rivetjs/cdk/dom` provides DOM traversal, focus and scrolling helpers. The shadow-DOM-aware variants are always on (React Aria gates them behind a feature flag); in the light DOM they behave like the plain versions. Owner document and window are server-safe; everything else is for handlers and client effects.
 
 ::example{id=dom-scroll}
 

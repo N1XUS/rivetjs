@@ -6,7 +6,7 @@ status: experimental
 related: [components/autocomplete, components/select, components/listbox, components/popover, components/field, foundations/announcements, foundations/collections]
 ---
 
-`ComboBox` is a port of React Aria Components `ComboBox` (with react-aria `useComboBox` and react-stately `useComboBoxState`). Like RAC, it is composed from parts: a `Label`, an `Input` (with an optional trigger `Button`, usually inside a `Group`), and a `Popover` holding a `ListBox` of `ListBoxItem`s. The combobox fills each part through its context, so the parts need no ids or handlers. Typing filters the options (contains, ignoring case and accents, in the current locale) and opens the popover; the arrow keys move a virtual focus (`aria-activedescendant`) while DOM focus stays in the input; :kbd[Enter] or a click selects. A hidden input carries the selected key in form posts. The server HTML holds the closed field; nothing runs until the first interaction.
+`ComboBox` combines text entry with a popup list of options. It is composed from parts: a `Label`, an `Input` (with an optional trigger `Button`, usually inside a `Group`), and a `Popover` holding a `ListBox` of `ListBoxItem`s. The combobox fills each part through its context, so the parts need no ids or handlers. Typing filters the options (contains, ignoring case and accents, in the current locale) and opens the popover; the arrow keys move a virtual focus (`aria-activedescendant`) while DOM focus stays in the input; :kbd[Enter] or a click selects. A hidden input carries the selected key in form posts. The server HTML holds the closed field; nothing runs until the first interaction.
 
 ::example{id=combobox-basic}
 

@@ -83,7 +83,7 @@ The pure layout functions (`placeColumns`, `placeJustified`, `rectsAt`, `resolve
 
 ## Justified rows
 
-`layout="justified"` packs items into rows of a target height and scales each row so it fills the width exactly: a port of [flickr/justified-layout](https://github.com/flickr/justified-layout) (MIT) row packing. The rows are decided at each breakpoint's reference width; every row height is then a linear function of the container width, so the server CSS fills the width at any width of the breakpoint.
+`layout="justified"` packs items into rows of a target height and scales each row so it fills the width exactly. The rows are decided at each breakpoint's reference width; every row height is then a linear function of the container width, so the server CSS fills the width at any width of the breakpoint.
 
 - `rowHeight`: target row height in px, or a container-width map (`{ 0: 120, 640: 180 }`). Default 240.
 - `rowHeightTolerance`: rows may be `rowHeight` ± this share. Default 0.25.

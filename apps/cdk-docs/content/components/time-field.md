@@ -6,7 +6,7 @@ status: experimental
 related: [components/date-field, components/date-picker, components/form, foundations/dates]
 ---
 
-`TimeField` is a port of React Aria Components' `TimeField` (react-aria `useTimeField`, react-stately `useTimeFieldState`). It shares `DateInput` and `DateSegment` with [DateField](date-field.md): each part of the time (hour, minute, second, AM/PM, time zone) is an individually editable `role="spinbutton"`, ordered and formatted for the locale. The value is a time: a `Time` (`"09:30:00"`), or a date-time / zoned date-time whose time part is shown.
+`TimeField` provides a localized, segmented time input. It shares `DateInput` and `DateSegment` with [DateField](date-field.md): each part of the time (hour, minute, second, AM/PM, time zone) is an individually editable `role="spinbutton"`, ordered and formatted for the locale. The value is a time: a `Time` (`"09:30:00"`), or a date-time / zoned date-time whose time part is shown.
 
 ::example{id=time-field-basic}
 

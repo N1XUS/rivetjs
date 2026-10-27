@@ -1,12 +1,12 @@
 ---
 title: Resizable
-description: "Resizable panel groups and split panes (react-resizable-panels port): horizontal, vertical, nested, collapsible, persisted, keyboard."
+description: "Resizable panel groups and split panes: horizontal, vertical, nested, collapsible, persisted layouts and keyboard resizing."
 template: guide
 status: experimental
 related: [components/separator, components/scroll-area, foundations/focus]
 ---
 
-`Group`, `Panel` and `Separator` build resizable layouts and split panes. Each separator is a [WAI-ARIA window splitter](https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/), resized by pointer or keyboard. This is a port of [react-resizable-panels](https://github.com/bvaughn/react-resizable-panels) 4.14.3: its layout engine runs unchanged, and the parts keep the upstream v4 names and props.
+`Group`, `Panel` and `Separator` build resizable layouts and split panes. Each separator is a [WAI-ARIA window splitter](https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/), resized by pointer or keyboard.
 
 ::example{id=resizable-horizontal}
 
@@ -76,6 +76,55 @@ Panels and separators can be added or removed. The group registers its current c
 `usePanelRef()` gives `collapse()`, `expand()`, `resize(size)`, `isCollapsed()` and `getSize()`. `useGroupRef()` gives `getLayout()` and `setLayout(layout)`. Calls on a resumed page boot the group first.
 
 ::example{id=resizable-imperative}
+
+## Props
+
+### Group
+
+| Prop | Default | Behavior |
+| --- | --- | --- |
+| `orientation` | `"horizontal"` | `"horizontal"` or `"vertical"`. |
+| `defaultLayout` | Auto-assigned | Map of panel ids to percentages; also accepts an accessor. |
+| `disabled`, `disableCursor` | `false` | Disable resizing or the document resize cursor; both accept accessors. |
+| `resizePreviewMode` | `"panel"` | `"panel"` resizes during dragging; `"separator"` shows a preview and commits on release. |
+| `resizeTargetMinimumSize` | `{ coarse: 20, fine: 10 }` | Minimum hit-target size in pixels for coarse and fine pointers. |
+| `onLayoutChange` | None | Called during layout changes, including each pointer move. |
+| `onLayoutChanged` | None | Called after a layout change; use for persistence. Receives layout and metadata with `isUserInteraction` and `requestedLayout`. |
+| `groupRef` | None | Imperative `getLayout()` / `setLayout(layout)` handle. |
+| `elementRef` | None | Root `HTMLDivElement` ref. |
+| `id` | Generated | String or number; also used for `data-testid`. |
+| `class`, `style`, `children` | `rv-ResizableGroup`, no style, no children | Root presentation and panel/separator content. Layout styles are protected except `overflow`. |
+
+### Panel
+
+| Prop | Default | Behavior |
+| --- | --- | --- |
+| `defaultSize` | Auto-assigned | Numbers are pixels; strings without units are percentages. Explicit `%`, `px`, `em`, `rem`, `vh`, `vw` are supported. |
+| `minSize`, `maxSize` | `"0%"`, `"100%"` | Size constraints, using the same units. |
+| `collapsible`, `collapsedSize` | `false`, `"0%"` | Allow collapsing to the specified size. |
+| `collapsedThreshold` | Half the distance between collapsed and minimum size | Distance past the relevant boundary needed to collapse or expand. |
+| `disabled` | `false` | Boolean/accessor; blocks direct and indirect resizing. |
+| `groupResizeBehavior` | `"preserve-relative-size"` | Or `"preserve-pixel-size"`; a group needs at least one relative-size panel. |
+| `onResize` | None | Reports percentage/pixel size, panel id and previous size. |
+| `panelRef` | None | Imperative `collapse`, `expand`, `getSize`, `isCollapsed`, `resize` handle. |
+| `elementRef`, `id` | No ref, generated id | Ref to the outer element; use stable ids for persisted layouts. |
+| `class`, `style`, `children` | `rv-ResizablePanel`, no style, no children | Presentation and content of the inner element. |
+
+### Separator
+
+| Prop | Default | Behavior |
+| --- | --- | --- |
+| `disabled` | `false` | Boolean/accessor; disables this handle, not indirect panel resizing. |
+| `disableDoubleClick` | `false` | Disables resetting the panel on double-click. |
+| `preview` | Group preview | Function returning preview content or `SeparatorOverlay` when `resizePreviewMode="separator"`. |
+| `elementRef`, `id` | No ref, generated id | Root element ref and identifier. |
+| `class`, `style`, `children` | `rv-ResizableSeparator`, no style, no children | Handle presentation; flex-grow and flex-shrink are protected. |
+
+`SeparatorOverlay` customizes the resize preview with `class` and `style`. The parts also accept their supported div attributes.
+
+## Accessibility
+
+Separators expose the window-splitter role, orientation and value. Keep their focus indicator visible and label the surrounding panels so users can identify the regions they are resizing.
 
 ## Keyboard
 

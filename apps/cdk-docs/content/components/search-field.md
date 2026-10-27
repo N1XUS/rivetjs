@@ -6,7 +6,7 @@ status: experimental
 related: [components/text-field, components/autocomplete, components/field, components/form, components/button]
 ---
 
-`SearchField` is a port of React Aria Components `SearchField` (with react-aria `useSearchField` and react-stately `useSearchFieldState`). It is composed from parts like RAC: a `Label`, an `Input` (`type="search"`), a clear `Button`, an optional `Text slot="description"` and a `FieldError`. The field fills each part through its context. :kbd[Enter] calls `onSubmit` with the text, :kbd[Escape] and the clear button empty it and call `onClear`. The server HTML is the complete field; nothing runs until the first interaction.
+`SearchField` provides a search input with submit and clear actions. It is composed from parts: a `Label`, an `Input` (`type="search"`), a clear `Button`, an optional `Text slot="description"` and a `FieldError`. The field fills each part through its context. :kbd[Enter] calls `onSubmit` with the text, :kbd[Escape] and the clear button empty it and call `onClear`. The server HTML is the complete field; nothing runs until the first interaction.
 
 ::example{id=search-field-basic}
 

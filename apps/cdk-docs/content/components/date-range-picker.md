@@ -6,7 +6,7 @@ status: experimental
 related: [components/date-picker, components/date-field, components/range-calendar, components/popover, foundations/dates]
 ---
 
-`DateRangePicker` is a port of React Aria Components' `DateRangePicker` (react-aria `useDateRangePicker` / `useDatePickerGroup`, react-stately `useDateRangePickerState`). You compose it from parts: a `Label`, a `Group` with two [DateField](date-field.md) inputs (`DateInput slot="start"` and `slot="end"`) and a calendar `Button`, and a `Popover` with a `Dialog` holding a [RangeCalendar](range-calendar.md). Type in either field, or open the calendar: the first click anchors the range, the second completes it and closes the popover. Everything but the popover is in the server HTML; the popover renders only while open. The single-date version is [DatePicker](date-picker.md).
+`DateRangePicker` combines two editable date fields with a range calendar. You compose it from parts: a `Label`, a `Group` with two [DateField](date-field.md) inputs (`DateInput slot="start"` and `slot="end"`) and a calendar `Button`, and a `Popover` with a `Dialog` holding a [RangeCalendar](range-calendar.md). Type in either field, or open the calendar: the first click anchors the range, the second completes it and closes the popover. Everything but the popover is in the server HTML; the popover renders only while open. The single-date version is [DatePicker](date-picker.md).
 
 ::example{id=date-range-picker-basic}
 

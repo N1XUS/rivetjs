@@ -6,7 +6,7 @@ status: experimental
 related: [components/preview-trigger, components/popover, components/button, foundations/overlays, foundations/portal]
 ---
 
-A tooltip displays a description of an element on hover or focus. `TooltipTrigger` wraps a focusable trigger (a [Button](button.md), a [Link](link.md), or any element in `<Focusable>`) and its `Tooltip`; an `OverlayArrow` inside the tooltip points at the trigger. It is a port of React Aria Components `TooltipTrigger` / `Tooltip` / `OverlayArrow`: the same parts, props and render props. The tooltip opens on hover after `delay` and at once on keyboard focus; it closes on pointer leave (after `closeDelay`), blur, a press, :kbd[Escape] or a scroll. One tooltip shows at a time. It is not modal: focus never moves, nothing goes inert. Closed, it renders nothing, on the server too.
+A tooltip displays a description of an element on hover or focus. `TooltipTrigger` wraps a focusable trigger (a [Button](button.md), a [Link](link.md), or any element in `<Focusable>`) and its `Tooltip`; an `OverlayArrow` inside the tooltip points at the trigger. The tooltip opens on hover after `delay` and at once on keyboard focus; it closes on pointer leave (after `closeDelay`), blur, a press, :kbd[Escape] or a scroll. One tooltip shows at a time. It is not modal: focus never moves, nothing goes inert. Closed, it renders nothing, on the server too.
 
 ::example{id=tooltip-basic}
 

@@ -106,10 +106,6 @@ An item's `isDisabled` disables one radio (arrow keys skip it); the group's disa
 The error message is the `FieldError` part of `@rivetjs/cdk/form` (formerly part of `@rivetjs/cdk/label`). RadioGroup renders it itself, inside its own `FieldErrorContext`: `errorMessage` becomes its children (a function receives the `ValidationResult`) and `errorClass` its class. It renders nothing while the group is valid (no `hidden` placeholder).
 :::
 
-:::warning
-Known issue: the group's `FieldError` currently renders nothing even while the group is invalid (server and resumed page); `aria-invalid`, `data-invalid` and the radios' `data-rv-error` are correct, and `aria-describedby` points at the missing `<id>-error`.
-:::
-
 ::example{id=radio-group-validation}
 
 ## Radio content and descriptions
@@ -180,7 +176,6 @@ A `<SelectionIndicator />` (`@rivetjs/cdk/selection-indicator`) in the radio con
 
 - The server renders the checked radio; arrow keys and submission work before any code loads.
 - Item callbacks must be inline arrows or local functions; `children` is a slot, write it inline.
-- **Known issue:** the error message (`FieldError`) does not render while invalid; see [Validation](#validation).
 
 ## Testing
 

@@ -107,7 +107,7 @@ A `<Portal>` (see [Portal](portal.md)) with a `FocusScope restoreFocus contain={
 
 ### Modal providers
 
-`@rivetjs/cdk/modal` (also `modal/provider`) ports React Aria's `ModalProvider`, `OverlayProvider`, `OverlayContainer`, `useModal` (`modal(element)`) and `modalProps()`: while a modal of a nested provider is open, the providers around it are `aria-hidden`. Providers are linked at render time through `data-rv-modal-parent`, so the chain survives the portal move. The cdk components use `inert` outside instead; these exist for ports that rely on them.
+`@rivetjs/cdk/modal` (also `modal/provider`) exports `ModalProvider`, `OverlayProvider`, `OverlayContainer`, `modal(element)` and `modalProps()`: while a modal of a nested provider is open, the providers around it are `aria-hidden`. Providers are linked at render time through `data-rv-modal-parent`, so the chain survives the portal move. The cdk components use `inert` outside instead; these helpers support provider-based modal isolation.
 
 ## Common mistakes
 

@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/utilities, foundations/observers, foundations/platform]
 ---
 
-Prefer CSS media and container queries: they need no JavaScript and no resume state. Use `@rivetjs/cdk/layout` when a handler or a client effect must branch on a breakpoint, such as switching a popover to a tray on phones. It ports the Angular CDK layout module; RxJS observables become a minimal observable with the same emission rules.
+Prefer CSS media and container queries: they need no JavaScript and no resume state. Use `@rivetjs/cdk/layout` when a handler or a client effect must branch on a breakpoint, such as switching a popover to a tray on phones. It exposes breakpoint queries through observables and signals.
 
 ::example{id=layout-breakpoints}
 

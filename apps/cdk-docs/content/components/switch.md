@@ -201,7 +201,7 @@ Put `group` on the label and style the track with `group-data-[selected]:`, `gro
 
 ## Hooks
 
-`@rivetjs/cdk/switch/behaviour` ports react-aria `useSwitch`: `switchProps(props, state, inputRef?)` = `toggleProps` (from `@rivetjs/cdk/checkbox/behaviour`) plus `role="switch"`. The state is `createToggleState` from `@rivetjs/cdk/state/toggle`.
+`@rivetjs/cdk/switch/behaviour` exposes switch behavior: `switchProps(props, state, inputRef?)` = `toggleProps` (from `@rivetjs/cdk/checkbox/behaviour`) plus `role="switch"`. The state is `createToggleState` from `@rivetjs/cdk/state/toggle`.
 
 ::api{symbol="@rivetjs/cdk/switch/behaviour#switchProps"}
 

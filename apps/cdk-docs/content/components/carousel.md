@@ -1,12 +1,12 @@
 ---
 title: Carousel
-description: Carousel from @rivetjs/cdk is a port of the embla-carousel engine and its motion, with W3C APG carousel roles, buttons, dots and rotation.
+description: Carousel from @rivetjs/cdk provides draggable slides, W3C APG roles, navigation buttons, dots and rotation controls.
 template: guide
 status: experimental
 related: [foundations/motion, components/button, components/tabs, foundations/keyboard-navigation]
 ---
 
-`Carousel` shows a set of slides one view at a time. The engine is a file-by-file port of [embla-carousel](https://www.embla-carousel.com/) 8.6.0: the same options, API, events, drag physics and loop repositioning. Slides move by an inline `transform` that embla's scroll body integrates frame by frame. The parts add the [W3C APG carousel](https://www.w3.org/WAI/ARIA/apg/patterns/carousel/) semantics: a labelled region, slides announced as "1 of 5", previous / next buttons, a tab-list slide picker and a rotation control for autoplay.
+`Carousel` shows a set of slides one view at a time. Slides move by an inline `transform` that embla's scroll body integrates frame by frame. The parts add the [W3C APG carousel](https://www.w3.org/WAI/ARIA/apg/patterns/carousel/) semantics: a labelled region, slides announced as "1 of 5", previous / next buttons, a tab-list slide picker and a rotation control for autoplay.
 
 ::example{id=carousel-basic}
 

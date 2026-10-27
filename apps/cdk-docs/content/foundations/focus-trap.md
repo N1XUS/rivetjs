@@ -1,12 +1,12 @@
 ---
 title: FocusTrap
-description: Angular CDK FocusTrap, CdkTrapFocus and ConfigurableFocusTrap from @rivetjs/cdk/a11y/focus-trap: Tab anchors, initial focus, a stack of traps.
+description: "Angular CDK FocusTrap, CdkTrapFocus and ConfigurableFocusTrap from @rivetjs/cdk/a11y/focus-trap: Tab anchors, initial focus, a stack of traps."
 template: guide
 status: experimental
 related: [foundations/focus, foundations/focus-monitor, components/dialog]
 ---
 
-A port of Angular CDK's focus trap: two invisible, tabbable anchors around a region send :kbd[Tab] back to the first or last tabbable element inside it. It is a browser object you create and destroy yourself; the declarative alternative is `<FocusScope contain>` ([Focus](focus.md)), which also resumes before any code runs.
+A focus trap keeps keyboard focus inside a region: two invisible, tabbable anchors around a region send :kbd[Tab] back to the first or last tabbable element inside it. It is a browser object you create and destroy yourself; the declarative alternative is `<FocusScope contain>` ([Focus](focus.md)), which also resumes before any code runs.
 
 ::example{id=focus-trap}
 

@@ -1,6 +1,6 @@
 ---
 title: Keyboard navigation
-description: Arrow keys, Home, End, paging and typeahead for your own widgets: nextIndex, Toolbar, Angular CDK key managers and React Aria keyboard delegates.
+description: "Arrow keys, Home, End, paging and typeahead for your own widgets: nextIndex, Toolbar, Angular CDK key managers and React Aria keyboard delegates."
 template: guide
 status: experimental
 related: [foundations/overview, foundations/focus, foundations/selection, components/menu, components/tabs]
@@ -129,7 +129,7 @@ In right-to-left text a horizontal toolbar swaps ArrowLeft and ArrowRight. Tailw
 
 ## Key managers
 
-The Angular CDK key managers, ported 1:1: an object that holds the active index of a list and moves it on keydown. Configure it with the builder methods, call `onKeydown(event)` from your handler, and react to `change`.
+The key managers provide an object that holds the active index of a list and moves it on keydown. Configure it with the builder methods, call `onKeydown(event)` from your handler, and react to `change`.
 
 - `ListKeyManager<T>` only tracks the active item: render it yourself.
 - `FocusKeyManager<T>` also calls `item.focus()` on the active item (roving focus).

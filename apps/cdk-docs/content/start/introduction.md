@@ -1,6 +1,6 @@
 ---
 title: Introduction
-description: What @rivetjs/cdk is - headless accessible components and a low-level CDK, ported from React Aria and Angular CDK, server-first and resumable.
+description: Rivet's headless accessible components and low-level widget utilities, with server-rendered markup and resumable interactions.
 template: guide
 status: experimental
 related: [start/installation, start/styling, start/resumability, components/overview, foundations/overview]
@@ -8,7 +8,7 @@ related: [start/installation, start/styling, start/resumability, components/over
 
 `@rivetjs/cdk` is the accessibility and interaction layer of Rivet. It has two halves:
 
-- **Components**: headless, accessible widgets (Button, ListBox, Select, ComboBox, Menu, Tabs, Dialog, Popover, Tooltip, DatePicker, …). They render correct roles, ARIA state, keyboard handling and focus management, and no styles.
+- **Components**: headless, accessible widgets (Button, ListBox, Select, ComboBox, Menu, Tabs, Dialog, Popover, Tooltip, DatePicker, …). They render correct roles, ARIA state, keyboard handling and focus management, with behavior-critical inline styles and an optional starter theme.
 - **CDK**: the parts the components are built from, for your own widgets: ids, focus scopes, key managers, collections and selection, overlays and positioning, live announcements, bidi, layout, observers, clipboard, virtual scrolling.
 
 The package is experimental. Its API may change.
@@ -31,26 +31,30 @@ export default function Page() {
 }
 ```
 
-## Ported, not reinvented
+## API and composition
 
-Each module is a faithful port of an upstream library, with its tests. Names and behaviour follow upstream, so upstream docs and knowledge carry over.
+Rivet owns the component APIs, signal-based state and resumable behavior documented here. Import the parts you need from individual subpaths; each component guide describes its props, events, markup and keyboard behavior. Use these guides for the current contract.
+
+## Credits
+
+The toolkit includes code and patterns from the projects below. Source headers and the package NOTICE preserve attribution and license information; compatibility details belong to each module's guide.
 
 | Upstream | What it gives here | Example |
 | --- | --- | --- |
 | React Aria (hooks) | Behaviour: press, hover, focus, keyboard, move, long press, interact outside, focus rings, overlays, position engine, selection managers, live announcer, i18n | `@rivetjs/cdk/interactions/press`, `@rivetjs/cdk/position` |
 | React Aria Components | Component API: prop names (`isDisabled`, `onPress`, `selectedKeys`, `onSelectionChange`, `isOpen`, `onOpenChange`), default class names (`rv-Button` for RAC `react-aria-Button`), render state as `data-*` attributes (`data-pressed`, `data-selected`, `data-focused`, `data-entering`, …), global DOM events and attributes on every part | `@rivetjs/cdk/button`, `@rivetjs/cdk/listbox` |
 | React Stately | State objects as plain signals (`createListState`, `createOverlayTriggerState`, `createToggleState`, …) | `@rivetjs/cdk/state/list` |
-| Angular CDK | a11y (FocusTrap, FocusMonitor, key managers, LiveAnnouncer, InteractivityChecker, high contrast), overlay (OverlayRef, connected / global position, scroll strategies), portal, bidi, layout (BreakpointObserver), observers, clipboard, coercion, text-field autosize, scrolling (virtual scroll), collections (`SelectionModel`, `DataSource`); the drag-drop engine is ported but has no import path yet | `@rivetjs/cdk/a11y/focus-trap`, `@rivetjs/cdk/layout` |
+| Angular CDK | a11y (FocusTrap, FocusMonitor, key managers, LiveAnnouncer, InteractivityChecker, high contrast), overlay (OverlayRef, connected / global position, scroll strategies), portal, bidi, layout (BreakpointObserver), observers, clipboard, coercion, text-field autosize, scrolling (virtual scroll), collections (`SelectionModel`, `DataSource`); drag-and-drop components and engine at `@rivetjs/cdk/drag-drop` | `@rivetjs/cdk/a11y/focus-trap`, `@rivetjs/cdk/layout` |
 | @internationalized/date | Calendar dates, time zones, calendars, formatting | `@rivetjs/cdk/date` |
 
-Where upstream and Rivet disagree (resumability, no React), the source file header names the deviation.
+Rivet also includes its own modules, such as [Compare](../components/compare.md), [Chat helpers](../foundations/chat.md) and [Markdown parsing](../foundations/markdown.md).
 
 ## Server first and resumable
 
 - The server HTML already holds roles, `aria-selected`, `aria-expanded`, `aria-pressed`, tab stops and hidden panels. Screen readers and keyboard users get the right state before any JavaScript runs.
 - No component code is on the critical path. Rivet resumes the page: a component's handlers load on intent (hover, focus, touch), when visible or when idle, in the background after the page is shown; nothing blocks the first render.
 - Composite widgets list the keys they handle in `data-rk`, so a cold arrow key does not scroll the page while the code loads.
-- Native elements where they are enough: buttons are `<button>`, fields are real inputs, Disclosure is `<details>`. Forms submit without JavaScript.
+- Native elements where they are enough: buttons are `<button>`, fields are real inputs, `DetailsDisclosure` is `<details>` (the composable `Disclosure` uses div and button parts). Forms submit without JavaScript.
 
 Rules for code that resumes (callbacks, overlay content, props that read signals): [Resumability](resumability.md).
 
@@ -60,7 +64,7 @@ Dialogs, popovers, menus, the Select list, tooltips and date picker calendars re
 
 ## Headless
 
-No stylesheet to import. Behaviour-critical styles (positioning, stacking, visually hidden text, the modal underlay) are set inline from JavaScript, so your classes cannot break behaviour. Style with Tailwind or plain CSS on the default `rv-*` classes and the ARIA / `data-*` state attributes; `@rivetjs/cdk/theme.css` is an optional starter look. See [Styling](styling.md).
+Most components need no structural stylesheet. Virtual scrolling, masonry and the imperative overlay service document their required CSS imports. Behaviour-critical styles (positioning, stacking, visually hidden text, the modal underlay) are set inline from JavaScript, so your classes cannot break behaviour. Style with Tailwind or plain CSS on the default `rv-*` classes and the ARIA / `data-*` state attributes; `@rivetjs/cdk/theme.css` is an optional starter look. See [Styling](styling.md).
 
 ## Where to go next
 

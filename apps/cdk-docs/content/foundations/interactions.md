@@ -1,12 +1,12 @@
 ---
 title: Interactions
-description: pressProps, longPressProps, hoverProps, moveProps, keyboardProps, scrollWheelProps and watchInteractOutside: resumable interaction handlers.
+description: "pressProps, longPressProps, hoverProps, moveProps, keyboardProps, scrollWheelProps and watchInteractOutside: resumable interaction handlers."
 template: guide
 status: experimental
 related: [foundations/focus-interactions, foundations/dom-props, components/button]
 ---
 
-The interaction hooks are ports of React Aria's `@react-aria/interactions`. Each returns a props object to spread on one element (`pressProps`, `hoverProps`, …) and, where it has state, a signal (`isPressed()`, `isHovered()`). They normalize mouse, pen, touch, keyboard and screen reader input into one set of events. The cdk components ([Button](../components/button.md), [Menu](../components/menu.md), [Select](../components/select.md), …) are built on them; use the hooks for your own pressable or draggable elements.
+The interaction helpers normalize input for custom widgets. Each returns a props object to spread on one element (`pressProps`, `hoverProps`, …) and, where it has state, a signal (`isPressed()`, `isHovered()`). They normalize mouse, pen, touch, keyboard and screen reader input into one set of events. The cdk components ([Button](../components/button.md), [Menu](../components/menu.md), [Select](../components/select.md), …) are built on them; use the hooks for your own pressable or draggable elements.
 
 ::example{id=press-events}
 

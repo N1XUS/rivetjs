@@ -59,6 +59,10 @@ import { sheetMotion, snapPointTransform, type SheetMotionController } from "@ri
 | `touchAction`                                                                              | `"none"` vertical, `"pan-y"` horizontal | Inline `touch-action` while attached (unchanged with `handle`).                                           |
 | `bleed`                                                                                    | `true`                                  | Overdrag bleed: the sheet's background fills the gap at its attached edge while dragged past fully shown. |
 
+## Keyboard and accessibility
+
+`sheetMotion` installs a pointer gesture, not dialog semantics or keyboard dismissal. Compose it with [Modal](../components/modal.md) and [Dialog](../components/dialog.md) for focus containment and Escape handling, and keep a labelled close button available. If changing snap points is essential, provide buttons that call the controller's `snapTo(index)` as an alternative to dragging. The motion respects reduced-motion preferences.
+
 ## Notes
 
 - Style the backdrop with the variable (`opacity: var(--sheet-backdrop-opacity, 1)` on a pseudo-element): the sheet usually sits inside the backdrop element.

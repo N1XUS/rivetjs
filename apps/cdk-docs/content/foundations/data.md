@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/collections, foundations/selection, components/listbox, components/grid-list, components/tree]
 ---
 
-`@rivetjs/cdk/data` ports the React Stately data hooks as factories: `useListData` → `createListData`, `useAsyncList` → `createAsyncList`, `useTreeData` → `createTreeData`. Each returns a plain object of signals and functions. Read `items()` in JSX or pass `items` to a collection component (`ListBox`, `GridList`, `Table`, `Tree`); pass `selectedKeys` (a two-way signal) to its `selectedKeys`; call the methods from event handlers. Every update is immutable: a new array (and new nodes up the tree), so the collection re-renders what changed.
+`@rivetjs/cdk/data` manages editable and asynchronous collections with `createListData`, `createAsyncList` and `createTreeData`. Each returns a plain object of signals and functions. Read `items()` in JSX or pass `items` to a collection component (`ListBox`, `GridList`, `Table`, `Tree`); pass `selectedKeys` (a two-way signal) to its `selectedKeys`; call the methods from event handlers. Every update is immutable: a new array (and new nodes up the tree), so the collection re-renders what changed.
 
 ```ts
 import { createListData, createAsyncList, createTreeData } from "@rivetjs/cdk/data";

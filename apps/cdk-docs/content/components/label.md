@@ -51,6 +51,10 @@ The parts and `FieldError`: [Label, Text and FieldError](field.md).
 <Label render={(props) => <label {...(props as {})} />}>…</Label>
 ```
 
+## Accessibility
+
+For a single form control, the label's `for` must match the control's id. A group label rendered as a span needs an `aria-labelledby` relationship on the group. Label adds no custom keyboard handling; keep the associated input's native interaction.
+
 ## Upstream
 
 - React Aria Components `Label`, `Input`, `TextArea`, `Text`.

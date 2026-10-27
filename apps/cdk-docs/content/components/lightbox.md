@@ -1,12 +1,12 @@
 ---
 title: Lightbox
-description: Lightbox from @rivetjs/cdk ports yet-another-react-lightbox for images, video, embeds and PDF, with zoom, captions, thumbnails and more plugins.
+description: Lightbox from @rivetjs/cdk displays images, video, embeds and PDF, with zoom, captions, thumbnails and plugins.
 template: guide
 status: experimental
 related: [components/carousel, components/modal, foundations/motion, foundations/focus-trap]
 ---
 
-`Lightbox` shows images, videos, embeds (YouTube, Vimeo, any iframe) and PDF documents full screen, one slide at a time. It is a port of [yet-another-react-lightbox](https://yet-another-react-lightbox.com/) 3.32.2 (YARL): the same slide data, carousel / animation / controller settings, events and plugins. Rivet builds it from parts on the cdk overlay layer: the modal traps focus, locks scroll, closes on Escape and returns focus to the trigger. Swipe, pull, wheel and keyboard navigation run on the house motion (`@rivetjs/cdk/motion`).
+`Lightbox` shows images, videos, embeds (YouTube, Vimeo, any iframe) and PDF documents full screen, one slide at a time. Rivet builds it from parts on the cdk overlay layer: the modal traps focus, locks scroll, closes on Escape and returns focus to the trigger. Swipe, pull, wheel and keyboard navigation run on the house motion (`@rivetjs/cdk/motion`).
 
 ::example{id=lightbox-basic}
 
@@ -107,6 +107,19 @@ const index = signal(0);
 Without children the lightbox renders its default parts: the carousel, a Close button and Previous / Next.
 
 ## Settings
+
+### Part props
+
+| Part | Props |
+| --- | --- |
+| `Lightbox` | `id`, `class` (default `rv-Lightbox`), `style`, `overlayClass` (`rv-LightboxOverlay`), `overlayStyle`, `containerClass` (`rv-LightboxContainer`), `aria-label` (defaults to the Lightbox label), `children` (content or a function; defaults to the carousel and controls). |
+| `LightboxView` | Required `state: LightboxState`; optional `entering` accessor, `dialogLabel`, `class` (`rv-LightboxContainer`), `style`, `children`. Used by modal and inline presentations. |
+| `LightboxCarousel` | `class` (`rv-LightboxCarousel`), `style`, `slideClass` (`rv-LightboxSlide`), `slideStyle`, `children(slide, { index, offset })`; `offset` is an accessor. |
+| `LightboxImage` | `slide` (defaults to the enclosing slide), `class` (`rv-LightboxImage`), `style`, `imageProps`, `loading`, `error`, `placeholderClass` (`rv-LightboxPlaceholder`). |
+| `LightboxToolbar` | `class` (`rv-LightboxToolbar`), `style`, `children`. |
+| `LightboxButton` and navigation buttons | `class` (`rv-LightboxButton`), `style`, `label` (accessible label and title), `children`, `isDisabled` (boolean/accessor), `onPress(event: MouseEvent)`. |
+
+### State options
 
 | Prop         | Settings (defaults)                                                                                                                                                                                                                        |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

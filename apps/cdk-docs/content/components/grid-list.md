@@ -6,7 +6,7 @@ status: experimental
 related: [components/overview, components/listbox, components/table, components/tag-group, foundations/selection, foundations/collections]
 ---
 
-`GridList` renders a `role="grid"` whose `GridListItem` children are `role="row"`s with one `role="gridcell"` each. Unlike a [ListBox](listbox.md) option, a row may hold interactive content: a selection checkbox, buttons, text fields. It is a port of React Aria Components `GridList` on the react-aria `useGridList` / `useGridListItem` hooks: the same parts, props and render props. The server HTML holds every row with its `aria-selected` state; no GridList code runs before the first interaction.
+`GridList` renders a `role="grid"` whose `GridListItem` children are `role="row"`s with one `role="gridcell"` each. Unlike a [ListBox](listbox.md) option, a row may hold interactive content: a selection checkbox, buttons, text fields. The server HTML holds every row with its `aria-selected` state; no GridList code runs before the first interaction.
 
 ::example{id=grid-list-basic}
 
@@ -342,7 +342,6 @@ Deviations:
 
 - Drag and drop (`dragAndDropHooks`, drop indicators, `slot="drag"` button). Virtualized lists: `<CollectionVirtualizer layout={ListLayout}>` or `layout={GridLayout}` (see [Virtualizer](../foundations/virtualizer.md#collection-components)); `GridListLoadMoreItem` inside it is not covered yet.
 - Focus restore after the focused row is removed (`gridListItemsChanged` is wired in TagGroup only).
-- `SelectionIndicator` inside a row: RAC wraps the rows in a `SharedElementTransition`, the port does not, so it throws.
 
 ## Common mistakes
 

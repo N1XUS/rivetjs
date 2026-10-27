@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/utilities, foundations/ids, foundations/dom]
 ---
 
-The small helpers every component in `@rivetjs/cdk` is built with, for your own widgets: merging attribute objects, the controlled / uncontrolled value pattern, number math for sliders and number fields, waiting for CSS transitions, labelling and form reset. `@rivetjs/cdk/utils` ports React Aria's `utils`; `@rivetjs/cdk/interactions` holds the Rivet-specific `controllable()`.
+The small helpers every component in `@rivetjs/cdk` is built with, for your own widgets: merging attribute objects, the controlled / uncontrolled value pattern, number math for sliders and number fields, waiting for CSS transitions, labelling and form reset. `@rivetjs/cdk/utils` provides shared helpers; `@rivetjs/cdk/interactions` holds the Rivet-specific `controllable()`.
 
 ::example{id=utils-merge}
 
@@ -31,7 +31,26 @@ There is one `mergeProps` / `chain` / `mergeRefs` implementation (`@rivetjs/cdk/
 
 ## Controlled and uncontrolled values
 
-`controllable(value, defaultValue)` returns the caller's signal when one is passed (controlled, two-way), else a new signal starting at `defaultValue` (uncontrolled). Both are plain signals, so state stays serializable. The internal signal is region state: when a resumed page re-creates the component's region, it keeps its value. Every `selected`, `value` and `input` prop of the cdk components goes through it.
+Use the three-argument `controllable(value, defaultValue, onChange)` form for custom controls. It returns `ControlledState`, read with `state.value()` and changed with `setControlledValue(state, next)`. The helpers are exported by `@rivetjs/cdk/interactions` and `@rivetjs/cdk/interactions/controllable`.
+
+| Input `value` | Read / write behavior |
+| --- | --- |
+| `undefined` | Internal signal starts at `defaultValue`; changes update it and call `onChange`. |
+| Signal | Uses that signal; changes write it and call `onChange`. |
+| Plain value | Controlled; changes only call `onChange`. |
+| Accessor without `.set` | Controlled and read live; changes only call `onChange`. |
+
+```ts check
+import { signal } from "@rivetjs/reactivity";
+import { controllable, controlledValue, setControlledValue } from "@rivetjs/cdk/interactions";
+
+const count = signal(0);
+const state = controllable(count, 0, undefined);
+setControlledValue(state, (previous) => previous + 1);
+const current = controlledValue(state);
+```
+
+`controlledValue(state)` includes a pending write earlier in the same task. `setControlledValue` skips equal values using `Object.is`; multiple updater calls in one task chain from the latest pending value. Pass the third argument even when it is `undefined`: the older two-argument overload returns a Signal directly and only accepts a Signal or `undefined`. The live example below demonstrates that older overload.
 
 ::example{id=utils-controllable}
 
@@ -84,5 +103,5 @@ React Aria `utils`: `chain`, `mergeProps`, `mergeRefs`, `mergeIds`, `runAfterTra
 ## Common mistakes
 
 - **Merging handlers that are not resumable.** `mergeProps` chains whatever it is given; a module-level or imported function in the bag still does not resume. Use inline arrows / local functions / hook bags.
-- **Passing a value instead of a signal for controlled state.** `controllable(undefined, x)` is uncontrolled; pass the signal itself to control it.
+- **Mixing the overloads.** The three-argument form returns `ControlledState`, not a Signal. Read `state.value()` and write with `setControlledValue`; do not call `.set` on a read-only controlled value.
 - **Focusing during an exit transition.** Wait with `runAfterTransition`, or focus lands on an element that is about to disappear.

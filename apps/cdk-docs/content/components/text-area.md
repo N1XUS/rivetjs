@@ -124,7 +124,7 @@ Global DOM events and attributes set on the `TextField` land on its root `<div>`
 
 ### Starter theme
 
-`@rivetjs/cdk/theme.css` still targets the old structure (`.rv-TextArea` as a grid root, `.rv-TextArea-input` as the textarea): with the parts it lays the textarea out as a grid and does not draw its border. Style `.rv-TextArea` yourself for now.
+`@rivetjs/cdk/theme.css` styles `.rv-TextArea` alongside `.rv-Input`, including its border, padding, background and invalid state. `.rv-TextField` supplies the grid layout around the parts. Its `:where()` selectors let your own classes override the starter look.
 
 ## Render
 
@@ -149,7 +149,7 @@ Global DOM events and attributes set on the `TextField` land on its root `<div>`
 
 - Typing works before code loads; the field's handlers resume on the first input or focus.
 - The CSS autosize needs no code; the script autosize runs once `autosizeTextarea` is called (in a client effect or an event).
-- **Known issue:** the server renders the value as a `value` attribute instead of the textarea's content, so a `defaultValue` or signal value is not visible before code runs.
+- The server writes `value` or `defaultValue` as escaped textarea content, so the initial text is visible before code loads.
 
 ## Testing
 

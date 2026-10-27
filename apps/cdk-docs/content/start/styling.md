@@ -6,7 +6,7 @@ status: experimental
 related: [start/installation, start/introduction, components/overview, foundations/overlays]
 ---
 
-cdk components ship no styles. Every part has a class name you can replace, and every state is an attribute on the element: an ARIA attribute (`aria-selected`, `aria-pressed`, `aria-expanded`, `aria-disabled`, `aria-invalid`) or a React Aria Components render-state attribute (`data-pressed`, `data-focused`, `data-entering`, …). Style those with Tailwind variants or CSS attribute selectors.
+cdk components are headless: behavior-critical styles are inline, with optional starter styling and module-specific structural stylesheets. Parts expose classes you can replace and state attributes: an ARIA attribute (`aria-selected`, `aria-pressed`, `aria-expanded`, `aria-disabled`, `aria-invalid`) or a React Aria Components render-state attribute (`data-pressed`, `data-focused`, `data-entering`, …). Style those with Tailwind variants or CSS attribute selectors.
 
 Interaction attributes (`data-hovered`, `data-pressed`, `data-focus-visible`) appear once the component's code has run, which on a resumed page is the first interaction. Pair each with its pseudo-class so the first hover, press or Tab looks the same: `[data-pressed], :active`, `[data-hovered], :hover` (inside `@media (hover: hover)`), `[data-focus-visible], :focus-visible`. In Tailwind: `data-pressed:bg-neutral-200 active:bg-neutral-200`. Keep pressed transforms, scales and opacity on `data-pressed` only: an `:active` rule changing those makes the first click about 20 ms slower (measured).
 
@@ -64,7 +64,6 @@ Slotted parts carry the `slot` attribute: `Text slot="description"` renders `[sl
 | `data-placement` | Popover, Select popover, Tooltip, OverlayArrow | Side after flipping (`"top"`, `"bottom"`, …). |
 | `data-entering`, `data-exiting` | Popover, Select popover, Modal and its underlay, Tooltip, tab panels | Enter / exit animation running. |
 | `data-trigger` | Popover | The component that opened it (`"DialogTrigger"`, `"MenuTrigger"`, `"ComboBox"`, …). |
-| `data-closed`, `data-enter`, `data-leave`, `data-transition` | Select popover | Headless UI transition phases (Select `enter` / `leave` class props). |
 
 Values differ (`""`, `"true"`): select on presence (`[data-selected]`, Tailwind `data-selected:`), not on a value. Hover and keyboard focus on buttons and menu items are plain CSS: `:hover`, `:focus-visible`.
 
@@ -192,7 +191,7 @@ Overlays (Popover, Menu, Select, Modal / DialogTrigger, Tooltip, PreviewTrigger)
 ```
 
 - CSS keyframe animations work with `entering:` / `exiting:` (the menu above defines `--animate-menu-in` in `@theme`). theme.css fades its overlays this way.
-- Select (not yet ported part by part) also takes Headless UI class props: `enter`, `enterFrom`, `enterTo`, `entered`, `leave`, `leaveFrom`, `leaveTo` (`data-closed`, `data-enter`, `data-leave`, `data-transition` phases).
+- Select composes a `Popover`; style that part's `data-entering` and `data-exiting` states just like the popovers above.
 - `prefers-reduced-motion`: wrap your animations in `motion-safe:` (Tailwind) or a media query; theme.css does.
 - Tooltip skips the animation when moving between warm tooltips.
 

@@ -6,7 +6,7 @@ status: experimental
 related: [components/overview, components/grid-list, components/tree, components/checkbox, foundations/selection, foundations/collections]
 ---
 
-`Table` renders a native `<table>` with grid semantics (`role="grid"`, or `role="treegrid"` with nested rows): `TableHeader` holds the `Column`s, `TableBody` the `Row`s, each `Row` one `Cell` per column. It is a port of React Aria Components `Table` on the react-aria `useTable` / `useTableColumnHeader` / `useTableRow` / `useTableCell` / `useTableSelectionCheckbox` / `useTableColumnResize` hooks: the same parts, props and render props. The server HTML holds every row with its `aria-selected` state; no Table code runs before the first interaction.
+`Table` renders a native `<table>` with grid semantics (`role="grid"`, or `role="treegrid"` with nested rows): `TableHeader` holds the `Column`s, `TableBody` the `Row`s, each `Row` one `Cell` per column. The server HTML holds every row with its `aria-selected` state; no Table code runs before the first interaction.
 
 ::example{id=table-basic}
 

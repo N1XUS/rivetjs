@@ -1,12 +1,12 @@
 ---
 title: Tabs
-description: Tabs, TabList, Tab, TabPanels and TabPanel from @rivetjs/cdk (React Aria Components port): keyboard navigation, link tabs and an items preset.
+description: Tabs, TabList, Tab, TabPanels and TabPanel provide keyboard navigation, link tabs and an items preset.
 template: guide
 status: experimental
 related: [components/overview, components/disclosure, foundations/keyboard-navigation, foundations/selection]
 ---
 
-`Tabs` is a port of React Aria Components `Tabs` / `TabList` / `Tab` / `TabPanels` / `TabPanel` (with react-aria `useTabList` / `useTab` / `useTabPanel` and react-stately `useTabListState`). Compose the parts: a `TabList` of `Tab`s and one `TabPanel` per tab, matched by `id`. Only the selected panel is rendered (RAC), unless a panel has `shouldForceMount`. The selected key can be a signal. No library code runs until the first interaction with the tablist. For tabs from data, the [items preset](#items-preset) renders the same parts from an `items` array.
+`Tabs`, `TabList`, `Tab`, `TabPanels` and `TabPanel` organize content into selectable panels. Compose the parts: a `TabList` of `Tab`s and one `TabPanel` per tab, matched by `id`. Only the selected panel is rendered (RAC), unless a panel has `shouldForceMount`. The selected key can be a signal. No library code runs until the first interaction with the tablist. For tabs from data, the [items preset](#items-preset) renders the same parts from an `items` array.
 
 ::example{id=tabs-basic}
 
@@ -55,6 +55,8 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs, type Key, type TabItem } from 
 ```
 
 ## Props
+
+`Tabs`, `TabList`, `Tab`, `TabPanels` and `TabPanel` each accept `ref` for their rendered element.
 
 ### Tabs
 

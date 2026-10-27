@@ -1,6 +1,6 @@
 ---
 title: Disclosure
-description: DisclosureGroup, Disclosure and DisclosurePanel from @rivetjs/cdk: sections opened by a Button slot="trigger", plus DetailsDisclosure on native details.
+description: "DisclosureGroup, Disclosure and DisclosurePanel from @rivetjs/cdk: sections opened by a Button slot=\"trigger\", plus DetailsDisclosure on native details."
 template: guide
 status: experimental
 related: [components/accordion, components/overview, components/tabs]
@@ -49,6 +49,8 @@ import { createDisclosureGroupState, createDisclosureState } from "@rivetjs/cdk/
 ```
 
 ## Props
+
+`DisclosurePanel` accepts `aria-label` and `aria-labelledby` when you need to customize its accessible name, in addition to its default trigger relationship.
 
 ### DisclosureGroup
 

@@ -6,7 +6,7 @@ status: experimental
 related: [components/tooltip, components/popover, components/link, foundations/overlays]
 ---
 
-A `PreviewTrigger` displays a non-modal preview of content on hover, keyboard focus or touch long press. It wraps a trigger (a [Link](link.md), a [Button](button.md), or any element in `<Focusable>`) and a [Popover](popover.md) holding the preview. Unlike a [Tooltip](tooltip.md), the preview may contain interactive content: :kbd[Tab] from the trigger moves into it. It is a port of React Aria Components `PreviewTrigger` and React Aria `usePreviewTrigger`. Closed, it renders nothing but the trigger, on the server too.
+A `PreviewTrigger` displays a non-modal preview of content on hover, keyboard focus or touch long press. It wraps a trigger (a [Link](link.md), a [Button](button.md), or any element in `<Focusable>`) and a [Popover](popover.md) holding the preview. Unlike a [Tooltip](tooltip.md), the preview may contain interactive content: :kbd[Tab] from the trigger moves into it. Closed, it renders nothing but the trigger, on the server too.
 
 ::example{id=preview-trigger-basic}
 
@@ -151,7 +151,7 @@ A `<Focusable>` child needs an interactive ARIA role (`role="link"`, `role="butt
 
 ## Behaviour hooks
 
-`@rivetjs/cdk/preview-trigger/behaviour` is the React Aria `usePreviewTrigger` port for building your own trigger: `previewTriggerProps(options, state)` returns the trigger handlers and ARIA; `attachPreviewTrigger(state, options)` runs the open-state effects (safe area, focus after long press). The state is `createTooltipTriggerState` from `@rivetjs/cdk/tooltip`.
+`@rivetjs/cdk/preview-trigger/behaviour` provides helpers for building your own trigger: `previewTriggerProps(options, state)` returns the trigger handlers and ARIA; `attachPreviewTrigger(state, options)` runs the open-state effects (safe area, focus after long press). The state is `createTooltipTriggerState` from `@rivetjs/cdk/tooltip`.
 
 ::api{symbol="@rivetjs/cdk/preview-trigger/behaviour#previewTriggerProps"}
 

@@ -1,12 +1,12 @@
 ---
 title: DataGrid
-description: DataGrid from @rivetjs/cdk/data-grid is a headless, data-driven grid: sorting, selection, resizing, pinning, tree rows, reordering, virtualization.
+description: "DataGrid from @rivetjs/cdk/data-grid is a headless, data-driven grid: sorting, selection, resizing, pinning, tree rows, reordering, virtualization."
 template: guide
 status: experimental
 related: [components/table, foundations/selection, foundations/virtualizer, foundations/keyboard-navigation]
 ---
 
-`DataGrid` renders rows from `data` and `columns` into one native `<table role="grid">` (`treegrid` with `getChildren`). It is Rivet-authored, not a port: the feature set follows HeroUI Pro's public DataGrid docs (prop and column names), the implementation is independent. Keyboard, focus, selection and sorting follow React Aria's table. [`Table`](table.md) stays the composable 1:1 RAC port; `DataGrid` is the data-first sibling built for large data: there is no collection build pass, the rows are one computed pipeline (filter, sort, tree, page), and `virtualized` renders only the rows in view.
+`DataGrid` renders rows from `data` and `columns` into one native `<table role="grid">` (`treegrid` with `getChildren`). Keyboard, focus, selection and sorting follow React Aria's table. [`Table`](table.md) exposes individually composed rows and cells; `DataGrid` is the data-first sibling built for large data: there is no collection build pass, the rows are one computed pipeline (filter, sort, tree, page), and `virtualized` renders only the rows in view.
 
 ::example{id=data-grid-basic}
 

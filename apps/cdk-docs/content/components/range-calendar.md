@@ -6,7 +6,7 @@ status: experimental
 related: [components/calendar, components/date-range-picker, components/date-picker, foundations/dates, foundations/i18n]
 ---
 
-`RangeCalendar` displays a grid of days in one or more months and lets the user select a contiguous range of dates. It is a port of React Aria Components `RangeCalendar` (react-aria `useRangeCalendar`, react-stately `useRangeCalendarState`) and is composed from the same parts as [Calendar](calendar.md): `Button slot="previous"` / `"next"`, `Heading`, `CalendarGrid`, `CalendarCell`. The first press (or :kbd[Enter]) anchors the range, moving the pointer or the arrow keys previews it, the second press completes it; dragging selects in one gesture, and dragging an end of an existing range moves that end. The value is `{ start, end }` of ISO strings in a signal. The server renders the whole grid; no calendar code runs until the first interaction. In a field with a popover, use [DateRangePicker](date-range-picker.md).
+`RangeCalendar` displays a grid of days in one or more months and lets the user select a contiguous range of dates. The first press (or :kbd[Enter]) anchors the range, moving the pointer or the arrow keys previews it, the second press completes it; dragging selects in one gesture, and dragging an end of an existing range moves that end. The value is `{ start, end }` of ISO strings in a signal. The server renders the whole grid; no calendar code runs until the first interaction. In a field with a popover, use [DateRangePicker](date-range-picker.md).
 
 ::example{id=range-calendar-basic}
 

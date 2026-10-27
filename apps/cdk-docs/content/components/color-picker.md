@@ -32,6 +32,10 @@ Render props: `color()`. Contexts: `ColorPickerContext`, `ColorPickerStateContex
 
 Children read the value from their contexts (`ColorAreaContext`, `ColorSliderContext`, `ColorWheelContext`, `ColorFieldContext`, `ColorSwatchContext`, `ColorSwatchPickerContext`) and write through `onChange`; their own props still win.
 
+## Keyboard and accessibility
+
+ColorPicker itself creates no focus target or keyboard handlers. Label each composed control and follow the keyboard maps of [ColorArea](color-area.md#accessibility), [ColorSlider](color-slider.md#accessibility) and [ColorField](color-field.md#accessibility). The shared value does not supply an accessible name for those controls.
+
 ## Resumability
 
 One `createColorPickerState` (plain signal state) shared by all children; works on a resumed page.

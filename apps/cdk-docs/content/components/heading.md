@@ -39,6 +39,10 @@ import { Heading, HeadingContext } from "@rivetjs/cdk/heading";
 <Heading render={(props) => <h3 {...(props as {})} />}>…</Heading>
 ```
 
+## Accessibility
+
+Choose `level` to fit the document hierarchy. A heading supplies document structure, not an interactive focus target or keyboard behavior. When replacing its element through `render`, preserve the heading semantics and any id supplied by the containing dialog.
+
 ## Upstream
 
 - React Aria Components `Heading`.

@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/selection, foundations/overview, components/listbox]
 ---
 
-A collection is the ordered, keyed list of nodes a widget navigates and selects: items, sections, rows, cells. The modules below port `@react-stately/collections`, `list`, `tree`, `grid`, `table`, `@react-aria/collections` and `@angular/cdk/collections`. Names, options and behaviour match the originals, so their docs apply.
+A collection is the ordered, keyed list of nodes a widget navigates and selects: items, sections, rows, cells. The modules below provide collection builders, DOM readers, selection models and data sources.
 
 Collections are class instances, so they are never part of the resumed state. A handler or a `computed` rebuilds one from the state (items, expanded keys) or from the server-rendered DOM.
 

@@ -9,7 +9,7 @@ related: [foundations/overview, foundations/collections, foundations/keyboard-na
 Two layers, both resumable because the state is signals and plain data:
 
 - `@rivetjs/cdk/collections`: a small `Selection` (a `Signal<Set<Key>>`, a mode, a range anchor) and helpers that treat the server-rendered elements as the collection. For hand-written lists.
-- `@rivetjs/cdk/selection/*`: the React Aria port (`@react-stately/selection`, `@react-aria/selection`). `createMultipleSelectionState`, `SelectionManager`, the selectable collection, list and item handlers, `ListKeyboardDelegate` and type select. It is what [ListBox](../components/listbox.md), Select, ComboBox, Menu and Tabs are built on.
+- `@rivetjs/cdk/selection/*`: collection selection and keyboard navigation. `createMultipleSelectionState`, `SelectionManager`, the selectable collection, list and item handlers, `ListKeyboardDelegate` and type select. It is what [ListBox](../components/listbox.md), Select, ComboBox, Menu and Tabs are built on.
 
 ::example{id=selection-dom}
 
@@ -55,7 +55,7 @@ The first example adds arrow keys with `nextIndex` (`@rivetjs/cdk/keys`) and `ro
 
 ## Selection state
 
-`@rivetjs/cdk/selection/state` ports `useMultipleSelectionState`. The state object holds signals; the setters are functions taking it.
+`@rivetjs/cdk/selection/state` exports `createMultipleSelectionState`. The state object holds signals; the setters are functions taking it.
 
 | Export | Does |
 | --- | --- |
@@ -83,7 +83,7 @@ The first example adds arrow keys with `nextIndex` (`@rivetjs/cdk/keys`) and `ro
 
 ## SelectionManager
 
-`@rivetjs/cdk/selection/manager` ports react-stately's `SelectionManager`: `new SelectionManager(collection, state, { allowsCellSelection?, layoutDelegate?, fullCollection? })`. It is a class over one collection, so it never goes into resumed state: build it from the state in each handler, or in a binding (its getters read the signals, so the binding updates).
+`@rivetjs/cdk/selection/manager` exports `SelectionManager`: `new SelectionManager(collection, state, { allowsCellSelection?, layoutDelegate?, fullCollection? })`. It is a class over one collection, so it never goes into resumed state: build it from the state in each handler, or in a binding (its getters read the signals, so the binding updates).
 
 | Member | Does |
 | --- | --- |

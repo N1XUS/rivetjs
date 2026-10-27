@@ -6,7 +6,7 @@ status: experimental
 related: [components/tree, components/link, foundations/collections]
 ---
 
-`NavigationTree` is a [Tree](tree.md) of links: a `role="treegrid"` with no selection, :kbd[Tab] navigation (arrow keys work too) and one `Link` per item. Set `selectedRoute` to the current path: the item whose `href` matches gets `aria-current="page"` on its link and `data-current` on its row, its ancestors get `data-current-ancestor`, and the tree's focus moves to it. It is a port of React Aria Components `NavigationTree`. Wrap it in a `<nav aria-label="…">` when it is the page's main navigation.
+`NavigationTree` is a [Tree](tree.md) of links: a `role="treegrid"` with no selection, :kbd[Tab] navigation (arrow keys work too) and one `Link` per item. Set `selectedRoute` to the current path: the item whose `href` matches gets `aria-current="page"` on its link and `data-current` on its row, its ancestors get `data-current-ancestor`, and the tree's focus moves to it. Wrap it in a `<nav aria-label="…">` when it is the page's main navigation.
 
 ::example{id=navigation-tree-basic}
 

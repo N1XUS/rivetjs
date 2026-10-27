@@ -6,7 +6,7 @@ status: experimental
 related: [components/dialog, components/modal, components/tooltip, components/preview-trigger, components/menu, foundations/overlays, foundations/portal]
 ---
 
-A popover is an overlay element positioned relative to a trigger. It is a port of React Aria Components `Popover`: put it in a `DialogTrigger` next to a `Button` (`<DialogTrigger><Button/><Popover><Dialog/></Popover></DialogTrigger>`), or use it standalone with `triggerRef` and `isOpen`. The position engine places it, flips it when there is no room, and positions an optional `OverlayArrow`. On open focus moves in; :kbd[Escape], a press outside or focus moving out closes it, and focus returns to the trigger. By default it is modal (the page behind is inert and does not scroll, :kbd[Tab] stays inside); `isNonModal` only moves focus. The same `Popover` is the overlay of `MenuTrigger`, `Select`, `ComboBox`, `DatePicker` and `PreviewTrigger`. A closed popover renders nothing, on the server too.
+A popover is an overlay element positioned relative to a trigger. Put `Popover` in a `DialogTrigger` next to a `Button`, or use it standalone with `triggerRef` and `isOpen`. The position engine places it, flips it when there is no room, and positions an optional `OverlayArrow`. On open focus moves in; :kbd[Escape], a press outside or focus moving out closes it, and focus returns to the trigger. By default it is modal (the page behind is inert and does not scroll, :kbd[Tab] stays inside); `isNonModal` only moves focus. The same `Popover` is the overlay of `MenuTrigger`, `Select`, `ComboBox`, `DatePicker` and `PreviewTrigger`. A closed popover renders nothing, on the server too.
 
 ::example{id=popover-basic}
 

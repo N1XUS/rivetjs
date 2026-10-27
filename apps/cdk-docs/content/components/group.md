@@ -55,6 +55,8 @@ import { Group, GroupContext } from "@rivetjs/cdk/group";
 | --- | --- |
 | `onHoverStart(e)`, `onHoverEnd(e)` | A mouse or pen pointer entered / left (`e.pointerType`). |
 | `onHoverChange(isHovering)` | Hover state changed. |
+| `onFocus`, `onBlur`, `onFocusIn`, `onFocusOut` | Native focus events on the root; focus-in/out also run the group's state handling. |
+| `onKeyDown`, `onKeyUp` | Native keyboard events on the root. Group itself adds no arrow-key navigation. |
 
 ## Focus within
 

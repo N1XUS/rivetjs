@@ -30,7 +30,7 @@ Each module is a separate import path. Code you do not import is not shipped.
 | `@rivetjs/cdk/virtualizer` | React Spectrum's virtualizer: layouts and a `Virtualizer` that renders only the items in view. | [Virtualizer](virtualizer.md) |
 | `@rivetjs/cdk/scrolling` | Angular CDK scrolling: virtual scroll, `ScrollDispatcher`, `ViewportRuler`, `CdkScrollable`. | [Scrolling](scrolling.md) |
 | `@rivetjs/cdk/portal`, `@rivetjs/cdk/portal-outlet` | `<Portal>` that renders on the server and moves to its mount; Angular CDK portal outlets. | [Portal](portal.md) |
-| `@rivetjs/cdk/interactions`, `@rivetjs/cdk/utils` | `merge()` and `mergeProps()` for attribute objects, `controllable()` for a value that is passed in or internal, `clamp()` and step math, `runAfterTransition()`, `useLabels()`, `useFormReset()`. | [Props, values and timing](props-and-values.md) |
+| `@rivetjs/cdk/interactions`, `@rivetjs/cdk/utils` | `mergeProps()` for attribute objects, `controllable()` for a value that is passed in or internal, `clamp()` and step math, `runAfterTransition()`, `useLabels()`, `useFormReset()`. | [Props, values and timing](props-and-values.md) |
 | `@rivetjs/cdk/dom` | Owner document and window, shadow-DOM-safe containment and focus, scroll parents, `scrollIntoView()`, viewport size, CSP nonce. | [DOM helpers](dom.md) |
 | `@rivetjs/cdk/platform` | `supports("field-sizing")` and other feature checks, `isMac()`, `getPlatform()`, `isVirtualClick()`. On the server they return `undefined`. | [Platform](platform.md) |
 | `@rivetjs/cdk/coercion` | Coerce attribute strings and accessors into booleans, numbers, CSS pixels, arrays and elements. | [Coercion](coercion.md) |
@@ -45,7 +45,19 @@ Each module is a separate import path. Code you do not import is not shipped.
 
 All small modules at a glance: [Utilities](utilities.md).
 
-`Portal`, which renders content at the end of `<body>`, comes from `@rivetjs/runtime/dom`: see [Portal](portal.md).
+`Portal` comes from `@rivetjs/cdk/portal`. It renders content in place on the server and moves its host to the chosen mount in the browser; the default mount is `document.body`. See [Portal](portal.md).
+
+## Import and example
+
+```ts check
+import { mergeProps } from "@rivetjs/cdk/utils";
+
+const attributes = mergeProps({ class: "field" }, { class: "compact", "aria-label": "Search" });
+```
+
+## API guides
+
+Each row above links to its module's API and examples. For text-oriented interfaces, see [Chat helpers](chat.md), [Markdown parsing](markdown.md) and [Code highlighting](highlight.md).
 
 ## Rules for your own widgets
 

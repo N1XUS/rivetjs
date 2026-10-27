@@ -6,7 +6,7 @@ status: experimental
 related: [components/time-field, components/date-picker, components/date-range-picker, components/calendar, components/text-field, foundations/dates]
 ---
 
-`DateField` is a port of React Aria Components' `DateField`, `DateInput`, `DateSegment` and `HiddenDateInput` (with react-aria `useDateField` / `useDateSegment` and react-stately `useDateFieldState`). Each part of a date (month, day, year and, with a time, hour, minute, second, AM/PM and the time zone) is an individually editable segment, ordered and formatted for the locale. Each segment is a `role="spinbutton"`: type digits and focus moves on when the segment is full, or spin it with the arrow keys. The server renders every segment with its text and ARIA plus a hidden input that posts the ISO string; the value is that string in a signal.
+`DateField`, `DateInput`, `DateSegment` and `HiddenDateInput` build an editable date field. Each part of a date (month, day, year and, with a time, hour, minute, second, AM/PM and the time zone) is an individually editable segment, ordered and formatted for the locale. Each segment is a `role="spinbutton"`: type digits and focus moves on when the segment is full, or spin it with the arrow keys. The server renders every segment with its text and ARIA plus a hidden input that posts the ISO string; the value is that string in a signal.
 
 ::example{id=date-field-basic}
 

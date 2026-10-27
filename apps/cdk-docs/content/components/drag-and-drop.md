@@ -1,12 +1,12 @@
 ---
 title: Drag and drop
-description: Drag, DropList and friends from @rivetjs/cdk/drag-drop - free dragging, sortable and connected lists, handles, previews (Angular CDK drag-drop port).
+description: Drag and DropList from @rivetjs/cdk provide free dragging, sortable and connected lists, handles and previews.
 template: guide
 status: experimental
 related: [components/carousel, foundations/keyboard-shortcuts, foundations/motion]
 ---
 
-`@rivetjs/cdk/drag-drop` is a port of the [Angular CDK drag and drop](https://angular.dev/guide/drag-drop) package: the engine (`DragRef`, `DropListRef`, the registry, the sort strategies, the preview) file by file, and the `cdkDrag` / `cdkDropList` / … directives as resumable components. It covers:
+`@rivetjs/cdk/drag-drop` provides free dragging and sortable lists through resumable components and an imperative engine (`DragRef`, `DropListRef`). It covers:
 
 - Free dragging
 - Lists of reorderable draggable elements
@@ -16,7 +16,7 @@ related: [components/carousel, foundations/keyboard-shortcuts, foundations/motio
 - Custom drag handles
 - Custom previews and placeholders
 
-Every example on this page is a port of the matching Angular docs example (`adev/src/content/examples/drag-drop`), with the same markup, data and styles.
+The examples adapt Angular documentation examples (`adev/src/content/examples/drag-drop`); see the upstream credits below.
 
 ## Before you start
 
@@ -279,7 +279,7 @@ A `DropList` auto-scrolls the window and its own element when the pointer gets c
 
 ## Integrations with other components
 
-Any element can be a drop list or an item (`elementType`: `DropList` renders `div`, `ul`, `ol`, `tbody` or `section`; `Drag` renders `div`, `li`, `tr`, `span`, `section` or `article`). The Angular Material table example ports to a plain table: the `tbody` is the `DropList` and every `tr` a `Drag`.
+Any element can be a drop list or an item (`elementType`: `DropList` renders `div`, `ul`, `ol`, `tbody` or `section`; `Drag` renders `div`, `li`, `tr`, `span`, `section` or `article`). The table example uses a plain table: the `tbody` is the `DropList` and every `tr` a `Drag`.
 
 ::example{id=drag-drop-table}
 

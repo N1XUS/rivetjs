@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/overview, foundations/props-and-values, foundations/platform]
 ---
 
-Small modules for your own widgets. Each is its own import path; code you do not import is not shipped. Most are ports of Angular CDK and React Aria utilities, changed so handlers and state resume (services become module functions or factories, observables become a minimal subset, nothing runs at import time).
+Small modules for your own widgets. Each is its own import path; code you do not import is not shipped. Use them from your own widget handlers and client effects.
 
 | Import | Gives you | Upstream | Guide |
 | --- | --- | --- | --- |
@@ -19,9 +19,22 @@ Small modules for your own widgets. Each is its own import path; code you do not
 | `@rivetjs/cdk/keys` | `createKeyboardShortcutHandler()` (and `nextIndex()`, `typeahead()`). | React Aria | [Keyboard shortcuts](keyboard-shortcuts.md), [Keyboard navigation](keyboard-navigation.md) |
 | `@rivetjs/cdk/i18n`, `@rivetjs/cdk/i18n-provider` | `I18nProvider`, `useLocale()`, `getDateFormatter()`, `getStringsForLocale()`. | React Aria i18n, `@internationalized/string` | [Internationalization](i18n.md) |
 | `@rivetjs/cdk/date` | `CalendarDate`, `ZonedDateTime`, calendar systems, date math, `stringifyDateValue()`. | `@internationalized/date` | [Dates](dates.md) |
-| `@rivetjs/cdk/utils`, `@rivetjs/cdk/interactions` | `merge()`, `mergeProps()`, `controllable()`, `clamp()`, `runAfterTransition()`, `useLabels()`, `useFormReset()`. | React Aria utils, react-stately | [Props, values and timing](props-and-values.md) |
+| `@rivetjs/cdk/utils`, `@rivetjs/cdk/interactions` | `mergeProps()`, `controllable()`, `clamp()`, `runAfterTransition()`, `useLabels()`, `useFormReset()`. | React Aria utils, react-stately | [Props, values and timing](props-and-values.md) |
 | `@rivetjs/cdk/dom` | Owner document, shadow-DOM-safe containment, `scrollIntoView()`, `getViewportSize()`, `getNonce()`. | React Aria utils | [DOM helpers](dom.md) |
 | `@rivetjs/cdk/drag-drop`, `@rivetjs/cdk/drag-drop/cdk`, `@rivetjs/cdk/drag-drop/utils` | Drag and drop components, engine (`DragRef`, `DropListRef`) and array helpers. | Angular CDK drag-drop | [Drag and drop](../components/drag-and-drop.md) |
+
+## Import and example
+
+```ts check
+import { coerceBooleanProperty, coerceCssPixelValue } from "@rivetjs/cdk/coercion";
+
+const disabled = coerceBooleanProperty("false"); // false
+const width = coerceCssPixelValue(320); // "320px"
+```
+
+## API guides
+
+The table above links to the API for each utility family. [Chat helpers](chat.md), [Markdown parsing](markdown.md) and [Code highlighting](highlight.md) cover streaming text and custom content renderers.
 
 ## Rules for all of them
 

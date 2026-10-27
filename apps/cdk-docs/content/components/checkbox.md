@@ -220,7 +220,7 @@ Put `group` on the button and style the box with `group-data-[selected]:`, `grou
 
 ## Hooks
 
-`@rivetjs/cdk/checkbox/behaviour` ports react-aria `useToggle` / `useCheckbox`: `toggleProps(props, state, inputRef?)` and `checkboxProps(props, state, inputRef?)` return `labelProps`, `inputProps`, `descriptionProps`, `errorMessageProps` bags (accessors inside: spread them) and accessor flags (`isSelected()`, `isPressed()`, `isInvalid()`…). The input handlers are free functions (`toggleChange`, `toggleFocus`, `toggleInvalid`, `toggleLabelPress`); `mergeInputRefs` joins input refs. The state is `createToggleState` from `@rivetjs/cdk/state/toggle` (see [ToggleButton](toggle-button.md#custom-markup)).
+`@rivetjs/cdk/checkbox/behaviour` exposes the field behavior: `toggleProps(props, state, inputRef?)` and `checkboxProps(props, state, inputRef?)` return `labelProps`, `inputProps`, `descriptionProps`, `errorMessageProps` bags (accessors inside: spread them) and accessor flags (`isSelected()`, `isPressed()`, `isInvalid()`…). The input handlers are free functions (`toggleChange`, `toggleFocus`, `toggleInvalid`, `toggleLabelPress`); `mergeInputRefs` joins input refs. The state is `createToggleState` from `@rivetjs/cdk/state/toggle` (see [ToggleButton](toggle-button.md#custom-markup)).
 
 ::api{symbol="@rivetjs/cdk/checkbox/behaviour#checkboxProps"}
 

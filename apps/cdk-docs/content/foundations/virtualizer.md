@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/scrolling, foundations/collections, foundations/selection, foundations/keyboard-navigation]
 ---
 
-`@rivetjs/cdk/virtualizer` ports the React Spectrum virtualizer: the react-stately engine (`Virtualizer`, `Layout`, `LayoutInfo`, `Rect`, `ReusableView`, overscan, scroll anchoring), its layouts (`ListLayout`, `GridLayout`, `WaterfallLayout`, `TableLayout`), and the react-aria `ScrollView` and item measurement. The `<Virtualizer>` component follows the react-aria-components `Virtualizer`: you pass a `layout` and `layoutOptions`, and only the views inside the visible rect (plus overscan and persisted keys) are in the DOM. It renders its own `items`, or it wraps a `ListBox`, `GridList`, `Menu`, `Tree` or `Table` (see [Collection components](#collection-components)).
+`@rivetjs/cdk/virtualizer` provides a virtualization engine (`Virtualizer`, `Layout`, `LayoutInfo`, `Rect`, `ReusableView`, overscan, scroll anchoring), its layouts (`ListLayout`, `GridLayout`, `WaterfallLayout`, `TableLayout`), and `ScrollView` and item measurement. With `<Virtualizer>`, you pass a `layout` and `layoutOptions`, and only the views inside the visible rect (plus overscan and persisted keys) are in the DOM. It renders its own `items`, or it wraps a `ListBox`, `GridList`, `Menu`, `Tree` or `Table` (see [Collection components](#collection-components)).
 
 - **Server**: the engine runs at `initialSize` and renders the first window; views are absolutely positioned.
 - **Browser**: no library code runs until the first scroll or focus on the scroller (`preload="interaction"`). Then the engine starts from the scroller's real size and adopts the server rows, keyed by item key.

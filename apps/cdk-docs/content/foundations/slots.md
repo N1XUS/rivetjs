@@ -6,7 +6,7 @@ status: experimental
 related: [components/heading, components/label, components/separator, components/keyboard, foundations/props-and-values]
 ---
 
-Composed components in `@rivetjs/cdk` (Dialog, fields, menus) don't render their titles, labels and help text themselves. Instead, they **provide props** to the parts you place inside them. Each part (`Heading`, `Text`, `Label`, `Input`, `Keyboard`, …) reads its context and merges those props with its own. This module, a port of React Aria Components `utils.tsx`, is the contract for that. Use it to build your own containers the same way.
+Composed components in `@rivetjs/cdk` (Dialog, fields, menus) don't render their titles, labels and help text themselves. Instead, they **provide props** to the parts you place inside them. Each part (`Heading`, `Text`, `Label`, `Input`, `Keyboard`, …) reads its context and merges those props with its own. The slots module defines that contract. Use it to build your own containers the same way.
 
 ::example{id=slots-provider}
 
@@ -57,7 +57,7 @@ Context values may be **accessors** (`"aria-invalid": () => invalid()`, `childre
 
 `createSlot()` returns `[ref, hasSlot]`. Put the ref on a slotted part through its context value: `hasSlot()` is true while that element is attached. On the server it is the initial state, or `true` once the part rendered earlier in the same render: a `Label` marks its slot when it renders, so a TagList with `aria-label` and a visible Label names the Label in the server HTML too (React Aria `useSlot`). A part that renders after the owner's attributes keeps the initial state.
 
-`createSlotId(id?, deps?)` ports React Aria `useSlotId`. Use it for an optional part referenced by `aria-describedby` / `aria-labelledby`:
+`createSlotId(id?, deps?)` tracks the id of an optional slot. Use it for an optional part referenced by `aria-describedby` / `aria-labelledby`:
 
 - The id starts present on the first client render.
 - After mount, a client effect checks `document.getElementById(id)` and drops the id when no element has it.

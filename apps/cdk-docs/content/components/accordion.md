@@ -105,6 +105,10 @@ A `DisclosureGroup` inside a panel owns its disclosures; opening an inner one do
 
 ::example{id=accordion-css}
 
+## Keyboard and accessibility
+
+Use a heading around each trigger button and meaningful trigger text. :kbd[Enter] or :kbd[Space] toggles a focused trigger; :kbd[Tab] moves between focusable controls. The group does not add an arrow-key navigation system. Panels expose the expanded trigger's relationship through ARIA; see [Disclosure accessibility](disclosure.md#accessibility).
+
 ## Resumability
 
 - Server HTML is final; nothing runs before the first press.

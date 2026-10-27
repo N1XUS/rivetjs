@@ -6,7 +6,7 @@ status: experimental
 related: [components/breadcrumbs, components/toolbar, components/menu, foundations/observers]
 ---
 
-`@rivetjs/cdk/overflow` measures the items of a container and collapses the ones that do not fit behind one overflow element you render, typically a "…" button opening a [Menu](../components/menu.md) of the hidden items. It ports the collapsing logic of React Spectrum v3: `Breadcrumbs` (keep the last items, optionally the root) and `ActionGroup` `overflowMode="collapse"` (keep the leading items). [Breadcrumbs](../components/breadcrumbs.md#overflow) uses it through `overflowMode="collapse"`.
+`@rivetjs/cdk/overflow` measures the items of a container and collapses the ones that do not fit behind one overflow element you render, typically a "…" button opening a [Menu](../components/menu.md) of the hidden items. It can keep the last items, optionally the root, or keep the leading items. [Breadcrumbs](../components/breadcrumbs.md#overflow) uses it through `overflowMode="collapse"`.
 
 :::note
 Rivet addition: React Aria Components and Angular CDK have no overflow primitive. The algorithm, defaults and test cases come from React Spectrum v3 (`@react-spectrum/breadcrumbs`, `@react-spectrum/actiongroup`).

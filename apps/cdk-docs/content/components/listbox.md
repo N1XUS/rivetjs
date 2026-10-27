@@ -6,7 +6,7 @@ status: experimental
 related: [components/overview, components/combobox, components/select, foundations/selection, foundations/collections]
 ---
 
-`ListBox` renders a `role="listbox"` whose `ListBoxItem` children are `role="option"`s, optionally grouped into `ListBoxSection`s with a `Header`. It is a port of React Aria Components `ListBox`: the same parts, props and render props. The server HTML holds every option with its `aria-selected` state, so screen readers read it before any code loads. Keys go to the listbox: arrows move focus, :kbd[Space] selects, letters jump by typeahead. The selection is a `Signal<Selection>`: a `Set` of keys, or `"all"`.
+`ListBox` renders a `role="listbox"` whose `ListBoxItem` children are `role="option"`s, optionally grouped into `ListBoxSection`s with a `Header`. The server HTML holds every option with its `aria-selected` state, so screen readers read it before any code loads. Keys go to the listbox: arrows move focus, :kbd[Space] selects, letters jump by typeahead. The selection is a `Signal<Selection>`: a `Set` of keys, or `"all"`.
 
 ::example{id=listbox-basic}
 

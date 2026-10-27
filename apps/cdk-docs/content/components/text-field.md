@@ -206,7 +206,7 @@ Native text input keys; :kbd[Enter] submits the enclosing form.
 
 ## Hooks
 
-`@rivetjs/cdk/text-field/behaviour` is the react-aria `useTextField` port for building your own field: `createTextFieldState(props)` (value + validation), `textFieldProps(props, inputRef?, state?)` (label / input / description / error bags with accessors) and the handlers `textFieldInput`, `textFieldChange`, `textFieldInvalid`, `textFieldFocus`, `textFieldBlur`.
+`@rivetjs/cdk/text-field/behaviour` provides helpers for building your own field: `createTextFieldState(props)` (value + validation), `textFieldProps(props, inputRef?, state?)` (label / input / description / error bags with accessors) and the handlers `textFieldInput`, `textFieldChange`, `textFieldInvalid`, `textFieldFocus`, `textFieldBlur`.
 
 ::api{symbol="@rivetjs/cdk/text-field/behaviour#textFieldProps"}
 

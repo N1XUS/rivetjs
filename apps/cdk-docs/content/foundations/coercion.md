@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/utilities, foundations/observers]
 ---
 
-Options often arrive as strings (attributes, URL parameters, CMS data) or as either a value or an accessor. `@rivetjs/cdk/coercion` ports the Angular CDK coercion helpers and adds Rivet's accessor and ref forms. Every function is pure and server-safe.
+Options often arrive as strings (attributes, URL parameters, CMS data) or as either a value or an accessor. `@rivetjs/cdk/coercion` converts those values and handles accessor and ref forms. Every function is pure and server-safe.
 
 ::example{id=coercion-values}
 

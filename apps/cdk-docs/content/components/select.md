@@ -6,7 +6,7 @@ status: experimental
 related: [components/listbox, components/combobox, components/popover, components/text-field, foundations/overlays, foundations/collections, foundations/selection]
 ---
 
-`Select` is a port of React Aria Components `Select` (with the `Button`, `SelectValue`, `Popover` and `ListBox` it composes, react-aria `useSelect` and react-stately `useSelectState`). It renders a label, a trigger `<button aria-haspopup="listbox">` that shows the selected value or a placeholder, a description, a field error and, while open, a listbox in a popover of the overlay layer. A hidden native `<select>` is in the server HTML, so the value posts with the form and browser autofill works before any JavaScript runs. While closed, typing on the trigger selects the matching option and :kbd[ArrowLeft] / :kbd[ArrowRight] step through the options. No library code runs until the first interaction.
+`Select` lets users choose an option from a popup listbox. It renders a label, a trigger `<button aria-haspopup="listbox">` that shows the selected value or a placeholder, a description, a field error and, while open, a listbox in a popover of the overlay layer. A hidden native `<select>` is in the server HTML, so the value posts with the form and browser autofill works before any JavaScript runs. While closed, typing on the trigger selects the matching option and :kbd[ArrowLeft] / :kbd[ArrowRight] step through the options. No library code runs until the first interaction.
 
 ::example{id=select-basic}
 

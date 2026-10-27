@@ -3,7 +3,7 @@ import type { NavGroup } from "@rivetjs/docs-kit/tools/nav.ts";
 
 export const components: NavGroup[] = [
   { title: "Media", pages: ["components/carousel", "components/lightbox", "components/compare"] },
-  { title: "Drag and drop", pages: ["components/drag-and-drop"] },
+  { title: "Drag and drop", pages: ["components/drag-and-drop", "components/drop-zone"] },
 ];
 export const foundations: NavGroup[] = [
   {

@@ -199,7 +199,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 
 ## Hooks
 
-`@rivetjs/cdk/checkbox/behaviour` ports react-aria `useCheckboxGroup` / `useCheckboxGroupItem`: `checkboxGroupProps(props, state)` returns `groupProps`, `labelProps`, `descriptionProps`, `errorMessageProps` and accessor flags; `checkboxGroupItemProps(props, state, inputRef?)` returns the checkbox bags of one option. `@rivetjs/cdk/state/checkbox-group` is react-stately `useCheckboxGroupState`: `createCheckboxGroupState(options)`, `isSelected(state, value)`, `setValue`, `addValue`, `removeValue`, `toggleValue`, `isRequiredNow`, `isGroupInvalid`, `setInvalid`.
+`@rivetjs/cdk/checkbox/behaviour` exposes group and item behavior: `checkboxGroupProps(props, state)` returns `groupProps`, `labelProps`, `descriptionProps`, `errorMessageProps` and accessor flags; `checkboxGroupItemProps(props, state, inputRef?)` returns the checkbox bags of one option. `@rivetjs/cdk/state/checkbox-group` is react-stately `useCheckboxGroupState`: `createCheckboxGroupState(options)`, `isSelected(state, value)`, `setValue`, `addValue`, `removeValue`, `toggleValue`, `isRequiredNow`, `isGroupInvalid`, `setInvalid`.
 
 ::api{symbol="@rivetjs/cdk/checkbox/behaviour#checkboxGroupProps"}
 

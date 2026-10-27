@@ -60,7 +60,7 @@ import {
   UNSTABLE_ToastContent as ToastContent,
   UNSTABLE_ToastStateContext as ToastStateContext,
 } from "@rivetjs/cdk/toast";
-// Hook ports for custom markup:
+// Behavior helpers for custom markup:
 import { toastRegionProps, toastProps } from "@rivetjs/cdk/toast/behaviour";
 // The queue alone (no components):
 import { ToastQueue, createToastState, createToastQueueState } from "@rivetjs/cdk/state/toast";
@@ -221,7 +221,7 @@ The [first example](#toast) styles the default class names and data attributes i
 | :kbd[Tab] / :kbd[Shift+Tab] | Move between toasts and their buttons inside the region. |
 | :kbd[Enter] / :kbd[Space] on the close button | Closes the toast. |
 
-Landmark navigation comes from the cdk port of React Aria's landmark manager (`@rivetjs/cdk/landmark`: `landmarkProps`, `UNSTABLE_createLandmarkController`). When focus wraps past the last landmark, the manager dispatches the `react-aria-landmark-navigation` event on `window`.
+Landmark navigation comes from the cdk landmark manager (`@rivetjs/cdk/landmark`: `landmarkProps`, `UNSTABLE_createLandmarkController`). When focus wraps past the last landmark, the manager dispatches the `react-aria-landmark-navigation` event on `window`.
 
 ## Resumability
 

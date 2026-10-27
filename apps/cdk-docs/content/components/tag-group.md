@@ -6,7 +6,7 @@ status: experimental
 related: [components/overview, components/grid-list, components/listbox, foundations/selection, foundations/collections]
 ---
 
-`TagGroup` renders a label, a `TagList` (`role="grid"`) of `Tag`s (`role="row"`), and optional description and error texts. It is a port of React Aria Components `TagGroup` / `TagList` / `Tag` on the react-aria `useTagGroup` / `useTag` hooks (which build on the GridList port). Tags can be selected, run an action, open a link or be removed with a remove button or :kbd[Delete]. The server HTML holds every tag with its `aria-selected` state; no TagGroup code runs before the first interaction.
+`TagGroup` renders a label, a `TagList` (`role="grid"`) of `Tag`s (`role="row"`), and optional description and error texts. Tags can be selected, run an action, open a link or be removed with a remove button or :kbd[Delete]. The server HTML holds every tag with its `aria-selected` state; no TagGroup code runs before the first interaction.
 
 ::example{id=tag-group-basic}
 
@@ -275,7 +275,6 @@ Deviations:
 
 ## Not yet supported
 
-- `SelectionIndicator` inside a `Tag`: RAC wraps the list in a `SharedElementTransition`, the port does not, so it throws.
 - Tooltips on truncated tags.
 
 ## Common mistakes

@@ -1,12 +1,12 @@
 ---
 title: Scrolling
-description: Angular CDK scrolling for Rivet: virtual scroll viewport (fixed-size and autosize strategies), ScrollDispatcher, CdkScrollable, ViewportRuler, RTL helpers.
+description: "Angular CDK scrolling for Rivet: virtual scroll viewport (fixed-size and autosize strategies), ScrollDispatcher, CdkScrollable, ViewportRuler, RTL helpers."
 template: guide
 status: experimental
 related: [foundations/virtualizer, foundations/overlays, foundations/utilities]
 ---
 
-`@rivetjs/cdk/scrolling` ports the Angular CDK `scrolling` package: a virtual scroll viewport that renders only the items in view, with the fixed-size strategy and the experimental autosize strategy, plus the scroll utilities behind it (`ScrollDispatcher`, `CdkScrollable`, `ViewportRuler`, RTL scroll normalization). Angular directives become a state object (`createVirtualScroll`) shared by the components, and plain classes.
+`@rivetjs/cdk/scrolling` provides a virtual scroll viewport that renders only the items in view, with the fixed-size strategy and the experimental autosize strategy, plus the scroll utilities behind it (`ScrollDispatcher`, `CdkScrollable`, `ViewportRuler`, RTL scroll normalization). The components share a state object created by `createVirtualScroll`.
 
 - **Server**: `createVirtualScroll` runs the real strategy against a measurement model (scroll offset 0, `initialViewportSize`, estimated item sizes) and renders the first range.
 - **Browser**: no library code runs until the first `scroll`, `wheel`, `pointerdown`, `focusin` or `keydown` on the viewport. That interaction creates the viewport engine, which takes over from the server range.

@@ -1,6 +1,6 @@
 ---
 title: Keyboard shortcuts
-description: Map shortcut strings such as Mod+s or Control+Shift+z to actions with createKeyboardShortcutHandler from @rivetjs/cdk/keys, a React Aria port.
+description: Map shortcut strings such as Mod+s or Control+Shift+z to actions with createKeyboardShortcutHandler from @rivetjs/cdk/keys.
 template: guide
 status: experimental
 related: [foundations/keyboard-navigation, foundations/platform, foundations/utilities]

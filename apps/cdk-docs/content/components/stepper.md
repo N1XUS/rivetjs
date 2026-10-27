@@ -1,12 +1,12 @@
 ---
 title: Stepper
-description: Stepper from @rivetjs/cdk/stepper splits a workflow into steps with linear validation, tabbed or list semantics and keyboard navigation (Angular CDK port).
+description: Stepper splits a workflow into steps with linear validation, tabbed or list semantics and keyboard navigation.
 template: guide
 status: experimental
 related: [components/tabs, components/disclosure, foundations/key-manager]
 ---
 
-`Stepper` shows a workflow as a series of steps: a wizard, a checkout, an onboarding flow or a progress indicator. Steps can be linear (a step opens only when the ones before it are valid) or free. This is a port of the [Angular CDK stepper](https://material.angular.dev/cdk/stepper/overview) (`CdkStepper`, `CdkStep`, `CdkStepHeader`, `CdkStepLabel`, `CdkStepperNext` / `CdkStepperPrevious`, v22.2.2) with the accessible markup of Angular Material's stepper.
+`Stepper` shows a workflow as a series of steps: a wizard, a checkout, an onboarding flow or a progress indicator. Steps can be linear (a step opens only when the ones before it are valid) or free.
 
 ::example{id=stepper-basic}
 

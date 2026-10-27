@@ -1,6 +1,6 @@
 ---
 title: Sidebar
-description: SidebarProvider, Sidebar and its parts from @rivetjs/cdk/sidebar - a port of the shadcn/ui Sidebar - collapsible, cookie-persisted, a sheet on mobile.
+description: SidebarProvider, Sidebar and their parts build collapsible, cookie-persisted navigation with a mobile sheet.
 template: guide
 status: experimental
 related: [components/disclosure, components/tooltip, components/modal, components/menu]
@@ -99,6 +99,7 @@ import { sidebarCookieOpen, SIDEBAR_COOKIE_NAME } from "@rivetjs/cdk/sidebar/sta
 | `defaultOpen` | `boolean` | `true` | Uncontrolled initial state; pass the cookie value here for SSR ([Persisted state](#persisted-state)). |
 | `open` | `boolean \| Signal<boolean> \| () => boolean` | none | Controlled: a plain value or accessor (only `onOpenChange` runs), or a two-way Signal. |
 | `onOpenChange` | `(open: boolean) => void` | none | Every change the sidebar makes (trigger, rail, shortcut, `setOpen`). |
+| `onKeyDown` | `(event: KeyboardEvent) => void` | none | Runs for keydown inside the wrapper before the toggle shortcut check. |
 | `toggleShortcut` | `string \| false` | `"mod+b"` | Rivet: the toggle chord. `mod` = Cmd or Ctrl; `shift` / `alt` must match exactly; the key matches `event.key` or `event.code`. `false` turns it off. |
 | `reduceMotion` | `boolean` | `false` | Rivet: no collapse, sheet, sub-menu or page transitions (`data-reduce-motion="true"`). `prefers-reduced-motion: reduce` always applies. |
 | `closeMobileOnAction` | `boolean` | `false` | Rivet: pressing a menu button closes the mobile sheet (off = upstream: the sheet stays open; `@rivetjs/ui` turns it on). Group, menu and item levels override it (nearest wins). |

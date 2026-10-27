@@ -99,13 +99,14 @@ Hooks for your own markup: `@rivetjs/cdk/menu/behaviour` (`menuTriggerProps(prop
 | `onAction` | `() => void` | Per-item action (also calls the menu's). |
 | `shouldCloseOnSelect` | `boolean` | Overrides the menu / section. |
 | `href`, `hrefLang`, `target`, `rel`, `download`, `ping`, `referrerPolicy`, `routerOptions` | | Link item (`<a>`). |
-| `onPress…`, `onHover…`, `onFocus`, `onBlur`, `onFocusChange` | | Same events as RAC. |
+| `onPress`, `onPressStart`, `onPressEnd`, `onPressUp`, `onPressChange` | Press callbacks | Press lifecycle; `onPressChange` receives the boolean pressed state. |
+| `onHoverStart`, `onHoverEnd`, `onHoverChange`, `onFocus`, `onBlur`, `onFocusChange` | Hover / focus callbacks | Hover and focus lifecycle; change callbacks receive booleans. |
 | `class`, `style`, `children` | value or function | Render props: `isHovered`, `isPressed`, `isSelected`, `isFocused`, `isFocusVisible`, `isDisabled`, `selectionMode`, `selectionBehavior`, `hasSubmenu`, `isOpen`. |
 | `render` | `(props, renderProps) => element` | Replaces the default `<div>` of `MenuItem`; see [Render](#render). |
 
 ### MenuSection, SubmenuTrigger, MenuLoadMoreItem
 
-- `MenuSection`: own `selectionMode` / `selectedKeys` / `onSelectionChange` / `shouldCloseOnSelect`; `items` + render function.
+- `MenuSection`: own `selectionMode` / `selectedKeys` / `defaultSelectedKeys` / `onSelectionChange` / `disallowEmptySelection` / `shouldCloseOnSelect`; `items` + render function.
 - `SubmenuTrigger`: `delay` (ms before hover opens, default 200); children = trigger `MenuItem` + `Popover`.
 - `MenuLoadMoreItem`: `onLoadMore`, `isLoading` (value or accessor), `scrollOffset`.
 

@@ -6,7 +6,7 @@ status: experimental
 related: [components/navigation-tree, components/listbox, components/grid-list, foundations/data, foundations/collections, foundations/selection, foundations/key-manager]
 ---
 
-`Tree` renders a single-column `role="treegrid"`: each `TreeItem` is a `role="row"` with `aria-level`, `aria-expanded` (parents), `aria-posinset` and `aria-setsize`, and child `TreeItem`s nest inside their parent. It is a port of React Aria Components `Tree`: the same parts (`Tree`, `TreeItem`, `TreeItemContent`, `TreeSection`, `TreeHeader`, `TreeLoadMoreItem`), props and render props. The server HTML holds the visible rows with their final ARIA state; collapsed rows are not rendered. Arrow keys move between rows, :kbd[ArrowRight] / :kbd[ArrowLeft] expand and collapse, letters jump by typeahead. A `Button slot="chevron"` in the row content is the expand toggle; a `Checkbox slot="selection"` is the selection checkbox.
+`Tree` renders a single-column `role="treegrid"`: each `TreeItem` is a `role="row"` with `aria-level`, `aria-expanded` (parents), `aria-posinset` and `aria-setsize`, and child `TreeItem`s nest inside their parent. The server HTML holds the visible rows with their final ARIA state; collapsed rows are not rendered. Arrow keys move between rows, :kbd[ArrowRight] / :kbd[ArrowLeft] expand and collapse, letters jump by typeahead. A `Button slot="chevron"` in the row content is the expand toggle; a `Checkbox slot="selection"` is the selection checkbox.
 
 ::example{id=tree-basic}
 

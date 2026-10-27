@@ -61,7 +61,7 @@ Known limitation: popovers created on a resumed page do not see the provider and
 
 ::example{id=portal-outlet}
 
-`@rivetjs/cdk/portal-outlet` ports Angular CDK's imperative portals, browser only: a **portal** is content, an **outlet** is a place it can be attached to. The [overlay service](overlay-service.md) attaches them to its panes.
+`@rivetjs/cdk/portal-outlet` provides browser-only imperative portals: a **portal** is content, an **outlet** is a place it can be attached to. The [overlay service](overlay-service.md) attaches them to its panes.
 
 | Export | Description |
 | --- | --- |

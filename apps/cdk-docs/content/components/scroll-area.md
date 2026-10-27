@@ -1,12 +1,12 @@
 ---
 title: ScrollArea
-description: ScrollArea from @rivetjs/cdk/scroll-area keeps native scrolling and draws custom, stylable scrollbars that mirror it (Radix UI port).
+description: ScrollArea from @rivetjs/cdk keeps native scrolling and draws custom, stylable scrollbars that mirror it.
 template: guide
 status: experimental
 related: [foundations/scrolling, foundations/bidi, foundations/observers]
 ---
 
-`ScrollArea` augments native scrolling for custom, cross-browser styling. The viewport scrolls natively: wheel, touch, keyboard and scroll anchoring stay the browser's. The native scrollbars are hidden. Custom scrollbars mirror the viewport's scroll metrics: the thumb size comes from the viewport-to-content ratio and its position from the scroll offset. You can drag the thumb, click the track, or turn the wheel over a scrollbar. This is a port of [Radix UI Primitives ScrollArea](https://www.radix-ui.com/primitives/docs/components/scroll-area) 1.3.0.
+`ScrollArea` augments native scrolling for custom, cross-browser styling. The viewport scrolls natively: wheel, touch, keyboard and scroll anchoring stay the browser's. The native scrollbars are hidden. Custom scrollbars mirror the viewport's scroll metrics: the thumb size comes from the viewport-to-content ratio and its position from the scroll offset. You can drag the thumb, click the track, or turn the wheel over a scrollbar.
 
 ::example{id=scroll-area-basic}
 

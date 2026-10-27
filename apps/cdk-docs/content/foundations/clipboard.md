@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/utilities, foundations/announcements, foundations/platform]
 ---
 
-`@rivetjs/cdk/clipboard` writes text to the clipboard. `copy(text)` uses `navigator.clipboard.writeText` and falls back to a hidden `<textarea>` plus `execCommand("copy")` where that API is missing or refused (insecure origins, some frames). The rest of the module is a port of the Angular CDK clipboard: synchronous copies, pending copies for large strings, and the `[cdkCopyToClipboard]` behaviour with retries.
+`@rivetjs/cdk/clipboard` writes text to the clipboard. `copy(text)` uses `navigator.clipboard.writeText` and falls back to a hidden `<textarea>` plus `execCommand("copy")` where that API is missing or refused (insecure origins, some frames). It also supports synchronous copies, pending copies for large strings, and retries with `copyToClipboard`.
 
 ::example{id=clipboard-copy}
 

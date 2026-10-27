@@ -196,7 +196,7 @@ Target the default class names and `[data-entering]` / `[data-exiting]`. For a r
 
 ## Testing
 
-`@rivetjs/testing/user` ports React Aria's test utils: `new User().createTester("Dialog", { root: trigger, overlayType: "modal" })` gives `open({ interactionType })`, `close()`, `getTrigger()` and `getDialog()`.
+`@rivetjs/testing/user` provides interaction testers: `new User().createTester("Dialog", { root: trigger, overlayType: "modal" })` gives `open({ interactionType })`, `close()`, `getTrigger()` and `getDialog()`.
 
 ## Upstream
 

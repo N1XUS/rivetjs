@@ -6,7 +6,7 @@ status: experimental
 related: [components/search-field, components/combobox, components/listbox, components/menu, components/select, foundations/collections]
 ---
 
-`Autocomplete` is a port of React Aria Components `Autocomplete` (with react-aria `useAutocomplete` and react-stately `useAutocompleteState`). It renders no element: it connects an input field (`SearchField` or `TextField`) to a collection (`ListBox`, `Menu`, `GridList`, `TagGroup`, `Table`) placed inside it. Typing in the field filters the collection with `filter`; the arrow keys move a virtual focus through the collection (`aria-activedescendant`) while DOM focus stays in the input, and :kbd[Enter] selects or runs the focused item. Use it for command palettes, searchable menus and filterable lists; for a field with a popup listbox, use [ComboBox](combobox.md).
+`Autocomplete` connects an input to a filtered collection. It renders no element: it connects an input field (`SearchField` or `TextField`) to a collection (`ListBox`, `Menu`, `GridList`, `TagGroup`, `Table`) placed inside it. Typing in the field filters the collection with `filter`; the arrow keys move a virtual focus through the collection (`aria-activedescendant`) while DOM focus stays in the input, and :kbd[Enter] selects or runs the focused item. Use it for command palettes, searchable menus and filterable lists; for a field with a popup listbox, use [ComboBox](combobox.md).
 
 ::example{id=autocomplete-menu}
 
@@ -65,10 +65,6 @@ For a controlled filter (server results, custom ranking), omit `filter`, own the
 ## Collections
 
 The collection merges `SelectableCollectionContext`: `ListBox`, `Menu`, `GridList`, `TagGroup` and `Table` support it. With a `Menu`, :kbd[Enter] runs the focused item's action (a command palette); with a `ListBox`, it selects. A `ListBox` without children renders its `items`.
-
-:::warning
-A `ListBox` inside an `Autocomplete` does not pick up the autocomplete's collection props yet: it keeps its own id (the input's `aria-controls` points elsewhere), is not filtered and gets no virtual focus. Use a `Menu` until this is fixed.
-:::
 
 ## DOM events and attributes
 
