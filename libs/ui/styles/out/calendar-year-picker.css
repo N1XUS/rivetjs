@@ -8,7 +8,6 @@
   }
 
   .calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"] {
-    will-change: opacity;
     transition: opacity var(--duration-fast) var(--ease-out), visibility 0s linear;
   }
 
@@ -123,7 +122,6 @@
     padding: var(--spacing, .25rem);
     opacity: 0;
     --r-year: max(var(--r-min, 0px), calc(var(--r-inner) - var(--spacing)));
-    will-change: opacity;
     grid-template-columns: repeat(3, 1fr);
     display: grid;
     position: absolute;

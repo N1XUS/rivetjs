@@ -80,7 +80,6 @@
   }
 
   .button:active, .button[data-pressed="true"] {
-    will-change: transform;
     background-color: var(--button-bg-pressed);
     transform: scale(.97);
   }

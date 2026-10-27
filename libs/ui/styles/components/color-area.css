@@ -45,7 +45,8 @@
    ========================================================================== */
 
 .color-area__thumb {
-  @apply size-4 rounded-xl will-change-[width,height];
+  /* Rivet (WILL-CHANGE, TW-179): no `will-change-[width,height]` (layout properties: no compositor effect). */
+  @apply size-4 rounded-xl;
 
   /* Current color from React Aria */
   background-color: var(--color-area-thumb-color);

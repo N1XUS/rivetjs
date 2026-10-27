@@ -86,7 +86,6 @@
   }
 
   .disclosure__content[data-expanded="true"] {
-    will-change: height, opacity;
     opacity: 1;
   }
 

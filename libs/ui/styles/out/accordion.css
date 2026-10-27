@@ -170,7 +170,6 @@
   }
 
   .accordion__panel[data-expanded="true"], details[open] > .accordion__panel {
-    will-change: height, opacity;
     opacity: 1;
   }
 

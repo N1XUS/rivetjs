@@ -72,7 +72,6 @@
     height: calc(var(--spacing, .25rem) * 6);
     border-radius: calc(var(--radius) * 1.5);
     color: var(--accent-soft-foreground);
-    will-change: scale;
     transition: transform var(--duration-base) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     justify-content: center;
@@ -170,7 +169,6 @@
     border-radius: calc(var(--radius) * 3);
     --tw-outline-style: none;
     cursor: var(--cursor-interactive);
-    will-change: background-color, border-color;
     transition: background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     outline-style: none;
@@ -200,7 +198,6 @@
     font-weight: var(--font-weight-medium, 500);
     color: var(--foreground);
     -webkit-tap-highlight-color: transparent;
-    will-change: scale;
     transition: scale var(--duration-base) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     justify-content: center;

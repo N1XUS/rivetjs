@@ -84,7 +84,7 @@
 .calendar__nav-button {
   @apply flex size-6 items-center justify-center rounded-2xl text-accent-soft-foreground;
 
-  will-change: scale;
+  /* Rivet (WILL-CHANGE, TW-179): no permanent `will-change: scale` (wrong property: the press animates `transform`). */
 
   /**
    * Transitions
@@ -188,7 +188,7 @@
   /* Cell (td) wrapper styles - margins now work with grid layout */
   @apply relative flex aspect-square size-full items-center justify-center rounded-3xl text-center text-sm font-medium outline-none no-highlight;
 
-  will-change: scale;
+  /* Rivet (WILL-CHANGE, TW-179): no permanent `will-change: scale` on the 35–42 cells per month. */
   /**
    * Transitions
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity

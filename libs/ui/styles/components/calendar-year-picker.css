@@ -35,7 +35,8 @@
 /* Day grid – default visible */
 .calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"],
 .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"] {
-  will-change: opacity;
+  /* Rivet (WILL-CHANGE, TW-179): no permanent `will-change: opacity` on the day grid / year grid — the hidden year grid's
+     hint kept 200 year-cell layers alive while closed; the crossfade promotes itself while it runs. */
   transition:
     opacity var(--duration-fast) var(--ease-out),
     visibility 0ms linear;
@@ -105,7 +106,6 @@
   grid-template-columns: repeat(3, 1fr);
 
   /* When closing: instant (no transition) */
-  will-change: opacity;
 }
 
 .calendar-year-picker__year-grid[data-open="true"] {

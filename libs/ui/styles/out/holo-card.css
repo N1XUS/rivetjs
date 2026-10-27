@@ -37,10 +37,10 @@
     transform-style: preserve-3d;
     transform: rotateY(calc((var(--holo-card-pointer-x) - 50) * .28deg)) rotateX(calc((50 - var(--holo-card-pointer-y)) * .28deg));
     transition: transform .5s var(--ease-out);
-    will-change: transform;
   }
 
   .holo-card[data-active="true"] .holo-card__rotator {
+    will-change: transform;
     transition-duration: 80ms;
   }
 

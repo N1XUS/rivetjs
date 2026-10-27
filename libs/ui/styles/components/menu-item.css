@@ -61,7 +61,7 @@
   /* Pressed state */
   &:active,
   &[data-pressed="true"] {
-    @apply will-change-transform;
+    /* Rivet (WILL-CHANGE, TW-179): no `will-change-transform` (set in the same frame as the transform). */
     transform: scale(0.98);
   }
 

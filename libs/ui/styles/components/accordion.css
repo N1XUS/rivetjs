@@ -143,9 +143,10 @@ span.accordion__indicator {
     opacity var(--duration-base) var(--ease-out);
   @apply motion-reduce:transition-none;
 
+  /* Rivet (WILL-CHANGE, TW-179): no `will-change` here — it held a layer on every expanded panel for as long as it stayed
+     open (height is not compositable; a running opacity transition promotes itself). */
   &[data-expanded="true"],
   details[open] > & {
-    will-change: height, opacity;
     opacity: 1;
   }
 }

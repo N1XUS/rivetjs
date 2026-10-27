@@ -42,6 +42,7 @@
 
 - Durations only via `var(--duration-fast | base | slow)` (120 / 180 / 260 ms) or `duration-(--duration-*)`; `--ease-smooth` = `cubic-bezier(0.2, 0, 0, 1)`. `libs/ui/tests/motion-tokens.test.ts` fails on a literal duration not in its `EXCEPTIONS` (reasons) and on stale exceptions. `@rivetjs/motion` reads the same tokens.
 - Fields: root `gap: var(--field-gap-help)` (4), label adds `--field-gap-label − --field-gap-help` (`label.css`, roots listed there; a new field root → add it to that `:where()` list), groups `--field-gap-group` (16).
+- `will-change` (TW-179, guard `libs/ui/tests/will-change.test.ts`): only inside a transient state block (`[data-entering]` / `[data-exiting]` / `[data-active]`) or on a listed element with its reason (drawer / sheet dialog: drag targets mounted only while open). Never permanent on repeated elements (cells, buttons, panels), never on `:active` (same frame as the change), never on layout properties. `transform-gpu` (`translateZ(0)`) is a permanent layer too (one per calendar cell / button today).
 - RTL: centre with `left-1/2 -translate-x-1/2` (direction-neutral), never `start-1/2` + a physical translate; physical 1 px nudges get an `rtl:` mirror.
 
 ## Look presets (TW-148)

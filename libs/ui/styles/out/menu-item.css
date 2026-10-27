@@ -74,7 +74,6 @@
   }
 
   .menu-item:active, .menu-item[data-pressed="true"] {
-    will-change: transform;
     transform: scale(.98);
   }
 

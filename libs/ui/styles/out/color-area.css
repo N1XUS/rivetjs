@@ -35,7 +35,6 @@
     width: calc(var(--spacing, .25rem) * 4);
     height: calc(var(--spacing, .25rem) * 4);
     border-radius: calc(var(--radius) * 1.5);
-    will-change: width,height;
     background-color: var(--color-area-thumb-color);
     transition: width var(--duration-fast) var(--ease-out), height var(--duration-fast) var(--ease-out);
     border: 3px solid #fff;

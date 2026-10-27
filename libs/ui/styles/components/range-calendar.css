@@ -84,7 +84,7 @@
 .range-calendar__nav-button {
   @apply flex size-6 items-center justify-center rounded-xl text-accent-soft-foreground;
 
-  will-change: scale;
+  /* Rivet (WILL-CHANGE, TW-179): no permanent `will-change: scale` (wrong property: the press animates `transform`). */
 
   /**
    * Transitions
@@ -188,7 +188,7 @@
   @apply relative z-1 mx-0 my-[2px] rounded-3xl p-0 outline-none;
   cursor: var(--cursor-interactive);
 
-  will-change: background-color, border-color;
+  /* Rivet (WILL-CHANGE, TW-179): no `will-change: background-color, border-color` (not compositable: no effect but a hint). */
   /**
    * Transitions
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
@@ -203,7 +203,7 @@
   .range-calendar__cell-button {
     @apply flex aspect-square w-full items-center justify-center rounded-3xl text-sm font-medium text-foreground no-highlight;
 
-    will-change: scale;
+    /* Rivet (WILL-CHANGE, TW-179): no permanent `will-change: scale` on every cell button. */
     transition:
       scale var(--duration-base) var(--ease-out),
       background-color var(--duration-fast) var(--ease-out),

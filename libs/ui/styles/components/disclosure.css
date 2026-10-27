@@ -54,8 +54,8 @@
     opacity var(--duration-base) var(--ease-out);
   @apply motion-reduce:transition-none;
 
+  /* Rivet (WILL-CHANGE, TW-179): no `will-change` (it held a layer while expanded; see accordion.css). */
   &[data-expanded="true"] {
-    will-change: height, opacity;
     opacity: 1;
   }
 }

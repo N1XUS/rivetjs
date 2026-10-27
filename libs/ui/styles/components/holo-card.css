@@ -50,11 +50,12 @@
   transform-style: preserve-3d;
   transform: rotateY(calc((var(--holo-card-pointer-x) - 50) * 0.28deg)) rotateX(calc((50 - var(--holo-card-pointer-y)) * 0.28deg));
   transition: transform 500ms var(--ease-out);
-  will-change: transform;
 }
 
+/* `will-change` only while the pointer / gyro drives the tilt (WILL-CHANGE, TW-179). */
 .holo-card[data-active="true"] .holo-card__rotator {
   transition-duration: 80ms;
+  will-change: transform;
 }
 
 /**
