@@ -46,7 +46,7 @@ export interface RenderCacheOptions {
    * on under the `development` condition.
    */
   verify?: boolean;
-  /** Longest props key (characters) worth caching; longer → rendered normally. Default 8,192. */
+  /** Longest encoded props key (all characters, including names and delimiters); longer → rendered normally. Default 8,192. */
   maxKey?: number;
 }
 /** Counters (since creation or `clear()`). */
@@ -219,59 +219,67 @@ let serial = 0;
 // numbers / bigints `;`-terminated, brackets for arrays / objects. `false`: not plain data (functions,
 // signals, class instances, slots, records, symbols, too deep / too long) → not cacheable.
 const MAX_DEPTH = 32;
-let budget = 0;
-function encode(value: unknown, depth: number): string | false {
+const bounded = (value: string, max: number): string | false => (value.length <= max ? value : false);
+function encode(value: unknown, depth: number, max: number): string | false {
   switch (typeof value) {
     case "string":
-      return (budget -= value.length) < 0 ? false : "s" + value.length + ":" + value;
+      return value.length > max ? false : bounded("s" + value.length + ":" + value, max);
     case "number":
-      return Object.is(value, -0) ? "n-0;" : "n" + value + ";";
+      return bounded(Object.is(value, -0) ? "n-0;" : "n" + value + ";", max);
     case "boolean":
-      return value ? "t" : "f";
+      return max < 1 ? false : value ? "t" : "f";
     case "undefined":
-      return "U";
+      return max < 1 ? false : "U";
     case "bigint":
-      return "b" + value + ";";
+      return bounded("b" + value + ";", max);
     case "object":
       break;
     default:
       return false;
   }
-  if (value === null) return "N";
-  if (depth >= MAX_DEPTH || --budget < 0) return false;
+  if (value === null) return max < 1 ? false : "N";
+  if (depth >= MAX_DEPTH || max < 2) return false;
   if (Array.isArray(value)) {
     let out = "[";
     for (let i = 0; i < value.length; i++) {
-      const item = encode(value[i], depth + 1);
+      const item = encode(value[i], depth + 1, max - out.length - 1);
       if (item === false) return false;
       out += item;
     }
     return out + "]";
   }
   const proto = Object.getPrototypeOf(value);
-  if (proto === Date.prototype) return "D" + (value as Date).getTime() + ";";
+  if (proto === Date.prototype) return bounded("D" + (value as Date).getTime() + ";", max);
   if (proto !== Object.prototype && proto !== null) return false;
   let out = "{";
   for (const key in value) {
-    const item = encode((value as Record<string, unknown>)[key], depth + 1);
+    const name = encode(key, 0, max - out.length - 1);
+    if (name === false) return false;
+    const item = encode((value as Record<string, unknown>)[key], depth + 1, max - out.length - name.length - 1);
     if (item === false) return false;
-    out += "s" + key.length + ":" + key + item;
+    out += name + item;
   }
   return out + "}";
 }
 /** Key of `props` (or `key(props)`); false: not plain data. Getters run; reading a signal makes it unkeyable. */
 function keyOf<P>(props: P, key: ((props: P) => unknown) | undefined, skip: readonly string[] | null, max: number): string | false {
   const { value, signals } = _trackReads(() => {
-    budget = max;
-    if (key) return encode(key(props), 0);
-    if (skip === null) return encode(props, 0);
+    if (key) return encode(key(props), 0, max);
+    if (skip === null) return encode(props, 0, max);
+    if (max < 2) return false;
     // Shells: every prop except the holes; a hole's presence is part of the key (absent holes are no slot).
     let out = "{";
     for (const name in props as object) {
       const hole = skip.indexOf(name);
-      const item = hole >= 0 ? ((props as Record<string, unknown>)[name] == null ? "N" : "H") : encode((props as Record<string, unknown>)[name], 1);
+      const field = encode(name, 0, max - out.length - 1);
+      if (field === false) return false;
+      const remaining = max - out.length - field.length - 1;
+      const item =
+        hole >= 0
+          ? bounded((props as Record<string, unknown>)[name] == null ? "N" : "H", remaining)
+          : encode((props as Record<string, unknown>)[name], 1, remaining);
       if (item === false) return false;
-      out += "s" + name.length + ":" + name + item;
+      out += field + item;
     }
     return out + "}";
   });

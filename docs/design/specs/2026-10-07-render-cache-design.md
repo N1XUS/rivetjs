@@ -47,7 +47,7 @@ Status 2026-10-07: design + prototype. Runtime `@rivetjs/runtime/server-cache` (
 
 - `serial \0 variant \0 partition \0 props` — `serial` = per-wrapper counter (a re-created wrapper — HMR re-evaluation, in-process redeploy — never sees old entries; ids are diagnostics only).
 - Props encoding: self-delimiting, injective, no hashing (Map key = full string: no collision possible): strings length-prefixed, numbers / bigints `;`-terminated (`-0` distinct), `t f N U`, arrays `[…]`, plain objects `{…}` in insertion order, Date as time. Anything else (functions, signals, slots, records, class instances, Map / Set, symbols) → not keyable → render normally.
-- Bounds: depth 32, key ≤ `maxKey` chars → normal render (no huge keys, no cycles).
+- Bounds: depth 32; a props key longer than `maxKey` characters bypasses caching and renders normally (no huge retained keys, no cycles). Every encoded character counts, including property names, primitive encodings, delimiters and shell hole markers; the budget is local to each key build, including reentrant getter calls.
 - Getters run inside `_trackReads`: a signal read → re-read for the enclosing tracker, call bypasses.
 - Shells: key = non-hole props + presence bit per hole.
 - `key(props)` option: user-chosen subset (must cover everything the output depends on — verified in dev).

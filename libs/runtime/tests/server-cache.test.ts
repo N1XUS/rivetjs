@@ -39,6 +39,64 @@ export function Page(props) {
 
 const scopeOf = (extra: Partial<RenderCacheScope> = {}): RenderCacheScope => ({ cache: createRenderCache({ admit: "first", verify: false }), ...extra });
 
+test("maxKey rejects oversized property names, numeric arrays, bigint and shell keys", () => {
+  for (const key of [{ ["x".repeat(1000)]: 1 }, Array(1000).fill(1), 10n ** 1000n, [true, false, null, undefined, true, false, null, undefined]]) {
+    for (const wrap of [cached, shell]) {
+      const cache = createRenderCache({ maxKey: 8, admit: "first", verify: false });
+      const view = wrap(() => "ok", { key: () => key });
+      assert.equal(
+        withRenderCache({ cache }, () => html(view({}))),
+        "ok",
+      );
+      assert.equal(cache.stats.bypass, 1);
+      assert.equal(cache.stats.entries, 0);
+    }
+  }
+  const cache = createRenderCache({ maxKey: 8, admit: "first", verify: false });
+  const view = shell(() => "ok");
+  withRenderCache({ cache }, () => view({ children: () => "child" }));
+  assert.equal(cache.stats.bypass, 1, "shell hole names and markers count too");
+});
+
+test("maxKey includes encoding overhead and admits an exactly fitting key", () => {
+  for (const [key, length] of [
+    ["abcd", 7],
+    [1234, 6],
+    [-0, 4],
+    [1234n, 6],
+    [new Date(0), 3],
+    [[1, 2], 8],
+    [{ x: 1 }, 9],
+    [null, 1],
+    [undefined, 1],
+    [true, 1],
+  ] as const) {
+    for (const maxKey of [length - 1, length]) {
+      const cache = createRenderCache({ maxKey, admit: "first", verify: false });
+      const view = cached(() => "ok", { key: () => key });
+      withRenderCache({ cache }, () => view({}));
+      assert.equal(cache.stats.entries, Number(maxKey === length), `${String(key)} with maxKey ${maxKey}`);
+    }
+  }
+});
+
+test("a nested cache call in a props getter cannot reset the outer key budget", () => {
+  const outer = createRenderCache({ maxKey: 12, admit: "first", verify: false });
+  const inner = createRenderCache({ maxKey: 8192, admit: "first", verify: false });
+  const nested = cached(() => "inner");
+  const view = cached(() => "outer");
+  const props = {
+    get x() {
+      withRenderCache({ cache: inner }, () => nested({}));
+      return "x".repeat(100);
+    },
+  };
+  withRenderCache({ cache: outer }, () => view(props));
+  assert.equal(outer.stats.entries, 0);
+  assert.equal(outer.stats.bypass, 1);
+  assert.equal(inner.stats.entries, 1);
+});
+
 test("no scope: the wrapper renders normally every time", async () => {
   const m = await serverModule(source);
   const Header = cached(m.Header);
