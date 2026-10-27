@@ -291,10 +291,41 @@ export interface RunOptions {
   touch?: boolean;
 }
 
+/**
+ * Wait for `selector` to attach, then (at most 1 s) until no finite animation runs on its element or an ancestor. Playwright's
+ * click / tap retries an element that is not yet stable with forced scroll alignments (end, center, start): mid entrance
+ * animation (a menu or popover zooming in) that scroll moves the page, and a non-modal popover closes on scroll (React Aria
+ * `useCloseOnScroll`), so the step fails where a person's click would land (COLD-FIX-B). No animation: no wait.
+ */
+async function settled(page: import("playwright").Page, selector: string): Promise<void> {
+  // A menu opened by the previous step may still be mounting (a cold boot): the click would wait for it anyway.
+  await page.waitForSelector(selector, { state: "attached", timeout: 5000 }).catch(() => {});
+  await page
+    .waitForFunction(
+      (selector) => {
+        let target: Element | null;
+        try {
+          target = document.querySelector(selector);
+        } catch {
+          return true; // a Playwright-only selector (`text=…`): no CSS form to inspect
+        }
+        for (let el = target; el; el = el.parentElement)
+          for (const animation of el.getAnimations())
+            if (animation.playState === "running" && Number.isFinite(Number(animation.effect?.getComputedTiming().endTime))) return false;
+        return true;
+      },
+      selector,
+      { timeout: 1000, polling: "raf" },
+    )
+    .catch(() => {});
+}
+
 /** Run one test step (exported for tests/steps.test.ts and the cold matrix, `cold.ts`). */
 export async function run(page: import("playwright").Page, step: Step, id: string, options: RunOptions = {}): Promise<void> {
   const where = `example ${id}: step ${JSON.stringify(step)}`;
   try {
+    const target = "click" in step ? step.click : "tap" in step ? step.tap : "dblclick" in step ? step.dblclick : null;
+    if (target !== null) await settled(page, target);
     if (options.touch && ("click" in step || "tap" in step)) await page.tap("click" in step ? step.click : step.tap, { timeout: 5000 });
     else if ("click" in step) await page.click(step.click, { timeout: 5000 });
     else if ("dblclick" in step) await page.dblclick(step.dblclick, { timeout: 5000 });

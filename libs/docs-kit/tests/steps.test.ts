@@ -116,3 +116,28 @@ test("tap fires touch events, a touch pointer and click", async () => {
 test("a failing step names the example and the step", async () => {
   await assert.rejects(steps({ hover: "#missing" }), /example steps-test: step \{"hover":"#missing"\} failed/);
 });
+
+// A menu zooming in that closes when the page scrolls (a non-modal popover, React Aria `useCloseOnScroll`): the click
+// waits out the entrance animation instead of letting Playwright's not-stable retries force-scroll the page (COLD-FIX-B).
+const ZOOM = `<!doctype html><html><body style="margin:0;height:3000px">
+<style>@keyframes zoom { from { transform: scale(0.9) translateY(4px); opacity: 0 } }</style>
+<div id="menu" style="position:absolute;top:400px;left:40px;width:180px;animation:zoom 200ms ease-out">
+  <div id="item" style="height:36px" onclick="document.getElementById('log').textContent += 'click '">Rename</div>
+</div>
+<p id="log"></p>
+<script>addEventListener("scroll", () => document.getElementById("menu")?.remove(), { once: true });</script>
+</body></html>`;
+
+test("click waits for the target's entrance animation (no forced scroll closes the menu)", async () => {
+  for (let i = 0; i < 3; i++) {
+    page = await browser.newPage({ viewport: { width: 800, height: 600 } });
+    try {
+      await page.setContent(ZOOM);
+      await run(page, { click: "#item" }, "steps-test");
+      assert.equal(await page.textContent("#log"), "click ");
+      assert.equal(await page.evaluate(() => scrollY), 0);
+    } finally {
+      await page.close();
+    }
+  }
+});
