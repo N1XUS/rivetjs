@@ -74,3 +74,26 @@ test("_rcdata keeps one Text node per part, rejects non-scalar parts, removes it
   assert.throws(() => createRoot(() => _rcdata(el("<div></div>") as never, [])), /requires textarea or title/);
   assert.throws(() => createRoot(() => _rcdata(el("<title></title>") as never, [1 as never])), /Invalid RCDATA part/);
 });
+
+test("_select preserves conversion, duplicate options and mutation reapplication for large selections", async () => {
+  const select = el<HTMLSelectElement>(
+    '<select multiple><option value="1">One</option><option value="1">Duplicate</option><option value="NaN">NaN</option><option value="null">Null</option><option value="missing">Missing</option></select>',
+  );
+  const value = signal<unknown[]>([...Array.from({ length: 20 }, (_, i) => i), 1, NaN, null]);
+  const root = createRoot(() => _select(select, value));
+  assert.deepEqual(
+    [...select.options].map((o) => o.selected),
+    [true, true, true, true, false],
+  );
+  select.options[4]!.value = "19";
+  await new Promise((r) => setTimeout(r, 0));
+  assert.ok(select.options[4]!.selected);
+  value.set([1]);
+  assert.deepEqual(
+    [...select.options].map((o) => o.selected),
+    [true, true, false, false, false],
+  );
+  value.set([]);
+  assert.ok([...select.options].every((o) => !o.selected));
+  root.dispose();
+});

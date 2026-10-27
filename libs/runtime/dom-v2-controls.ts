@@ -70,7 +70,10 @@ export function _select(target: HTMLSelectElement, read: () => unknown, model?: 
   const apply = () => {
     if (target.multiple || Array.isArray(last)) {
       const list = (Array.isArray(last) ? last : last == null ? [] : [last]).map(String);
-      for (const o of target.options) o.selected = list.includes(o.value);
+      if (list.length > 16) {
+        const selected = new Set(list);
+        for (const o of target.options) o.selected = selected.has(o.value);
+      } else for (const o of target.options) o.selected = list.includes(o.value);
     } else target.value = last == null ? "" : String(last);
   };
   effect(() => {
