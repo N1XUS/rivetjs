@@ -16,6 +16,8 @@
 //   over local state — a live prop the native markup would not follow);
 // - every other component in it is a non-boundary that reads no context (an `Icon`): nothing below can read or drive
 //   the family's state through its contexts, and no boundary below needs an adopt run of the family's parts;
+// - no part other than the root is called inside a call of itself with no root in between (TABLE-NATIVE: a column
+//   group, a tree row: the native markup cannot nest them);
 // - no part of the family is called where no root of it encloses the call in the same JSX (a wrapper component, JSX built
 //   outside the root and inserted as a value), and no part is used as a value (`componentValues`): then a native root's
 //   subtree holds only parts the proof saw. One such use anywhere makes every site of that family unproven.
@@ -121,6 +123,15 @@ export function nativeSites(input: NativeInput): Map<string, string[]> {
     const c = info.get(to);
     return !!c && !c.source && !c.listens && !c.context && (inputs || !live(caller)) && !(renders.get(to) ?? []).some((t) => t === null || interactive(t));
   };
+  // A non-root part inside the same part with no root of the family in between (`around` is innermost first): a nested
+  // column (column groups) or a nested row (tree rows) has no native rendering (`<th>` in a `<th>`, `<tr>` in a `<tr>`).
+  const selfNested = (around: (string | null)[], part: string, rootId: string): boolean => {
+    for (const tag of around) {
+      if (tag === rootId) return false;
+      if (tag === part) return true;
+    }
+    return false;
+  };
   const allowed = (attrs: string[] | undefined, keys: ReadonlySet<string>): boolean =>
     attrs !== undefined && attrs.every((a) => (keys.has(a) || a.startsWith("data-") || a.startsWith("aria-")) && !a.endsWith("*"));
   for (const [file, list] of families)
@@ -167,6 +178,7 @@ export function nativeSites(input: NativeInput): Map<string, string[]> {
           const keys = parts.get(to);
           if (keys) {
             if (s!.fn || !allowed(call.attrs, keys)) ((ok = false), trace?.(rootId, "part call", site.caller, call.tag, call.attrs, s!.fn));
+            else if (to !== rootId && selfNested(s!.around, to, rootId)) ((ok = false), trace?.(rootId, "nested part", site.caller, call.tag));
           } else if (s!.fn || !staticInstance(to, site.caller, call.inputs)) ((ok = false), trace?.(rootId, "inner", site.caller, call.tag));
         });
         if (!ok) continue;
