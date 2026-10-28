@@ -3,6 +3,7 @@
 // client renders: ../tests/live-props.browser.test.tsx.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
+import { isDeepStrictEqual } from "node:util";
 import type { Page } from "playwright";
 import { stories, watch, type Stories } from "./harness.ts";
 
@@ -132,6 +133,35 @@ const snap = (page: Page) =>
     };
   });
 
+// The parts' bindings follow the flip once their units adopted (the first change adopts them, their chunks may still be
+// loading): wait for the state, then compare.
+const untilSnap = async (page: Page, want: unknown) => {
+  let got = await snap(page);
+  for (const end = Date.now() + 5000; !isDeepStrictEqual(got, want) && Date.now() < end; got = await snap(page)) await page.waitForTimeout(25);
+  assert.deepEqual(got, want);
+};
+
+// REDS-CDK 2026-10-28 (order / load dependent red): a unit adopted after the first write (its chunks loaded late) put
+// the pre-adopt `checked` back over its binding's current value — `dirtyOf` counted every checkbox / radio without a
+// `value` attribute as user-changed (`value` "on" against `defaultValue` ""). Slow script responses make it every time.
+test("live props: a first change while the parts' chunks load late — controlled Checkbox / Switch inputs follow", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  await page.route(/\/assets\/.*\.js$/, async (route) => {
+    await new Promise((done) => setTimeout(done, 150));
+    await route.continue();
+  });
+  await page.goto(s.origin + "/live-props");
+  await page.click("#lp-flip");
+  await page.waitForFunction(() => document.querySelector("[data-testid=lp-check]")!.className === "c-on", undefined, { timeout: 10000 });
+  await page.waitForFunction(() => document.querySelector("[data-testid=lp-switch]")!.className === "s-on", undefined, { timeout: 10000 });
+  // Settled: the class bindings ran in the same adopt runs as the inputs' `checked`.
+  assert.equal(await page.evaluate(() => document.querySelector<HTMLInputElement>("[data-testid=lp-check] input")!.checked), true);
+  assert.equal(await page.evaluate(() => document.querySelector<HTMLInputElement>("[data-testid=lp-switch] input")!.checked), true);
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
 test("live props: ToggleButton / Checkbox / Switch / TextField / Slider / Select / ListBoxItem / Tabs / RadioGroup / Text / Link / wave-3 parts value forms update in place", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
@@ -227,9 +257,9 @@ test("live props: ToggleButton / Checkbox / Switch / TextField / Slider / Select
   ];
   for (const sel of sels) await mark(page, sel);
   await flip(page);
-  assert.deepEqual(await snap(page), on);
+  await untilSnap(page, on);
   await flip(page);
-  assert.deepEqual(await snap(page), off);
+  await untilSnap(page, off);
   for (const sel of sels) assert.ok(await kept(page, sel), sel + " kept (no re-creation)");
   assert.deepEqual(seen.errors, []);
   await page.close();

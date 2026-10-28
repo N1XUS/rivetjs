@@ -57,8 +57,9 @@ test("update after another first change (append first, then update)", async () =
   await page.close();
 });
 
-// ListBoxSection creates its rows' For in its body (no region of its own): the section row is re-created as a whole.
-test("a row of a section's nested For re-renders on a value change (the section row is re-created)", async () => {
+// ListBoxSection creates its rows' For in its body: on the derived resume the section's nested list re-creates the
+// changed row only, like a client rebuild (the serialized model re-created the section row as a whole).
+test("a row of a section's nested For re-renders on a value change (only that row is re-created)", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
   await page.goto(s.origin + "/list-data");
@@ -66,7 +67,7 @@ test("a row of a section's nested For re-renders on a value change (the section 
   await mark(page, "#ld-sections");
   await page.click("#ld-veg");
   await until(page, "#ld-sections", ["Pear", "Leek", "KALE"]);
-  assert.deepEqual(await marks(page, "#ld-sections"), [1, 0, 0], "the other section keeps its rows");
+  assert.deepEqual(await marks(page, "#ld-sections"), [1, 2, 0], "the other section and the unchanged row keep their elements");
   assert.deepEqual(seen.errors, []);
   await page.close();
 });

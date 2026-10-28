@@ -149,7 +149,11 @@ export function dirtyOf(controls: readonly Element[]): Dirty[] {
       tag = el.localName;
     const dirty =
       tag === "input"
-        ? el.value !== el.defaultValue || el.checked !== el.defaultChecked
+        ? // A checkbox / radio without a `value` attribute reads `value` "on" against `defaultValue` "": only `checked`
+          // tells (REDS-CDK 2026-10-28: every such control counted as changed, so an adopt run after a write put the
+          // pre-adopt `checked` back over the binding's current one — a live `isSelected` checkbox stayed unchecked).
+          ((el as HTMLInputElement).type === "checkbox" || (el as HTMLInputElement).type === "radio" ? false : el.value !== el.defaultValue) ||
+          el.checked !== el.defaultChecked
         : tag === "textarea"
           ? el.value !== el.defaultValue
           : Array.from(el.options).some((o) => o.selected !== o.hasAttribute("selected"));
