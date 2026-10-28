@@ -868,10 +868,11 @@ const soleOf = (a: UnitAlign, n: Node): boolean => {
   const hole = a.holes.get(n);
   return hole !== undefined && ((hole.kind === 1 && hole.sole !== null) || hole.kind === 2);
 };
-// An element's children, read on first use (a slot's current that stays untouched while a lazy list keeps its rows).
-function lazyKids(el: Element): Node[] {
+// A slot's current, captured on first use: row adoption may insert anchors before the
+// lazy list's first reconcile. Freeze then, so DOM mutations during reconcile cannot shift it.
+function lazyNodes(read: () => Node[]): Node[] {
   let got: Node[] | null = null;
-  const at = (): Node[] => (got ??= kids(el));
+  const at = (): Node[] => (got ??= read());
   return new Proxy([] as Node[], {
     get: (_, key) => Reflect.get(at(), key),
     has: (_, key) => Reflect.has(at(), key),
@@ -984,7 +985,10 @@ function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): numbe
     }
     hole.groups = groups;
     hole.span = nodes;
-    a.span.set(hole.nodes[0]!, nodes);
+    a.span.set(
+      hole.nodes[0]!,
+      lazyNodes(() => (nodes.length ? spanOf(nodes[0]!, nodes[nodes.length - 1]!) : [])),
+    );
     a.span.set(hole.nodes[1]!, []);
     return j;
   }
@@ -1096,7 +1100,10 @@ function alignUnit(a: UnitAlign, fl: Node[], ll: Node[], at: Node, ref: Node | n
       // The list is the element's only content: its rows stay unscanned until needed (`rowsOf`), the slot holds the
       // element's children through a lazy view (O(1) adopt for a page's long list).
       only.sole = l;
-      a.span.set(only.nodes[0]!, lazyKids(l));
+      a.span.set(
+        only.nodes[0]!,
+        lazyNodes(() => kids(l)),
+      );
       a.span.set(only.nodes[1]!, []);
     } else alignUnit(a, fk, kids(l), l, null, marked);
     if (a.fail) return;
@@ -1212,13 +1219,18 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   }
   // 3. Answers: per creation its live node, per slot what it holds (holes: the server nodes they stand for).
   const one = (n: Node): Node[] => a.span.get(n) ?? [map.get(n) ?? n];
+  // A helper-returned For has an insertion anchor beside its hole, so it is not
+  // the sole-hole case. Defer the containing array's expansion too: eagerly flattening
+  // its range loses the boundary anchors added when its rows materialise.
   const mapped = (current: Current): Current =>
     current === null || current === undefined
       ? null
       : Array.isArray(current)
         ? current.length === 2 && soleOf(a, current[0]!) && a.holes.get(current[0]!)!.nodes[1] === current[1]
           ? a.span.get(current[0]!)!
-          : current.flatMap(one)
+          : current.some((n) => a.holes.get(n)?.kind === 1)
+            ? lazyNodes(() => current.flatMap(one))
+            : current.flatMap(one)
         : a.span.has(current)
           ? a.span.get(current)!.slice()
           : (map.get(current) ?? null);
@@ -1928,7 +1940,8 @@ function records(t: BoundaryTail, patch: boolean): void {
 }
 function trigger(r: Rec): void {
   const go = () => {
-    const p = need(r);
+    // A dependent boundary can still be inside an unmaterialised row after its parent adopts.
+    const p = woken(r);
     if (p !== true) p.catch(report);
   };
   if (r.flags & LOAD) go();
