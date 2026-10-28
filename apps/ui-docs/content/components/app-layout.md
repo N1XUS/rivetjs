@@ -103,6 +103,8 @@ A multi-level breadcrumb trail in the navbar shows the current depth.
 
 ### With aside
 
+The aside column shows from 1024px. The aside demos set `asideMobile="sheet"`, so in a narrower frame `AppLayout.AsideTrigger` opens the panel as a sheet.
+
 ::example{id=app-layout-aside}
 
 ### Content scroll mode

@@ -19,7 +19,7 @@ function AppSidebar() {
   return (
     <Sidebar>
       <Sidebar.Header>
-        <span class="px-2 text-sm font-semibold">Planwise</span>
+        <span class="px-2 text-sm font-semibold in-data-[collapsible=icon]:hidden">Planwise</span>
       </Sidebar.Header>
       <Sidebar.Content>
         <Sidebar.Group>

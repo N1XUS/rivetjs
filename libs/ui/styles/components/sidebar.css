@@ -272,8 +272,9 @@
 .sidebar__footer {
   @apply flex flex-col gap-2 p-2;
 
+  /* Rivet: the icon rail clips header / footer content wider than the rail (a brand name ran over the inset). */
   .sidebar[data-collapsible="icon"] & {
-    @apply px-1.5;
+    @apply overflow-hidden px-1.5;
   }
 }
 

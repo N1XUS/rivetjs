@@ -18,7 +18,7 @@ function DocsSidebar() {
   return (
     <Sidebar>
       <Sidebar.Header>
-        <span class="px-2 text-sm font-semibold">Lattice docs</span>
+        <span class="px-2 text-sm font-semibold in-data-[collapsible=icon]:hidden">Lattice docs</span>
       </Sidebar.Header>
       <Sidebar.Content>
         {NAV.map((group) => (

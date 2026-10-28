@@ -65,7 +65,7 @@ function AppSidebar() {
   return (
     <Sidebar>
       <Sidebar.Header>
-        <span class="px-2 text-sm font-semibold">Northwind</span>
+        <span class="px-2 text-sm font-semibold in-data-[collapsible=icon]:hidden">Northwind</span>
       </Sidebar.Header>
       <Sidebar.Content>
         <Sidebar.Group>

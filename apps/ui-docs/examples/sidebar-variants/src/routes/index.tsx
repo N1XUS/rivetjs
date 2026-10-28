@@ -14,7 +14,7 @@ export default function SidebarVariants() {
     <Sidebar.Provider>
       <Sidebar variant={variant} side={side}>
         <Sidebar.Header>
-          <span class="px-2 text-sm font-semibold">Acme</span>
+          <span class="px-2 text-sm font-semibold in-data-[collapsible=icon]:hidden">Acme</span>
         </Sidebar.Header>
         <Sidebar.Content>
           <Sidebar.Group>
