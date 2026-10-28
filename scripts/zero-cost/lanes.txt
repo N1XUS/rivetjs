@@ -55,11 +55,7 @@ rivet-router/server/assets/resume-format-cYh7FszK.js c5f43e8d15ac
 rivet-router/server/assets/route-cache-CUJN0q4D.js ecca1601e09e
 rivet-router/server/assets/server-cache-BQnLdqHL.js d4b0efd6b25b
 rivet-router/server/assets/strict-csp-nG9xclrT.js 21a1c9dc0690
-<<<<<<< ours
-rivet-router/server/entry.server.js 8f58e8650895
-=======
-rivet-router/server/entry.server.js e9cd14140bc7
->>>>>>> theirs
+rivet-router/server/entry.server.js 22db4eccce77
 rivet.mjs 1d7f24edb7f5
 server-uws.mjs cb8c978a4da4
 server.mjs 68a3f8f56e37
