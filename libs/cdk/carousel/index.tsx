@@ -211,9 +211,12 @@ export function Carousel(inProps: CarouselProps) {
   const viewport = createRef<HTMLElement>();
   // Client render: start after mount. Resumed page: with rotation, `plugins` or `onApi` (embla inits them on mount:
   // Fade / AutoHeight / tweens must run before the first interaction) the engine starts when the viewport is
-  // visible; otherwise the first interaction starts it (`ensureCarousel` in the handlers).
-  if (typeof document !== "undefined" || hasRotation(state) || state.plugins || state.onApi)
-    clientEffect(() => carouselEffect(state, viewport()), { when: "visible" });
+  // visible; otherwise the first interaction starts it (`ensureCarousel` in the handlers) — also when the carousel's
+  // body runs in the browser as part of another unit's adopt run (`adopted`: the root it returned is the live server
+  // element; CLAIM 2026-10-28: an autoplay carousel's handler prop adopts the page unit, which started every carousel).
+  const eager = hasRotation(state) || !!state.plugins || !!state.onApi;
+  let adopted = false;
+  if (typeof document !== "undefined" || eager) clientEffect(() => (adopted && !eager ? undefined : carouselEffect(state, viewport())), { when: "visible" });
   const values = renderValues(state);
   const rp = renderPropsOf(props, { values, defaultClassName: "rv-Carousel" });
   const dom = globalDOMProps(props, ROOT_OWNED);
@@ -228,8 +231,8 @@ export function Carousel(inProps: CarouselProps) {
   const loop = state.options.loop ? "true" : undefined;
   const draggable = state.options.watchDrag !== false ? "true" : undefined;
   const parts = { viewport, tabs: !!props.tabs };
-  if (props.render)
-    return props.render(
+  if (props.render) {
+    const out = props.render(
       {
         ...dom,
         ref: ref as never,
@@ -264,7 +267,10 @@ export function Carousel(inProps: CarouselProps) {
       } as never,
       values,
     );
-  return (
+    adopted = live(out);
+    return out;
+  }
+  const out = (
     <div
       {...dom}
       ref={ref as never}
@@ -298,7 +304,11 @@ export function Carousel(inProps: CarouselProps) {
       </Provider>
     </div>
   );
+  adopted = live(out);
+  return out;
 }
+/** The root a Carousel body returned is in the document already: the server's element, handed over by an adopt run. */
+const live = (out: unknown): boolean => typeof document !== "undefined" && out instanceof Node && out.isConnected;
 
 function useCarousel(part: string): { state: CarouselState; parts: { viewport: Ref<HTMLElement>; tabs: boolean } } {
   const state = useContext(CarouselStateContext);

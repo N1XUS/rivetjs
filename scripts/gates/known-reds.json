@@ -30,27 +30,6 @@
       "since": "2026-10-27"
     },
     {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/carousel.test.ts > carousel: HeroUI CSS applied; no engine before interaction on the static carousels",
-      "reason": "derived resume granularity: the autoplay `#ca-auto` boots at load (`data-boot`), and its `onSelect` handler prop (a non-data prop) makes its record adopt with its parent, so the route unit re-runs and every cdk Carousel on the page (`#ca-basic`, `#ca-thumbs`) starts its engine before any interaction (REDS-UI 2026-10-28)",
-      "owner": "runtime / compiler (RED-COMP: standalone adopt of a woken child with handler props)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/data-grid.test.ts > data-grid: resumed sort + selection keep the server rows; keyboard after resume",
-      "reason": "derived adopt mismatch: in `<tbody>` the empty server branch region of the top spacer `<Show>` (`<!--[--><!--r0[--><!--]--><!--]-->`, Show false) is claimable by the following `<For>` hole (`R_OPEN`), so the For claims it as its first row group and fails at the `]` marker; the cdk DataGrid boundary renders afresh in the browser (dev: 'did not adopt its server markup: <tbody> children'), re-creating every row (REDS-UI 2026-10-28)",
-      "owner": "runtime (RED-COMP: dom-derived alignUnit / claim of a For after a false Show)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/data-grid.test.ts > data-grid: virtualized 10k rows scroll swaps the window; sort on 10k",
-      "reason": "same derived adopt mismatch as the sort case (Show-false region claimed by the For hole): the first (held) scroll adopts by rendering the grid afresh, the new scroll container starts at scrollTop 0, so the window never reaches row 5000; a second scroll works (REDS-UI 2026-10-28)",
-      "owner": "runtime (RED-COMP: dom-derived alignUnit / claim of a For after a false Show)",
-      "since": "2026-10-27"
-    },
-    {
       "gate": "vitest:cdk-components",
       "match": "libs/cdk/tests-components/drag-drop-resume.test.ts > nothing drag-drop related loads before the lists are visible; scrolling them in preloads it",
       "reason": "derived resume: the story's `export const preload = \"visible\"` is ignored under derived (compiler CLAUDE.md) and there is no derived visible prefetch for boundaries, so nothing loads on scroll-in on the lean story page. Needs a ruling: port visible prefetch to derived, or drop the contract + these tests (triaged REDS-CDK 2026-10-28)",
