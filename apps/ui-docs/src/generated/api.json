@@ -27481,8 +27481,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/button/button.tsx",
-    "line": 104,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/button/button.tsx#L104"
+    "line": 105,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/button/button.tsx#L105"
    },
    "href": "/api/rivetjs/ui/button/ButtonRoot/"
   },
@@ -29354,8 +29354,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/button-group/button-group.tsx",
-    "line": 118,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/button-group/button-group.tsx#L118"
+    "line": 124,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/button-group/button-group.tsx#L124"
    },
    "href": "/api/rivetjs/ui/button-group/ButtonGroupSeparator/"
   },
@@ -29398,8 +29398,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/button-group/button-group.tsx",
-    "line": 110,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/button-group/button-group.tsx#L110"
+    "line": 116,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/button-group/button-group.tsx#L116"
    },
    "href": "/api/rivetjs/ui/button-group/ButtonGroupSeparatorProps/"
   },
@@ -324837,8 +324837,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/scheduler/state.ts",
-    "line": 85,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/state.ts#L85"
+    "line": 86,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/state.ts#L86"
    },
    "href": "/api/rivetjs/ui/scheduler/SchedulerOptions/"
   },
@@ -326202,8 +326202,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/scheduler/state.ts",
-    "line": 201,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/state.ts#L201"
+    "line": 202,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/state.ts#L202"
    },
    "href": "/api/rivetjs/ui/scheduler/SchedulerState/"
   },
