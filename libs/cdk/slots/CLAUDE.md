@@ -40,7 +40,8 @@ THE RAC slot / context / render-prop contract (port of RAC `utils.tsx`). Every R
 - a JSX value stored in a const and inserted later (`const content = <P>…<Show/>…</P>; return <div>{content}</div>`) loses the `Show` region on resumed pages (toggling does nothing) — render inline
 - element spread rejects `style` ("Unsafe attribute name", runtime `dom.ts` bindAttribute / `dom-v2.ts` UNSAFE_NAME): parts destructure `style` and bind `style={…}` explicitly; never leave `style` in a spread object
 - a spread never sets `ref`: render-function children of `Pressable` / `Focusable` pass `ref={p.ref}` explicitly
-- `contextProps` with both refs boots a `clientEffect` (runtime at idle on resumed pages) — prefer one ref
+- `contextProps` with both refs boots a `clientEffect` (runtime at idle on resumed pages) — prefer one ref. Kept idle (CEFF 2026-10-28): an owner may read the context ref while the part (an independent unit) has not adopted (e.g. `createSlot` `hasSlot`).
+- `markRendered` server cleanup for a `deps` slot id (field error parts): `when: "interaction"` (CEFF 2026-10-28; was idle: every field rendered invalid booted its page). A part removed before its unit adopted: the owner's `slotIdRef(id, isInvalid())` / browser `createSlotId` check drop the id. Consequence: a server id whose part never rendered (no `deps`) stays in the owner's attribute on a page with nothing else booting (documented deviation; story `/slots` `#nd-input`).
 - `Dynamic` (non-compiled tags: Text/Label/Separator custom `elementType`) drops event handlers on the server (not resumable)
 - `MergedId` (`createMergedId(id?)`, `isMergedId`, `mergedIdOf`): RA mergeIds for an id a parent generates and a child may override. Context `id` = MergedId → `contextProps` sets `ctxProps.id = merged.id` and writes a non-empty own id into `merged.current` (parent reads `current()` for aria-controls etc.)
 

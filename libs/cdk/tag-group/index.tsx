@@ -402,12 +402,16 @@ export function TagList<T extends object>(inProps: TagListProps<T>) {
   const rootRef = mergeRefValues<HTMLDivElement>(ref, gridEl);
   // After the items changed: focused-key reset + focus restoration (useListState / useTagGroup effects).
   const cache: { items?: ICollection<Node<T>> } = {};
-  clientEffect(() => {
-    version();
-    const el = gridEl();
-    if (!el) return;
-    queueMicrotask(() => (cache.items = gridListItemsChanged(state as ListState<T>, el, cache.items)));
-  });
+  // Item changes come from the group's own events or a write its render reads (a wake adopts it): no trigger (CEFF 2026-10-28).
+  clientEffect(
+    () => {
+      version();
+      const el = gridEl();
+      if (!el) return;
+      queueMicrotask(() => (cache.items = gridListItemsChanged(state as ListState<T>, el, cache.items)));
+    },
+    { when: "interaction" },
+  );
   const tagDescription = (
     <Show when={() => highlight() != null}>
       {() => (

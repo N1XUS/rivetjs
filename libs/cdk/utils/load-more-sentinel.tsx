@@ -52,29 +52,34 @@ export function loadMoreSentinel(props: LoadMoreSentinelProps, ref: () => HTMLEl
     }
   };
 
-  clientEffect(() => {
-    // Dependencies: collection, ref, scrollOffset, direction.
-    read(props.collection);
-    const element = ref();
-    const scrollOffset = read(props.scrollOffset) ?? 1;
-    const direction = read(props.direction) ?? "end";
-    let sentinelObserver: IntersectionObserver | null = null;
-    if (element) {
-      // Tear down and set up a new IntersectionObserver when the collection changes so that we can properly trigger additional loadMores if there is room for more items
-      // Need to do this tear down and set up since using a large rootMargin will mean the observer's callback isn't called even when scrolling the item into view beause its visibility hasn't actually changed
-      // https://codesandbox.io/p/sandbox/magical-swanson-dhgp89?file=%2Fsrc%2FApp.js%3A21%2C21
-      const margin = 100 * scrollOffset;
-      // For direction='start', right/left margins have no affect for vertical scroll containers. We are not supporting reverse horizontal scroll containers for now.
-      const rootMargin = direction === "start" ? `${margin}% 0px 0px 0px` : `0px ${margin}% ${margin}% ${margin}%`;
-      sentinelObserver = new IntersectionObserver(triggerLoadMore, {
-        root: getScrollParent(element) as HTMLElement,
-        rootMargin,
-      });
-      sentinelObserver.observe(element);
-    }
+  // Resumed page: the observer starts when the collection scrolls into view (CEFF 2026-10-28, was idle). Limit: a
+  // sentinel within `scrollOffset` of the viewport but its collection not yet in it loads once the collection shows.
+  clientEffect(
+    () => {
+      // Dependencies: collection, ref, scrollOffset, direction.
+      read(props.collection);
+      const element = ref();
+      const scrollOffset = read(props.scrollOffset) ?? 1;
+      const direction = read(props.direction) ?? "end";
+      let sentinelObserver: IntersectionObserver | null = null;
+      if (element) {
+        // Tear down and set up a new IntersectionObserver when the collection changes so that we can properly trigger additional loadMores if there is room for more items
+        // Need to do this tear down and set up since using a large rootMargin will mean the observer's callback isn't called even when scrolling the item into view beause its visibility hasn't actually changed
+        // https://codesandbox.io/p/sandbox/magical-swanson-dhgp89?file=%2Fsrc%2FApp.js%3A21%2C21
+        const margin = 100 * scrollOffset;
+        // For direction='start', right/left margins have no affect for vertical scroll containers. We are not supporting reverse horizontal scroll containers for now.
+        const rootMargin = direction === "start" ? `${margin}% 0px 0px 0px` : `0px ${margin}% ${margin}% ${margin}%`;
+        sentinelObserver = new IntersectionObserver(triggerLoadMore, {
+          root: getScrollParent(element) as HTMLElement,
+          rootMargin,
+        });
+        sentinelObserver.observe(element);
+      }
 
-    return () => {
-      if (sentinelObserver) sentinelObserver.disconnect();
-    };
-  });
+      return () => {
+        if (sentinelObserver) sentinelObserver.disconnect();
+      };
+    },
+    { when: "visible" },
+  );
 }

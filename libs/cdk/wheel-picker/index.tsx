@@ -92,16 +92,21 @@ export function Wheel<V extends WheelValue = WheelValue>(props: WheelProps<V>) {
 
   // Client renders: spin when the value changes from outside (a typed segment); stop the motion on unmount.
   const follow = { previous: -1 };
-  clientEffect(() => {
-    const index = wheelSelectedIndex(state);
-    const node = el();
-    untrack(() => {
-      if (node) wheelArm(state, node);
-      if (node && follow.previous >= 0) wheelFollow(state, node, index, follow.previous);
-    });
-    follow.previous = index;
-  });
-  clientEffect(() => () => wheelDispose(state));
+  // Resumed page: the drum's non-passive `wheel` listener is armed once it scrolls into view (a wheel needs a visible drum;
+  // CEFF 2026-10-28, was idle).
+  clientEffect(
+    () => {
+      const index = wheelSelectedIndex(state);
+      const node = el();
+      untrack(() => {
+        if (node) wheelArm(state, node);
+        if (node && follow.previous >= 0) wheelFollow(state, node, index, follow.previous);
+      });
+      follow.previous = index;
+    },
+    { when: "visible" },
+  );
+  clientEffect(() => () => wheelDispose(state), { when: "interaction" });
 
   return (
     <div

@@ -24,7 +24,7 @@
 //   no `<img>`); the probe runs in a `clientEffect`, which a resumed page starts without a user event; `Show` bindings add
 //   the `<img>` and drop the fallback. An `Image` outside a `Root` (upstream: throws) keeps a status of its own.
 // - `useLayoutEffect` / `useEffect` → `clientEffect`; `useCallbackRef` not needed (the callback is read when called).
-import { createContext, signal, useContext } from "@rivetjs/reactivity";
+import { createContext, signal, untrack, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
 import { Provider, Show, clientEffect } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
@@ -105,40 +105,51 @@ const AvatarImage = (props: AvatarImageProps): JSX.Element => {
     });
   }
 
-  // Upstream: layout effect comparing the status with the previous render's (`loadingStatusRef`).
+  // Upstream: layout effect comparing the status with the previous render's (`loadingStatusRef`). Reports changes only:
+  // on a resumed page it runs with the loading effect below (same unit), never needs a trigger of its own.
   let previous: ImageLoadingStatus = status();
-  clientEffect(() => {
-    const next = status();
-    if (next !== previous) {
-      previous = next;
-      local.onLoadingStatusChange?.(next);
-    }
-  });
+  clientEffect(
+    () => {
+      const next = status();
+      if (next !== previous) {
+        previous = next;
+        local.onLoadingStatusChange?.(next);
+      }
+    },
+    { when: "interaction" },
+  );
 
-  // Upstream `useImageLoadingStatus` (deps: src, crossOrigin, referrerPolicy — read as accessors here).
-  clientEffect(() => {
-    const source = read(local.src);
-    const crossOrigin = read(imageProps.crossOrigin);
-    const referrerPolicy = read(imageProps.referrerPolicy);
-    if (!source) {
-      status.set("error");
-      return;
-    }
-    const image = new window.Image();
-    const handleLoad = (event: Event) => status.set(getImageLoadingStatus(event.currentTarget as HTMLImageElement));
-    const handleError = () => status.set("error");
-    image.addEventListener("load", handleLoad);
-    image.addEventListener("error", handleError);
-    if (referrerPolicy) image.referrerPolicy = referrerPolicy;
-    image.crossOrigin = crossOrigin ?? null;
-    image.src = source;
-    status.set(getImageLoadingStatus(image));
-    return () => {
-      image.removeEventListener("load", handleLoad);
-      image.removeEventListener("error", handleError);
-      status.set("idle");
-    };
-  });
+  // Upstream `useImageLoadingStatus` (deps: src, crossOrigin, referrerPolicy — read as accessors here). The server cannot
+  // know whether the image loads (it renders the fallback), so a resumed page with a `src` probes at idle. Without a `src`
+  // the status stays "not loaded" (the server's fallback): no trigger unless `onLoadingStatusChange` wants the "error" report
+  // (CEFF 2026-10-28). `visible` would start at once
+  // anyway: the image part renders no element to observe before it loads.
+  clientEffect(
+    () => {
+      const source = read(local.src);
+      const crossOrigin = read(imageProps.crossOrigin);
+      const referrerPolicy = read(imageProps.referrerPolicy);
+      if (!source) {
+        status.set("error");
+        return;
+      }
+      const image = new window.Image();
+      const handleLoad = (event: Event) => status.set(getImageLoadingStatus(event.currentTarget as HTMLImageElement));
+      const handleError = () => status.set("error");
+      image.addEventListener("load", handleLoad);
+      image.addEventListener("error", handleError);
+      if (referrerPolicy) image.referrerPolicy = referrerPolicy;
+      image.crossOrigin = crossOrigin ?? null;
+      image.src = source;
+      status.set(getImageLoadingStatus(image));
+      return () => {
+        image.removeEventListener("load", handleLoad);
+        image.removeEventListener("error", handleError);
+        status.set("idle");
+      };
+    },
+    { when: untrack(() => read(local.src) || local.onLoadingStatusChange) ? "idle" : "interaction" },
+  );
 
   return <Show when={() => status() === "loaded"}>{() => <img {...(imageProps as JSX.IntrinsicElements["img"])} src={read(local.src)} />}</Show>;
 };
@@ -159,12 +170,16 @@ const AvatarFallback = (props: AvatarFallbackProps): JSX.Element => {
   const canRender = signal(local.delayMs === undefined);
 
   // Upstream `useEffect(…, [delayMs])`: re-runs when a live `delayMs` changes (a new timer; never hides the fallback again).
-  clientEffect(() => {
-    const delayMs = local.delayMs;
-    if (delayMs === undefined) return;
-    const timerId = setTimeout(() => canRender.set(true), delayMs);
-    return () => clearTimeout(timerId);
-  });
+  // Resumed page: only a delayed fallback (hidden by the server) needs its timer before the first input (CEFF 2026-10-28).
+  clientEffect(
+    () => {
+      const delayMs = local.delayMs;
+      if (delayMs === undefined) return;
+      const timerId = setTimeout(() => canRender.set(true), delayMs);
+      return () => clearTimeout(timerId);
+    },
+    { when: untrack(() => local.delayMs) === undefined ? "interaction" : "idle" },
+  );
 
   return <Show when={() => canRender() && context.status?.() !== "loaded"}>{() => <span {...rest} />}</Show>;
 };

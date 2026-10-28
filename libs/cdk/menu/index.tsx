@@ -459,30 +459,41 @@ export function Menu<T = object>(inProps: MenuProps<T>) {
   const autoFocus = props.autoFocus;
   // Accessor options (Autocomplete): mirror into the state options the delegated handler reads.
   if (typeof shouldUseVirtualFocus === "function" || typeof disallowTypeAhead === "function")
-    clientEffect(() => {
-      state.options.shouldUseVirtualFocus = virtualFocus();
-      state.options.disallowTypeAhead = !!read(disallowTypeAhead);
-    });
+    // Read by the delegated handlers only (the effect runs when the menu adopts, before a held event replays).
+    clientEffect(
+      () => {
+        state.options.shouldUseVirtualFocus = virtualFocus();
+        state.options.disallowTypeAhead = !!read(disallowTypeAhead);
+      },
+      { when: "interaction" },
+    );
   // useSelectableCollection: the items changed (filter / load) → a pending "virtual focus first". React runs
   // it after the commit; here the count changes while the list's DOM is still being reconciled in the same
   // flush (an item's cleanup runs before its parent insertion removes its nodes), so it runs after the flush.
-  clientEffect(() => {
-    state.itemCount();
-    const el = element();
-    if (el) queueMicrotask(() => el.isConnected && untrack(() => menuCollectionUpdated(state, el)));
-  });
-  clientEffect(() => {
-    const el = element();
-    if (!el) return;
-    return untrack(() => {
-      menuAutoFocus(state, el, read(autoFocus) ?? false);
-      const sub = state.submenuTrigger;
-      if (!sub) return;
-      const parentMenu = state.parentId ? el.ownerDocument.getElementById(state.parentId) : null;
-      menuSubmenuOpened(sub, parentMenu, el);
-      return () => menuSubmenuClosed(sub);
-    });
-  });
+  clientEffect(
+    () => {
+      state.itemCount();
+      const el = element();
+      if (el) queueMicrotask(() => el.isConnected && untrack(() => menuCollectionUpdated(state, el)));
+    },
+    { when: "interaction" },
+  );
+  // Resumed page: only an auto-focused menu or an open submenu needs this before the first event (CEFF 2026-10-28).
+  clientEffect(
+    () => {
+      const el = element();
+      if (!el) return;
+      return untrack(() => {
+        menuAutoFocus(state, el, read(autoFocus) ?? false);
+        const sub = state.submenuTrigger;
+        if (!sub) return;
+        const parentMenu = state.parentId ? el.ownerDocument.getElementById(state.parentId) : null;
+        menuSubmenuOpened(sub, parentMenu, el);
+        return () => menuSubmenuClosed(sub);
+      });
+    },
+    { when: untrack(() => read(autoFocus)) || state.submenuTrigger ? "idle" : "interaction" },
+  );
 
   const { CollectionRoot } = renderer;
   // Virtualized: the menu element is the scroll container (RAC scrollRef); its focused item stays rendered and its

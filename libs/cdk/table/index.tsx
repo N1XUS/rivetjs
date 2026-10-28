@@ -485,36 +485,44 @@ export function Table(inProps: TableProps) {
   const rootRef = mergeRefValues<HTMLTableElement>(mergeRefValues<HTMLTableElement>(el as RefValue<HTMLTableElement>, userRef), container?.tableRef as never);
   // react-aria useHasTabbableChild (empty table with a tabbable child: the table leaves the tab order).
   const hasTabbableChild = signal(false);
-  clientEffect(() => {
-    const root = el();
-    if (!root || collection().size !== 0) return;
-    const update = () => hasTabbableChild.set(!!getFocusableTreeWalker(root, { tabbable: true }).nextNode());
-    update();
-    const observer = new MutationObserver(update);
-    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["tabIndex", "disabled"] });
-    return () => observer.disconnect();
-  });
+  // Resumed page: only a table rendered empty needs this before its first event (CEFF 2026-10-28, as Tree's TREE-PRE).
+  clientEffect(
+    () => {
+      const root = el();
+      if (!root || collection().size !== 0) return;
+      const update = () => hasTabbableChild.set(!!getFocusableTreeWalker(root, { tabbable: true }).nextNode());
+      update();
+      const observer = new MutationObserver(update);
+      observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["tabIndex", "disabled"] });
+      return () => observer.disconnect();
+    },
+    { when: untrack(() => collection().size) === 0 ? "idle" : "interaction" },
+  );
   // useGridState: reset the focused key when its row leaves the collection.
   // `blurred`: target of the last focusout to nowhere (Rivet: Chromium fires focusout when the focused row is
   // removed, jsdom / React's detached-node events do not — a blur whose target left the DOM keeps focus in the grid).
   const focusMemo: { last: TableCollection<unknown> | null; blurred: Element | null } = { last: null, blurred: null };
-  clientEffect(() => {
-    const c = collection();
-    const selection = data.selectionState;
-    const previous = untrack(selection.focusedKey);
-    resetGridFocusedKey(data, focusMemo.last, c);
-    focusMemo.last = c;
-    // useSelectableItem's focus effect for the replacement key, after the rows re-rendered.
-    const next = untrack(selection.focusedKey);
-    if (next == null || next === previous) return;
-    const wasFocused = untrack(selection.isFocused);
-    queueMicrotask(() => {
-      const lost = focusMemo.blurred;
-      if (untrack(selection.focusedKey) !== next || !(wasFocused || (lost && !lost.isConnected))) return;
-      const item = getItemElement(el(), next);
-      if (item && item.ownerDocument.activeElement !== item) focusSafely(item);
-    });
-  });
+  // Resumed page: the server's collection holds its focused key; nothing to reset before the first event (CEFF 2026-10-28).
+  clientEffect(
+    () => {
+      const c = collection();
+      const selection = data.selectionState;
+      const previous = untrack(selection.focusedKey);
+      resetGridFocusedKey(data, focusMemo.last, c);
+      focusMemo.last = c;
+      // useSelectableItem's focus effect for the replacement key, after the rows re-rendered.
+      const next = untrack(selection.focusedKey);
+      if (next == null || next === previous) return;
+      const wasFocused = untrack(selection.isFocused);
+      queueMicrotask(() => {
+        const lost = focusMemo.blurred;
+        if (untrack(selection.focusedKey) !== next || !(wasFocused || (lost && !lost.isConnected))) return;
+        const item = getItemElement(el(), next);
+        if (item && item.ownerDocument.activeElement !== item) focusSafely(item);
+      });
+    },
+    { when: "interaction" },
+  );
 
   // Column resizing (ResizableTableContainer): the layout state over the measured width.
   const resizeData = container ? createTableColumnResizeState<unknown>({ tableWidth: container.tableWidth }) : null;
@@ -1209,11 +1217,15 @@ export function ColumnResizer(props: ColumnResizerProps) {
   const resizerRef = mergeRefValues<HTMLDivElement>(resizer as RefValue<HTMLDivElement>, props.ref);
   // The cursor of the resizer (computed style) for the full-screen cursor overlay.
   const cursor = signal("");
-  clientEffect(() => {
-    const node = resizer();
-    resizableDirection();
-    if (node) cursor.set(node.ownerDocument.defaultView?.getComputedStyle(node).cursor ?? "");
-  });
+  // Read for the drag overlay only: nothing before the resizer's first event (CEFF 2026-10-28).
+  clientEffect(
+    () => {
+      const node = resizer();
+      resizableDirection();
+      if (node) cursor.set(node.ownerDocument.defaultView?.getComputedStyle(node).cursor ?? "");
+    },
+    { when: "interaction" },
+  );
   const values: ColumnResizerRenderProps = {
     isHovered: () => hovered(),
     isFocused: () => ring.isFocused(),

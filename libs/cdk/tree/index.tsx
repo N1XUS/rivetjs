@@ -672,13 +672,17 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
   };
   if (nav) {
     // Keep the current route's row visible inside the tree's own scroll container (never the page).
-    clientEffect(() => {
-      const el = row();
-      if (!isCurrent() || !el) return;
-      const scrollParent = getScrollParent(el, true) as HTMLElement;
-      const tree = el.closest('[role="treegrid"]');
-      if (tree && nodeContains(tree, scrollParent)) scrollIntoView(scrollParent, el, { block: "center" });
-    });
+    // Resumed page: only the server's current row scrolls before the first event; a later route change is an event (CEFF).
+    clientEffect(
+      () => {
+        const el = row();
+        if (!isCurrent() || !el) return;
+        const scrollParent = getScrollParent(el, true) as HTMLElement;
+        const tree = el.closest('[role="treegrid"]');
+        if (tree && nodeContains(tree, scrollParent)) scrollIntoView(scrollParent, el, { block: "center" });
+      },
+      { when: untrack(isCurrent) ? "idle" : "interaction" },
+    );
   }
   const rp = untrack(() =>
     renderProps(

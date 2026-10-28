@@ -152,6 +152,9 @@ test("form fields: native controls, labels, descriptions, two-way state, exclusi
   // Disclosures work with no JavaScript (native details name group).
   assert.equal(await page.evaluate(() => document.querySelector<HTMLDetailsElement>("#faq-1")!.open), true);
   await page.click("#faq-2 summary");
+  // A cold summary click inside a listening record is held until its chunk ran, then its default replays (CEFF
+  // 2026-10-28: before, the page's idle boot had adopted everything before the click).
+  await page.waitForFunction(() => document.querySelector<HTMLDetailsElement>("#faq-2")!.open);
   assert.equal(await page.evaluate(() => document.querySelector<HTMLDetailsElement>("#faq-1")!.open), false, "exclusive group");
   // Fetch-ahead (this file opts in) hints the page's chunks after load: only code fetched beyond those counts.
   const hints = new Set(await hinted(page));

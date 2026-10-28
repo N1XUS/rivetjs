@@ -435,12 +435,16 @@ function Shell<T>(shell: ShellProps<T>): DOMValue {
     });
   if (measure && measureVersion) {
     let first = true;
-    clientEffect(() => {
-      measureVersion();
-      const element = untrack(grid);
-      if (first || !element) return void (first = false);
-      relayoutMeasured(element, true);
-    });
+    // The first run is a no-op (relayouts follow later changes only): no trigger of its own (CEFF 2026-10-28).
+    clientEffect(
+      () => {
+        measureVersion();
+        const element = untrack(grid);
+        if (first || !element) return void (first = false);
+        relayoutMeasured(element, true);
+      },
+      { when: "interaction" },
+    );
   }
   const handleRef = props.handleRef;
   if (handleRef)

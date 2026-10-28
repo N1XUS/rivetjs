@@ -20,6 +20,6 @@
 `../tests/wheel-picker.browser.test.tsx` (Chromium: offsets, a11y, keys + wrap, type-ahead, disabled, notch / trackpad wheel, drag settle, flick, tap, reduced motion, follow, shared state, TimeWheels suite), `../tests/wheel-picker-ssr.test.ts` (server markup + resumable). Docs examples via `check-examples`.
 
 ## Gotchas
-- Delegated / resumed `wheel` listeners are passive (cannot `preventDefault`): `wheelArm` adds a non-passive per-element listener — from a client render's effect, or on a resumed page on first pointerover / pointerdown / keydown. A test dispatching `wheel` right after mount must `await flush()` first.
+- Delegated / resumed `wheel` listeners are passive (cannot `preventDefault`): `wheelArm` adds a non-passive per-element listener — from a client render's effect, or on a resumed page when the drum scrolls into view (the arm effect is `when: "visible"`, CEFF 2026-10-28; was idle) or on its first pointerover / pointerdown / keydown; the dispose effect is `interaction`. A test dispatching `wheel` right after mount must `await flush()` first.
 - Not yet: date drums, 3D cylinder transform.
 - Drum `data-rk` = `WHEEL_KEYS` (ArrowUp / ArrowDown / PageUp / PageDown / Home / End; none while disabled / read-only): cold stepping keys are held (never scroll the page) and replayed (SLIDER-KEY).

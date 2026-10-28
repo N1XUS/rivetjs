@@ -625,9 +625,12 @@ export function mergedIdOf(id: unknown): string | undefined {
 function markRendered(slotId: SlotId, value: true | string = true): void {
   setRendered(slotId.rendered, value);
   // Server: the flag stays set (the part is in the HTML). A part whose id has `deps` may unmount on the resumed page:
-  // its region gets the client cleanup the server cannot hand over (a client effect, so that page boots at idle).
+  // its region gets the client cleanup the server cannot hand over, registered when the part's unit adopts (`interaction`,
+  // CEFF 2026-10-28; was idle: every field rendered invalid booted its page at load). A part removed before its unit
+  // adopted is covered by the owner: the `deps` change that removes it wakes the owner, whose browser `createSlotId`
+  // check drops the id once no element has it.
   if (!SERVER) onCleanup(() => setRendered(slotId.rendered, false));
-  else if (changing.has(slotId)) clientEffect(() => () => setRendered(slotId.rendered, false));
+  else if (changing.has(slotId)) clientEffect(() => () => setRendered(slotId.rendered, false), { when: "interaction" });
 }
 
 /** Writes the flag; skips no-op writes, and defers one made during a computed evaluation (a build pass). */

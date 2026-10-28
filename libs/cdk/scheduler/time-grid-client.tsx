@@ -100,29 +100,38 @@ export function SchedulerTimeGridClient(props: SchedulerTimeGridClientProps): nu
   const now = props.now;
   // Initial scroll, re-applied when the axis or the view changes. The clock is read here, untracked, not through the
   // now-line signal (malva rule: a hidden line never ticks, so its minute would be stale).
-  clientEffect(() => {
-    const element = scroller();
-    state.view.value();
-    const axis = axisOf(state);
-    const centre = !!read(state.options.scrollToCurrentTime);
-    const business = read(state.options.businessHours);
-    if (!element) return;
-    untrack(() => {
-      const minutes = nowMinutes(state);
-      if (centre && minutes >= axis.min && minutes < axis.max) scrollTimeGrid(element, minutes, axis, "center");
-      else scrollTimeGrid(element, initialMinutes(business?.start), axis);
-    });
-  });
+  // Resumed page: the initial scroll is applied when the grid scrolls into view (CEFF 2026-10-28; was idle: every week /
+  // day view booted at load).
+  clientEffect(
+    () => {
+      const element = scroller();
+      state.view.value();
+      const axis = axisOf(state);
+      const centre = !!read(state.options.scrollToCurrentTime);
+      const business = read(state.options.businessHours);
+      if (!element) return;
+      untrack(() => {
+        const minutes = nowMinutes(state);
+        if (centre && minutes >= axis.min && minutes < axis.max) scrollTimeGrid(element, minutes, axis, "center");
+        else scrollTimeGrid(element, initialMinutes(business?.start), axis);
+      });
+    },
+    { when: "visible" },
+  );
   // `schedulerScrollToTime`: applied once by the live grid, then consumed; only the request is tracked.
-  clientEffect(() => {
-    const request = state.scrollRequest();
-    const element = scroller();
-    if (!request || !element) return;
-    untrack(() => {
-      scrollTimeGrid(element, parseTime(request.time), axisOf(state));
-      if (untrack(state.scrollRequest)?.sequence === request.sequence) state.scrollRequest.set(null);
-    });
-  });
+  // A request made before the grid adopted is still pending when it adopts (`visible` below): no trigger of its own.
+  clientEffect(
+    () => {
+      const request = state.scrollRequest();
+      const element = scroller();
+      if (!request || !element) return;
+      untrack(() => {
+        scrollTimeGrid(element, parseTime(request.time), axisOf(state));
+        if (untrack(state.scrollRequest)?.sequence === request.sequence) state.scrollRequest.set(null);
+      });
+    },
+    { when: "interaction" },
+  );
   // Minute clock of the now-line.
   clientEffect(
     () => {

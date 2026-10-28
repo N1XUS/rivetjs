@@ -356,11 +356,16 @@ export function FocusScope(props: FocusScopeProps) {
   const doc = browserDocument();
   const nodeToRestore = doc ? (getActiveElement(doc) as FocusableElement | null) : null;
   const resumed = !doc;
-  clientEffect(() => {
-    const element = scope();
-    if (!element) return;
-    return mountScope({ scope: element, contain, restoreFocus, autoFocus, nodeToRestore, resumed });
-  });
+  // Resumed page: containment / auto focus act before any input; a plain or restore-only scope registers when it adopts
+  // (its children adopt with it; restore runs on unmount) (CEFF 2026-10-28).
+  clientEffect(
+    () => {
+      const element = scope();
+      if (!element) return;
+      return mountScope({ scope: element, contain, restoreFocus, autoFocus, nodeToRestore, resumed });
+    },
+    { when: contain || autoFocus ? "idle" : "interaction" },
+  );
   return (
     <div
       ref={scope}

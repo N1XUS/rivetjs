@@ -116,7 +116,7 @@ const snapshot = (page: Page, id: string) =>
     [id, PARTS] as const,
   );
 
-test("wave1: every wave-1 component renders on the server (data-slot per part), styles applied; Button / Link preload only their resume chunks", () =>
+test("wave1: every wave-1 component renders on the server (data-slot per part), styles applied; nothing boots before input", () =>
   onPage(async (page) => {
     const seen = watch(page);
     await page.goto(s.origin + "/wave1");
@@ -131,11 +131,10 @@ test("wave1: every wave-1 component renders on the server (data-slot per part), 
     assert.notEqual(await page.$eval("#w-press", (el) => getComputedStyle(el).paddingLeft), "0px");
     assert.notEqual(await page.$eval("[data-slot=alert-root]", (el) => getComputedStyle(el).paddingTop), "0px");
     await page.waitForLoadState("networkidle");
-    // Documented (libs/ui/CLAUDE.md Known diffs): cdk Button / Link preload their resume chunks + the route module on load; the markup-only
-    // route below carries the strict gate.
-    // The chunk holding Button's boundary symbol (`@rivetjs/ui/…/button.tsx#ButtonRoot`; symbol ids carry no `$hash` suffix since the
-    // derived manifest): `resume-Button-…` with `chunks: "component"`, the route's (or a shared) chunk by default.
-    assert.ok(scriptsOf(seen.scripts, /\/button\/button\.tsx#ButtonRoot$/).length > 0, "Button resume chunk preloaded: " + seen.scripts.join(","));
+    // CEFF 2026-10-28: no effect on this page sets a load / idle trigger (field-error slot cleanup, src-less Avatar wait for the
+    // first event), so Button's resume chunk is not fetched before input either (it was, through the page's idle boot).
+    assert.equal(await page.$('script[type="rivet/boundaries"][data-boot]'), null, "nothing boots by itself");
+    assert.deepEqual(scriptsOf(seen.scripts, /\/button\/button\.tsx#ButtonRoot$/), [], "no Button resume chunk before input");
     assert.deepEqual(seen.errors, []);
   }));
 

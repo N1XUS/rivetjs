@@ -12,7 +12,7 @@ RAC TagGroup / TagList / Tag + RA useTagGroup / useTag on the `grid-list/behavio
 
 ## Invariants / gotchas
 - Remove-button slot props: plain values / inline arrows, no accessor (`isDisabled: () => …`) in the ButtonContext slot; use an `untrack(...)` snapshot (rule from the serialized model, where the accessor made the provider unserializable; kept until a derived test covers accessor slot props).
-- TagList calls `gridListItemsChanged` in a clientEffect + microtask: focus moves to the next tag (or the grid) after removal.
+- TagList calls `gridListItemsChanged` in a clientEffect + microtask: focus moves to the next tag (or the grid) after removal. `when: "interaction"` (CEFF 2026-10-28): item changes come from the group's events or a render-read write; a resumed TagGroup boots nothing (story `/tag-group`).
 - `tagProps` roving `tabIndex` reads focus keyed (`../selection/keyed.ts` `isFocusedKey` + `hasFocusedKey`): a focus move re-runs the two tags involved, not every tag. Remaining focus-move cost is the handlers' DOM collection scan (`listStateView` → `domCollection`, O(tags) per event).
 - `render` prop (RAC DOMRenderProps; `(attrs, renderProps)` → spread attrs; early return before the compiled element; `tests/render-collections.browser.test.tsx`) on TagGroup / TagList / Tag
 - Pending: tooltips (C1b).

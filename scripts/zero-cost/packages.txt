@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 410d8cd7941a 533371 css 8e1fd421ec84 1181987
-@rivetjs/ui [server] 98683df6adc2 474642 css 8e1fd421ec84 1181987
+@rivetjs/ui [dom] 814c8f272f0f 533663 css 8e1fd421ec84 1181987
+@rivetjs/ui [server] f0a0e6ded9e1 474934 css 8e1fd421ec84 1181987
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -101,10 +101,10 @@
 @rivetjs/ui/toggle-button-group [server] 646d9941f4aa 6026 css 8ab0992e9ccb 1176921
 @rivetjs/ui/close-button [dom] 86c3df5d4502 5607 css 8ab0992e9ccb 1176921
 @rivetjs/ui/close-button [server] 43b444b82df9 5400 css 8ab0992e9ccb 1176921
-@rivetjs/ui/avatar [dom] 27b8319df55d 6609 css 8ab0992e9ccb 1176921
-@rivetjs/ui/avatar [server] 92a2b50f02ed 6414 css 8ab0992e9ccb 1176921
-@rivetjs/ui/avatar-group [dom] e9d9a5a1e35f 9286 css 8ab0992e9ccb 1176921
-@rivetjs/ui/avatar-group [server] 6ae0c9263bbc 8815 css 8ab0992e9ccb 1176921
+@rivetjs/ui/avatar [dom] 5d8c31666055 6768 css 8ab0992e9ccb 1176921
+@rivetjs/ui/avatar [server] d7f972488c40 6571 css 8ab0992e9ccb 1176921
+@rivetjs/ui/avatar-group [dom] e579c90d3b31 9430 css 8ab0992e9ccb 1176921
+@rivetjs/ui/avatar-group [server] 252d3c177eb4 8959 css 8ab0992e9ccb 1176921
 @rivetjs/ui/progress-bar [dom] 6b396e74210a 6342 css 8ab0992e9ccb 1176921
 @rivetjs/ui/progress-bar [server] 713fb6214534 6071 css 8ab0992e9ccb 1176921
 @rivetjs/ui/progress-circle [dom] 9090a88cacb2 6714 css 8ab0992e9ccb 1176921
@@ -183,8 +183,8 @@
 @rivetjs/ui/dropdown [server] a8ba10d86a30 11571 css 8ab0992e9ccb 1176921
 @rivetjs/ui/range-calendar [dom] eb5515cdfe5e 21049 css 8ab0992e9ccb 1176921
 @rivetjs/ui/range-calendar [server] 21c75e042240 19411 css 8ab0992e9ccb 1176921
-@rivetjs/ui/input-otp [dom] 4b1db8ce3fdd 15126 css 8ab0992e9ccb 1176921
-@rivetjs/ui/input-otp [server] 00c7f1b6fd8b 13276 css 8ab0992e9ccb 1176921
+@rivetjs/ui/input-otp [dom] ae010a960472 15252 css 8ab0992e9ccb 1176921
+@rivetjs/ui/input-otp [server] 46efc20154ad 13402 css 8ab0992e9ccb 1176921
 @rivetjs/ui/date-input-group [dom] 4579aeeca79f 6601 css 8ab0992e9ccb 1176921
 @rivetjs/ui/date-input-group [server] 878b767f354b 6342 css 8ab0992e9ccb 1176921
 @rivetjs/ui/date-field [dom] c4d4a2c724c2 7354 css 8ab0992e9ccb 1176921
@@ -339,8 +339,8 @@
 @rivetjs/ui/text-shimmer [server] 0210c855d643 3727 css 91b77d4ecd3a 1993
 @rivetjs/ui/chat-loader [dom] ac40a192934c 7725 css 8ab0992e9ccb 1176921
 @rivetjs/ui/chat-loader [server] f6097f822242 7442 css 8ab0992e9ccb 1176921
-@rivetjs/ui/chat-message [dom] 99c32a97ac3b 9429 css 8ab0992e9ccb 1176921
-@rivetjs/ui/chat-message [server] 48187e9c996e 8905 css 8ab0992e9ccb 1176921
+@rivetjs/ui/chat-message [dom] a2f6b7ea7422 9588 css 8ab0992e9ccb 1176921
+@rivetjs/ui/chat-message [server] caff4643acd7 9064 css 8ab0992e9ccb 1176921
 @rivetjs/ui/chat-message-actions [dom] 6165bf3b7c65 8336 css 8ab0992e9ccb 1176921
 @rivetjs/ui/chat-message-actions [server] a2e72771a88e 7887 css 8ab0992e9ccb 1176921
 @rivetjs/ui/prompt-suggestion [dom] 6062a84c565e 6463 css 8ab0992e9ccb 1176921
@@ -349,8 +349,8 @@
 @rivetjs/ui/chat-list-view [server] 0c5d70832818 5435 css 8ab0992e9ccb 1176921
 @rivetjs/ui/code-block [dom] 80dd62dc74ca 9657 css 8ab0992e9ccb 1176921
 @rivetjs/ui/code-block [server] 8784a4bd3a8d 8964 css 8ab0992e9ccb 1176921
-@rivetjs/ui/markdown [dom] 31301d5827d5 20500 css 8ab0992e9ccb 1176921
-@rivetjs/ui/markdown [server] b26178642383 18377 css 8ab0992e9ccb 1176921
+@rivetjs/ui/markdown [dom] 998cab5b4b3c 20521 css 8ab0992e9ccb 1176921
+@rivetjs/ui/markdown [server] 7073af5976fe 18398 css 8ab0992e9ccb 1176921
 @rivetjs/ui/chain-of-thought [dom] d272f8d47e76 10703 css 8ab0992e9ccb 1176921
 @rivetjs/ui/chain-of-thought [server] c6ba2de91c43 9289 css 8ab0992e9ccb 1176921
 @rivetjs/ui/chat-source [dom] 53a63d514f6d 15893 css 8ab0992e9ccb 1176921
@@ -395,10 +395,10 @@
 @rivetjs/bridge-preact/server fc1962a61f07 1263
 @rivetjs/bridge-preact/client a8c2cae94ddc 967
 @rivetjs/bridge-preact/types 56e1b0c10087 9
-@rivetjs/cdk/masonry [dom] e303d4e65dd6 89395
-@rivetjs/cdk/masonry [server] cd567d88a864 80585
+@rivetjs/cdk/masonry [dom] 225194031bf9 89433
+@rivetjs/cdk/masonry [server] 5508dcc21eed 80623
 @rivetjs/cdk/masonry/behaviour 9a3cc9e6aabd 16055
 @rivetjs/cdk/flip 94e1c39bc99c 3782
-@rivetjs/cdk/scheduler [dom] cb2b1507482b 197587
-@rivetjs/cdk/scheduler [server] da1715fc9b2f 180412
+@rivetjs/cdk/scheduler [dom] 3fd82d4c9285 197781
+@rivetjs/cdk/scheduler [server] 7864dfecf00a 180606
 @rivetjs/cdk/scheduler/layout f4c2c747b346 23962

@@ -152,17 +152,21 @@ function NavigationTreeItemContentInner(props: { values: TreeItemContentRenderPr
   const id: Key = values.id;
   // useRouteFocusSync: move the tree's focused key to the item matching selectedRoute (once per change,
   // deduped across items).
-  clientEffect(() => {
-    const route = nav?.selectedRoute();
-    if (route == null || !nav || nav.syncedRoute.current === route) return;
-    const collection = treeCollection(state);
-    let key = findKeyForRoute(collection, route);
-    if (key != null) {
-      key = closestVisibleKey(collection, state.expandedKeys(), key);
-      nav.syncedRoute.current = route;
-      untrack(() => treeSelectionManager(state, collection).setFocusedKey(key));
-    }
-  });
+  // Resumed page: without a selected route there is nothing to sync before the first event (CEFF 2026-10-28).
+  clientEffect(
+    () => {
+      const route = nav?.selectedRoute();
+      if (route == null || !nav || nav.syncedRoute.current === route) return;
+      const collection = treeCollection(state);
+      let key = findKeyForRoute(collection, route);
+      if (key != null) {
+        key = closestVisibleKey(collection, state.expandedKeys(), key);
+        nav.syncedRoute.current = route;
+        untrack(() => treeSelectionManager(state, collection).setFocusedKey(key));
+      }
+    },
+    { when: untrack(() => nav?.selectedRoute()) == null ? "interaction" : "idle" },
+  );
   const href = link?.href;
   const isCurrent = link?.isCurrent;
   const isLinkFocused = link?.isLinkFocused;

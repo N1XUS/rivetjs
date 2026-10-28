@@ -41,13 +41,17 @@ export function scrollWheelProps(
   ref?: Ref<HTMLElement> | (() => HTMLElement | null | undefined),
 ): { scrollWheelProps: Record<string, unknown> } {
   if (ref) {
-    clientEffect(() => {
-      const element = ref();
-      if (!element) return;
-      const listener = (e: WheelEvent) => scrollWheel(props, e);
-      element.addEventListener("wheel", listener, { passive: false });
-      return () => element.removeEventListener("wheel", listener);
-    });
+    // Resumed page: armed once the element scrolls into view (a wheel needs it visible; CEFF 2026-10-28, was idle).
+    clientEffect(
+      () => {
+        const element = ref();
+        if (!element) return;
+        const listener = (e: WheelEvent) => scrollWheel(props, e);
+        element.addEventListener("wheel", listener, { passive: false });
+        return () => element.removeEventListener("wheel", listener);
+      },
+      { when: "visible" },
+    );
     return { scrollWheelProps: {} };
   }
   return { scrollWheelProps: { onWheel: (e: WheelEvent) => scrollWheel(props, e) } };

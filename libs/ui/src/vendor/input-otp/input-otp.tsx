@@ -32,8 +32,9 @@
 // - `OTPInputContext` (resumable `rv-ui-input-otp-primitive`) carries getters over signals (`slots` is a `computed` array):
 //   readers bind attributes / children to them (React re-renders the context consumers). `RenderProps` fields are read
 //   lazily; `render` receives the same getter object.
-// - effects → `clientEffect` (runs on a resumed page without a user event: the mirrors / style / `--root-height` need the
-//   mounted input); `usePrevious` → the value before the change (`untrack`), `onComplete` tracks its own previous value.
+// - effects → `clientEffect({ when: "interaction" })`: on a resumed page they run when the field adopts on its first event
+//   (CEFF 2026-10-28; before: the default idle trigger booted every OTP page at load). Limit: a value the browser restores
+//   into the input on a history navigation shows in the slots from the first focus / input on; `usePrevious` → the value before the change (`untrack`), `onComplete` tracks its own previous value.
 // - no `<noscript><style>` fallback: Rivet JSX rejects inline `<style>` / `<script>` content (build-time assets only, CSP), so
 //   `noScriptCSSFallback` is accepted and ignored (`NOSCRIPT_CSS_FALLBACK` exported for an app stylesheet); without JS the
 //   input stays transparent over the slots (upstream: a visible bordered input).
@@ -261,128 +262,148 @@ export const OTPInput = (props: OTPInputProps): JSX.Element => {
   };
 
   // Mount (upstream mount-only effect): value sync, selection mirror, styles, root height.
-  clientEffect(() => {
-    const input = inputRef();
-    const container = containerRef();
-    if (!input || !container) return;
-    return untrack(() => {
-      // Sync input value (e.g. restored by the browser)
-      if (value() !== input.value) {
-        local.onChange?.(input.value);
-        const v = local.value;
-        if (isSignal(v)) v.set(input.value);
-        internalValue.set(input.value);
-      }
-
-      // Previous selection
-      prevSelection.set([input.selectionStart, input.selectionEnd, input.selectionDirection]);
-      const onDocumentSelectionChange = () => {
-        if (document.activeElement !== input) {
-          mirrorSelectionStart.set(null);
-          mirrorSelectionEnd.set(null);
-          return;
+  // Resumed page (CEFF 2026-10-28): every effect waits for the field's first event (focus, input, press): the mirrors,
+  // the style tag and `--root-height` only matter for a focused / typed-into field; the server renders the slots from `value`.
+  clientEffect(
+    () => {
+      const input = inputRef();
+      const container = containerRef();
+      if (!input || !container) return;
+      return untrack(() => {
+        // Sync input value (e.g. restored by the browser)
+        if (value() !== input.value) {
+          local.onChange?.(input.value);
+          const v = local.value;
+          if (isSignal(v)) v.set(input.value);
+          internalValue.set(input.value);
         }
-        const next = mirrorSelection(input, untrack(prevSelection));
-        // Finally, update the state
-        mirrorSelectionStart.set(next[0]);
-        mirrorSelectionEnd.set(next[1]);
-        // Store the previous selection value
-        prevSelection.set(next);
-      };
-      document.addEventListener("selectionchange", onDocumentSelectionChange, { capture: true });
 
-      // Set initial mirror state
-      onDocumentSelectionChange();
-      if (document.activeElement === input) isFocused.set(true);
+        // Previous selection
+        prevSelection.set([input.selectionStart, input.selectionEnd, input.selectionDirection]);
+        const onDocumentSelectionChange = () => {
+          if (document.activeElement !== input) {
+            mirrorSelectionStart.set(null);
+            mirrorSelectionEnd.set(null);
+            return;
+          }
+          const next = mirrorSelection(input, untrack(prevSelection));
+          // Finally, update the state
+          mirrorSelectionStart.set(next[0]);
+          mirrorSelectionEnd.set(next[1]);
+          // Store the previous selection value
+          prevSelection.set(next);
+        };
+        document.addEventListener("selectionchange", onDocumentSelectionChange, { capture: true });
 
-      // Apply needed styles (the style tag is created once per document: only the first nonce is used)
-      injectStyles(untrack(() => local.nonce));
+        // Set initial mirror state
+        onDocumentSelectionChange();
+        if (document.activeElement === input) isFocused.set(true);
 
-      // Track root height
-      const updateRootHeight = () => container.style.setProperty("--root-height", `${input.clientHeight}px`);
-      updateRootHeight();
-      // ResizeObserver is missing in older browsers (e.g. iOS Safari <13.4); without it the root height is measured once.
-      const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateRootHeight);
-      resizeObserver?.observe(input);
+        // Apply needed styles (the style tag is created once per document: only the first nonce is used)
+        injectStyles(untrack(() => local.nonce));
 
-      return () => {
-        document.removeEventListener("selectionchange", onDocumentSelectionChange, { capture: true });
-        resizeObserver?.disconnect();
-      };
-    });
-  });
+        // Track root height
+        const updateRootHeight = () => container.style.setProperty("--root-height", `${input.clientHeight}px`);
+        updateRootHeight();
+        // ResizeObserver is missing in older browsers (e.g. iOS Safari <13.4); without it the root height is measured once.
+        const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateRootHeight);
+        resizeObserver?.observe(input);
+
+        return () => {
+          document.removeEventListener("selectionchange", onDocumentSelectionChange, { capture: true });
+          resizeObserver?.disconnect();
+        };
+      });
+    },
+    { when: "interaction" },
+  );
 
   // `ref` → the input
-  clientEffect(() => {
-    const input = inputRef();
-    if (input) untrack(() => bindRef(input, local.ref as ((element: Element) => void) | undefined));
-  });
+  clientEffect(
+    () => {
+      const input = inputRef();
+      if (input) untrack(() => bindRef(input, local.ref as ((element: Element) => void) | undefined));
+    },
+    { when: "interaction" },
+  );
 
   // Value / focus change: drop `:autofill` and re-read the selection (upstream effect `[value, isFocused]`).
-  clientEffect(() => {
-    value();
-    isFocused();
-    const timeouts = syncTimeouts(() => {
-      const input = untrack(inputRef);
-      // Forcefully remove :autofill state
-      input?.dispatchEvent(new Event("input"));
+  clientEffect(
+    () => {
+      value();
+      isFocused();
+      const timeouts = syncTimeouts(() => {
+        const input = untrack(inputRef);
+        // Forcefully remove :autofill state
+        input?.dispatchEvent(new Event("input"));
 
-      // Update the selection state
-      const s = input?.selectionStart;
-      const e = input?.selectionEnd;
-      const dir = input?.selectionDirection;
-      if (s !== null && e !== null) {
-        mirrorSelectionStart.set(s ?? null);
-        mirrorSelectionEnd.set(e ?? null);
-        prevSelection.set([s ?? null, e ?? null, dir ?? null]);
-      }
-    });
-    return () => timeouts.forEach((timeout) => clearTimeout(timeout));
-  });
+        // Update the selection state
+        const s = input?.selectionStart;
+        const e = input?.selectionEnd;
+        const dir = input?.selectionDirection;
+        if (s !== null && e !== null) {
+          mirrorSelectionStart.set(s ?? null);
+          mirrorSelectionEnd.set(e ?? null);
+          prevSelection.set([s ?? null, e ?? null, dir ?? null]);
+        }
+      });
+      return () => timeouts.forEach((timeout) => clearTimeout(timeout));
+    },
+    { when: "interaction" },
+  );
 
   // `onComplete` (upstream effect over the previous render's value). The previous value starts as the rendered one, not
   // `undefined`: the mount sync above runs first and may already have written a value found in the input (browser-restored,
   // or typed into a cold resumed page before it adopted) — upstream's sync re-renders, so its effect sees "" → the value and
   // completes; here the first run then saw the synced value as its own previous one and never completed (COLD-FIX-B).
   const completedFrom = signal<string>(untrack(value));
-  clientEffect(() => {
-    const v = value();
-    untrack(() => {
-      const previousValue = completedFrom();
-      completedFrom.set(v);
-      if (v !== previousValue && previousValue.length < maxLength() && v.length === maxLength()) local.onComplete?.(v);
-    });
-  });
+  clientEffect(
+    () => {
+      const v = value();
+      untrack(() => {
+        const previousValue = completedFrom();
+        completedFrom.set(v);
+        if (v !== previousValue && previousValue.length < maxLength() && v.length === maxLength()) local.onComplete?.(v);
+      });
+    },
+    { when: "interaction" },
+  );
 
   // Password-manager badge: space check every second (upstream `checkHasSpace` interval).
-  clientEffect(() => {
-    const container = containerRef();
-    if (!container || strategy() === "none") return;
-    const checkHasSpace = () => badge.hasPWMBadgeSpace.set(availableBadgeSpace(container) >= PWM_BADGE_SPACE_WIDTH_PX);
-    checkHasSpace();
-    const interval = setInterval(checkHasSpace, 1000);
-    return () => clearInterval(interval);
-  });
+  clientEffect(
+    () => {
+      const container = containerRef();
+      if (!container || strategy() === "none") return;
+      const checkHasSpace = () => badge.hasPWMBadgeSpace.set(availableBadgeSpace(container) >= PWM_BADGE_SPACE_WIDTH_PX);
+      checkHasSpace();
+      const interval = setInterval(checkHasSpace, 1000);
+      return () => clearInterval(interval);
+    },
+    { when: "interaction" },
+  );
 
   // Password-manager badge: probe after focus.
-  clientEffect(() => {
-    const input = inputRef();
-    const focused = isFocused() || (input !== undefined && document.activeElement === input);
-    const s = strategy();
-    badge.done();
-    if (s === "none" || !focused) return;
-    const track = () => trackPWMBadge(badge, untrack(containerRef), untrack(inputRef), s);
-    const t1 = setTimeout(track, 0);
-    const t2 = setTimeout(track, 2000);
-    const t3 = setTimeout(track, 5000);
-    const t4 = setTimeout(() => badge.done.set(true), 6000);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-    };
-  });
+  clientEffect(
+    () => {
+      const input = inputRef();
+      const focused = isFocused() || (input !== undefined && document.activeElement === input);
+      const s = strategy();
+      badge.done();
+      if (s === "none" || !focused) return;
+      const track = () => trackPWMBadge(badge, untrack(containerRef), untrack(inputRef), s);
+      const t1 = setTimeout(track, 0);
+      const t2 = setTimeout(track, 2000);
+      const t3 = setTimeout(track, 5000);
+      const t4 = setTimeout(() => badge.done.set(true), 6000);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        clearTimeout(t4);
+      };
+    },
+    { when: "interaction" },
+  );
 
   /** Upstream `onChange` callback: notify, then store. */
   const onChange = (newValue: string) => {

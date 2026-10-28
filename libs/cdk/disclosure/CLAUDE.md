@@ -18,7 +18,7 @@ RAC Disclosure port: `DisclosureGroup`, `Disclosure`, `DisclosurePanel` (+ `<But
 - RAC `Disclosure.tsx`; react-aria `disclosure/useDisclosure.ts`; react-stately `disclosure/{useDisclosureState,useDisclosureGroupState}.ts` (Apache-2.0); Angular CDK `accordion/{accordion,accordion-item}.ts` (MIT) for the extras
 
 ## Rules / invariants
-- `isExpanded` / `expandedKeys` / `allowsMultipleExpanded`: plain value (controlled) or Signal (two-way); single-expansion clamp at creation + every write (+ clientEffect when `allowsMultipleExpanded` is an accessor)
+- `isExpanded` / `expandedKeys` / `allowsMultipleExpanded`: plain value (controlled) or Signal (two-way); single-expansion clamp at creation + every write (+ clientEffect when `allowsMultipleExpanded` is an accessor; idle: an outside write must clamp an unadopted group). `onOpened` / `onClosed` reporter: `when: "interaction"` (changes come from the item's events or a render-read write; CEFF 2026-10-28)
 - `render` prop (RAC DOMRenderProps; `(attrs, renderProps)` → spread attrs; early return before the compiled element; `tests/render-collections.browser.test.tsx`) on DisclosureGroup / Disclosure / DisclosurePanel (panel `beforematch` = `onBeforeMatch` key)
 - Inside a group, `isExpanded` = `expandedKeys.has(id)`; Disclosure registers with its disabled flag, unregisters on cleanup when it has an owner (client-rendered)
 - `openAll` only with multiple expansion; `openAll` / `closeAll` skip disabled members

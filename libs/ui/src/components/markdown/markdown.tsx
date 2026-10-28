@@ -401,10 +401,14 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
   // Streaming accessor only: the root follows its content height while streaming (disposed with the Markdown).
   const follow = typeof isStreaming === "function" ? createRef<HTMLDivElement>() : undefined;
   if (follow)
-    clientEffect(() => {
-      const el = follow();
-      if (el) return untrack(() => followHeight(el, streaming));
-    });
+    // Content writes wake the Markdown (its rows read them), which runs this effect: no trigger (CEFF 2026-10-28).
+    clientEffect(
+      () => {
+        const el = follow();
+        if (el) return untrack(() => followHeight(el, streaming));
+      },
+      { when: "interaction" },
+    );
   return (
     <div
       class={composeSlotClassName(SLOTS.base, local.class)}

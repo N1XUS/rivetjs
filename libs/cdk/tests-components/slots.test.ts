@@ -25,10 +25,13 @@ test("slots: resumed page — slot ids, re-created slotted parts, accessor conte
   const page = await s.browser.newPage();
   const seen = watch(page);
   await page.goto(s.origin + "/slots");
-  // The page's records adopt at idle (derived resume, `DEFER`): the slot check runs then and drops an id without its
-  // element (RA useSlotId's post-mount drop); present ones stay.
-  await page.waitForSelector("#nd-input:not([aria-describedby])", { state: "attached" });
-  await page.waitForSelector("#d2-input:not([aria-describedby])", { state: "attached" });
+  // Nothing boots by itself (CEFF 2026-10-28: the `deps` slot cleanup waits for its part's first event). Server ids
+  // without an element stay until their owner adopts (the `createSlotId` deviation: assistive technology ignores
+  // IDREFs without an element); before, the idle boot this page had adopted every record and dropped them at load.
+  await page.waitForLoadState("networkidle");
+  assert.equal(await page.$('script[type="rivet/boundaries"][data-boot]'), null, "nothing boots by itself");
+  assert.equal(await page.getAttribute("#nd-input", "aria-describedby"), "nd-desc");
+  assert.equal(await page.$("#nd-desc"), null);
   assert.equal(await page.getAttribute("#d1-input", "aria-describedby"), "d1-desc");
   // Slot id follows its part after resume.
   await page.click("#d1-toggle");

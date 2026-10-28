@@ -243,12 +243,16 @@ export function Disclosure(inProps: DisclosureProps) {
     // The last reported state is a region signal (serialized): a resumed page's effect, which first runs
     // after the first change, still compares against the server-rendered state.
     const reported = signal(untrack(state.isExpanded));
-    clientEffect(() => {
-      const now = state.isExpanded();
-      if (now === untrack(reported)) return;
-      reported.set(now);
-      untrack(() => (now ? onOpened?.() : onClosed?.()));
-    });
+    // Expansion changes come from the item's own events or a write its render reads: no trigger (CEFF 2026-10-28).
+    clientEffect(
+      () => {
+        const now = state.isExpanded();
+        if (now === untrack(reported)) return;
+        reported.set(now);
+        untrack(() => (now ? onOpened?.() : onClosed?.()));
+      },
+      { when: "interaction" },
+    );
   }
   const onDestroyed = props.onDestroyed;
   if (onDestroyed && getOwner()) onCleanup(() => onDestroyed());
