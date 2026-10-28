@@ -99,18 +99,6 @@
     "step": "{\"matches\":\"ol#timeline > li[aria-current=step]:nth-child(2)\"}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
-  "table-basic": {
-    "step": "{\"matches\":\"#files thead [slot=selection][data-indeterminate]\"}",
-    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
-  },
-  "table-dynamic": {
-    "step": "{\"expect\":[\"#invoices tfoot\",\"$2,600\"]}",
-    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
-  },
-  "table-expandable": {
-    "step": "{\"attr\":[\"#tree tr[data-key=photos]\",\"aria-expanded\",\"true\"]}",
-    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
-  },
   "table-load-more": {
     "step": "{\"expect\":[\"#planets-11-name\",\"Planet 11\"]}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
