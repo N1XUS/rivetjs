@@ -2469,7 +2469,10 @@ const runtime: DerivedRuntime = {
       if (!u || !rec) return undefined;
       const n = (u.counts.get("$r") ?? 0) + 1;
       u.counts.set("$r", n);
-      return rec.values.get(n > 1 ? "$r#" + n : "$r");
+      const seed = rec.values.get(n > 1 ? "$r#" + n : "$r") as { j?: { t: unknown[]; r: number } } | undefined,
+        j = seed?.j;
+      // A seed that is not JSON data ships as its resume table (DERIVED-GAPS 03): decoded with the router `Root`'s decoder.
+      return j ? (_tableDecoder ? _tableDecoder(j.t).get(j.r) : { x: 1 }) : seed;
     };
     _adoption.suspense = () => {
       if (cur !== null && cur.mode === PROBE) cur.sus = true;

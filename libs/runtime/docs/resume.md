@@ -20,6 +20,6 @@ Server renders; the browser runs nothing on load and runs a boundary (an interac
 
 ## Gotchas / open bugs
 
-- Not yet on the derived model (plan M6, lane M6-PARITY): framework islands beyond the lean boot, `Suspense` whose content waits for a load the server could not ship (a resource value that is not JSON data, a resource made outside a boundary, a streamed Suspense past the deadline: renders in the browser), per-component preload strategies / `ChunkGroup`.
+- Not yet on the derived model (plan M6, lane M6-PARITY): framework islands beyond the lean boot, `Suspense` whose content waits for a load the server could not ship (a resource value the resume table cannot encode or without the router `Root`'s table decoder, a resource made outside a boundary, a streamed Suspense past the deadline: renders in the browser), per-component preload strategies / `ChunkGroup`.
 - Injected markup: HTML inserted from user content (sanitizers such as DOMPurify keep `data-*` by default) must strip `data-b` / `data-rk` / `data-cm`, else an injected element can claim a boundary's id.
 - Adding an import to `dom.ts` / `dom-derived.ts`: list it in `tests/resume/harness.ts` `sources` and `tests/dom.test.ts`, or browser suites 404.

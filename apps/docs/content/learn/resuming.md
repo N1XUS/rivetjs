@@ -124,13 +124,13 @@ export default defineConfig({
 ## Loaded data, forms and islands
 
 - **`Async` and `Suspense`.** `Async` content is resumed, with or without a fallback function, also inside a component's children, under a provider or in the rows of a `<For>`: an `Async` without a fallback is awaited in place on the server, also when the page streams, and a streamed `Suspense` sends its content before the page's resume state, so it resumes like content rendered in place; the server's value is used and its `load` does not run again in the browser (so it does not reload when something its load read changes). With `rivetRouter` a value JSON cannot hold, such as a `Date`, arrives as the same value.
-- **`resource`.** A resource resumes with the state the server settled, inside `Suspense` or not: it does not load again in the browser until its source changes or it is refetched.
+- **`resource`.** A resource resumes with the state the server settled, inside `Suspense` or not: it does not load again in the browser until its source changes or it is refetched. With `rivetRouter` a value JSON cannot hold, such as a `Date`, arrives as the same value.
 - **Forms** keep progressive enhancement, enhanced submit and revalidation ([forms](../guides/forms/forms.md)).
 - **[Framework islands](../guides/components/framework-components.md#pages-with-only-islands).** An island with plain JSON props starts through the islands' inline script; one that needs Rivet (live props, callbacks, Rivet slot content) starts with the component that renders it, by its `client` policy.
 
 ## What it does not do yet
 
-- **A load still pending when the page was sent.** A `resource` or `Async` value JSON cannot hold, or a load still pending when the page was sent, loads in the browser; if that load suspends a `Suspense`, the component holding it renders again in the browser the first time it is used (development prints a warning naming it).
+- **A load still pending when the page was sent.** A load still pending when the page was sent, or (without `rivetRouter`) a `resource` or `Async` value JSON cannot hold, loads in the browser; if that load suspends a `Suspense`, the component holding it renders again in the browser the first time it is used (development prints a warning naming it).
 - **Hover state on a replayed press.** The hover state of the pressed element (`data-hovered`) can differ from a loaded page until the pointer moves, and some collection components (tag group, grid list, tree) still render again in the browser on their first interaction.
 - **`when: "interaction"` / `"media:(query)"`** of a `clientEffect` or `clientEvent` start it when its component is first used, not at the first press anywhere on the page or when the query matches (plan M6).
 - **Dev edits reload the page.** The dev server serves pages resumable like production; an edit of a component reloads the page.

@@ -86,7 +86,7 @@ Following a link is already handled this way by the router: the old page stays u
 - Normal rendering waits for every `Async` inside and sends the finished content. The fallback is not sent.
 - With [streaming](/guides/performance/streaming.md) on, a `Suspense` with a `fallback` whose parts are still loading sends its fallback with the page, then its content once every part inside is ready, in the same response. An `Async` inside it streams with it, not on its own. The page's resume state follows the last such content, so the page responds to input once that content has arrived.
 - Past the streaming `deadline`, content not sent yet stays a fallback; the component holding it renders again in the browser and its parts load there.
-- Settled, supported resource values resume without another fetch. A pending or unsupported value loads in the browser; if it suspends during adoption, the containing boundary renders again in the browser.
+- Settled resource values resume without another fetch (with `rivetRouter` also values JSON cannot hold, such as a `Date`). A pending or unsupported value loads in the browser; if it suspends during adoption, the containing boundary renders again in the browser.
 
 ## Limits
 

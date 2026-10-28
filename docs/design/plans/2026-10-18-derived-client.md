@@ -34,6 +34,8 @@ M6 status update (2026-10-28, DERIVED-GAPS 01): forms progressive enhancement cl
 
 M6 status update (2026-10-28, DERIVED-GAPS 02): streamed `Suspense` on derived — a pending Suspense with a fallback writes its fallback in the shell, its content after the shell (document order, `<template data-s>` + `$rS`), then the tail (settled state): the browser adopts the in-place page, no wire change. `Async` inside a Suspense in place. Tests `libs/runtime/tests/derived-stream-browser.test.ts`.
 
+M6 status update (2026-10-28, DERIVED-GAPS 03): a `resource` value (or source key) that is not JSON data ships as its resume table (`$r` = `{ j: { t, r } }`), decoded in the adopt run with the router `Root`'s table decoder: the unit holding its Suspense adopts with it (was: `{ x: 1 }`, the browser loaded it and the unit rendered in the browser). Without a decoder (no router) or not encodable: as before.
+
 ## M1 — route bundles (first)
 
 Why first: S3 measured 74 requests / 76 KB fetched at the dashboard's first click (2.25 s on Slow 4G + 4× CPU, 108 ms unthrottled); ROUTE-CHUNKS could not get widget frames under 61 requests because `route` mode still emits one shared chunk per owner **set** and the merge budget (2 KB default, 64 KB tried) only reaches 29–49. The question M1 answers is the request/bytes curve, and the policy that lands is whichever point meets the gate.

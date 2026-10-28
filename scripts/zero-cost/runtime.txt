@@ -36,12 +36,21 @@
 @rivetjs/runtime/server-incr 77b31d8e25f1 35895
 @rivetjs/runtime/props e57eee2a8448 9502
 @rivetjs/runtime/dom-derived 22549fe5615e 5496
+<<<<<<< ours
 @rivetjs/runtime/dom-derived-runtime 4aac1d8918c1 61073
 @rivetjs/runtime/dom-derived-runtime [resumed] 4eeb6512b018 61449
 @rivetjs/runtime/dom-derived-runtime [domData] d5ab489066bf 61795
 @rivetjs/runtime/dom-lite 66b63d435a26 10982
 @rivetjs/runtime/dom-lite [resumed] 99f1344eb1d2 10982
 @rivetjs/runtime/dom-lite [domData] 5e152aededef 10982
+=======
+@rivetjs/runtime/dom-derived-runtime 57c66119f53a 61092
+@rivetjs/runtime/dom-derived-runtime [resumed] aa9f77296372 61468
+@rivetjs/runtime/dom-derived-runtime [domData] 7f2c11ff3dfc 61814
+@rivetjs/runtime/dom-lite 8b98df11a898 10434
+@rivetjs/runtime/dom-lite [resumed] c95bf514e03e 10434
+@rivetjs/runtime/dom-lite [domData] a858b082126e 10434
+>>>>>>> theirs
 @rivetjs/runtime/derived-reactivity 540c9a53af42 15710
 @rivetjs/runtime/node 3c195fe5ea08 5769
 @rivetjs/runtime/hot 3ec01cdb200b 8208

@@ -699,3 +699,68 @@ compiled("streamed Suspense, nested: inner content after the outer content holdi
     assert.deepEqual(errors, []);
   });
 });
+
+// DERIVED-GAPS 03: a resource value that is not JSON data (a `Date`) ships as its resume table (`$r` = `{ j }`); with the
+// table decoder the router's `Root` installs, the unit holding its Suspense adopts with it (no fetch in the browser);
+// without one the browser loads it as before.
+const DATED_RESOURCE = `import { signal } from "@rivetjs/reactivity";
+import { Suspense, resource } from "@rivetjs/runtime/dom";
+export function App() {
+  const count = signal(0);
+  const peek = signal("");
+  const when = resource(() => ((globalThis as { fetches?: number }).fetches = ((globalThis as { fetches?: number }).fetches ?? 0) + 1, new Promise<{ at: Date }>((done) => setTimeout(() => done({ at: new Date(86400000) }), 5))));
+  return (
+    <section>
+      <button id="count" onClick={() => count.set(count() + 1)}>{count()}</button>
+      <button id="peek" onClick={() => peek.set(when.state() + " " + (when.latest()?.at instanceof Date ? "date" : "none"))}>{peek()}</button>
+      <Suspense fallback={() => <p id="wait">wait</p>}>
+        {() => <b id="when">{when()?.at instanceof Date ? when()!.at.toISOString().slice(0, 10) : "not a date"}</b>}
+      </Suspense>
+    </section>
+  );
+}
+`;
+async function datedPage(): Promise<{ html: string; dom: string }> {
+  const resume = { module: "src/page.tsx", boundaries: ["App"], independent: ["App"] };
+  const server = compile(DATED_RESOURCE, { target: "server", filename: "page.tsx", resume } as never);
+  const dom = compile(DATED_RESOURCE, { target: "dom", filename: "page.tsx", resume } as never);
+  assert.deepEqual(server.diagnostics, []);
+  const { App } = await importServer<{ App: () => ServerValue }>(server.code);
+  const html = (await derivedToString(() => App(), { manifest: { ...manifest, symbols: { "src/page.tsx#App": "/page.js" } } })) as string;
+  return { html, dom: rewrite(dom.code) };
+}
+
+compiled("server: a resource value that is not JSON data ships as its resume table", async () => {
+  const { html } = await datedPage();
+  assert.match(html, /<b id="when">1970-01-02<\/b>/);
+  const values = tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!)).b[0][4] as unknown[];
+  const seed = values[values.indexOf("$r") + 1] as { j: { t: unknown[]; r: number } };
+  const { createDecoder } = await import("@rivetjs/runtime/resume-format");
+  const decoded = createDecoder(seed.j.t).get(seed.j.r) as { s: number; v: { at: Date } };
+  assert.equal(decoded.s, 2);
+  assert.ok(decoded.v.at instanceof Date && decoded.v.at.getTime() === 86400000);
+});
+
+compiled("a table-encoded resource value adopts with the installed decoder (no fetch); without one it loads in the browser", async () => {
+  const { html, dom } = await datedPage();
+  const rt = 'import { _useTableDecoder } from "/resume-format.ts"; _useTableDecoder(); export { default } from "/dom-derived.ts";';
+  for (const decoder of [true, false])
+    await withPage({ ...files(html, dom), ...(decoder ? { "/rt.js": rt } : {}) }, async (page) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto("http://rivet.test/");
+      await tag(page, ["#when"]);
+      await page.click("#count");
+      await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+      await page.click("#peek");
+      await page.waitForFunction(() => document.querySelector("#peek")!.textContent !== "");
+      const peeked = await text(page, "#peek"),
+        fetches = await page.evaluate(() => (globalThis as { fetches?: number }).fetches ?? 0);
+      if (decoder) {
+        assert.equal(peeked, "ready date", "the server's state, decoded");
+        assert.equal(fetches, 0, "no fetch in the browser");
+        assert.deepEqual(await tagged(page, ["#when"]), [true], "server nodes kept");
+      } else assert.ok(fetches >= 1, "without a decoder the browser loads it (the unit renders in the browser, as before)");
+      assert.deepEqual(errors, []);
+    });
+});

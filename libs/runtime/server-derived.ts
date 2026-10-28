@@ -1385,7 +1385,11 @@ _onDerivedResource({
     if (!ctx || !owner || owner.id < ctx.base) return;
     register(owner, "$r", () => {
       const seed = get();
-      return isData(seed) ? seed : { x: 1 };
+      if (isData(seed)) return seed;
+      // Not JSON data (a Date / Map / … value or source key, DERIVED-GAPS 03): the seed as its resume table `j`, decoded with
+      // the decoder the router's generated `Root` installs (else, or not encodable, the browser loads it: `x`).
+      const j = encodeTable(ctx, seed);
+      return j ? { j } : { x: 1 };
     });
   },
   mark() {
