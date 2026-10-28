@@ -30,6 +30,8 @@ M6 status update (2026-10-22, DERIVED-C4 / C5): page-root adopt is O(touched) on
 M6 status update (2026-10-22, M6-PARITY): forms on derived — `libs/forms/tests` (`RIVET_RESUME_MODEL=derived`: demo + drawer apps) 71 / 71 as on serialized; fix: the derived runtime registers its delegated document listeners before any adopt run (a link `onClick` `preventDefault()` ran after the router's `interceptClick`).
  Framework islands on derived: JSON-prop islands → the bridge's lean boot on every derived page (records + BOOT before the boundaries tail); others → the rendering boundary's trigger flag + tail `i`, the adopt run hydrates them (hole kind 3), slot content rendered again into its `rivet-slot` holes; `libs/bridge/tests/derived-browser.test.ts`; island-bench (3 Rivet lanes) + bridge-demo (`rivet-derived` lane) build + interact on derived. Open: `intent` cold clicks; router root props carry loader data a lean island also gets (bridge-demo `/orders` 153 vs 87 KB raw).
 
+M6 status update (2026-10-28, DERIVED-GAPS 01): forms progressive enhancement closed — `libs/forms/tests` 73 / 73 on derived (demo + drawer apps in Chromium; derived is the only model); removed from every "not yet on derived" list.
+
 ## M1 — route bundles (first)
 
 Why first: S3 measured 74 requests / 76 KB fetched at the dashboard's first click (2.25 s on Slow 4G + 4× CPU, 108 ms unthrottled); ROUTE-CHUNKS could not get widget frames under 61 requests because `route` mode still emits one shared chunk per owner **set** and the merge budget (2 KB default, 64 KB tried) only reaches 29–49. The question M1 answers is the request/bytes curve, and the policy that lands is whichever point meets the gate.
