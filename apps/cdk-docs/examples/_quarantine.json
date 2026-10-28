@@ -1,6 +1,1 @@
-{
-  "carousel-class-names": {
-    "step": "{\"matches\":\"#classes-slide-0.is-snapped\"}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): the ClassNames plugin adds is-snapped to slide 0 at engine init, then the slide's adopted class binding rewrites className and drops it (is-in-view, added later by slidesInView, survives; after #next slide 1 keeps is-snapped); owner cdk carousel / runtime _cls (foreign classes on an adopted element)"
-  }
-}
+{}

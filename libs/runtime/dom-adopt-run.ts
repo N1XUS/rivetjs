@@ -34,20 +34,24 @@ export interface Probe {
   shapes: Node[][];
   attrs: [Element, string, string][][] | null;
   slots: InsertSlot[];
+  /** First class binding values: fallback for standalone rows without a server snapshot. */
+  classes: Map<Element, string | null>;
+  /** Pristine template classes, for spreads whose absent first value skips the class writer. */
+  staticClasses: Map<Element, string>;
   /** The detached probe run (its markup, before an anchor) and its root (`_rootIn` holder). */
   frag: DocumentFragment;
   owner: Owner | null;
 }
-export type Hooks = [node: typeof _adoption.node, slot: typeof _adoption.slot, live: boolean | undefined];
+export type Hooks = [node: typeof _adoption.node, slot: typeof _adoption.slot, live: boolean | undefined, classValue: typeof _adoption.classValue];
 // Entering an adoption (a unit's probe / adopt runs, a lazy row): first run a deferred first-click flush still pending
 // (reactivity `_settle`). Any `batched` call inside the runs would otherwise run it there, with the unit current and the
 // probe's creation hooks installed: another unit's update then renders its `_b` children as this unit's holes (COLD-FIX-A,
 // WebKit: a tap's click is held, the next event's adoption probes before the held task: "an adopt run diverged from its
 // probe", the popup never adopted).
-export const save = (): Hooks => (_settle(), [_adoption.node, _adoption.slot, _adoption.live]);
+export const save = (): Hooks => (_settle(), [_adoption.node, _adoption.slot, _adoption.live, _adoption.classValue]);
 /** The owner an adoption runs under was disposed (by the flush `save` ran, e.g. a view switch replaced the subtree). */
 export const gone = (parent: Owner | null): boolean => !!(parent as { disposed?: boolean } | null)?.disposed;
-const restore = (h: Hooks): void => void ((_adoption.node = h[0]), (_adoption.slot = h[1]), (_adoption.live = h[2]));
+const restore = (h: Hooks): void => void ((_adoption.node = h[0]), (_adoption.slot = h[1]), (_adoption.live = h[2]), (_adoption.classValue = h[3]));
 export const between = (start: Node, end: Node): Node[] => {
   const out: Node[] = [];
   for (let n = start.nextSibling; n !== null && n !== end; n = n.nextSibling) out.push(n);
@@ -175,21 +179,45 @@ export interface Answers {
   names: [string[], string[], string[]];
   shapes: (Node | null | undefined)[][];
   slots: Current[];
+  classes?: [Element, string | null][];
 }
 
 // Step 1 of `_adoptRow`: run the row in create mode, detached (under `frag`), recording what it creates (`_adoption`
 // hooks); `attrs` (dev verifier) also records each template clone's pristine attributes.
 export function probeRow(parent: Owner | null, enter: <T>(fn: () => T) => T, rowFn: () => unknown, doc: Document, attrs: boolean, outer: Hooks): Probe {
-  const probe: Probe = { made: [[], [], []], shapes: [], attrs: attrs ? [] : null, slots: [], frag: doc.createDocumentFragment(), owner: null },
+  const probe: Probe = {
+      made: [[], [], []],
+      shapes: [],
+      attrs: attrs ? [] : null,
+      slots: [],
+      classes: new Map(),
+      staticClasses: new Map(),
+      frag: doc.createDocumentFragment(),
+      owner: null,
+    },
     anchor = doc.createTextNode("");
   probe.frag.append(anchor);
   _adoption.node = <N extends Node>(node: N, kind: number): N => {
     probe.made[kind as 0 | 1 | 2].push(node);
-    if (kind === 0) (probe.shapes.push(shapeOf(node)), probe.attrs?.push(attrsOf(node)));
+    if (kind === 0) {
+      const shape = shapeOf(node);
+      probe.shapes.push(shape);
+      probe.attrs?.push(attrsOf(node));
+      for (let i = 0; i < shape.length; i += 3) {
+        const el = shape[i]!;
+        if (el.nodeType !== 1) continue;
+        const value = (el as Element).getAttribute("class");
+        if (value !== null) probe.staticClasses.set(el as Element, value);
+      }
+    }
     return node;
   };
   _adoption.slot = (slot) => void probe.slots.push(slot);
   _adoption.live = false;
+  _adoption.classValue = (el, value) => {
+    if (!probe.classes.has(el) && primitiveClass(value)) probe.classes.set(el, value == null ? null : String(value));
+    return value;
+  };
   try {
     untrack(() => _rootIn(parent, () => enter(() => _insert(null, rowFn(), anchor)), probe));
   } finally {
@@ -347,8 +375,11 @@ export function _adoptRow(
       return out;
     }),
     slots: probe.slots.map((slot) => mapped(slot.current)),
+    classes: mappedClasses(probe, map),
   };
-  if (cache && !a.copied && (cache.p === undefined || (DEV && cache.p && cache.p.sig === row.sig))) {
+  // Class ownership is per row, not per structure: a plan cannot carry another row's first value.
+  if (cache && probe.classes.size) cache.p = false;
+  else if (cache && !a.copied && (cache.p === undefined || (DEV && cache.p && cache.p.sig === row.sig))) {
     const built = toPlan(answers, exp, row.list, row.sig);
     if (cache.p === undefined) {
       if (built) cache.p = built;
@@ -401,6 +432,35 @@ function fromPlan(plan: RowPlan, list: Node[]): Answers {
     slots: plan.slots.map(cur),
   };
 }
+// Capture before any boundary runs: a parent's refs can decorate a child whose chunk loads later, and its state can
+// change before that child's probe. Neither the child's current DOM nor its probe value then represents the server.
+// Weak keys do not retain removed server trees. An absent attribute is recorded too, so a later patch cannot capture
+// a plugin addition as the baseline. Ordinary DOM builds never import this module.
+const serverClasses = new WeakMap<Element, string | null>();
+export function captureClasses(root: ParentNode): void {
+  for (const el of root.querySelectorAll("*")) if (!serverClasses.has(el)) serverClasses.set(el, el.getAttribute("class"));
+}
+/** Transfer the captured server classes; standalone row adopters without a snapshot use the probe baseline. */
+export function mappedClasses(probe: Probe, map: Map<Node, Node>): [Element, string | null][] {
+  const out: [Element, string | null][] = [];
+  for (const [node, live] of map) {
+    if (node.nodeType !== 1) continue;
+    const el = node as Element;
+    // Without a server snapshot, an absent spread falls back to the pristine template, before refs/cleanup decorate it.
+    out.push([
+      live as Element,
+      serverClasses.has(live as Element)
+        ? serverClasses.get(live as Element)!
+        : probe.classes.has(el)
+          ? probe.classes.get(el)!
+          : (probe.staticClasses.get(el) ?? null),
+    ]);
+  }
+  return out;
+}
+const primitiveClass = (value: unknown): value is string | number | boolean | bigint | null | undefined =>
+  value == null || typeof value === "string" || typeof value === "number" || typeof value === "boolean" || typeof value === "bigint";
+const classTokens = (value: string | null): string[] => value?.match(/[^\t\n\f\r ]+/g) ?? [];
 const MISS = {} as Owner;
 // 3. Adopt: the row function again; each creation returns its live node, each new slot starts from what it held.
 export function adopt(
@@ -452,6 +512,22 @@ export function adopt(
     else miss = true;
   };
   _adoption.live = true;
+  // Only this synchronous adoption owns these sets. Later values extend ownership, so removing
+  // a token still works. A class binding absent from the planned sample needs its own probe.
+  const classes = new Map<Element, string | null | Set<string>>(a.classes);
+  _adoption.classValue = (el, value) => {
+    if (planned && a.shapes.some((shape) => shape.includes(el))) return ((miss = true), el.getAttribute("class"));
+    if (!primitiveClass(value)) return value;
+    let owned = classes.get(el);
+    // A ref can synchronously update an already-live binding outside this unit. It still owns its whole class.
+    if (owned === undefined) return value;
+    if (owned === null || typeof owned === "string") classes.set(el, (owned = new Set(classTokens(owned))));
+    const tokens = classTokens(value == null ? null : String(value));
+    for (const token of tokens) owned.add(token);
+    const count = tokens.length;
+    for (const token of el.classList) if (!owned.has(token)) tokens.push(token);
+    return tokens.length === count ? value : tokens.join(" ");
+  };
   const row = { owner: null as Owner | null };
   try {
     untrack(() => _rootIn(parent, () => enter(() => _insert(null, rowFn(), end)), row));

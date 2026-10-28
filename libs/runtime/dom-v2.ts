@@ -189,6 +189,7 @@ export function _attrValue(el: Element, name: string, value: unknown): void {
 }
 /** `write`, unless an adopt run finds the value on the server's node already (`holds`). Resume builds only. */
 function put(el: Element, name: string, value: unknown): void {
+  if (_adoption.classValue && name.toLowerCase() === "class") value = _adoption.classValue(el, value);
   if (!(_adoption.live && holds(el, name, value))) write(el, name, value);
 }
 /**
@@ -217,8 +218,10 @@ export function _setAttr(el: Element, name: string, value: unknown): void {
   else plain(el, name, value);
 }
 function plain(el: Element, name: string, value: unknown): void {
+  if (LAZY_ROWS && _adoption.classValue && name.toLowerCase() === "class") value = _adoption.classValue(el, value);
+  if (LAZY_ROWS && _adoption.live && holds(el, name, value)) return;
   if (value == null) el.removeAttribute(name);
-  else if (!(LAZY_ROWS && _adoption.live && holds(el, name, value))) el.setAttribute(name, value as string);
+  else el.setAttribute(name, value as string);
 }
 /**
  * Compiler ABI for dynamic attributes: the compiler emits one closure per binding,
@@ -252,10 +255,14 @@ export function _className(el: Element, value: unknown): void {
   else className(el, value);
 }
 function className(el: Element, value: unknown): void {
+  if (LAZY_ROWS && _adoption.classValue) {
+    value = _adoption.classValue(el, value === false ? null : value);
+    if (_adoption.live && holds(el, "class", value === "" ? null : value)) return;
+  }
   // An empty class removes the attribute: a fresh row has none, so no write (and no style
   // invalidation) happens for it (krausest 01 / 07 / 08 +2–3% with the write).
   if (value == null || value === false || value === "") el.removeAttribute("class");
-  else if (!(LAZY_ROWS && _adoption.live && holds(el, "class", value))) el.className = value as string;
+  else el.className = value as string;
 }
 // ---- events (delegated): `dom-events.ts` (a leaf module the lite runtime shares) ----
 export { _delegateBelow, _listen, _on } from "./dom-events.ts";
@@ -634,6 +641,8 @@ export const _adoption: {
    * the server's node already holds are skipped (`holds`, `soleText`; ADOPT-CONTENT).
    */
   live?: boolean;
+  /** Adoption-scoped class ownership: probe records the first binding value; adopt keeps only foreign tokens. */
+  classValue?: ((el: Element, value: unknown) => unknown) | undefined;
   /**
    * Derived model adopt runs (`dom-derived.ts`, `DERIVED` builds only): called first by every `_for` with its props; a
    * returned accessor replaces the list (probe run: a hole the alignment pairs with the server rows; adopt run: the list

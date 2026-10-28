@@ -37,7 +37,7 @@ import { _adoption, _delegateBelow, _for, _insert, _on } from "./dom-v2.ts";
 import { _delegated } from "./dom-events.ts";
 import type { ForRow, InsertSlot } from "./dom-v2.ts";
 import { same } from "./dom-adopt.ts";
-import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, gone, kids, probeRow, save, textOf } from "./dom-adopt-run.ts";
+import { _adoptRow, adopt, between, captureClasses, copyIn, describe, dirtyOf, gone, kids, mappedClasses, probeRow, save, textOf } from "./dom-adopt-run.ts";
 import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt-run.ts";
 import { _setUnrecorded, _tableDecoder } from "./resume-format.ts";
 import type { BoundaryTail, DerivedAsync, DerivedDom } from "./resume-format.ts";
@@ -1245,6 +1245,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
       return out;
     }),
     slots: probe.slots.map((slot) => mapped(slot.current)),
+    classes: mappedClasses(probe, map),
   };
   _dispose(probe.owner);
   const dirty = dirtyOf(controlsOf(map));
@@ -1888,6 +1889,7 @@ function domEntries(t: BoundaryTail): void {
 // The records of the tail or of a streamed segment's patch (its names, keys and wake lists merged into the tail), then
 // its `Async` entries.
 function records(t: BoundaryTail, patch: boolean): void {
+  captureClasses(doc!);
   const added: Rec[] = [],
     n = t.n;
   for (let i = 0; i < n.length; i++) {

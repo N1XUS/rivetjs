@@ -381,7 +381,7 @@ All examples above use Tailwind with `@rivetjs/cdk/tailwind.css` variants (`data
 - The handler code of the root and the viewport, and the code of every binding that reads the carousel state, is fetched when the carousel is visible. It runs only on an interaction, so the first press or drag needs no further download.
 - A press whose click the page holds while earlier code loads still selects: the press waits for the held click.
 - With `autoplay` / `autoScroll`, `plugins` or `onApi`, the engine starts when the carousel scrolls into view (a visible `clientEffect`: a deliberate preload). embla initialises plugins and API listeners on mount, so Fade, AutoHeight and tweens are in place before the first interaction.
-- Classes that plugins add at init (ClassNames `is-snapped`) stay on a resumed page: the slides' class binding leaves an unchanged class alone on its first run.
+- Classes that plugins add at init (ClassNames `is-snapped`) stay on a resumed page: adoption preserves tokens added after the runtime snapshots the server classes, while removing old binding-owned tokens if the class value changed. Later live class writes replace the class normally.
 - Callbacks (`onSelect`, `onApi`, `plugins`, function options) must be inline arrows.
 
 ## Upstream
