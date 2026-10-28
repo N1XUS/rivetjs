@@ -16,6 +16,8 @@ export type Listen = (target: EventTarget, type: string, fn: (event: Event) => v
 
 /** Island roots whose hydrate / mount is in flight: an outer island waits for the inner ones (spec §3.8 nesting). */
 const pending = new WeakMap<Element, Promise<unknown>>();
+/** The presses an `intent` island records before it hydrates (`intent.ts` records the same). */
+const PRESS = ["pointerdown", "click"];
 
 /** The resumed Rivet content in each slot hole of `root` (holes of nested islands excluded), by slot name. */
 export function slotNodes(root: Element): Slots {
@@ -77,14 +79,22 @@ export function _drive(
   let replay: Event[] | null = null;
   const stops: (() => void)[] = [];
   let unrecord: (() => void) | undefined;
-  let redispatch: ((event: Event) => void) | undefined;
-  // `intent` listeners + replay load on demand (`intent.ts`): no other policy ships them.
-  const watch = () =>
-    void import("./intent.ts").then((cold) => {
-      if (dead || started) return;
-      redispatch = cold.redispatch;
-      unrecord = cold.intent(root, listen, start, () => (replay ??= []));
-    });
+  let cold: Promise<typeof import("./intent.ts")> | undefined;
+  // `intent`: a pointerdown / click before hydration starts the island and is recorded for one replay. Recorded here,
+  // synchronously, so a press the resume runtime replays right after this island's adopt run (a cold press before
+  // boot: T-INTENT-COLD) is kept before `intent.ts` (hover / focus / touch triggers + the replay, on demand) is in.
+  const watch = () => {
+    const record = (event: Event) => {
+      const list = (replay ??= []);
+      if (!list.some((e) => e.type === event.type)) list.push(event);
+      start();
+    };
+    for (const type of PRESS) root.addEventListener(type, record, { capture: true, passive: true });
+    unrecord = () => {
+      for (const type of PRESS) root.removeEventListener(type, record, { capture: true });
+    };
+    void (cold = import("./intent.ts")).then((mod) => dead || started || mod.intent(root, listen, start));
+  };
   const listen: Listen = (target, type, fn, capture = true) => {
     target.addEventListener(type, fn, { capture, passive: true });
     stops.push(() => target.removeEventListener(type, fn, { capture }));
@@ -166,7 +176,8 @@ export function _drive(
         if (replay) {
           const events = replay;
           replay = null;
-          for (const event of events) redispatch!(event);
+          const { redispatch } = await cold!;
+          if (!dead) for (const event of events) redispatch(event);
         }
       },
       (error: unknown) => {

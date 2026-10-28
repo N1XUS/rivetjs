@@ -58,6 +58,17 @@ export function Below() {
 }
 `,
 );
+// DERIVED-GAPS 04 (T-INTENT-COLD): an `intent` island its boundary hydrates (callback prop), pressed before the chunks.
+await writeFile(
+  resolve(app.root, "src/intent.tsx"),
+  `import { signal } from "@rivetjs/reactivity";
+import { Counter } from "./Counter.fake.js";
+export function Intent() {
+  const n = signal(0);
+  return <main><button class="bump" onClick={() => n.set(n() + 10)}>bump</button><p class="total">{n()}</p><Counter client="intent" count={n()} onIncrement={(d: number) => n.set(n() + d)} /></main>;
+}
+`,
+);
 await writeFile(
   resolve(app.root, "src/entry-derived.tsx"),
   `import { derivedToString } from "@rivetjs/runtime/server-derived";
@@ -66,6 +77,8 @@ import { Page } from "./page.tsx";
 import { Slotted } from "./slotted.tsx";
 import { Live } from "./live.tsx";
 import { Below } from "./below.tsx";
+import { Intent } from "./intent.tsx";
+export const intent = (manifest: never) => derivedToString(() => <Intent />, { manifest });
 export const below = (manifest: never) => derivedToString(() => <Below />, { manifest });
 export const live = (manifest: never) => derivedToString(() => <Live />, { manifest });
 export const slotted = (manifest: never) => derivedToString(() => <Slotted />, { manifest });
@@ -74,7 +87,10 @@ export const mixed = (manifest: never) => derivedToString(() => <Page />, { mani
 `,
 );
 const plugins = () => [
-  rivet({ resume: { modules: ["src/page.tsx", "src/islands.tsx", "src/slotted.tsx", "src/live.tsx", "src/below.tsx"] }, bridges: [app.fake()] }),
+  rivet({
+    resume: { modules: ["src/page.tsx", "src/islands.tsx", "src/slotted.tsx", "src/live.tsx", "src/below.tsx", "src/intent.tsx"] },
+    bridges: [app.fake()],
+  }),
 ];
 await build({ configFile: false, root: app.root, logLevel: "silent", plugins: plugins(), build: { outDir: "dist", minify: false } });
 await build({
@@ -89,7 +105,7 @@ const manifest = JSON.parse(await readFile(resolve(app.root, "dist/.vite/rivet-r
   islands?: Record<string, string>;
 };
 const entry = (await import(pathToFileURL(resolve(app.root, "dist-server/entry-derived.js")).href)) as Record<
-  "islands" | "mixed" | "slotted" | "live" | "below",
+  "islands" | "mixed" | "slotted" | "live" | "below" | "intent",
   (m: unknown) => Promise<string>
 >;
 const assets: Record<string, string> = {};
@@ -244,3 +260,40 @@ test("visible island hydrated by its boundary, below the fold: no chunk before t
     assert.deepEqual(errors, []);
   });
 });
+
+// DERIVED-GAPS 04 (T-INTENT-COLD): a cold press on an `intent` island before the page's chunks load is held by the loader
+// (its boundary listens to every type), replayed after the boundary's adopt run, recorded by the driver before
+// `intent.ts` is in, and replayed once more on the hydrated island: the island's own click handler runs once.
+for (const engine of ["chromium", "webkit"] as const)
+  test.skipIf(engine === "webkit" && !hasWebkit())(`intent island: a cold click before the chunks load reaches the island once (${engine})`, async () => {
+    const html = await entry.intent(manifest);
+    const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+    // The boundary rendering it listens to every type (its island props): the loader holds the press.
+    assert.equal(tail.n[0][2], "*");
+    let release!: () => void;
+    const gate = new Promise<void>((go) => (release = go));
+    const delays = Object.fromEntries(Object.keys(assets).map((path) => [path, gate]));
+    await withPage(
+      pageOf(html),
+      async (page) => {
+        const errors: string[] = [];
+        page.on("pageerror", (error) => errors.push(String(error)));
+        page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
+        await page.goto("http://rivet.test/", { waitUntil: "domcontentloaded" });
+        await page.click("rivet-island button");
+        release();
+        await page.waitForFunction(
+          () => document.querySelector(".total")?.textContent === "1" && document.querySelector("rivet-island .count")?.textContent === "1",
+          undefined,
+          { timeout: 5000 },
+        );
+        await page.waitForTimeout(200);
+        assert.equal(await page.textContent(".total"), "1", "replayed once");
+        assert.equal((await log(page)).filter((e) => e[0] === "hydrate").length, 1);
+        await page.click("rivet-island button");
+        await page.waitForFunction(() => document.querySelector(".total")?.textContent === "2", undefined, { timeout: 5000 });
+        assert.deepEqual(errors, []);
+      },
+      { delays, engine },
+    );
+  });

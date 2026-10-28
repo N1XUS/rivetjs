@@ -1,15 +1,16 @@
 // @rivetjs/bridge/intent — the `intent` policy (spec §3.5), loaded on demand by the driver (`client.ts`) for intent
 // islands only (resumed ones start fetching it next to the driver: `root.tsx`). Island-local listeners start the
-// hydration; the cold pointerdown / click that started it is replayed once on its target after hydration.
+// hydration; the cold pointerdown / click that started it (recorded by the driver) is replayed once on its target after
+// hydration.
 import type { Listen } from "./client.ts";
 
 const DWELL = 60;
 
 /**
- * @internal Island-local intent: pointerover dwell / focusin / touchstart on the root start it; a pointerdown / click
- * before hydration starts it too and is recorded for one replay. Returns the recorder's remover (called once hydrated).
+ * @internal Island-local intent: pointerover dwell / focusin / touchstart on the root start it (`listen`: removed once it
+ * starts). The driver records a pointerdown / click before hydration itself (`client.ts` `watch`).
  */
-export function intent(root: Element, listen: Listen, start: () => void, queue: () => Event[]): () => void {
+export function intent(root: Element, listen: Listen, start: () => void): void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   listen(root, "pointerover", () => {
     clearTimeout(timer);
@@ -18,16 +19,6 @@ export function intent(root: Element, listen: Listen, start: () => void, queue: 
   listen(root, "pointerout", () => clearTimeout(timer));
   listen(root, "focusin", start);
   listen(root, "touchstart", start);
-  const record = (event: Event) => {
-    const list = queue();
-    if (!list.some((e) => e.type === event.type)) list.push(event);
-    start();
-  };
-  for (const type of ["pointerdown", "click"]) root.addEventListener(type, record, { capture: true, passive: true });
-  return () => {
-    clearTimeout(timer);
-    for (const type of ["pointerdown", "click"]) root.removeEventListener(type, record, { capture: true });
-  };
 }
 
 /**

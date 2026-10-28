@@ -383,10 +383,10 @@
 @rivetjs/bridge 56e1b0c10087 9
 @rivetjs/bridge/server [dom] 93b3e7384272 7660
 @rivetjs/bridge/server [server] 8b342e80fa39 7656
-@rivetjs/bridge/dom [dom] 49a4d1f0409c 4740
-@rivetjs/bridge/dom [server] d2c8255a4ab9 4712
-@rivetjs/bridge/client 878ea5cdbb87 2186
-@rivetjs/bridge/intent fd8e0ac73097 1275
+@rivetjs/bridge/dom [dom] 4f8941a2e839 4959
+@rivetjs/bridge/dom [server] 54deed63cdf1 4931
+@rivetjs/bridge/client 6682c605112b 2405
+@rivetjs/bridge/intent 8481580cf53b 1022
 @rivetjs/bridge/adapter ca26e8eea25e 184
 @rivetjs/bridge/persist 56e1b0c10087 9
 @rivetjs/bridge-react 56e1b0c10087 9

@@ -184,7 +184,7 @@ On other pages, too, every island with plain JSON props starts through that inli
 ## Common mistakes
 
 - **Writing React JSX in a plain `.tsx` file.** Rivet then compiles it as Rivet JSX and fails. Rename the file to `*.react.tsx`, add the pragma, or list the folder in `include`.
-- **Expecting clicks before hydration to work.** Events inside an island that has not started yet are lost. `intent` replays a click that arrives while the island loads, but not one that arrives before Rivet's own runtime has started on the page. Pick `load` for controls people press right away.
+- **Expecting clicks before hydration to work.** Events inside an island that has not started yet are lost. `intent` replays a press that arrives before the island has started (also before Rivet's own runtime has started on the page) once after hydration. Pick `load` for controls people press right away.
 - **Many small islands.** Each island is its own React root that hydrates on its own. Islands on one page share one copy of React, and download that framework's runtime too. Make islands wide (a whole table, a whole form), not one per button.
 - **Running the production server without `NODE_ENV=production`.** React then renders with its development build: slower, with development warnings. The starters' `serve.js` sets it unless you set it yourself; see [Node.js](../deploy/node.md#start-the-server).
 - **Sharing React context between islands.** Each island is a separate root, so React context does not cross from one island to another, and Rivet context does not reach React.

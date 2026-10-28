@@ -286,9 +286,9 @@ export function _island(props: Record<string, unknown>, def: IslandDef, load?: (
 
 Gap: the `intent` recorder (`libs/bridge/intent.ts`) attaches when the island's hydration effect starts (runtime boot + driver chunk). A pointerdown / click on an `intent` island before that is lost (the loader's cold event snapshot records only elements carrying Rivet handlers, `data-r` delegation).
 
-- [ ] Route: the server marks an `intent` island root with a delegated `data-r` marker (no handler symbol), so the existing loader replay chain snapshots cold events on it and hands them to the driver once hydrated. Target: 0 loader bytes (marker reuses the existing delegation lookup).
-- [ ] Test: resumed page, click before boot → one replay on the island's target after hydration; default action once.
-- [ ] Until it lands: listed in the user-facing limits section (T17).
+- [x] Route (as built, DERIVED-GAPS 04 2026-10-28: no marker needed — the derived island hole's boundary listens to `*`, the loader holds the cold press and replays it after the adopt run; `client.ts` `watch()` records presses synchronously, moved from `intent.ts`; 0 loader / server bytes). Planned: the server marks an `intent` island root with a delegated `data-r` marker (no handler symbol), so the existing loader replay chain snapshots cold events on it and hands them to the driver once hydrated. Target: 0 loader bytes (marker reuses the existing delegation lookup).
+- [x] Test (`libs/bridge/tests/derived-browser.test.ts` "intent", chromium + webkit): resumed page, click before boot → one replay on the island's target after hydration; default action once.
+- [x] User-facing limits section updated (framework-components.md).
 
 ### Task T5: Vite integration
 

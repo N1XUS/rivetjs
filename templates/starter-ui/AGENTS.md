@@ -147,7 +147,6 @@ The server writes the HTML plus a short record per interactive component (it has
 - `.ts` files are not server-rewritten: import `@rivetjs/runtime/dom` (`For`, `Show`, `clientEffect`, …) only from `.tsx` files, else the DOM runtime is bundled into SSR.
 - With the default `resume.appModules: true`, project `.tsx` / `.jsx` files imported by routes need no registration (outside `node_modules` and within the project root).
 - A component whose markup differs in the browser renders there instead of reusing the server nodes (dev prints a warning naming it).
-- Not yet on this model (plan M6): framework islands.
 - Playwright tests: the first trusted mouse click per document flushes DOM updates one task later. After a page's first `page.click`, wait (`expect(...).toHaveText` retries / `waitForFunction`), don't read the DOM synchronously.
 
 ## 4. File routes
