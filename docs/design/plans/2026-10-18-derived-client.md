@@ -77,7 +77,7 @@ Status (2026-10-18): **E1 done** in-process — `apps/ssr-bench/spikes/encoded/e
 ## Measurement discipline
 
 - Every milestone's gate runs the same harness the spike used, in the same place: in-container for ratios (pinned Chromium via `RESUME_BENCH_CHROME`), the bench host under the lock for absolute numbers before any public claim. Numbers in docs name the host and the load.
-- Spike artifacts stay until the milestone that replaces them lands, then are deleted: `apps/ssr-bench/spikes/{splice,structural}`, `apps/resume-bench/spikes/s3-dashboard.ts`, `apps/resume-bench/lanes/rivet-derived`, `libs/compiler/spikes/portability`.
+- Spike artifacts stay until the milestone that replaces them lands, then are deleted: `apps/ssr-bench/spikes/{splice,structural}`, `apps/resume-bench/spikes/s3-dashboard.ts`, `apps/resume-bench/lanes/rivet-derived`, `libs/compiler/spikes/portability`. Deleted (lane HYGIENE 2026-10-28): `structural`, `s3-dashboard.ts` (derived ui-docs pages exist), `libs/compiler/spikes/portability` (compiler facts classify boundaries), `apps/ssr-bench/spikes/derived` (M2 gate done). Kept: `splice` (imported by `spikes/encoded` and `apps/editorial-bench/spikes/ppr-shell`), `rivet-derived` (M3 reference, M3 not landed).
 
 ## Risks (carried from the records, with the mitigation that is in the plan)
 
