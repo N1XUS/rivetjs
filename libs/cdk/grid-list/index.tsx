@@ -29,7 +29,9 @@
 // Deviation: react-aria `useHasTabbableChild` (empty state with a tabbable child) is not tracked: an
 //   empty grid is always tabbable.
 // Deviation: the description / section heading ids (react-aria `useSlotId`) are always set on the
-//   server (like React SSR); in the browser they follow whether the part rendered.
+//   server (like React SSR); in the browser they follow whether the part rendered. A row's description slot and
+//   selection checkbox ids are `<row id>-description` / `<row id>-checkbox` (react-aria: generated ids), stable across
+//   a row the resumed page materialises on its own.
 // `render` (RAC DOMRenderProps) on GridList / GridListItem / GridListSection / GridListHeader: given, the attributes object goes to `render(attrs, renderProps)` instead of the default element. Deviation: no `FocusScope`. The SharedElementTransition scope is a `SharedElementContext` provider entry.
 // Integration points: drag and drop (`dragAndDropHooks`, drop indicators, drag preview, `slot="drag"`
 //   button) — C8; `SelectableCollectionContext` filtering (Autocomplete) — C2b; `ListStateContext` — B5
@@ -96,7 +98,6 @@ import {
 } from "../slots/index.tsx";
 import { ButtonContext } from "../button/index.tsx";
 import { CheckboxContext, CheckboxFieldContext } from "../checkbox/contexts.ts";
-import { resumedId } from "../utils/id.ts";
 import { TextContext } from "../text/index.tsx";
 import { SelectionIndicatorContext } from "../selection-indicator/context.ts";
 import { SharedElementContext, type SharedElementScope } from "../shared-element-transition/transition.tsx";
@@ -128,6 +129,7 @@ import {
   gridListSelectionCheckboxChange,
   gridListSelectionCheckboxProps,
   listStateView,
+  normalizeKey,
   type AriaGridListItemOptions,
   type AriaGridListOptions,
   type GridListShared,
@@ -682,8 +684,12 @@ export const GridListItem = /*#__PURE__*/ createLeafComponent(
     // Live `isDisabled` (LIVE-SWEEP round 2): the row's spec with the current value (read in the computed / at event time).
     const disabledView = isLive(props, "isDisabled") ? liveView(props, ["isDisabled"]) : undefined;
     const specNow = (): RowSpec => (disabledView ? withDisabled(spec, !!read(disabledView.isDisabled as MaybeAccessor<boolean | undefined>)) : spec);
-    const descriptionSlot = createSlotId();
-    const checkboxId = resumedId();
+    // The row's part ids derive from the row id (`<list id>-<key>`, like ListBox option slots): a row the resumed page
+    // materialises on its own (an event in it, a lazy row) creates the server's ids (REDS-CDK 2026-10-28: a generated id
+    // took the first row's keyed id there, so a selected second row was labelled by the first row's description).
+    const rowIdBase = shared.id + "-" + normalizeKey(key);
+    const descriptionSlot = createSlotId(rowIdBase + "-description");
+    const checkboxId = rowIdBase + "-checkbox";
     const router = useRouter();
     // Resumable closures / bags read locals only (a `props.x` read captures the whole props object).
     const { focusMode, allowsArrowNavigation, onHoverStart, onHoverEnd, onHoverChange } = props;
