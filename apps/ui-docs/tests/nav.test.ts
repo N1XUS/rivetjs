@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "vitest";
+import { navPath } from "@rivetjs/docs-kit/tools/nav.ts";
 import { groups } from "../content/_nav/components.ts";
 
 const content = resolve(fileURLToPath(new URL("../content", import.meta.url)));
@@ -12,7 +13,7 @@ const title = (page: string) => /^title:\s*"?(.*?)"?\s*$/m.exec(readFileSync(res
 
 test("components groups are sorted by page title", () => {
   for (const group of groups) {
-    const titles = group.pages.map(title);
+    const titles = group.pages.map((page) => title(navPath(page)));
     const sorted = [...titles].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     assert.deepEqual(titles, sorted, `group "${group.title}"`);
   }
@@ -22,7 +23,7 @@ test("chart pages live in the Charts group", () => {
   const charts = groups.find((group) => group.title === "Charts");
   assert.ok(charts, "Charts group");
   for (const group of groups) {
-    if (group !== charts) assert.ok(!group.pages.some((page) => /chart$/.test(page) && page !== "components/trend-chip"), `group "${group.title}"`);
+    if (group !== charts) assert.ok(!group.pages.map(navPath).some((page) => /chart$/.test(page)), `group "${group.title}"`);
   }
-  assert.ok(charts.pages.includes("components/chart"));
+  assert.ok(charts.pages.map(navPath).includes("components/chart"));
 });
