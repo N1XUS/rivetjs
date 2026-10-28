@@ -952,6 +952,24 @@ function rivetPlugin(
   >();
   // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
   const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
+  // Dev: module-local verdicts (`facts-fixpoint.ts`, without the program): boundaries = components with a change source,
+  // own read sites or listeners, closed over the module's own tags; conditional = those without a change source.
+  const devVerdicts = new Map<string, { source: string; boundaries: string[]; conditional: string[] }>();
+  const devVerdict = (filename: string, source: string): { boundaries: string[]; conditional: string[] } => {
+    const hit = devVerdicts.get(filename);
+    if (hit?.source === source) return hit;
+    const facts = moduleFacts(source, filename, { boundaries: true }).boundaries ?? new Map();
+    const marked = new Set<string>();
+    for (const [name, c] of facts) if (c.source || c.interactive || c.listens) marked.add(name);
+    for (let grew = true; grew;) {
+      grew = false;
+      for (const [name, c] of facts) if (!marked.has(name) && [...c.renders].some((tag) => marked.has(tag))) (marked.add(name), (grew = true));
+    }
+    const boundaries = [...marked];
+    const entry = { source, boundaries, conditional: boundaries.filter((name) => !facts.get(name)!.source) };
+    devVerdicts.set(filename, entry);
+    return entry;
+  };
   // `resume.shells` + `api.resumeShell()` (ZERO A1): absolute `file` / `file#Name` entries, resolved in the walk.
   const shellEntries: string[] = [];
   const hostEntries: string[] = [];
@@ -1934,8 +1952,19 @@ function rivetPlugin(
           native?: string[];
         }
       | undefined = derivedVerdicts.get(filename);
-    // Dev (no build walk): a `resume.roots` module's default export is independent all the same.
-    if (!verdict && isDerivedRoot(filename)) verdict = { independent: [moduleFacts(source, filename).defaultName ?? "default"] };
+    // Dev (no build walk): module-local verdicts, as the walk marks them. A component with keyed state but no own handler
+    // (a demo page holding a signal its fields bind) is a boundary, a component without a change source is conditional:
+    // else every static instance (a ui QRCode / Status / Chip on a frame) and every field of such a page was a dependent
+    // record with no boundary above it, adopted standalone with `{}` props — its first event re-rendered it from the
+    // defaults. A `resume.roots` module's default export is independent all the same.
+    if (!verdict && serve) {
+      const local = devVerdict(filename, source);
+      const boundaries = [...local.boundaries],
+        conditional = local.conditional;
+      const independent = isDerivedRoot(filename) ? [moduleFacts(source, filename).defaultName ?? "default"] : [];
+      for (const name of independent) if (!boundaries.includes(name)) boundaries.push(name);
+      if (boundaries.length) verdict = { boundaries, independent, conditional };
+    } else if (!verdict && isDerivedRoot(filename)) verdict = { independent: [moduleFacts(source, filename).defaultName ?? "default"] };
     return {
       resume: { module: moduleId(filename), ...verdict },
       ...(resume?.incr ? { incr: true } : {}),
@@ -2535,6 +2564,7 @@ function rivetPlugin(
       if (change.event !== "delete") return;
       sheets.delete(id);
       clientCode.delete(id);
+      devVerdicts.delete(id);
       for (const [name, file] of derivedDev) if (file === id) derivedDev.delete(name);
     },
     // css`` edits that leave the compiled module unchanged update only its stylesheet.
