@@ -126,6 +126,7 @@ test("table native: the root keeps the grid path for anything the native markup 
   await grid("undeclared", () => (
     <Table {...NATIVE} aria-label="Team" selectionMode="multiple" columns={[{ id: "name", name: "Name", isRowHeader: true }]} items={[]} />
   ));
+  await grid("virtualized", () => <Table {...NATIVE} virtualized aria-label="Team" columns={[{ id: "name", name: "Name", isRowHeader: true }]} items={[]} />);
   // A sortable auto-form column; a non-array `items` (a live collection).
   await grid("sortable", () => (
     <Table {...NATIVE} aria-label="Team" columns={[{ id: "name", name: "Name", isRowHeader: true, allowsSorting: true }]} items={[]} />

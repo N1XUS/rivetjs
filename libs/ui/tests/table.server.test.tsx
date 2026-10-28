@@ -86,3 +86,60 @@ test("table SSR: auto form matches the compound form", async () => {
   const folded = await renderToString(() => <Table aria-label="Team" columns={columns} footer="2 members" items={rows} sortDescriptor={sort} />);
   assert.equal(mask(folded), mask(explicit));
 });
+
+for (const rowHeight of [undefined, 40]) {
+  test(`table SSR: virtualized data form windows 10k rows (${rowHeight ?? "default"})`, async () => {
+    const items = Array.from({ length: 10000 }, (_, id) => ({ id: String(id), name: `Member ${id}` }));
+    const html = await renderToString(() => (
+      <Table
+        virtualized
+        rowHeight={rowHeight}
+        headingHeight={36}
+        initialSize={{ width: 600, height: 240 }}
+        aria-label="Members"
+        columns={[{ id: "name", name: "Name", isRowHeader: true }]}
+        items={items}
+      />
+    ));
+    const count = (html.match(/data-slot="table-row"/g) ?? []).length;
+    assert.ok(count >= 4 && count < 20, `server window: ${count}`);
+    assert.match(html, /aria-rowcount="10001"/);
+    assert.match(html, /aria-colcount="1"/);
+    assert.match(html, /aria-rowindex="2"/);
+    assert.match(html, /data-ui-virtualized="true"/);
+    assert.match(html, new RegExp(`height:\\s*${(rowHeight ?? 48) * 10000}px`));
+    assert.doesNotMatch(html, />Member 9999</);
+    assert.doesNotMatch(html, /<table|rowHeight=|headingHeight=|initialSize=/);
+  });
+}
+
+test("table SSR: false opt-in preserves ordinary markup in data and compound forms", async () => {
+  const normalize = (html: string) => html.replace(/rvs\d+/g, "rv-id");
+  for (const compound of [false, true]) {
+    const output = (optOut: boolean) =>
+      renderToString(() => {
+        const props = optOut ? { virtualized: false, rowHeight: 99, headingHeight: 80, initialSize: { width: 300, height: 180 } } : {};
+        return compound ? (
+          <Table>
+            <Table.ScrollContainer>
+              <Table.Content aria-label="Plain" {...props}>
+                <Table.Header>
+                  <Table.Column id="name" isRowHeader>
+                    Name
+                  </Table.Column>
+                </Table.Header>
+                <Table.Body>
+                  <Table.Row id="a">
+                    <Table.Cell>Alpha</Table.Cell>
+                  </Table.Row>
+                </Table.Body>
+              </Table.Content>
+            </Table.ScrollContainer>
+          </Table>
+        ) : (
+          <Table aria-label="Plain" columns={[{ id: "name", name: "Name", isRowHeader: true }]} items={[{ id: "a", name: "Alpha" }]} {...props} />
+        );
+      });
+    assert.equal(normalize(await output(true)), normalize(await output(false)));
+  }
+});

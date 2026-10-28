@@ -42,7 +42,17 @@ export const badDirection = () => <Table.SortableColumnHeader sortDirection="up"
 
 // Rivet auto form: `columns` + `items` (row type inferred for the row renderer), cdk Table props on the root.
 export const auto = () => (
-  <Table aria-label="t" columns={[{ id: "name", name: "Name", isRowHeader: true, allowsSorting: true }]} items={rows} selectionMode="single" footer="f">
+  <Table
+    virtualized
+    rowHeight={40}
+    headingHeight={36}
+    initialSize={{ width: 600, height: 300 }}
+    aria-label="t"
+    columns={[{ id: "name", name: "Name", isRowHeader: true, allowsSorting: true }]}
+    items={rows}
+    selectionMode="single"
+    footer="f"
+  >
     {(row) => (
       <Table.Row id={row.id}>
         <Table.Cell>{row.name}</Table.Cell>
@@ -55,3 +65,6 @@ void col;
 
 // @ts-expect-error column needs a name
 export const badColumn = () => <Table aria-label="t" columns={[{ id: "x" }]} items={rows} />;
+
+// @ts-expect-error virtual row heights are numeric
+export const badHeight = () => <Table.Content virtualized rowHeight="40" />;

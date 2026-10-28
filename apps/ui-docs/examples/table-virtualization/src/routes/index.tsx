@@ -98,7 +98,7 @@ export function Virtualization() {
     <Table class="w-fit max-w-full">
       <Table.ScrollContainer>
         <CollectionVirtualizer layout={TableLayout} layoutOptions={{ rowHeight: 40, headingHeight: 36 }} initialSize={{ width: 700, height: 300 }}>
-          <Table.Content aria-label="Virtualized table with 1000 rows" class="h-[300px] w-[700px] overflow-auto">
+          <Table.Content selectionMode="single" aria-label="Virtualized table with 1000 rows" class="h-[300px] w-[700px] overflow-auto">
             <Table.Header class="h-full w-full">
               <Table.Column isRowHeader id="name" minWidth={160}>
                 Name

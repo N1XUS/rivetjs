@@ -283,3 +283,13 @@ test("table: a part nested in itself (tree rows, column groups) keeps the grid p
 test("table: a part outside a root anywhere (a row helper / wrapper component) turns the family off", () => {
   assert.deepEqual(proveTable({ Page: table(), RowHelper: { calls: [{ tag: "Table.Row" }, { tag: "Table.Cell", around: ["Table.Row"] }] } }), []);
 });
+
+test("table: virtualization props refuse native sites on both root and Content", () => {
+  const [family] = nativeFamilies(tableSource);
+  for (const prop of ["virtualized", "rowHeight", "headingHeight", "initialSize"]) {
+    assert.equal(family!.parts.get("TableRoot")!.has(prop), false);
+    assert.equal(family!.parts.get("TableContent")!.has(prop), false);
+    assert.deepEqual(proveTable({ Page: table({ root: { attrs: [prop] } }) }), [], `root ${prop}`);
+    assert.deepEqual(proveTable({ Page: table({ content: { attrs: ["aria-label", prop] } }) }), [], `Content ${prop}`);
+  }
+});

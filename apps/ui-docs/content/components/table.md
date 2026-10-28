@@ -107,9 +107,30 @@ Use `renderEmptyState` on `Table.Body` to display a custom message when the tabl
 
 ### Virtualization
 
-A table can be virtualized through [Virtualizer](https://react-aria.adobe.com/Virtualizer), enabling efficient rendering of large datasets by displaying only the rows visible within the viewport.
+Set `virtualized` on the data form or on `Table.Content` to render only the visible rows, overscan and focused row. The opt-in loads a separate helper using the [cdk CollectionVirtualizer and TableLayout](site:cdk/foundations/virtualizer/#collection-components); ordinary tables keep their existing markup and do not load the virtualizer.
 
-Wrap `Table.Content` in the [cdk Virtualizer](site:cdk/foundations/virtualizer/#collection-components) with a `TableLayout` (`@rivetjs/cdk/virtualizer`). The table then renders `div`s with grid roles, and its header row is sticky. Give `Table.Content` a fixed size and set `initialSize` to it: the server renders the first window at that size. Column resizing does not apply to a virtualized table yet.
+`rowHeight` and `headingHeight` default to 48 px. `initialSize` defaults to `{ width: 800, height: 600 }` and sets both the server window and the default scroll viewport. On `Table.Content`, `style` can override the viewport; keep `initialSize` aligned with its dimensions to avoid a jump on first interaction. Use fixed heights that fit the cell content. The table renders `div`s with grid roles and a sticky header. Selection, sorting and keyboard navigation remain CDK Table behaviour: with row focus, ArrowDown moves to the next row, End to the last row and Home to the first; with cell focus, Home/End move within the row. After clicking a cell, Home then ArrowLeft enters row focus. Column resizing does not apply to virtualized tables yet.
+
+::example{id=table-virtualized}
+
+For compound tables, put the same props on the content:
+
+```tsx
+<Table>
+  <Table.ScrollContainer>
+    <Table.Content virtualized rowHeight={48} headingHeight={40} initialSize={{ width: 600, height: 320 }} aria-label="Members">
+      <Table.Header>
+        <Table.Column id="name" isRowHeader>Name</Table.Column>
+      </Table.Header>
+      <Table.Body items={members}>
+        {(member) => <Table.Row id={member.id}><Table.Cell>{member.name}</Table.Cell></Table.Row>}
+      </Table.Body>
+    </Table.Content>
+  </Table.ScrollContainer>
+</Table>
+```
+
+The explicit CDK composition remains available for advanced layout options:
 
 ::example{id=table-virtualization}
 
@@ -206,7 +227,7 @@ A table that only shows data renders as a plain HTML table and ships no JavaScri
 
 Markup there: `table` / `thead` / `tbody` / `tr`, column headers `th scope="col"`, the cells of `isRowHeader` columns `th scope="row"`, the other cells `td`; same classes and `data-slot`s, hover from `:hover`. It is a data table, not a grid: no `role="grid"`, no tab stop, no arrow-key cell navigation; screen readers read it with their table commands (WAI-ARIA keeps static data tables as tables; the grid pattern is for interactive cells).
 
-The grid path (the cdk Table, keyboard above) is used as soon as a site has any of: `selectionMode` / `selectedKeys` / `onSelectionChange`, `sortDescriptor` / `onSortChange` / `allowsSorting`, `onRowAction` / `onCellAction` / row `href` / `onAction`, `disabledKeys` / `isDisabled`, `expandedKeys` / `treeColumn` / nested rows, `keyboardNavigationBehavior`, render props or `items` with a row function (`<Table.Body items={…}>{(item) => …}</Table.Body>`), a signal or computed as a prop value, a spread, `Table.Collection` / `Table.SortableColumnHeader` / `Table.ColumnResizer` / `Table.ResizableContainer` / `Table.LoadMore`, a Virtualizer, or another component that reads a context. Limits: the proof is per component (a grid table in the same component keeps its static siblings on the grid path), and a Table part called outside a `<Table>` JSX element anywhere in the app (a row helper function or a wrapper component) turns the static path off for every table in that build: write row renderers inline (see [Expandable Rows](#expandable-rows)). App CSS that targets the grid attributes (`[role=gridcell]`, `[data-key]`) does not match static tables. See the framework guide "Native automata".
+The grid path (the cdk Table, keyboard above) is used as soon as a site has any of: `selectionMode` / `selectedKeys` / `onSelectionChange`, `sortDescriptor` / `onSortChange` / `allowsSorting`, `onRowAction` / `onCellAction` / row `href` / `onAction`, `disabledKeys` / `isDisabled`, `expandedKeys` / `treeColumn` / nested rows, `keyboardNavigationBehavior`, render props or `items` with a row function (`<Table.Body items={…}>{(item) => …}</Table.Body>`), a signal or computed as a prop value, a spread, `Table.Collection` / `Table.SortableColumnHeader` / `Table.ColumnResizer` / `Table.ResizableContainer` / `Table.LoadMore`, `virtualized` / `rowHeight` / `headingHeight` / `initialSize`, a Virtualizer, or another component that reads a context. Limits: the proof is per component (a grid table in the same component keeps its static siblings on the grid path), and a Table part called outside a `<Table>` JSX element anywhere in the app (a row helper function or a wrapper component) turns the static path off for every table in that build: write row renderers inline (see [Expandable Rows](#expandable-rows)). App CSS that targets the grid attributes (`[role=gridcell]`, `[data-key]`) does not match static tables. See the framework guide "Native automata".
 
 ## Customization
 
@@ -308,6 +329,10 @@ See the [full module API](/api/rivetjs/ui/table/) for every named export and par
 | `items`                                            | `Iterable<T>`                                                      | -           | Data form: the rows                                                                                          |
 | `footer`                                           | `Content`                                                          | -           | Data form: `Table.Footer` content                                                                            |
 | `aria-label`, `sortDescriptor`, `selectionMode`, … | cdk Table props                                                    | -           | Data form: passed to `Table.Content`                                                                         |
+| `virtualized` | `boolean` | `false` | Window rows using a dynamically loaded CDK TableLayout helper. |
+| `rowHeight` | `number` | `48` | Fixed row height in px when virtualized. |
+| `headingHeight` | `number` | `48` | Fixed header height in px when virtualized. |
+| `initialSize` | `{ width: number; height: number }` | `{ width: 800, height: 600 }` | Server window and default scroll viewport dimensions in px. |
 
 ### Table.ScrollContainer
 
@@ -329,6 +354,10 @@ Inherits from [cdk Table](site:cdk/components/table/).
 | `sortDescriptor`    | `SortDescriptor \| Signal<SortDescriptor \| null>` | -        | Current sort state (a `Signal` is two-way) |
 | `onSortChange`      | `(descriptor: SortDescriptor) => void`             | -        | Sort change handler                        |
 | `class`             | `string`                                           | -        | Additional CSS classes                     |
+| `virtualized` | `boolean` | `false` | Window rows using a dynamically loaded CDK TableLayout helper. |
+| `rowHeight` | `number` | `48` | Fixed row height in px when virtualized. |
+| `headingHeight` | `number` | `48` | Fixed header height in px when virtualized. |
+| `initialSize` | `{ width: number; height: number }` | `{ width: 800, height: 600 }` | Server window and default scroll viewport dimensions in px. |
 
 ### Table.Header
 

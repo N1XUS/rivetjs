@@ -5,7 +5,7 @@
 // Rivet: `@react-aria/test-utils` Table tester / user-event → direct pointer / key events; fake timers → `flush()`; part classes,
 // variant, SortableColumnHeader indicator (default lucide chevron, custom, hidden), dynamic body `items` + `Table.Collection`,
 // Footer / ResizableContainer / LoadMore parts, parts outside a Table, live `class`, index exports.
-import { afterEach, test } from "vitest";
+import { afterEach, test, vi } from "vitest";
 import assert from "node:assert/strict";
 import { installOverlayDom } from "./install-overlay-dom.ts";
 
@@ -43,6 +43,7 @@ const mount = (fn: () => unknown) => {
 afterEach(() => {
   unmount?.();
   unmount = undefined;
+  vi.restoreAllMocks();
   document.body.innerHTML = "";
 });
 
@@ -529,3 +530,104 @@ test("table native (DOM): semantic markup, row headers, caller bindings", () => 
   );
   assert.equal(tables[1]!.getAttribute("aria-label"), "Auto");
 });
+
+for (const compound of [false, true]) {
+  test(`table: virtualized ${compound ? "compound" : "data"} window, selection, sorting and row keyboard focus`, async () => {
+    // happy-dom has no layout; focus scrolling needs the row's rectangle as well as the viewport.
+    const bounds = HTMLElement.prototype.getBoundingClientRect;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.matches('[data-slot="table-content"]')) return new DOMRect(0, 0, 600, 240);
+      if (this.matches('[data-slot="table-row"]')) {
+        const top = 36 + Number(this.dataset.key) * 40 - (this.closest<HTMLElement>("[role=grid]")?.scrollTop ?? 0);
+        return new DOMRect(0, top, 600, 40);
+      }
+      return bounds.call(this);
+    });
+    for (const [property, size] of [
+      ["clientWidth", 600],
+      ["clientHeight", 240],
+      ["offsetWidth", 600],
+      ["offsetHeight", 240],
+    ] as const) {
+      vi.spyOn(HTMLElement.prototype, property, "get").mockImplementation(function (this: HTMLElement) {
+        return this.matches('[data-slot="table-content"]') ? size : 0;
+      });
+    }
+    const items = Array.from({ length: 10000 }, (_, id) => ({ id: String(id), name: `Member ${id}` }));
+    const sort = signal<SortDescriptor | null>(null);
+    const columns = [{ id: "name", name: "Name", isRowHeader: true, allowsSorting: true }];
+    const r = mount(() =>
+      compound ? (
+        <Table>
+          <Table.ScrollContainer>
+            <Table.Content
+              virtualized
+              initialSize={{ width: 600, height: 240 }}
+              rowHeight={40}
+              headingHeight={36}
+              aria-label="Members"
+              selectionMode="single"
+              sortDescriptor={sort}
+            >
+              <Table.Header>
+                <Table.Column id="name" isRowHeader allowsSorting>
+                  Name
+                </Table.Column>
+              </Table.Header>
+              <Table.Body items={items}>
+                {(item: (typeof items)[number]) => (
+                  <Table.Row id={item.id}>
+                    <Table.Cell>{item.name}</Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
+        </Table>
+      ) : (
+        <Table
+          virtualized
+          initialSize={{ width: 600, height: 240 }}
+          rowHeight={40}
+          headingHeight={36}
+          aria-label="Members"
+          selectionMode="single"
+          sortDescriptor={sort}
+          columns={columns}
+          items={items}
+        />
+      ),
+    );
+    for (let i = 0; i < 100 && !r.container.querySelector("[data-slot=table-row]"); i++) await flush();
+    const grid = r.container.querySelector<HTMLElement>("[role=grid]")!;
+    assert.ok(grid);
+    Object.defineProperty(grid, "scrollHeight", { configurable: true, value: 400036 });
+    const count = () => grid.querySelectorAll("[data-slot=table-row]").length;
+    assert.ok(count() > 0 && count() < 25, `window contains ${count()} rows`);
+    assert.equal(grid.getAttribute("aria-rowcount"), "10001");
+    assert.equal(grid.style.height, "240px");
+    press(grid.querySelector("[role=columnheader]")!);
+    await flush();
+    assert.deepEqual(sort(), { column: "name", direction: "ascending" });
+    const first = grid.querySelector<HTMLElement>('[role=row][data-key="0"]')!;
+    first.focus();
+    press(first);
+    await flush();
+    assert.equal(first.getAttribute("aria-selected"), "true");
+    const navigate = async (value: string) => {
+      key(document.activeElement!, value);
+      await flush();
+      grid.dispatchEvent(new Event("scroll"));
+      await flush();
+    };
+    await navigate("ArrowDown");
+    assert.equal(document.activeElement?.getAttribute("data-key"), "1");
+    await navigate("End");
+    assert.equal(document.activeElement?.getAttribute("data-key"), "9999");
+    assert.ok(grid.scrollTop > 399000);
+    assert.ok(count() < 25);
+    await navigate("Home");
+    assert.equal(document.activeElement?.getAttribute("data-key"), "0");
+    assert.ok(grid.scrollTop < 50);
+  });
+}

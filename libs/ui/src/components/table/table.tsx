@@ -18,8 +18,7 @@
 //   stays on the root `div`); with `columns` + `items` it also renders the header (`Table.Column` per column, a
 //   `Table.SortableColumnHeader` for `allowsSorting`) and the body (`children` = a row renderer `(item) => <Table.Row>…`, default
 //   one `Table.Cell` per column with `item[column.id]`) and `footer` as a `Table.Footer`. The form is decided once at render
-//   (`columns` / `items` stay live); the compound form is unchanged. No Virtualizer path (the cdk `TableLayout` is a cdk
-//   Virtualizer layout; wiring it into `Table.Content` stays the `table-virtualization` example's explicit form).
+//   (`columns` / `items` stay live); the compound form is unchanged. Opt-in `virtualized` loads TableLayout in a separate helper.
 // - Rivet (TABLE-NATIVE 2026-10-27): static tables render native `<table>` markup without the cdk grid (see "Native table").
 import type {
   CellProps,
@@ -50,7 +49,7 @@ import { SelectableCollectionContext } from "@rivetjs/cdk/autocomplete-contexts"
 import type { Key } from "@rivetjs/cdk/collections/types";
 import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
-import { Provider } from "@rivetjs/runtime/dom";
+import { lazyComponent, Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { ChevronUp } from "lucide";
@@ -172,8 +171,12 @@ const CONTENT_KEYS = [
   "escapeKeyBehavior",
   "shouldSelectOnPressUp",
   "disallowTypeAhead",
+  "virtualized",
+  "rowHeight",
+  "headingHeight",
+  "initialSize",
 ] as const;
-type TableAutoContentProps = Pick<TableProps, Exclude<(typeof CONTENT_KEYS)[number], "aria-label" | "aria-labelledby" | "aria-describedby">>;
+type TableAutoContentProps = Pick<TableContentProps, Exclude<(typeof CONTENT_KEYS)[number], "aria-label" | "aria-labelledby" | "aria-describedby">>;
 
 interface TableRootBaseProps<E extends keyof JSX.IntrinsicElements = "div"> extends DOMRenderProps<E, undefined> {
   class?: string;
@@ -369,7 +372,23 @@ const TableScrollContainer = <E extends keyof JSX.IntrinsicElements = "div">(pro
 /* -------------------------------------------------------------------------------------------------
  * Table Content
  * -----------------------------------------------------------------------------------------------*/
-interface TableContentProps extends TableProps {}
+interface TableContentProps extends TableProps {
+  /** Render only the visible rows using the CDK TableLayout. */
+  virtualized?: boolean;
+  /** Fixed virtual row height in px. @default 48 */
+  rowHeight?: number;
+  /** Fixed virtual header height in px. @default 48 */
+  headingHeight?: number;
+  /** Server window and default viewport size in px. @default { width: 800, height: 600 } */
+  initialSize?: { width: number; height: number };
+}
+
+// Keep the virtualizer out of ordinary tables. Preload only when the SSR document contains
+// a virtual table: synchronous adoption preserves its first held interaction (as in ListBox).
+const VirtualizedTable = lazyComponent(() => import("./table-virtualized.tsx"));
+if (typeof document !== "undefined" && document.querySelector('[data-ui-virtualized="true"][data-slot="table-content"]')) {
+  await (VirtualizedTable as typeof VirtualizedTable & { load: () => Promise<unknown> }).load();
+}
 
 const TableContent = (props: TableContentProps): JSX.Element => {
   const context = useContext(TableContext);
@@ -387,9 +406,21 @@ const TableContent = (props: TableContentProps): JSX.Element => {
       </table>
     );
   }
-  const [local, rest] = splitLive(props, ["class", "keyboardNavigationBehavior"]);
+  const [local, rest] = splitLive(props, ["class", "keyboardNavigationBehavior", "virtualized", "rowHeight", "headingHeight", "initialSize"]);
   const cls = liveClass(local, () => composeTwRenderProps(local.class as never, slotsOf(context)?.content()));
 
+  if (local.virtualized) {
+    return (
+      <VirtualizedTable
+        composed={cls as never}
+        keyboardNavigationBehavior={local.keyboardNavigationBehavior ?? "tab"}
+        {...rest}
+        rowHeight={local.rowHeight}
+        headingHeight={local.headingHeight}
+        initialSize={local.initialSize}
+      />
+    );
+  }
   return (
     <TablePrimitive
       class={cls as never}
