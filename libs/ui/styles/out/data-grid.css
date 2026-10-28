@@ -105,24 +105,24 @@
     initial-value: #0000;
   }
 
-  .data-grid .data-grid__cell[data-pinned] {
+  .data-grid .table__row .data-grid__cell[data-pinned] {
     --data-grid-pinned-state: var(--surface);
     background-color: var(--surface-secondary);
     background-image: linear-gradient(var(--data-grid-pinned-state), var(--data-grid-pinned-state));
     transition: background-color var(--duration-fast) var(--ease-out), --data-grid-pinned-state var(--duration-fast) var(--ease-out);
   }
 
-  .data-grid .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .data-grid .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .data-grid .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
+  .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
     transition-property: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .data-grid .data-grid__cell[data-pinned]:not(:is([data-reduce-motion="true"], [data-reduce-motion="true"] *)), .data-grid .data-grid__cell[data-pinned]:not(:is([data-reduce-motion="true"], [data-reduce-motion="true"] *)):before, .data-grid .data-grid__cell[data-pinned]:not(:is([data-reduce-motion="true"], [data-reduce-motion="true"] *)):after {
+    .data-grid .table__row .data-grid__cell[data-pinned]:not(:is([data-reduce-motion="true"], [data-reduce-motion="true"] *)), .data-grid .table__row .data-grid__cell[data-pinned]:not(:is([data-reduce-motion="true"], [data-reduce-motion="true"] *)):before, .data-grid .table__row .data-grid__cell[data-pinned]:not(:is([data-reduce-motion="true"], [data-reduce-motion="true"] *)):after {
       transition-property: none;
     }
   }
 
-  .data-grid.table-root--secondary .data-grid__cell[data-pinned] {
+  .data-grid.table-root--secondary .table__row .data-grid__cell[data-pinned] {
     --data-grid-pinned-state: transparent;
     background-color: var(--background);
   }

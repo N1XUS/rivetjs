@@ -71,6 +71,15 @@ test("button native: same markup as the cdk path (variants, sizes, disabled, ari
     () => <Button {...NATIVE} isIconOnly type="button" id="b1" radius="concentric" aria-label="More" />,
     () => <Button isIconOnly type="button" id="b1" radius="concentric" aria-label="More" />,
   );
+  // An own `data-radius` attribute (styling docs, `/geometry` story) is kept: the native path dropped it (REDS-UI).
+  await same(
+    () => (
+      <Button {...NATIVE} data-radius="concentric">
+        Edit
+      </Button>
+    ),
+    () => <Button data-radius="concentric">Edit</Button>,
+  );
 });
 
 test("close button native: same markup as the cdk path (default icon, custom children, label)", async () => {

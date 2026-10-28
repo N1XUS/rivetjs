@@ -129,7 +129,9 @@
 /* Pinned cells stay opaque in every row state while columns scroll under them: the background colour is the opaque
    surface behind the cells (primary: the root's surface-secondary; secondary: the page background) and the vendored
    state colour (table.css: surface, surface/40 hover, surface/10 selected, accent-soft drop target; secondary:
-   transparent, default/50 hover) is layered on top as an image, so pinned cells look exactly like their row. */
+   transparent, default/50 hover) is layered on top as an image, so pinned cells look exactly like their row.
+   `.table__row` in the base selectors (0,4,0) beats table.css's row-state `background-color` (0,3,0) by specificity, not by
+   file order: a stylesheet chunk appended on the first interaction (table.css after data-grid.css) flipped the tie (TW-180). */
 /* Registered so the row-state layer of pinned cells eases like the plain cells' background-color */
 @property --data-grid-pinned-state {
   syntax: "<color>";
@@ -137,7 +139,7 @@
   initial-value: transparent;
 }
 
-.data-grid .data-grid__cell[data-pinned] {
+.data-grid .table__row .data-grid__cell[data-pinned] {
   --data-grid-pinned-state: var(--surface);
   background-color: var(--surface-secondary);
   background-image: linear-gradient(var(--data-grid-pinned-state), var(--data-grid-pinned-state));
@@ -147,7 +149,7 @@
   @apply motion-reduce:transition-none;
 }
 
-.data-grid.table-root--secondary .data-grid__cell[data-pinned] {
+.data-grid.table-root--secondary .table__row .data-grid__cell[data-pinned] {
   --data-grid-pinned-state: transparent;
   background-color: var(--background);
 }

@@ -83,7 +83,13 @@ const ButtonGroupRoot = (props: ButtonGroupRootProps): JSX.Element => {
 
   // An inline arrow (compiler-captured, resumable), not `accessorIfLive`: cdk `Group`'s hover handlers capture it, and a function
   // created in a `.ts` module does not serialize on resume.
-  const isDisabled = hasLiveProp(props, ["isDisabled"]) ? () => local.isDisabled : local.isDisabled;
+  // (A live getter yielding an accessor — `isDisabled={nav.isDisabled}` — is called: the cdk reads a function as truthy.)
+  const isDisabled = hasLiveProp(props, ["isDisabled"])
+    ? () => {
+        const value = local.isDisabled as boolean | (() => boolean) | undefined;
+        return typeof value === "function" ? value() : value;
+      }
+    : local.isDisabled;
 
   // A body const, not inline in the JSX: the compiler registers a const initializer holding a function as a resumable symbol
   // (re-evaluated on resume with its captures); a call inside the JSX getter would hand cdk an unregistered closure.

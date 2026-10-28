@@ -211,14 +211,21 @@ export function registerStep(state: StepperState, step: StepItemState): void {
   if (!steps.includes(step)) state.steps.set([...steps, step]);
 }
 
-/** Removes `step`; a selection past the end moves back one step (upstream `steps.changes` handler). */
+/**
+ * Removes `step`; a selection past the end moves back one step (upstream `steps.changes` handler). The check runs in a
+ * microtask, as upstream's `QueryList.changes` fires once the change settled: a step whose unit is disposed and created
+ * again in the same task (a resumed page's adopt run retrying its probe, REDS-UI 2026-10-28: a display-only
+ * `defaultStep={1}` stepper fell back to step 0 on the first interaction) re-registers before it, so nothing moves.
+ */
 export function unregisterStep(state: StepperState, step: StepItemState): void {
-  const steps = untrack(state.steps).filter((s) => s !== step);
-  state.steps.set(steps);
-  const selected = controlledValue(state.selected);
-  if (selected >= steps.length && selected > 0) {
-    if (!state.selected.isControlled || state.selected.isSignal) state.selected.value.set(Math.max(selected - 1, 0));
-  }
+  state.steps.set(untrack(state.steps).filter((s) => s !== step));
+  queueMicrotask(() => {
+    const count = untrack(state.steps).length,
+      selected = untrack(() => controlledValue(state.selected));
+    if (selected >= count && selected > 0) {
+      if (!state.selected.isControlled || state.selected.isSignal) state.selected.value.set(Math.max(selected - 1, 0));
+    }
+  });
 }
 
 // -------------------------------------------------------------------------------------------------

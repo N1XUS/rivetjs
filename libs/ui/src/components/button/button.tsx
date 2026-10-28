@@ -96,7 +96,8 @@ function inertAttrs(props: object, slot: string, cls: string): Record<string, un
   out.type = p.type ?? "button";
   out.id = p.id ?? createId(); // the cdk Button's `aria.id ?? createId()`: same ids as the cdk path
   out.class = cls;
-  out["data-radius"] = p.radius;
+  // The cdk path spreads the caller's attributes after `data-radius={radius}`: an own `data-radius="concentric"` wins there.
+  if (!("data-radius" in p)) out["data-radius"] = p.radius;
   if (p.isDisabled) ((out.disabled = true), (out["data-disabled"] = "true"));
   return out;
 }
@@ -129,9 +130,15 @@ const ButtonRoot = (props: ButtonRootProps): JSX.Element => {
         }
       : composeTwRenderProps(local.class as never, styles());
   // cdk Button's press handlers capture the accessor: the compiler registers a const arrow used as a value (resumable).
+  // A live getter may yield an accessor itself (`isDisabled={nav.isNextDisabled}`: a member read of a non-props object is
+  // a getter whose value is the function): called here, else the cdk read the function as truthy (always disabled).
+  const liveIsDisabled = (): boolean | undefined => {
+    const value = finalIsDisabled() as boolean | (() => boolean) | undefined;
+    return typeof value === "function" ? value() : value;
+  };
   const isDisabled =
     hasLiveProp(props, ["isDisabled"]) || (buttonGroupContext !== undefined && hasLiveProp(buttonGroupContext, ["isDisabled"]))
-      ? finalIsDisabled
+      ? liveIsDisabled
       : finalIsDisabled();
 
   // Inside a `<Form form>` (T20): a submit button without `isPending` is pending while the store's submit runs.

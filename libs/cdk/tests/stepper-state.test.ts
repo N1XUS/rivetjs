@@ -44,13 +44,25 @@ describe("stepper state", () => {
     expect(stepperSelectedIndex(s)).toBe(0);
   });
 
-  it("registers a step once and re-indexes on removal", () => {
+  it("registers a step once and re-indexes on removal", async () => {
     const { state, items } = setup();
     registerStep(state, items[0]!);
     expect(state.steps()).toHaveLength(3);
     selectStep(state, 2);
     unregisterStep(state, items[2]!);
+    await Promise.resolve();
     expect(stepperSelectedIndex(state)).toBe(1);
+  });
+
+  // Rivet: the clamp waits for the change to settle (upstream `steps.changes`): a step disposed and registered again in
+  // the same task (a resumed page's adopt run retrying its probe) keeps the selection.
+  it("a step removed and registered again in the same task keeps the selection", async () => {
+    const { state, items } = setup();
+    selectStep(state, 2);
+    unregisterStep(state, items[2]!);
+    registerStep(state, items[2]!);
+    await Promise.resolve();
+    expect(stepperSelectedIndex(state)).toBe(2);
   });
 
   it("marks the step interacted when moving away; completed = interacted + valid", () => {

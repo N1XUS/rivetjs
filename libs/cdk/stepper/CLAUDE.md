@@ -9,7 +9,7 @@ Angular CDK stepper port (v22.2.2): wizard-like workflow split into steps, linea
 
 ## Layout
 - `state.ts` — plain signals + free functions: selection via cdk `controllable` (value / Signal / accessor), steps list signal, per-step `interacted` / overrides; linear gating = upstream `_anyControlsInvalidOrPending` + `_isValidIndex`.
-- `index.tsx` — parts; `Step` registers itself (creation order = index; `onCleanup` unregisters); `StepHeader` owns click / keydown / pointer hover / focus-visible; `StepPanel` `index` or the enclosing `Step`.
+- `index.tsx` — parts; `Step` registers itself (creation order = index; `onCleanup` unregisters; the selection clamp after a removal runs in a microtask, upstream `steps.changes` timing: a step disposed and registered again in one task — a resumed page's adopt probe retry — keeps the selection, REDS-UI 2026-10-28); `StepHeader` owns click / keydown / pointer hover / focus-visible; `StepPanel` `index` or the enclosing `Step`.
 - tests: `../tests/stepper-state.test.ts`, `../tests/stepper-ssr.test.ts`, `../tests/stepper.browser.test.tsx` (Chromium).
 - docs: `apps/cdk-docs/content/components/stepper.md`, examples `apps/cdk-docs/examples/stepper-{basic,linear,vertical,list}`.
 

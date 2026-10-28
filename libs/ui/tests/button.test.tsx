@@ -137,3 +137,24 @@ test("button: render prop swaps the element, keeps classes + data-slot, forwards
   assert.equal(el, a);
   r.unmount();
 });
+
+// A member read of a non-props object compiles to a live getter whose value is the accessor itself
+// (`isDisabled={nav.isNextDisabled}`, `useDisclosureGroupNavigation`): the button follows the accessor, not "a function =
+// truthy = disabled" (REDS-UI 2026-10-28: the disclosure-group story's Next / Previous never pressed).
+test("button: a live isDisabled holding an accessor (member read) follows it; presses run", () => {
+  const at = signal(0);
+  const nav = { isNextDisabled: () => at() >= 2, onNext: () => at.set(at() + 1) };
+  const r = render(() => (
+    <Button isDisabled={nav.isNextDisabled} onPress={nav.onNext}>
+      next
+    </Button>
+  ));
+  const b = r.container.firstElementChild as HTMLButtonElement;
+  assert.equal(b.hasAttribute("disabled"), false);
+  b.click();
+  assert.equal(at(), 1);
+  b.click();
+  assert.equal(at(), 2);
+  assert.equal(b.hasAttribute("disabled"), true);
+  r.unmount();
+});

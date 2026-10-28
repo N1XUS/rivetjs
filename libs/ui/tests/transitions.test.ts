@@ -69,7 +69,7 @@ const CASES: [file: string, start: string, props: string[]][] = [
   ["sidebar.css", ".sidebar__menu-actions {", ["opacity"]],
   ["sidebar.css", ".sidebar__menu-badge {", ["opacity"]],
   ["sidebar.css", ".sidebar__menu-chip {", ["opacity"]],
-  ["data-grid.css", ".data-grid .data-grid__cell[data-pinned] {", ["background-color", "--data-grid-pinned-state"]],
+  ["data-grid.css", ".data-grid .table__row .data-grid__cell[data-pinned] {", ["background-color", "--data-grid-pinned-state"]],
   ["data-grid.css", ".data-grid__expand {", ["background-color", "color"]],
   ["chat-tool.css", ".chat-tool__trigger {", ["color"]],
   ["markdown.css", ".markdown__link {", ["text-decoration-color"]],
