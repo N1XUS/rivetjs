@@ -37,6 +37,7 @@ export function derivedLoader(): void {
     booting: Promise<DerivedRuntime> | undefined,
     // The element a replay re-dispatches on (its own event is not handled again).
     skip: Element | null | undefined;
+  let paired: Map<string, EventTarget> | undefined;
   const q: HeldEvent[] = [],
     parse = (): BoundaryTail => (tail ??= JSON.parse(script.textContent!)),
     fo = script.dataset.fo,
@@ -154,6 +155,8 @@ export function derivedLoader(): void {
     // "open in new tab", text selection) the browser's menu shows: nothing says a handler cancels it.
     else if (type == "invalid" || (type == "contextmenu" && target.closest?.("[data-cm]"))) replay = () => {};
     else if (type == "keydown") {
+      // A queued keydown owns its release even when a context/helper keyup is absent from data-events.
+      if (paired) (paired.set((event as KeyboardEvent).code, target), listen("keyup", keyup, true));
       // The keys the target's widget handles (the nearest `data-rk`: cdk composites, slider thumbs, spin fields) and the
       // boundaries around it (record `k`): held while the chunk loads, so a cold key never acts natively (a range input
       // stepping, the page scrolling) before its handler replays. A text field without its own `data-rk` (a row's
@@ -170,6 +173,15 @@ export function derivedLoader(): void {
     rt ? rt.cold(item) : (q.push(item), booting || !(lazy && hover.test(type))) && boot().catch(fail);
   };
   const listen = (type: string, fn: (event: Event) => unknown, active?: boolean): void => d.addEventListener(type, fn, { capture: true, passive: !active });
+  // Only subscribed while cold keys await release: warm keyups pay no extra capture listener. A release on another
+  // target (e.g. native Tab moved focus) clears the code without replaying it. Repeats occupy one entry.
+  const keyup = (event: Event): void => {
+    const code = (event as KeyboardEvent).code,
+      target = paired!.get(code);
+    paired!.delete(code);
+    if (!paired!.size) d.removeEventListener("keyup", keyup, true);
+    if (target == event.target) on(event);
+  };
   const im = window as Window & { __rvIM?: string };
   // Intent inside a listening record, or on a document click listener's match (`data-g`: the router's links); with held
   // hover events (records that listen to hover), always.
@@ -190,9 +202,10 @@ export function derivedLoader(): void {
     clearTimeout(dwell);
     (event as PointerEvent).pointerType == "touch" || (dwell = setTimeout(() => (booting || prune(), hovered(event.target) && warm(event)), 80));
   });
-  (script.dataset.events || "click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout")
-    .split(" ")
-    .map((type) => listen(type, on, !/^(touch|wheel|scroll)/.test(type)));
+  const events = script.dataset.events || "click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout";
+  events.split(" ").map((type) => listen(type, on, !/^(touch|wheel|scroll)/.test(type)));
+  // Listed keyups already use on. Otherwise pair only queued keydowns by target/code, including chords/repeats.
+  if (!events.split(" ").includes("keyup")) paired = new Map();
   listen("focusin", warm);
   listen("touchstart", warm);
   // Triggers: start now. (`data-boot="<ids>"`, ZERO ABI-SPLIT: `DERIVED_LOADER_VISIBLE` runs `derivedVisibleBoot` here instead.)

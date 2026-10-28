@@ -881,9 +881,12 @@ _trigger.ev = (key) => {
 export function _rListens(type: string): null {
   const ctx = useContext(DERIVED);
   const b = ctx && !ctx.off && current(ctx);
-  // No `ctx.events` widening: the helper's listener installs on adoption, which a default-type event triggers first
-  // (widening the loader to keyup / focus / blur replays those cold and broke cdk Select typeahead's pressed state).
-  if (b) listen(b, type);
+  // Scroll may be the first interaction and does not bubble: the loader's capture listener must exist before adopt.
+  // Other helper types keep the default-event wake rule (keyup is paired with its cold keydown in the loader).
+  if (b) {
+    listen(b, type);
+    if (type === "scroll") ctx!.events.add(type);
+  }
   return null;
 }
 
