@@ -39,15 +39,29 @@ import { BUTTON_GROUP_CHILD, ButtonGroupContext } from "../button-group/button-g
  * -----------------------------------------------------------------------------------------------*/
 interface ButtonRootProps extends ButtonPrimitiveProps, ButtonVariants {
   [BUTTON_GROUP_CHILD]?: boolean;
+  /** @internal The build's class for this call site (VCLS); never passed by hand. */
+  $cls?: string;
   /** `"concentric"`: the padded parent's inner radius (`--r-inner`) instead of the pill, e.g. a Button in a Card corner. */
   radius?: "concentric";
 }
 
+/** The compiler's static class prop (VCLS, below; file-local like the native helpers). */
+const CLASS_PROP = "$cls";
 /** Props that pick the classes; a live one makes the cdk `class` a render-prop function. */
 const STYLE_PROPS = ["class", "fullWidth", "isIconOnly", "size", "variant"] as const;
 /** Group context fields that pick the classes (getters when the group's prop is live). */
 const GROUP_STYLE_PROPS = ["fullWidth", "size", "variant"] as const;
-const OWN_PROPS = ["children", ...STYLE_PROPS, "isDisabled", "radius", "slot", "style", BUTTON_GROUP_CHILD] as const;
+const OWN_PROPS = ["children", ...STYLE_PROPS, "isDisabled", "radius", "slot", "style", BUTTON_GROUP_CHILD, CLASS_PROP] as const;
+
+/* -------------------------------------------------------------------------------------------------
+ * Static class (VCLS, `libs/compiler/static-class.ts`). At a call site whose `fullWidth` / `isIconOnly` / `size` /
+ * `variant` are constants (or absent) and that passes no `class`, the build evaluates `buttonVariants` of them and passes
+ * the result as `$cls`: the root uses it instead of calling the resolver, so a page whose every Button is such a site
+ * ships no variant table, and no resolver when no other shipped component uses `tv` (the browser build reads
+ * `buttonVariants` lazily; by default only when every Button site of the build is proven). Under a `ButtonGroup` (its context may set size / variant / fullWidth) the root
+ * calls the resolver: modules importing the context register it. Contract: `tests/static-class{,.server}.test.tsx`.
+ * -----------------------------------------------------------------------------------------------*/
+// @rivet-class ButtonRoot(fullWidth,isIconOnly,size,variant) buttonVariants with(ButtonGroupContext)
 
 /* -------------------------------------------------------------------------------------------------
  * State-space path (ZERO JSLEAK, the STATESPACE mechanism: `docs/guides/resumability.md` "Native automata"). A Button
@@ -113,7 +127,10 @@ const ButtonRoot = (props: ButtonRootProps): JSX.Element => {
   const finalIsDisabled = () => local.isDisabled ?? (shouldUseContext ? buttonGroupContext?.isDisabled : undefined);
   const finalFullWidth = () => local.fullWidth ?? (shouldUseContext ? buttonGroupContext?.fullWidth : undefined);
 
+  // `$cls`: the build's `buttonVariants` of this call's constant props (no group context can change them here).
+  const staticClass = typeof local[CLASS_PROP] === "string" && !(buttonGroupContext && Object.keys(buttonGroupContext).length) ? local[CLASS_PROP] : null;
   const styles = () =>
+    staticClass ??
     buttonVariants({
       fullWidth: finalFullWidth(),
       isIconOnly: local.isIconOnly,

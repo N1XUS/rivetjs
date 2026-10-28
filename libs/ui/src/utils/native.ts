@@ -9,6 +9,8 @@ import { isSlot } from "@rivetjs/runtime/slot";
 
 /** The build's mark on a proven call site (compiler-injected prop; never rendered). */
 export const NATIVE = "$native";
+/** The build's static class of a call site (VCLS, `libs/compiler/static-class.ts`; compiler-injected, never rendered). */
+export const CLASS_PROP = "$cls";
 
 /**
  * `props` came from a proven call site and hold only `allowed` keys (plus `data-*` / `aria-*`) with static data values:
@@ -19,7 +21,7 @@ export function nativeProps(props: object, allowed: ReadonlySet<string>): boolea
   for (const key in props) {
     const d = Object.getOwnPropertyDescriptor(props, key);
     if (!d || d.get !== undefined) return false;
-    if (!(allowed.has(key) || key === NATIVE || key.startsWith("data-") || key.startsWith("aria-"))) return false;
+    if (!(allowed.has(key) || key === NATIVE || key === CLASS_PROP || key.startsWith("data-") || key.startsWith("aria-"))) return false;
     const v: unknown = d.value;
     if (typeof v === "function" && !(key === "children" && isSlot(v))) return false;
   }

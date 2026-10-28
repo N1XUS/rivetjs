@@ -85,6 +85,15 @@ export interface BoundaryFacts {
    * (`file?Name`; its `calls[index]`, resolved or not), null = TOP (or no call-site proof: `contexts` not given).
    */
   aboveCall(caller: string, index: number): string[] | null;
+  /**
+   * VCLS (`static-class.ts`): the component key (`file?Name`) a JSX tag or a value binding of `file` names (an own or
+   * imported component, through re-exports, a compound or one of its parts, `ns.Part`), null when unresolved.
+   */
+  resolveTag(file: string, tag: string): string | null;
+  /** VCLS: the module a namespace binding of `file` names (`import * as M`, an `export * as M` import), null otherwise. */
+  namespaceOf(file: string, name: string): string | null;
+  /** VCLS: some export of `file` (direct, re-exported, `export *`, a compound or its parts) names component `id`. */
+  exportsComponent(file: string, id: string): boolean;
 }
 
 const key = (file: string, name: string) => file + "?" + name;
@@ -505,8 +514,34 @@ export function boundaryFacts(
       escapes: call.escapes === true,
     });
   };
+  const exportsComponent = (file: string, id: string, seen = new Set<string>()): boolean => {
+    const own = facts.get(file);
+    if (!own || seen.has(file)) return false;
+    seen.add(file);
+    const names = new Set([...(own.exports?.keys() ?? []), ...(own.reexports?.keys() ?? []), ...own.boundaries.keys()]);
+    for (const name of names) {
+      const re = own.reexports?.get(name);
+      if (re?.imported === "*") {
+        const to = target(file, re.from);
+        if (to && exportsComponent(to, id, seen)) return true;
+        continue;
+      }
+      const bound = exported(file, name, new Set());
+      if (component(bound) === id) return true;
+      const compound = bound && facts.get(bound.file)!.compounds?.get(bound.local);
+      if (compound) for (const part of compound.parts.values()) if (component(local(bound!.file, part, new Set())) === id) return true;
+    }
+    for (const from of own.stars ?? []) {
+      const to = target(file, from);
+      if (to && exportsComponent(to, id, seen)) return true;
+    }
+    return false;
+  };
   return {
     aboveCall,
+    resolveTag,
+    namespaceOf: (file, name) => namespaceOf(file, name),
+    exportsComponent: (file, id) => exportsComponent(file, id),
     callSites: proof,
     native: (file) => native.get(file) ?? [],
     callers: sites,

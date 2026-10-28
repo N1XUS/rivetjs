@@ -6,6 +6,7 @@
 //   lookup table (`@rivetjs/runtime/comptime-tv`) reproduces it for every enumerated combination.
 // Refusals (non-deterministic, not data, unsupported definition, too large) keep the call at runtime.
 // The worker is this module itself (`new Worker(import.meta.url)`): the same file in the source tree and the package.
+import * as nodeModule from "node:module";
 import { isMainThread, parentPort, Worker, workerData } from "node:worker_threads";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -663,7 +664,20 @@ interface Request {
   readonly paths?: TvPaths;
 }
 
+// Stylesheet imports (a `@rivetjs/ui` definition imports its CSS: VCLS evaluates those definitions) load as empty
+// modules: the evaluated code never reads them. `module.registerHooks` (Node ≥ 22.15 / 23.5).
+const STYLESHEET = /\.(?:css|scss|sass|less|styl|stylus|pcss|postcss|sss)(?:\?|$)/;
+function stubStylesheets(): void {
+  const register = (nodeModule as { registerHooks?: (hooks: unknown) => unknown }).registerHooks;
+  register?.({
+    load(url: string, context: unknown, next: (url: string, context: unknown) => unknown) {
+      return STYLESHEET.test(url) ? { format: "module", source: "", shortCircuit: true } : next(url, context);
+    },
+  });
+}
+
 function workerMain(): void {
+  stubStylesheets();
   installTraps();
   const modules = new Map<string, Record<string, unknown> | Error>();
   const resolvers = new Map<string, unknown>();

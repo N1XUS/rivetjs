@@ -20,6 +20,20 @@ import { updateEditorManifest } from "./editor.ts";
 import { imagesPlugin } from "./images/plugin.ts";
 import { staticIcons } from "./static-icons.ts";
 import { applyMotion, motionContextToken, motionSites, type MotionElementSite, type MotionLowering } from "./static-motion.ts";
+import {
+  CLASS_FX,
+  CLASS_REG,
+  CLASS_REGISTRY,
+  classPlan,
+  lazyResolvers,
+  effectSource,
+  REGISTRY_SOURCE,
+  registrationSource,
+  sideEffectImports,
+  type Literal,
+  type PlannedFamily,
+} from "./static-class.ts";
+import { encode, evaluator } from "./comptime-eval.ts";
 import { matchesServerOnly, type ServerOnlyPattern } from "./server-only.ts";
 import { nameRegistry, scopedName, type ClassNames } from "./styles.ts";
 import type { ImagesConfig } from "./images/options.ts";
@@ -1019,12 +1033,42 @@ function rivetPlugin(
       );
     return hit;
   };
-  // `<Icon>` with constant props → inline `<svg>`; then the walk's Motion rewrite (builds).
+  // VCLS (builds, `static-class.ts`): module → its text with `$cls` at the proven call sites (`from`: the prepared text
+  // the walk proved them on); the active families (declaring module → its lazy resolver bindings), the browser build's
+  // registration imports by module, the walked modules and the families' packages (the transform's net for the rest).
+  const classText = new Map<string, { from: string; to: string }>();
+  const classState = {
+    families: [] as PlannedFamily[],
+    lazy: new Map<string, Map<string, string>>(),
+    flags: new Map<string, Set<string>>(),
+    walked: new Set<string>(),
+    packages: [] as { name: string; dir: string; keys: string[] }[],
+    definitions: new Map<string, { file: string; name: string }>(),
+    keep: new Map<string, { file: string; name: string }[]>(),
+  };
+  // Build-time class evaluations (both environments' walks ask the same calls): recipe → class (null: refused).
+  const classValues = new Map<string, Promise<string | null>>();
+  let classEvaluator: ReturnType<typeof evaluator> | null = null;
+  const classEvaluate = (file: string, name: string, props: Record<string, Literal>): Promise<string | null> => {
+    const id = JSON.stringify([file, name, props]);
+    let hit = classValues.get(id);
+    if (!hit) {
+      classEvaluator ??= evaluator();
+      hit = classEvaluator
+        .evaluate({ file, name, args: [encode(props)!], adapter: "value" })
+        .then((result) => (result.ok && "value" in result && typeof result.value === "string" ? result.value : null));
+      classValues.set(id, hit);
+    }
+    return hit;
+  };
+  // `<Icon>` with constant props → inline `<svg>`; then the walk's Motion rewrite, then its static classes (builds).
   const prepared = (filename: string, source: string): string => {
     if (!/\.[jt]sx$/.test(filename)) return source;
     const text = (serve ? (t: string) => t : _mergeOnlyImports)(icons ? staticIcons(source, filename, lucideFor) : source);
     const motion = motionText.get(filename);
-    return motion && motion.from === text ? motion.to : text;
+    const moved = motion && motion.from === text ? motion.to : text;
+    const cls = classText.get(filename);
+    return cls && cls.from === moved ? cls.to : moved;
   };
   // Read live: the router adds route modules while the dev server runs.
   const isRoute = (filename: string) => !!serverExports?.modules.some((path) => resolve(root, path) === resolve(filename));
@@ -1441,6 +1485,7 @@ function rivetPlugin(
     // MOTION-CSS: the walked modules' prepared texts (the Motion pass rewrites from them).
     const texts = new Map<string, string>();
     motionText.clear();
+    classText.clear();
     placementMismatches.length = 0;
     // `resume.domData`: resume modules that may hold a `<For>` (their source names it), checked after the verdicts.
     const forSources = new Map<string, string>();
@@ -1562,6 +1607,61 @@ function rivetPlugin(
       if (!changed) break;
       verdicts = close();
     }
+    // VCLS (`static-class.ts`): `$cls` at the call sites whose class props are constants; which modules register.
+    const classTrace = process.env.RIVET_CLASS_TRACE ? (...a: unknown[]) => console.error("[class]", ...a) : null;
+    // `RIVET_STATIC_CLASS=0`: off (A/B measurement, parity tests); `=page`: proof per page instead of per build.
+    const plannedClasses =
+      process.env.RIVET_STATIC_CLASS === "0"
+        ? { families: [], texts: new Map<string, string>(), flags: new Map<string, Set<string>>() }
+        : await classPlan({
+            texts,
+            facts,
+            target: (file, spec) => graph.get(file)?.get(spec) ?? null,
+            resolveTag: verdicts.resolveTag,
+            namespaceOf: verdicts.namespaceOf,
+            exportsComponent: verdicts.exportsComponent,
+            callers: verdicts.callers,
+            definition: async (file, spec) => {
+              const hit = await resolveFact(ctx, spec, file);
+              return hit && !hit.external && !hit.id.startsWith("\0") ? hit.id.split("?")[0]! : null;
+            },
+            evaluate: classEvaluate,
+            scope: process.env.RIVET_STATIC_CLASS === "page" ? "page" : "build",
+            boundaries: verdicts.boundaries,
+            edges: (file) => graph.get(file)?.values() ?? [],
+            keyOf: (file, name) =>
+              createHash("sha256")
+                .update(posix(relative(root, file)) + "#" + name)
+                .digest("hex")
+                .slice(0, 10),
+            ...(classTrace
+              ? { trace: (...a: unknown[]) => classTrace(...a.map((v) => (typeof v === "string" && v.startsWith(root) ? relative(root, v) : v))) }
+              : {}),
+          });
+    for (const [file, to] of plannedClasses.texts) {
+      classText.set(file, { from: texts.get(file)!, to });
+      texts.set(file, to);
+    }
+    classState.families = plannedClasses.families;
+    classState.flags = plannedClasses.flags;
+    classState.walked = new Set(facts.keys());
+    classState.lazy = new Map();
+    classState.definitions = new Map();
+    classState.keep = new Map();
+    const packages = new Map<string, { name: string; dir: string; keys: string[] }>();
+    for (const family of plannedClasses.families) {
+      let lazy = classState.lazy.get(family.file);
+      if (!lazy) classState.lazy.set(family.file, (lazy = new Map()));
+      lazy.set(family.resolver, family.key);
+      classState.definitions.set(family.key, family.definition);
+      classState.keep.set(family.key, family.keep);
+      const pkg = sourcePackage(family.file) ?? { name: "", dir: root };
+      let entry = packages.get(pkg.dir);
+      if (!entry) packages.set(pkg.dir, (entry = { ...pkg, keys: [] }));
+      entry.keys.push(family.key);
+      classTrace?.("active", family.component, relative(root, family.file), family.key, family.proven + " proven");
+    }
+    classState.packages = [...packages.values()];
     if (process.env.RIVET_CALLSITE_TRACE) {
       const out: Record<string, unknown> = {};
       for (const [id, results] of verdicts.callSites!.trace) out[id] = results;
@@ -1942,6 +2042,131 @@ function rivetPlugin(
       ...(frame ? { frame } : {}),
     });
   };
+  // VCLS (`static-class.ts`), production browser builds: a declaring module reads its resolvers lazily; a module that may
+  // create an instance without `$cls` (the walk's flags, and any module the walk did not see that imports a family's
+  // package) imports the registrations first, on line 1 (later lines and source maps stay put).
+  const CLASS_PACKAGE_IMPORT = (name: string): RegExp => {
+    const escaped = name.replace(/[.*+?^$()|[\]\\/{}]/g, "\\$&");
+    return new RegExp("(?:\\bfrom|\\bimport)\\s*\\(?\\s*[\"']" + escaped + "(?:[\"'/])");
+  };
+  const classImports = (
+    ctx: Rollup.TransformPluginContext,
+    original: string,
+    id: string,
+    options: { ssr?: boolean } | undefined,
+    out: Out | Promise<Out> | null | undefined,
+  ): Out | Promise<Out> | null | undefined => {
+    if (!classState.families.length || !built || serve || id.startsWith("\0" + CLASS_REGISTRY) || id.startsWith("\0rivet-class-")) return out;
+    const consumer = ctx.environment?.config?.consumer;
+    if (options?.ssr ?? (consumer ? consumer === "server" : ssrBuild)) return out;
+    const filename = id.split("?", 1)[0]!;
+    if (!id.startsWith("\0") && !/\.[cm]?[jt]sx?$/.test(filename)) return out;
+    const lazy = classState.lazy.get(filename);
+    let keys = classState.flags.get(filename);
+    if (!classState.walked.has(filename)) {
+      const net = new Set<string>();
+      for (const pkg of classState.packages)
+        if (pkg.name ? CLASS_PACKAGE_IMPORT(pkg.name).test(original) : !id.startsWith("\0") && !/[/\\]node_modules[/\\]/.test(filename))
+          for (const key of pkg.keys) if (classState.definitions.get(key)?.file !== filename) net.add(key);
+      if (net.size) keys = net;
+    }
+    if (!lazy && !keys?.size) return out;
+    return Promise.resolve(out).then((value) => {
+      let code = value ? value.code : original;
+      if (lazy) code = lazyResolvers(code, lazy) ?? code;
+      if (keys?.size) code = [...keys].map((key) => `import ${JSON.stringify(CLASS_REG + key)};`).join("") + code;
+      return { code, map: value ? value.map : null };
+    });
+  };
+  /** A definition's side-effect imports (`rivet-class-fx:<key>`): its stylesheets, through its re-exports. */
+  const classSideEffects = async (ctx: Rollup.PluginContext, file: string, seen = new Set<string>()): Promise<string[]> => {
+    if (seen.has(file)) return [];
+    seen.add(file);
+    const { bare, follow } = sideEffectImports(await readFile(file, "utf8"), file);
+    const out: string[] = [];
+    for (const spec of bare) {
+      const hit = await ctx.resolve(spec, file, { skipSelf: true });
+      if (hit && !hit.external) out.push(hit.id);
+    }
+    for (const spec of follow) {
+      const hit = await ctx.resolve(spec, file, { skipSelf: true });
+      const next = hit && !hit.external && !hit.id.startsWith("\0") ? hit.id.split("?", 1)[0]! : null;
+      if (next && /\.[cm]?[jt]sx?$/.test(next)) out.push(...(await classSideEffects(ctx, next, seen)));
+    }
+    return out;
+  };
+  // The module transform (wrapped by `transform`, which adds VCLS's browser-build imports: `classImports`).
+  function transformModule(this: Rollup.TransformPluginContext, original: string, id: string, options: { ssr?: boolean } | undefined) {
+    const [filename = "", query = ""] = id.split("?", 2);
+    if (localeClient(this, options) && !id.startsWith(LOCALE_FULL)) {
+      if (original.includes(LOCALE_TABLE_MARK) && /\.[cm]?[jt]s$/.test(filename) && !id.startsWith("\0")) {
+        const code = localeRewrite(filename, original);
+        if (code !== null) return { code, map: null };
+      }
+    }
+    const annotated = _pureAnnotate(filename, original, query);
+    if (annotated !== null) return { code: annotated, map: null };
+    // Island facades (`rivet({ bridges })`) are the only virtual modules compiled here.
+    const facade = virtual(filename);
+    if ((id.startsWith("\0") && !facade) || (/(?:^|[/\\])node_modules[/\\]/.test(filename) && !sourcePackage(filename) && !frameworkJsx(filename))) return null;
+    // A `.ts` route module (an endpoint a page imports from): its server exports leave the browser build too.
+    const routeScript = /\.[cm]?ts$/.test(filename) && !filename.endsWith(".d.ts") && isRoute(filename);
+    // Build-time evaluation of plain script modules (`tv(…)` definitions, constant calls).
+    if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript && /\.[cm]?[jt]s$/.test(filename) && !filename.endsWith(".d.ts") && built && !serve)
+      return classMerged(this, filename, original, options, comptimeOn() ? comptimeRewrite(this, filename, null, original) : null);
+    if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript) {
+      // DevTools (dev client only): plain app modules name their signals, computeds and contexts too
+      // (same-line edits: line numbers and stacks stay right).
+      if (!tools || !serve || !/\.[cm]?[jt]s$/.test(filename) || !original.includes("@rivetjs/") || !appModule(filename)) return null;
+      const consumer = this.environment?.config?.consumer;
+      if (options?.ssr ?? (consumer ? consumer === "server" : ssrBuild)) return null;
+      const named = tools.nameSignals(original, null, /\.[cm]?ts$/.test(filename) ? "ts" : "js");
+      return named ? { code: named.code, map: null } : null;
+    }
+    const params = new URLSearchParams(query);
+    if (params.has("raw") || params.has("url")) return null;
+    if (!facade) {
+      // A framework bridge's module (its plugins compile it). RV2145: also listed by an explicit Rivet `include`.
+      const owner = bridges?.owner(filename, original);
+      if (owner) {
+        if (patterns.include != null && selected(filename)) this.error(ownershipConflict(filename, owner, root));
+        // RV2148: Rivet runtime use in a framework-owned module (the framework compiles it; Rivet JSX / ABI would break).
+        const use = rivetRuntimeUse(original, filename);
+        if (use) this.error(foreignRivetRuntime(filename, owner, root, use));
+        return null;
+      }
+      if (!selected(filename) || foreignJsxPragma(original)) return null;
+    }
+    const source = prepared(filename, original);
+    const consumer = this.environment?.config?.consumer;
+    const server = options?.ssr ?? (consumer ? consumer === "server" : ssrBuild);
+    if (routeScript) {
+      if (server) return null;
+      const split = compile(source, { ...contributed(false, id), serverExports: true, target: "dom", filename, ...(sourceMap ? { sourceMap: true } : {}) });
+      if (split.diagnostics.length) fail(this, split, filename);
+      return classMerged(this, filename, original, options, comptimeRewrite(this, filename, { code: split.code, map: split.map ?? null }, original));
+    }
+    const done = finish(this, filename, source, server, id);
+    if (facade) return done;
+    // Server output with island facade calls: props that can read a signal become getters (`island-props.ts`, E1), so
+    // the bridge sees a live prop instead of a plain JSON value.
+    if (server && bridges) {
+      const ctx = this,
+        api = bridges;
+      const live = islandGetters(done.code, async (spec) => {
+        const hit = await ctx.resolve(spec, id);
+        return !!hit && !hit.external && api.facade(hit.id);
+      }).then((code) => (code === null ? done : { code, map: done.map }));
+      return classMerged(
+        this,
+        filename,
+        original,
+        options,
+        live.then((out) => comptimeRewrite(this, filename, out, original)),
+      );
+    }
+    return classMerged(this, filename, original, options, comptimeRewrite(this, filename, done, original));
+  }
   return {
     name: "vite-plugin-rivet",
     enforce: "pre",
@@ -2103,6 +2328,9 @@ function rivetPlugin(
     },
     resolveId(id, importer) {
       if (boundaryEntries.has(id)) return id;
+      // VCLS: the resolver registry (pure), a family's registration and its definition's side-effect imports.
+      if (id === CLASS_REGISTRY) return "\0" + id;
+      if (id.startsWith(CLASS_REG) || id.startsWith(CLASS_FX)) return { id: "\0" + id, moduleSideEffects: true };
       if (id.startsWith(MOTION_CSS)) return { id: "\0" + id, moduleSideEffects: true };
       if (id.startsWith(LOCALE_FULL)) return id;
       // `@rivetjs/ui`'s merge switch (ZERO UI-JS2): merge everywhere but production browser builds, whatever the
@@ -2179,6 +2407,16 @@ function rivetPlugin(
       return null;
     },
     async load(id) {
+      if (id === "\0" + CLASS_REGISTRY) return { code: REGISTRY_SOURCE, moduleSideEffects: false };
+      if (id.startsWith("\0" + CLASS_REG) || id.startsWith("\0" + CLASS_FX)) {
+        const reg = id.startsWith("\0" + CLASS_REG);
+        const key = id.slice((reg ? CLASS_REG : CLASS_FX).length + 1);
+        const definition = classState.definitions.get(key);
+        if (!definition) this.error(`static class ${key}: no definition in this build`);
+        if (reg) return { code: registrationSource(key, definition.file, definition.name), moduleSideEffects: true };
+        const imports = await classSideEffects(this, definition.file);
+        return { code: effectSource(imports, classState.keep.get(key) ?? []), moduleSideEffects: true };
+      }
       // MOTION-CSS: one entrance rule (`static-motion.ts`; the walk of this build proved and lowered it).
       if (id.startsWith("\0" + MOTION_CSS)) return motionCss.get(id.slice(MOTION_CSS.length + 1, -4)) ?? "";
       // A locale table whole (its lazy chunk): the table's own source text (pure data).
@@ -2281,82 +2519,16 @@ function rivetPlugin(
       },
     },
     transform(original, id, options) {
-      const [filename = "", query = ""] = id.split("?", 2);
-      if (localeClient(this, options) && !id.startsWith(LOCALE_FULL)) {
-        if (original.includes(LOCALE_TABLE_MARK) && /\.[cm]?[jt]s$/.test(filename) && !id.startsWith("\0")) {
-          const code = localeRewrite(filename, original);
-          if (code !== null) return { code, map: null };
-        }
-      }
-      const annotated = _pureAnnotate(filename, original, query);
-      if (annotated !== null) return { code: annotated, map: null };
-      // Island facades (`rivet({ bridges })`) are the only virtual modules compiled here.
-      const facade = virtual(filename);
-      if ((id.startsWith("\0") && !facade) || (/(?:^|[/\\])node_modules[/\\]/.test(filename) && !sourcePackage(filename) && !frameworkJsx(filename)))
-        return null;
-      // A `.ts` route module (an endpoint a page imports from): its server exports leave the browser build too.
-      const routeScript = /\.[cm]?ts$/.test(filename) && !filename.endsWith(".d.ts") && isRoute(filename);
-      // Build-time evaluation of plain script modules (`tv(…)` definitions, constant calls).
-      if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript && /\.[cm]?[jt]s$/.test(filename) && !filename.endsWith(".d.ts") && built && !serve)
-        return classMerged(this, filename, original, options, comptimeOn() ? comptimeRewrite(this, filename, null, original) : null);
-      if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript) {
-        // DevTools (dev client only): plain app modules name their signals, computeds and contexts too
-        // (same-line edits: line numbers and stacks stay right).
-        if (!tools || !serve || !/\.[cm]?[jt]s$/.test(filename) || !original.includes("@rivetjs/") || !appModule(filename)) return null;
-        const consumer = this.environment?.config?.consumer;
-        if (options?.ssr ?? (consumer ? consumer === "server" : ssrBuild)) return null;
-        const named = tools.nameSignals(original, null, /\.[cm]?ts$/.test(filename) ? "ts" : "js");
-        return named ? { code: named.code, map: null } : null;
-      }
-      const params = new URLSearchParams(query);
-      if (params.has("raw") || params.has("url")) return null;
-      if (!facade) {
-        // A framework bridge's module (its plugins compile it). RV2145: also listed by an explicit Rivet `include`.
-        const owner = bridges?.owner(filename, original);
-        if (owner) {
-          if (patterns.include != null && selected(filename)) this.error(ownershipConflict(filename, owner, root));
-          // RV2148: Rivet runtime use in a framework-owned module (the framework compiles it; Rivet JSX / ABI would break).
-          const use = rivetRuntimeUse(original, filename);
-          if (use) this.error(foreignRivetRuntime(filename, owner, root, use));
-          return null;
-        }
-        if (!selected(filename) || foreignJsxPragma(original)) return null;
-      }
-      const source = prepared(filename, original);
-      const consumer = this.environment?.config?.consumer;
-      const server = options?.ssr ?? (consumer ? consumer === "server" : ssrBuild);
-      if (routeScript) {
-        if (server) return null;
-        const split = compile(source, { ...contributed(false, id), serverExports: true, target: "dom", filename, ...(sourceMap ? { sourceMap: true } : {}) });
-        if (split.diagnostics.length) fail(this, split, filename);
-        return classMerged(this, filename, original, options, comptimeRewrite(this, filename, { code: split.code, map: split.map ?? null }, original));
-      }
-      const done = finish(this, filename, source, server, id);
-      if (facade) return done;
-      // Server output with island facade calls: props that can read a signal become getters (`island-props.ts`, E1), so
-      // the bridge sees a live prop instead of a plain JSON value.
-      if (server && bridges) {
-        const ctx = this,
-          api = bridges;
-        const live = islandGetters(done.code, async (spec) => {
-          const hit = await ctx.resolve(spec, id);
-          return !!hit && !hit.external && api.facade(hit.id);
-        }).then((code) => (code === null ? done : { code, map: done.map }));
-        return classMerged(
-          this,
-          filename,
-          original,
-          options,
-          live.then((out) => comptimeRewrite(this, filename, out, original)),
-        );
-      }
-      return classMerged(this, filename, original, options, comptimeRewrite(this, filename, done, original));
+      return classImports(this, original, id, options, transformModule.call(this, original, id, options));
     },
     async closeBundle() {
       // The last environment's bundle closes the evaluator (a later build of this plugin instance makes a new one).
       const pass = comptime;
       comptime = null;
       await pass?.close();
+      const classes = classEvaluator;
+      classEvaluator = null;
+      await classes?.close();
     },
     // T6: a deleted (or renamed away) module drops its dev caches — sheet, last client code, dev boundary names.
     watchChange(id, change) {

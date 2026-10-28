@@ -27481,8 +27481,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/button/button.tsx",
-    "line": 105,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/button/button.tsx#L105"
+    "line": 119,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/button/button.tsx#L119"
    },
    "href": "/api/rivetjs/ui/button/ButtonRoot/"
   },

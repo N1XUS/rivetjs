@@ -9,7 +9,7 @@ Rivet = compiled, resumable JSX framework: SSR-first streaming server output, fi
 | Path | What |
 | --- | --- |
 | `libs/reactivity` | `@rivetjs/reactivity`: signals, computed, effects, owners/disposal, `/store`, `/debug`, runtime ABI (`_*` exports). |
-| `libs/compiler` | `@rivetjs/compiler`: Rust/oxc JSX→server/DOM compiler (wasm), Vite plugin, build-time evaluation (`comptime`: constant calls + proven tailwind-variants tables), `?image` / `?jsx` / `?svg` (sharp + svgo), oracle parity corpus. Rust sources: root-agent-only edits (rule below). |
+| `libs/compiler` | `@rivetjs/compiler`: Rust/oxc JSX→server/DOM compiler (wasm), Vite plugin, build-time evaluation (`comptime`: constant calls + proven tailwind-variants tables; `static-class.ts`: precomputed ui variant classes at constant call sites), `?image` / `?jsx` / `?svg` (sharp + svgo), oracle parity corpus. Rust sources: root-agent-only edits (rule below). |
 | `libs/runtime` | `@rivetjs/runtime`: server streaming, DOM (`dom` + `dom-v2` ABI), resume (derived model: `server-derived` + `server-resume` façade / `dom-derived` / `resume-format`), router runtime, image, style, css, id, testing register, dev a11y. |
 | `libs/router` | `@rivetjs/router`: file routes, loaders/actions, guards, web-standard handler, node/static adapters, codegen. |
 | `libs/forms` | `@rivetjs/forms`: Standard Schema forms, progressive enhancement, resumable. |
