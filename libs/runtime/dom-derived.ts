@@ -861,16 +861,19 @@ const soleOf = (a: UnitAlign, n: Node): boolean => {
 };
 // A slot's current, captured on first use: row adoption may insert anchors and an Async
 // segment may replace its fallback before reconciliation. Freeze then, so DOM mutations cannot shift it.
+const snapshots = new WeakMap<Node[], () => Node[]>();
 function lazyNodes(read: () => Node[]): Node[] {
   let got: Node[] | null = null;
   const at = (): Node[] => (got ??= read());
-  return new Proxy([] as Node[], {
+  const nodes = new Proxy([] as Node[], {
     get: (_, key) => Reflect.get(at(), key),
     has: (_, key) => Reflect.has(at(), key),
     ownKeys: () => Reflect.ownKeys(at()),
     getOwnPropertyDescriptor: (_, key) => Reflect.getOwnPropertyDescriptor(at(), key),
     set: (_, key, value) => Reflect.set(at(), key, value),
   });
+  snapshots.set(nodes, at);
+  return nodes;
 }
 
 /** The alignment of one unit (`_adoptRow`'s, plus holes and server structure markers). */
@@ -2443,6 +2446,7 @@ const runtime: DerivedRuntime = {
     _adoption.same = same;
     _adoption.list = forHook as typeof _adoption.list;
     _adoption.keep = new WeakSet();
+    _adoption.snapshot = (nodes) => snapshots.get(nodes)?.() ?? nodes;
     // A pass whose output is inspected and discarded (`_rUnrecorded`: cdk's collection build pass, often first evaluated
     // inside a cached `computed` read by a later unit's probe) runs outside every unit, as the server renders it outside
     // its recorder: its boundaries run their bodies (they register), its `signal()`s are plain (no key counted) and its

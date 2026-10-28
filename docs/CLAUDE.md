@@ -102,6 +102,7 @@ Latest night measurement: `benchmarks/2026-10-28-night.md` + `.json` (CX-BENCH, 
 
 ## benchmarks/
 
+- `2026-10-28-cx-lazysnap.md` + `.json` — CX-LAZYSNAP: same-host interleaved filterKey A/B at 100 / 1000 rows, fast / slow; plain-array reconciliation of lazy snapshots, DOM-data read audit, semantic gates and runtime hash deltas.
 - `razor-adversarial.md` — red-team: text-grid scenario (`apps/ssr-bench --grid`) where Razor beats rivet-compiled on rps / p50 / TTFB / CPU (Rivet keeps peak memory); root cause `putText` inline loop ≤ 64 chars; hypotheses tried / untested; fixes.
 - `2026-10-07-speed-round.md` — same-session speed round: dom mount drift explained (COI harness change), Chrome first-mouse-click stall + `_dispatch` defer, resume click/key/tap/filter/navigate, resumable SSR vs like-for-like `solid-stable-interactive`.
 - `2026-10-08-props-suite.md` — component-props suite (`apps/dom-bench/props`): live props getter layouts (literal getters = V8 dictionary mode vs shared-getter slot objects), `mergeProps` / `splitProps` / `_spreadProps` forwarding; Rivet vs Solid stable, mount / relabel / select / bump / dispose / heap.

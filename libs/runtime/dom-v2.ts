@@ -406,7 +406,8 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
   // Follow the marker, not `parent`: content first bound in a detached fragment (an `Output`, a row) moves with its
   // anchors, and an inner update must insert where the marker is now (`tests/dom-v2-children-browser.test.ts` movedParent).
   if (read !== null) return nested(marker === null ? () => parent : () => marker.parentNode as Parent, read, slot, marker);
-  const current = slot.current;
+  // Unwrap a derived lazy snapshot once, before replacement can mutate its DOM range.
+  const current = DERIVED && Array.isArray(slot.current) && _adoption.snapshot ? _adoption.snapshot(slot.current) : slot.current;
   const t = typeof value;
   if (t === "string" || t === "number" || t === "bigint") {
     const text = String(value);
@@ -661,6 +662,8 @@ export const _adoption: {
    * a token's `n()` gives the list's server nodes.
    */
   keep?: WeakSet<object>;
+  /** A lazy slot snapshot as a plain array, captured at the first replacement and shared with its proxy. */
+  snapshot?: (nodes: Node[]) => Node[];
   /**
    * Derived model adopt runs (`dom-derived.ts`, `DERIVED` builds only, DERIVED-C2): called first by every `Async` with its
    * props and `Async` itself; a returned value replaces it (an `Async` the server streamed or awaited: probe run a hole,
