@@ -39,3 +39,9 @@ HTML bytes (source) + HTML transfer, JS transfer + requests before input (CDP `e
 - Scoreboard verdict on the 32 headline rows: 0 WIN / 17 TIE / 15 LOSE. Ties: products paint, CPU before input, LCP, TBT (0 everywhere), fast paint vs Qwik.
 - Losses: JS before input ~25.7 KB / 4 requests on every page vs Solid 1 ~7.5–7.9 KB / 1 (3.3–3.4×), Solid 2 ~21–22 KB; HTML transfer +1.4–1.6 KB vs Solid; slow paint on dashboard (sort: 56 vs Solid 1 46.5 ms) and settings (15-field invalid submit: 76 vs 44 ms, Rivet bimodal 49–84).
 - Fast paint ~32 ms in Rivet / Qwik vs ~38–41 ms in Solid on every page except settings (48 vs 40): the first-mouse-click one-task deferral shows up as a frame quantum, not framework work.
+
+## Results 2026-10-28 after JS-DIET-2 (report `docs/benchmarks/2026-10-28-real-pages-jsdiet.md`, n = 5, load1 2.5–9.7)
+
+- JS before input: Rivet 3.5–4.8 KB / 1 request on every page (was ~25.7 KB / 4) vs Solid 1 7.5–7.9 KB / 1, Solid 2 ~21–22 KB / 1, Qwik 1 ~24 KB / 3, Qwik 2 RC 38–44 KB / 14–31. The lite runtime + page residual ship as one chunk.
+- Slow main interaction → paint: products 32.3 vs Solid 1 48 ms, dashboard 35.4 vs 54.1, article 32.8 vs 48.5; settings 53.6 vs 52 (tie). Fast paint ~32–33 ms except settings 49.7 vs 34.3 (first-mouse-click deferral frame quantum).
+- Main-thread CPU before input (slow) lowest on every page (44.5–64 ms vs Solid 1 46.6–67.6).
