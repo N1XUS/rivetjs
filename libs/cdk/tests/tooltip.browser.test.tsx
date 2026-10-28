@@ -203,6 +203,9 @@ describe("Tooltip", () => {
     // Tooltip should not be visible on scroll
     const scrollContainer = screen().getByTestId("scroll-container");
     expect(scrollContainer).toBeInTheDocument();
+    // Rivet (overlay `overlayPosition`, 2026-10-23): only a scroll that moved the trigger (or the document) dismisses; a
+    // notification at the opening position is a queued pre-open one. RA closes on any: the container really scrolls here.
+    scrollContainer.scrollTop = 100;
     fireEvent.scroll(scrollContainer, { target: { top: 100 } });
     await wait();
     expect(tooltip1).not.toBeVisible();

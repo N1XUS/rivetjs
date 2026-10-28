@@ -428,9 +428,18 @@ describe("ComboBox", () => {
     await flush();
     const listbox = getByRole("listbox");
     expect(listbox).toBeInTheDocument();
-    fireEvent.scroll(document.body);
-    await flush();
-    expect(queryByRole("listbox")).toBeNull();
+    // Rivet (overlay `overlayPosition`, 2026-10-23): a scroll notification at the opening trigger position and document
+    // offset is a queued pre-open one and keeps the overlay; RA closes on any. The page really scrolls here.
+    document.body.style.minHeight = "300vh";
+    window.scrollTo(0, 40);
+    try {
+      fireEvent.scroll(document.body);
+      await flush();
+      expect(queryByRole("listbox")).toBeNull();
+    } finally {
+      window.scrollTo(0, 0);
+      document.body.style.minHeight = "";
+    }
   });
 
   it("should not close on input scrolling for cursor placement", async () => {

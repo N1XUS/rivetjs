@@ -25,11 +25,10 @@ test("slots: resumed page — slot ids, re-created slotted parts, accessor conte
   const page = await s.browser.newPage();
   const seen = watch(page);
   await page.goto(s.origin + "/slots");
-  // No slot check runs on the resumed page (no idle boot): an id without its element stays until the owner's binding
-  // re-runs (deviation from RA's post-mount drop; AT ignores IDREFs without an element); present ones stay.
-  await page.waitForLoadState("networkidle");
-  assert.equal(await page.getAttribute("#nd-input", "aria-describedby"), "nd-desc");
-  assert.equal(await page.getAttribute("#d2-input", "aria-describedby"), "d2-desc");
+  // The page's records adopt at idle (derived resume, `DEFER`): the slot check runs then and drops an id without its
+  // element (RA useSlotId's post-mount drop); present ones stay.
+  await page.waitForSelector("#nd-input:not([aria-describedby])", { state: "attached" });
+  await page.waitForSelector("#d2-input:not([aria-describedby])", { state: "attached" });
   assert.equal(await page.getAttribute("#d1-input", "aria-describedby"), "d1-desc");
   // Slot id follows its part after resume.
   await page.click("#d1-toggle");

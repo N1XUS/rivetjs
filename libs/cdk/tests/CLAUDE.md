@@ -1,5 +1,6 @@
 # libs/cdk/tests
 - `overlay-position.test.ts` / `overlay.test.ts` queued-scroll regression (2026-10-23): unchanged trigger coordinates and document offsets ignore pre-open scroll notifications; fixed-trigger scrollX/scrollY changes still close absolute overlays; parent/body/document/window close cases model actual rectangle movement, and later movement still closes. Production rapid confirmation-to-range-menu coverage is in UI Scheduler tests.
+- Upstream scroll-dismiss ports adapted to that rule (REDS-CDK 2026-10-28): `combobox.browser` "should close on scroll" scrolls the window 40px (taller body, restored after), `tooltip.browser` "should hide tooltip on scroll" sets the container's `scrollTop` before the scroll event: RA closes on any scroll notification, Rivet only after real trigger / document movement.
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
 Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` engines/behaviours; `tests/date` = `@internationalized/date` suite.

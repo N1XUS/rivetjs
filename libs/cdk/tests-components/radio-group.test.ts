@@ -24,6 +24,7 @@ const waitText = (page: Page, selector: string, value: string) =>
 const waitFocus = (page: Page, id: string) => page.waitForFunction((id) => document.activeElement?.id === id, id);
 const focused = (page: Page) => page.evaluate(() => document.activeElement?.id);
 const checked = (page: Page, id: string) => page.evaluate((id) => (document.getElementById(id) as HTMLInputElement).checked, id);
+const waitChecked = (page: Page, id: string) => page.waitForFunction((id) => (document.getElementById(id) as HTMLInputElement | null)?.checked === true, id);
 const labelOf = (id: string) => `label:has(> #${id})`;
 
 test("radio group: roles, label, description, orientation, required (RAC 'should render a radio group')", async () => {
@@ -79,9 +80,11 @@ test("radio group: RTL horizontal flips left/right", async () => {
   await page.click("#rg-1");
   await page.keyboard.press("ArrowLeft");
   await waitFocus(page, "rg-2");
-  assert.equal(await checked(page, "rg-2"), true);
+  // The handler moves focus at once; the `checked` binding flushes with the dispatch's batch (after the focus event).
+  await waitChecked(page, "rg-2");
   await page.keyboard.press("ArrowRight");
   await waitFocus(page, "rg-1");
+  await waitChecked(page, "rg-1");
   await page.close();
 });
 
