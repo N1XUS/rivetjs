@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] b13aea7329b5 538876 css d31938897091 1187616
-@rivetjs/ui [server] b63f5d3473b4 479426 css d31938897091 1187616
+@rivetjs/ui [dom] 5ea6e62cb6b5 538943 css d31938897091 1187616
+@rivetjs/ui [server] ba4ebb791e55 479458 css d31938897091 1187616
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -121,8 +121,8 @@
 @rivetjs/ui/popover [server] c64689c54f72 6747 css fd049ee7610c 1177314
 @rivetjs/ui/sidebar [dom] c431cabf5ffc 14999 css 75ed40676959 81971
 @rivetjs/ui/sidebar [server] 7d01abc3b9b4 14278 css 75ed40676959 81971
-@rivetjs/ui/app-layout [dom] 242ca50274c5 30362 css fd049ee7610c 1177314
-@rivetjs/ui/app-layout [server] 0424d479131d 25491 css fd049ee7610c 1177314
+@rivetjs/ui/app-layout [dom] 8551db6a685a 30429 css fd049ee7610c 1177314
+@rivetjs/ui/app-layout [server] 35154f442364 25523 css fd049ee7610c 1177314
 @rivetjs/ui/stepper [dom] 40fe00f25bf9 9087 css fd049ee7610c 1177314
 @rivetjs/ui/stepper [server] 8561e93bccb0 8186 css fd049ee7610c 1177314
 @rivetjs/ui/tooltip [dom] 6ea57c8318d3 7330 css fd049ee7610c 1177314
