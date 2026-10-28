@@ -17,6 +17,25 @@ const routeFiles = (table: RouteTable, routesDir: string, id: string): string[] 
 };
 
 /**
+ * Module path → the chunk holding it. A module's own id wins over its query copies (the compiler's lite graph copies
+ * route modules as `<file>?rivet-lite` into lite chunks without their stylesheets: a copy listed after the module took
+ * its route's CSS away, CSS-LAZY 2026-10-28); a copy counts only for a path no chunk holds as such.
+ */
+function moduleOwners<T>(bundle: Rollup.OutputBundle, value: (chunk: Rollup.OutputChunk) => T): Map<string, T> {
+  const owner = new Map<string, T>();
+  const copies = new Map<string, T>();
+  for (const output of Object.values(bundle))
+    if (output.type === "chunk")
+      for (const id of output.moduleIds) {
+        const at = id.indexOf("?");
+        if (at < 0) owner.set(id, value(output));
+        else if (!copies.has(id.slice(0, at))) copies.set(id.slice(0, at), value(output));
+      }
+  for (const [path, chunk] of copies) if (!owner.has(path)) owner.set(path, chunk);
+  return owner;
+}
+
+/**
  * Stylesheet URLs per route id from a client bundle (empty when no route module imports CSS). `appEntries`: the module
  * ids of the app's own build inputs (router `styles`, `build.rollupOptions.input`): their CSS is global. Every other
  * entry is the compiler's (derived boundary modules, a route page among them, and the runtime): its CSS stays per route.
@@ -30,8 +49,7 @@ export function bundleRouteCSS(
 ): Record<string, string[]> {
   const chunks = Object.values(bundle).filter((o): o is Rollup.OutputChunk => o.type === "chunk");
   const byFile = new Map(chunks.map((c) => [c.fileName, c]));
-  const owner = new Map<string, Rollup.OutputChunk>();
-  for (const chunk of chunks) for (const id of chunk.moduleIds) owner.set(id.split("?")[0]!, chunk);
+  const owner = moduleOwners(bundle, (chunk) => chunk);
   // App entry CSS (router `styles`) is linked on every page already. Boundary modules are entries too (the compiler
   // emits one per derived boundary module, e.g. `src/routes/index.tsx`) but their CSS is a page's or a component's.
   const global = new Set(
@@ -251,8 +269,7 @@ export function pageSheets(
   lists: Readonly<Record<string, readonly string[]>>,
   merged: Readonly<Record<string, readonly string[]>>,
 ): Map<string, PageSheet> {
-  const owner = new Map<string, string>();
-  for (const output of Object.values(bundle)) if (output.type === "chunk") for (const id of output.moduleIds) owner.set(id.split("?")[0]!, output.fileName);
+  const owner = moduleOwners(bundle, (chunk) => chunk.fileName);
   const out = new Map<string, PageSheet | null>();
   for (const route of table.routes) {
     if (!route.page) continue;
@@ -270,10 +287,72 @@ export function pageSheets(
   return new Map([...out].flatMap(([page, sheet]) => (sheet ? [[page, sheet] as const] : [])));
 }
 
-/** What a dynamic import's preload list does with its stylesheets: drop these files, add these (bundle file names). */
+/**
+ * The merged route sheets of a client build and the routes that link them (CSS-LAZY): `sheets` = merged sheet file →
+ * the stylesheet files it holds; `of(chunk)` = the merged sheet file of every route whose layouts / page reach `chunk`
+ * (static and dynamic imports), repeated once per route (cached per chunk).
+ */
+export interface RouteSheets {
+  readonly sheets: ReadonlyMap<string, ReadonlySet<string>>;
+  of(chunk: string): readonly string[];
+}
+
+/** `RouteSheets` of a client build (`lists`: `bundleRouteCSS`, `merged`: `mergeRouteCSS(…).routes`). */
+export function routeSheets(
+  bundle: Rollup.OutputBundle,
+  table: RouteTable,
+  routesDir: string,
+  base: string,
+  lists: Readonly<Record<string, readonly string[]>>,
+  merged: Readonly<Record<string, readonly string[]>>,
+): RouteSheets {
+  const owner = moduleOwners(bundle, (chunk) => chunk.fileName);
+  const sheets = new Map<string, Set<string>>();
+  const routes: { sheet: string; roots: string[]; reach?: Set<string> }[] = [];
+  for (const id of new Set(table.routes.map((r) => r.id))) {
+    const list = lists[id];
+    const sheet = merged[id];
+    if (!list || list.length < 2 || sheet?.length !== 1) continue;
+    const file = sheet[0]!.slice(base.length);
+    if (!sheets.has(file)) sheets.set(file, new Set(list.map((href) => href.slice(base.length))));
+    const roots = routeFiles(table, routesDir, id).flatMap((path) => (owner.has(path) ? [owner.get(path)!] : []));
+    if (roots.length) routes.push({ sheet: file, roots });
+  }
+  const reach = (route: (typeof routes)[number]): Set<string> => {
+    if (route.reach) return route.reach;
+    const seen = new Set<string>();
+    for (const stack = [...route.roots]; stack.length;) {
+      const file = stack.pop()!;
+      if (seen.has(file)) continue;
+      seen.add(file);
+      const chunk = bundle[file];
+      if (chunk?.type === "chunk") stack.push(...chunk.imports, ...(chunk.dynamicImports ?? []));
+    }
+    return (route.reach = seen);
+  };
+  const cache = new Map<string, string[]>();
+  return {
+    sheets,
+    of(chunk) {
+      let out = cache.get(chunk);
+      if (!out) cache.set(chunk, (out = routes.filter((route) => reach(route).has(chunk)).map((route) => route.sheet)));
+      return out;
+    },
+  };
+}
+
+/** At most this many route sheets a preload list checks at run time (`CSSDepsPlan.check`): the ones most routes share. */
+export const MAX_CHECKED_SHEETS = 4;
+
+/**
+ * What a dynamic import's preload list does with its stylesheets: drop these files, add these (bundle file names),
+ * and at run time skip the `check[].files` of a merged route sheet the page has (`<link rel=stylesheet>` or
+ * `<style data-href>`, matched by file name).
+ */
 export interface CSSDepsPlan {
   readonly drop: ReadonlySet<string>;
   readonly add: readonly string[];
+  readonly check?: readonly { readonly sheet: string; readonly files: readonly string[] }[];
 }
 
 /**
@@ -283,9 +362,19 @@ export interface CSSDepsPlan {
  *   preload list);
  * - a route page's CSS that its merged route sheet holds: the list names the route sheet instead, so a resumed page
  *   (sheet linked) loads nothing and a client navigation loads the one sheet the server links for that route.
+ * With `routes` (CSS-LAZY), the rest that a merged route sheet of a route reaching the host holds (a lazily loaded
+ * part's CSS that the page has through another component) is checked at run time: skipped when the page has that
+ * sheet, loaded when it does not (another route, after a client navigation, a shell that links other sheets). Up to
+ * `MAX_CHECKED_SHEETS` sheets, the ones most of those routes link first.
  * Undefined when nothing changes. Stylesheets the plan does not name (another route's, a lazily loaded part's own) stay.
  */
-export function cssDepsPlan(bundle: Rollup.OutputBundle, host: string, target: string, sheets: ReadonlyMap<string, PageSheet>): CSSDepsPlan | undefined {
+export function cssDepsPlan(
+  bundle: Rollup.OutputBundle,
+  host: string,
+  target: string,
+  sheets: ReadonlyMap<string, PageSheet>,
+  routes?: RouteSheets,
+): CSSDepsPlan | undefined {
   const cssOf = (from: string, skip?: string): Set<string> => {
     const css = new Set<string>();
     const seen = new Set<string>();
@@ -310,7 +399,18 @@ export function cssDepsPlan(bundle: Rollup.OutputBundle, host: string, target: s
     for (const file of listed) if (page.parts.has(file)) drop.add(file);
     if ([...listed].some((file) => page.parts.has(file) && !loaded.has(file))) add.push(page.sheet);
   }
-  return drop.size || add.length ? { drop, add } : undefined;
+  const rest = [...listed].filter((file) => !drop.has(file));
+  const check: { sheet: string; files: string[] }[] = [];
+  if (rest.length && routes) {
+    const count = new Map<string, number>();
+    for (const sheet of routes.of(host)) if (!add.includes(sheet)) count.set(sheet, (count.get(sheet) ?? 0) + 1);
+    for (const [sheet] of [...count].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))) {
+      const parts = routes.sheets.get(sheet)!;
+      const files = rest.filter((file) => parts.has(file));
+      if (files.length && check.push({ sheet, files }) === MAX_CHECKED_SHEETS) break;
+    }
+  }
+  return drop.size || add.length || check.length ? { drop, add, ...(check.length ? { check } : {}) } : undefined;
 }
 
 /** A plan's marker in a `resolveDependencies` result: `cssDepsMarker(n)`; `rewriteCSSDeps` replaces it. */
@@ -323,12 +423,17 @@ const MAP_DEPS_CALL = /__vite__mapDeps\(\[([\d,]*)\]\)/g;
 // helper finds: lists that name a route sheet drop the ones on the page as `<style>` (matched by file name).
 const INLINED = "__rivet_inlined__";
 const INLINED_HELPER = `const ${INLINED}=d=>d.filter(f=>!f.endsWith(".css")||!document.querySelector('style[data-href$="/'+f.split("/").pop()+'"]'));`;
+// CSS-LAZY: `[[sheet, …positions]]` per call: the listed stylesheets at those positions are skipped when the page has
+// that merged route sheet (linked or inline, matched by file name).
+const SHEETS = "__rivet_sheets__";
+const SHEETS_HELPER = `const ${SHEETS}=(d,s)=>{const o=s.flatMap(([h,...i])=>document.querySelector('link[rel=stylesheet][href$="/'+h+'"],style[data-href$="/'+h+'"]')?i:[]);return d.filter((f,i)=>!o.includes(i))};`;
 
 /**
  * Applies the plans whose markers (`cssDepsMarker`) Vite wrote into a chunk's `__vite__mapDeps` file list (after its
  * import analysis): each marked call drops the plan's stylesheets and lists its added ones; the markers go, unused
  * files leave the list; a call that adds a route sheet skips it at run time when the page has it inline
- * (`<style data-href>`). `relative`: a relative `base` (Vite lists files relative to the chunk). `pad`: calls that
+ * (`<style data-href>`); a plan's `check` sheets wrap the call in `__rivet_sheets__(…)` (helper prepended once: the
+ * listed files a sheet holds are skipped when the page has that sheet). `relative`: a relative `base` (Vite lists files relative to the chunk). `pad`: calls that
  * shrink keep their length (spaces), so a source map's columns hold. Null when the chunk has no marker.
  */
 export function rewriteCSSDeps(code: string, chunkFile: string, plans: readonly CSSDepsPlan[], relative: boolean, pad = false): string | null {
@@ -358,11 +463,12 @@ export function rewriteCSSDeps(code: string, chunkFile: string, plans: readonly 
     if (i === undefined) index.set(entry, (i = out.push(entry) - 1));
     return i;
   };
-  const calls: { start: number; end: number; list: number[]; inlined: boolean }[] = [];
+  const calls: { start: number; end: number; list: number[]; inlined: boolean; check: (string | number)[][] }[] = [];
   for (const match of code.slice(listEnd).matchAll(MAP_DEPS_CALL)) {
     const start = listEnd + match.index;
     let list = match[1] ? match[1].split(",").map(Number) : [];
     let inlined = false;
+    let check: (string | number)[][] = [];
     const marker = list.find((i) => MARKER.test(files[i] ?? ""));
     if (marker !== undefined) {
       const plan = plans[Number(MARKER.exec(files[marker]!)![1])];
@@ -374,9 +480,13 @@ export function rewriteCSSDeps(code: string, chunkFile: string, plans: readonly 
         kept.splice(firstCSS < 0 ? kept.length : firstCSS, 0, ...added);
         list = kept;
         inlined = added.length > 0;
+        for (const { sheet, files } of plan.check ?? []) {
+          const at = list.flatMap((i, position) => (out[i]!.endsWith(".css") && files.includes(fileOf(out[i]!)) ? [position] : []));
+          if (at.length) check.push([posix.basename(sheet), ...at]);
+        }
       }
     }
-    calls.push({ start, end: start + match[0].length, list, inlined });
+    calls.push({ start, end: start + match[0].length, list, inlined, check });
   }
   // Renumber: only the files some call still lists, in list order.
   const used = [...new Set(calls.flatMap((call) => call.list))].sort((a, b) => a - b);
@@ -385,11 +495,12 @@ export function rewriteCSSDeps(code: string, chunkFile: string, plans: readonly 
   let at = listEnd;
   for (const call of calls) {
     const deps = `__vite__mapDeps([${call.list.map((i) => renumber.get(i)).join(",")}])`;
-    const text = call.inlined ? `${INLINED}(${deps})` : deps;
+    const checked = call.check.length ? `${SHEETS}(${deps},${JSON.stringify(call.check)})` : deps;
+    const text = call.inlined ? `${INLINED}(${checked})` : checked;
     body += code.slice(at, call.start) + (pad ? text.padEnd(call.end - call.start) : text);
     at = call.end;
   }
   body += code.slice(at);
-  const helper = calls.some((call) => call.inlined) ? INLINED_HELPER : "";
+  const helper = (calls.some((call) => call.inlined) ? INLINED_HELPER : "") + (calls.some((call) => call.check.length) ? SHEETS_HELPER : "");
   return code.slice(0, head) + helper + code.slice(head, listStart) + JSON.stringify(used.map((i) => out[i])).slice(0, -1) + body;
 }

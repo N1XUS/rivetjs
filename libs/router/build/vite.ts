@@ -41,9 +41,11 @@ import {
   pageSheets,
   rewriteCSSDeps,
   ROUTE_CSS,
+  routeSheets,
   type CSSDepsPlan,
   type InlineStylesheets,
   type PageSheet,
+  type RouteSheets,
 } from "./route-css.ts";
 import { devHandler, devReport, listenClientErrors } from "./dev-errors.ts";
 import { unexportHead } from "./head-strip.ts";
@@ -587,7 +589,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     const key = hostId + "\0" + file;
     let index = planIndex.get(key);
     if (index === undefined) {
-      const plan = cssDepsPlan(clientBundle, hostId, file, sheetsOf);
+      const plan = cssDepsPlan(clientBundle, hostId, file, sheetsOf, routeSheetsOf);
       index = plan ? cssPlans.push(plan) - 1 : -1;
       planIndex.set(key, index);
     }
@@ -598,6 +600,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
   let cssPlans: CSSDepsPlan[] | undefined;
   const planIndex = new Map<string, number>();
   let sheetsOf: ReadonlyMap<string, PageSheet> = new Map();
+  // CSS-LAZY: merged route sheets + the routes reaching a chunk (run-time checks in lazy imports' preload lists).
+  let routeSheetsOf: RouteSheets | undefined;
   // After Vite's import analysis (`generateBundle` order "post"): the marked preload lists get their stylesheets.
   const cssDeps: Plugin = {
     name: "vite-plugin-rivet-router:css-deps",
@@ -823,6 +827,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         const lists = bundleRouteCSS(bundle, table, resolve(root, routesDir), base, apps);
         const { routes: css, assets } = mergeRouteCSS(bundle, lists, base);
         sheetsOf = pageSheets(bundle, table, resolve(root, routesDir), base, lists, css);
+        routeSheetsOf = routeSheets(bundle, table, resolve(root, routesDir), base, lists, css);
         cssPlans = [];
         planIndex.clear();
         for (const asset of assets) this.emitFile({ type: "asset", ...asset });
