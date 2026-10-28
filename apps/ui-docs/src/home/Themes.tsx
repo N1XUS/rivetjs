@@ -130,8 +130,8 @@ function AssistantCard() {
       <InputGroup variant="secondary">
         <InputGroup.Input aria-label="Message" placeholder="Ask a question" />
         <InputGroup.Suffix>
-          {/* 24 px: the input group's inline-button size is 16 px, under the WCAG 2.2 target minimum. */}
-          <Button isIconOnly size="sm" class="size-6!" aria-label="Send">
+          {/* Concentric square from the input group (TW-169: shell height − 2 × inset, ≥ the WCAG 2.2 24 px target). */}
+          <Button isIconOnly size="sm" aria-label="Send">
             <Icon icon={ArrowUp} size={16} />
           </Button>
         </InputGroup.Suffix>
