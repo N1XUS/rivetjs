@@ -27,3 +27,15 @@
     @apply ms-[3%] w-[94%];
   }
 }
+
+/* Rivet: opt-in fixed-row viewport (TWEAKS.md TW-182). Caller supplies its height. */
+.list-box[data-slot="list-box"][data-ui-virtualized="true"] {
+  padding: 0;
+  overflow: auto;
+
+  :where(.list-box-item) {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+}

@@ -6179,6 +6179,17 @@
     width: 94%;
     margin-inline-start: 3%;
   }
+
+  .list-box[data-slot="list-box"][data-ui-virtualized="true"] {
+    padding: 0;
+    overflow: auto;
+  }
+
+  .list-box[data-slot="list-box"][data-ui-virtualized="true"] :where(.list-box-item) {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
 }
 @layer components {
   .menu-item {

@@ -29,3 +29,37 @@ test("list-box SSR: roles + classes", async () => {
   assert.match(html, /data-slot="list-box-item-indicator--checkmark"/);
   assert.match(html, /stroke-dashoffset="48"/);
 });
+
+for (const rowHeight of [undefined, 48]) {
+  test(`list-box SSR: 10k server window, rowHeight=${rowHeight ?? "default"}`, async () => {
+    const items = Array.from({ length: 10000 }, (_, id) => ({ id: String(id), name: `Item ${id}` }));
+    const html = await renderToString(() => (
+      <ListBox virtualized rowHeight={rowHeight} initialSize={{ width: 300, height: 180 }} aria-label="Large list" items={items}>
+        {(item: { id: string; name: string }) => (
+          <ListBox.Item id={item.id} textValue={item.name}>
+            {item.name}
+          </ListBox.Item>
+        )}
+      </ListBox>
+    ));
+    const count = (html.match(/role="option"/g) ?? []).length;
+    assert.ok(count >= 4 && count < 20, `server window: ${count}`);
+    assert.match(html, /aria-setsize="10000"/);
+    assert.match(html, /aria-posinset="1"/);
+    assert.match(html, /data-ui-virtualized="true"/);
+    assert.match(html, new RegExp(`height:\\s*${(rowHeight ?? 36) * 10000}px`));
+    assert.doesNotMatch(html, />Item 9999</);
+  });
+}
+
+test("list-box SSR: opting out preserves ordinary markup and strips virtualizer props", async () => {
+  const output = (optOut: boolean) =>
+    renderToString(() => (
+      <ListBox aria-label="Plain" {...(optOut ? { virtualized: false, rowHeight: 99, initialSize: { width: 300, height: 180 } } : {})}>
+        <ListBox.Item id="a">Alpha</ListBox.Item>
+      </ListBox>
+    ));
+  // Generated instance IDs differ per render; all markup around them must stay identical.
+  const normalize = (html: string) => html.replace(/rvs\d+/g, "rv-id");
+  assert.equal(normalize(await output(true)), normalize(await output(false)));
+});

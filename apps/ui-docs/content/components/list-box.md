@@ -12,7 +12,7 @@ Notes:
 
 - `class`, not `className`. Render props are accessors (`({ isSelected }) => isSelected() ? … : …`). `selectedKeys` takes a signal (two-way) or a value (controlled).
 - The default item indicator is the lucide `Check` icon with the Rivet UI stroke-draw animation.
-- Virtualization: wrap the ListBox in the cdk `CollectionVirtualizer` with a `ListLayout` (`@rivetjs/cdk/virtualizer`). Give the ListBox a fixed size and `p-0` (the layout's `padding` replaces the list's own), and set `initialSize` to that size: the server renders the first window at it.
+- Set `virtualized` for large lists; give the list a fixed height and set `initialSize` to its viewport size for the server window.
 - `ListBox.Item` `render` renders a `div` (Rivet types the item attributes as `div`).
 
 ## Usage
@@ -70,7 +70,17 @@ Additional exported parts: `ListBox.Root`.
 
 ### Virtualization
 
-A ListBox inside the [cdk Virtualizer](site:cdk/foundations/virtualizer/#collection-components) with a `ListLayout` renders only the options in view (plus overscan and the focused option). The server renders the first window at `initialSize`. After the first scroll or focus move, the browser renders the rest as you scroll. Keyboard navigation scrolls offscreen options into view.
+Set `virtualized` to render a window of a large collection. `rowHeight` defaults to **36 px**, matching the default item's `min-h-9`. Set it explicitly for taller content or custom density. Give the ListBox a fixed height and set `initialSize={{ width, height }}` to its client box in pixels (default: 800 × 600). The opt-in styles remove container padding and size each item to its layout row.
+
+::example{id=list-box-virtualized}
+
+:::warning Resumed keyboard focus
+On a resumed page, pressing End from the initial server window currently scrolls to the last option but can lose keyboard focus. This also affects direct CDK virtualizer composition; client-rendered lists support End normally.
+:::
+
+The virtualizer code loads only for virtualized lists. Ordinary lists retain their existing markup and rendering path. Options expose `aria-setsize` and `aria-posinset`; selection, typeahead, and Arrow / Home / End navigation operate on the full collection, including offscreen options.
+
+For custom layout options, a ListBox inside the [cdk Virtualizer](site:cdk/foundations/virtualizer/#collection-components) with a `ListLayout` renders only the options in view (plus overscan and the focused option). The server renders the first window at `initialSize`. After the first scroll or focus move, the browser renders the rest as you scroll. Keyboard navigation scrolls offscreen options into view.
 
 ::example{id=list-box-virtualization}
 
@@ -194,6 +204,9 @@ See the [full module API](/api/rivetjs/ui/list-box/) for every named export and 
 
 | Prop                  | Type                                                                 | Default     | Description                                                      |
 | --------------------- | -------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| `virtualized` | `boolean` | `false` | Render a window of the collection. Requires a fixed height. |
+| `rowHeight` | `number` | `36` | Fixed virtual row height in pixels. |
+| `initialSize` | `{ width: number; height: number }` | `{ width: 800, height: 600 }` | Server window viewport in pixels. |
 | `aria-label`          | `string`                                                             | -           | Accessibility label for the listbox                              |
 | `aria-labelledby`     | `string`                                                             | -           | ID of element that labels the listbox                            |
 | `selectionMode`       | `"none" \| "single" \| "multiple"`                                   | `"single"`  | Selection behavior                                               |

@@ -131,3 +131,77 @@ test("list-box: Indicator outside an item gets only the caller's class", () => {
   assert.equal(r.container.querySelector("[data-slot=list-box-item-indicator]")!.className, "x");
   r.unmount();
 });
+
+// happy-dom has no layout: supply the viewport dimensions used by the real scroll driver.
+test("list-box: virtualized 10k window, keyboard scrolling, selection and typeahead", async () => {
+  const items = Array.from({ length: 10000 }, (_, id) => ({ id: String(id), name: id === 9000 ? "Zebra" : `Item ${id}` }));
+  const selected: unknown[] = [];
+  const r = render(() => (
+    <ListBox
+      virtualized
+      aria-label="Large list"
+      items={items}
+      selectionMode="single"
+      initialSize={{ width: 300, height: 180 }}
+      onSelectionChange={(keys) => selected.push(keys === "all" ? keys : [...keys])}
+      ref={(el) => {
+        el.getBoundingClientRect = () => new DOMRect(0, 0, 300, 180);
+        Object.defineProperties(el, {
+          clientWidth: { configurable: true, value: 300 },
+          clientHeight: { configurable: true, value: 180 },
+          offsetWidth: { configurable: true, value: 300 },
+          offsetHeight: { configurable: true, value: 180 },
+          scrollHeight: { configurable: true, value: 360000 },
+        });
+      }}
+    >
+      {(item: { id: string; name: string }) => (
+        <ListBox.Item
+          id={item.id}
+          textValue={item.name}
+          ref={(el) => {
+            el.getBoundingClientRect = () => new DOMRect(0, Number(item.id) * 36 - (el.closest<HTMLElement>("[role=listbox]")?.scrollTop ?? 0), 300, 36);
+          }}
+        >
+          {item.name}
+        </ListBox.Item>
+      )}
+    </ListBox>
+  ));
+  try {
+    for (let i = 0; i < 100 && !options(r.container).length; i++) await flush();
+    const list = r.container.querySelector<HTMLElement>("[role=listbox]")!;
+    assert.ok(options(list).length > 0 && options(list).length < 30);
+    const first = options(list)[0];
+    assert.equal(first.getAttribute("aria-setsize"), "10000");
+    assert.equal(first.getAttribute("aria-posinset"), "1");
+    first.focus();
+    press(first);
+    await flush();
+    assert.equal(first.getAttribute("aria-selected"), "true");
+    const key = async (value: string) => {
+      document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true }));
+      await flush();
+      list.dispatchEvent(new Event("scroll"));
+      await flush();
+    };
+    for (let i = 0; i < 8; i++) await key("ArrowDown");
+    assert.equal(document.activeElement?.getAttribute("data-key"), "8");
+    assert.ok(list.scrollTop > 0);
+    await key("End");
+    assert.equal(document.activeElement?.getAttribute("data-key"), "9999");
+    assert.ok(list.scrollTop >= 359820);
+    await key(" ");
+    assert.equal(document.activeElement?.getAttribute("aria-selected"), "true");
+    assert.deepEqual(selected.at(-1), ["9999"]);
+    await key("Home");
+    assert.equal(document.activeElement?.getAttribute("data-key"), "0");
+    assert.equal(list.scrollTop, 0);
+    await key("z");
+    assert.equal(document.activeElement?.getAttribute("data-key"), "9000");
+    assert.ok(list.scrollTop > 0);
+    assert.ok(options(list).length < 30);
+  } finally {
+    r.unmount();
+  }
+});
