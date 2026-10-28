@@ -382,6 +382,11 @@ export interface ComponentBoundaryFacts {
      * provider `around` does not show (bound to a variable, a local component, a callback handed to other code).
      */
     escapes?: boolean;
+    /**
+     * JS-DIET-2 C1 (`facts-placement.ts`, build walk only): every non-plain attribute is a member chain over the caller's
+     * props parameter (`data={props.data}`), no spread, text children only: data when the caller's props are static.
+     */
+    forwards?: boolean;
     /** Its attributes and expression children are data (element children are calls of their own, function children slots). */
     inputs: boolean;
     /** PLACE cost feature: source bytes of its attributes and text children (≈ the props a record would ship; absent from an older wasm). */

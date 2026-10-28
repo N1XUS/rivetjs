@@ -12,6 +12,12 @@
 //
 // Eager JSX (`const t = <X />` in the body, `.map` in the body) is created where it is written, under the caller's own
 // owner, before any provider it is later inserted into runs: its lexical `around` is right (server and browser agree).
+//
+// JS-DIET-2 C1 (2026-10-28): a call `forwards` when every attribute the facts call non-plain (`attrs` `name*`) is a
+// member chain over the caller's props parameter (`<App data={props.data} />`, `props.a.b`, `props["k"]`; not
+// `props.children`, not optional), no spread, only text children, and the caller never rebinds / writes that parameter.
+// Such a call passes its caller's props through: data exactly when the caller's own props are static data
+// (`facts-fixpoint.ts` `staticProps`: a derived root, or every call site data / forwarding from such a caller).
 import { parseSync } from "vite";
 import type { ModuleFacts } from "./index.ts";
 
@@ -74,18 +80,19 @@ export function placeCalls(source: string, filename: string, facts: ModuleFacts)
   const inComponent = new Set<Node>(components.values());
   const hidden = new Set<string>();
   // Calls per component function, source order (the facts' order: a pre-order walk of the function).
-  const found = new Map<Node, { tag: string; escapes: boolean }[]>();
+  const found = new Map<Node, { tag: string; escapes: boolean; forwards: (Node | null)[] | null }[]>();
   const stack: Node[] = [];
   let owner: Node | null = null;
   let ownerDepth = -1;
+  let ownerProps: string | null = null;
   const visit = (node: Node): void => {
     const enter = owner === null && inComponent.has(node);
-    if (enter) ((owner = node), (ownerDepth = stack.length), found.set(node, []));
+    if (enter) ((owner = node), (ownerDepth = stack.length), found.set(node, []), (ownerProps = propsParam(node)));
     if (node.type === "JSXElement") {
       const tag = componentTag(source, (node.openingElement as Node).name as Node);
       if (tag !== null) {
         if (owner === null) hidden.add(tag);
-        else found.get(owner)!.push({ tag, escapes: escapes(stack, ownerDepth, inPlace) });
+        else found.get(owner)!.push({ tag, escapes: escapes(stack, ownerDepth, inPlace), forwards: ownerProps === null ? null : forwarded(node, ownerProps) });
       }
     }
     stack.push(node);
@@ -97,7 +104,7 @@ export function placeCalls(source: string, filename: string, facts: ModuleFacts)
       } else if (value && typeof value === "object" && typeof (value as Node).type === "string") visit(value as Node);
     }
     stack.pop();
-    if (enter) ((owner = null), (ownerDepth = -1));
+    if (enter) ((owner = null), (ownerDepth = -1), (ownerProps = null));
   };
   visit(program);
   for (const [name, c] of facts.boundaries) {
@@ -110,11 +117,103 @@ export function placeCalls(source: string, filename: string, facts: ModuleFacts)
       continue;
     }
     list.forEach((call, i) => {
-      if (call.escapes) c.calls[i]!.escapes = true;
+      const facts = c.calls[i]!;
+      if (call.escapes) facts.escapes = true;
+      // JS-DIET-2 C1: every attribute the facts call non-plain is a props chain (the facts' `attrs` follow source order).
+      if (call.forwards && !facts.data && !facts.fn && facts.attrs && facts.attrs.length === call.forwards.length) {
+        let chains = 0;
+        const ok = facts.attrs.every((name, at) => {
+          if (name === "..." || name === "()") return false;
+          if (!name.endsWith("*")) return true;
+          if (!call.forwards![at]) return false;
+          chains++;
+          return true;
+        });
+        if (ok && chains) facts.forwards = true;
+      }
     });
   }
   if (hidden.size) facts.hidden = [...hidden];
   return facts;
+}
+
+/**
+ * JS-DIET-2 C1: the component's props parameter name (`function C(props)`), null when it has none, destructures it or
+ * the body rebinds / writes it (a nested binding of the same name, an assignment / update / `delete` through it).
+ */
+function propsParam(fn: Node): string | null {
+  const first = (fn.params as Node[] | undefined)?.[0];
+  if (!first || first.type !== "Identifier") return null;
+  const name = first.name as string;
+  let clean = true;
+  const names = (pattern: Node | null | undefined): boolean => {
+    let hit = false;
+    const scan = (n: unknown): void => {
+      if (hit || !n || typeof n !== "object") return;
+      if (Array.isArray(n)) return n.forEach(scan);
+      const node = n as Node;
+      if (node.type === "Identifier" && node.name === name) hit = true;
+      for (const key in node) if (key !== "type" && key !== "start" && key !== "end" && key !== "typeAnnotation") scan(node[key]);
+    };
+    scan(pattern);
+    return hit;
+  };
+  const rootName = (n: Node): string | null => {
+    let at = unwrap(n);
+    while (at.type === "MemberExpression" || at.type === "ChainExpression") at = unwrap((at.type === "ChainExpression" ? at.expression : at.object) as Node);
+    return at.type === "Identifier" ? (at.name as string) : null;
+  };
+  const walk = (n: unknown): void => {
+    if (!clean || !n || typeof n !== "object") return;
+    if (Array.isArray(n)) return n.forEach(walk);
+    const node = n as Node;
+    if (typeof node.type !== "string") return;
+    if (node !== fn && FUNCTIONS.has(node.type) && (names(node.id as Node) || (node.params as Node[]).some((p) => names(p)))) clean = false;
+    else if (node.type === "VariableDeclarator" && names(node.id as Node)) clean = false;
+    else if (node.type === "CatchClause" && names(node.param as Node)) clean = false;
+    else if ((node.type === "ClassDeclaration" || node.type === "ClassExpression") && names(node.id as Node)) clean = false;
+    else if (node.type === "AssignmentExpression" && (rootName(node.left as Node) === name || names(node.left as Node))) clean = false;
+    else if (node.type === "UpdateExpression" && rootName(node.argument as Node) === name) clean = false;
+    else if (node.type === "UnaryExpression" && node.operator === "delete" && rootName(node.argument as Node) === name) clean = false;
+    else if (node.type === "ForInStatement" || node.type === "ForOfStatement") {
+      if (names(node.left as Node)) clean = false;
+    }
+    for (const key in node) if (key !== "type" && key !== "start" && key !== "end" && key !== "params") walk(node[key]);
+  };
+  walk(fn.body);
+  return clean ? name : null;
+}
+
+/**
+ * JS-DIET-2 C1: per attribute of a component element (source order), its value when it is a member chain over `props`
+ * (`props.a`, `props.a.b`, `props["k"]`, `props[0]`; not optional, not `props.children`), else null; null for the whole
+ * element when it has a spread or a non-text child.
+ */
+function forwarded(element: Node, props: string): (Node | null)[] | null {
+  for (const child of (element.children as Node[]) ?? []) if (child.type !== "JSXText") return null;
+  const out: (Node | null)[] = [];
+  for (const attr of (element.openingElement as Node).attributes as Node[]) {
+    if (attr.type !== "JSXAttribute") return null;
+    const value = attr.value as Node | null;
+    out.push(value?.type === "JSXExpressionContainer" && chainOver(value.expression as Node, props) ? value : null);
+  }
+  return out;
+}
+
+function chainOver(expression: Node, props: string): boolean {
+  let at = unwrap(expression);
+  let first: Node | null = null;
+  if (at.type !== "MemberExpression") return false;
+  while (at.type === "MemberExpression") {
+    if (at.optional) return false;
+    const property = at.property as Node;
+    if (at.computed && !(property.type === "Literal" && (typeof property.value === "string" || typeof property.value === "number"))) return false;
+    first = at;
+    at = unwrap(at.object as Node);
+  }
+  if (at.type !== "Identifier" || at.name !== props || !first) return false;
+  const key = first.computed ? String((first.property as Node).value) : ((first.property as Node).name as string);
+  return key !== "children";
 }
 
 /** Module-level components as the facts count them (Rust `module_components`): name → function node. */

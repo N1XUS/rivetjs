@@ -187,7 +187,17 @@ export function boundaryFacts(
     return part !== undefined ? component(local(head!.file, part, new Set())) : null;
   };
   // Per component: facts, resolved renders, and its call sites by callee.
-  type Site = { caller: string; index: number; data: boolean; inputs: boolean; fn: boolean; around: (string | null)[]; tags: string[]; escapes: boolean };
+  type Site = {
+    caller: string;
+    index: number;
+    data: boolean;
+    inputs: boolean;
+    fn: boolean;
+    around: (string | null)[];
+    tags: string[];
+    escapes: boolean;
+    forwards: boolean;
+  };
   const info = new Map<string, ComponentFacts>();
   const renders = new Map<string, (string | null)[]>();
   const sites = new Map<string, Site[]>();
@@ -215,6 +225,7 @@ export function boundaryFacts(
           around: call.around.map((tag) => resolveTag(file, tag)),
           tags: call.around,
           escapes: call.escapes === true,
+          forwards: call.forwards === true,
         });
       });
     }
@@ -286,6 +297,30 @@ export function boundaryFacts(
         if (!ns) continue;
         for (const local of facts.get(ns)?.boundaries.keys() ?? []) escaped.add(key(ns, local));
       }
+  // JS-DIET-2 C1 (2026-10-28): a call that forwards its caller's props (`<App data={props.data} />`, `facts-placement.ts`)
+  // passes data when the caller's props are static data: the caller is a derived root (`resume.roots`, the server
+  // entry's data-only root: nothing above it, its record holds the props) or every call site of it passes data or
+  // forwards from such a caller. Only builds without route roots (no router: a derived root there may sit under layouts,
+  // and route roots get params / loader data from the router). The site then counts
+  // as data everywhere (independent verdict, the call-site proof); the server still demotes a record whose props are no
+  // data (`isData`). The page root that only forwarded its data drops out of the tail (`COND`, nothing live below it).
+  const derivedRoots = contexts?.routeHosts;
+  if (derivedRoots?.size && [...isRoot].every((id) => derivedRoots.has(id.slice(0, id.lastIndexOf("?"))))) {
+    const memo = new Map<string, boolean>();
+    const staticProps = (id: string): boolean => {
+      const known = memo.get(id);
+      if (known !== undefined) return known;
+      memo.set(id, false); // a cycle proves nothing
+      const file = id.slice(0, id.lastIndexOf("?"));
+      const list = sites.get(id);
+      const ok = isRoot.has(id)
+        ? derivedRoots.has(file)
+        : !!list && !escaped.has(id) && !hidden.has(id) && list.every((s) => !s.fn && (s.data || (s.forwards && staticProps(s.caller))));
+      memo.set(id, ok);
+      return ok;
+    };
+    for (const list of sites.values()) for (const s of list) if (!s.data && s.forwards && !s.fn && staticProps(s.caller)) s.data = true;
+  }
   // TABS-ROOT (2026-10-28): what a shell page renders through helper code the component facts do not see. A component's
   // `renders` are the JSX tags of its own body; a body that hands its work to a module function (cdk parts:
   // `TabList(p) { return untrack(() => tabList(p)) }`, whose `<Collection>` is the boundary) reports none, so a frame

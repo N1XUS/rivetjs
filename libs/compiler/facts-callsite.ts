@@ -489,6 +489,13 @@ export function callSites(input: CallSiteInput): CallSites {
     const file = id.slice(0, id.lastIndexOf("?"));
     return routeHostFiles.size > 0 && !routeHostFiles.has(file) && !input.sites.has(id);
   };
+  // JS-DIET-2 C1: in a build without route roots, a derived root (`routeHosts` = `resume.roots`: the server entry's root,
+  // no call site in the walk) has nothing above it — it adopts standalone already, so what its calls see above them is
+  // its own provisions and enclosing tags only (the browser never had anything else).
+  const noRouteRoots = ![...input.verdicts].some(
+    ([file, byNameV]) => !routeHostFiles.has(file) && [...byNameV.keys()].some((name) => input.isRoot(file + "?" + name)),
+  );
+  const topRoot = (id: string): boolean => noRouteRoots && routeHostFiles.has(id.slice(0, id.lastIndexOf("?"))) && !input.sites.has(id);
   // ---- above(component): least fixpoint over its call sites (monotone unions); roots / values / unknown: TOP.
   const above = new Map<string, Set<number>>();
   const keys: string[] = [];
@@ -497,7 +504,7 @@ export function callSites(input: CallSiteInput): CallSites {
     const list = input.sites.get(id);
     const at = id.lastIndexOf("?");
     if (input.escaped.has(id) || input.hidden?.has(id)) above.set(id, new Set(TOPSET));
-    else if (input.isRoot(id)) above.set(id, routeRoot(id) ? routeSet(id.slice(0, at)) : new Set(TOPSET));
+    else if (input.isRoot(id)) above.set(id, routeRoot(id) ? routeSet(id.slice(0, at)) : topRoot(id) ? new Set() : new Set(TOPSET));
     else if (!list) above.set(id, input.shell(id) && options.hosts ? hostSet(id.slice(0, at)) : new Set(TOPSET));
     else above.set(id, new Set());
   }
