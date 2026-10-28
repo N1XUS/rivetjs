@@ -2,6 +2,8 @@
 
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
+AI chat (CX-CHATSIDE): `showcase-chat` uses a contained AppLayout with a resizable offcanvas history sidebar and six open Disclosure/Card detail sections. The AsideTrigger toggles the desktop column or a right Drawer below 1024px; MobileAside provides its close control. Workspace files, PR draft and stoppable tool rows are local demo data. The manifest exercises desktop collapse, 375px drawer/Escape, disclosure and stop behavior before the existing streaming checks.
+
 Docs site of `@rivetjs/ui` (`libs/ui`), third site on `@rivetjs/docs-kit` (same engine and frame as `apps/docs` / `apps/cdk-docs`). Engine internals: [libs/docs-kit/CLAUDE.md](../../libs/docs-kit/CLAUDE.md). Attribution (user ruling 2026-10-27, lifts the DEBRAND 2026-10-12 brand rule and its `tests/brand.test.ts` gate): pages may name the upstreams (React Aria, HeroUI) where it helps; `content/start/licenses.md` stays the licenses page (+ per-file license headers of ported sources).
 
 ## Layout
@@ -77,7 +79,6 @@ Docs site of `@rivetjs/ui` (`libs/ui`), third site on `@rivetjs/docs-kit` (same 
 
 | Component    | Demo                                               | Missing                                                                                                                                                                          | Upstream file                               |
 | ------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| button       | `button-social`                                    | brand-logo icons (lucide has none)                                                                                                                                               | `en/button/social.tsx`                      |
 | avatar       | `avatar-custom-image-component`                    | `asChild` + Next.js Image                                                                                                                                                        | `en/avatar/custom-image-component.tsx`      |
 
 - Stand-ins = cdk primitive + HeroUI class names from the vendored CSS (`input input--primary|secondary`, `textfield`, `textarea textarea--secondary`, `tag-group` / `tag-group__list` / `tag tag--md tag--default`, `number-field number-field--secondary` + `__group` / `__input` / `__increment-button`, cdk Select preset with `select select--secondary` / `select__trigger` …). Replace with the real component once libs/ui ports it, drop the `:::warning` + tag.
@@ -98,7 +99,10 @@ Docs site of `@rivetjs/ui` (`libs/ui`), third site on `@rivetjs/docs-kit` (same 
 
 ## Icons (HIGH PRIORITY)
 
-- lucide only via `@rivetjs/kit/icon` (`import { Icon } from "@rivetjs/kit/icon"`; examples import it directly too). Never UTF glyphs or hand-written SVG.
+- General UI icons: lucide via `@rivetjs/kit/icon` (`import { Icon } from "@rivetjs/kit/icon"`; examples import it directly too). Never UTF glyphs or hand-written SVG.
+
+- `button-social` brand logos come from the exact `@thesvg/icons` 4.0.0 devDependency (MIT package), ui-docs only; never add it to a shipped library. `vite.config.ts` imports the package's exported `variants` strings: Google `default` (full colour), GitHub / Apple `mono`.
+- `brand-icons.ts` provides `brandIcons({ name: { svg, currentColor? } })`: `virtual:brand-icons/<name>.svg?svg` resolves to content-hashed, gitignored `.rivet/brand-icons/*.svg.tsx` generated from those strings by the compiler's existing `images/svg.ts` `inlineSvg` emitter (the same sanitizer / optimizer / JSX emitter as `?svg`). The local helper uses that repo-internal build API because ordinary `?svg` modules are opaque to the native-button proof: exposing generated TSX lets the compiler prove the buttons static and ship no logo or button JS. `currentColor: true` supplies the emitter's monochrome directive. The helper normalises `xlink:href` to SVG 2 `href` (Google gradient references), because the inline sanitizer strips namespace declarations between SVGO passes; path data stays package-owned. No copied SVG paths, string innerHTML, logo runtime or package import in the demo. Use `class="size-4" aria-hidden="true"` before each label. This helper is local to the docs app; copying the demo outside this repo requires equivalent build-time SVG-to-JSX generation. The static built frame must retain only its existing docs frame script (zero logo client JS).
 
 ## Commands (repo root; `export PATH=/Users/denisseverin/.nvm/versions/node/v26.5.1/bin:$PATH` first)
 

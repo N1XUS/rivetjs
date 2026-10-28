@@ -209,7 +209,7 @@ Global:
 
 ### 3.8 Closing CTA
 
-- One line, centered: "Build something fast." + the command box again (Astro pattern) + "Star on GitHub" text link (lucide has no brand icon → text).
+- One line, centered: "Build something fast." + the command box again (Astro pattern) + "Star on GitHub" text link (the homepage uses text for this link).
 
 ### 3.9 Footer: this page's own numbers
 

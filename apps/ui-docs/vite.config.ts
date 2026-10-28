@@ -1,4 +1,8 @@
 import { defineConfig } from "vite";
+import { variants as google } from "@thesvg/icons/google";
+import { variants as github } from "@thesvg/icons/github";
+import { variants as apple } from "@thesvg/icons/apple";
+import { brandIcons } from "./brand-icons.ts";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
 import { docsSite, FRAME_ROOT } from "@rivetjs/docs-kit/vite.ts";
@@ -9,6 +13,11 @@ import { docsSite, FRAME_ROOT } from "@rivetjs/docs-kit/vite.ts";
  */
 export default defineConfig({
   plugins: [
+    brandIcons({
+      google: { svg: google.default },
+      github: { svg: github.mono, currentColor: true },
+      apple: { svg: apple.mono, currentColor: true },
+    }),
     docsSite(),
     rivetRouter({
       mode: "static",

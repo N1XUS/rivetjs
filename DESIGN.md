@@ -56,6 +56,7 @@ Design preferences, look, composition rules for `@rivetjs/ui`, `@rivetjs/cdk` st
 ## Icons
 
 - **HIGH PRIORITY:** lucide only, via `import { Icon } from "@rivetjs/kit/icon"`. Never invented SVG paths, never UTF glyphs (✓ × ▾ → ★ …) as icons.
+- Brand-logo exception: ui-docs `button-social` uses `@thesvg/icons` via its local build-time SVG helper; see `apps/ui-docs/CLAUDE.md`.
 - Optical sizes 16 / 20 / 24 (12 / 14 only inside 12-px chips / indicators). Map: text 12 → 14, 14 → 16, 16 → 20, 18+ → 24.
 - Stroke per size: 16 → 2, 20 → 1.75, 24 → 1.5, 12–14 → 2 `absoluteStrokeWidth`; set via `--icon-size` / `--icon-stroke` on the slot.
 - `flex: none`, square box, no negative margins; align to first text line.

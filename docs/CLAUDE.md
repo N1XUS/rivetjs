@@ -12,6 +12,8 @@ Internal, contributor-facing docs (user-facing docs live in `apps/docs/content` 
 - Latest chart sources: `benchmarks/2026-10-23-ssr-comparison.{md,json}` (+ `.notes.md`) for Docker SSR and `benchmarks/2026-10-23-krausest.{md,json}` for local keyed-table measurements; docs retain the older mount / resume run dates and reject published krausest framework rankings across Chrome major versions.
 - `benchmarks/` — measured comparisons (`*.md`) with their raw `*-summary.json` / `*-diagnostic.json` next to them; `direct-ssr/` = archived direct-SSR experiments (sources removed after commit `876929e`; the `experimentalServerDirect` option, its runtime protocol and design docs removed 2026-10-07).
 
+Latest night measurement: `benchmarks/2026-10-28-night.md` + `.json` (CX-BENCH, base `7820b7579`) records fresh five-lane resume, local krausest/rendering, and 100/1,000-row DOM peers with per-trial uptime and medians/spreads. The stock 5,000-row Rivet DOM trial hit the RAM guard in both the full scoreboard and a fresh-process retry; no result is inferred for that case. The regenerated `perf-scoreboard.md` contains this run's krausest/resume suites only; published Chrome 154/155 timing comparisons remain n/a against Chrome 156. No SSR/Docker run or runtime/compiler change.
+
 ## guides/
 
 | File | Topic |
@@ -152,3 +154,5 @@ Root `CLAUDE.md` · `apps/docs/content/` (public guides) · `README.md`.
 Scheduler final report records real LTR/RTL month/all-day resize preview, commit and Escape checks; final compiled CSS is 18,408 bytes / 2,601 Brotli. Original SSR/cold closure limits and broad UI reds remain explicit.
 
 - `guides/resumability.md` documents PRESS-LITE's native handler twin and CX-PRESS2's graph-preserving VCLS / co-load integration, including the escape hatch and measured mixed-frame deltas.
+
+- CX-SOCIAL: the homepage design spec keeps GitHub as a text link by design; brand logos are supported in the ui-docs social-button demo through its local build helper (see `apps/ui-docs/CLAUDE.md`).

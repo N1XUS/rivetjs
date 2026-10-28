@@ -43,7 +43,7 @@ Main Rivet docs site (framework: reactivity, runtime, router, compiler, i18n, to
 ## Icons (HIGH PRIORITY)
 - Never hand-write SVG paths; never use UTF symbols or emoji (✓ × ▾ → ★ + − …) as icons. Use lucide (`lucide` package, icon data).
 - In an example: `src/components/Icon.tsx` (copy from `examples/computed-total/src/components/Icon.tsx`), then `import { Plus } from "lucide"; <Icon icon={Plus} />`. Examples are standalone apps: each keeps its own copy.
-- In the site / docs-kit UI: `import { Icon } from "@rivetjs/kit/icon"` (same API, default size 24; server + client). lucide has no brand icons: the GitHub links (footer) are text.
+- In the site / docs-kit UI: `import { Icon } from "@rivetjs/kit/icon"` (same API, default size 24; server + client). The GitHub footer links use text. Brand-logo assets for the ui-docs social-button demo are documented in `apps/ui-docs/CLAUDE.md` (ui-docs-only build dependency).
 
 ## Commands (repo root; `export PATH=/Users/denisseverin/.nvm/versions/node/v26.5.1/bin:$PATH` first)
 - Typecheck + content/nav check: `NX_DAEMON=false npx nx run docs:typecheck --output-style=static --skip-nx-cache` (runs `prepare`: regenerates routes + error pages).

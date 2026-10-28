@@ -61,7 +61,7 @@ Docs site of `@rivetjs/cdk` (headless components + foundations), second site on 
 - In the site / docs-kit UI: `import { Icon } from "@rivetjs/kit/icon"` (same API, default size 24; server + client).
 - Tests assert icons by element (`{ matches: "#id svg.check" }`), not by glyph text.
 - Overlay arrows: `<OverlayArrow>` child holding a CSS-shaped `<span class="tip" />` (`clip-path` triangle), not an SVG path; rotate per `data-placement` (`placement-*:` Tailwind variants).
-- lucide has no brand icons: the GitHub links (footer) are text.
+- The GitHub footer links use text. Brand-logo assets for the ui-docs social-button demo are documented in `apps/ui-docs/CLAUDE.md` (ui-docs-only build dependency).
 
 ## Commands (repo root; `export PATH=/Users/denisseverin/.nvm/versions/node/v26.5.1/bin:$PATH` first)
 - Typecheck + content/nav check: `NX_DAEMON=false npx nx run cdk-docs:typecheck --output-style=static --skip-nx-cache` (runs `prepare`: regenerates routes; fails on nav orphans, long descriptions, TS errors in examples).

@@ -73,9 +73,7 @@ Rivet addition: a gradient fill from the logo's deep stops, for the one primary 
 
 ### Social Buttons
 
-:::warning
-Not yet ported: the original demo shows the Google, GitHub and Apple brand logos (Iconify `devicon:google`, `mdi:github`, `ion:logo-apple`). lucide has no brand logos and icons come from lucide only, so the buttons render without them.
-:::
+Google keeps its full-colour logo; GitHub and Apple follow the button text colour in light and dark themes.
 
 ::example{id=button-social}
 
