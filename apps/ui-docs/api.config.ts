@@ -394,6 +394,13 @@ export const entries: ApiEntryConfig[] = [
     summary: "Status (Rivet addition): status / presence / unread dot in the semantic colours, three sizes, optional CSS pulse.",
   },
   {
+    entry: "@rivetjs/ui/qr-code",
+    file: "ui/src/components/qr-code/index.ts",
+    runsOn: "both",
+    summary:
+      "QRCode (Rivet addition): QR code from a value (server-rendered SVG), square / dots / rounded shapes, gradient presets, centred icon, loading placeholder + shimmer.",
+  },
+  {
     entry: "@rivetjs/ui/item-card",
     file: "ui/src/components/item-card/index.ts",
     runsOn: "both",

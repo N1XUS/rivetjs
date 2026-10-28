@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] dd84112e1dc7 533758 css 0061a94a1cc9 1182009
-@rivetjs/ui [server] e85c4b2d0d42 475027 css 0061a94a1cc9 1182009
+@rivetjs/ui [dom] 84648b0600bb 537756 css 1853bd6584f9 1187245
+@rivetjs/ui [server] 75ca9c6c5949 478693 css 1853bd6584f9 1187245
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -291,6 +291,8 @@
 @rivetjs/ui/feature-list [server] 98c1b2a3f945 4335 css e875d638860b 1178290
 @rivetjs/ui/status [dom] fd6acb2335d9 3906 css 96546e2a17f2 1770
 @rivetjs/ui/status [server] c4f0ee170ede 3971 css 96546e2a17f2 1770
+@rivetjs/ui/qr-code [dom] 44981580b741 7231 css a1ef4a4606c9 5235
+@rivetjs/ui/qr-code [server] 5bca8bf86999 6966 css a1ef4a4606c9 5235
 @rivetjs/ui/item-card [dom] 83dfa65dd605 6481 css 04b59941ff72 1178714
 @rivetjs/ui/item-card [server] 32d40f5ba601 6321 css 04b59941ff72 1178714
 @rivetjs/ui/item-card-group [dom] 9e752064618a 5240 css 6c2bf148248a 1176943

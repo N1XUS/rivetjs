@@ -47,6 +47,7 @@ export const groups: NavGroup[] = [
       "components/list-view",
       "components/masonry",
       "components/number-value",
+      "components/qr-code",
       "components/status",
       "components/table",
       "components/timeline",

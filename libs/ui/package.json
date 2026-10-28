@@ -516,6 +516,10 @@
       "types": "./src/components/status/index.ts",
       "default": "./src/components/status/index.ts"
     },
+    "./qr-code": {
+      "types": "./src/components/qr-code/index.ts",
+      "default": "./src/components/qr-code/index.ts"
+    },
     "./item-card": {
       "types": "./src/components/item-card/index.ts",
       "default": "./src/components/item-card/index.ts"

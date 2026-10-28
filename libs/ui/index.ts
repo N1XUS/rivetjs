@@ -174,6 +174,9 @@ export * from "./src/components/feature-list/index.ts";
 // Rivet addition (no HeroUI counterpart): status / presence / unread dot.
 export * from "./src/components/status/index.ts";
 
+// Rivet addition (no HeroUI counterpart): QR code (shapes, gradient presets, centred icon, loading / shimmer).
+export * from "./src/components/qr-code/index.ts";
+
 // Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): list row card.
 export * from "./src/components/item-card/index.ts";
 

@@ -4,8 +4,8 @@
     "brotli": 1636
   },
   "cdk": {
-    "tests": 5384,
-    "a11y": 658
+    "tests": 5411,
+    "a11y": 659
   },
   "inlineJs": {
     "bytes": 11146,

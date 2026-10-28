@@ -1,0 +1,182 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no QR code): QR symbol on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * QRCode Component Styles
+ * Block: qr-code (shapes --square / --dots / --rounded, colours --default / --accent / --brand / --sunset, sizes --sm /
+ *   --md / --lg, --shimmer = decorative light sweep)
+ * Elements: __svg (the symbol, quiet zone included), __body (data + timing + alignment modules), __eyes (finder
+ *   patterns), __icon (centred plate over the excavated area)
+ * States: [data-loading] (placeholder symbol + skeleton sweep)
+ * Variables: --qr-code-size (side), --qr-code-fg / --qr-code-bg (module / background colour), --qr-code-eye (finder
+ *   colour, default = modules; not with a gradient), --qr-code-gradient-1..3 (gradient stops: --brand / --sunset
+ *   set [data-gradient] and paint the paths through `fill` / `stroke` attributes = url(#gradient)), --qr-code-dot (dot diameter in modules), --qr-code-icon-size (set inline),
+ *   --qr-code-radius
+ * Polarity: dark modules on a light background in both themes (inverted codes fail on many scanners); dark mode swaps
+ *   the theme pair (--background on --foreground) instead of following the page.
+ * -----------------------------------------------------------------------------------------------*/
+
+.qr-code {
+  --qr-code-fg: var(--foreground);
+  --qr-code-bg: var(--surface);
+  --qr-code-dot: 0.84;
+  --qr-code-radius: calc(var(--radius) * 1.5);
+  @apply relative inline-block shrink-0 overflow-hidden align-middle;
+  isolation: isolate;
+  width: var(--qr-code-size);
+  aspect-ratio: 1;
+  border-radius: var(--qr-code-radius);
+  background-color: var(--qr-code-bg);
+  color: var(--qr-code-fg);
+}
+
+.dark .qr-code,
+[data-theme="dark"] .qr-code {
+  --qr-code-fg: var(--background);
+  --qr-code-bg: var(--foreground);
+}
+
+.qr-code--sm {
+  --qr-code-size: --spacing(32);
+}
+
+.qr-code--md {
+  --qr-code-size: --spacing(40);
+}
+
+.qr-code--lg {
+  --qr-code-size: --spacing(56);
+}
+
+.qr-code--accent {
+  --qr-code-fg: var(--accent);
+}
+
+.dark .qr-code--accent,
+[data-theme="dark"] .qr-code--accent {
+  --qr-code-fg: var(--accent);
+}
+
+/* Gradient presets (the paths' fill / stroke attributes point at the root's <linearGradient>). Every stop stays dark enough
+ * for scanners on the light background. */
+.qr-code--brand {
+  --qr-code-gradient-1: #0360fa;
+  --qr-code-gradient-2: #5b00f8;
+  --qr-code-gradient-3: #b815f9;
+}
+
+.qr-code--sunset {
+  --qr-code-gradient-1: #e4405f;
+  --qr-code-gradient-2: #c13584;
+  --qr-code-gradient-3: #5851db;
+}
+
+.qr-code__svg {
+  @apply block size-full;
+}
+
+.qr-code:not([data-gradient]) .qr-code__body {
+  fill: var(--qr-code-fg);
+}
+
+.qr-code:not([data-gradient]) .qr-code__eyes {
+  fill: var(--qr-code-eye, var(--qr-code-fg));
+}
+
+.qr-code--square .qr-code__svg {
+  shape-rendering: crispEdges;
+}
+
+.qr-code--dots .qr-code__body {
+  fill: none;
+  stroke-width: var(--qr-code-dot);
+  stroke-linecap: round;
+}
+
+.qr-code--dots:not([data-gradient]) .qr-code__body {
+  stroke: var(--qr-code-fg);
+}
+
+.qr-code--dots .qr-code__eyes {
+  fill-rule: evenodd;
+}
+
+/* Centred plate over the excavated modules: any content (lucide icon, logo image, initials). */
+.qr-code__icon {
+  @apply absolute grid place-items-center overflow-hidden;
+  top: 50%;
+  left: 50%;
+  width: var(--qr-code-icon-size);
+  height: var(--qr-code-icon-size);
+  transform: translate(-50%, -50%);
+  border-radius: calc(var(--qr-code-radius) * 0.6);
+  background-color: var(--qr-code-bg);
+  color: var(--qr-code-fg);
+}
+
+.qr-code__icon > svg {
+  width: 72%;
+  height: 72%;
+}
+
+.qr-code__icon > img {
+  @apply size-full object-contain;
+}
+
+/* Loading: placeholder symbol in a faint module colour + the skeleton sweep. */
+.qr-code[data-loading] .qr-code__body {
+  fill: color-mix(in oklab, var(--qr-code-fg) 14%, transparent);
+}
+
+.qr-code--dots[data-loading] .qr-code__body {
+  fill: none;
+  stroke: color-mix(in oklab, var(--qr-code-fg) 14%, transparent);
+}
+
+.qr-code[data-loading] .qr-code__eyes {
+  fill: color-mix(in oklab, var(--qr-code-fg) 22%, transparent);
+}
+
+.qr-code[data-loading] .qr-code__icon {
+  opacity: 0.4;
+}
+
+.qr-code[data-loading]::after,
+.qr-code--shimmer::after {
+  @apply pointer-events-none absolute inset-0;
+  content: "";
+  transform: translateX(-100%);
+}
+
+.qr-code[data-loading]::after {
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--qr-code-fg) 10%, transparent), transparent);
+  animation: qr-code-sweep 1.6s linear infinite;
+}
+
+.qr-code--shimmer:not([data-loading])::after {
+  background: linear-gradient(105deg, transparent 30%, color-mix(in oklab, var(--qr-code-bg) 55%, transparent) 50%, transparent 70%);
+  animation: qr-code-shimmer 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qr-code[data-loading]::after,
+  .qr-code--shimmer::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@keyframes qr-code-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes qr-code-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  55%,
+  100% {
+    transform: translateX(100%);
+  }
+}

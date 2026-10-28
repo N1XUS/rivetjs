@@ -1406,6 +1406,22 @@
    ]
   },
   {
+   "entry": "@rivetjs/ui/qr-code",
+   "summary": "QRCode (Rivet addition): QR code from a value (server-rendered SVG), square / dots / rounded shapes, gradient presets, centred icon, loading placeholder + shimmer.",
+   "runsOn": "both",
+   "href": "/api/rivetjs/ui/qr-code/",
+   "symbols": [
+    "QRCode",
+    "QRCode",
+    "QRCodeEcc",
+    "QRCodeRoot",
+    "QRCodeRootProps",
+    "QRCodeShape",
+    "QRCodeVariants",
+    "qrCodeVariants"
+   ]
+  },
+  {
    "entry": "@rivetjs/ui/item-card",
    "summary": "ItemCard (Rivet addition): list row card with icon, title, description and a trailing action.",
    "runsOn": "both",
@@ -301019,6 +301035,1939 @@
     "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/prompt-suggestion/prompt-suggestion.styles.ts#L8"
    },
    "href": "/api/rivetjs/ui/prompt-suggestion/promptSuggestionVariants/"
+  },
+  {
+   "key": "@rivetjs/ui/qr-code#QRCode",
+   "entry": "@rivetjs/ui/qr-code",
+   "name": "QRCode",
+   "kind": "type",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "type QRCode = unknown"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "Props",
+     "kind": "property",
+     "signature": "Props: QRCodeRootProps",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "RootProps",
+     "kind": "property",
+     "signature": "RootProps: QRCodeRootProps",
+     "doc": "",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/qr-code/index.ts",
+    "line": 9,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/qr-code/index.ts#L9"
+   },
+   "href": "/api/rivetjs/ui/qr-code/QRCode/"
+  },
+  {
+   "key": "@rivetjs/ui/qr-code#QRCode",
+   "entry": "@rivetjs/ui/qr-code",
+   "name": "QRCode",
+   "kind": "variable",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "const QRCode: (props: QRCodeRootProps) => CompiledElement & { Root: (props: QRCodeRootProps) => CompiledElement }"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/qr-code/index.ts",
+    "line": 9,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/qr-code/index.ts#L9"
+   },
+   "href": "/api/rivetjs/ui/qr-code/QRCode/"
+  },
+  {
+   "key": "@rivetjs/ui/qr-code#QRCodeEcc",
+   "entry": "@rivetjs/ui/qr-code",
+   "name": "QRCodeEcc",
+   "kind": "type",
+   "summary": "Error correction level: recovers about 7 % (`L`), 15 % (`M`), 25 % (`Q`) or 30 % (`H`) of the codewords.",
+   "remarks": "Error correction level: recovers about 7 % (`L`), 15 % (`M`), 25 % (`Q`) or 30 % (`H`) of the codewords.",
+   "signatures": [
+    "type QRCodeEcc = \"L\" | \"M\" | \"Q\" | \"H\""
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/qr-code/encode.ts",
+    "line": 16,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/qr-code/encode.ts#L16"
+   },
+   "href": "/api/rivetjs/ui/qr-code/QRCodeEcc/"
+  },
+  {
+   "key": "@rivetjs/ui/qr-code#QRCodeRoot",
+   "entry": "@rivetjs/ui/qr-code",
+   "name": "QRCodeRoot",
+   "kind": "function",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "function QRCodeRoot(props: QRCodeRootProps): CompiledElement"
+   ],
+   "params": [
+    {
+     "name": "props",
+     "type": "QRCodeRootProps",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "CompiledElement",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/qr-code/qr-code.tsx",
+    "line": 113,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/qr-code/qr-code.tsx#L113"
+   },
+   "href": "/api/rivetjs/ui/qr-code/QRCodeRoot/"
+  },
+  {
+   "key": "@rivetjs/ui/qr-code#QRCodeRootProps",
+   "entry": "@rivetjs/ui/qr-code",
+   "name": "QRCodeRootProps",
+   "kind": "interface",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "interface QRCodeRootProps extends Omit<JSX.IntrinsicElements[\"div\"], \"class\" | \"children\" | \"color\">, Omit<QRCodeVariants, \"size\">"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "accessKey",
+     "kind": "property",
+     "signature": "accessKey?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "autoCapitalize",
+     "kind": "property",
+     "signature": "autoCapitalize?: \"none\" | \"off\" | \"on\" | \"sentences\" | \"words\" | \"characters\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "children",
+     "kind": "property",
+     "signature": "children?: Children",
+     "doc": "Centred content (alternative to `icon`).",
+     "optional": true
+    },
+    {
+     "name": "class",
+     "kind": "property",
+     "signature": "class?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "className",
+     "kind": "property",
+     "signature": "className?: ClassValue",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "color",
+     "kind": "property",
+     "signature": "color?: \"default\" | \"brand\" | \"accent\" | \"sunset\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "contentEditable",
+     "kind": "property",
+     "signature": "contentEditable?: boolean | \"true\" | \"false\" | \"plaintext-only\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "dir",
+     "kind": "property",
+     "signature": "dir?: \"auto\" | \"ltr\" | \"rtl\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "draggable",
+     "kind": "property",
+     "signature": "draggable?: boolean | \"true\" | \"false\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "ecc",
+     "kind": "property",
+     "signature": "ecc?: QrEcc",
+     "doc": "Error correction level (minimum; raised while the data fits).",
+     "optional": true,
+     "default": "\"H\" with an icon, else \"M\""
+    },
+    {
+     "name": "enterKeyHint",
+     "kind": "property",
+     "signature": "enterKeyHint?: \"search\" | \"enter\" | \"done\" | \"go\" | \"next\" | \"previous\" | \"send\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "hidden",
+     "kind": "property",
+     "signature": "hidden?: boolean | \"until-found\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "icon",
+     "kind": "property",
+     "signature": "icon?: Children",
+     "doc": "Centred content (lucide `Icon`, logo `img`, initials); same slot as children.",
+     "optional": true
+    },
+    {
+     "name": "iconSize",
+     "kind": "property",
+     "signature": "iconSize?: number",
+     "doc": "Icon plate side as a fraction of the symbol (0.1–0.3).",
+     "optional": true,
+     "default": "0.22"
+    },
+    {
+     "name": "id",
+     "kind": "property",
+     "signature": "id?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "inert",
+     "kind": "property",
+     "signature": "inert?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "inputMode",
+     "kind": "property",
+     "signature": "inputMode?: \"search\" | \"text\" | \"none\" | \"decimal\" | \"numeric\" | \"tel\" | \"email\" | \"url\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "isLoading",
+     "kind": "property",
+     "signature": "isLoading?: boolean | (() => boolean)",
+     "doc": "Placeholder + skeleton sweep until the value is ready. Value or accessor.",
+     "optional": true
+    },
+    {
+     "name": "itemId",
+     "kind": "property",
+     "signature": "itemId?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "itemProp",
+     "kind": "property",
+     "signature": "itemProp?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "itemRef",
+     "kind": "property",
+     "signature": "itemRef?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "itemScope",
+     "kind": "property",
+     "signature": "itemScope?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "itemType",
+     "kind": "property",
+     "signature": "itemType?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "lang",
+     "kind": "property",
+     "signature": "lang?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "margin",
+     "kind": "property",
+     "signature": "margin?: number",
+     "doc": "Quiet zone in modules (ISO 18004).",
+     "optional": true,
+     "default": "4"
+    },
+    {
+     "name": "nonce",
+     "kind": "property",
+     "signature": "nonce?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAbort",
+     "kind": "property",
+     "signature": "onAbort?: Handler<HTMLDivElement, UIEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAbortCapture",
+     "kind": "property",
+     "signature": "onAbortCapture?: Handler<HTMLDivElement, UIEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationCancel",
+     "kind": "property",
+     "signature": "onAnimationCancel?: Handler<HTMLDivElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationCancelCapture",
+     "kind": "property",
+     "signature": "onAnimationCancelCapture?: Handler<HTMLDivElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationEnd",
+     "kind": "property",
+     "signature": "onAnimationEnd?: Handler<HTMLDivElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationEndCapture",
+     "kind": "property",
+     "signature": "onAnimationEndCapture?: Handler<HTMLDivElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationIteration",
+     "kind": "property",
+     "signature": "onAnimationIteration?: Handler<HTMLDivElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationIterationCapture",
+     "kind": "property",
+     "signature": "onAnimationIterationCapture?: Handler<HTMLDivElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationStart",
+     "kind": "property",
+     "signature": "onAnimationStart?: Handler<HTMLDivElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationStartCapture",
+     "kind": "property",
+     "signature": "onAnimationStartCapture?: Handler<HTMLDivElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAuxClick",
+     "kind": "property",
+     "signature": "onAuxClick?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAuxClickCapture",
+     "kind": "property",
+     "signature": "onAuxClickCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeInput",
+     "kind": "property",
+     "signature": "onBeforeInput?: Handler<HTMLDivElement, InputEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeInputCapture",
+     "kind": "property",
+     "signature": "onBeforeInputCapture?: Handler<HTMLDivElement, InputEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeMatch",
+     "kind": "property",
+     "signature": "onBeforeMatch?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeMatchCapture",
+     "kind": "property",
+     "signature": "onBeforeMatchCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeToggle",
+     "kind": "property",
+     "signature": "onBeforeToggle?: Handler<HTMLDivElement, ToggleEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeToggleCapture",
+     "kind": "property",
+     "signature": "onBeforeToggleCapture?: Handler<HTMLDivElement, ToggleEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBlur",
+     "kind": "property",
+     "signature": "onBlur?: Handler<HTMLDivElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBlurCapture",
+     "kind": "property",
+     "signature": "onBlurCapture?: Handler<HTMLDivElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCancel",
+     "kind": "property",
+     "signature": "onCancel?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCancelCapture",
+     "kind": "property",
+     "signature": "onCancelCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCanPlay",
+     "kind": "property",
+     "signature": "onCanPlay?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCanPlayCapture",
+     "kind": "property",
+     "signature": "onCanPlayCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCanPlayThrough",
+     "kind": "property",
+     "signature": "onCanPlayThrough?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCanPlayThroughCapture",
+     "kind": "property",
+     "signature": "onCanPlayThroughCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onChange",
+     "kind": "property",
+     "signature": "onChange?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onChangeCapture",
+     "kind": "property",
+     "signature": "onChangeCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClick",
+     "kind": "property",
+     "signature": "onClick?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClickCapture",
+     "kind": "property",
+     "signature": "onClickCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClose",
+     "kind": "property",
+     "signature": "onClose?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCloseCapture",
+     "kind": "property",
+     "signature": "onCloseCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionEnd",
+     "kind": "property",
+     "signature": "onCompositionEnd?: Handler<HTMLDivElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionEndCapture",
+     "kind": "property",
+     "signature": "onCompositionEndCapture?: Handler<HTMLDivElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionStart",
+     "kind": "property",
+     "signature": "onCompositionStart?: Handler<HTMLDivElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionStartCapture",
+     "kind": "property",
+     "signature": "onCompositionStartCapture?: Handler<HTMLDivElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionUpdate",
+     "kind": "property",
+     "signature": "onCompositionUpdate?: Handler<HTMLDivElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionUpdateCapture",
+     "kind": "property",
+     "signature": "onCompositionUpdateCapture?: Handler<HTMLDivElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextLost",
+     "kind": "property",
+     "signature": "onContextLost?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextLostCapture",
+     "kind": "property",
+     "signature": "onContextLostCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextMenu",
+     "kind": "property",
+     "signature": "onContextMenu?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextMenuCapture",
+     "kind": "property",
+     "signature": "onContextMenuCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextRestored",
+     "kind": "property",
+     "signature": "onContextRestored?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextRestoredCapture",
+     "kind": "property",
+     "signature": "onContextRestoredCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCopy",
+     "kind": "property",
+     "signature": "onCopy?: Handler<HTMLDivElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCopyCapture",
+     "kind": "property",
+     "signature": "onCopyCapture?: Handler<HTMLDivElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCueChange",
+     "kind": "property",
+     "signature": "onCueChange?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCueChangeCapture",
+     "kind": "property",
+     "signature": "onCueChangeCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCut",
+     "kind": "property",
+     "signature": "onCut?: Handler<HTMLDivElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCutCapture",
+     "kind": "property",
+     "signature": "onCutCapture?: Handler<HTMLDivElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDblClick",
+     "kind": "property",
+     "signature": "onDblClick?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDblClickCapture",
+     "kind": "property",
+     "signature": "onDblClickCapture?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDrag",
+     "kind": "property",
+     "signature": "onDrag?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragCapture",
+     "kind": "property",
+     "signature": "onDragCapture?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragEnd",
+     "kind": "property",
+     "signature": "onDragEnd?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragEndCapture",
+     "kind": "property",
+     "signature": "onDragEndCapture?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragEnter",
+     "kind": "property",
+     "signature": "onDragEnter?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragEnterCapture",
+     "kind": "property",
+     "signature": "onDragEnterCapture?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragLeave",
+     "kind": "property",
+     "signature": "onDragLeave?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragLeaveCapture",
+     "kind": "property",
+     "signature": "onDragLeaveCapture?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragOver",
+     "kind": "property",
+     "signature": "onDragOver?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragOverCapture",
+     "kind": "property",
+     "signature": "onDragOverCapture?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragStart",
+     "kind": "property",
+     "signature": "onDragStart?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragStartCapture",
+     "kind": "property",
+     "signature": "onDragStartCapture?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDrop",
+     "kind": "property",
+     "signature": "onDrop?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDropCapture",
+     "kind": "property",
+     "signature": "onDropCapture?: Handler<HTMLDivElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDurationChange",
+     "kind": "property",
+     "signature": "onDurationChange?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDurationChangeCapture",
+     "kind": "property",
+     "signature": "onDurationChangeCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEmptied",
+     "kind": "property",
+     "signature": "onEmptied?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEmptiedCapture",
+     "kind": "property",
+     "signature": "onEmptiedCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEnded",
+     "kind": "property",
+     "signature": "onEnded?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEndedCapture",
+     "kind": "property",
+     "signature": "onEndedCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onError",
+     "kind": "property",
+     "signature": "onError?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onErrorCapture",
+     "kind": "property",
+     "signature": "onErrorCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocus",
+     "kind": "property",
+     "signature": "onFocus?: Handler<HTMLDivElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusCapture",
+     "kind": "property",
+     "signature": "onFocusCapture?: Handler<HTMLDivElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusIn",
+     "kind": "property",
+     "signature": "onFocusIn?: Handler<HTMLDivElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusInCapture",
+     "kind": "property",
+     "signature": "onFocusInCapture?: Handler<HTMLDivElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusOut",
+     "kind": "property",
+     "signature": "onFocusOut?: Handler<HTMLDivElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusOutCapture",
+     "kind": "property",
+     "signature": "onFocusOutCapture?: Handler<HTMLDivElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFormData",
+     "kind": "property",
+     "signature": "onFormData?: Handler<HTMLDivElement, FormDataEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFormDataCapture",
+     "kind": "property",
+     "signature": "onFormDataCapture?: Handler<HTMLDivElement, FormDataEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFullscreenChange",
+     "kind": "property",
+     "signature": "onFullscreenChange?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFullscreenChangeCapture",
+     "kind": "property",
+     "signature": "onFullscreenChangeCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFullscreenError",
+     "kind": "property",
+     "signature": "onFullscreenError?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFullscreenErrorCapture",
+     "kind": "property",
+     "signature": "onFullscreenErrorCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onGotPointerCapture",
+     "kind": "property",
+     "signature": "onGotPointerCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onGotPointerCaptureCapture",
+     "kind": "property",
+     "signature": "onGotPointerCaptureCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onInput",
+     "kind": "property",
+     "signature": "onInput?: Handler<HTMLDivElement, InputEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onInputCapture",
+     "kind": "property",
+     "signature": "onInputCapture?: Handler<HTMLDivElement, InputEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onInvalid",
+     "kind": "property",
+     "signature": "onInvalid?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onInvalidCapture",
+     "kind": "property",
+     "signature": "onInvalidCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyDown",
+     "kind": "property",
+     "signature": "onKeyDown?: Handler<HTMLDivElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyDownCapture",
+     "kind": "property",
+     "signature": "onKeyDownCapture?: Handler<HTMLDivElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyPress",
+     "kind": "property",
+     "signature": "onKeyPress?: Handler<HTMLDivElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyPressCapture",
+     "kind": "property",
+     "signature": "onKeyPressCapture?: Handler<HTMLDivElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyUp",
+     "kind": "property",
+     "signature": "onKeyUp?: Handler<HTMLDivElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyUpCapture",
+     "kind": "property",
+     "signature": "onKeyUpCapture?: Handler<HTMLDivElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoad",
+     "kind": "property",
+     "signature": "onLoad?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadCapture",
+     "kind": "property",
+     "signature": "onLoadCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadedData",
+     "kind": "property",
+     "signature": "onLoadedData?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadedDataCapture",
+     "kind": "property",
+     "signature": "onLoadedDataCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadedMetadata",
+     "kind": "property",
+     "signature": "onLoadedMetadata?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadedMetadataCapture",
+     "kind": "property",
+     "signature": "onLoadedMetadataCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadStart",
+     "kind": "property",
+     "signature": "onLoadStart?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadStartCapture",
+     "kind": "property",
+     "signature": "onLoadStartCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLostPointerCapture",
+     "kind": "property",
+     "signature": "onLostPointerCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLostPointerCaptureCapture",
+     "kind": "property",
+     "signature": "onLostPointerCaptureCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseDown",
+     "kind": "property",
+     "signature": "onMouseDown?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseDownCapture",
+     "kind": "property",
+     "signature": "onMouseDownCapture?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseEnter",
+     "kind": "property",
+     "signature": "onMouseEnter?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseEnterCapture",
+     "kind": "property",
+     "signature": "onMouseEnterCapture?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseLeave",
+     "kind": "property",
+     "signature": "onMouseLeave?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseLeaveCapture",
+     "kind": "property",
+     "signature": "onMouseLeaveCapture?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseMove",
+     "kind": "property",
+     "signature": "onMouseMove?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseMoveCapture",
+     "kind": "property",
+     "signature": "onMouseMoveCapture?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOut",
+     "kind": "property",
+     "signature": "onMouseOut?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOutCapture",
+     "kind": "property",
+     "signature": "onMouseOutCapture?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOver",
+     "kind": "property",
+     "signature": "onMouseOver?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOverCapture",
+     "kind": "property",
+     "signature": "onMouseOverCapture?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseUp",
+     "kind": "property",
+     "signature": "onMouseUp?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseUpCapture",
+     "kind": "property",
+     "signature": "onMouseUpCapture?: Handler<HTMLDivElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPaste",
+     "kind": "property",
+     "signature": "onPaste?: Handler<HTMLDivElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPasteCapture",
+     "kind": "property",
+     "signature": "onPasteCapture?: Handler<HTMLDivElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPause",
+     "kind": "property",
+     "signature": "onPause?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPauseCapture",
+     "kind": "property",
+     "signature": "onPauseCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPlay",
+     "kind": "property",
+     "signature": "onPlay?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPlayCapture",
+     "kind": "property",
+     "signature": "onPlayCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPlaying",
+     "kind": "property",
+     "signature": "onPlaying?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPlayingCapture",
+     "kind": "property",
+     "signature": "onPlayingCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerCancel",
+     "kind": "property",
+     "signature": "onPointerCancel?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerCancelCapture",
+     "kind": "property",
+     "signature": "onPointerCancelCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerDown",
+     "kind": "property",
+     "signature": "onPointerDown?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerDownCapture",
+     "kind": "property",
+     "signature": "onPointerDownCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerEnter",
+     "kind": "property",
+     "signature": "onPointerEnter?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerEnterCapture",
+     "kind": "property",
+     "signature": "onPointerEnterCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerLeave",
+     "kind": "property",
+     "signature": "onPointerLeave?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerLeaveCapture",
+     "kind": "property",
+     "signature": "onPointerLeaveCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerMove",
+     "kind": "property",
+     "signature": "onPointerMove?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerMoveCapture",
+     "kind": "property",
+     "signature": "onPointerMoveCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOut",
+     "kind": "property",
+     "signature": "onPointerOut?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOutCapture",
+     "kind": "property",
+     "signature": "onPointerOutCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOver",
+     "kind": "property",
+     "signature": "onPointerOver?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOverCapture",
+     "kind": "property",
+     "signature": "onPointerOverCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerRawUpdate",
+     "kind": "property",
+     "signature": "onPointerRawUpdate?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerRawUpdateCapture",
+     "kind": "property",
+     "signature": "onPointerRawUpdateCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerUp",
+     "kind": "property",
+     "signature": "onPointerUp?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerUpCapture",
+     "kind": "property",
+     "signature": "onPointerUpCapture?: Handler<HTMLDivElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onProgress",
+     "kind": "property",
+     "signature": "onProgress?: Handler<HTMLDivElement, ProgressEvent<EventTarget>>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onProgressCapture",
+     "kind": "property",
+     "signature": "onProgressCapture?: Handler<HTMLDivElement, ProgressEvent<EventTarget>>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onRateChange",
+     "kind": "property",
+     "signature": "onRateChange?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onRateChangeCapture",
+     "kind": "property",
+     "signature": "onRateChangeCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onReset",
+     "kind": "property",
+     "signature": "onReset?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onResetCapture",
+     "kind": "property",
+     "signature": "onResetCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onResize",
+     "kind": "property",
+     "signature": "onResize?: Handler<HTMLDivElement, UIEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onResizeCapture",
+     "kind": "property",
+     "signature": "onResizeCapture?: Handler<HTMLDivElement, UIEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScroll",
+     "kind": "property",
+     "signature": "onScroll?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScrollCapture",
+     "kind": "property",
+     "signature": "onScrollCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScrollEnd",
+     "kind": "property",
+     "signature": "onScrollEnd?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScrollEndCapture",
+     "kind": "property",
+     "signature": "onScrollEndCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSecurityPolicyViolation",
+     "kind": "property",
+     "signature": "onSecurityPolicyViolation?: Handler<HTMLDivElement, SecurityPolicyViolationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSecurityPolicyViolationCapture",
+     "kind": "property",
+     "signature": "onSecurityPolicyViolationCapture?: Handler<HTMLDivElement, SecurityPolicyViolationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSeeked",
+     "kind": "property",
+     "signature": "onSeeked?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSeekedCapture",
+     "kind": "property",
+     "signature": "onSeekedCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSeeking",
+     "kind": "property",
+     "signature": "onSeeking?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSeekingCapture",
+     "kind": "property",
+     "signature": "onSeekingCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelect",
+     "kind": "property",
+     "signature": "onSelect?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectCapture",
+     "kind": "property",
+     "signature": "onSelectCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectionChange",
+     "kind": "property",
+     "signature": "onSelectionChange?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectionChangeCapture",
+     "kind": "property",
+     "signature": "onSelectionChangeCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectStart",
+     "kind": "property",
+     "signature": "onSelectStart?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectStartCapture",
+     "kind": "property",
+     "signature": "onSelectStartCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSlotChange",
+     "kind": "property",
+     "signature": "onSlotChange?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSlotChangeCapture",
+     "kind": "property",
+     "signature": "onSlotChangeCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onStalled",
+     "kind": "property",
+     "signature": "onStalled?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onStalledCapture",
+     "kind": "property",
+     "signature": "onStalledCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSubmit",
+     "kind": "property",
+     "signature": "onSubmit?: Handler<HTMLDivElement, SubmitEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSubmitCapture",
+     "kind": "property",
+     "signature": "onSubmitCapture?: Handler<HTMLDivElement, SubmitEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSuspend",
+     "kind": "property",
+     "signature": "onSuspend?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSuspendCapture",
+     "kind": "property",
+     "signature": "onSuspendCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTimeUpdate",
+     "kind": "property",
+     "signature": "onTimeUpdate?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTimeUpdateCapture",
+     "kind": "property",
+     "signature": "onTimeUpdateCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onToggle",
+     "kind": "property",
+     "signature": "onToggle?: Handler<HTMLDivElement, ToggleEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onToggleCapture",
+     "kind": "property",
+     "signature": "onToggleCapture?: Handler<HTMLDivElement, ToggleEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchCancel",
+     "kind": "property",
+     "signature": "onTouchCancel?: Handler<HTMLDivElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchCancelCapture",
+     "kind": "property",
+     "signature": "onTouchCancelCapture?: Handler<HTMLDivElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchEnd",
+     "kind": "property",
+     "signature": "onTouchEnd?: Handler<HTMLDivElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchEndCapture",
+     "kind": "property",
+     "signature": "onTouchEndCapture?: Handler<HTMLDivElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchMove",
+     "kind": "property",
+     "signature": "onTouchMove?: Handler<HTMLDivElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchMoveCapture",
+     "kind": "property",
+     "signature": "onTouchMoveCapture?: Handler<HTMLDivElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchStart",
+     "kind": "property",
+     "signature": "onTouchStart?: Handler<HTMLDivElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchStartCapture",
+     "kind": "property",
+     "signature": "onTouchStartCapture?: Handler<HTMLDivElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionCancel",
+     "kind": "property",
+     "signature": "onTransitionCancel?: Handler<HTMLDivElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionCancelCapture",
+     "kind": "property",
+     "signature": "onTransitionCancelCapture?: Handler<HTMLDivElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionEnd",
+     "kind": "property",
+     "signature": "onTransitionEnd?: Handler<HTMLDivElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionEndCapture",
+     "kind": "property",
+     "signature": "onTransitionEndCapture?: Handler<HTMLDivElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionRun",
+     "kind": "property",
+     "signature": "onTransitionRun?: Handler<HTMLDivElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionRunCapture",
+     "kind": "property",
+     "signature": "onTransitionRunCapture?: Handler<HTMLDivElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionStart",
+     "kind": "property",
+     "signature": "onTransitionStart?: Handler<HTMLDivElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionStartCapture",
+     "kind": "property",
+     "signature": "onTransitionStartCapture?: Handler<HTMLDivElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onVolumeChange",
+     "kind": "property",
+     "signature": "onVolumeChange?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onVolumeChangeCapture",
+     "kind": "property",
+     "signature": "onVolumeChangeCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWaiting",
+     "kind": "property",
+     "signature": "onWaiting?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWaitingCapture",
+     "kind": "property",
+     "signature": "onWaitingCapture?: Handler<HTMLDivElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWheel",
+     "kind": "property",
+     "signature": "onWheel?: Handler<HTMLDivElement, WheelEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWheelCapture",
+     "kind": "property",
+     "signature": "onWheelCapture?: Handler<HTMLDivElement, WheelEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "popover",
+     "kind": "property",
+     "signature": "popover?: boolean | \"auto\" | \"manual\" | \"hint\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "preload",
+     "kind": "property",
+     "signature": "preload?: \"eager\" | \"idle\" | \"visible\" | \"intent\" | \"interaction\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "r:slot",
+     "kind": "property",
+     "signature": "r:slot?: string",
+     "doc": "Usage side of a named slot: this element becomes the parent component's `name` slot content.",
+     "optional": true
+    },
+    {
+     "name": "ref",
+     "kind": "property",
+     "signature": "ref?: RefProp<HTMLDivElement>",
+     "doc": "A `ref()` object or a callback receiving the native element once it exists in the browser; never set / called on the server.",
+     "optional": true
+    },
+    {
+     "name": "role",
+     "kind": "property",
+     "signature": "role?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "shape",
+     "kind": "property",
+     "signature": "shape?: \"dots\" | \"square\" | \"rounded\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "shimmer",
+     "kind": "property",
+     "signature": "shimmer?: boolean",
+     "doc": "Decorative light sweep over the finished code.",
+     "optional": true
+    },
+    {
+     "name": "size",
+     "kind": "property",
+     "signature": "size?: number | \"md\" | \"lg\" | \"sm\"",
+     "doc": "`sm` / `md` / `lg` or a side in pixels.",
+     "optional": true,
+     "default": "\"md\""
+    },
+    {
+     "name": "slot",
+     "kind": "property",
+     "signature": "slot?: string",
+     "doc": "Native (shadow DOM) slot assignment; Rivet slot content uses `r:slot`.",
+     "optional": true
+    },
+    {
+     "name": "spellCheck",
+     "kind": "property",
+     "signature": "spellCheck?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "style",
+     "kind": "property",
+     "signature": "style?: StyleObject",
+     "doc": "A style object (`{ color: c, \"--x\": v }`); style strings are compile errors.",
+     "optional": true
+    },
+    {
+     "name": "tabIndex",
+     "kind": "property",
+     "signature": "tabIndex?: number",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "title",
+     "kind": "property",
+     "signature": "title?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "translate",
+     "kind": "property",
+     "signature": "translate?: \"yes\" | \"no\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "value",
+     "kind": "property",
+     "signature": "value?: string | (() => string)",
+     "doc": "Text to encode (URL, Wi-Fi string, …): numeric / alphanumeric / UTF-8 byte mode. A live prop / accessor updates the code.",
+     "optional": true
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/qr-code/qr-code.tsx",
+    "line": 35,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/qr-code/qr-code.tsx#L35"
+   },
+   "href": "/api/rivetjs/ui/qr-code/QRCodeRootProps/"
+  },
+  {
+   "key": "@rivetjs/ui/qr-code#QRCodeShape",
+   "entry": "@rivetjs/ui/qr-code",
+   "name": "QRCodeShape",
+   "kind": "type",
+   "summary": "Module shapes: `square` = standard, `dots` = round modules + rounded finder eyes, `rounded` = connected modules with rounded outer corners and filleted inner corners (one merged path).",
+   "remarks": "Module shapes: `square` = standard, `dots` = round modules + rounded finder eyes, `rounded` = connected modules with\n rounded outer corners and filleted inner corners (one merged path).",
+   "signatures": [
+    "type QRCodeShape = \"square\" | \"dots\" | \"rounded\""
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/qr-code/shapes.ts",
+    "line": 21,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/qr-code/shapes.ts#L21"
+   },
+   "href": "/api/rivetjs/ui/qr-code/QRCodeShape/"
+  },
+  {
+   "key": "@rivetjs/ui/qr-code#QRCodeVariants",
+   "entry": "@rivetjs/ui/qr-code",
+   "name": "QRCodeVariants",
+   "kind": "type",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "type QRCodeVariants = VariantProps<typeof qrCodeVariants>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/styles/src/components/qr-code/qr-code.styles.ts",
+    "line": 45,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/qr-code/qr-code.styles.ts#L45"
+   },
+   "href": "/api/rivetjs/ui/qr-code/QRCodeVariants-type/"
+  },
+  {
+   "key": "@rivetjs/ui/qr-code#qrCodeVariants",
+   "entry": "@rivetjs/ui/qr-code",
+   "name": "qrCodeVariants",
+   "kind": "variable",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "const qrCodeVariants: TVReturnType<{ color: { accent: { base: string }; brand: { base: string }; default: { base: string }; sunset: { base: string } }; shape: { dots: { base: string }; rounded: { base: string }; square: { base: string } }; shimmer: { true: { base: string } }; size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; body: string; eyes: string; icon: string; svg: string }, undefined, { color: { accent: { base: string }; brand: { base: string }; default: { base: string }; sunset: { base: string } }; shape: { dots: { base: string }; rounded: { base: string }; square: { base: string } }; shimmer: { true: { base: string } }; size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; body: string; eyes: string; icon: string; svg: string }, TVReturnTypeLike<{ color: { accent: { base: string }; brand: { base: string }; default: { base: string }; sunset: { base: string } }; shape: { dots: { base: string }; rounded: { base: string }; square: { base: string } }; shimmer: { true: { base: string } }; size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; body: string; eyes: string; icon: string; svg: string }>>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/styles/src/components/qr-code/qr-code.styles.ts",
+    "line": 9,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/qr-code/qr-code.styles.ts#L9"
+   },
+   "href": "/api/rivetjs/ui/qr-code/qrCodeVariants/"
   },
   {
    "key": "@rivetjs/ui/radar-chart#RadarChart",
