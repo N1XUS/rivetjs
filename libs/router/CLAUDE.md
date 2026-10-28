@@ -106,3 +106,5 @@ npm run zero-cost                                       # repo gate: runtime + s
 ## CLI output (CLI-UX)
 
 CLI output: sync/migrate accept `--quiet`, `--json`, `--verbose`; help includes commands/options/examples. Exit 0 success, 1 operational failure (missing config/plugin/MCP included), 2 invalid usage. Unknown arguments suggest corrections; exceptions show stacks only with --verbose or DEBUG=rivet. MCP stdio stays protocol-only. Build-only progress comes through compiler `/format`; no runtime/client imports. Tests: `tests/cli-output.test.ts`.
+
+- CX-PRESS2: co-load chunk recording accepts the explicit `meta.rivetCoload` opt-in for manifest-managed entries, while ordinary and dynamic entries remain fixed; the existing identical-page-set and cycle checks still govern every merge. Coverage: `tests/coload.test.ts`; implementation contract: `build/CLAUDE.md`.

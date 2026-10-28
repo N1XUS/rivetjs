@@ -196,7 +196,7 @@ When using the render prop pattern, these values are provided:
 
 ## Accessibility
 
-A native `<button>` with the cdk Button behaviour: Enter and Space press it, a disabled button is `disabled`, a pending one is announced and keeps focus. Focus rings follow `data-focus-visible` (keyboard only); a Button without behaviour is a plain `<button>` whose ring follows `:focus-visible`.
+A native `<button>` with the cdk Button behaviour: Enter and Space press it, a disabled button is `disabled`, a pending one is announced and keeps focus. Focus rings follow `data-focus-visible` (keyboard only); a Button without behaviour is a plain `<button>` whose ring follows `:focus-visible`. In production builds, a Button whose `onPress` never reads its event (constant `variant` / `size`, no `class`, no render-prop children, not inside a group, form, trigger or tooltip) is also a plain `<button>` with a click listener: Enter / Space follow native button rules, there is no `data-pressed` / `data-hovered` while held (`:active` / `:hover` style it), and the page loads no press code.
 
 ## Related Components
 

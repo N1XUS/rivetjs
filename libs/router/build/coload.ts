@@ -2,7 +2,7 @@
 // always load together. Pass 1 (env `RIVET_COLOAD` = a directory) records the client chunks (`chunks.json`: modules,
 // entry flag, imports); the orchestrator prerenders it and calls `planCoload`, which reads every page's scripts fetched
 // before input (`<script src>`, modulepreload, the resume state's `data-fo`) and writes `plan.json`: groups of shared
-// (non-entry) chunks with the same set of pages that fetch them before input AND the same set of pages that can reach
+// chunks (ordinary entries excluded; manifest-managed entries may opt in) with the same set of pages that fetch them before input AND the same set of pages that can reach
 // them at all (static + dynamic imports), so no page loads a byte more, before or after input. A merge never closes an
 // import cycle through the group, via an outside chunk or another group (a chunk cycle would change evaluation order). Pass 2 (same env,
 // `plan.json` present) captures each group's modules into one chunk (`codeSplitting.groups`, dependencies not
@@ -22,7 +22,7 @@ export const COLOAD_PLAN = "plan.json";
 /** One recorded client chunk. Module ids are root-relative (virtual ids as they are). */
 export interface ColoadChunk {
   modules: string[];
-  /** Entry or dynamic entry: loaded by URL, never grouped. */
+  /** Fixed entry or dynamic entry: loaded by URL, never grouped. Manifest-managed entries can opt in via `meta.rivetCoload`. */
   entry: boolean;
   /** Chunk files it imports (static and dynamic). */
   imports: string[];
@@ -86,7 +86,8 @@ export function coloadPlugin(): Plugin {
           if (output.type === "chunk")
             chunks[output.fileName] = {
               modules: output.moduleIds.map((id) => toId(root, id)),
-              entry: output.isEntry || output.isDynamicEntry,
+              entry:
+                output.isDynamicEntry || (output.isEntry && !(output.facadeModuleId && this.getModuleInfo(output.facadeModuleId)?.meta.rivetCoload === true)),
               imports: [...output.imports, ...output.dynamicImports],
               size: Buffer.byteLength(output.code),
             };

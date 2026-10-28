@@ -86,6 +86,8 @@ Docs site of `@rivetjs/ui` (`libs/ui`), third site on `@rivetjs/docs-kit` (same 
 
 ## Examples
 
+- CX-DRPTOUCH (2026-10-28): `date-range-picker-controlled` checks two calendar taps after Clear, the unchanged empty value and open popover after the first tap, then the committed dates and closed popover after the second. Day-suffix selectors keep this check independent of the current month. The shared CDK calendar quick-touch release previously committed a one-day range on the first tap.
+
 - CX-CAR (2026-10-28): `carousel-shadcn-spacing` uses `align="start"` so its first Next selects slide 1. A production trace of the prior centered configuration showed one replayed handler and one `scrollNext` (selected snap 0 → 1, registry `[[0,1],[2],[3,4]]`), no synthetic click: the quarantine diagnosis confused slide indexes with snap indexes. Manifest checks cover cold Next, later Next and Previous; the matching CDK story also counts selections.
 
 - Steps: CSS selectors only. Inside a ToggleButtonGroup a ToggleButton `id` is the selection key, not the DOM id (select by `aria-label` / `:nth-child`). Inside a cdk field, an `id` on `Label` breaks the input's `aria-labelledby` (leave the label id to the field).
@@ -110,3 +112,9 @@ Docs site of `@rivetjs/ui` (`libs/ui`), third site on `@rivetjs/docs-kit` (same 
 ## See also
 
 - [libs/ui/CLAUDE.md](../../libs/ui/CLAUDE.md), [apps/cdk-docs/CLAUDE.md](../cdk-docs/CLAUDE.md), [libs/docs-kit/CLAUDE.md](../../libs/docs-kit/CLAUDE.md).
+
+- CX-VLB: `list-box-virtualized` demonstrates UI ListBox `virtualized` with 10,000 options, a 280 × 288 px viewport and default 36 px rows; steps cover cold selection, ArrowDown, End and Home. Cold Chromium / WebKit with mouse / touch pass (CX-VFOCUS fixed the runtime's stale adopted For range snapshot; the first window jump keeps focus). The assertion remains enabled, without quarantine. `components/list-box.md` documents rowHeight / initialSize and retains `list-box-virtualization` for direct CDK layout composition.
+
+- CX-VTABLE (2026-10-28): Table data form and `Table.Content` accept `virtualized`, `rowHeight`, `headingHeight`, `initialSize`. A dynamic `table-virtualized.tsx` helper uses CDK CollectionVirtualizer + TableLayout; row / header default 48 px, viewport defaults to `initialSize` (800 × 600), Content style may override it. The SSR marker preload preserves cold first input; ordinary tables keep their markup and do not import the engine. Virtualization props remain outside the native family allowlist. `table-virtualized` demonstrates 10,000 data-form rows; `table-virtualization` retains explicit CDK composition, now with selection and cold keyboard steps (ArrowDown / End / Home).
+
+- PRESS-LITE: `content/components/button.md` explains that proven event-independent Button handlers use a native click listener in production, while richer press behavior retains the cdk path. CX-PRESS2 keeps that optimization without increasing the mixed frame gate's file counts or Brotli bytes; compiler / router co-load rules are documented in their CLAUDE files.

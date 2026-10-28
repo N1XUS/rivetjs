@@ -75,6 +75,15 @@ const OWN_PROPS = ["children", ...STYLE_PROPS, "isDisabled", "radius", "slot", "
  * -----------------------------------------------------------------------------------------------*/
 // @rivet-native ButtonRoot(children,class,variant,size,fullWidth,isIconOnly,isDisabled,type,id,radius)
 
+/* -------------------------------------------------------------------------------------------------
+ * Light twin (PRESS-LITE, `libs/compiler/native-lite.ts`, `./button-lite.tsx`). A call site with an `onPress` that
+ * never reads its event, constant style props, no `class`, nothing above that a ButtonRoot reads (slots, press
+ * responder, focusable, group, form, collection build) and nothing inside reading what it provides renders `ButtonLite`
+ * instead (the build rewrites the tag on both targets): a native `<button onClick>`, live `isDisabled` → `disabled`, no
+ * cdk press / hover / focus-visible / slots code on the page. Every other site keeps this component.
+ * -----------------------------------------------------------------------------------------------*/
+// @rivet-native-lite ButtonRoot(children,variant,size,fullWidth,isIconOnly,id,radius,type=button,isDisabled*,onPress!) ButtonLite(./button-lite.tsx)
+
 /** A context value that hands a button props or behaviour (a provider above). */
 const given = (value: unknown): boolean => value != null && (typeof value !== "object" || Object.keys(value).length > 0);
 

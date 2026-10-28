@@ -17,7 +17,7 @@ Internal, contributor-facing docs (user-facing docs live in `apps/docs/content` 
 | File | Topic |
 | --- | --- |
 | `performance.md` | Hot path idioms: measured micro-patterns (Intl memo, parse-once caches, delegated hover/focus, no per-instance FinalizationRegistry, frozen arrays, cssText for CSP, insertion; CODE-SMELL-A: bounded per-key / per-header caches, free constant array literals, lazy side tables, in-place compaction, pass the match; CODE-SMELL-B: keep the per-key getter scan, lazy result lists, `includes` for short lists; RESUME-DROP-MARKERS: per-node `removeChild` cost, no bulk short of a whole-parent wipe). |
-| `resumability.md` | Resume model (derived, the only one since M6-CUT): boundaries tail, loader, adopt runs, cold press, body shortcuts during boot, fuzz, first-click flush — **read before touching runtime/compiler resume code**. |
+| `resumability.md` | Resume model (derived, the only one since M6-CUT): boundaries tail, loader, adopt runs, targeted lazy-row client triggers, cold press, paired key releases and helper scroll capture, body shortcuts during boot, fuzz, first-click flush — **read before touching runtime/compiler resume code**. |
 | `routing.md` | `@rivetjs/router`: patterns, loaders/actions, Async boundary, adapters. |
 | `server-code.md` | `load(…)`/`actions(…)` next to the page; compiler strips them from browser builds. |
 | `forms.md` | `@rivetjs/forms` over Standard Schema v1. |
@@ -150,3 +150,5 @@ Root `CLAUDE.md` · `apps/docs/content/` (public guides) · `README.md`.
 - `benchmarks/2026-10-23-scheduler.md` — Scheduler layout/render/cold-input/warm-drag evidence and unchanged unmet byte/whole-week-render budgets; includes integration gates, known full-UI failures and generated size baseline scope (minified JS versus generated compiled CSS measured verbatim, each with Brotli); original performance targets remain unchanged.
 
 Scheduler final report records real LTR/RTL month/all-day resize preview, commit and Escape checks; final compiled CSS is 18,408 bytes / 2,601 Brotli. Original SSR/cold closure limits and broad UI reds remain explicit.
+
+- `guides/resumability.md` documents PRESS-LITE's native handler twin and CX-PRESS2's graph-preserving VCLS / co-load integration, including the escape hatch and measured mixed-frame deltas.

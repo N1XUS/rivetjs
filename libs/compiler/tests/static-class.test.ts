@@ -4,7 +4,17 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { boundaryFacts } from "../facts-fixpoint.ts";
 import { hasDerivedModel, moduleFacts, type ModuleFacts } from "../index.ts";
-import { classFamilies, classModule, classPlan, effectSource, lazyResolvers, provenProps, sideEffectImports, type ClassElement } from "../static-class.ts";
+import {
+  classFamilies,
+  classModule,
+  classPlan,
+  effectSource,
+  lazyResolvers,
+  provenProps,
+  sideEffectImports,
+  type ClassElement,
+  type ClassPlanInput,
+} from "../static-class.ts";
 
 test("static class: declarations", () => {
   assert.deepEqual(
@@ -121,7 +131,13 @@ const IMPORTS: Record<string, Record<string, string>> = {
   "/p/index.ts": { "./btn.tsx": "/p/btn.tsx", "./ctx.ts": "/p/ctx.ts" },
 };
 
-async function plan(program: Record<string, string>, scope: "build" | "page" = "page", extra: Record<string, Record<string, string>> = {}, ships = false) {
+async function plan(
+  program: Record<string, string>,
+  scope: "build" | "page" = "page",
+  extra: Record<string, Record<string, string>> = {},
+  ships = false,
+  rewrites: Pick<ClassPlanInput, "introduced" | "previouslyActive"> = {},
+) {
   const facts = new Map<string, ModuleFacts>();
   const graph = new Map<string, Map<string, string>>();
   for (const [file, source] of Object.entries(program)) {
@@ -132,6 +148,7 @@ async function plan(program: Record<string, string>, scope: "build" | "page" = "
   const verdicts = boundaryFacts(facts, graph, roots);
   const evaluated: unknown[] = [];
   const result = await classPlan({
+    ...rewrites,
     texts: new Map(Object.entries(program)),
     facts,
     target: (file, spec) => graph.get(file)?.get(spec) ?? null,
@@ -229,6 +246,11 @@ test.skipIf(!hasDerivedModel())("static class: build scope — active only when 
   const siblingEdges = { ...edges, "/p/chip.tsx": { "./chip.styles.ts": "/p/chip.styles.ts" } };
   assert.deepEqual(await keepOf(sibling, "build", siblingEdges), [RT], "runtime shared with a used sibling: kept reachable");
   assert.deepEqual(await keepOf(sibling, "page", siblingEdges), [[]], "page scope drops it");
+  assert.deepEqual(
+    await keepOf(sibling, "build", siblingEdges, false, { introduced: new Set(["/p/btn.tsx"]) }),
+    [[]],
+    "a new twin does not retain an unused runtime merely to preserve a layout it never had",
+  );
   // With the boundary hooks: a sibling reached only from modules without interactive boundaries (a static route) ships nothing.
   const page = { ...sibling, "/p/static.tsx": `import { Chip } from "./chip.tsx";\nexport default function S() { return <Chip />; }\n` };
   const pageEdges = { ...siblingEdges, "/p/static.tsx": { "./chip.tsx": "/p/chip.tsx" } };
@@ -252,4 +274,20 @@ test("static class: effect module — stylesheet imports, a kept runtime registe
     ),
     'import "/x/button.css";\nimport { register as __rvClassKeep } from "rivet-class-registry";\nimport { tv as __k0 } from "/x/tv.ts";\nimport * as __k1 from "/x/ns.ts";\n__rvClassKeep("", [__k0, __k1]);\n',
   );
+});
+
+test.skipIf(!hasDerivedModel())("static class: removing the last caller retains a prior proof, but every current flag still vetoes it", async () => {
+  const declarations = Object.fromEntries(
+    Object.entries(PROGRAM).filter(([file]) => ["/p/btn.tsx", "/p/btn.styles.ts", "/p/ctx.ts", "/p/index.ts"].includes(file)),
+  );
+  const rewrites = { previouslyActive: new Set(["/p/btn.tsx?Btn"]) };
+  assert.deepEqual((await plan(declarations, "build")).result.families, [], "no prior proof: unchanged policy");
+  const retained = await plan(declarations, "build", {}, false, rewrites);
+  assert.equal(retained.result.families.length, 1);
+  assert.equal(retained.result.families[0]!.proven, 0);
+  assert.equal(retained.result.texts.size, 0, "no invented call-site class");
+  for (const file of ["/p/dynamic.tsx", "/p/value.tsx", "/p/group.tsx", "/p/ns.tsx", "/p/lazy.tsx", "/p/helper.tsx", "/p/hidden.tsx"]) {
+    const current = await plan({ ...declarations, [file]: PROGRAM[file]! }, "build", {}, false, rewrites);
+    assert.deepEqual(current.result.families, [], file + ": a prior proof never overrides a current unsafe use");
+  }
 });

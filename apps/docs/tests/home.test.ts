@@ -151,7 +151,7 @@ test("home: product shot = ui Tabs, three force-mounted panels, one selected; co
 });
 
 test("home: the Server HTML pane equals the counter page's server markup (resume markers and ids removed)", () => {
-  const built = /<div class="counter"[^]*?<\/div>/.exec(counterPage())![0].replace(/ data-b="\d+"/g, "").replace(/ id="rv\d+"/g, "");
+  const built = /<div class="counter"[^]*?<\/div>/.exec(counterPage())![0].replace(/ data-b="\d+"/g, "").replace(/ id="rv\d+"/g, "").replace(/<!--[[\]]-->/g, "");
   const fence = /```html[^\n]*\n([^]*?)\n```/.exec(readFileSync(resolve(root, "content/_home-server.md"), "utf8"))![1]!;
   const flat = (text: string) => text.replace(/>\s+</g, "><").trim();
   assert.equal(flat(fence), flat(built));

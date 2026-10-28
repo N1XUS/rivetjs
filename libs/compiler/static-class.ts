@@ -31,7 +31,7 @@
 //   names the package (`@rivetjs/ui`): code the proof cannot read.
 // A flagged module evaluates the registration before its own body, so the resolver is registered before any instance
 // without `$cls` can run (instances need the component value, which only flagged code or proven sites hold). A family
-// whose own module is flagged, or with no proven site, keeps today's static import (no lazy read, no `$cls`).
+// whose own module is flagged, or with no current or previously proven site, keeps today's static import (no lazy read, no `$cls`).
 // Server builds and dev keep the static import; `$cls` is passed on both targets (same text: same ids and keys).
 //
 // Scope (`ClassPlanInput.scope`, default "build"; perf only, soundness above holds in both): in a multi-entry build a
@@ -336,7 +336,7 @@ export function applyClassProps(source: string, edits: readonly { at: number; cl
  * definition's side-effect imports (`rivet-class-fx:<key>`: its stylesheet) + a lazy registry read. Same line count.
  * Null when no such import is found.
  */
-export function lazyResolvers(code: string, resolvers: ReadonlyMap<string, string>): string | null {
+export function lazyResolvers(code: string, resolvers: ReadonlyMap<string, string>, registryId = CLASS_REGISTRY): string | null {
   if (!resolvers.size) return null;
   let program: Node;
   try {
@@ -377,7 +377,7 @@ export function lazyResolvers(code: string, resolvers: ReadonlyMap<string, strin
     at = end;
   }
   out += code.slice(at);
-  return registry ? `import { lazy as __rvClassLazy } from ${JSON.stringify(CLASS_REGISTRY)};` + out : out;
+  return registry ? `import { lazy as __rvClassLazy } from ${JSON.stringify(registryId)};` + out : out;
 }
 
 /** The registry module: resolvers by key; a lazy read calls the registered one (unregistered: a TypeError, loud). */
@@ -398,8 +398,8 @@ export function effectSource(bare: readonly string[], keep: readonly { file: str
 }
 
 /** A family's registration module: imports the real resolver and registers it. */
-export const registrationSource = (key: string, file: string, name: string): string =>
-  `import { register } from ${JSON.stringify(CLASS_REGISTRY)};\nimport { ${name} as resolver } from ${JSON.stringify(file)};\nregister(${JSON.stringify(key)}, resolver);\n`;
+export const registrationSource = (key: string, file: string, name: string, registryId = CLASS_REGISTRY): string =>
+  `import { register } from ${JSON.stringify(registryId)};\nimport { ${name} as resolver } from ${JSON.stringify(file)};\nregister(${JSON.stringify(key)}, resolver);\n`;
 
 /**
  * The side-effect imports of a definition module (its stylesheet): bare `import "…"` specifiers, and the same of the
@@ -443,7 +443,11 @@ export interface ClassPlanInput {
   /** `name` of `file` applied to `props` at build time; null: not evaluable / not a string. */
   evaluate(file: string, name: string, props: Record<string, Literal>): Promise<string | null>;
   /** Stable key of a definition export (root-relative). */
-  keyOf(file: string, name: string): string;
+  keyOf(file: string, name: string, declaring: string): string;
+  /** Modules introduced by a preceding rewrite have no original chunk layout to preserve. */
+  introduced?: ReadonlySet<string>;
+  /** Families proven on the graph before a preceding rewrite removed their callers; flags still veto activation. */
+  previouslyActive?: ReadonlySet<string>;
   /**
    * Scope of the proof (default `"build"`): a family is active only when no walked module needs its registration (a
    * runtime the definition shares with shipped code is kept reachable: `PlannedFamily.keep`), so no other module's
@@ -536,7 +540,7 @@ export async function classPlan(input: ClassPlanInput): Promise<ClassPlan> {
         family,
         id: file + "?" + family.component,
         file,
-        key: input.keyOf(def, imported.imported),
+        key: input.keyOf(def, imported.imported, file),
         definition: { file: def, name: imported.imported },
         contexts: contexts as string[],
       });
@@ -738,14 +742,14 @@ export async function classPlan(input: ClassPlanInput): Promise<ClassPlan> {
     return null;
   };
   fams.forEach((f, index) => {
-    if (!proven[index]) trace?.("inactive", f.family.component, "no proven site");
+    if (!proven[index] && !input.previouslyActive?.has(f.id)) trace?.("inactive", f.family.component, "no proven site");
     else if (flagged.get(f.file)?.has(index)) trace?.("inactive", f.family.component, "own module flagged");
     else if (input.scope !== "page" && needed(index)) trace?.("inactive", f.family.component, "registration needed (scope build)");
     else active.add(index);
   });
   for (const index of active) {
     const f = fams[index]!;
-    const shared = input.scope === "page" ? null : runtimeShared(index);
+    const shared = input.scope === "page" || input.introduced?.has(f.file) ? null : runtimeShared(index);
     const keep = shared ? runtimeImports(index) : [];
     if (shared) trace?.("keep runtime", f.family.component, "shared with", shared, keep);
     plan.families.push({

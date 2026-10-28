@@ -100,6 +100,10 @@ export interface CallSites {
   demoted: string[];
   /** MOTION-CSS: what may be provided above a call (any caller's call, resolved or not): token names, null = TOP. */
   aboveSite(site: CallSiteSite): string[] | null;
+  /** PRESS-LITE (`native-lite.ts`): the context tokens a component may read or provide (`touch`), null = TOP. */
+  touches(id: string): string[] | null;
+  /** PRESS-LITE: the context tokens a component may provide to what it encloses (`prov`), null = TOP. */
+  provides(id: string): string[] | null;
 }
 
 const TOP = 0;
@@ -646,9 +650,13 @@ export function callSites(input: CallSiteInput): CallSites {
     return set.has(TOP) ? null : [...set].map((t) => names[t]!);
   };
 
+  const tokenNames = (set: Set<number>): string[] | null => (set.has(TOP) ? null : [...set].map((t) => names[t]!));
+
   return {
     demoted,
     aboveSite,
+    touches: (id) => tokenNames(touchOf(id)),
+    provides: (id) => tokenNames(provOf(id)),
     whyAbove,
     why,
     site: (file) => siteNames.get(file) ?? [],

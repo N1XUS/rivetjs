@@ -165,3 +165,37 @@ test("coloadPlugin: inert without the env; with a plan, one group capturing the 
     else process.env[COLOAD_ENV] = before;
   }
 });
+
+test("coloadPlugin: manifest-managed entries may group; ordinary and dynamic entries remain fixed", async () => {
+  const before = process.env[COLOAD_ENV];
+  const work = join(dir, "manifest-entry");
+  try {
+    process.env[COLOAD_ENV] = work;
+    const plugin = coloadPlugin();
+    const output = (id: string | null, dynamic = false) => ({
+      type: "chunk",
+      fileName: String(id) + ".js",
+      facadeModuleId: id,
+      moduleIds: id ? [id] : [],
+      isEntry: true,
+      isDynamicEntry: dynamic,
+      imports: [],
+      dynamicImports: [],
+      code: "export default 1;",
+    });
+    (plugin.generateBundle as any).handler.call(
+      {
+        environment: { config: { consumer: "client" } },
+        getModuleInfo: (id: string) => ({ meta: { rivetCoload: id === "runtime" || id === "dynamic" } }),
+      },
+      {},
+      { runtime: output("runtime"), app: output("app"), dynamic: output("dynamic", true), unknown: output(null) },
+    );
+    const { chunks } = JSON.parse(await readFile(join(work, "chunks.json"), "utf8"));
+    assert.equal(chunks["runtime.js"].entry, false);
+    for (const name of ["app.js", "dynamic.js", "null.js"]) assert.equal(chunks[name].entry, true, name);
+  } finally {
+    if (before === undefined) delete process.env[COLOAD_ENV];
+    else process.env[COLOAD_ENV] = before;
+  }
+});

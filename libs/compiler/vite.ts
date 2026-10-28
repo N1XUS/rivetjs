@@ -8,6 +8,7 @@ import { switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
 import { placeCalls, placementMismatches } from "./facts-placement.ts";
 import { nativeFamilies, stylesState, type NativeFamily } from "./facts-native.ts";
+import { liteFamilies, litePlan, type LiteFamily } from "./native-lite.ts";
 import { explainText, placementTable, placeVerdicts, type PlacementOption, type PlacementTable } from "./place.ts";
 import { islandGetters } from "./island-props.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
@@ -1055,6 +1056,9 @@ function rivetPlugin(
   // the walk proved them on); the active families (declaring module → its lazy resolver bindings), the browser build's
   // registration imports by module, the walked modules and the families' packages (the transform's net for the rest).
   const classText = new Map<string, { from: string; to: string }>();
+  // PRESS-LITE (builds, `native-lite.ts`): module → its text with the proven call sites renamed to the light twin
+  // (`from`: the prepared text after the Motion pass the walk proved them on).
+  const liteText = new Map<string, { from: string; to: string }>();
   const classState = {
     families: [] as PlannedFamily[],
     lazy: new Map<string, Map<string, string>>(),
@@ -1063,6 +1067,7 @@ function rivetPlugin(
     packages: [] as { name: string; dir: string; keys: string[] }[],
     definitions: new Map<string, { file: string; name: string }>(),
     keep: new Map<string, { file: string; name: string }[]>(),
+    registries: new Map<string, string>(),
   };
   // Build-time class evaluations (both environments' walks ask the same calls): recipe → class (null: refused).
   const classValues = new Map<string, Promise<string | null>>();
@@ -1085,8 +1090,10 @@ function rivetPlugin(
     const text = (serve ? (t: string) => t : _mergeOnlyImports)(icons ? staticIcons(source, filename, lucideFor) : source);
     const motion = motionText.get(filename);
     const moved = motion && motion.from === text ? motion.to : text;
+    const lite = liteText.get(filename);
+    const lighter = lite && lite.from === moved ? lite.to : moved;
     const cls = classText.get(filename);
-    return cls && cls.from === moved ? cls.to : moved;
+    return cls && cls.from === lighter ? cls.to : lighter;
   };
   // Read live: the router adds route modules while the dev server runs.
   const isRoute = (filename: string) => !!serverExports?.modules.some((path) => resolve(root, path) === resolve(filename));
@@ -1498,11 +1505,14 @@ function rivetPlugin(
       graph = new Map<string, Map<string, string>>(),
       roots = new Set<string>(),
       families = new Map<string, NativeFamily[]>(),
+      lites = new Map<string, LiteFamily[]>(),
+      routeFiles = new Set<string>(),
       stateStyled = new Set<string>();
     const pending = [...resumable];
     // MOTION-CSS: the walked modules' prepared texts (the Motion pass rewrites from them).
     const texts = new Map<string, string>();
     motionText.clear();
+    liteText.clear();
     classText.clear();
     placementMismatches.length = 0;
     // `resume.domData`: resume modules that may hold a `<For>` (their source names it), checked after the verdicts.
@@ -1513,43 +1523,50 @@ function rivetPlugin(
     const plain = new Set<string>();
     const passThrough = (file: string) =>
       /\.[cm]?[jt]s$/.test(file) && !/[/\\]node_modules[/\\]/.test(file) && (!relative(root, file).startsWith("..") || sourcePackage(file) !== null);
-    for (let filename; (filename = pending.shift());) {
-      if (facts.has(filename)) continue;
-      const source = prepared(filename, await sourceOf(ctx, filename));
-      sourceBytes.set(filename, source.length);
-      texts.set(filename, source);
-      const route = isRoute(filename);
-      const f = plain.has(filename)
-        ? moduleFacts(source, filename, { refs: true })
-        : placeCalls(
-            source,
-            filename,
-            moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true }),
-          );
-      facts.set(filename, f);
-      if (!plain.has(filename) && resume?.domData !== false && /\bFor\b/.test(source)) forSources.set(filename, source);
-      // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
-      const declared = plain.has(filename) ? [] : nativeFamilies(source);
-      if (declared.length) families.set(filename, declared);
-      if (!plain.has(filename) && stylesState(source)) stateStyled.add(filename);
-      typeExports.set(filename, _typeExports(source));
-      if (route || isDerivedRoot(filename)) roots.add(filename);
-      const map = new Map<string, string>();
-      for (const spec of new Set([...f.statics, ...f.dynamics])) {
-        const hit = await resolveFact(ctx, spec, filename);
-        const file = hit && !hit.external ? hit.id.split("?")[0]! : null;
-        if (!file) continue;
-        if (isResumable(file)) {
-          map.set(spec, file);
-          if (!resumable.has(file)) (resumable.add(file), pending.push(file));
-        } else if (!file.startsWith("\0") && passThrough(file) && existsSync(file)) {
-          // (Dynamic ones too, ZERO CALLSITE: `import("./announcer.ts")` in a hook reaches that module's declarations.)
-          map.set(spec, file);
-          if (!plain.has(file)) (plain.add(file), pending.push(file));
+    const walk = async (): Promise<void> => {
+      for (let filename; (filename = pending.shift());) {
+        if (facts.has(filename)) continue;
+        const source = prepared(filename, await sourceOf(ctx, filename));
+        sourceBytes.set(filename, source.length);
+        texts.set(filename, source);
+        const route = isRoute(filename);
+        const f = plain.has(filename)
+          ? moduleFacts(source, filename, { refs: true })
+          : placeCalls(
+              source,
+              filename,
+              moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true }),
+            );
+        facts.set(filename, f);
+        if (!plain.has(filename) && resume?.domData !== false && /\bFor\b/.test(source)) forSources.set(filename, source);
+        // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
+        const declared = plain.has(filename) ? [] : nativeFamilies(source);
+        if (declared.length) families.set(filename, declared);
+        // PRESS-LITE: the module's `@rivet-native-lite` families (`native-lite.ts`).
+        const light = plain.has(filename) ? [] : liteFamilies(source);
+        if (light.length) lites.set(filename, light);
+        if (!plain.has(filename) && stylesState(source)) stateStyled.add(filename);
+        typeExports.set(filename, _typeExports(source));
+        if (route || isDerivedRoot(filename)) roots.add(filename);
+        if (route) routeFiles.add(filename);
+        const map = new Map<string, string>();
+        for (const spec of new Set([...f.statics, ...f.dynamics])) {
+          const hit = await resolveFact(ctx, spec, filename);
+          const file = hit && !hit.external ? hit.id.split("?")[0]! : null;
+          if (!file) continue;
+          if (isResumable(file)) {
+            map.set(spec, file);
+            if (!resumable.has(file)) (resumable.add(file), pending.push(file));
+          } else if (!file.startsWith("\0") && passThrough(file) && existsSync(file)) {
+            // (Dynamic ones too, ZERO CALLSITE: `import("./announcer.ts")` in a hook reaches that module's declarations.)
+            map.set(spec, file);
+            if (!plain.has(file)) (plain.add(file), pending.push(file));
+          }
         }
+        graph.set(filename, map);
       }
-      graph.set(filename, map);
-    }
+    };
+    await walk();
     // ZERO CALLSITE: the hosts above every shell page (`resume.hosts` + `api.resumeHost`: docs-kit `FrameShell` / `FrameRoot`).
     const shells = shellSet();
     const hostList = [...(resume?.hosts ?? []), ...hostEntries].map((entry) => {
@@ -1628,11 +1645,15 @@ function rivetPlugin(
     // VCLS (`static-class.ts`): `$cls` at the call sites whose class props are constants; which modules register.
     const classTrace = process.env.RIVET_CLASS_TRACE ? (...a: unknown[]) => console.error("[class]", ...a) : null;
     // `RIVET_STATIC_CLASS=0`: off (A/B measurement, parity tests); `=page`: proof per page instead of per build.
-    const plannedClasses =
+    const introduced = new Set<string>();
+    let previouslyActive = new Set<string>();
+    const planClasses = () =>
       process.env.RIVET_STATIC_CLASS === "0"
         ? { families: [], texts: new Map<string, string>(), flags: new Map<string, Set<string>>() }
-        : await classPlan({
+        : classPlan({
             texts,
+            introduced,
+            previouslyActive,
             facts,
             target: (file, spec) => graph.get(file)?.get(spec) ?? null,
             resolveTag: verdicts.resolveTag,
@@ -1647,15 +1668,68 @@ function rivetPlugin(
             scope: process.env.RIVET_STATIC_CLASS === "page" ? "page" : "build",
             boundaries: verdicts.boundaries,
             edges: (file) => graph.get(file)?.values() ?? [],
-            keyOf: (file, name) =>
+            keyOf: (file, name, declaring) =>
               createHash("sha256")
-                .update(posix(relative(root, file)) + "#" + name)
+                .update(posix(relative(root, file)) + "#" + name + (introduced.has(declaring) ? "#" + posix(relative(root, declaring)) : ""))
                 .digest("hex")
                 .slice(0, 10),
             ...(classTrace
               ? { trace: (...a: unknown[]) => classTrace(...a.map((v) => (typeof v === "string" && v.startsWith(root) ? relative(root, v) : v))) }
               : {}),
           });
+    // PRESS-LITE (`native-lite.ts`): proven handler call sites render the declared light twin; the rewritten modules
+    // (and the twins) are walked again and the program closed again. `RIVET_NATIVE_LITE=0`: off (A/B, parity).
+    const liteTrace = process.env.RIVET_LITE_TRACE ? (...a: unknown[]) => console.error("[lite]", ...a) : null;
+    if (lites.size && process.env.RIVET_NATIVE_LITE !== "0" && verdicts.callSites) {
+      const twins = new Map<string, string | null>();
+      for (const [file, list] of lites)
+        for (const family of list) {
+          const hit = await resolveFact(ctx, family.spec, file);
+          twins.set(file + "\0" + family.spec, hit && !hit.external ? hit.id.split("?")[0]! : null);
+        }
+      const proof = verdicts.callSites;
+      const lite = litePlan({
+        texts,
+        facts,
+        families: lites,
+        stateStyled,
+        twin: (file, spec) => twins.get(file + "\0" + spec) ?? null,
+        callers: verdicts.callers,
+        aboveCall: verdicts.aboveCall,
+        touches: (id) => proof.touches(id),
+        provides: (id) => proof.provides(id),
+        resolveTag: verdicts.resolveTag,
+        // Page scope (`RIVET_NATIVE_LITE=all`: every proven site, A/B).
+        ...(process.env.RIVET_NATIVE_LITE === "all"
+          ? {}
+          : {
+              pages: [...routeFiles],
+              edges: (file: string) => [...(facts.get(file)?.statics ?? [])].flatMap((spec) => graph.get(file)?.get(spec) ?? []),
+              dynamicEdges: (file: string) => [...(facts.get(file)?.dynamics ?? [])].flatMap((spec) => graph.get(file)?.get(spec) ?? []),
+              packageOf: (file: string) => sourcePackage(file)?.dir ?? null,
+              isStatic: (id: string) => {
+                const at = id.lastIndexOf("?");
+                return verdicts.static(id.slice(0, at)).includes(id.slice(at + 1));
+              },
+            }),
+        ...(liteTrace ? { trace: (...a: unknown[]) => liteTrace(...a.map((v) => (typeof v === "string" && v.startsWith(root) ? relative(root, v) : v))) } : {}),
+      });
+      if (lite.texts.size) {
+        // Removing the last proven caller must not deactivate a class proof the original graph already established.
+        const priorClasses = await planClasses();
+        previouslyActive = new Set(priorClasses.families.map((family) => family.file + "?" + family.component));
+        for (const twin of lite.twins) if (!texts.has(twin)) introduced.add(twin);
+        for (const [file, to] of lite.texts) {
+          liteText.set(file, { from: texts.get(file)!, to });
+          facts.delete(file);
+          pending.push(file);
+        }
+        for (const twin of lite.twins) if (!facts.has(twin) && !resumable.has(twin)) (resumable.add(twin), pending.push(twin));
+        await walk();
+        verdicts = close();
+      }
+    }
+    const plannedClasses = await planClasses();
     for (const [file, to] of plannedClasses.texts) {
       classText.set(file, { from: texts.get(file)!, to });
       texts.set(file, to);
@@ -1666,6 +1740,7 @@ function rivetPlugin(
     classState.lazy = new Map();
     classState.definitions = new Map();
     classState.keep = new Map();
+    classState.registries = new Map();
     const packages = new Map<string, { name: string; dir: string; keys: string[] }>();
     for (const family of plannedClasses.families) {
       let lazy = classState.lazy.get(family.file);
@@ -1673,6 +1748,17 @@ function rivetPlugin(
       lazy.set(family.resolver, family.key);
       classState.definitions.set(family.key, family.definition);
       classState.keep.set(family.key, family.keep);
+      // New twins must not split the registry chunk shared by the original components either.
+      if (introduced.has(family.file))
+        classState.registries.set(
+          family.key,
+          CLASS_REGISTRY +
+            ":" +
+            createHash("sha256")
+              .update(posix(relative(root, family.file)))
+              .digest("hex")
+              .slice(0, 10),
+        );
       const pkg = sourcePackage(family.file) ?? { name: "", dir: root };
       let entry = packages.get(pkg.dir);
       if (!entry) packages.set(pkg.dir, (entry = { ...pkg, keys: [] }));
@@ -2102,7 +2188,7 @@ function rivetPlugin(
     if (!lazy && !keys?.size) return out;
     return Promise.resolve(out).then((value) => {
       let code = value ? value.code : original;
-      if (lazy) code = lazyResolvers(code, lazy) ?? code;
+      if (lazy) code = lazyResolvers(code, lazy, classState.registries.get(lazy.values().next().value!)) ?? code;
       if (keys?.size) code = [...keys].map((key) => `import ${JSON.stringify(CLASS_REG + key)};`).join("") + code;
       return { code, map: value ? value.map : null };
     });
@@ -2358,7 +2444,7 @@ function rivetPlugin(
     resolveId(id, importer) {
       if (boundaryEntries.has(id)) return id;
       // VCLS: the resolver registry (pure), a family's registration and its definition's side-effect imports.
-      if (id === CLASS_REGISTRY) return "\0" + id;
+      if (id === CLASS_REGISTRY || id.startsWith(CLASS_REGISTRY + ":")) return "\0" + id;
       if (id.startsWith(CLASS_REG) || id.startsWith(CLASS_FX)) return { id: "\0" + id, moduleSideEffects: true };
       if (id.startsWith(MOTION_CSS)) return { id: "\0" + id, moduleSideEffects: true };
       if (id.startsWith(LOCALE_FULL)) return id;
@@ -2400,7 +2486,8 @@ function rivetPlugin(
       // Dev client: app modules get the state-restoring `signal` (hot replacement keeps state).
       if (id === "@rivetjs/reactivity" && serve && importer && this.environment?.config?.consumer !== "server" && appModule(importer.split("?")[0]!))
         return this.resolve("@rivetjs/runtime/hot-reactivity", importer, { skipSelf: true });
-      if (id === DERIVED_ENTRY) return id;
+      // The manifest follows this entry to its code-bearing chunk (`_foldFacade`), so a co-load group may move it.
+      if (id === DERIVED_ENTRY) return { id, meta: { rivetCoload: liteText.size > 0 } };
       // Builds: `@rivetjs/ui`'s resolver (and project `cn` / `cx` imports, `_mergeOnlyImports`) get tailwind-variants' `cn`
       // without the upstream `tv` runtime (`_pureAnnotate`).
       if ((id === "tailwind-variants" && !serve && importer && _UI_TV.test(importer.split("?")[0]!)) || id === "tailwind-variants" + _MERGE_ONLY)
@@ -2436,13 +2523,13 @@ function rivetPlugin(
       return null;
     },
     async load(id) {
-      if (id === "\0" + CLASS_REGISTRY) return { code: REGISTRY_SOURCE, moduleSideEffects: false };
+      if (id === "\0" + CLASS_REGISTRY || id.startsWith("\0" + CLASS_REGISTRY + ":")) return { code: REGISTRY_SOURCE, moduleSideEffects: false };
       if (id.startsWith("\0" + CLASS_REG) || id.startsWith("\0" + CLASS_FX)) {
         const reg = id.startsWith("\0" + CLASS_REG);
         const key = id.slice((reg ? CLASS_REG : CLASS_FX).length + 1);
         const definition = classState.definitions.get(key);
         if (!definition) this.error(`static class ${key}: no definition in this build`);
-        if (reg) return { code: registrationSource(key, definition.file, definition.name), moduleSideEffects: true };
+        if (reg) return { code: registrationSource(key, definition.file, definition.name, classState.registries.get(key)), moduleSideEffects: true };
         const imports = await classSideEffects(this, definition.file);
         return { code: effectSource(imports, classState.keep.get(key) ?? []), moduleSideEffects: true };
       }
