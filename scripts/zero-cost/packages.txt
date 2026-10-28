@@ -367,8 +367,8 @@
 @rivetjs/ui/prompt-input [server] ffd92cd6f22f 16793 css de69bb8b6cc3 1177058
 @rivetjs/ui/table-tanstack 3be7eaa54140 2918
 @rivetjs/ui/theme fe6bbbbb0f68 23442
-@rivetjs/motion [dom] 287ad5aa2fe1 46227
-@rivetjs/motion [server] 23afc7eec026 38461
+@rivetjs/motion [dom] ec524509790b 46351
+@rivetjs/motion [server] e52eeecf8825 38591
 @rivetjs/motion/presence [dom] 55d641294d3b 1481
 @rivetjs/motion/presence [server] a65bb5cf6a91 1354
 @rivetjs/motion/layout [dom] dfb0bdda77e0 3445

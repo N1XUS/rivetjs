@@ -6,6 +6,7 @@ import { cleanup, render } from "@rivetjs/runtime/testing";
 import { Motion } from "@rivetjs/motion";
 import { animateLayout, LayoutGroup, layoutDriver } from "@rivetjs/motion/layout";
 import { Masonry } from "@rivetjs/cdk/masonry";
+import { layoutHook } from "../layout-hook.ts";
 
 afterEach(() => {
   cleanup();
@@ -14,6 +15,18 @@ afterEach(() => {
 const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 const byId = (id: string) => document.getElementById(id)!;
 const left = (id: string) => byId(id).getBoundingClientRect().left;
+
+test("layoutId: a disposed probe does not play its queued layout animation", () => {
+  const queued: VoidFunction[] = [];
+  vi.spyOn(globalThis, "queueMicrotask").mockImplementation((run) => void queued.push(run));
+  vi.spyOn(layoutHook, "from").mockReturnValue(new DOMRect(0, 0, 100, 2));
+  const play = vi.spyOn(layoutHook, "play");
+  // Derived adoption disposes the detached probe before its mount microtask runs, clearing its ref.
+  render(() => <Motion.div layoutId="probe-underline" />);
+  cleanup();
+  for (const run of queued) run();
+  expect(play).not.toHaveBeenCalled();
+});
 
 test("animateLayout: a `layout` child animates from its old box (midway between old and new)", async () => {
   const justify = signal("flex-start");

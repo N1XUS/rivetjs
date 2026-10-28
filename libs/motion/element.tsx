@@ -392,6 +392,12 @@ export function motionElement(props: Record<string, unknown>, tag: string, entra
         else queueMicrotask(() => untrack(() => go(untrack(node!))));
       }
     }
+    // The ref is bound before `live`, and the entrance attributes are read afterwards. Keep an adopted element's
+    // current entrance form (or the absence left by JS takeover): installing a client rule restarts it during a press.
+    if (bound.mve && el?.isConnected) {
+      bound.mve = el.getAttribute("data-mve") ?? undefined;
+      bound.mvv = el.getAttribute("data-mvv") ?? undefined;
+    }
     return undefined;
   };
   // Returned in the Bound literal (that makes it a resume symbol, recordable as a spread handler); groups absent at
@@ -456,16 +462,32 @@ export function motionElement(props: Record<string, unknown>, tag: string, entra
   const mount = <E,>(element: E): E => {
     if (typeof user === "function" && !isRef(user) && !SERVER) user(untrack(node!)!);
     if (shared)
-      queueMicrotask(() =>
-        layoutHook.play?.(
-          untrack(node!)!,
-          shared!,
-          String(layout || true),
-          untrack(() => transitionOf(undefined)),
-          untrack(reducedOf),
-        ),
-      );
+      queueMicrotask(() => {
+        // An adoption probe is disposed before this task runs, clearing its ref.
+        const el = untrack(node!);
+        if (el)
+          layoutHook.play?.(
+            el,
+            shared!,
+            String(layout || true),
+            untrack(() => transitionOf(undefined)),
+            untrack(reducedOf),
+          );
+      });
     return element;
   };
-  return { rest: attributes, node, live, style, mve: attrs["data-mve"], mvv: attrs["data-mvv"], bind, on, enter: h ? on : undefined, content, mount };
+  const bound: Bound = {
+    rest: attributes,
+    node,
+    live,
+    style,
+    mve: attrs["data-mve"],
+    mvv: attrs["data-mvv"],
+    bind,
+    on,
+    enter: h ? on : undefined,
+    content,
+    mount,
+  };
+  return bound;
 }
