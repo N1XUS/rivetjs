@@ -19,7 +19,7 @@
 // boundary, ships no chunk and is never adopted. Tags resolve through re-exports (`export … from`, `export *`) and
 // compound components (`Object.assign(Root, { Part })`, `<Meter.Output>`) of the walked modules, `.ts` re-export modules
 // included. A component with no resolved call site (rendered by code the walk does not see) counts its inputs as live.
-import type { ComponentBoundaryFacts as ComponentFacts, ModuleFacts } from "./index.ts";
+import type { ComponentBoundaryFacts as ComponentFacts, ModuleFacts, ModuleRefs } from "./index.ts";
 import { callSites, type CallSites, type ContextOptions } from "./facts-callsite.ts";
 import { nativeSites, type NativeOptions } from "./facts-native.ts";
 
@@ -277,6 +277,102 @@ export function boundaryFacts(
         if (!ns) continue;
         for (const local of facts.get(ns)?.boundaries.keys() ?? []) escaped.add(key(ns, local));
       }
+  // TABS-ROOT (2026-10-28): what a shell page renders through helper code the component facts do not see. A component's
+  // `renders` are the JSX tags of its own body; a body that hands its work to a module function (cdk parts:
+  // `TabList(p) { return untrack(() => tabList(p)) }`, whose `<Collection>` is the boundary) reports none, so a frame
+  // page that only renders such parts was no boundary at all, and the boundary below it shipped as a dependent record
+  // with no parent: its standalone adopt ran with `{}` props (tabs-css: the tab list emptied on the first key). The
+  // binding graph (`refs`: per top-level declaration, the bindings it references as values and as JSX tags) closes each
+  // shell page over components, helpers and imported bindings; a boundary reached that way makes the page a boundary
+  // (`renders`). Only shells: everywhere else a boundary already sits above (route pages: the router's `Root`; frames
+  // with props: docs-kit `FrameRoot`), and the runtime parents a record to the innermost boundary on its render stack, so
+  // the components in between need no record of their own.
+  function shellRenders(isShell: (id: string) => boolean): Map<string, string[]> {
+    const out = new Map<string, string[]>();
+    const shellIds = [...info.keys()].filter(isShell);
+    if (!shellIds.length) return out;
+    const declsOf = new Map<string, Map<string, ModuleRefs["decls"][number]>>();
+    const declMap = (file: string) => {
+      let map = declsOf.get(file);
+      if (!map) {
+        declsOf.set(file, (map = new Map()));
+        for (const decl of facts.get(file)?.refs?.decls ?? []) for (const name of decl.names) map.set(name, decl);
+      }
+      return map;
+    };
+    // A binding of `file` → the declaration (module, name) it names, through imports and re-exports.
+    const declOf = (file: string, name: string, depth: number): string | null => {
+      const own = facts.get(file);
+      if (!own || depth > 16) return null;
+      if (declMap(file).has(name)) return file + "\0" + name;
+      const imported = own.imports.get(name);
+      const to = imported && target(file, imported.from);
+      return imported && to ? exportedDecl(to, imported.imported, depth + 1) : null;
+    };
+    const exportedDecl = (file: string, name: string, depth: number): string | null => {
+      const own = facts.get(file);
+      if (!own || depth > 16) return null;
+      const direct = own.exports?.get(name);
+      if (direct !== undefined) return declOf(file, direct, depth + 1);
+      const re = own.reexports?.get(name);
+      if (re) {
+        const to = target(file, re.from);
+        return to && re.imported !== "*" ? exportedDecl(to, re.imported, depth + 1) : null;
+      }
+      if (name === "default" && own.defaultName) return declOf(file, own.defaultName, depth + 1);
+      for (const from of own.stars ?? []) {
+        const to = target(file, from);
+        const hit = to ? exportedDecl(to, name, depth + 1) : null;
+        if (hit) return hit;
+      }
+      return null;
+    };
+    // Per declaration: the components its JSX tags name and the declarations it references (memoised edges).
+    const edges = new Map<string, { components: string[]; next: string[] }>();
+    const edgesOf = (at: string) => {
+      let e = edges.get(at);
+      if (e) return e;
+      const cut = at.indexOf("\0");
+      const file = at.slice(0, cut),
+        decl = declMap(file).get(at.slice(cut + 1))!;
+      e = { components: [], next: [] };
+      for (const tag of decl.jsx) {
+        const c = resolveTag(file, tag);
+        if (c) e.components.push(c);
+        else {
+          const d = declOf(file, tag, 0);
+          if (d) e.next.push(d);
+        }
+      }
+      for (const name of decl.values) {
+        const d = declOf(file, name, 0);
+        if (d && d !== at) e.next.push(d);
+      }
+      edges.set(at, e);
+      return e;
+    };
+    for (const id of shellIds) {
+      const at = id.lastIndexOf("?");
+      const start = declOf(id.slice(0, at), id.slice(at + 1), 0);
+      if (!start) continue;
+      const reached = new Set<string>();
+      const seen = new Set<string>([start]);
+      const stack = [start];
+      while (stack.length) {
+        const e = edgesOf(stack.pop()!);
+        for (const c of e.components) {
+          if (c === id || reached.has(c)) continue;
+          reached.add(c);
+          const cut = c.lastIndexOf("?");
+          const d = declOf(c.slice(0, cut), c.slice(cut + 1), 0);
+          if (d && !seen.has(d)) (seen.add(d), stack.push(d));
+        }
+        for (const d of e.next) if (!seen.has(d)) (seen.add(d), stack.push(d));
+      }
+      if (reached.size) out.set(id, [...reached]);
+    }
+    return out;
+  }
   // ORPHAN-B (2026-10-26): live data alone (live props / a live context into its read sites) makes no boundary when every
   // instance renders inside a boundary (`enclosed`: every resolved call site's caller is a boundary or enclosed itself, and
   // no unseen code renders it). The change source is above it; the browser runs its code inline in the unit of the
@@ -289,6 +385,13 @@ export function boundaryFacts(
   // the adopt run's probe clamps the two-way signal), so such a component is never enclosed.
   // Not enclosed (a frame page, a route rendered by the router's own code, a component passed as a value):
   // it stays a boundary as before (`kept`), else such a hidden source would have no boundary to report to.
+  const shell = (id: string): boolean => {
+    const at = id.lastIndexOf("?");
+    const file = id.slice(0, at),
+      name = id.slice(at + 1);
+    return shells.has(file + "#" + name) || (shells.has(file) && (facts.get(file)?.defaultName ?? "default") === name);
+  };
+  const deep = shellRenders(shell);
   const kept = new Set<string>();
   for (let grew = true; grew;) {
     grew = false;
@@ -298,7 +401,7 @@ export function boundaryFacts(
         const inputs = liveIn.get(id) || inputsLive(id);
         const context = liveContext.get(id) || (c.context && contextLive(id));
         const isLive = c.source || c.listens || inputs || context;
-        const below = (renders.get(id) ?? []).some((t) => t !== null && interactive.get(t));
+        const below = (renders.get(id) ?? []).some((t) => t !== null && interactive.get(t)) || !!deep.get(id)?.some((t) => interactive.get(t));
         const isInteractive = c.source || c.listens || ((inputs || context) && c.interactive && kept.has(id)) || below;
         if (
           inputs !== (liveIn.get(id) ?? false) ||
@@ -333,12 +436,6 @@ export function boundaryFacts(
   // ZERO A1 adopted (least fixpoint): a boundary, a component used as a value, one without a resolved call site (rendered
   // by code the walk does not see — a route root under the router's `Root`, a frame page under `FrameRoot` — unless it is
   // a `shells` entry), or one an adopted component renders. A compound used as a value counts with every part.
-  const shell = (id: string): boolean => {
-    const at = id.lastIndexOf("?");
-    const file = id.slice(0, at),
-      name = id.slice(at + 1);
-    return shells.has(file + "#" + name) || (shells.has(file) && (facts.get(file)?.defaultName ?? "default") === name);
-  };
   const adopted = new Set<string>();
   for (const id of info.keys()) if (interactive.get(id) || escaped.has(id) || (!sites.has(id) && !shell(id))) adopted.add(id);
   for (let changed = true; changed;) {

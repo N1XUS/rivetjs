@@ -54,6 +54,7 @@ RAC Tabs family 1:1 (`Tabs` / `TabList` / `Tab` / `TabPanels` / `TabPanel`, rend
 - [../CLAUDE.md](../CLAUDE.md), [../state/CLAUDE.md](../state/CLAUDE.md), [../_adapters/CLAUDE.md](../_adapters/CLAUDE.md), [../collections/CLAUDE.md](../collections/CLAUDE.md)
 - `docs/design/specs/2026-10-05-tabs-parity.md`
 
+- TABS-ROOT (2026-10-28): an uncontrolled Tabs on a stateless frame page (cdk-docs `tabs-css` / `-rtl` / `-tailwind` / `-indicator-css`) resumes: `TabList` hands its `<Collection>` to the `tabList` helper, which the component facts do not see, so the page was no boundary and the `Collection` record had no parent (adopted with `{}`: tab list emptied, focus → body). The compiler's shell-page closure (`libs/compiler/facts-fixpoint.ts` `shellRenders`) now makes such a page the root record; nothing in this module changed.
 - ID-RESUME (2026-10-27): Generated tab / panel roots (state/tabs.ts) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.
 
 - TOGGLE-TABS-COLD (2026-10-27): the first cold selection on a resumed page (arrow key / Enter / click) switches the force-mounted `items` panels too — the selection's first write wakes the deferred `TabPanels` records, whose run creates the panels' lazy list; the runtime now hands that list the same write (`libs/runtime/dom-derived.ts` `before`, `dom-derived-abi.ts` `_guard`). Pinned by `tests-components/tabs.test.ts` automatic + manual activation.

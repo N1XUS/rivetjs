@@ -12,7 +12,7 @@ function module(
   components: Record<string, Component>,
   imports: Record<string, [string, string]> = {},
   defaultName: string | null = null,
-  extra: Partial<Pick<ModuleFacts, "exports" | "reexports" | "stars" | "compounds" | "componentValues">> = {},
+  extra: Partial<Pick<ModuleFacts, "exports" | "reexports" | "stars" | "compounds" | "componentValues" | "refs">> = {},
 ): ModuleFacts {
   const boundaries = new Map<string, ComponentBoundaryFacts>();
   for (const [name, c] of Object.entries(components))
@@ -45,6 +45,7 @@ function module(
     stars: extra.stars ?? [],
     compounds: extra.compounds ?? new Map(),
     ...(extra.componentValues ? { componentValues: extra.componentValues } : {}),
+    ...(extra.refs ? { refs: extra.refs } : {}),
     boundaries,
   };
 }
@@ -432,6 +433,66 @@ test("ZERO A1: adopted = boundary, rendered by an adopted component, used as a v
   // `file#Name` shell entries name a component other than the default export.
   out = boundaryFacts(plain, new Map(), new Set(), new Set(["src/page.tsx#Page"]));
   assert.deepEqual(out.static("src/page.tsx").sort(), ["Leaf", "Page", "Static"]);
+});
+
+/** `refs` of a module from its top-level declarations: name → [values, jsx]. */
+function refs(decls: Record<string, [string[], string[]]>): NonNullable<ModuleFacts["refs"]> {
+  return {
+    tokens: new Set(),
+    decls: Object.entries(decls).map(([name, [values, jsx]]) => ({ names: [name], values, jsx, flags: 0, dynamic: [], reads: [] })),
+    groups: [],
+    namespaces: new Map(),
+  };
+}
+
+test("TABS-ROOT: a shell page whose boundary sits behind a part's helper function is a boundary", () => {
+  // cdk Tabs shape: `TabList(p) { return untrack(() => tabList(p)) }` — the component facts see no `<Collection>`; the
+  // helper's declaration does. Without the page as a boundary the Collection record shipped with no parent and adopted
+  // standalone with `{}` props (apps/cdk-docs tabs-css / tabs-rtl / tabs-tailwind / tabs-indicator-css, select-disabled).
+  const facts = (withRefs: boolean) =>
+    new Map<string, ModuleFacts>([
+      [
+        "src/page.tsx",
+        module({ Page: { renders: ["TabList"], calls: [{ tag: "TabList", data: false }], params: "none" } }, { TabList: ["./tabs", "TabList"] }, "Page", {
+          ...(withRefs ? { refs: refs({ Page: [[], ["TabList"]] }) } : {}),
+        }),
+      ],
+      [
+        "src/tabs.tsx",
+        module({ TabList: {} }, { Collection: ["./collection", "Collection"], untrack: ["@rivetjs/reactivity", "untrack"] }, null, {
+          exports: new Map([["TabList", "TabList"]]),
+          ...(withRefs ? { refs: refs({ TabList: [["untrack", "tabList"], []], tabList: [["helper"], ["Collection", "div"]], helper: [[], []] }) } : {}),
+        }),
+      ],
+      [
+        "src/collection.tsx",
+        module({ Collection: { interactive: true } }, {}, null, {
+          exports: new Map([["Collection", "Collection"]]),
+          ...(withRefs ? { refs: refs({ Collection: [[], []] }) } : {}),
+        }),
+      ],
+    ]);
+  const resolved = new Map([
+    ["src/page.tsx", new Map([["./tabs", "src/tabs.tsx"]])],
+    ["src/tabs.tsx", new Map([["./collection", "src/collection.tsx"]])],
+  ]);
+  const shell = new Set(["src/page.tsx"]);
+  let out = boundaryFacts(facts(true), resolved, new Set(), shell);
+  const v = (file: string, name: string) => out.verdicts.get(file)!.get(name)!;
+  assert.equal(v("src/page.tsx", "Page").interactive, true);
+  assert.equal(v("src/page.tsx", "Page").because, "renders");
+  assert.equal(v("src/page.tsx", "Page").independent, true, "a props-less shell adopts standalone");
+  assert.equal(v("src/page.tsx", "Page").conditional, true, "kept only by a kept dependent boundary below");
+  assert.equal(v("src/page.tsx", "Page").adopted, true);
+  // The part in between stays no boundary: the runtime parents Collection to the innermost boundary on its stack (Page).
+  assert.deepEqual(out.boundaries("src/tabs.tsx"), []);
+  assert.deepEqual(out.boundaries("src/collection.tsx"), ["Collection"]);
+  // Without the binding graph (no `refs`): the page renders no boundary as far as the facts see — the old verdict.
+  out = boundaryFacts(facts(false), resolved, new Set(), shell);
+  assert.equal(v("src/page.tsx", "Page").interactive, false);
+  // Not a shell (a route root under the router's `Root`, which is the record above): unchanged.
+  out = boundaryFacts(facts(true), resolved, new Set(["src/page.tsx"]));
+  assert.equal(v("src/page.tsx", "Page").interactive, false);
 });
 
 test("ZERO A1: a compound used as a value counts every part adopted", () => {
