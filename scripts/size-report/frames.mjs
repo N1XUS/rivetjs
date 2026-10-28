@@ -1,7 +1,9 @@
 // Frame payload gate (ZERO Z2, 2026-10-25): real docs / ui-docs frame pages (one frames-only production build per
 // site = `check-examples` without the Chromium checks), measured by `frame-metrics.mjs`, against the committed
-// ceilings in `frames.json` (ratchet: any growth fails, reductions pass and print the `--update` hint). The ZERO
-// acceptance targets (`TARGETS`) are printed as the remaining gap; they do not fail the gate.
+// ceilings in `frames.json` (ratchet: any growth fails, reductions pass and print the `--update` hint). A ZERO
+// acceptance target (`TARGETS`) that the committed `frames.json` meets is a gate (2026-10-26 rule: targets become gates
+// once met): `--check` fails when a frame goes over it, `--update` refuses to write a baseline over it (an intended loss
+// edits `TARGETS`). Unmet targets are printed as the remaining gap and never fail.
 //
 //   node scripts/size-report/frames.mjs                 build + measure + print
 //   node scripts/size-report/frames.mjs --check         also compare with frames.json (exit 1 on growth)
@@ -15,7 +17,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildFrames } from "../../libs/docs-kit/tools/check-examples.ts";
-import { assertFrameCeilings, measureFrame, overTargets } from "./frame-metrics.mjs";
+import { assertFrameCeilings, measureFrame, targetGaps } from "./frame-metrics.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const baseline = resolve(root, "scripts/size-report/frames.json");
@@ -85,16 +87,20 @@ async function main() {
     }
   }
   if (args.json) await writeFile(String(args.json), JSON.stringify(measured, null, 1) + "\n");
-  const gap = overTargets(measured, TARGETS);
-  console.log(gap.length ? `ZERO targets not met (informational):\n  ${gap.join("\n  ")}` : "ZERO targets: all met");
+  const committed = existsSync(baseline) ? JSON.parse(await readFile(baseline, "utf8")) : {};
+  const { met, gating, open } = targetGaps(measured, TARGETS, committed);
+  const gates = Object.entries(met).flatMap(([id, fields]) => Object.entries(fields).map(([field, limit]) => `${id} ${field} <= ${limit}`));
+  console.log(`ZERO targets gating (met in frames.json): ${gates.length ? gates.join(", ") : "none"}`);
+  console.log(open.length ? `ZERO targets not met (informational):\n  ${open.join("\n  ")}` : "ZERO targets: all met");
+  if (gating.length && (args.check || args.update))
+    throw new Error(`frame payload: met ZERO targets regressed (gates; an intended loss edits TARGETS):\n  ${gating.join("\n  ")}`);
   if (args.update) {
     // A partial run (--sites) keeps the other site's ceilings.
-    const old = existsSync(baseline) ? JSON.parse(await readFile(baseline, "utf8")) : {};
-    const next = { ...Object.fromEntries(Object.entries(old).filter(([, v]) => !sites.includes(v.site))), ...measured };
+    const next = { ...Object.fromEntries(Object.entries(committed).filter(([, v]) => !sites.includes(v.site))), ...measured };
     await writeFile(baseline, JSON.stringify(Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b))), null, 1) + "\n");
     console.log("frame payload: frames.json updated");
   } else if (args.check) {
-    const ceilings = Object.fromEntries(Object.entries(JSON.parse(await readFile(baseline, "utf8"))).filter(([, v]) => sites.includes(v.site)));
+    const ceilings = Object.fromEntries(Object.entries(committed).filter(([, v]) => sites.includes(v.site)));
     const better = assertFrameCeilings(measured, ceilings, { tolerance: Number(args.tolerance ?? 0) });
     console.log(`frame payload: within ceilings${better.length ? ` (smaller than baseline, run --update:\n  ${better.join("\n  ")})` : ""}`);
   }

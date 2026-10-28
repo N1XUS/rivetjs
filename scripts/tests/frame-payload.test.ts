@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { brotliCompressSync, constants } from "node:zlib";
-import { assertFrameCeilings, measureFrame, overTargets, tailRecords } from "../size-report/frame-metrics.mjs";
+import { assertFrameCeilings, measureFrame, metTargets, overTargets, tailRecords, targetGaps } from "../size-report/frame-metrics.mjs";
 
 const bytes = (text: string) => Buffer.from(text);
 const br = (b: Buffer) => brotliCompressSync(b, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }).length;
@@ -101,6 +101,22 @@ test("frame ceilings reject html / state / inline / holes growth and missing fra
   assert.throws(() => assertFrameCeilings({ card: ceiling }, {}), /card.*missing/i);
 });
 
-test("ZERO targets are reported, not enforced", () => {
+test("overTargets lists every frame over its target", () => {
   assert.deepEqual(overTargets({ a: { jsGz: 10 }, b: { jsGz: 0 } }, { a: { jsGz: 0 }, b: { jsGz: 0 }, c: { jsGz: 0 } }), ["a: jsGz 10 > target 0"]);
+});
+
+test("ZERO targets met in the baseline gate; unmet ones stay informational", () => {
+  const targets = { met: { jsGz: 0 }, near: { jsGz: 5120 }, open: { jsGz: 0 }, unmeasured: { jsGz: 0 } };
+  const baseline = { met: { jsGz: 0 }, near: { jsGz: 2949 }, open: { jsGz: 32718 } };
+  assert.deepEqual(metTargets(baseline, targets), { met: { jsGz: 0 }, near: { jsGz: 5120 } });
+  // Within the met targets (growth under the target passes), the open one over its target: informational.
+  assert.deepEqual(targetGaps({ met: { jsGz: 0 }, near: { jsGz: 5000 }, open: { jsGz: 30000 } }, targets, baseline), {
+    met: { met: { jsGz: 0 }, near: { jsGz: 5120 } },
+    gating: [],
+    open: ["open: jsGz 30000 > target 0"],
+  });
+  // A met target regressing gates.
+  const { gating, open } = targetGaps({ met: { jsGz: 1 }, near: { jsGz: 5121 }, open: { jsGz: 32718 } }, targets, baseline);
+  assert.deepEqual(gating, ["met: jsGz 1 > target 0", "near: jsGz 5121 > target 5120"]);
+  assert.deepEqual(open, ["open: jsGz 32718 > target 0"]);
 });

@@ -113,6 +113,26 @@ export function assertFrameCeilings(measured, ceilings, { tolerance = 0 } = {}) 
 }
 
 /** Distance to a stated target (ZERO acceptance): `{ id: { jsGz: limit } }` → rows over target (informational). */
+/**
+ * Targets that gate (2026-10-26 rule: a ZERO target becomes a gate once met): the fields of `targets` the committed
+ * baseline (`frames.json`) already meets. A frame or field without a baseline value stays informational.
+ */
+export function metTargets(baseline, targets) {
+  const met = {};
+  for (const [id, target] of Object.entries(targets))
+    for (const [field, limit] of Object.entries(target))
+      if (baseline[id] && Number.isSafeInteger(baseline[id][field]) && baseline[id][field] <= limit) (met[id] ??= {})[field] = limit;
+  return met;
+}
+
+/** Split `overTargets(measured, targets)` into regressions of met targets (`gating`) and the remaining gap (`open`). */
+export function targetGaps(measured, targets, baseline) {
+  const met = metTargets(baseline, targets);
+  const gating = overTargets(measured, met);
+  const open = overTargets(measured, targets).filter((row) => !gating.includes(row));
+  return { met, gating, open };
+}
+
 export function overTargets(measured, targets) {
   const rows = [];
   for (const [id, target] of Object.entries(targets))
