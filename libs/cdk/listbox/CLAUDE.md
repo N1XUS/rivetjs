@@ -63,3 +63,5 @@ RAC ListBox re-port (collections pilot): `ListBox`, `ListBoxItem`, `ListBoxSecti
 - `render` (RAC DOMRenderProps) on ListBox, ListBoxItem (div/a), ListBoxSection; early-return attrs path, custom events as `on<Type>` keys; tests `tests/render-leftovers.browser.test.tsx`.
 
 - ID-RESUME (2026-10-27): Generated standalone list and slot roots (including labels / descriptions in lazy rows) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.
+
+- Load-more resume (CX-ROWTRIG 2026-10-28): `ListBoxLoadingIndicator` is a top-level exported internal component passed to `createLeafComponent`, so its visible client effect records a boundary on the sentinel row. A visible trigger wakes that lazy row through the runtime's targeted `woken` path; ordinary rows stay lazy. The observer starts when the sentinel boundary intersects, then retains the shared `scrollOffset` margin/re-arm behavior.

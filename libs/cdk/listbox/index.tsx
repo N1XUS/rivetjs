@@ -1013,36 +1013,36 @@ export interface ListBoxLoadMoreItemProps extends Omit<LoadMoreSentinelProps, "c
 }
 
 /** A sentinel that loads more items when scrolled into view, with an optional loading row (RAC `ListBoxLoadMoreItem`). */
-export const ListBoxLoadMoreItem = /*#__PURE__*/ createLeafComponent(
-  LoaderNode,
-  function ListBoxLoadingIndicator(props: ListBoxLoadMoreItemProps, ref: unknown, _item: Node<unknown>) {
-    const state = useContext(ListStateContext);
-    const { isLoading, onLoadMore, scrollOffset } = props;
-    const sentinel = createRef<HTMLDivElement>();
-    // RAC passes `state.collection` (re-created on every ListBox render: a loading change re-arms the observer); Rivet: the
-    // sentinel re-arms when the collection or the loading state changes (a live `isLoading` does not rebuild the collection).
-    const built = state?.collection;
-    const collection = () => (read(isLoading), built ? resolveCollection(built as CollectionInput) : null);
-    loadMoreSentinel({ collection, onLoadMore, scrollOffset }, sentinel);
-    const dom = globalDOMProps(props, ["style"]);
-    const cls = props.class ?? "rv-ListBoxLoadingIndicator";
-    const style = props.style;
-    const children = props.children;
-    return (
-      <>
-        <div style={{ position: "relative", width: 0, height: 0 }} inert>
-          <div data-testid="loadMoreSentinel" ref={sentinel as never} style={{ position: "absolute", height: "1px", width: "1px" }} />
-        </div>
-        {children != null ? (
-          <Show when={() => !!read(isLoading)}>
-            {() => (
-              <div {...dom} ref={ref as never} class={cls} style={style} role="option" tabIndex={-1}>
-                {children as never}
-              </div>
-            )}
-          </Show>
-        ) : null}
-      </>
-    );
-  },
-) as (props: ListBoxLoadMoreItemProps) => unknown;
+export const ListBoxLoadMoreItem = /*#__PURE__*/ createLeafComponent(LoaderNode, ListBoxLoadingIndicator) as (props: ListBoxLoadMoreItemProps) => unknown;
+
+/** @internal A separate boundary lets the visible trigger wake only the sentinel's lazy row. */
+export function ListBoxLoadingIndicator(props: ListBoxLoadMoreItemProps, ref: unknown, _item: Node<unknown>) {
+  const state = useContext(ListStateContext);
+  const { isLoading, onLoadMore, scrollOffset } = props;
+  const sentinel = createRef<HTMLDivElement>();
+  // RAC passes `state.collection` (re-created on every ListBox render: a loading change re-arms the observer); Rivet: the
+  // sentinel re-arms when the collection or the loading state changes (a live `isLoading` does not rebuild the collection).
+  const built = state?.collection;
+  const collection = () => (read(isLoading), built ? resolveCollection(built as CollectionInput) : null);
+  loadMoreSentinel({ collection, onLoadMore, scrollOffset }, sentinel);
+  const dom = globalDOMProps(props, ["style"]);
+  const cls = props.class ?? "rv-ListBoxLoadingIndicator";
+  const style = props.style;
+  const children = props.children;
+  return (
+    <>
+      <div style={{ position: "relative", width: 0, height: 0 }} inert>
+        <div data-testid="loadMoreSentinel" ref={sentinel as never} style={{ position: "absolute", height: "1px", width: "1px" }} />
+      </div>
+      {children != null ? (
+        <Show when={() => !!read(isLoading)}>
+          {() => (
+            <div {...dom} ref={ref as never} class={cls} style={style} role="option" tabIndex={-1}>
+              {children as never}
+            </div>
+          )}
+        </Show>
+      ) : null}
+    </>
+  );
+}

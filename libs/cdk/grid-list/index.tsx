@@ -1012,7 +1012,10 @@ export interface GridListLoadMoreItemProps extends Omit<GlobalDOMAttributes<HTML
 }
 
 /** A row shown while more items load + the sentinel that calls `onLoadMore` (RAC `GridListLoadMoreItem`). */
-export const GridListLoadMoreItem = /*#__PURE__*/ createLeafComponent(LoaderNode, function GridListLoadingIndicator(props: GridListLoadMoreItemProps) {
+export const GridListLoadMoreItem = /*#__PURE__*/ createLeafComponent(LoaderNode, GridListLoadingIndicator);
+
+/** @internal A separate boundary lets the visible trigger wake only the sentinel's lazy row. */
+export function GridListLoadingIndicator(props: GridListLoadMoreItemProps) {
   const ctx = useContext(GridListInternalContext);
   const { isLoading, onLoadMore, scrollOffset, children } = props;
   const sentinel = createRef<HTMLDivElement>();
@@ -1038,7 +1041,7 @@ export const GridListLoadMoreItem = /*#__PURE__*/ createLeafComponent(LoaderNode
       </Show>
     </>
   );
-});
+}
 
 // --- GridListSection / GridListHeader ------------------------------------------------------------
 

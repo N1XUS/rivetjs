@@ -2177,60 +2177,60 @@ export interface TableLoadMoreItemProps extends Omit<LoadMoreSentinelProps, "col
 }
 
 /** A sentinel row: calls `onLoadMore` when scrolled near, and renders its children while `isLoading`. */
-export const TableLoadMoreItem = /* @__PURE__ */ createLeafComponent(
-  LoaderNode,
-  function TableLoadingIndicator(props: TableLoadMoreItemProps, ref: unknown, item: Node<unknown>) {
-    const internal = useContext(TableInternalContext)!;
-    const isLoading = props.isLoading;
-    const level = item.level + 1;
-    const numColumns = () => internal.collection().columns.length;
-    const sentinel = elementRef<HTMLDivElement>();
-    const { onLoadMore, scrollOffset, style: userStyle } = props;
-    loadMoreSentinel({ onLoadMore, collection: internal.collection, scrollOffset }, sentinel);
-    const children = props.children;
-    const className = props.class || "rv-TableLoadingIndicator";
-    const style = { "--table-row-level": level, ...userStyle };
-    const dom = globalDOMProps(props, ["style", "id"]);
-    if (internal.isVirtualized) {
-      // Virtualized (RAC useElementType): `div`s inside the loader view.
-      return (
-        <>
-          <div style={{ height: "0" }} inert>
-            <div style={{ padding: "0", border: "0" }}>
-              <div data-testid="loadMoreSentinel" ref={sentinel} style={{ position: "relative", height: "1px", width: "1px" }} />
-            </div>
-          </div>
-          <Show when={() => !!read(isLoading) && children != null}>
-            {() => (
-              <div {...dom} ref={ref as never} role="row" class={className} style={style} aria-level={level} data-level={level}>
-                <div role="rowheader" aria-colspan={numColumns()}>
-                  {children as never}
-                </div>
-              </div>
-            )}
-          </Show>
-        </>
-      );
-    }
+export const TableLoadMoreItem = /*#__PURE__*/ createLeafComponent(LoaderNode, TableLoadingIndicator);
+
+/** @internal A separate boundary lets the visible trigger wake only the sentinel's lazy row. */
+export function TableLoadingIndicator(props: TableLoadMoreItemProps, ref: unknown, item: Node<unknown>) {
+  const internal = useContext(TableInternalContext)!;
+  const isLoading = props.isLoading;
+  const level = item.level + 1;
+  const numColumns = () => internal.collection().columns.length;
+  const sentinel = elementRef<HTMLDivElement>();
+  const { onLoadMore, scrollOffset, style: userStyle } = props;
+  loadMoreSentinel({ onLoadMore, collection: internal.collection, scrollOffset }, sentinel);
+  const children = props.children;
+  const className = props.class || "rv-TableLoadingIndicator";
+  const style = { "--table-row-level": level, ...userStyle };
+  const dom = globalDOMProps(props, ["style", "id"]);
+  if (internal.isVirtualized) {
+    // Virtualized (RAC useElementType): `div`s inside the loader view.
     return (
       <>
-        {/* Always render the sentinel. For now onus is on the user for styling when using flex + gap. */}
-        <tr style={{ height: "0" }} inert>
-          <td style={{ padding: "0", border: "0" }}>
+        <div style={{ height: "0" }} inert>
+          <div style={{ padding: "0", border: "0" }}>
             <div data-testid="loadMoreSentinel" ref={sentinel} style={{ position: "relative", height: "1px", width: "1px" }} />
-          </td>
-        </tr>
+          </div>
+        </div>
         <Show when={() => !!read(isLoading) && children != null}>
           {() => (
-            // For now don't include aria-rowindex on loader since they aren't keyboard focusable.
-            <tr {...dom} ref={ref as never} role="row" class={className} style={style} aria-level={level} data-level={level}>
-              <td role="rowheader" colSpan={numColumns()}>
+            <div {...dom} ref={ref as never} role="row" class={className} style={style} aria-level={level} data-level={level}>
+              <div role="rowheader" aria-colspan={numColumns()}>
                 {children as never}
-              </td>
-            </tr>
+              </div>
+            </div>
           )}
         </Show>
       </>
     );
-  },
-);
+  }
+  return (
+    <>
+      {/* Always render the sentinel. For now onus is on the user for styling when using flex + gap. */}
+      <tr style={{ height: "0" }} inert>
+        <td style={{ padding: "0", border: "0" }}>
+          <div data-testid="loadMoreSentinel" ref={sentinel} style={{ position: "relative", height: "1px", width: "1px" }} />
+        </td>
+      </tr>
+      <Show when={() => !!read(isLoading) && children != null}>
+        {() => (
+          // For now don't include aria-rowindex on loader since they aren't keyboard focusable.
+          <tr {...dom} ref={ref as never} role="row" class={className} style={style} aria-level={level} data-level={level}>
+            <td role="rowheader" colSpan={numColumns()}>
+              {children as never}
+            </td>
+          </tr>
+        )}
+      </Show>
+    </>
+  );
+}

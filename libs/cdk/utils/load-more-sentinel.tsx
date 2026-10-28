@@ -52,8 +52,8 @@ export function loadMoreSentinel(props: LoadMoreSentinelProps, ref: () => HTMLEl
     }
   };
 
-  // Resumed page: the observer starts when the collection scrolls into view (CEFF 2026-10-28, was idle). Limit: a
-  // sentinel within `scrollOffset` of the viewport but its collection not yet in it loads once the collection shows.
+  // Resumed page: the owning boundary must be visible before this observer starts. Lazy collection loaders give
+  // the sentinel its own boundary; the first load waits for it to intersect, then scrollOffset controls later loads.
   clientEffect(
     () => {
       // Dependencies: collection, ref, scrollOffset, direction.
