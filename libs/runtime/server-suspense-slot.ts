@@ -5,14 +5,17 @@ import type { ServerValue } from "./server.ts";
 
 /** @internal Nearest Suspense (context token): Asyncs below it never stream on their own (server-resume) and report pending loads (`p`). */
 export const _SUSPENSE: Context<{ p: boolean } | null> = { defaultValue: null };
-/** A streaming render's claim on one Suspense (see server-resume's `_onSuspense`). */
+/** A streaming render's claim on one Suspense (the derived renderer's `_onSuspense`, `server-derived.ts`). */
 export interface SuspenseStream {
-  /** Stream `value` (constructed since the claim) as one segment after `fallback`; null: render in place. */
-  defer(value: unknown, fallback: () => ServerValue, owner: Owner | null | undefined, own: Disposer): ServerValue;
+  /**
+   * Stream `value` (constructed since the claim) after `fallback`: the fallback goes out in the shell, the content follows
+   * once it rendered. `inside` is this Suspense's pending flag (the context value its content sees as `_SUSPENSE`).
+   */
+  defer(value: unknown, fallback: () => ServerValue, owner: Owner | null | undefined, own: Disposer, inside: object): ServerValue;
   release(dispose: Disposer): void;
 }
 let suspenseHook: (() => SuspenseStream | null) | null = null;
-/** Resume ABI: a streaming render may stream a pending Suspense as one segment (fallback first). */
+/** Resume ABI: a streaming derived render may stream a pending Suspense (fallback first, its content after the shell). */
 export function _onSuspense(fn: () => SuspenseStream | null): void {
   suspenseHook = fn;
 }

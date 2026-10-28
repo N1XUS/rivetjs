@@ -49,7 +49,7 @@ Rivet is experimental. The current npm release is `0.1.0-alpha.1` (the first, `0
 
 ## In progress
 
-The derived resume model is the only model. Keyed list adoption, reading eligible list data from the DOM, React/Preact bridges and forms progressive enhancement are implemented. `Suspense` is awaited in place on the server; it does not stream as a group. See [resuming](../learn/resuming.md), [lists](../learn/resuming.md#lists), [data from the page](../learn/resuming.md#data-from-the-page) and [streaming](../guides/performance/streaming.md).
+The derived resume model is the only model. Keyed list adoption, reading eligible list data from the DOM, React/Preact bridges, forms progressive enhancement and streamed `Suspense` groups are implemented. See [resuming](../learn/resuming.md), [lists](../learn/resuming.md#lists), [data from the page](../learn/resuming.md#data-from-the-page) and [streaming](../guides/performance/streaming.md).
 
 [Cached page shells](../guides/routing/headers-and-caching.md#partial-prerendering-shell-cache) are also available: a `shell: true` route rule stores the page up to its deferred parts, which render per request.
 

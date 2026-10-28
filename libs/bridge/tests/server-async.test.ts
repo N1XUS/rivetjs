@@ -1,6 +1,6 @@
-// T3 async island renders: an Async boundary — awaited in place in ordered renders and under a streaming Suspense (the
-// derived model awaits Suspense content on the server; the island's lean record follows), request abort through
-// `ctx.signal`.
+// T3 async island renders: an Async boundary — awaited in place in ordered renders, streamed with the Suspense around it
+// in a streaming render (DERIVED-GAPS 02: fallback in the shell, the content before the tail; the island's lean record
+// follows), request abort through `ctx.signal`.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { renderResumable, resumableToString } from "@rivetjs/runtime/server-resume";
@@ -49,12 +49,19 @@ test("async render, ordered render: awaited in place; the slot content's boundar
   );
 });
 
-test("async render inside a streaming Suspense: awaited in place (no fallback first), the island's lean record after it", async () => {
+test("async render inside a streaming Suspense: fallback first, the island in the Suspense content after the shell, its lean record after that", async () => {
   const chunks: string[] = [];
   await renderResumable(() => mod.Streamed!(), { write: (chunk) => void chunks.push(chunk) }, { manifest, stream: {} });
   const html = chunks.join("");
-  assert.doesNotMatch(html, /<i>wait<\/i>/);
-  assert.match(html, /<!--\[--><rivet-island data-ri="(i\d+)" style="display:contents"><p>streamed<\/p><\/rivet-island><!--\]--><\/main>/);
+  // DERIVED-GAPS 02: the Suspense streams (fallback in the shell, its content before the tail).
+  assert.match(html, /<!--\[--><!--s1--><i>wait<\/i><!--\/s--><!--\]--><\/main>/);
+  const content = html.indexOf('<template data-s="1"><rivet-island data-ri="');
+  assert.ok(content > 0);
+  assert.match(
+    html,
+    /<template data-s="1"><rivet-island data-ri="(i\d+)" style="display:contents"><p>streamed<\/p><\/rivet-island><\/template><script>\$rS\(1\)<\/script>/,
+  );
+  assert.ok(html.indexOf('<script type="rivet/islands">') > content, "the lean record after the content");
   const records = islandsOf(html)!;
   assert.equal(records.length, 1);
   assert.equal(records[0]![3], "visible");

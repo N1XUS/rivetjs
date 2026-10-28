@@ -60,7 +60,7 @@ The heading goes out right away with "Loading reviews…". The list follows when
 
 An `Async` without `fallback` is awaited as before: the server waits for it before sending that part.
 
-On the derived model, [`Suspense`](../components/suspense.md) content is awaited in place; its fallback does not become a streamed group. Use separate `Async` boundaries with fallbacks outside `Suspense` for parts that should stream independently.
+A [`Suspense`](../components/suspense.md) with a `fallback` streams as one group: its fallback goes out with the page, its content when every part inside it (each `Async`, each `resource` it reads) is ready. Parts inside a `Suspense` do not stream on their own. Unlike a streamed `Async`, the page's resume state waits for streamed `Suspense` content: the page responds to input once it has arrived. Use separate `Async` boundaries with fallbacks outside `Suspense` for parts that should stream independently and leave the rest of the page interactive.
 
 ## What the browser receives
 

@@ -116,7 +116,7 @@ What the response looks like for the layout above and a page with a normal loade
 2. The server sends the document: head, header with `…`, the page, the resume state. The deferred loader has not finished.
 3. The loader finishes. The server sends the header part (the user link and its resume state) at the end of the same response, and the browser puts it in place of `…`.
 
-Several deferred parts arrive in the order their loaders finish. A page with a deferred loader streams this way even when [streaming](/guides/performance/streaming.md) is off for the app. A `resource` read inside `Suspense` waits in place instead: the page streams up to it, then waits.
+Several deferred parts arrive in the order their loaders finish. A page with a deferred loader streams this way even when [streaming](/guides/performance/streaming.md) is off for the app. A `resource` read inside a `Suspense` with a fallback streams with that `Suspense`: its fallback goes out first, its content when the resource is ready.
 
 - **Client navigation:** the data request waits for deferred loaders and answers with their values. The page then gets the value itself in `data`, and `<Async load={() => data}>` renders it at once.
 - **Errors:** the status line is already sent, so a deferred loader that throws `notFound()` or an error does not change the response. Its boundary shows its `error` view, or the page reports a render error. A `redirect()` moves the browser: the document ends with a script that goes to the target.

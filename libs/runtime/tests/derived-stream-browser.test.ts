@@ -463,3 +463,239 @@ compiled("a discarded Suspense build leaves no records: the boundaries of the re
     assert.deepEqual(errors, []);
   });
 });
+
+// DERIVED-GAPS 02: a streamed `Suspense` on the derived model. Pending once its content is constructed, it writes its
+// fallback in the shell (`<!--sN-->…<!--/s-->`, rendered plainly), its content after the shell (`<template data-s>` +
+// `$rS`), then the tail — settled resource state included — so the browser adopts the page an in-place render writes.
+const STREAMED_SUSPENSE = `import { signal } from "@rivetjs/reactivity";
+import { Async, Suspense, resource } from "@rivetjs/runtime/dom";
+export function Inner(props: { label: string }) {
+  const n = signal(0);
+  return <button id={"inner-" + props.label} onClick={() => n.set(n() + 1)}>{props.label + n()}</button>;
+}
+export function App(props: { gate: PromiseLike<void> }) {
+  const count = signal(0);
+  const user = resource(() => ((globalThis as { fetches?: number }).fetches = ((globalThis as { fetches?: number }).fetches ?? 0) + 1, Promise.resolve(props.gate).then(() => "u")));
+  return (
+    <section>
+      <button id="count" onClick={() => count.set(count() + 1)}>{count()}</button>
+      <Suspense fallback={() => <p id="wait">wait</p>}>
+        {() => (
+          <div id="content">
+            <b id="user">{user()}</b>
+            <Inner label="a" />
+            <Async load={() => ((globalThis as { loads?: number }).loads = ((globalThis as { loads?: number }).loads ?? 0) + 1, Promise.resolve(props.gate).then(() => ({ x: "ax" })))} fallback={() => <i id="inner-wait">…</i>}>
+              {(v) => <i id="a">{v.x}</i>}
+            </Async>
+          </div>
+        )}
+      </Suspense>
+      <Suspense fallback={() => <p id="wait2">wait</p>}>
+        {() => <p id="ready">ready</p>}
+      </Suspense>
+    </section>
+  );
+}
+`;
+const SUSPENSE_RESUME = { module: "src/page.tsx", boundaries: ["App", "Inner"], independent: ["App"] };
+const suspenseManifest = { hash: "t", runtime: "/rt.js", symbols: { "src/page.tsx#App": "/page.js", "src/page.tsx#Inner": "/page.js" } };
+async function buildSuspense(): Promise<{ App: (props: { gate: PromiseLike<void> }) => ServerValue; dom: string }> {
+  const server = compile(STREAMED_SUSPENSE, { target: "server", filename: "page.tsx", resume: SUSPENSE_RESUME } as never);
+  const dom = compile(STREAMED_SUSPENSE, { target: "dom", filename: "page.tsx", resume: SUSPENSE_RESUME } as never);
+  assert.deepEqual(server.diagnostics, []);
+  assert.deepEqual(dom.diagnostics, []);
+  const { App } = await importServer<{ App: (props: { gate: PromiseLike<void> }) => ServerValue }>(server.code);
+  return { App, dom: rewrite(dom.code) };
+}
+async function streamedSuspense(App: (props: { gate: PromiseLike<void> }) => ServerValue, gate: Promise<void>, deadline?: number): Promise<string[]> {
+  const chunks: string[] = [];
+  await renderDerived(
+    () => App({ gate }),
+    { write: (chunk: string) => void chunks.push(chunk) },
+    { manifest: suspenseManifest, stream: deadline === undefined ? {} : { deadline } },
+  );
+  return chunks;
+}
+
+compiled("server: a pending Suspense streams — fallback in the shell, its content after it, the settled tail last", async () => {
+  const { App } = await buildSuspense();
+  const chunks = await streamedSuspense(App, new Promise((resolve) => setTimeout(resolve, 5)));
+  const html = chunks.join("");
+  const at = html.indexOf("<script>(function(){const d=document;window.$rS=");
+  assert.ok(at > 0, "the content streams as a template");
+  const shell = html.slice(0, at);
+  assert.match(shell, /<!--s1--><p id="wait">wait<\/p><!--\/s-->/, "the fallback between its markers, in the shell");
+  assert.match(shell, /<p id="ready">ready<\/p>/, "a Suspense with nothing pending renders in place");
+  assert.ok(!shell.includes("wait2") && !shell.includes("<!--s2"), "no fallback for it");
+  assert.ok(!shell.includes("rivet/boundaries"), "the tail waits for the content");
+  const rest = html.slice(at);
+  assert.ok(rest.startsWith("<script>(function(){const d=document;window.$rS="), "the swap add-on once, before the first content");
+  assert.match(
+    rest,
+    /<\/script><template data-s="1"><div id="content"><b id="user">u<\/b>.*<i id="a">ax<\/i><!--\/a--><!--]--><\/div><\/template><script>\$rS\(1\)<\/script><script type="rivet\/boundaries"/s,
+  );
+  assert.ok(!rest.includes("inner-wait"), "an Async inside a Suspense is awaited with it (no segment of its own)");
+  assert.ok(!html.includes("<template data-a"), "no Async segment");
+  const tail = tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(rest)![1]!));
+  const values = tail.b[0][4] as unknown[];
+  assert.deepEqual(values.slice(values.indexOf("$r"), values.indexOf("$r") + 2), ["$r", { s: 2, v: "u" }], "the resource's settled state");
+  assert.ok(
+    tail.b.some((r: unknown[]) => r[3] === "src/page.tsx#Inner"),
+    "the content's boundary is recorded",
+  );
+});
+
+compiled("server: not streaming (derivedToString), the Suspense renders in place as before", async () => {
+  const { App } = await buildSuspense();
+  const html = (await derivedToString(() => App({ gate: Promise.resolve() }), { manifest: suspenseManifest })) as string;
+  assert.ok(!html.includes("<!--s") && !html.includes("<template"));
+  assert.match(html, /<div id="content"><b id="user">u<\/b>/);
+});
+
+async function suspenseErrors(page: Page): Promise<string[]> {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
+  await page.addInitScript(() =>
+    document.addEventListener("rivet:resume-error", (event) => {
+      event.preventDefault();
+      console.error("resume error " + String((event as CustomEvent).detail));
+    }),
+  );
+  return errors;
+}
+
+compiled("streamed Suspense: the swapped-in content adopts (server nodes kept, no load in the browser), the page works", async () => {
+  const { App, dom } = await buildSuspense();
+  const html = (await streamedSuspense(App, new Promise((resolve) => setTimeout(resolve, 5)))).join("");
+  await withPage(files(html, dom), async (page) => {
+    const errors = await suspenseErrors(page);
+    await page.goto("http://rivet.test/");
+    assert.equal(await page.$("#wait"), null, "the content replaced the fallback");
+    assert.equal(
+      await page.evaluate(() => document.body.innerHTML.includes("<!--s") || document.querySelector("template") !== null),
+      false,
+      "no marker, no template left",
+    );
+    await tag(page, ["#content", "#user", "#a", "#inner-a"]);
+    await page.click("#inner-a");
+    await page.waitForFunction(() => document.querySelector("#inner-a")!.textContent === "a1");
+    await page.click("#count");
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+    assert.deepEqual(await tagged(page, ["#content", "#user", "#a", "#inner-a"]), [true, true, true, true], "server nodes kept");
+    assert.deepEqual(
+      await page.evaluate(() => [(globalThis as { fetches?: number }).fetches ?? 0, (globalThis as { loads?: number }).loads ?? 0]),
+      [0, 0],
+      "no resource fetch, no Async load in the browser",
+    );
+    assert.deepEqual(errors, []);
+  });
+});
+
+compiled("streamed Suspense over a live response: the fallback paints first, the content and the tail follow", async () => {
+  const { App, dom } = await buildSuspense();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  await withPage(
+    files("", dom),
+    async (page) => {
+      const errors = await suspenseErrors(page);
+      await page.goto("http://rivet.test/", { waitUntil: "commit" });
+      await page.waitForSelector("#wait");
+      assert.equal(await page.$("#content"), null);
+      release();
+      await page.waitForSelector("#content");
+      assert.equal(await page.$("#wait"), null);
+      await tag(page, ["#content"]);
+      await page.click("#count");
+      await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+      assert.deepEqual(await tagged(page, ["#content"]), [true], "the content's nodes adopted");
+      assert.equal(await page.evaluate(() => (globalThis as { fetches?: number }).fetches ?? 0), 0, "no resource fetch in the browser");
+      assert.deepEqual(errors, []);
+    },
+    {
+      streams: {
+        "/": (_request, response) => {
+          response.writeHead(200, { "content-type": "text/html" });
+          response.write("<!doctype html><html><body>");
+          void Promise.resolve(
+            renderDerived(() => App({ gate }), { write: (chunk: string) => void response.write(chunk) }, { manifest: suspenseManifest, stream: {} }),
+          ).then(() => response.end("</body></html>"));
+        },
+      },
+    },
+  );
+});
+
+compiled("streamed Suspense past the deadline: the fallback stays, the tail follows, the browser renders the unit", async () => {
+  const { App, dom } = await buildSuspense();
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  const html = (await streamedSuspense(App, gate, 10)).join("");
+  assert.ok(!html.includes("<template data-s"), "no content written");
+  assert.match(html, /<!--s1--><p id="wait">wait<\/p><!--\/s-->/);
+  assert.match(html, /<script type="rivet\/boundaries"/, "the tail is written");
+  release();
+  await withPage(files(html, dom), async (page) => {
+    await page.goto("http://rivet.test/");
+    await page.click("#count");
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+    await page.waitForFunction(() => document.querySelector("#user")?.textContent === "u");
+    assert.equal(await page.$("#wait"), null);
+  });
+});
+
+// Nested: the inner Suspense's content streams after the outer content that holds it.
+const NESTED_SUSPENSE = `import { signal } from "@rivetjs/reactivity";
+import { Suspense, resource } from "@rivetjs/runtime/dom";
+export function App(props: { gate: PromiseLike<void>; later: PromiseLike<void> }) {
+  const count = signal(0);
+  const outer = resource(() => Promise.resolve(props.gate).then(() => "o"));
+  const inner = resource(() => Promise.resolve(props.later).then(() => "i"));
+  return (
+    <section>
+      <button id="count" onClick={() => count.set(count() + 1)}>{count()}</button>
+      <Suspense fallback={() => <p id="wait-o">wait</p>}>
+        {() => (
+          <div id="outer">
+            <b>{outer()}</b>
+            <Suspense fallback={() => <p id="wait-i">wait</p>}>{() => <b id="inner">{inner()}</b>}</Suspense>
+          </div>
+        )}
+      </Suspense>
+    </section>
+  );
+}
+`;
+compiled("streamed Suspense, nested: inner content after the outer content holding it; the page adopts", async () => {
+  const resume = { module: "src/page.tsx", boundaries: ["App"], independent: ["App"] };
+  const server = compile(NESTED_SUSPENSE, { target: "server", filename: "page.tsx", resume } as never);
+  const dom = compile(NESTED_SUSPENSE, { target: "dom", filename: "page.tsx", resume } as never);
+  assert.deepEqual(server.diagnostics, []);
+  const { App } = await importServer<{ App: (props: { gate: PromiseLike<void>; later: PromiseLike<void> }) => ServerValue }>(server.code);
+  const chunks: string[] = [];
+  const gate = new Promise<void>((resolve) => setTimeout(resolve, 5)),
+    later = new Promise<void>((resolve) => setTimeout(resolve, 15));
+  await renderDerived(
+    () => App({ gate, later }),
+    { write: (chunk: string) => void chunks.push(chunk) },
+    { manifest: { ...manifest, symbols: { "src/page.tsx#App": "/page.js" } }, stream: {} },
+  );
+  const html = chunks.join("");
+  const outerAt = html.search(/<template data-s="\d+"><div id="outer">/),
+    innerAt = html.search(/<template data-s="\d+"><b id="inner">i<\/b>/);
+  assert.ok(outerAt > 0 && innerAt > outerAt, "outer content, then inner");
+  assert.ok(html.indexOf("rivet/boundaries") > innerAt, "the tail last");
+  await withPage(files(html, rewrite(dom.code)), async (page) => {
+    const errors = await suspenseErrors(page);
+    await page.goto("http://rivet.test/");
+    assert.equal(await page.textContent("#inner"), "i");
+    assert.equal(await page.$("#wait-o"), null);
+    assert.equal(await page.$("#wait-i"), null);
+    await tag(page, ["#outer", "#inner"]);
+    await page.click("#count");
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+    assert.deepEqual(await tagged(page, ["#outer", "#inner"]), [true, true]);
+    assert.deepEqual(errors, []);
+  });
+});

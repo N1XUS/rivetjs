@@ -19,11 +19,11 @@
 
 - Ordered renders: children in place, Asyncs below awaited, no fallback.
 - Server `Async` inside a Suspense: never claims its own stream segment; sets `p` when its load is pending.
-- Resumable renders (derived model): `Suspense` is awaited in place (no own stream segment); a boundary whose probe run suspends renders in the browser on its first adopt (dev warning). Streamed `Async` holes: `docs/guides/resumability.md` "Mechanics".
+- Resumable renders (derived model): not streaming (`derivedToString`), `Suspense` is awaited in place. Streaming (`renderDerived` with `stream`, DERIVED-GAPS 02): a Suspense with a fallback constructed in the shell (not inside an `ErrorBoundary`'s content, a shell cache render or a streamed `Async` segment) whose parts are pending once its content is constructed writes its fallback plainly between `<!--sN-->` / `<!--/s-->`; its content renders after the shell in document order (inner after the content holding it) as `<template data-s="N">` + `$rS(N)` (`server-derived.ts` `SUSPENSE_SWAP`, once), which replaces the fallback and drops the markers; the boundaries tail follows the last content, so the browser adopts the in-place page (no hole, no wire change). An `Async` inside a Suspense never streams on its own. `stream.deadline` (from the first claim): unwritten contents stay fallbacks, the unit holding one renders in the browser. A boundary whose probe run suspends renders in the browser on its first adopt (dev warning). Streamed `Async` holes: `docs/guides/resumability.md` "Mechanics".
 
 ## Resume
 
-- Awaited in place on resumable renders; `pending` signals ship like any keyed signal. Streamed Suspense segments on resumable pages: not yet on the derived model (plan M6).
+- Awaited in place, or streamed before the tail (above), on resumable renders; `pending` signals ship like any keyed signal. Tests: `libs/runtime/tests/derived-stream-browser.test.ts` (DERIVED-GAPS 02 block).
 
 ## Router
 

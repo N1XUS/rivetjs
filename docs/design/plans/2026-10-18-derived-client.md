@@ -32,6 +32,8 @@ M6 status update (2026-10-22, M6-PARITY): forms on derived — `libs/forms/tests
 
 M6 status update (2026-10-28, DERIVED-GAPS 01): forms progressive enhancement closed — `libs/forms/tests` 73 / 73 on derived (demo + drawer apps in Chromium; derived is the only model); removed from every "not yet on derived" list.
 
+M6 status update (2026-10-28, DERIVED-GAPS 02): streamed `Suspense` on derived — a pending Suspense with a fallback writes its fallback in the shell, its content after the shell (document order, `<template data-s>` + `$rS`), then the tail (settled state): the browser adopts the in-place page, no wire change. `Async` inside a Suspense in place. Tests `libs/runtime/tests/derived-stream-browser.test.ts`.
+
 ## M1 — route bundles (first)
 
 Why first: S3 measured 74 requests / 76 KB fetched at the dashboard's first click (2.25 s on Slow 4G + 4× CPU, 108 ms unthrottled); ROUTE-CHUNKS could not get widget frames under 61 requests because `route` mode still emits one shared chunk per owner **set** and the merge budget (2 KB default, 64 KB tried) only reaches 29–49. The question M1 answers is the request/bytes curve, and the policy that lands is whichever point meets the gate.

@@ -41,7 +41,7 @@ import {
   _tracking,
   _wrapEffects,
 } from "@rivetjs/reactivity";
-import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
+import type { Disposer, EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { ATTRIBUTE, COMPILED, compiledTemplate, template, MARK_CHAIN, _attributeRecord, _markFragments } from "./template.ts";
@@ -53,6 +53,7 @@ import { _onSlot } from "./slot.ts";
 import { _list, renderToString, renderToWriter, type ServerWriter } from "./server.ts";
 import { _asyncHook, _onAsync, _onAsyncContent, _onUserAsync } from "./server-async.ts";
 import { _onDerivedResource } from "./server-resource-slot.ts";
+import { _onSuspense, _SUSPENSE } from "./server-suspense-slot.ts";
 import type { AsyncStream } from "./server-async.ts";
 import { _CLASSES, _builtinKinds, _setUnrecorded, createEncoder, serialize, typeName } from "./resume-format.ts";
 import type { BoundaryRecord, ClassHooks, ClassRegistry, DerivedAsync, DerivedDom, FlushTail, TableEntry } from "./resume-format.ts";
@@ -245,6 +246,8 @@ export interface DerivedRender {
   lean: DerivedIsland[];
   adopt: DerivedIsland[];
   tailed: boolean;
+  /** Streamed `Suspense`s (DERIVED-GAPS 02): their contents render after the shell, before the tail; null: none claimed. */
+  held: HeldSuspenses | null;
   /** `_rData`'s payload (or its table encoding) and the objects in it, checked as data this render (`propsData`). */
   verified: unknown[] | null;
   /** `_rData`'s payload until `settle` checks it (the first flush that writes records). */
@@ -363,6 +366,7 @@ export function createDerived(): DerivedRender {
     lean: [],
     adopt: [],
     tailed: false,
+    held: null,
     verified: null,
     pending: null,
   };
@@ -575,7 +579,13 @@ const frame = (options: Partial<StreamingResumableOptions>): Recorder => {
   }
 };
 // The root tail: the boundaries script + loader, unless the shell cache writes nothing (a replay).
-const tailOf = (recorder: Recorder) => (): ServerValue => (recorder.options.shell?.tail(recorder) ? null : derivedTail(recorder.derived));
+// Streamed `Suspense`s (DERIVED-GAPS 02) first: the tail then holds what their contents recorded.
+const tailOf = (recorder: Recorder) => (): ServerValue =>
+  recorder.derived.held !== null
+    ? heldContents(recorder.derived, () => derivedTail(recorder.derived))
+    : recorder.options.shell?.tail(recorder)
+      ? null
+      : derivedTail(recorder.derived);
 
 /**
  * A resumable page as a string (`@rivetjs/runtime/server-resume` `resumableToString`): the content, then the derived tail
@@ -1366,6 +1376,7 @@ interface DerivedMark {
   segAn: number;
   signals: number;
   made: number;
+  held: number;
 }
 _onDerivedResource({
   seed(get) {
@@ -1394,6 +1405,7 @@ _onDerivedResource({
       segAn: seg?.an ?? 0,
       signals: at?.signals.length ?? 0,
       made: at?.made ?? 0,
+      held: ctx.held?.items.length ?? 0,
     } satisfies DerivedMark;
   },
   cut(mark) {
@@ -1404,6 +1416,8 @@ _onDerivedResource({
     ctx.next = m.next;
     for (let i = m.asyncs; i < ctx.asyncs.length; i++) ctx.changed.delete(ctx.asyncs[i]!);
     ctx.asyncs.length = m.asyncs;
+    // Streamed Suspenses the discarded build claimed: their contents never render (the build that renders claims again).
+    if (ctx.held && ctx.held.items.length > m.held) for (const h of ctx.held.items.splice(m.held)) ((h.done = true), heldDispose(h));
     ctx.an = m.an;
     if (m.seg) m.seg.an = m.segAn;
     const at = m.at;
@@ -1446,8 +1460,9 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
         dispose: null,
         own,
       });
-      // No fallback to stream first (an app `Async` without one): awaited in place, also while streaming.
-      const inplace = !ctx.stream || typeof fallback !== "function";
+      // No fallback to stream first (an app `Async` without one): awaited in place, also while streaming. Inside a
+      // `Suspense` too: the Suspense streams (or not) for all of its parts (DERIVED-GAPS 02), as the browser reveals them.
+      const inplace = !ctx.stream || typeof fallback !== "function" || useContext(_SUSPENSE) !== null;
       if (ctx.stream && inplace) a.out = true;
       ctx.asyncs.push(a);
       ctx.changed.add(a);
@@ -1477,12 +1492,15 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
         a.state = 3;
         let html: string | Promise<string> | null;
         try {
-          html = renderToString(
-            _scopedRecord(owner ?? null, outcome() as ServerValue, noop) as unknown as ServerValue,
-            {
-              signal: ctx.options?.signal,
-              variant: ctx.options?.variant,
-            } as never,
+          // (In `segmentStore`: a `Suspense` its traversal constructs renders in place — its markers are not in the shell.)
+          html = segmentStore.run(a, () =>
+            renderToString(
+              _scopedRecord(owner ?? null, outcome() as ServerValue, noop) as unknown as ServerValue,
+              {
+                signal: ctx.options?.signal,
+                variant: ctx.options?.variant,
+              } as never,
+            ),
           );
         } catch {
           html = null;
@@ -1562,6 +1580,7 @@ async function segments(ctx: DerivedRender, writer: { write(chunk: string): unkn
 }
 // The stream is over: every streamed boundary's root goes (its content rendered, or it never will).
 function release(ctx: DerivedRender): void {
+  if (ctx.held) for (const h of ctx.held.items) heldDispose(h);
   for (const a of ctx.asyncs) {
     const dispose = a.dispose ?? a.own;
     a.dispose = a.own = null;
@@ -1569,6 +1588,140 @@ function release(ctx: DerivedRender): void {
       dispose?.();
     } catch {}
   }
+}
+
+// ---- Streamed Suspense (DERIVED-GAPS 02, 2026-10-28) ----
+// A streaming render (`renderDerived` with `stream`) claims each `Suspense` with a fallback constructed in the shell (not in
+// an `ErrorBoundary`'s content, a shell cache render, or a streamed `Async`'s segment). One whose parts are still loading
+// once its content is constructed (`inside.p`: an `Async` below — awaited in place inside it — or a `resource` it reads)
+// writes its fallback between `<!--sN-->` / `<!--/s-->` (rendered plainly: no records — it never reaches the tail); its
+// content renders after the shell, in document order (an inner one after the content holding it), each written as
+// `<template data-s="N">` + `$rS(N)` (the swap add-on `SUSPENSE_SWAP` once, before the first): the template's nodes replace the fallback
+// and both markers go, so the page is the one an in-place render writes. The boundaries tail follows the last of them:
+// it holds what the contents recorded, settled — the browser adopts the page as it adopts the in-place render (no hole,
+// no wire change); before the tail the page is plain HTML (nothing to resume yet, as before: an in-place render sent
+// nothing until then). `stream.deadline` (ms from the first claim) stops waiting: the contents not written by then stay
+// fallbacks, and the unit holding one renders in the browser (its resources load there).
+interface HeldSuspense {
+  id: number;
+  value: unknown;
+  owner: Owner | null | undefined;
+  /** The enclosing Suspense's pending flag where it was claimed (null: none), and its own. */
+  parent: object | null;
+  self: object | null;
+  dispose: Disposer | null;
+  own: Disposer | null;
+  /** Written, dropped or abandoned. */
+  done: boolean;
+  written: boolean;
+}
+interface HeldSuspenses {
+  items: HeldSuspense[];
+  /** Ids given (a discarded build's claims leave theirs unused). */
+  n: number;
+  /** Claims are taken until the last content is written. */
+  open: boolean;
+  addon: boolean;
+  start: number;
+}
+const SUSPENDED = /* @__PURE__ */ Object.freeze(["<!--s", "-->", "<!--/s-->"]);
+/** The swap add-on of streamed Suspense contents (inline, once per page). */
+export const SUSPENSE_SWAP =
+  '(function(){const d=document;window.$rS=i=>{const a=d.currentScript,t=a.previousElementSibling,w=d.createTreeWalker(d.body,128);let n,l=0;for(;(n=w.nextNode())&&n.data!="s"+i;);for(let x=n&&n.nextSibling;x;){const p=x.nextSibling,c=x.nodeType==8?x.data:"";if(/^s\\d+$/.test(c))l++;else if(c=="/s"&&!l--){x.before(t.content);x.remove();n.remove();break}x.remove();x=p}t.remove();a.remove()}})();';
+// A streamed segment's content renders in this store: a `Suspense` constructed there stays in place (its markers would
+// reach the page after the tail).
+const segmentStore = new AsyncLocalStorage<DerivedAsyncState>();
+_onSuspense(() => {
+  const ctx = useContext(DERIVED);
+  if (ctx === null || !ctx.stream || ctx.off || (ctx.held !== null && !ctx.held.open) || segmentStore.getStore() !== undefined) return null;
+  const recorder = store.getStore();
+  if (recorder === undefined || recorder.held || recorder.options.shell) return null;
+  const parent = useContext(_SUSPENSE);
+  let item: HeldSuspense | null = null;
+  return {
+    defer(value, fallback, owner, own, inside) {
+      const held = (ctx.held ??= { items: [], n: 0, open: true, addon: false, start: Date.now() });
+      item = { id: ++held.n, value, owner, parent, self: inside, dispose: null, own, done: false, written: false };
+      held.items.push(item);
+      // The fallback renders plainly (no boundary, keyed state or marker of this render): it leaves before the tail.
+      const html = store.exit(() =>
+        provide(DERIVED, null, () => renderToString(fallback(), { signal: ctx.options?.signal, variant: ctx.options?.variant } as never)),
+      );
+      const id = item.id;
+      return typeof html === "string" ? rawHtml(id, html) : (html.then((text) => rawHtml(id, text)) as unknown as ServerValue);
+    },
+    release(dispose) {
+      if (item === null || item.done) return dispose();
+      item.dispose = dispose;
+    },
+  };
+});
+const rawHtml = (id: number, html: string): ServerValue =>
+  compiledTemplate([SUSPENDED[0] + id + SUSPENDED[1] + html + SUSPENDED[2]], []) as unknown as ServerValue;
+function heldDispose(h: HeldSuspense): void {
+  const dispose = h.dispose ?? h.own;
+  h.dispose = h.own = null;
+  try {
+    dispose?.();
+  } catch {}
+}
+// The next content to write: the first claimed one (creation order) whose Suspense is in the page — in the shell (no
+// claimed Suspense around it, or one rendered in place) or in a content written already. One whose enclosing content
+// was dropped is dropped.
+function nextHeld(held: HeldSuspenses): HeldSuspense | null {
+  for (let again = true; again;) {
+    again = false;
+    for (const h of held.items) {
+      if (h.done) continue;
+      const around = h.parent === null ? undefined : held.items.find((x) => x.self === h.parent);
+      if (around === undefined || around.written) return h;
+      if (around.done) ((h.done = true), heldDispose(h), (again = true));
+    }
+  }
+  return null;
+}
+// The contents, one at a time (their traversal numbers as the in-place render's would), then `rest` (the tail). Their roots
+// go with the stream's (`release`): the tail reads what they recorded.
+const LATE = /* @__PURE__ */ Symbol();
+function heldContents(ctx: DerivedRender, rest: () => ServerValue): ServerValue {
+  const held = ctx.held!,
+    options = ctx.options,
+    signal = options?.signal,
+    deadline = options?.stream?.deadline,
+    nonce = options?.nonce ? ' nonce="' + String(options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "";
+  let timer: ReturnType<typeof setTimeout> | null = null,
+    late: Promise<typeof LATE> | null = null;
+  if (deadline != null) late = new Promise((resolve) => (timer = setTimeout(() => resolve(LATE), Math.max(0, deadline - (Date.now() - held.start)))));
+  const end = (): ServerValue => {
+    held.open = false;
+    if (timer) clearTimeout(timer);
+    for (const h of held.items) h.done = true;
+    return rest();
+  };
+  const step = (): ServerValue => {
+    const h = signal?.aborted ? null : nextHeld(held);
+    if (h === null) return end();
+    h.done = true;
+    let html: string | Promise<string>;
+    try {
+      html = renderToString(_scopedRecord(h.owner ?? null, h.value, noop) as unknown as ServerValue, { signal, variant: options?.variant } as never);
+    } catch {
+      return step();
+    }
+    // A content that fails stays its fallback (the unit holding it renders in the browser).
+    const out = typeof html === "string" ? html : html.then(undefined, () => null);
+    return Promise.resolve(late ? Promise.race([out, late]) : out).then((text) => {
+      if (text === LATE) return end();
+      if (text === null) return step();
+      h.written = true;
+      const swap = held.addon ? "" : ((held.addon = true), "<script" + nonce + ">" + SUSPENSE_SWAP + "</script>");
+      return [
+        compiledTemplate([swap + '<template data-s="' + h.id + '">' + text + "</template><script" + nonce + ">$rS(" + h.id + ")</script>"], []),
+        step,
+      ] as unknown as ServerValue;
+    }) as unknown as ServerValue;
+  };
+  return step();
 }
 
 // ---- Route payload (DERIVED-S, 2026-10-21) ----

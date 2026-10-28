@@ -26,8 +26,9 @@ export function _onBuild<S>(fn: (content: () => unknown) => unknown, state: S): 
 /**
  * Coordinated loading. Ordered renders: `children` render in place, every `Async` below awaited (the
  * fallback is never rendered). Streaming resumable renders: Asyncs below never stream on their own; when
- * one of them is pending, the Suspense (with a `fallback`, in a claimable site) writes the fallback and
- * streams all of its content as one segment once it has rendered. Pass `children` as a thunk.
+ * one of them (or a `resource` it reads) is pending, the Suspense (with a `fallback`) writes the fallback
+ * in the shell and streams all of its content once it has rendered, before the page's resume state.
+ * Pass `children` as a thunk.
  */
 export function Suspense({ fallback, children }: { fallback?: () => ServerValue; children: ServerValue }): ServerScope {
   const claim = typeof fallback === "function" ? _claimSuspense() : null;
@@ -47,7 +48,7 @@ export function Suspense({ fallback, children }: { fallback?: () => ServerValue;
     // createRoot init does), whether or not an owner is around it.
     let value;
     try {
-      value = claim.defer(root.value, fallback!, owner, root.dispose);
+      value = claim.defer(root.value, fallback!, owner, root.dispose, inside);
     } catch (error) {
       root.dispose();
       throw error;
