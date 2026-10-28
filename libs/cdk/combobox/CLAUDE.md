@@ -36,10 +36,12 @@ LabelContext, ButtonContext (+ `isPressed` while open), InputContext, FieldInput
 - `<ListBox id>` wins over the generated list id (RAC mergeIds): `listBoxProps.id` is a `MergedId` (`slots`); ListBox writes its own id into `menuId.current`, input/button `aria-controls` + `aria-activedescendant` read it. Server: ListBox renders after the input, so SSR markup keeps the generated id until resume (client re-points)
 - `render` prop (RAC DOMRenderProps; `(attrs, renderProps)` → spread attrs; early return before the compiled element; `tests/render-collections.browser.test.tsx`) on ComboBox / ComboBoxValue (`div`)
 - `menuTrigger="focus"` + button press on an unfocused input: the input focus opens the menu inside the press; React batches it with the press `toggle` (which reads the pre-focus closed state and opens), a signal toggle would close it again → `keptOpenByFocus` in `behaviour.tsx` keeps it open (trigger "manual"); `tests/combobox.browser.test.tsx` Rivet case
-- Not ported: Virtualizer in the popover, useAsyncList cases
+- Not ported: useAsyncList cases
 
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../listbox/CLAUDE.md](../listbox/CLAUDE.md), [../autocomplete/CLAUDE.md](../autocomplete/CLAUDE.md), [../state/CLAUDE.md](../state/CLAUDE.md)
 - `apps/cdk-docs/content/components/combobox.md`
 
 - ID-RESUME (2026-10-27): Generated listbox and menu-trigger roots (state/combobox.ts and behaviour.tsx) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.
+
+- CX-VPICK: input keyboard focus synchronization retains `isVirtualized: true` from the collection options. Like RA useOption's post-render focus effect, `syncFocus` waits for an offscreen persisted option to render before moving virtual focus and scrolling it into view. UI integration tests cover End / Home and filtered selection over 10,000 items.

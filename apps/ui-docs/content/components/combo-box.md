@@ -200,6 +200,14 @@ When used inside a [Surface](/components/surface/) component, use `variant="seco
 
 ::example{id=combo-box-on-surface}
 
+### Virtualization
+
+Place `<ListBox virtualized>` inside the popover to window a large collection. `rowHeight` defaults to **36 px**; set it for a different fixed item height. Give the ListBox a height and `min-h-0`, constrain the popover with `max-height` and a flex column, and match `initialSize` to the list viewport. The list owns scrolling and can shrink when the popover has less room.
+
+::example{id=combo-box-virtualized}
+
+The example has 10,000 items. Arrow keys, Home and End scroll the focused option into view; selecting key `9999` updates the value. Typing filters the full collection and updates the rendered window. The virtualizer loads only for opted-in lists. This follows [React Aria Virtualizer composition](https://react-aria.adobe.com/Virtualizer).
+
 ## Customization
 
 ### Tailwind CSS

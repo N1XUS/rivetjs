@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 87aecb2576ce 538852 css d31938897091 1187616
-@rivetjs/ui [server] bea6b1bc5c38 479404 css d31938897091 1187616
+@rivetjs/ui [dom] b13aea7329b5 538876 css d31938897091 1187616
+@rivetjs/ui [server] b63f5d3473b4 479426 css d31938897091 1187616
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -149,8 +149,8 @@
 @rivetjs/ui/search-field [server] 3c77d799a212 9354 css fd049ee7610c 1177314
 @rivetjs/ui/number-field [dom] 5219c0d4b25d 8471 css fd049ee7610c 1177314
 @rivetjs/ui/number-field [server] 59d9f0ded388 7789 css fd049ee7610c 1177314
-@rivetjs/ui/list-box [dom] f410d9de0105 6477 css fd049ee7610c 1177314
-@rivetjs/ui/list-box [server] 9963a4d41b41 6151 css fd049ee7610c 1177314
+@rivetjs/ui/list-box [dom] b0ecddc439c7 6544 css fd049ee7610c 1177314
+@rivetjs/ui/list-box [server] f514215c26dc 6216 css fd049ee7610c 1177314
 @rivetjs/ui/list-box-item [dom] 921745f689e2 5576 css fd049ee7610c 1177314
 @rivetjs/ui/list-box-item [server] a77047aa6a77 5449 css fd049ee7610c 1177314
 @rivetjs/ui/list-box-section [dom] d7899253a425 3585 css 229105696f76 1325
@@ -205,8 +205,8 @@
 @rivetjs/ui/switch [server] e4c58fb5fddc 8165 css fd049ee7610c 1177314
 @rivetjs/ui/switch-group [dom] 2fc79c6c8191 4345 css b094ab225173 665
 @rivetjs/ui/switch-group [server] 8e242822ebfb 4205 css b094ab225173 665
-@rivetjs/ui/select [dom] da8dd7e227ed 12300 css fd049ee7610c 1177314
-@rivetjs/ui/select [server] d6e1b83dee16 11249 css fd049ee7610c 1177314
+@rivetjs/ui/select [dom] 28a18306baa3 12367 css fd049ee7610c 1177314
+@rivetjs/ui/select [server] 1e5e96b8b281 11316 css fd049ee7610c 1177314
 @rivetjs/ui/date-picker [dom] 64ffb0fbda01 7225 css fd049ee7610c 1177314
 @rivetjs/ui/date-picker [server] 7719b0f1c8e9 6897 css fd049ee7610c 1177314
 @rivetjs/ui/date-range-picker [dom] ead04e659e1f 7726 css fd049ee7610c 1177314
@@ -215,8 +215,8 @@
 @rivetjs/ui/slider [server] b7208f7bfedb 6975 css fd049ee7610c 1177314
 @rivetjs/ui/disclosure [dom] c9ab47bbe37a 6928 css fd049ee7610c 1177314
 @rivetjs/ui/disclosure [server] 85f98a65a372 6419 css fd049ee7610c 1177314
-@rivetjs/ui/combo-box [dom] 88df6c81df8d 12924 css fd049ee7610c 1177314
-@rivetjs/ui/combo-box [server] 7efd4c0d6864 11722 css fd049ee7610c 1177314
+@rivetjs/ui/combo-box [dom] 5fad10ee1f44 12991 css fd049ee7610c 1177314
+@rivetjs/ui/combo-box [server] 21743475e924 11789 css fd049ee7610c 1177314
 @rivetjs/ui/color-swatch [dom] 024bc3909ae3 4565 css fd049ee7610c 1177314
 @rivetjs/ui/color-swatch [server] 3511f9da39bd 4502 css fd049ee7610c 1177314
 @rivetjs/ui/color-area [dom] b882b450e2d8 5266 css fd049ee7610c 1177314
@@ -233,8 +233,8 @@
 @rivetjs/ui/color-picker [server] 39bc9c965b17 5772 css fd049ee7610c 1177314
 @rivetjs/ui/disclosure-group [dom] a8f43b0257f1 4866 css fd049ee7610c 1177314
 @rivetjs/ui/disclosure-group [server] 4407cdc7e70d 4789 css fd049ee7610c 1177314
-@rivetjs/ui/autocomplete [dom] c167322422a8 18976 css fd049ee7610c 1177314
-@rivetjs/ui/autocomplete [server] d27d6968c69c 16858 css fd049ee7610c 1177314
+@rivetjs/ui/autocomplete [dom] bd1b9c58bd6c 18998 css fd049ee7610c 1177314
+@rivetjs/ui/autocomplete [server] 952d7789b6bc 16878 css fd049ee7610c 1177314
 @rivetjs/ui/accordion [dom] 105a480dbb3e 11447 css fd049ee7610c 1177314
 @rivetjs/ui/accordion [server] 61fa39786f5f 10263 css fd049ee7610c 1177314
 @rivetjs/ui/segment [dom] 482217935f2a 6923 css fd049ee7610c 1177314
@@ -249,10 +249,10 @@
 @rivetjs/ui/number-stepper [server] 18ad5dc241c4 7541 css fd049ee7610c 1177314
 @rivetjs/ui/cell-slider [dom] 864709a16b2a 6218 css fd049ee7610c 1177314
 @rivetjs/ui/cell-slider [server] df204442cfa6 6012 css fd049ee7610c 1177314
-@rivetjs/ui/cell-select [dom] 2e3a48b63aa3 10477 css fd049ee7610c 1177314
-@rivetjs/ui/cell-select [server] 00a64b446550 9604 css fd049ee7610c 1177314
-@rivetjs/ui/inline-select [dom] b170bb75d220 9807 css fd049ee7610c 1177314
-@rivetjs/ui/inline-select [server] 657a098ea71a 9092 css fd049ee7610c 1177314
+@rivetjs/ui/cell-select [dom] 81696fdbd927 10544 css fd049ee7610c 1177314
+@rivetjs/ui/cell-select [server] de0393ac6f82 9671 css fd049ee7610c 1177314
+@rivetjs/ui/inline-select [dom] ea0420c6aa80 9874 css fd049ee7610c 1177314
+@rivetjs/ui/inline-select [server] 714e106d4bb7 9159 css fd049ee7610c 1177314
 @rivetjs/ui/pagination [dom] e966104a9d99 10341 css fd049ee7610c 1177314
 @rivetjs/ui/pagination [server] a40ff31c9ce2 9487 css fd049ee7610c 1177314
 @rivetjs/ui/table [dom] 51072f5010d3 15169 css fd049ee7610c 1177314

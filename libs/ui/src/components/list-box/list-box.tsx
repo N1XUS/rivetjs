@@ -4,6 +4,7 @@
 // `class` → render-prop function (the composed class is a local: it reaches cdk `ListBox` as a plain value).
 import { ListBox as ListBoxPrimitive } from "@rivetjs/cdk/listbox";
 import type { ListBoxProps as ListBoxPrimitiveProps, ListBoxRenderProps } from "@rivetjs/cdk/listbox";
+import { isHidden } from "@rivetjs/cdk/collections/hidden";
 import { lazyComponent } from "@rivetjs/runtime/dom";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 
@@ -37,7 +38,8 @@ function ListBoxRoot<T extends object = object>(props: ListBoxRootProps<T>): JSX
   const classOf = () => composeTwRenderProps(local.class as never, listboxVariants({ variant: local.variant })) as string | ((v: ListBoxRenderProps) => string);
   const cls = hasLiveProp(local, ["class", "variant"]) ? (values: ListBoxRenderProps) => renderClass(classOf(), values) : classOf();
 
-  if (local.virtualized) {
+  // Collection registration is synchronous, including a closed picker's hidden build pass.
+  if (local.virtualized && !isHidden()) {
     return <VirtualizedListBox composed={cls as never} {...rest} rowHeight={local.rowHeight} initialSize={local.initialSize} />;
   }
   return <ListBoxPrimitive class={cls as never} data-slot="list-box" {...(rest as ListBoxPrimitiveProps<object>)} />;

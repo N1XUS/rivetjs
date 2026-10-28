@@ -203,9 +203,9 @@ export function comboBoxInputKeyDown(e: KeyboardEvent, props: ComboBoxHandlerPro
       const options = collectionOptions(props, state, refs);
       const before = untrack(state.focusedKey);
       selectableCollectionKeyDown(options, e);
-      // The listbox's item effect: virtual focus (and scrolling) follows the focused key.
+      // RA useOption's post-render effect: wait for a persisted virtual row before focusing and scrolling.
       const listBox = refs.listBoxRef();
-      if (listBox) syncFocus({ ...options, ref: listBox, shouldUseVirtualFocus: true, isVirtualized: false }, before);
+      if (listBox) syncFocus({ ...options, ref: listBox, shouldUseVirtualFocus: true }, before);
     }
     comboBoxShortcutKeyDown(e, props, state, refs);
     keyboardKeyDown(
