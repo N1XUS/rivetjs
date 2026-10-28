@@ -152,7 +152,7 @@ test("inline stylesheets: per page, all listed sheets when their brotli total fi
 
 test("inline stylesheets: headTags writes them as nonce'd <style> in link order", () => {
   const html = headTags(undefined, { styles: ["/a.css", "/b.css", "/c.css"], inlineStyles: { "/b.css": "b{}</style><i>" }, nonce: "n1" });
-  assert.equal(html, '<link rel="stylesheet" href="/a.css"><style nonce="n1">b{}<\\/style><i></style><link rel="stylesheet" href="/c.css">');
+  assert.equal(html, '<link rel="stylesheet" href="/a.css"><style data-href="/b.css" nonce="n1">b{}<\\/style><i></style><link rel="stylesheet" href="/c.css">');
   // Inherited keys never count.
   assert.equal(headTags(undefined, { styles: ["toString"], inlineStyles: {} }), '<link rel="stylesheet" href="toString">');
 });

@@ -51,13 +51,6 @@
       "since": "2026-10-27"
     },
     {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/navbar.test.ts > navbar: first press on a slow network is fast (handler chunks prefetched while visible)",
-      "reason": "router build: the first press imports the route page module through the App's `__vitePreload`, whose deps list the component CSS chunks (navbar / separator / morph-icon .css) that the page already has inside its merged `route-*.css`; Vite injects them under their own hrefs and waits for them: +1 round trip (~580 ms at 400 ms latency) on every resumed page's first interaction, and the re-appended sheets reorder the cascade (data-grid pinned cells, fixed by specificity TW-180) (REDS-UI 2026-10-28)",
-      "owner": "router (route CSS vs Vite CSS preload deps: `libs/router/build/vite.ts` preloadDeps / route-css.ts)",
-      "since": "2026-10-27"
-    },
-    {
       "gate": "vitest:cdk-components",
       "match": "libs/cdk/tests-components/drag-drop-resume.test.ts > nothing drag-drop related loads before the lists are visible; scrolling them in preloads it",
       "reason": "derived resume: the story's `export const preload = \"visible\"` is ignored under derived (compiler CLAUDE.md) and there is no derived visible prefetch for boundaries, so nothing loads on scroll-in on the lean story page. Needs a ruling: port visible prefetch to derived, or drop the contract + these tests (triaged REDS-CDK 2026-10-28)",

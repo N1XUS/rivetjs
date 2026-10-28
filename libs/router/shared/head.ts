@@ -112,7 +112,10 @@ const LINK_ATTRIBUTES = [
 export interface HeadTagOptions {
   /** Stylesheet URLs, linked before the head's own stylesheets (capo position 7). */
   styles?: readonly string[];
-  /** Entries of `styles` written as an inline `<style>` (URL → CSS, with the nonce) instead of a link, in place. */
+  /**
+   * Entries of `styles` written as an inline `<style data-href>` (URL → CSS, with the nonce) instead of a link, in place
+   * (`data-href`: the client skips the sheet in preload lists).
+   */
   inlineStyles?: Readonly<Record<string, string>> | undefined;
   /** CSP nonce for inline and external scripts. */
   nonce?: string | undefined;
@@ -181,9 +184,9 @@ function scriptTag(script: SrcScript, nonce: string, mark: string): string {
   const timing = strategy === "eager" ? " async" : strategy === "defer" && !module ? " defer" : "";
   return `<script${module ? ' type="module"' : ""}${timing} src="${escapeAttribute(script.src)}"${attr("id", script.id)}${attr("integrity", script.integrity)}${attr("crossorigin", script.crossorigin)}${attr("referrerpolicy", script.referrerpolicy)}${nonce}${mark}></script>`;
 }
-/** Inline `<style>` (unmanaged: never `data-rh`). CSS never contains a closing tag. */
-const styleTag = (style: HeadStyle, nonce: string): string =>
-  `<style${attr("media", style.media)}${nonce}>${style.css.replace(/<\/(style)/gi, "<\\/$1")}</style>`;
+/** Inline `<style>` (unmanaged: never `data-rh`); `href`: an inlined stylesheet's URL. CSS never contains a closing tag. */
+const styleTag = (style: HeadStyle, nonce: string, href?: string): string =>
+  `<style${attr("data-href", href)}${attr("media", style.media)}${nonce}>${style.css.replace(/<\/(style)/gi, "<\\/$1")}</style>`;
 /** Inline script: its JSON data block (if any) right before it. Code never contains a closing tag. */
 function inlineTag(script: Extract<HeadScript, { inline: InlineScript }>, nonce: string): string {
   if (!isInlineScript(script.inline)) throw new TypeError("head script `inline` must be an InlineScript (`?script` import or unsafeInlineScript)");
@@ -205,7 +208,8 @@ export function headTags(head: Head | undefined, options: HeadTagOptions = {}): 
   const sheets = options.inlineStyles;
   for (const href of options.styles ?? []) {
     const css = sheets && Object.hasOwn(sheets, href) ? sheets[href] : undefined;
-    groups[5] += css !== undefined ? styleTag({ css }, nonce) : `<link rel="stylesheet" href="${escapeAttribute(href)}">`;
+    // `data-href`: the sheet's URL, so a preload list naming it (a route page import, ROUTE-CSS) skips it.
+    groups[5] += css !== undefined ? styleTag({ css }, nonce, href) : `<link rel="stylesheet" href="${escapeAttribute(href)}">`;
   }
   // Inline styles after the stylesheets (same group): component rules (motion entrances) win ties over sheet rules.
   const inlineStyles = head?.styles?.map((style) => styleTag(style, nonce)).join("") ?? "";

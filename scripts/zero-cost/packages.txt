@@ -1,5 +1,5 @@
 @rivetjs/router 965ee4bafd7e 3340
-@rivetjs/router/server 8f5000d7ce0e 31120
+@rivetjs/router/server 75ecbf8da59d 31120
 @rivetjs/router/route-cache 783a9a89cc9f 18452
 @rivetjs/router/server-only 56e1b0c10087 9
 @rivetjs/router/client [dom] 21dc1faef41c 24498
@@ -23,7 +23,7 @@
 @rivetjs/router/cloudflare c375aa7ccb4c 2973
 @rivetjs/router/bun b65576f8b6bf 6570
 @rivetjs/router/deno 6d09edbada5c 6639
-@rivetjs/router/head c13740e6a62b 6518
+@rivetjs/router/head f6912bab1323 6541
 @rivetjs/forms d0655525e863 4979
 @rivetjs/forms/array cc6f125f16cd 3810
 @rivetjs/forms/components [dom] 92c319e012bb 2278

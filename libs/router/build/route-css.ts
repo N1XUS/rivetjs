@@ -3,7 +3,7 @@
 import { createHash } from "node:crypto";
 import { brotliCompressSync, constants } from "node:zlib";
 import type { InlineStyleManifest } from "../server/inline-styles.ts";
-import { resolve } from "node:path";
+import { posix, resolve } from "node:path";
 import type { Rollup, ViteDevServer } from "vite";
 import type { RouteTable } from "./routes.ts";
 
@@ -228,4 +228,168 @@ export async function devRouteCSS(server: ViteDevServer, table: RouteTable, rout
     visit(environment.moduleGraph.getModuleById(file));
   }
   return css;
+}
+
+/**
+ * A route page chunk's merged route sheet (`mergeRouteCSS`): the sheet's file name and the stylesheet files it holds
+ * (bundle file names, without `base`).
+ */
+export interface PageSheet {
+  readonly sheet: string;
+  readonly parts: ReadonlySet<string>;
+}
+
+/**
+ * Route page chunk file name → its merged route sheet (`lists`: `bundleRouteCSS`, `merged`: `mergeRouteCSS(…).routes`).
+ * A page chunk on several routes with different sheets, or on a route whose list was not merged, has none.
+ */
+export function pageSheets(
+  bundle: Rollup.OutputBundle,
+  table: RouteTable,
+  routesDir: string,
+  base: string,
+  lists: Readonly<Record<string, readonly string[]>>,
+  merged: Readonly<Record<string, readonly string[]>>,
+): Map<string, PageSheet> {
+  const owner = new Map<string, string>();
+  for (const output of Object.values(bundle)) if (output.type === "chunk") for (const id of output.moduleIds) owner.set(id.split("?")[0]!, output.fileName);
+  const out = new Map<string, PageSheet | null>();
+  for (const route of table.routes) {
+    if (!route.page) continue;
+    const page = owner.get(resolve(routesDir, route.page));
+    if (!page) continue;
+    const list = lists[route.id];
+    const sheet = merged[route.id];
+    const next =
+      list && sheet?.length === 1 && list.length > 1
+        ? { sheet: sheet[0]!.slice(base.length), parts: new Set(list.map((href) => href.slice(base.length))) }
+        : null;
+    const seen = out.get(page);
+    out.set(page, seen === undefined || (seen && next && seen.sheet === next.sheet) ? next : null);
+  }
+  return new Map([...out].flatMap(([page, sheet]) => (sheet ? [[page, sheet] as const] : [])));
+}
+
+/** What a dynamic import's preload list does with its stylesheets: drop these files, add these (bundle file names). */
+export interface CSSDepsPlan {
+  readonly drop: ReadonlySet<string>;
+  readonly add: readonly string[];
+}
+
+/**
+ * The stylesheets Vite appends to the preload list of `host`'s `import()` of `target` (every chunk of the target's
+ * static graph but the host) are already on the page when they come with the host or with the target's route sheet:
+ * - CSS of the host's own static graph: the host runs, so its stylesheets were loaded (route sheet or its importer's
+ *   preload list);
+ * - a route page's CSS that its merged route sheet holds: the list names the route sheet instead, so a resumed page
+ *   (sheet linked) loads nothing and a client navigation loads the one sheet the server links for that route.
+ * Undefined when nothing changes. Stylesheets the plan does not name (another route's, a lazily loaded part's own) stay.
+ */
+export function cssDepsPlan(bundle: Rollup.OutputBundle, host: string, target: string, sheets: ReadonlyMap<string, PageSheet>): CSSDepsPlan | undefined {
+  const cssOf = (from: string, skip?: string): Set<string> => {
+    const css = new Set<string>();
+    const seen = new Set<string>();
+    for (const stack = [from]; stack.length;) {
+      const file = stack.pop()!;
+      if (seen.has(file) || file === skip) continue;
+      seen.add(file);
+      const chunk = bundle[file];
+      if (chunk?.type !== "chunk") continue;
+      stack.push(...chunk.imports);
+      for (const sheet of chunk.viteMetadata?.importedCss ?? []) css.add(sheet);
+    }
+    return css;
+  };
+  const listed = cssOf(target, host);
+  if (!listed.size) return undefined;
+  const loaded = cssOf(host);
+  const drop = new Set([...listed].filter((file) => loaded.has(file)));
+  const page = sheets.get(target);
+  const add: string[] = [];
+  if (page) {
+    for (const file of listed) if (page.parts.has(file)) drop.add(file);
+    if ([...listed].some((file) => page.parts.has(file) && !loaded.has(file))) add.push(page.sheet);
+  }
+  return drop.size || add.length ? { drop, add } : undefined;
+}
+
+/** A plan's marker in a `resolveDependencies` result: `cssDepsMarker(n)`; `rewriteCSSDeps` replaces it. */
+export const cssDepsMarker = (index: number): string => `__rivet_css__/${index}`;
+const MARKER = /__rivet_css__\/(\d+)$/;
+const MAP_DEPS = "const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=";
+const MAP_DEPS_END = "])))=>i.map(i=>d[i]);";
+const MAP_DEPS_CALL = /__vite__mapDeps\(\[([\d,]*)\]\)/g;
+// A route sheet the page has inline (`inlineStylesheets`: `<style data-href>`, `headTags`) is no `<link>` Vite's preload
+// helper finds: lists that name a route sheet drop the ones on the page as `<style>` (matched by file name).
+const INLINED = "__rivet_inlined__";
+const INLINED_HELPER = `const ${INLINED}=d=>d.filter(f=>!f.endsWith(".css")||!document.querySelector('style[data-href$="/'+f.split("/").pop()+'"]'));`;
+
+/**
+ * Applies the plans whose markers (`cssDepsMarker`) Vite wrote into a chunk's `__vite__mapDeps` file list (after its
+ * import analysis): each marked call drops the plan's stylesheets and lists its added ones; the markers go, unused
+ * files leave the list; a call that adds a route sheet skips it at run time when the page has it inline
+ * (`<style data-href>`). `relative`: a relative `base` (Vite lists files relative to the chunk). `pad`: calls that
+ * shrink keep their length (spaces), so a source map's columns hold. Null when the chunk has no marker.
+ */
+export function rewriteCSSDeps(code: string, chunkFile: string, plans: readonly CSSDepsPlan[], relative: boolean, pad = false): string | null {
+  const head = code.indexOf(MAP_DEPS);
+  if (head < 0 || !code.includes("__rivet_css__/")) return null;
+  const listStart = head + MAP_DEPS.length;
+  const listEnd = code.indexOf(MAP_DEPS_END, listStart);
+  if (listEnd < 0) return null;
+  let files: string[];
+  try {
+    files = JSON.parse(code.slice(listStart, listEnd + 1)) as string[];
+  } catch {
+    return null; // `renderBuiltUrl` runtime entries: not a JSON list.
+  }
+  // Vite's relative entries: `toRelativePath(file, chunk)`.
+  const dir = posix.dirname(chunkFile);
+  const fileOf = (entry: string) => (relative ? posix.join(dir, entry) : entry);
+  const entryOf = (file: string) => {
+    if (!relative) return file;
+    const path = posix.relative(dir, file);
+    return path[0] === "." ? path : "./" + path;
+  };
+  const out = [...files];
+  const index = new Map(files.map((file, i) => [file, i] as const));
+  const indexOf = (entry: string): number => {
+    let i = index.get(entry);
+    if (i === undefined) index.set(entry, (i = out.push(entry) - 1));
+    return i;
+  };
+  const calls: { start: number; end: number; list: number[]; inlined: boolean }[] = [];
+  for (const match of code.slice(listEnd).matchAll(MAP_DEPS_CALL)) {
+    const start = listEnd + match.index;
+    let list = match[1] ? match[1].split(",").map(Number) : [];
+    let inlined = false;
+    const marker = list.find((i) => MARKER.test(files[i] ?? ""));
+    if (marker !== undefined) {
+      const plan = plans[Number(MARKER.exec(files[marker]!)![1])];
+      list = list.filter((i) => i !== marker);
+      if (plan) {
+        const kept = list.filter((i) => !(files[i]!.endsWith(".css") && plan.drop.has(fileOf(files[i]!))));
+        const firstCSS = kept.findIndex((i) => out[i]!.endsWith(".css"));
+        const added = plan.add.map((file) => indexOf(entryOf(file))).filter((i) => !kept.includes(i));
+        kept.splice(firstCSS < 0 ? kept.length : firstCSS, 0, ...added);
+        list = kept;
+        inlined = added.length > 0;
+      }
+    }
+    calls.push({ start, end: start + match[0].length, list, inlined });
+  }
+  // Renumber: only the files some call still lists, in list order.
+  const used = [...new Set(calls.flatMap((call) => call.list))].sort((a, b) => a - b);
+  const renumber = new Map(used.map((old, i) => [old, i] as const));
+  let body = "";
+  let at = listEnd;
+  for (const call of calls) {
+    const deps = `__vite__mapDeps([${call.list.map((i) => renumber.get(i)).join(",")}])`;
+    const text = call.inlined ? `${INLINED}(${deps})` : deps;
+    body += code.slice(at, call.start) + (pad ? text.padEnd(call.end - call.start) : text);
+    at = call.end;
+  }
+  body += code.slice(at);
+  const helper = calls.some((call) => call.inlined) ? INLINED_HELPER : "";
+  return code.slice(0, head) + helper + code.slice(head, listStart) + JSON.stringify(used.map((i) => out[i])).slice(0, -1) + body;
 }

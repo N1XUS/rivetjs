@@ -42,7 +42,7 @@ You can list several files: `styles: ["src/reset.css", "src/styles.css"]`.
 
 A linked stylesheet blocks the first paint until it has downloaded. When a page's CSS is small, that request costs more than its bytes. So in production builds, Rivet decides per page:
 
-- If all of the page's stylesheets (your `styles` plus the route's own stylesheet) add up to 6 KB or less compressed (brotli, measured at build time), `headTags` writes all of them into the page as `<style>` elements, each in the place of its link. The page then makes no stylesheet request before its first paint.
+- If all of the page's stylesheets (your `styles` plus the route's own stylesheet) add up to 6 KB or less compressed (brotli, measured at build time), `headTags` writes all of them into the page as `<style data-href="…">` elements, each in the place of its link. The page then makes no stylesheet request before its first paint, and `data-href` tells the browser code that the sheet is already there.
 - Otherwise, only stylesheets of 4 KB or less uncompressed (Vite's `build.assetsInlineLimit`) are inlined, and the rest stay linked.
 
 Files with relative `url()` or `@import` references always stay linked. The dev server links every file.
@@ -54,6 +54,8 @@ import { rivetRouter } from "@rivetjs/router/vite";
 
 rivetRouter({ styles: ["src/styles.css"], inlineStylesheets: "never" });
 ```
+
+The first interaction on a page never downloads CSS the page already has. The code it loads lists the route's stylesheet, not the component files inside it, so a page that links or inlines that stylesheet fetches nothing; a client navigation fetches the target route's one stylesheet; a part loaded later (a lazily imported module) still fetches its own stylesheets before it runs. This applies when you leave Vite's `build.modulePreload` unset.
 
 The inline styles carry the page's CSP nonce. A shell that writes its own links from `styles` (`styles.map(...)`) links every file; pass `input` to `headTags` instead, or call `headTags(undefined, { styles, inlineStyles, nonce })` from the shell's input.
 

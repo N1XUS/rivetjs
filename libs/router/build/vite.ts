@@ -30,7 +30,21 @@ import type { DocumentPrefetch, PrefetchEagerness } from "../shared/prefetch.ts"
 export type { InlineStylesheets } from "./route-css.ts";
 /** Build-time helper for other Vite plugins (docs-kit example frames): one merged sheet per stylesheet list. */
 export { mergeRouteCSS } from "./route-css.ts";
-import { bundleRouteCSS, devRouteCSS, INLINE_CSS, inlineCSS, mergeRouteCSS, ROUTE_CSS, type InlineStylesheets } from "./route-css.ts";
+import {
+  bundleRouteCSS,
+  cssDepsMarker,
+  cssDepsPlan,
+  devRouteCSS,
+  INLINE_CSS,
+  inlineCSS,
+  mergeRouteCSS,
+  pageSheets,
+  rewriteCSSDeps,
+  ROUTE_CSS,
+  type CSSDepsPlan,
+  type InlineStylesheets,
+  type PageSheet,
+} from "./route-css.ts";
 import { devHandler, devReport, listenClientErrors } from "./dev-errors.ts";
 import { unexportHead } from "./head-strip.ts";
 import { analyzeReach, serverOnlyOption, RV_REACH, type Reach, type ReachProblem, type ServerOnlyOption } from "./reach.ts";
@@ -566,7 +580,41 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     }
     const rest = deps.filter((dep) => !loaded.has(dep));
     // Only the imported chunk itself left: `import()` fetches it anyway (a preload list would repeat its URL).
-    return rest.length === 1 && rest[0] === file ? [] : rest;
+    const list = rest.length === 1 && rest[0] === file ? [] : rest;
+    // ROUTE-CSS: the stylesheets Vite appends after this list (it never passes them here) skip what the page already
+    // has (the host's CSS, the target route's sheet): a marker names the plan, `rewriteCSSDeps` applies it.
+    if (!cssPlans) return list;
+    const key = hostId + "\0" + file;
+    let index = planIndex.get(key);
+    if (index === undefined) {
+      const plan = cssDepsPlan(clientBundle, hostId, file, sheetsOf);
+      index = plan ? cssPlans.push(plan) - 1 : -1;
+      planIndex.set(key, index);
+    }
+    return index < 0 ? list : [...list, cssDepsMarker(index)];
+  };
+  // ROUTE-CSS plans of the client build (resumed / server modes; CSR shells link no route sheets) and route page
+  // chunk → its merged route sheet.
+  let cssPlans: CSSDepsPlan[] | undefined;
+  const planIndex = new Map<string, number>();
+  let sheetsOf: ReadonlyMap<string, PageSheet> = new Map();
+  // After Vite's import analysis (`generateBundle` order "post"): the marked preload lists get their stylesheets.
+  const cssDeps: Plugin = {
+    name: "vite-plugin-rivet-router:css-deps",
+    apply: "build",
+    generateBundle: {
+      order: "post",
+      handler(_options, bundle) {
+        if (this.environment?.config?.consumer === "server" || !cssPlans) return;
+        const base = this.environment?.config?.base ?? "/";
+        const relative = base === "./" || base === "";
+        for (const output of Object.values(bundle)) {
+          if (output.type !== "chunk") continue;
+          const code = rewriteCSSDeps(output.code, output.fileName, cssPlans, relative, !!output.map);
+          if (code !== null) output.code = code;
+        }
+      },
+    },
   };
   const router: Plugin = {
     name: "vite-plugin-rivet-router",
@@ -764,6 +812,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       if (this.environment?.config?.consumer === "server") return;
       clientBundle = bundle;
       loadedBy.clear();
+      cssPlans = undefined;
       if (mode !== "csr") {
         // Route modules' CSS (component stylesheets, css`` sheets), linked per route by the handler.
         // Several stylesheets of one route are merged into one route sheet (`mergeRouteCSS`).
@@ -771,7 +820,11 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         // The app's own inputs (router `styles` by default): their CSS is global; the compiler's entries are not.
         const input = this.environment?.config?.build.rollupOptions.input ?? [];
         const apps = new Set((typeof input === "string" ? [input] : Array.isArray(input) ? input : Object.values(input)).map((file) => resolve(root, file)));
-        const { routes: css, assets } = mergeRouteCSS(bundle, bundleRouteCSS(bundle, table, resolve(root, routesDir), base, apps), base);
+        const lists = bundleRouteCSS(bundle, table, resolve(root, routesDir), base, apps);
+        const { routes: css, assets } = mergeRouteCSS(bundle, lists, base);
+        sheetsOf = pageSheets(bundle, table, resolve(root, routesDir), base, lists, css);
+        cssPlans = [];
+        planIndex.clear();
         for (const asset of assets) this.emitFile({ type: "asset", ...asset });
         if (Object.keys(css).length) this.emitFile({ type: "asset", fileName: ROUTE_CSS, source: JSON.stringify(css, null, 2) + "\n" });
         // Sheets the handler may write inline (`inlineStylesheets`; decided per page, `server/inline-styles.ts`).
@@ -999,6 +1052,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     router,
     ...plugins,
     headStrip,
+    cssDeps,
     // Co-load chunk groups (two-pass builds, env `RIVET_COLOAD`; inert otherwise): `coload.ts`.
     coloadPlugin(),
     ...(adapter ? [targetEntryPlugin(adapter, { serverEntry: () => resolve(root, outDir, "entry.server.tsx"), mode: () => mode })] : []),
