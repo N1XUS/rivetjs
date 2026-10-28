@@ -358,7 +358,8 @@ function radioGroupParts(props: RadioGroupPartsProps) {
     value: merged.value,
     defaultValue: merged.defaultValue,
     onChange: merged.onChange,
-    name: merged.name,
+    // The generated name holds the server id (`resumedId`; the state module's `createId()` differs in the adopt run).
+    name: merged.name ?? resumedId(),
     isDisabled: merged.isDisabled as RadioGroupStateOptions["isDisabled"],
     isReadOnly: merged.isReadOnly as RadioGroupStateOptions["isReadOnly"],
     isRequired,

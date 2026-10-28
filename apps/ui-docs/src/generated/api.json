@@ -101837,8 +101837,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/checkbox/index.tsx",
-    "line": 233,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/checkbox/index.tsx#L233"
+    "line": 234,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/checkbox/index.tsx#L234"
    },
    "href": "/api/rivetjs/ui/checkbox/CheckboxButtonRenderProps/"
   },
@@ -102604,8 +102604,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/checkbox/index.tsx",
-    "line": 167,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/checkbox/index.tsx#L167"
+    "line": 168,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/checkbox/index.tsx#L168"
    },
    "href": "/api/rivetjs/ui/checkbox/CheckboxFieldRenderProps/"
   },
@@ -134505,8 +134505,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/compare/index.tsx",
-    "line": 62,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/compare/index.tsx#L62"
+    "line": 61,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/compare/index.tsx#L61"
    },
    "href": "/api/rivetjs/ui/compare/CompareContext/"
   },

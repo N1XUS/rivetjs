@@ -19,7 +19,7 @@
 // - Resumed page: the first `dragenter` loads the zone's code; the next `dragover` (browsers repeat it every ~50 ms)
 //   enters in its place (`./dnd.ts`). A drop before the code has loaded falls back to the browser's default.
 // `render` (RAC DOMRenderProps): given, the attributes go to `render(attrs, DropZoneRenderProps)`.
-import { createContext, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { createContext, signal, type Signal } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import { formatMessage } from "../_adapters/intl.ts";
 import { visuallyHidden } from "../a11y/index.ts";
@@ -133,10 +133,8 @@ function ringOf(zone: Element, states: ZoneStates): object {
 
 /** A drop zone is an area into which one or multiple objects can be dragged and dropped. */
 export function DropZone(inProps: DropZoneProps) {
-  return untrack(() => dropZone(inProps));
-}
-
-function dropZone(inProps: DropZoneProps) {
+  // SELECT-B: the body stays in the component (no lowercase helper): the build's boundary facts see only a
+  // component's own body, so its handlers / keyed state make an instance with no stateful caller a boundary.
   const [ctxProps, ref] = contextProps(inProps, inProps.ref, DropZoneContext) as [DropZoneProps, RefValue<HTMLDivElement> | undefined];
   const props = hasLive(ctxProps) ? liveOptions(ctxProps, ["isDisabled"] as never) : ctxProps;
   const isDisabledProp = props.isDisabled;

@@ -14,6 +14,7 @@
 import { CheckboxContext, CheckboxFieldContext, CheckboxGroupContext, CheckboxGroupStateContext } from "./contexts.ts";
 import { probeSlots, slotProbing } from "#server";
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
+import { clientEffect } from "@rivetjs/runtime/dom";
 import { mergeProps as mergeLive } from "@rivetjs/runtime/props";
 import { hasLive, liveOmit, liveOptions, liveWithoutData } from "../utils/live.tsx";
 import { liveRenderProps } from "../slots/index.tsx";
@@ -472,6 +473,9 @@ export function Checkbox(props: CheckboxProps) {
   );
 }
 
+/** `clientEffect` body of an indeterminate checkbox: nothing to do, the trigger alone boots the boundary. */
+const bootIndeterminate = (): void => {};
+
 /**
  * A checkbox button is the clickable area of a checkbox, including the indicator and label.
  */
@@ -511,6 +515,10 @@ export function CheckboxButton(props: CheckboxButtonProps) {
   // idle). Without an `isIndeterminate` (absent / plain `false`) the input keeps the property's default (`false`, RA's
   // effect writes the same), so it is bound only when given.
   const indeterminateGiven = isIndeterminate !== undefined && isIndeterminate !== false;
+  // The server cannot write the property: an instance rendered indeterminate boots its boundary at idle (a load-time
+  // client trigger) so the adopt run's `prop:indeterminate` binding sets it before the first input (SELECT-B). Same
+  // value on both sides, so the adopt run takes the same branch.
+  if (indeterminateGiven && untrack(indeterminate)) clientEffect(bootIndeterminate);
   const nativeInput = () =>
     indeterminateGiven ? <input {...input} ref={inputRef as never} prop:indeterminate={indeterminate()} /> : <input {...input} ref={inputRef as never} />;
   const slot = untrack(() => props.slot) || undefined;

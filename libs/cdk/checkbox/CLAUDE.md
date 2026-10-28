@@ -34,6 +34,7 @@ RAC Checkbox family: `CheckboxGroup`, `CheckboxField` + `CheckboxButton`, `Check
 - `STORIES_DIST=dist-x npx vitest run --project cdk-components libs/cdk/tests-components/checkbox.test.ts`
 
 ## Gotchas
+- resumed page: the server cannot write `indeterminate` (a property). An instance rendered indeterminate calls `clientEffect(bootIndeterminate)` (a no-op body: the load-time trigger boots its boundary at idle, the adopt run's `prop:indeterminate` binding sets it before the first input; SELECT-B 2026-10-28, cdk-docs `checkbox-indeterminate`). Not indeterminate at render → no trigger, no JS.
 - story tests must click the `<label>` (`label:has(#id)`): the input is visually hidden (Playwright refuses it)
 - resumed `/forms` page: a truly cold Space on `#terms` toggles (widgets "form fields" passes); a Space pressed right while the runtime boots / chunks load (after the idle slot effect) is flaky: the input's `click` arrives `defaultPrevented` (label `onClick` preventDefault without the input's stopPropagation?) and the box reverts (K1 probe 2/3 runs); open
 - resumed page, label click: after a first label click (input spread activated) a Space on the input was swallowed — runtime takeover order (the label's delegated onClick preventDefault ran before the input's own stopPropagation), fixed in the runtime's `dispatch` (runtime-bugs K3-rt-1; example switch-events). Still open: the very first label click while the runtime / chunks load double-toggles (loader C8 replays the label-activated input click; proposal in scratchpad runtime-bugs.md [G-PAR/K-rt-1])

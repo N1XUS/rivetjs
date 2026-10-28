@@ -138,7 +138,9 @@ function RadioGroupItems(props: RadioGroupItemsProps) {
     value: liveOptions(props, [], ["value"]).value,
     defaultValue: props.defaultValue,
     onChange: props.onChange,
-    name: props.name,
+    // The generated name holds the server id (a `createId()` in the state module is `rvc…` in the adopt run: the
+    // adopted radios would leave the server radios' group).
+    name: props.name ?? resumedId(),
     isDisabled,
     isReadOnly,
     isRequired,

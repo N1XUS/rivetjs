@@ -13,7 +13,6 @@
 // - Resumable: state = plain signals (`createCompareState`, provided by `CompareContext`), handlers are inline arrows
 //   calling `./behaviour.ts`; nothing runs before the first pointer / key event (the root carries `preload="visible"`:
 //   the handler chunks are fetched while visible, so a cold drag follows at once).
-import { untrack } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { createContext, useContext } from "@rivetjs/reactivity";
@@ -78,14 +77,12 @@ export interface CompareProps extends Omit<CompareStateOptions, "direction" | "l
 const ROOT_OWNED = ["onPointerDown", "style"] as const;
 
 /** Root: provides the state to the parts; with `dragAnywhere` a press on the surface jumps there and drags. */
-export function Compare(props: CompareProps) {
+export function Compare(inProps: CompareProps) {
+  // SELECT-B: the body stays in the component (no lowercase helper): the build's boundary facts see only a
+  // component's own body, so its handlers / keyed state make an instance with no stateful caller a boundary.
   const { locale, direction } = useLocale();
   // Live props: `value` (controlled) / `isDisabled` become accessors at the boundary; the rest is read once.
-  const merged = liveOptions(props, ["isDisabled"], ["value"]);
-  return untrack(() => compareRoot(merged, locale, direction));
-}
-
-function compareRoot(props: CompareProps, locale: string, direction: "ltr" | "rtl") {
+  const props = liveOptions(inProps, ["isDisabled"], ["value"]);
   const state =
     props.state ??
     createCompareState({

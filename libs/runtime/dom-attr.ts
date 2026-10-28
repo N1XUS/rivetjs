@@ -26,6 +26,13 @@ export function write(el: Element, name: string, value: unknown): void {
   if (html && (lower === "value" || lower === "checked" || lower === "selected") && lower in el) {
     const next = lower === "value" ? coerce(value) : Boolean(value);
     if ((el as unknown as Record<string, unknown>)[lower] !== next) (el as unknown as Record<string, unknown>)[lower] = next;
+    // `<textarea>` (only `value` gets here): its content (RCDATA) as on the server (`server-spread.ts`), never a `value`
+    // attribute — the default follows the written value like an input's `value` attribute does, so an adopted textarea
+    // keeps its server text and a form reset restores it (SELECT-B).
+    if (el.localName === "textarea") {
+      if ((el as HTMLTextAreaElement).defaultValue !== next) (el as HTMLTextAreaElement).defaultValue = next as string;
+      return;
+    }
   }
   // Boolean attributes follow truthiness (`0`, `""`, `NaN` remove them), like the server.
   if (value == null || (bool && (!value || word))) {

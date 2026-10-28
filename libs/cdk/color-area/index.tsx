@@ -9,7 +9,6 @@
 // - render props are accessors (`isDisabled()`); `state` is the serializable state object.
 // `render` (RAC DOMRenderProps): given, the attributes object (reactive entries are accessors) goes to `render(attrs, renderProps)` instead of the default element.
 import { ColorAreaContext, ColorAreaStateContext } from "./contexts.ts";
-import { untrack } from "@rivetjs/reactivity";
 import { ref as createRef } from "@rivetjs/runtime/dom";
 import { createColorAreaState, getColorAreaDisplayColor, type ColorAreaState } from "../color/area-state.ts";
 import { useLocale } from "@rivetjs/cdk/i18n";
@@ -86,14 +85,12 @@ function liveDisabledAttr(state: ColorAreaState): () => "true" | undefined {
  * two-dimensional gradient background.
  */
 export function ColorArea(props: ColorAreaProps) {
+  // SELECT-B: the body stays in the component (no lowercase helper): the build's boundary facts see only a
+  // component's own body, so its handlers / keyed state make an instance with no stateful caller a boundary.
   const [ctxMerged, forwarded] = contextProps(props, props.ref, ColorAreaContext);
   // Live props (P5): `isDisabled` and a controlled `value={c()}` become accessors (the state / handlers read them; the
   // value is never written); the rest of the body is read once (untracked: a prop change never re-creates the area).
   const merged = liveOptions(ctxMerged, ["isDisabled"], ["value"]);
-  return untrack(() => colorArea(merged, forwarded as RefValue<HTMLDivElement> | undefined));
-}
-
-function colorArea(merged: ColorAreaProps, forwarded: RefValue<HTMLDivElement> | undefined) {
   const inputXRef = createRef<HTMLInputElement>();
   const inputYRef = createRef<HTMLInputElement>();
   const containerRef = createRef<HTMLDivElement>();

@@ -875,7 +875,7 @@ _trigger.ev = (key) => {
 
 /**
  * D5 (intake 3, ABI 11): an in-place handler of a module function that is no boundary body (a lowercase helper a
- * component calls — cdk `group` / `compareRoot` — or a non-boundary component), compiled in place of its server slot: the
+ * component calls, e.g. a cdk parts form's `selectParts`, or a non-boundary component), compiled in place of its server slot: the
  * boundary open at render installs that listener when it adopts, so it listens to `type` (`*`: unknown). An empty slot.
  */
 export function _rListens(type: string): null {

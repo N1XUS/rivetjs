@@ -13,7 +13,7 @@
 // `render` (RAC DOMRenderProps): given, the attributes go to `render(attrs, GroupRenderProps)` instead of the default `<div>`.
 // Deviations: RA useHover's "end hover when isDisabled turns true" effect is not ported (the
 // hover ends at the next pointerleave; `data-hovered` is not written while disabled).
-import { createContext, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { createContext, signal, type Signal } from "@rivetjs/reactivity";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import {
   dataBool,
@@ -89,16 +89,14 @@ const isFn = (v: unknown): boolean => typeof v === "function";
 const truthy = (v: unknown): boolean => !!v && v !== "false";
 const attr = (v: unknown): string | undefined => (v == null ? undefined : String(v));
 
-/** A group of related UI controls (RAC `Group`). */
-export function Group(inProps: GroupProps) {
-  // Live props (P5): isDisabled / isInvalid / isReadOnly / aria-disabled / aria-invalid become accessors (the part reads
-  // them with `read`), class / style / children from a live view; the rest of the body is read once (untracked).
-  return untrack(() => group(inProps));
-}
-
 const GROUP_LIVE = ["isDisabled", "isInvalid", "isReadOnly", "aria-disabled", "aria-invalid"] as const;
 
-function group(inProps: GroupProps) {
+/** A group of related UI controls (RAC `Group`). */
+export function Group(inProps: GroupProps) {
+  // SELECT-B: the body stays in the component (no lowercase helper): the build's boundary facts see only a
+  // component's own body, so its handlers / keyed state make an instance with no stateful caller a boundary.
+  // Live props (P5): isDisabled / isInvalid / isReadOnly / aria-disabled / aria-invalid become accessors (the part reads
+  // them with `read`), class / style / children from a live view; the rest of the body is read once (`_c` untracks it).
   const [ctxProps, ref] = contextProps(inProps, inProps.ref, GroupContext) as [GroupProps, RefValue<HTMLDivElement> | undefined];
   const props = hasLive(ctxProps) ? liveOptions(ctxProps, GROUP_LIVE as never) : ctxProps;
   const { id, onPointerEnter, onPointerLeave, onFocus, onBlur, onFocusIn, onFocusOut, onKeyDown, onKeyUp } = props;

@@ -3,8 +3,8 @@
 @rivetjs/reactivity/track ce983b5ae9df 1943
 @rivetjs/reactivity/store 02fab8d3fba0 10217
 @rivetjs/runtime/server f73fa8d812bc 54909
-@rivetjs/runtime/dom fdb0e0563d5a 49960
-@rivetjs/runtime/dom [resumed] d29b7cdedd27 51531
+@rivetjs/runtime/dom 65bb07527e57 50036
+@rivetjs/runtime/dom [resumed] 5279062d1083 51607
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176
 @rivetjs/runtime/jsx-dev-runtime 25ccf3645071 176
@@ -30,9 +30,9 @@
 @rivetjs/runtime/dom-derived-runtime 4afc1f4e11e3 59880
 @rivetjs/runtime/dom-derived-runtime [resumed] 9ec59e81ea78 60197
 @rivetjs/runtime/dom-derived-runtime [domData] 2bb517fddc6d 60545
-@rivetjs/runtime/dom-lite a98556a21d6f 10358
-@rivetjs/runtime/dom-lite [resumed] 70860def40ec 10358
-@rivetjs/runtime/dom-lite [domData] e9210e0abddd 10358
+@rivetjs/runtime/dom-lite 9f5d1435869e 10434
+@rivetjs/runtime/dom-lite [resumed] e9d9bea128b9 10434
+@rivetjs/runtime/dom-lite [domData] e30ca3080073 10434
 @rivetjs/runtime/derived-reactivity 540c9a53af42 15710
 @rivetjs/runtime/node 3c195fe5ea08 5769
 @rivetjs/runtime/hot 3ec01cdb200b 8208

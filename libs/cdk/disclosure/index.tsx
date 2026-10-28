@@ -205,19 +205,17 @@ const InternalDisclosureContext = createContext<InternalDisclosureContextValue |
 
 const DISCLOSURE_OWNED = ["style", "onFocusIn", "onFocusOut"] as const;
 
-/** A disclosure is a collapsible section of content (RAC `Disclosure`). */
-export function Disclosure(inProps: DisclosureProps) {
-  // Live props (P5): `isDisabled` stays live (press checks, button, `data-disabled`), `isExpanded` is controlled (an
-  // accessor only when defined at creation); class / style / children from a live view; the rest is read once.
-  return untrack(() => disclosure(inProps));
-}
-
 /** A live disclosure's disabled state: its own (live or static) flag or the group's (a returned arrow: resumable). */
 function disclosureDisabled(own: boolean | (() => boolean | undefined) | undefined, group: DisclosureGroupState | null): () => boolean {
   return () => !!read(own) || (group ? isGroupDisabled(group) : false);
 }
 
-function disclosure(inProps: DisclosureProps) {
+/** A disclosure is a collapsible section of content (RAC `Disclosure`). */
+export function Disclosure(inProps: DisclosureProps) {
+  // SELECT-B: the body stays in the component (no lowercase helper): the build's boundary facts see only a
+  // component's own body, so its handlers / keyed state make an instance with no stateful caller a boundary.
+  // Live props (P5): `isDisabled` stays live (press checks, button, `data-disabled`), `isExpanded` is controlled (an
+  // accessor only when defined at creation); class / style / children from a live view; the rest is read once.
   const [ctxProps, ref] = contextProps(inProps, inProps.ref, DisclosureContext) as [DisclosureProps, RefValue<HTMLDivElement> | undefined];
   const props = hasLive(ctxProps) ? liveOptions(ctxProps, ["isDisabled"], ["isExpanded"]) : ctxProps;
   const groupState = useContext(DisclosureGroupStateContext);

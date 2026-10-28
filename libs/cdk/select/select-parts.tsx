@@ -220,10 +220,8 @@ interface SelectPartsInnerInput {
 }
 
 function SelectPartsInner(input: SelectPartsInnerInput) {
-  return untrack(() => selectPartsInner(input));
-}
-
-function selectPartsInner(input: SelectPartsInnerInput) {
+  // SELECT-B: the body stays in the component (no lowercase helper): the build's boundary facts see only a
+  // component's own body, so its handlers / keyed state make an instance with no stateful caller a boundary.
   // Inside another field's server slot probe (`probeSlots`): this field's subtree holds none of that field's slots.
   if (slotProbing) return null;
   const { props, collection, selectRef: ref } = input;

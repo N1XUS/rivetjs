@@ -224,16 +224,14 @@ export function Select<M extends SelectionMode = "single">(props: SelectProps<M>
 
 function SelectPreset<M extends SelectionMode = "single">(input: { props: SelectProps<M> }) {
   // Live props (P5, LIVE-SWEEP): `isDisabled` / `isInvalid` / `isRequired` / `placeholder` / `aria-describedby` /
-  // controlled `value` / `selectedKey` live; body reads read once.
+  // controlled `value` / `selectedKey` live; body reads read once (`<SelectPreset>` runs untracked, `_c`).
+  // The body stays in this component (no lowercase helper): the build's boundary facts see only a component's own
+  // body, so its handlers / keyed state make this instance a boundary on a page with no stateful caller (SELECT-B).
   const props = liveOptions(
     input.props,
     ["isDisabled", "isInvalid", "isRequired", "placeholder", "aria-describedby"] as never,
     ["value", "selectedKey"] as never,
-  );
-  return untrack(() => selectPreset(props));
-}
-
-function selectPreset<M extends SelectionMode = "single">(props: SelectProps<M>) {
+  ) as SelectProps<M>;
   const validationBehavior = useValidationBehavior(props.validationBehavior);
   const state = (props.state ??
     createSelectState<M>({ ...props, validationBehavior, validationErrors: useValidationErrors() })) as unknown as SelectState<SelectionMode>;

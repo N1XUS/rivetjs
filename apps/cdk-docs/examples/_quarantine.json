@@ -3,10 +3,6 @@
     "step": "{\"matches\":\"#classes-slide-0.is-snapped\"}",
     "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): the ClassNames plugin adds is-snapped to slide 0 at engine init, then the slide's adopted class binding rewrites className and drops it (is-in-view, added later by slidesInView, survives; after #next slide 1 keeps is-snapped); owner cdk carousel / runtime _cls (foreign classes on an adopted element)"
   },
-  "checkbox-indeterminate": {
-    "step": "{\"matches\":\"#all:indeterminate\"}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): indeterminate is a DOM property with no HTML form: the server markup cannot carry it (data-indeterminate is there) and nothing runs the checkbox before the first input, so #all is not :indeterminate on load; needs a load-time property write for adopted boundaries; owner runtime derived / cdk checkbox"
-  },
   "date-field-events": {
     "step": "{\"expect\":[\"#log\",\"focus focusChange:true change:2026-10-15 keydown:ArrowUp keyup:ArrowUp\"]}",
     "reason": "cold keyup lost in the full site build (TABS-ROOT 2026-10-28: passes in a check-examples build on base and after; same gap as date-range-picker-events, SLIDER-KEY 2026-10-27): keyup not in the page's data-events; runtime fix in lane RED-COMP"
@@ -19,41 +15,9 @@
     "step": "{\"expect\":[\"#pokedex-9\",\"Pok\u00e9mon #9\"]}",
     "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): onLoadMore never fires on a cold wheel scroll: scroll does not bubble and is not a held / waking event, so the GridList boundary never adopts and its load-more sentinel / scroll listener does not exist; owner runtime derived wake triggers (scroll) / cdk collections"
   },
-  "group-dom-events": {
-    "step": "{\"expect\":[\"#dom-group-log\",\"hover:true\"]}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): cold hover lost: the example's own pointerenter listener logs, but the Group's useHover never sees the pointerenter (not a held event; it fired before the adopt run), so onHoverChange(true) never runs; owner runtime derived event hold / replay (lane RED-COMP)"
-  },
-  "group-focus": {
-    "step": "{\"attr\":[\"#search\",\"data-focus-within\",\"true\"]}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): Tab into the group: a cold focus during the first adopt run is lost: the trusted focus / focusin fires before the boundary adopts and is not replayed, so the component's focus state (useFocus / useFocusWithin / focus-visible) never turns on; owner runtime derived event hold / replay (lane RED-COMP)"
-  },
-  "group-hover": {
-    "step": "{\"attr\":[\"#zoom\",\"data-hovered\",\"true\"]}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): cold hover lost: a click on the group's button gives data-focus-within but never data-hovered (pointerenter is not held / replayed before the adopt run); owner runtime derived event hold / replay (lane RED-COMP)"
-  },
-  "group-tailwind": {
-    "step": "{\"attr\":[\"#tw-price\",\"data-focus-within\",\"true\"]}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): click into the group's input: a cold focus during the first adopt run is lost: the trusted focus / focusin fires before the boundary adopts and is not replayed, so the component's focus state (useFocus / useFocusWithin / focus-visible) never turns on; owner runtime derived event hold / replay (lane RED-COMP)"
-  },
-  "radio-group-orientation": {
-    "step": "{\"matches\":\"#align input[value='center']:checked\"}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): id mismatch after adopt: the pressed radio's name becomes a client id (rvc1) while its siblings keep the server name (rv0), so they are no longer one native group and ArrowRight does not check the next radio; owner runtime derived useId parity (lane RED-COMP)"
-  },
-  "select-css": {
-    "step": "{\"matches\":\"#city[data-focused][data-focus-visible]\"}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): keyboard focus on the trigger (page.press focuses, then Shift): a cold focus during the first adopt run is lost: the trusted focus / focusin fires before the boundary adopts and is not replayed, so the component's focus state (useFocus / useFocusWithin / focus-visible) never turns on; owner runtime derived event hold / replay (lane RED-COMP)"
-  },
-  "select-events": {
-    "step": "{\"expect\":[\"#log\",\"focus focused:true open:true down:ArrowDown\"]}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): log has open / down but not focus / focused:true: a cold focus during the first adopt run is lost: the trusted focus / focusin fires before the boundary adopts and is not replayed, so the component's focus state (useFocus / useFocusWithin / focus-visible) never turns on; owner runtime derived event hold / replay (lane RED-COMP)"
-  },
   "table-load-more": {
     "step": "{\"expect\":[\"#planets-11-name\",\"Planet 11\"]}",
     "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): onLoadMore never fires on a cold wheel scroll (same as grid-list-load-more): scroll is not a waking event, the Table boundary never adopts; owner runtime derived wake triggers (scroll) / cdk collections"
-  },
-  "text-area-controlled": {
-    "step": "{\"expect\":[\"#poem\",\"Roses are red\"]}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): the adopted textarea loses its server RCDATA text: after the first input the uncontrolled #poem keeps .value but has no text child (defaultValue \"\", a form reset empties it) and gains a value attribute (the client attribute writer sets value= on a textarea, the server writes text); owner runtime adopt / dom-attr textarea value"
   },
   "time-field-events": {
     "step": "{\"expect\":[\"#log\",\"focus focusChange:true change:09:31:00 keydown:ArrowUp keyup:ArrowUp\"]}",
