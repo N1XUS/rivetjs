@@ -393,9 +393,11 @@ export interface ResumeManifest {
   /**
    * Lite resume (ZERO LITE-WIRE): the lite runtime (`@rivetjs/runtime/dom-lite` instance) and, per boundary name with a
    * lite residual, its lite entry. A page whose every record is listed (and that holds nothing else for the browser:
-   * no island, `Async`, wake list, DOM data, document listener) loads these instead of `runtime` / `symbols`.
+   * no island, `Async`, wake list, DOM data, document listener) loads these instead of `runtime` / `symbols`. `props`
+   * (JS-DIET-2): the boundary names whose residual reads the record's props (`LiteRec.p`): a `DEMOTED` record of them
+   * (props not data, so not on the record) is not lite.
    */
-  lite?: { runtime: string; symbols: Record<string, string> };
+  lite?: { runtime: string; symbols: Record<string, string>; props?: string[] };
   /**
    * Lazy parts (IDLE-PREFETCH): chunk URL → the chunks of the `lazyComponent(() => import(…))` parts its modules import.
    * The parts a page's fetch-ahead list reaches (+ their `deps`) are its later fetch list (tail `data-fl`): fetched after the
@@ -1977,10 +1979,10 @@ function flush(ctx: DerivedRender): FlushTail | null {
     for (const record of all ? b : []) {
       // RT-DIET: any record with a residual (the compiler emits one only for a compile-time independent boundary). A
       // render-time demotion (`DEMOTED`: props that are not data, or no context proof) concerns re-running the component
-      // body with its props / context; a residual never does — it reads no props live and no context — so it adopts the
-      // server nodes alike.
+      // body with its props / context; a residual reads no context, and props only when `lite.props` names it
+      // (JS-DIET-2: then its record must hold them) — otherwise it adopts the server nodes alike.
       // (`UNKEYED`: a keyed value that is not data stayed off the record; a residual would take the site's init instead.)
-      const url = record[2] & UNKEYED ? undefined : lite.symbols[record[3]];
+      const url = record[2] & UNKEYED || (record[2] & DEMOTED && lite.props?.includes(record[3])) ? undefined : lite.symbols[record[3]];
       if (url === undefined) {
         all = false;
         break;

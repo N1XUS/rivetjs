@@ -1,17 +1,9 @@
 // Lite runtime: keyed lists (`<For each by>`, RT-DIET lite v2; a leaf of `dom-lite.ts`, see `dom-lite-core.ts`).
 import type { Signal } from "@rivetjs/reactivity";
 import { type Eff, _lw, effect, miss, own, release, signal, untracked } from "./dom-lite-core.ts";
+import { build, type LiteSpec } from "./dom-lite-spec.ts";
 
-/** A row's static markup: `[tag, attributes, …children]`, a child a Text's data, `0` / `1` a content opener / closer. */
-export type LiteSpec = [tag: string, attributes: Record<string, string>, ...children: (string | 0 | 1 | LiteSpec)[]];
-const build = (d: Document, s: string | 0 | 1 | LiteSpec): Node => {
-  if (typeof s == "string") return d.createTextNode(s);
-  if (typeof s == "number") return d.createComment(s ? "]" : "[");
-  const el = d.createElement(s[0]);
-  for (const k in s[1]) el.setAttribute(k, s[1][k]!);
-  for (let i = 2; i < s.length; i++) el.append(build(d, s[i] as LiteSpec));
-  return el;
-};
+export type { LiteSpec } from "./dom-lite-spec.ts";
 type Row<T> = [key: unknown, item: Signal<T>, index: Signal<number>, nodes: Node[], effects: Eff[]];
 /**
  * A keyed list (`<For each by>`; RT-DIET lite v2): `at` = its content opener; server rows `<!--r[-->el<!--]-->` are

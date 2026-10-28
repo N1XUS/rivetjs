@@ -51,6 +51,8 @@ const sources: Record<string, string> = {
   "/dom-lite-attr.ts": "dom-lite-attr.ts",
   "/dom-lite-write.ts": "dom-lite-write.ts",
   "/dom-lite-list.ts": "dom-lite-list.ts",
+  "/dom-lite-spec.ts": "dom-lite-spec.ts",
+  "/dom-lite-cond.ts": "dom-lite-cond.ts",
   "/dom-lite-model.ts": "dom-lite-model.ts",
   "/dom-lite-full.ts": "dom-lite-full.ts",
   // DERIVED-C4: the derived build's `@rivetjs/reactivity` alias (fixtures import it by path).

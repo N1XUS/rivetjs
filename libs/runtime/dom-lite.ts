@@ -30,19 +30,23 @@ import { DEV } from "#dev";
 import { type Eff, _lw, defaulted, delegate, dispatch, effect, miss, type On, on, own, release, signal, types } from "./dom-lite-core.ts";
 
 export { signal, _lw } from "./dom-lite-core.ts";
-export { _lb, _lk, _lq } from "./dom-lite-attr.ts";
+export { _lb, _lk, _lq, _lv } from "./dom-lite-attr.ts";
 export { _la, _lp } from "./dom-lite-write.ts";
 export { _lf, type LiteSpec } from "./dom-lite-list.ts";
+export { _lo } from "./dom-lite-cond.ts";
 export { _lm } from "./dom-lite-model.ts";
 
 /**
- * A boundary record as a residual sees it: its id, its keyed values by key (absent key ⇒ the site's init, LIT) and the
- * page's wake lists (tail `w`: a key another boundary reads is not lite).
+ * A boundary record as a residual sees it: its id, its keyed values by key (absent key ⇒ the site's init, LIT), the
+ * page's wake lists (tail `w`: a key another boundary reads is not lite) and its recorded props (JS-DIET-2: an
+ * `INDEPENDENT` record's props are data; a residual whose live bindings / handlers read props declares
+ * `const props = r.p`; `{}` when the record has none).
  */
 export interface LiteRec {
   readonly id: number;
   readonly v: Record<string, unknown> | undefined;
   readonly w?: Record<string, number[]> | undefined;
+  readonly p?: Record<string, unknown>;
 }
 /** The residual of a boundary (`<Name>$a`): binds its handlers, bindings and keyed state over the server nodes. */
 export type LiteResidual = (node: Element | Comment, rec: LiteRec) => void;
@@ -253,10 +257,10 @@ const runtime: DerivedRuntime = {
     doc = d;
     api = loader;
     mixed = t.l;
-    eachRecord(t, (id, _parent, flags, name, signals) => {
+    eachRecord(t, (id, _parent, flags, name, signals, props) => {
       const v: Record<string, unknown> = {};
       for (let i = 0; i < signals.length; i += 2) v[signals[i] as string] = signals[i + 1];
-      recs.set(id, [id, name, flags, { id, v, w: t.w }, 0]);
+      recs.set(id, [id, name, flags, { id, v, w: t.w, p: (props ?? {}) as Record<string, unknown> }, 0]);
     });
     for (const item of loader.q.splice(0)) runtime.cold(item);
   },

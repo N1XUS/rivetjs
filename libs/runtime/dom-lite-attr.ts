@@ -1,6 +1,6 @@
 // Lite runtime: the light attribute bindings the compiler picks by name (RT-DIET; a leaf of `dom-lite.ts`, see
 // `dom-lite-core.ts`): `class`, plain attributes, boolean attributes. URL-bearing / enumerated / form-value attributes
-// go through `_la` (`dom-lite-write.ts`).
+// go through `_la` (`dom-lite-write.ts`); an `<input>` / `<select>` `value` through `_lv` (JS-DIET-2).
 import { effect } from "./dom-lite-core.ts";
 
 /** A dynamic `class` (`_className` semantics: null / false / "" remove the attribute). */
@@ -21,4 +21,15 @@ export const _lb = (el: Element, name: string, fn: () => unknown): void =>
     const on = !!fn();
     el.toggleAttribute(name, on);
     if (name in el) (el as unknown as Record<string, boolean>)[name] = on;
+  });
+/**
+ * A dynamic `value` of an `<input>` / `<select>` (JS-DIET-2; `dom-attr.ts` `write` for that name without its other rules):
+ * the property (`coerce`: null / booleans → "") when it differs, and the attribute (null removes it).
+ */
+export const _lv = (el: HTMLInputElement, fn: () => unknown): void =>
+  effect(() => {
+    const v = fn(),
+      s = v == null || typeof v == "boolean" ? "" : String(v);
+    if (el.value !== s) el.value = s;
+    v == null ? el.removeAttribute("value") : el.setAttribute("value", v as string);
   });

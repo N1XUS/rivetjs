@@ -10,6 +10,8 @@ export interface Eff {
   d: Set<Set<Eff>>;
   /** Released (a removed list row's binding): never runs again. */
   x?: 1;
+  /** A disposer (`onRelease`): runs when released (a conditional subtree releases what its current branch bound). */
+  r?: () => void;
 }
 let observer: Eff | null = null,
   depth = 0,
@@ -44,9 +46,12 @@ export const effect = (f: () => void): void => {
 export const release = (effects: Eff[]): void => {
   for (const e of effects) {
     e.x = 1;
+    e.r?.();
     for (const s of e.d) s.delete(e);
   }
 };
+/** Run `r` when the bindings being made now are released (JS-DIET-2: a conditional subtree's later branches). */
+export const onRelease = (r: () => void): void => void made?.push({ f: r, d: new Set(), r });
 /** Run `fn` reading nothing (no dependency for the running binding). */
 export function untracked<T>(fn: () => T): T {
   const previous = observer;

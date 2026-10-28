@@ -103,13 +103,13 @@
   "stateBytes": 131,
   "inlineJsBytes": 6099,
   "files": 4,
-  "jsRaw": 8315,
-  "jsGz": 4270,
-  "jsBr": 3868,
+  "jsRaw": 8333,
+  "jsGz": 4279,
+  "jsBr": 3880,
   "urls": [
-   "/assets/dom-lite.js",
    "/assets/dom-lite-attr.js",
    "/assets/dom-lite-list.js",
+   "/assets/dom-lite.js",
    "/assets/index.js"
   ]
  },
@@ -202,9 +202,9 @@
   "stateBytes": 162,
   "inlineJsBytes": 6099,
   "files": 2,
-  "jsRaw": 5896,
-  "jsGz": 2949,
-  "jsBr": 2671,
+  "jsRaw": 5914,
+  "jsGz": 2962,
+  "jsBr": 2681,
   "urls": [
    "/assets/dom-lite.js",
    "/assets/index.js"
@@ -324,14 +324,14 @@
   "stateBytes": 146,
   "inlineJsBytes": 6099,
   "files": 5,
-  "jsRaw": 9074,
-  "jsGz": 4778,
-  "jsBr": 4292,
+  "jsRaw": 9092,
+  "jsGz": 4783,
+  "jsBr": 4313,
   "urls": [
-   "/assets/dom-lite.js",
    "/assets/dom-lite-attr.js",
    "/assets/dom-lite-list.js",
    "/assets/dom-lite-model.js",
+   "/assets/dom-lite.js",
    "/assets/index.js"
   ]
  },
@@ -356,9 +356,9 @@
   "stateBytes": 173,
   "inlineJsBytes": 6099,
   "files": 2,
-  "jsRaw": 5913,
-  "jsGz": 2963,
-  "jsBr": 2688,
+  "jsRaw": 5931,
+  "jsGz": 2971,
+  "jsBr": 2698,
   "urls": [
    "/assets/BookCard.js",
    "/assets/dom-lite.js"
@@ -372,12 +372,12 @@
   "stateBytes": 343,
   "inlineJsBytes": 6099,
   "files": 3,
-  "jsRaw": 7797,
-  "jsGz": 4006,
-  "jsBr": 3631,
+  "jsRaw": 7815,
+  "jsGz": 4014,
+  "jsBr": 3639,
   "urls": [
-   "/assets/dom-lite.js",
    "/assets/dom-lite-list.js",
+   "/assets/dom-lite.js",
    "/assets/index.js"
   ]
  }

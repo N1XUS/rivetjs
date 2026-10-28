@@ -386,6 +386,13 @@ const MANIFEST = ".vite/rivet-resume.json";
  * one reactivity / event table (a fallback's full runtime and ordinary module are copies too).
  */
 const LITE_PREFIX = "\0rivet-lite:";
+/** JS-DIET-2: the residual `<local>$a` of a lite entry reads its record's props (`__rivetLr.p`, `derived_lite.rs`). */
+export function _liteReadsProps(code: string, local: string): boolean {
+  const at = code.indexOf("export function " + local + "$a(");
+  if (at < 0) return false;
+  const end = code.indexOf("\nexport ", at + 1);
+  return /\b__rivetLr\.p\b/.test(code.slice(at, end < 0 ? undefined : end));
+}
 const LITE_RUNTIME = "\0rivet-lite-runtime";
 /** Stylesheets reached from lite modules: the page already links them (server render), a copy would be a second sheet. */
 const LITE_EMPTY = "\0rivet-lite-empty";
@@ -1848,6 +1855,7 @@ function rivetPlugin(
       sized = new Set<Rollup.OutputChunk>(),
       roots: string[] = [];
     const lite: Record<string, string> = {};
+    const liteProps: string[] = [];
     let runtime: string | null = null,
       builtins: string | null = null,
       domReader: string | null = null,
@@ -1873,7 +1881,10 @@ function rivetPlugin(
       if (output.facadeModuleId.startsWith(LITE_PREFIX)) {
         const entry = liteEntries.get(output.facadeModuleId.slice(LITE_PREFIX.length, -3));
         if (entry) {
-          for (const name of entry.names) lite[name] = base + output.fileName;
+          for (const name of entry.names) {
+            lite[name] = base + output.fileName;
+            if (_liteReadsProps(entry.code, name.slice(name.lastIndexOf("#") + 1))) liteProps.push(name);
+          }
           sized.add(output);
           roots.push(output.fileName);
         }
@@ -1938,7 +1949,9 @@ function rivetPlugin(
       ...(domDataIn && domReader ? { domData: domReader } : {}),
       ...(Object.keys(lazy).length ? { lazy } : {}),
       // Pages whose every record is in `lite.symbols` load `lite.runtime` + those entries instead (server `flush`).
-      ...(liteRuntime && Object.keys(lite).length ? { lite: { runtime: liteRuntime, symbols: lite } } : {}),
+      ...(liteRuntime && Object.keys(lite).length
+        ? { lite: { runtime: liteRuntime, symbols: lite, ...(liteProps.length ? { props: liteProps.sort() } : {}) } }
+        : {}),
     };
     const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
     this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });
