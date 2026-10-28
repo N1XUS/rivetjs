@@ -12,7 +12,8 @@
 // runs live (`rt.on`); else it is held — click defaults (links, toggles, labels, summary, submit / reset), submit,
 // invalid, a `contextmenu` inside the nearest `data-cm` (COLD-CTXMENU), the keys the target's nearest `data-rk` or the boundary record (`k`) lists — and queued with its path and the target's form state, and the
 // runtime replays it once the boundary chunks loaded (`rt.cold`). An event outside every listening boundary whose target is inside
-// a `data-g` selector match goes to the document click listener's boundary (tail `g`, the router's links; M2-R5). Intent
+// a `data-g` selector match goes to the document click listener's boundary (tail `g`, the router's links; M2-R5). Once boot
+// starts, keydowns outside boundaries join its pending queue too (a window shortcut after a nonfocusable first click). Intent
 // (pointerdown, focusin, touchstart, keydown, a mouse / pen pointer resting 80 ms on an element) inside a listening
 // boundary starts the runtime, fetches the page's fetch-ahead list at once (`data-fo`, high priority: no import
 // waterfall) and loads the chunks of the listening boundaries around the target (`rt.w`). One chunk per boundary: tail
@@ -116,7 +117,10 @@ export function derivedLoader(): void {
     const at = ids(target, rt || booting || type == "submit" || (target.form && !nc) ? "" : type);
     // Outside every boundary inside a `data-g` match (the router's links): the document click listener's (tail `g`).
     at.length || !target.closest?.(script.dataset.g!) || at.push("");
-    if (!at.length || rt?.on(event)) return;
+    // A nonfocusable first click leaves keys targeting body, outside every boundary. Once boot started, keep those
+    // keys behind the pending adopt too: its window shortcut listener does not exist until the chunk runs. With no
+    // pending work rt.on lets them through; a body key alone still never boots the page. Key defaults stay native.
+    if (!(at.length || (booting && type == "keydown")) || rt?.on(event)) return;
     let replay: (() => void) | undefined;
     if (
       type == "click" &&

@@ -1,6 +1,1 @@
-{
-  "app-layout-aside-shortcut": {
-    "step": "{\"attr\":[\"#app-layout-aside-shortcut-aside\",\"data-state\",\"closed\"]}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): a cold keydown (Control+Shift+KeyE) sent right after the first click, while that click's adopt run is in flight, is lost (the aside stays open); the same shortcut 1.5 s later toggles it; owner runtime derived event hold (lane RED-COMP)"
-  }
-}
+{}

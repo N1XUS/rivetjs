@@ -17,7 +17,7 @@ Internal, contributor-facing docs (user-facing docs live in `apps/docs/content` 
 | File | Topic |
 | --- | --- |
 | `performance.md` | Hot path idioms: measured micro-patterns (Intl memo, parse-once caches, delegated hover/focus, no per-instance FinalizationRegistry, frozen arrays, cssText for CSP, insertion; CODE-SMELL-A: bounded per-key / per-header caches, free constant array literals, lazy side tables, in-place compaction, pass the match; CODE-SMELL-B: keep the per-key getter scan, lazy result lists, `includes` for short lists; RESUME-DROP-MARKERS: per-node `removeChild` cost, no bulk short of a whole-parent wipe). |
-| `resumability.md` | Resume model (derived, the only one since M6-CUT): boundaries tail, loader, adopt runs, cold press, fuzz, first-click flush — **read before touching runtime/compiler resume code**. |
+| `resumability.md` | Resume model (derived, the only one since M6-CUT): boundaries tail, loader, adopt runs, cold press, body shortcuts during boot, fuzz, first-click flush — **read before touching runtime/compiler resume code**. |
 | `routing.md` | `@rivetjs/router`: patterns, loaders/actions, Async boundary, adapters. |
 | `server-code.md` | `load(…)`/`actions(…)` next to the page; compiler strips them from browser builds. |
 | `forms.md` | `@rivetjs/forms` over Standard Schema v1. |
