@@ -387,8 +387,12 @@ export function Dialog(inProps: DialogProps) {
   const element = createRef<HTMLElement>();
   const ref = mergeRefValues(element as RefValue<HTMLElement>, contextRef) as Ref<HTMLElement>;
   const isEntering = props.isEntering;
-  // Rendered by the server: the mount effect runs on a resumed page when its chunk wakes (idle / visible).
-  const resumed = typeof document === "undefined";
+  // Rendered by the server: the mount effect runs on a resumed page when its unit adopts (an event elsewhere on the page,
+  // idle / visible). An adopt run hands the component the live server element (connected), a client render a detached
+  // one: set below, once the element exists (REDS-CDK 2026-10-28: the derived resume runs the body in the browser, so
+  // the former `typeof document` test was always false there — an inline Dialog adopting on a ComboBox's first input
+  // pulled focus out of the input).
+  let resumed = false;
   // useDialog: focus the dialog itself on mount (or once it has entered), unless a child element is already focused.
   clientEffect(() => {
     const el = element();
@@ -428,9 +432,11 @@ export function Dialog(inProps: DialogProps) {
       onBlur: (event: FocusEvent) => dialogBlur(event as never),
       children: () => body,
     };
-    return props.render(attrs as never, undefined);
+    const out = props.render(attrs as never, undefined);
+    resumed = adoptedEl(ref);
+    return out;
   }
-  return (
+  const out = (
     <section
       {...dom}
       id={id}
@@ -449,4 +455,9 @@ export function Dialog(inProps: DialogProps) {
       {body}
     </section>
   );
+  resumed = adoptedEl(ref);
+  return out;
 }
+
+/** The ref's element exists and is in the document already: the server's, handed to an adopt run (resumed page). */
+const adoptedEl = (ref: Ref<HTMLElement>): boolean => !SERVER && !!untrack(ref as unknown as () => HTMLElement | undefined)?.isConnected;

@@ -35,7 +35,7 @@ RAC `DialogTrigger` + `Dialog` (React Aria useDialog / useOverlayTrigger). Compo
 
 ## Gotchas
 - SSR: an open dialog IS in the server HTML (RAC renders nothing for an overlay on the server) — deliberate, resumable pages
-- Resumed page: focus-on-mount client effect (idle) skips when focus is already outside the dialog and the user moved it (`focusMovedByUser`, `../focus/index.ts`) — inline open dialog must not steal the first cold keystroke (deviation in header)
+- Resumed page: focus-on-mount client effect (idle) skips when focus is already outside the dialog and the user moved it (`focusMovedByUser`, `../focus/index.ts`) — inline open dialog must not steal the first cold keystroke (deviation in header); `resumed` = the ref's element is already connected after the body ran (an adopt run hands over the server `<section>`; a client render a detached one) — `typeof document` was always false under derived, so an inline Dialog adopting on a ComboBox's first input pulled focus out of it (REDS-CDK 2026-10-28, `tests-components/dom-events-overlays.test.ts` combobox)
 - Hover mode: pointer leave does not close while focus is inside the dialog (dialog takes focus on open)
 - Plain text children re-run the whole children slot on change (bare expression reads tracked by the binding); element / component children keep their own bindings
 - Skipped upstream cases: portalContainer (deleted), MenuItem autoFocus (needs Menu re-port), DateRangePicker dismiss (needs DateRangePicker re-port), "latest onEnter/onExit" (no rerender)
