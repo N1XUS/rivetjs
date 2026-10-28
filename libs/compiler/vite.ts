@@ -1004,6 +1004,10 @@ function rivetPlugin(
   const lazyPending: Promise<unknown>[] = [];
   // Client build (ZERO LITE-WIRE): module → its lite entry (compile `lite`: residual code + the boundary names it covers).
   const liteEntries = new Map<string, { code: string; names: string[] }>();
+  // JS-DIET-2 one request: with one lite entry in the build, the lite runtime + that entry (set at `buildEnd`) are the `lite`
+  // chunk group's roots; the group takes their static dependencies too (the modules the chunk actually uses: an import
+  // only the fallback graph reads stays out), so a lite page fetches one file. Several lite entries: default chunking.
+  const liteGroup = new Set<string>();
   // Resume walk: module → whether it exports anything but its boundary components (the facade only pays off then).
   const derivedExtraExports = new Map<string, boolean>();
   // Framework bridges (`rivet({ bridges })`): the facade host's api once Vite resolved the config, else null.
@@ -1873,7 +1877,10 @@ function rivetPlugin(
       if (domReaderId && output.facadeModuleId === domReaderId) domReader = base + output.fileName;
       // Lite graph (ZERO LITE-WIRE): the lite runtime + per module its lite entry (`lite.symbols`: boundary name → URL).
       if (output.facadeModuleId === LITE_RUNTIME) {
-        const real = _foldFacade(bundle, output, ["default"]);
+        // JS-DIET-2: in the `lite` group the chunk also answers a default-exported boundary's `module.default` (the full
+        // runtime's fallback reads it as the component): then the runtime keeps its facade (one more, ~90 B file).
+        const shared = liteGroup.size > 0 && [...liteEntries.values()].some((entry) => entry.names.some((name) => name.endsWith("#default")));
+        const real = shared ? output : _foldFacade(bundle, output, ["default"]);
         liteRuntime = base + real.fileName;
         roots.push(real.fileName);
         continue;
@@ -1881,12 +1888,19 @@ function rivetPlugin(
       if (output.facadeModuleId.startsWith(LITE_PREFIX)) {
         const entry = liteEntries.get(output.facadeModuleId.slice(LITE_PREFIX.length, -3));
         if (entry) {
+          // JS-DIET-2: in the one `lite` group the entry is a facade of the chunk the runtime also names (one URL, one fetch):
+          // its residual (`$a`, the lite runtime) and ordinary-module import (`$c`, the full runtime's fallback) exports.
+          const real = _foldFacade(
+            bundle,
+            output,
+            entry.names.flatMap((name) => [name.slice(name.lastIndexOf("#") + 1) + "$a", name.slice(name.lastIndexOf("#") + 1) + "$c"]),
+          );
           for (const name of entry.names) {
-            lite[name] = base + output.fileName;
+            lite[name] = base + real.fileName;
             if (_liteReadsProps(entry.code, name.slice(name.lastIndexOf("#") + 1))) liteProps.push(name);
           }
-          sized.add(output);
-          roots.push(output.fileName);
+          sized.add(real);
+          roots.push(real.fileName);
         }
         continue;
       }
@@ -2400,7 +2414,21 @@ function rivetPlugin(
         if (plugin.name === "vite-plugin-rivet-i18n")
           declaredLocales ??= (plugin as { api?: { config?: { locales?: readonly string[] } } }).api?.config?.locales ?? null;
     },
+    // JS-DIET-2: the lite graph of a one-lite-entry build as one chunk. Vite reads output options before the build, so the
+    // group's test reads `liteGroup` (set at `buildEnd`) when Rolldown chunks: empty = it captures nothing. A
+    // `codeSplitting: false` build stays as it is. (Added from the `config` hook as `environments.client` options, the group
+    // changed other builds' output: the docs motion examples' Tailwind CSS grew.)
+    outputOptions(options) {
+      if (options.codeSplitting === false) return null;
+      const split = typeof options.codeSplitting === "object" ? options.codeSplitting : {};
+      return { ...options, codeSplitting: { ...split, groups: [...(split.groups ?? []), { name: "lite", test: (id: string) => liteGroup.has(id) }] } };
+    },
     buildEnd() {
+      liteGroup.clear();
+      if (!serve && !ssrBuild && this.environment?.config?.consumer !== "server" && liteEntries.size === 1) {
+        liteGroup.add(LITE_RUNTIME);
+        for (const file of liteEntries.keys()) liteGroup.add(LITE_PREFIX + file + ".js");
+      }
       if (!serve && (diagnosticErrors || diagnosticWarnings)) diagnosticLogger?.warn(`[rivet:compiler] ${summary(diagnosticErrors, diagnosticWarnings)}`);
     },
     async buildStart() {

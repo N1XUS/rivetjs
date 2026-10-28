@@ -185,7 +185,9 @@ async function serve(built: Built, html: string, browser: Browser, run: (page: i
       built.warnings.filter((message) => message.includes("lite")),
       [],
     );
-    assert.ok(lite.size <= 2, [...lite].join(" "));
+    // JS-DIET-2: one lite entry in the build → the lite runtime and that entry are one chunk (one fetch before input).
+    assert.equal(manifest.lite.symbols["src/cards.tsx#Card"], manifest.lite.runtime);
+    assert.deepEqual([...lite], [manifest.lite.runtime]);
 
     // All-lite page: lite runtime, lite entries, fetch-ahead of those only.
     const liteHtml = built.pages.lite;
