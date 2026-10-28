@@ -61,6 +61,7 @@ const PROBE = 0,
   ADOPT = 1,
   CLIENT = 2;
 const R_OPEN = /^r\d*\[$/,
+  OPEN = /^(?:r\d*)?\[$/,
   B_OPEN = /^b\d+$/,
   A_OPEN = /^a\d+$/,
   HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -1052,7 +1053,28 @@ function alignUnit(a: UnitAlign, fl: Node[], ll: Node[], at: Node, ref: Node | n
       lr: Node[] = [];
     while (i < fl.length && fl[i]!.nodeType !== 1 && !a.holes.has(fl[i]!)) fr.push(fl[i++]!);
     const hole = i < fl.length ? a.holes.get(fl[i]!) : undefined;
-    while (j < ll.length && ll[j]!.nodeType !== 1 && !(hole && claimable(hole, ll[j]!))) lr.push(ll[j++]!);
+    // A list's server rows and a Show / Switch branch carry the same region markers (`<!--rN[-->…<!--]-->`): the probe's
+    // comments before a list (slot anchors: a false Show's, CLAIM 2026-10-28) each stand for one server unit first — a
+    // comment, or a whole balanced region (`<!--[-->…<!--]-->`, `<!--rN[-->…<!--]-->`) — which the list never claims.
+    // Was: the list claimed a false Show's empty region as its first row group, failed at the region's close and the unit
+    // rendered in the browser (a cdk DataGrid's top spacer `<Show>` in `<tbody>`: every row re-created).
+    let owed = 0;
+    if (hole !== undefined && hole.kind === 1) for (const n of fr) if (n.nodeType === 8) owed++;
+    while (j < ll.length && ll[j]!.nodeType !== 1 && !(hole && !owed && claimable(hole, ll[j]!))) {
+      const d = owed ? data(ll[j]) : null;
+      if (d !== null) {
+        if (d === "]") break;
+        owed--;
+        if (OPEN.test(d)) {
+          const e = closeAt(ll, j, OPEN, "]");
+          if (e < 0) break;
+          while (j <= e) lr.push(ll[j++]!);
+          continue;
+        }
+      }
+      lr.push(ll[j++]!);
+    }
+    if (owed) while (j < ll.length && ll[j]!.nodeType !== 1 && !(hole && claimable(hole, ll[j]!))) lr.push(ll[j++]!);
     runs(a, fr, lr, at, j < ll.length ? ll[j]! : ref);
     if (i >= fl.length) return j < ll.length ? mismatch(a, at, ll[j], undefined) : undefined;
     if (hole) {

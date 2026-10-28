@@ -13,6 +13,7 @@ export default defineExample({
     { matches: "[data-vertical-align=top]" },
     { click: "[aria-label='Vertical alignment'] [role=radio]:nth-of-type(3)" },
     { matches: "[data-vertical-align=bottom]" },
-    { matches: "tbody tr[data-key='1'] [data-column=amount][style*='text-align: end']" },
+    // Adopted server cell keeps the server's `text-align:end`; a browser-written one serialises `text-align: end`.
+    { matches: "tbody tr[data-key='1'] [data-column=amount]:is([style*='text-align:end'], [style*='text-align: end'])" },
   ],
 });
