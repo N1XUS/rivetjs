@@ -82,6 +82,14 @@ export default () => (
 
 ::example{id=date-range-picker-controlled}
 
+### Presets
+
+Compose small `Button` shortcuts inside `DateRangePicker.Popover` and write `{ start, end }` date strings to the picker’s two-way value signal. Last 7 days and Last 30 days include today; This month and This year select the full calendar period. Set the calendar’s `focusedValue` signal to the range start so that period is visible.
+
+Pass the same `value` signal to the calendar to keep its selection highlight in sync while the popover stays open. The shortcuts sit to the left of the calendar on wide screens and above it on narrow screens. No additional picker API is needed.
+
+::example{id=date-range-picker-presets}
+
 ### Validation
 
 ::example{id=date-range-picker-with-validation}

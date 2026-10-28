@@ -1,0 +1,35 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}
+
+@layer components {
+  .picker-presets {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .picker-presets__shortcuts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .picker-presets__shortcuts .button {
+    justify-content: flex-start;
+  }
+
+  @media (min-width: 640px) {
+    .picker-presets {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+  }
+}

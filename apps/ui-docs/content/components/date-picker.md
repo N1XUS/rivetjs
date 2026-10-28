@@ -78,6 +78,14 @@ export default () => (
 
 ::example{id=date-picker-controlled}
 
+### Presets
+
+Compose small `Button` shortcuts inside `DatePicker.Popover` and write to the same two-way date-string signal as the picker. Today and Tomorrow use the local date; Next week selects seven days from today. `focusedValue` moves the calendar to the selected date.
+
+Pass the same `value` signal to the calendar to keep its selection highlight in sync while the popover stays open. The shortcuts sit to the left of the calendar on wide screens and above it on narrow screens. No additional picker API is needed.
+
+::example{id=date-picker-presets}
+
 ### Validation
 
 ::example{id=date-picker-with-validation}
