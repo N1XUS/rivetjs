@@ -1114,7 +1114,7 @@ export function _deferredFlush(): boolean { return releasing; }
 let heldEvent: Event | null = null, heldError: ((error: unknown) => void) | undefined, port: MessagePort | null = null;
 // Documents (windows) whose first DOM-changing mouse click was deferred: their later clicks flush synchronously.
 let settled: WeakSet<object> | null = null;
-// Keep the click's queued effects for a task posted now (MessageChannel: no timer clamping, before rAF).
+// Keep the click's queued effects for a task posted now (MessageChannel: no timer clamping; after a click Chrome runs it after the next frame, which avoids the first-click frame stall).
 function hold(event: Event, view: object, onError: ((error: unknown) => void) | undefined): void {
   (settled ??= new WeakSet()).add(view);
   if (heldEvent !== event || heldError === undefined) heldError = onError;
