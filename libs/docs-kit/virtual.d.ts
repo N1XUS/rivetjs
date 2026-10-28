@@ -28,6 +28,8 @@ declare module "virtual:docs/scripts" {
   export const pageScript: () => string | undefined;
   /** URLs of the docs page script's static imports (built: the preload helper; DOCS-ZERO), preloaded with it on first intent. */
   export const pageScriptImports: () => string[];
+  /** The page script's lazy chrome parts (theme menu, mobile menu, search dialog: their closures, THEME-JS), preloaded by the stub on an event on their button; empty unbuilt. */
+  export const pageScriptParts: () => import("./page-stub.ts").StubParts;
   /** URL of a page's own plain module script (`docsSite({ scripts })`, DOCS-FAST); undefined in the browser / for other pages. */
   export const routeScript: (pathname: string) => string | undefined;
 }

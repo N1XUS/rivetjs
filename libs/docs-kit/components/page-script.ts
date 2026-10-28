@@ -9,7 +9,7 @@
 //  - TOC scroll-spy: marks the TOC link of the heading above the reading line (`browser.ts` `spy`)
 //  - site chrome (RT-DIET2): theme menu / mobile drawer mounted on intent, search button click, code copy (below)
 //  - benchmark charts (STATIC-ZERO-3): keyboard reading of a focused `BenchChart` plot (`bench-keys.ts`, bundled in)
-// Loaded on first intent (DOCS-ZERO, 2026-10-27): `document.ts` links no module — its inline stub (`PAGE_STUB`) imports
+// Loaded on first intent (DOCS-ZERO, 2026-10-27): `document.ts` links no module — its inline stub (`page-stub.ts` `PAGE_STUB`) imports
 // this module on the first pointerover / pointerdown / focusin / keydown / click, the first scroll of a page with a TOC,
 // or at idle when a visible code block is left plain (dev server, runtime-filled blocks), or at load on `/search/?q=…`;
 // built content pages fetch no JS before input. The stub queues the events it saw (`window.__rvDocs`; it already

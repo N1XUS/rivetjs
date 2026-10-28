@@ -11,6 +11,7 @@ import { docsContent } from "./tools/content/plugin.ts";
 import { docsDevSearch } from "./tools/dev-search.ts";
 import { CSS_DIR, EXAMPLES_JSON, FRAME_SHELLS, FRAMES_DIR, FRAMES_INDEX, SHARED_ASSETS } from "./tools/examples.ts";
 import { frameStyleLists, mergeFrameStyles } from "./tools/frame-styles.ts";
+import type { StubParts } from "./page-stub.ts";
 
 /** `virtual:docs/<name>` → file relative to the app root. */
 const FILES: Record<string, string> = {
@@ -288,6 +289,57 @@ function docsBrand(): Plugin {
 
 /** The docs page script (ZERO Z13): `components/page-script.ts` (highlighter, search shortcuts, TOC spy), a plain module script. */
 const PAGE_SCRIPT = realpathSync(fileURLToPath(new URL("./components/page-script.ts", import.meta.url)));
+/**
+ * The page script's lazy chrome parts (THEME-JS 2026-10-28): button selector → the module `page-script.ts` imports for it
+ * (same selectors there). The stub (`page-stub.ts`) preloads a part's closure on an event on its button.
+ */
+const CHROME_PARTS = (
+  [
+    [".theme-button[data-chrome]", "./components/theme-menu-open.tsx"],
+    [".menu-button[data-chrome]", "./components/mobile-menu-open.tsx"],
+    [".search-button", "./search/dialog.tsx"],
+  ] as const
+).map(([selector, file]): [selector: string, file: string] => [selector, realpathSync(fileURLToPath(new URL(file, import.meta.url)))]);
+
+/**
+ * `SCRIPTS_FILE` `parts` (THEME-JS): per chrome part, its chunk + that chunk's static imports, transitively (what the
+ * page script's `import()` preloads), minus the page script's own closure (preloaded with it); URLs deduped across parts
+ * (`StubParts`). A part without a chunk (not built, tree-shaken) is left out.
+ */
+export function chromeParts(
+  chunks: readonly Rollup.OutputChunk[],
+  page: string,
+  parts: readonly (readonly [selector: string, file: string])[],
+  base: string,
+): StubParts {
+  const byFile = new Map(chunks.map((chunk) => [chunk.fileName, chunk]));
+  const closure = (file: string, into: string[], skip: ReadonlySet<string>) => {
+    const seen = new Set<string>();
+    for (const stack = [file]; stack.length;) {
+      const next = stack.pop()!;
+      if (seen.has(next) || skip.has(next)) continue;
+      seen.add(next);
+      into.push(next);
+      stack.push(...[...(byFile.get(next)?.imports ?? [])].reverse());
+    }
+    return into;
+  };
+  const pageChunk = chunks.find((chunk) => chunk.facadeModuleId === page);
+  const loaded = new Set(pageChunk ? closure(pageChunk.fileName, [], new Set()) : []);
+  const urls: string[] = [];
+  const lists: StubParts["lists"] = [];
+  for (const [selector, file] of parts) {
+    const chunk = chunks.find((output) => output.facadeModuleId === file);
+    if (!chunk) continue;
+    const files = closure(chunk.fileName, [], loaded).map((name) => {
+      const url = base + name;
+      const index = urls.indexOf(url);
+      return index < 0 ? urls.push(url) - 1 : index;
+    });
+    lists.push([selector, files]);
+  }
+  return { urls, lists };
+}
 const SCRIPTS = "\0virtual:docs/scripts";
 /** Client build asset: `{ page: url, routes: { [pathname]: url } }` of the emitted scripts, read by the server bundle at render. */
 export const SCRIPTS_FILE = ".vite/docs-scripts.json";
@@ -329,12 +381,13 @@ function docsScripts(routes: Record<string, string> = {}): Plugin {
     },
     load(id) {
       if (id === SCRIPTS + "?client")
-        return "export const pageScript = () => undefined;\nexport const pageScriptImports = () => [];\nexport const routeScript = (_path) => undefined;";
+        return "export const pageScript = () => undefined;\nexport const pageScriptImports = () => [];\nexport const pageScriptParts = () => ({ urls: [], lists: [] });\nexport const routeScript = (_path) => undefined;";
       if (id !== SCRIPTS) return null;
       if (dev)
         return [
           `export const pageScript = () => ${JSON.stringify(base + "@fs" + PAGE_SCRIPT)};`,
           "export const pageScriptImports = () => [];",
+          "export const pageScriptParts = () => ({ urls: [], lists: [] });",
           `const routes = ${JSON.stringify(Object.fromEntries(files.map(([path, file]) => [path, base + "@fs" + file])))};`,
           "export const routeScript = (path) => routes[path];",
         ].join("\n");
@@ -345,6 +398,7 @@ function docsScripts(routes: Record<string, string> = {}): Plugin {
         `const read = () => (scripts ??= existsSync(${JSON.stringify(file)}) ? JSON.parse(readFileSync(${JSON.stringify(file)}, "utf8")) : {});`,
         "export const pageScript = () => read().page;",
         "export const pageScriptImports = () => read().pageImports ?? [];",
+        "export const pageScriptParts = () => read().parts ?? { urls: [], lists: [] };",
         "export const routeScript = (path) => read().routes?.[path];",
       ].join("\n");
     },
@@ -365,7 +419,9 @@ function docsScripts(routes: Record<string, string> = {}): Plugin {
       // the first intent waits one round trip, not two (DOCS-ZERO).
       const imports = chunks.find((output) => output.facadeModuleId === PAGE_SCRIPT)?.imports.map((file) => base + file) ?? [];
       const scripts = Object.fromEntries(files.flatMap(([path, file]) => (url(file) ? [[path, url(file)]] : [])));
-      if (page) this.emitFile({ type: "asset", fileName: SCRIPTS_FILE, source: JSON.stringify({ page, pageImports: imports, routes: scripts }) + "\n" });
+      // The lazy chrome parts' closures (THEME-JS): the stub preloads one on an event on its button, with the script.
+      const parts = chromeParts(chunks, PAGE_SCRIPT, CHROME_PARTS, base);
+      if (page) this.emitFile({ type: "asset", fileName: SCRIPTS_FILE, source: JSON.stringify({ page, pageImports: imports, parts, routes: scripts }) + "\n" });
     },
   };
 }

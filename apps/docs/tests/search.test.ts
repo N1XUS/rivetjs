@@ -166,7 +166,7 @@ test("search: a result click navigates on the client; a page with an `::api` car
   }
 });
 
-// DOCS-ZERO 2026-10-27: docs pages link no module; an inline stub (docs-kit `document.ts` `PAGE_STUB`) imports the docs
+// DOCS-ZERO 2026-10-27: docs pages link no module; an inline stub (docs-kit `page-stub.ts` `PAGE_STUB`, written by `document.ts`) imports the docs
 // page script on the first intent and queues the events that came before it (defaults prevented at once), which the
 // module replays. The module is held back here so every event lands before it.
 test("page script: no JS before input; events before the module replay (Ctrl+K, theme click, scroll-spy)", async () => {
