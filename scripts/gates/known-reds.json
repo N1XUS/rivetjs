@@ -32,289 +32,58 @@
     {
       "gate": "vitest:ui-components",
       "match": "libs/ui/tests-components/carousel.test.ts > carousel: HeroUI CSS applied; no engine before interaction on the static carousels",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/collections.test.ts > breadcrumbs: SSR markup, separators, current page; resumed onPress",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/combo-box-dev.test.ts > dev server: ComboBox cold load + open / type / pick log no error and no a11y warning",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
+      "reason": "derived resume granularity: the autoplay `#ca-auto` boots at load (`data-boot`), and its `onSelect` handler prop (a non-data prop) makes its record adopt with its parent, so the route unit re-runs and every cdk Carousel on the page (`#ca-basic`, `#ca-thumbs`) starts its engine before any interaction (REDS-UI 2026-10-28)",
+      "owner": "runtime / compiler (RED-COMP: standalone adopt of a woken child with handler props)",
       "since": "2026-10-27"
     },
     {
       "gate": "vitest:ui-components",
       "match": "libs/ui/tests-components/data-grid.test.ts > data-grid: resumed sort + selection keep the server rows; keyboard after resume",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
+      "reason": "derived adopt mismatch: in `<tbody>` the empty server branch region of the top spacer `<Show>` (`<!--[--><!--r0[--><!--]--><!--]-->`, Show false) is claimable by the following `<For>` hole (`R_OPEN`), so the For claims it as its first row group and fails at the `]` marker; the cdk DataGrid boundary renders afresh in the browser (dev: 'did not adopt its server markup: <tbody> children'), re-creating every row (REDS-UI 2026-10-28)",
+      "owner": "runtime (RED-COMP: dom-derived alignUnit / claim of a For after a false Show)",
       "since": "2026-10-27"
     },
     {
       "gate": "vitest:ui-components",
       "match": "libs/ui/tests-components/data-grid.test.ts > data-grid: virtualized 10k rows scroll swaps the window; sort on 10k",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/data-grid.test.ts > data-grid: pinned cells stay opaque (default / hover / selected) while columns scroll under them",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/disclosure-group.test.ts > disclosure-group: useDisclosureGroupNavigation buttons on the resumed page",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/geometry.test.ts > geometry: Card \u2192 concentric Button (radius=concentric)",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/morph-icons.test.ts > morph chevron: Select open \u2192 close \u2192 open mid-flight reverses without a jump; settles as \u2303",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
+      "reason": "same derived adopt mismatch as the sort case (Show-false region claimed by the For hole): the first (held) scroll adopts by rendering the grid afresh, the new scroll container starts at scrollTop 0, so the window never reaches row 5000; a second scroll works (REDS-UI 2026-10-28)",
+      "owner": "runtime (RED-COMP: dom-derived alignUnit / claim of a For after a false Show)",
       "since": "2026-10-27"
     },
     {
       "gate": "vitest:ui-components",
       "match": "libs/ui/tests-components/navbar.test.ts > navbar: first press on a slow network is fast (handler chunks prefetched while visible)",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/popover.test.ts > popover: controlled isOpen signal both ways",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/removed-region.test.ts > ternary: writes after the server step was removed update the client step only",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/removed-region.test.ts > keyed Show: writes after the server step was removed update the client step only",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/removed-region.test.ts > Label in a div next to a conditional sibling: first changes resume",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/sidebar-resize.test.ts > sidebar-resize: keyboard \u2014 arrows, Shift, Home / End, Enter toggles",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/stepper.test.ts > stepper: keyboard Tab + Enter selects; display-only ignores clicks",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/theme-scope.test.ts > theme-scope: Popover + Tooltip inside the scope",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/wave1.test.ts > wave1: every wave-1 component renders on the server (data-slot per part), styles applied; Button / Link preload only their resume chunks",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/wave1.test.ts > wave1: T10\u2013T13 markup identical server vs resumed client, per component (adopted region kept, re-created region equal), no resume errors",
-      "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
-      "owner": "ui (triage lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-browser",
-      "match": "libs/cdk/tests/combobox.browser.test.tsx > ComboBox > should close on scroll",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-browser",
-      "match": "libs/cdk/tests/tooltip.browser.test.tsx > Tooltip > should hide tooltip on scroll",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/combobox.test.ts > typing filters (accent-insensitive), arrow keys move virtual focus, Enter commits, hidden input",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/combobox.test.ts > button opens the full list; clicking an option selects it; onOpenChange",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/combobox.test.ts > static items, menuTrigger focus",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/combobox.test.ts > multiple selection: ComboBoxValue lists the selected items; hidden inputs per key",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/dom-events-overlays.test.ts > combobox: root and listbox events; input events, keydown, focus change chained with filtering",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "reason": "router build: the first press imports the route page module through the App's `__vitePreload`, whose deps list the component CSS chunks (navbar / separator / morph-icon .css) that the page already has inside its merged `route-*.css`; Vite injects them under their own hrefs and waits for them: +1 round trip (~580 ms at 400 ms latency) on every resumed page's first interaction, and the re-appended sheets reorder the cascade (data-grid pinned cells, fixed by specificity TW-180) (REDS-UI 2026-10-28)",
+      "owner": "router (route CSS vs Vite CSS preload deps: `libs/router/build/vite.ts` preloadDeps / route-css.ts)",
       "since": "2026-10-27"
     },
     {
       "gate": "vitest:cdk-components",
       "match": "libs/cdk/tests-components/drag-drop-resume.test.ts > nothing drag-drop related loads before the lists are visible; scrolling them in preloads it",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "reason": "derived resume: the story's `export const preload = \"visible\"` is ignored under derived (compiler CLAUDE.md) and there is no derived visible prefetch for boundaries, so nothing loads on scroll-in on the lean story page. Needs a ruling: port visible prefetch to derived, or drop the contract + these tests (triaged REDS-CDK 2026-10-28)",
+      "owner": "runtime / cdk (ruling needed)",
       "since": "2026-10-27"
     },
     {
       "gate": "vitest:cdk-components",
       "match": "libs/cdk/tests-components/drag-drop-resume.test.ts > first drag after the visible preload starts synchronously; the drop reports the new index",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/grid-list.test.ts > grid list: row aria-labelledby (row + description id) survives a selection change after resume",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/list-data.test.ts > createListData.update re-renders the resumed row; other rows keep their elements",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/list-data.test.ts > update after another first change (append first, then update)",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/list-data.test.ts > a row of a section's nested For re-renders on a value change (the section row is re-created)",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/list-data.test.ts > Table: a resumed body row follows an item change; the other row keeps its element",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/live-props.test.ts > live props: controlled values (NumberField / RadioGroup / CheckboxGroup / ComboBox / ColorField / DateField / ToggleButtonGroup / DisclosureGroup / ListBox / Tree) follow the prop in place",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/radio-group.test.ts > radio group: RTL horizontal flips left/right",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "reason": "derived resume: no visible prefetch under derived (see the sibling entry), so the first drag replays asynchronously after the chunk loads instead of starting synchronously. Same ruling needed (triaged REDS-CDK 2026-10-28)",
+      "owner": "runtime / cdk (ruling needed)",
       "since": "2026-10-27"
     },
     {
       "gate": "vitest:cdk-components",
       "match": "libs/cdk/tests-components/resizable.test.ts > cold: the imperative panel ref collapses; a drag persists the layout to the cookie, server-rendered on reload",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "reason": "derived resume (RED-COMP / compiler facts): the story's button click does not adopt the Group (record flags 262, DEFER) / Panel, so `leftRef.current` is null on the first click; `usePanelRef` returns a plain-data object, so the dependency facts cannot see the mutable ref the handler reads. Needs a compiler / server-facts change (triaged REDS-CDK 2026-10-28)",
+      "owner": "runtime (RED-COMP lane)",
       "since": "2026-10-27"
     },
     {
       "gate": "vitest:cdk-components",
       "match": "libs/cdk/tests-components/select.test.ts > focus events fire once per focus, not when the listbox takes focus; data-focused stays while open",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "reason": "derived resume (RED-COMP): a cold programmatic / fast-Tab focus on the Select trigger is not held by the loader (`focus` not in the trigger's `data-events`; `_rListens` deliberately does not widen to focus/blur, protects Select typeahead), so onFocus is lost before the unit adopts. Triaged REDS-CDK 2026-10-28; a Tab-focus test variant fails the same way",
+      "owner": "runtime (RED-COMP lane)",
       "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/slots.test.ts > slots: resumed page \u2014 slot ids, re-created slotted parts, accessor context values, PressResponder",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/table.test.ts > table: resumed selection checkboxes (cold mouse clicks: row box toggles every time, select all toggles all)",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/table.test.ts > table: resumed row action, keyboard selection, row press in selection mode",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/live-props.test.ts > live props: ToggleButton / Checkbox / Switch / TextField / Slider / Select / ListBoxItem / Tabs / RadioGroup / Text / Link / wave-3 parts value forms update in place",
-      "reason": "order / load dependent: passes in a whole-file run, fails in the full project run and alone with -t (check / switch first value false); TOGGLE-TABS-COLD (d7e9c3bd6) fixed it once, red again at HEAD 645ab2e88 without later changes to cdk / runtime",
-      "owner": "cdk (triage lane)",
-      "since": "2026-10-28"
     }
   ]
 }

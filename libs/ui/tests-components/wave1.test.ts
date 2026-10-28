@@ -78,7 +78,7 @@ const EXPR_PARTS = ["chip-expr", "badge-expr"];
 const PARTS = [...MARKUP_PARTS, ...FIELD_PARTS, ...EXPR_PARTS];
 
 /** Target-independent markup of every `PARTS` root in a region (`@rivetjs/testing/html` `normalizedHTML` rules, in-page: comment / empty
- * text anchors dropped, adjacent text merged, attributes sorted, generated `rv…` ids masked, `data-r` markers dropped) + the region's element count; the counter text is blanked. */
+ * text anchors dropped, adjacent text merged, attributes sorted, generated `rv…` ids masked, `data-r` / `data-b` markers dropped) + the region's element count; the counter text is blanked. */
 const snapshot = (page: Page, id: string) =>
   page.evaluate(
     ([id, parts]) => {
@@ -94,9 +94,10 @@ const snapshot = (page: Page, id: string) =>
         };
         walk(clone);
         const ser = (el: Element): string => {
-          // Generated ids (`rv…`) differ per instance; `data-r` resume markers exist on server nodes only.
+          // Generated ids (`rv…`) differ per instance; `data-r` resume markers and `data-b` boundary ids (numbered per instance) exist
+          // on server nodes only.
           const attrs = [...el.attributes]
-            .filter((a) => a.name !== "data-r")
+            .filter((a) => a.name !== "data-r" && a.name !== "data-b")
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((a) => ` ${a.name}="${/^rv[a-z0-9]*$/.test(a.value) ? "#" : a.value}"`);
           const inner = [...el.childNodes].map((c) => (c.nodeType === Node.ELEMENT_NODE ? ser(c as Element) : c.textContent)).join("");
@@ -132,8 +133,9 @@ test("wave1: every wave-1 component renders on the server (data-slot per part), 
     await page.waitForLoadState("networkidle");
     // Documented (libs/ui/CLAUDE.md Known diffs): cdk Button / Link preload their resume chunks + the route module on load; the markup-only
     // route below carries the strict gate.
-    // The chunk holding Button's symbols: `resume-Button-…` with `chunks: "component"`, the route's (or a shared) chunk by default.
-    assert.ok(scriptsOf(seen.scripts, /#Button\$/).length > 0, "Button resume chunk preloaded: " + seen.scripts.join(","));
+    // The chunk holding Button's boundary symbol (`@rivetjs/ui/…/button.tsx#ButtonRoot`; symbol ids carry no `$hash` suffix since the
+    // derived manifest): `resume-Button-…` with `chunks: "component"`, the route's (or a shared) chunk by default.
+    assert.ok(scriptsOf(seen.scripts, /\/button\/button\.tsx#ButtonRoot$/).length > 0, "Button resume chunk preloaded: " + seen.scripts.join(","));
     assert.deepEqual(seen.errors, []);
   }));
 

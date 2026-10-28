@@ -113,24 +113,28 @@ test("sidebar-resize: below half the minimum collapses to the icon rail, draggin
 test("sidebar-resize: keyboard — arrows, Shift, Home / End, Enter toggles", () =>
   onPage(async (page) => {
     await page.locator(HANDLE).focus();
-    const now = () => page.locator(HANDLE).getAttribute("aria-valuenow");
+    // The first key is cold (held by the loader, replayed once the handle's chunk loaded): wait on the state, not the press.
+    // (Uncontrolled width: the server writes no `aria-valuenow` until the first change.)
+    const nowIs = (value: string) =>
+      page.waitForFunction(([sel, v]) => document.querySelector(sel)?.getAttribute("aria-valuenow") === v, [HANDLE, value] as const);
+    const stateIs = (state: string) => page.waitForFunction((v) => document.querySelector('[data-slot="sidebar"]')?.getAttribute("data-state") === v, state);
     await page.keyboard.press("ArrowRight");
-    assert.equal(await now(), "272");
+    await nowIs("272");
     await page.keyboard.press("Shift+ArrowLeft");
-    assert.equal(await now(), "200");
+    await nowIs("200");
     await page.keyboard.press("End");
-    assert.equal(await now(), "400");
+    await nowIs("400");
     await settled(page);
     assert.equal(await gapWidth(page), 400);
     await page.keyboard.press("Home");
-    assert.equal(await now(), "200");
+    await nowIs("200");
     assert.equal(await text(page, "#sr-end"), "200");
     await page.keyboard.press("Enter");
+    await stateIs("collapsed");
     await settled(page);
-    assert.equal(await page.locator('[data-slot="sidebar"]').getAttribute("data-state"), "collapsed");
     await page.keyboard.press("Enter");
+    await stateIs("expanded");
     await settled(page);
-    assert.equal(await page.locator('[data-slot="sidebar"]').getAttribute("data-state"), "expanded");
     assert.equal(await gapWidth(page), 200);
     const focusVisible = await page.locator(HANDLE).evaluate((el) => el.matches(":focus-visible"));
     assert.ok(focusVisible);

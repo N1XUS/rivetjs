@@ -87,6 +87,9 @@ test("theme-scope: Popover + Tooltip inside the scope", () =>
     await assertScoped(page, "#ts-po-body", "[data-rv-overlay]");
     await page.keyboard.press("Escape");
     await page.waitForSelector("#ts-po-body", { state: "detached" });
+    // Escape left the keyboard modality; a real pointer moves before it enters the trigger (RA useTooltipTrigger shows on
+    // hover only in the pointer modality, and a one-step jump dispatches pointerenter before its pointermove).
+    await page.mouse.move(1, 1);
     await page.hover("#ts-tt");
     await assertScoped(page, "#ts-tt-tip", "[role=tooltip]");
   }));
