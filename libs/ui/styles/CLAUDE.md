@@ -11,6 +11,8 @@
 - `src/index.ts` exports every `*Variants` (`cardVariants`, …), their `*Variants` types, `tv` / `cn` / `VariantProps` re-exported from `tailwind-variants` (3.3.1), utils.
 - Consumed by `libs/ui/src/components/<name>/<name>.styles.ts` (Tasks 5+) and as CSS via the `@rivetjs/ui/styles` export.
 
+- AppLayout aside triggers use `data-viewport="desktop"|"mobile"`: CSS shows exactly one at the 1024 px boundary. Selectors also apply in portaled sheets. Each button has its own label / expanded state; responsive selection requires no runtime boot. Generated `out/app-layout.css` and `out/all.css` follow `components/app-layout.css`.
+
 ## Rules
 
 - Every change vs the upstream file → a `TWEAKS.md` row (`TW-nnn`, file, before → after with numbers, reason, the visual baselines it changes). A changed vendored file keeps line 1 `Ported from HeroUI v3.2.6 …` and gets line 2 `Rivet: modified, see TWEAKS.md` (Apache-2.0 §4b); Rivet-authored files say so in their header. Standing tweaks: relative imports in `src/**/*.ts` end in `.ts` / `/index.ts` (Node type-stripping); `*.styles.ts` import `tv` from `src/utils/tv.ts` (Rivet-authored: tailwind-merge only for `class` / `className` overrides, output = upstream `tv`; a new definition imports it too); overlay close triggers (drawer / modal / alert-dialog / sheet) anchored to the header's first row; sibling-counting selectors survive cdk overlay anchors (`:nth-child(1 of …)`).

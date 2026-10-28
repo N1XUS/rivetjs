@@ -64,6 +64,8 @@ Docs site of `@rivetjs/ui` (`libs/ui`), third site on `@rivetjs/docs-kit` (same 
 
 - Themes: `/themes/` theme builder = route area in `content/_nav.ts` (`href`, docs-kit route areas) → `src/routes/themes.tsx` + `src/theme-builder/**` (see `src/theme-builder/CLAUDE.md`); guide page `content/start/themes.md`. Examples import `@rivetjs/ui/styles` = Rivet theme (the only shipped theme; the HeroUI look = `CLASSIC_PRESET` in the builder). Example frames follow the site theme (docs-kit `frame-theme.ts`: `dark` / `light` class + `data-theme` on the example `<html>`, live on toggle).
 
+- AppLayout accessibility notes describe the CSS-selected trigger state: desktop at >= 1024 px, mobile sheet below it, with no client startup for viewport detection. Explicit trigger ids use a `-mobile` suffix on the mobile button. Sheet-mode custom icon content uses inline JSX / render functions, since it is rendered for both buttons.
+
 ## Pages (content/*.md)
 
 - Frontmatter: `title`, `description` (≤160 chars), `template` (`guide` / `reference`), `status: experimental`, `related` (pages of THIS site).

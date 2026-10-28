@@ -5,7 +5,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { nonRuntimeScripts, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -35,6 +35,62 @@ test("app-layout: SSR markup", async () => {
     assert.match(html, /data-app-layout="al"/);
     assert.match(html, /<aside[^>]*id="al-aside"/);
     assert.match(html, /role="separator"/);
+  } finally {
+    await page.close();
+  }
+});
+
+test("app-layout: sheet trigger follows the visible panel at 1023 / 1024 px without booting before input", async () => {
+  const page = await s.browser.newPage({ viewport: { width: 1023, height: 800 } });
+  try {
+    const seen = watch(page);
+    await page.goto(s.origin + "/app-layout-sheet");
+    await page.waitForLoadState("networkidle");
+    const trigger = page.locator('header [data-slot="app-layout-aside-trigger"]:visible');
+    assert.equal(await trigger.count(), 1);
+    assert.equal(await trigger.getAttribute("aria-label"), "Show panel");
+    assert.equal(await trigger.getAttribute("aria-expanded"), "false");
+    const icon = page.locator('header [data-slot="app-layout-aside-trigger"]:visible [data-slot="app-layout-aside-trigger-icon"]');
+    assert.equal(await icon.count(), 1);
+    assert.equal(await icon.isVisible(), true);
+    const iconBox = await icon.boundingBox();
+    const triggerBox = await trigger.boundingBox();
+    assert.ok(Math.abs(iconBox!.x + iconBox!.width / 2 - triggerBox!.x - triggerBox!.width / 2) < 1, "icon is centered in the visible button");
+    await page.setViewportSize({ width: 1024, height: 800 });
+    assert.equal(await trigger.getAttribute("aria-label"), "Hide panel");
+    assert.equal(await trigger.getAttribute("aria-expanded"), "true");
+    assert.equal(await icon.isVisible(), true);
+    await page.setViewportSize({ width: 1023, height: 800 });
+    assert.equal(await trigger.getAttribute("aria-label"), "Show panel");
+    assert.deepEqual(nonRuntimeScripts(seen), [], "no component JS before input");
+    await trigger.click();
+    await page.getByRole("dialog", { name: "Details" }).waitFor();
+    assert.equal(await trigger.getAttribute("aria-label"), "Hide panel");
+    assert.equal(await trigger.getAttribute("aria-expanded"), "true");
+    assert.equal(await page.locator("#sheet-aside").getAttribute("data-state"), "open");
+    const sheetTrigger = page.getByRole("dialog").getByRole("button", { name: "Hide panel" });
+    assert.equal(await sheetTrigger.getAttribute("aria-expanded"), "true");
+    assert.equal(await sheetTrigger.getAttribute("aria-controls"), await page.getByRole("dialog").getAttribute("id"));
+    await sheetTrigger.hover();
+    await page.getByRole("tooltip", { name: "Hide panel" }).waitFor();
+    await sheetTrigger.click();
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    await page.mouse.move(1, 1);
+    await trigger.hover();
+    await page.getByRole("tooltip", { name: "Show panel" }).waitFor();
+    await trigger.click();
+    await page.getByRole("dialog").waitFor();
+    await page.keyboard.press("Escape");
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    assert.equal(await trigger.getAttribute("aria-label"), "Show panel");
+    assert.equal(await trigger.getAttribute("aria-expanded"), "false");
+    await page.setViewportSize({ width: 1024, height: 800 });
+    assert.equal(await trigger.getAttribute("aria-label"), "Hide panel");
+    await trigger.click();
+    await page.waitForFunction(() => document.querySelector("#sheet-aside")?.getAttribute("data-state") === "closed");
+    assert.equal(await trigger.getAttribute("aria-label"), "Show panel");
+    assert.equal(await trigger.getAttribute("aria-expanded"), "false");
+    assert.deepEqual(seen.errors, []);
   } finally {
     await page.close();
   }

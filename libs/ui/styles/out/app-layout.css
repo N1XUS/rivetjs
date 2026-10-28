@@ -179,7 +179,13 @@
   }
 
   @media not all and (min-width: 1024px) {
-    .app-layout .app-layout__aside-trigger:not([data-sheet]) {
+    .app-layout__aside-trigger[data-viewport="desktop"] {
+      display: none;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .app-layout__aside-trigger[data-viewport="mobile"] {
       display: none;
     }
   }

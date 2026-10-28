@@ -225,7 +225,11 @@ test("asideMobile sheet: MobileAside children only in the sheet; trigger marked 
   const r = render(() => (
     <AppLayout
       asideMobile="sheet"
-      navbar={() => <AppLayout.AsideTrigger />}
+      navbar={() => (
+        <AppLayout.AsideTrigger aria-label="Panel options" class="custom-trigger">
+          {() => <span class="custom-panel-icon">Details</span>}
+        </AppLayout.AsideTrigger>
+      )}
       aside={() => (
         <>
           <p class="both">Both</p>
@@ -242,6 +246,11 @@ test("asideMobile sheet: MobileAside children only in the sheet; trigger marked 
   assert.equal(q(".sheet-only"), null, "closed sheet + desktop aside: no MobileAside content");
   assert.equal(q('[data-slot="app-layout-aside-trigger"]')!.getAttribute("data-sheet"), "true");
   assert.equal(q("[data-app-layout]")!.getAttribute("data-aside-mobile"), "sheet");
+  for (const trigger of document.querySelectorAll('[data-slot="app-layout-aside-trigger"]')) {
+    assert.equal(trigger.getAttribute("aria-label"), "Panel options");
+    assert.ok(trigger.querySelector(".custom-panel-icon"));
+    assert.ok(trigger.classList.contains("custom-trigger"));
+  }
   r.unmount();
 });
 
@@ -255,4 +264,45 @@ test("asideCookieOpen + index exports", () => {
   assert.equal(ui.AppLayoutRoot, AppLayout);
   assert.equal(typeof ui.appLayoutVariants, "function");
   assert.equal(ui.ASIDE_BREAKPOINT, 1024);
+});
+
+test("asideMobile sheet: trigger label and expanded state follow the sheet independently of the desktop aside", async () => {
+  window.happyDOM.setWindowSize({ width: 900, height: 800 });
+  const open = signal(true);
+  const calls: boolean[] = [];
+  const r = render(() => (
+    <AppLayout
+      asideMobile="sheet"
+      asideOpen={open}
+      onAsideOpenChange={(value) => calls.push(value)}
+      navbar={() => <AppLayout.AsideTrigger id="sheet-trigger" closedTooltip="Show details" openTooltip="Hide details" />}
+      aside={() => <p>Details</p>}
+    >
+      Main
+    </AppLayout>
+  ));
+  try {
+    const mobile = q('button[aria-label="Show details"]');
+    assert.ok(mobile, "closed mobile sheet must offer Show details even when the desktop aside is open");
+    assert.equal(mobile.getAttribute("aria-expanded"), "false");
+    mobile.click();
+    await flush();
+    assert.equal(mobile.getAttribute("aria-label"), "Hide details");
+    assert.equal(mobile.getAttribute("aria-expanded"), "true");
+    assert.equal(mobile.getAttribute("data-state"), "open");
+    assert.ok(q('[role="dialog"]'));
+    assert.equal(open(), true);
+    assert.deepEqual(calls, []);
+    open.set(false);
+    await flush();
+    assert.equal(mobile.getAttribute("aria-label"), "Hide details");
+    assert.equal(q("#sheet-trigger")!.getAttribute("aria-label"), "Show details");
+    key(q('[role="dialog"]')!, { key: "Escape", code: "Escape" });
+    await flush();
+    assert.equal(mobile.getAttribute("aria-label"), "Show details");
+    assert.equal(mobile.getAttribute("aria-expanded"), "false");
+  } finally {
+    r.unmount();
+    window.happyDOM.setWindowSize({ width: 1024, height: 768 });
+  }
 });

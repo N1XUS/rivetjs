@@ -207,7 +207,7 @@ See the [full module API](/api/rivetjs/ui/app-layout/) for every named export an
 ## Accessibility
 
 - Landmarks: `header`, `main`, `aside` (labelled by `asideLabel`); the sidebar is the `Sidebar` landmark.
-- `AppLayout.AsideTrigger` has `aria-expanded` + `aria-controls` and a "Show panel" / "Hide panel" label; a closed aside is `inert`.
+- `AppLayout.AsideTrigger` has `aria-expanded` + `aria-controls` and a "Show panel" / "Hide panel" label and tooltip. At 1024px and wider they follow the desktop aside; below 1024px with `asideMobile="sheet"` they follow the sheet (closed = "Show panel", open = "Hide panel"). CSS selects the visible trigger without starting client JavaScript. A supplied trigger `id` belongs to the desktop button; the mobile button uses `<id>-mobile`. In sheet mode, pass custom icon children as inline JSX or a render function, since each viewport has its own button; avoid hoisted eager JSX nodes and fixed child IDs. A closed desktop aside is `inert`.
 - Resize handles are focusable window splitters (`role="separator"`, `aria-orientation="vertical"`, value in percent).
 
 ## Related Components

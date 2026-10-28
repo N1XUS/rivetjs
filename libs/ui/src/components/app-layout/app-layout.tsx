@@ -412,7 +412,7 @@ const AppLayoutRoot = (props: AppLayoutRootProps): JSX.Element => {
       {hasAside && sheet ? (
         <DrawerBackdrop isOpen={aside.mobileOpen} class={slots().sheetBackdrop()}>
           <DrawerContainer placement="right">
-            <DrawerDialog aria-label={asideLabel} class={slots().sheet()}>
+            <DrawerDialog id={`${asideId}-sheet`} aria-label={asideLabel} class={slots().sheet()}>
               <DrawerBody>
                 <Provider token={AppLayoutContext} value={{ ...ctx, inSheet: true }}>
                   {renderSlot(local.aside)}
@@ -491,7 +491,7 @@ const AppLayoutMenuToggle = (props: AppLayoutMenuToggleProps): JSX.Element => {
  * AppLayout AsideTrigger
  * -----------------------------------------------------------------------------------------------*/
 interface AppLayoutAsideTriggerProps {
-  /** Replaces the default lucide `PanelRight` icon. */
+  /** Replaces the default lucide `PanelRight` icon. In sheet mode, use inline JSX or a render function (rendered once per viewport). */
   children?: Content;
   /** Tooltip while the aside is closed. @default "Show panel" */
   closedTooltip?: string;
@@ -504,12 +504,25 @@ interface AppLayoutAsideTriggerProps {
 }
 
 const AppLayoutAsideTrigger = (props: AppLayoutAsideTriggerProps): JSX.Element => {
+  const ctx = useContext(AppLayoutContext);
+  if (!ctx) throw new Error("AppLayout.AsideTrigger must be used within an AppLayout.");
+  // CSS selects the visible button, including its ARIA state, before any runtime starts and on resize.
+  return (
+    <>
+      <AppLayoutAsideTriggerButton {...props} mobile={false} />
+      {ctx.sheet ? <AppLayoutAsideTriggerButton {...props} mobile /> : null}
+    </>
+  );
+};
+
+const AppLayoutAsideTriggerButton = (props: AppLayoutAsideTriggerProps & { mobile: boolean }): JSX.Element => {
   const [local] = splitLive(props, ["children", "closedTooltip", "openTooltip", "tooltipProps", "aria-label", "class", "id"]);
   const ctx = useContext(AppLayoutContext);
   if (!ctx) throw new Error("AppLayout.AsideTrigger must be used within an AppLayout.");
   const aside = ctx.aside;
   const sheet = ctx.sheet;
-  const open = () => isAsideOpen(aside);
+  const mobile = props.mobile;
+  const open = () => (mobile ? aside.mobileOpen() : isAsideOpen(aside));
   const closedTip = local.closedTooltip ?? "Show panel";
   const openTip = local.openTooltip ?? "Hide panel";
   const hasChildren = "children" in props && props.children !== undefined;
@@ -520,13 +533,14 @@ const AppLayoutAsideTrigger = (props: AppLayoutAsideTriggerProps): JSX.Element =
         variant="ghost"
         size="sm"
         isIconOnly
-        id={local.id}
+        id={mobile && local.id ? `${local.id}-mobile` : local.id}
         class={composeSlotClassName(slots().asideTrigger, local.class)}
         data-slot="app-layout-aside-trigger"
         data-sheet={sheet ? "true" : undefined}
+        data-viewport={mobile ? "mobile" : "desktop"}
         aria-label={local["aria-label"] ?? (() => (open() ? openTip : closedTip))}
         aria-expanded={() => (open() ? "true" : "false")}
-        aria-controls={ctx.asideId}
+        aria-controls={mobile ? `${ctx.asideId}-sheet` : ctx.asideId}
         {...{ "data-state": () => (open() ? "open" : "closed") }}
         onPress={() => toggleAside(aside, sheet)}
       >

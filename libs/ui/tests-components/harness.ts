@@ -23,7 +23,13 @@ export async function stories(options: { preload?: NonNullable<Parameters<typeof
   // `ui-components` builds once in `global-setup.ts`; other callers (fuzz, own `STORIES_DIST`) build here, in child
   // processes (the build's memory is not kept by this fork while Chromium runs).
   await (built ??= inject("uiStoriesDist") === dist ? Promise.resolve() : buildAppInChild());
-  const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {}, preload: options.preload ?? { lean: true } });
+  const app = await start({
+    dist,
+    port: Number(process.env.UI_STORIES_PORT ?? 0),
+    host: "127.0.0.1",
+    onError: () => {},
+    preload: options.preload ?? { lean: true },
+  });
   const browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
   return {
     origin: app.url,

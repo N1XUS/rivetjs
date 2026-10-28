@@ -139,10 +139,17 @@
 }
 
 /**
- * Element: aside-trigger - hidden below 1024 px unless the aside has a mobile sheet
+ * Element: aside-trigger - CSS selects desktop / sheet state without booting the runtime
  */
-.app-layout .app-layout__aside-trigger:not([data-sheet]) {
+/* The sheet is portaled outside .app-layout; its triggers need the same visibility rules. */
+.app-layout__aside-trigger[data-viewport="desktop"] {
   @media (width < 1024px) {
+    @apply hidden;
+  }
+}
+
+.app-layout__aside-trigger[data-viewport="mobile"] {
+  @media (width >= 1024px) {
     @apply hidden;
   }
 }
