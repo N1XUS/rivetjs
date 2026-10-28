@@ -15,6 +15,7 @@ RAC `Calendar` + `RangeCalendar` parts port (react-aria-components Calendar.tsx)
 - tests: `tests-components/calendar-state.test.ts`, `calendar-keyboard.test.ts`, `calendar-parts.test.ts` (Rivet-name adapters at file top), `dates-calendar.test.ts` (`/calendar`), `dom-events-dates.test.ts`
 
 ## Rules / invariants
+- Quick touch releases before the 200 ms drag timer start a pending range exactly once; they must not fall through into the end-date selection branch. The second tap completes it (including a one-day range); held-touch dragging still completes on release. This grid-owned path also serves DateRangePicker popovers; `tests/calendar-touch.browser.test.tsx` covers both (CX-DRPTOUCH 2026-10-28).
 - Grid handlers delegated on `<table role="grid">` (`data-rk={GRID_KEYS}`); user handlers destructured into locals, chained after own
 - Body rows = one binding over the computed `startDate` key (`gridRows`): outside `focusedValue` writes move the grid
 - Resume: structural bindings (body rows, weekday header, page buttons) must not read `focused` / `anchor` — a resumed region wakes on the first change of any leaf signal read on the server (runtime: region entries record the leaf signals behind a computed) and re-creates the focused cell. `visibleStart` reads only `start` unless `focusControlled` (`focusedValue` signal); every internal focus write keeps `start` corrected (`syncStart` → `correctedStart`). `availableRange` reads `anchor` only with `isDateUnavailable` and contiguous ranges

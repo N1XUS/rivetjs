@@ -553,7 +553,7 @@ function windowPointerUp(event: PointerEvent): void {
       }
     } else if (overDate && selectable(state, overDate)) {
       if (p.timer) {
-        // Quick tap: select now (the drag timer never fired).
+        // Quick tap: start the range now (the drag timer never fired). Do not also complete it below.
         clearTimeout(p.timer);
         p.timer = undefined;
         if (releasedOnPressed) {
@@ -561,8 +561,7 @@ function windowPointerUp(event: PointerEvent): void {
           setFocusedDate(state, overDate);
           setFocused(state, true);
         }
-      }
-      if (p.boundaryPressed && releasedOnPressed) {
+      } else if (p.boundaryPressed && releasedOnPressed) {
         // Pressing the start / end of a range starts a new selection on press up.
         setAnchorDate(state, overDate);
       } else if (untrack(state.anchor) && !(p.anchorPressed && releasedOnPressed)) {

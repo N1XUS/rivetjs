@@ -37,6 +37,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 ## Test file -> modules covered
 | file | modules |
 |---|---|
+| calendar-touch.browser | calendar pointer release: quick touch starts one pending range, second tap commits, same-day range, existing selection, DateRangePicker stays open until completion, held-touch drag |
 | a11y-aria-describer | a11y/aria-describer |
 | a11y-focus-trap-node | a11y/focus-trap, a11y/interactivity-checker |
 | a11y-high-contrast | a11y/high-contrast |
