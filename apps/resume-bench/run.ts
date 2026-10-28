@@ -765,4 +765,8 @@ async function main() {
   }
 }
 
-await main();
+if (option("suite", "micro") === "real") {
+  await (await import("./real-pages/run.ts")).runRealPages(args);
+} else {
+  await main();
+}

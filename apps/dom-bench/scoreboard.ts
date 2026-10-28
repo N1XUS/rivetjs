@@ -1,5 +1,6 @@
 // Rivet-only scoreboard against stored competitor numbers (competitors.json) and krausest ratios (krausest/published.json).
-// Usage: node apps/dom-bench/scoreboard.ts [--repo <checkout or worktree path>] [--suites dom,krausest,resume] [--ssr]
+// Usage: node apps/dom-bench/scoreboard.ts [--repo <checkout or worktree path>] [--suites real,dom,krausest,resume] [--ssr]
+//          [--real-results <real-pages results.json>] [--real-lanes rivet,solid-stable,solid,qwik-stable,qwik]
 //          [--quick] [--dom-build-args "--compact"] [--krausest-compile-options '{"experimentalDomCompact":true}']
 //          [--krausest-iterations N] [--md docs/benchmarks/perf-scoreboard.md | --no-md] [--label text]
 // --repo (default: this checkout) is measured through its own adapters and build scripts:
@@ -7,6 +8,10 @@
 //             (window.bench contract; the branch's run.ts validates the branch's DOM output).
 //   krausest: <repo>/apps/dom-bench/krausest/build.ts if present (else this harness's build.ts --repo <repo>), then
 //             THIS checkout's krausest/run.ts (DOM-only contract; identical harness for every branch).
+//   real:     HEADLINE. <repo>/apps/resume-bench/run.ts --suite real --build (realistic pages: products, dashboard,
+//             settings, article) with every lane measured in the same run on this host (interleaved, >= 5 repeats);
+//             --real-results consumes an existing results.json instead. Summarized by real-pages/report.ts.
+//   micro (dom, krausest, resume) stays as the secondary section: never removed, labelled "micro".
 //   resume:   <repo>/apps/resume-bench/run.ts --build --lanes rivet --conditions slow (CLI contract).
 //   ssr:      <repo> benchmark.py --frameworks=rivet-compiled,rivet-resume --rows=100,1000,5000 --concurrency=1 with the
 //             duration/warmup/repeats/GC profile recorded in competitors.json ssr.provenance (isolated compose
@@ -23,6 +28,7 @@ import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withBenchLock } from "./bench-lock.ts";
 import { compareToPublished, REFERENCE_FRAMEWORKS, type SuiteResults } from "./krausest/compare.ts";
+import { summarize, type RealResult } from "../resume-bench/real-pages/report.ts";
 import { asStat, browserDrift, overall, publishedChrome, stat, verdict, type Stat, type Verdict } from "./verdict.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -35,7 +41,7 @@ const option = (name: string, fallback: string) => {
 };
 const repo = resolve(option("repo", ownRoot));
 const quick = flag("quick");
-const suites = option("suites", "dom,krausest,resume")
+const suites = option("suites", "real,dom,krausest,resume")
   .split(",")
   .concat(flag("ssr") ? ["ssr"] : []);
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -93,6 +99,8 @@ interface Scenario {
   losesTo: string[];
   tiesWith: string[];
   note?: string;
+  /** Real pages: competitor lanes whose cell failed the behaviour / parity gate (no number, not a win). */
+  withheld?: string[];
 }
 /** Do the checkout's @rivetjs/* node_modules links point into the checkout itself? A worktree without its own
  * node_modules resolves ../../node_modules of the main checkout, i.e. the main checkout's libs: wrong sources. */
@@ -350,6 +358,49 @@ async function resumeSuite() {
   }
 }
 
+/** Headline: realistic pages, every lane measured in the same run (no stored competitor numbers). */
+async function realSuite() {
+  let path = option("real-results", "");
+  if (!path) {
+    if (!linkedHere) throw foreignLibs("real");
+    path = resolve(raw, "real");
+    const argv = ["apps/resume-bench/run.ts", "--suite", "real", "--build", "--repeats", "5", "--out", path, "--report", resolve(path, "report.md")];
+    const lanes = option("real-lanes", "");
+    await run(node, lanes ? [...argv, "--lanes", lanes] : argv, repo);
+    path = resolve(path, "results.json");
+  }
+  raws.real = resolve(path);
+  const result = JSON.parse(await readFile(raws.real, "utf8")) as RealResult;
+  browsers.real = { measured: result.chrome, reference: result.chrome, drift: "same" };
+  const summary = summarize(result);
+  const rows: [string, string, string, string][] = [
+    ["inputToPaint", "slow", "main interaction to paint", "ms"],
+    ["inputToPaint", "fast", "main interaction to paint", "ms"],
+    ["jsBytes", "slow", "JS transfer before input", "B"],
+    ["jsRequests", "slow", "JS requests before input", "req"],
+    ["cpuBeforeInput", "slow", "main-thread CPU before input", "ms"],
+    ["lcp", "slow", "LCP", "ms"],
+    ["tbt", "slow", "TBT before input", "ms"],
+    ["htmlTransferBytes", "slow", "HTML transfer", "B"],
+  ];
+  for (const page of result.pages)
+    for (const [metric, condition, name, unit] of rows) {
+      if (!result.conditions.includes(condition)) continue;
+      const cell = (lane: string) => summary[`${condition}/${page}/${lane}`]?.[metric] ?? null;
+      const withheld = result.lanes.filter((lane) => lane !== "rivet" && !cell(lane));
+      add({
+        suite: "real",
+        id: `real ${page} ${condition} ${name}`,
+        unit,
+        better: "lower",
+        rivet: cell("rivet"),
+        competitors: Object.fromEntries(result.lanes.filter((lane) => lane !== "rivet").map((lane) => [lane, cell(lane)])),
+        note: cell("rivet") ? undefined : "rivet cell failed the behaviour / parity gate",
+        ...(withheld.length && cell("rivet") ? { withheld } : {}),
+      });
+    }
+}
+
 function table(result: { table: Record<string, Record<string, Stat>> }, scenario: string, metric: string): Stat | null {
   return result.table[`slow/${scenario}/rivet`]?.[metric] ?? null;
 }
@@ -425,7 +476,7 @@ async function ssrSuite() {
 
 await mkdir(raw, { recursive: true });
 const started = new Date().toISOString();
-const steps: Record<string, () => Promise<void>> = { dom: domSuite, krausest: krausestSuite, resume: resumeSuite, ssr: ssrSuite };
+const steps: Record<string, () => Promise<void>> = { real: realSuite, dom: domSuite, krausest: krausestSuite, resume: resumeSuite, ssr: ssrSuite };
 for (const suite of suites) {
   if (!steps[suite]) throw Error(`Unknown suite ${suite}; known: ${Object.keys(steps).join(",")}`);
   try {
@@ -444,7 +495,21 @@ const fmtStat = (v: Stat | null, unit: string) =>
       ? `${fmt(v.median, unit)} (${fmt(v.min, unit)}–${fmt(v.max, unit)})`
       : fmt(v.median, unit);
 const fmt = (v: number | null, unit: string) =>
-  v == null ? "–" : unit === "nodes" || unit === "B" || unit === "req/s" ? Math.round(v).toLocaleString("en-US") : v < 10 ? v.toFixed(2) : v.toFixed(1);
+  v == null
+    ? "–"
+    : unit === "nodes" || unit === "B" || unit === "req" || unit === "req/s"
+      ? Math.round(v).toLocaleString("en-US")
+      : v < 10
+        ? v.toFixed(2)
+        : v.toFixed(1);
+function totals(list: Scenario[]) {
+  return {
+    win: list.filter((s) => s.verdict === "WIN").length,
+    tie: list.filter((s) => s.verdict === "TIE").length,
+    lose: list.filter((s) => s.verdict === "LOSE").length,
+    na: list.filter((s) => s.verdict === "n/a").length,
+  };
+}
 const summary = {
   started,
   finished: new Date().toISOString(),
@@ -462,22 +527,28 @@ const summary = {
   raw: raws,
   failures,
   browsers,
-  totals: {
-    win: scenarios.filter((s) => s.verdict === "WIN").length,
-    tie: scenarios.filter((s) => s.verdict === "TIE").length,
-    lose: scenarios.filter((s) => s.verdict === "LOSE").length,
-    na: scenarios.filter((s) => s.verdict === "n/a").length,
-  },
+  totals: totals(scenarios.filter((s) => s.suite !== "real")),
+  realTotals: totals(scenarios.filter((s) => s.suite === "real")),
   scenarios,
 };
 await writeFile(resolve(outRoot, `${stamp}.json`), JSON.stringify(summary, null, 2) + "\n");
 
+const row = (s: Scenario) =>
+  `| ${s.id} | ${s.unit}${s.better === "higher" ? " ↑" : ""} | ${fmtStat(s.rivet, s.unit)} | ${
+    Object.entries(s.competitors)
+      .map(([k, v]) => `${label(k)} ${fmtStat(v, s.unit)}`)
+      .concat((s.withheld ?? []).map((k) => `${label(k)} withheld (failed gate)`))
+      .join(", ") || "–"
+  } | ${s.verdict}${s.note ? ` (${s.note})` : ""} | ${s.losesTo.map(label).join(", ")} | ${s.tiesWith.map(label).join(", ")} |`;
+const header = ["| scenario | unit | Rivet | competitors | verdict | loses to | ties with |", "|---|---|---|---|---|---|---|"];
+const real = scenarios.filter((s) => s.suite === "real");
+const micro = scenarios.filter((s) => s.suite !== "real");
 const lines = [
   `# Perf scoreboard`,
   "",
   `- Run: ${summary.started} → ${summary.finished}${summary.quick ? " (quick)" : ""}${summary.label ? ` — ${summary.label}` : ""}`,
-  `- Measured: ${summary.branch ?? "?"} @ ${summary.commit?.slice(0, 7) ?? "?"}${summary.dirty ? " (dirty)" : ""} (${relative(ownRoot, repo) || "this checkout"}); Rivet only, competitors from apps/dom-bench/competitors.json and krausest/published.json`,
-  `- Totals: ${summary.totals.win} WIN / ${summary.totals.tie} TIE / ${summary.totals.lose} LOSE / ${summary.totals.na} n/a. WIN = Rivet ≥3% better than every listed competitor with non-overlapping trial ranges (where both have ranges); LOSE = the same in reverse vs any; otherwise TIE. Values: median (min–max).`,
+  `- Measured: ${summary.branch ?? "?"} @ ${summary.commit?.slice(0, 7) ?? "?"}${summary.dirty ? " (dirty)" : ""} (${relative(ownRoot, repo) || "this checkout"}); real pages: every lane measured in the same run; micro: Rivet only, competitors from apps/dom-bench/competitors.json and krausest/published.json`,
+  `- Verdicts: WIN = Rivet ≥3% better than every listed competitor with non-overlapping trial ranges (where both have ranges); LOSE = the same in reverse vs any; otherwise TIE. Values: median (min–max).`,
   `- Browsers: ${
     Object.entries(browsers)
       .map(([suite, b]) => `${suite} ${JSON.stringify(b)}`)
@@ -486,18 +557,21 @@ const lines = [
   `- Raw: .artifacts/perf-night/scoreboard/${stamp}.json`,
   ...(Object.keys(failures).length ? [`- Failed suites: ${Object.keys(failures).join(", ")} (see JSON)`] : []),
   "",
-  "| scenario | unit | Rivet | competitors | verdict | loses to | ties with |",
-  "|---|---|---|---|---|---|---|",
-  ...scenarios.map(
-    (s) =>
-      `| ${s.id} | ${s.unit}${s.better === "higher" ? " ↑" : ""} | ${fmtStat(s.rivet, s.unit)} | ${
-        Object.entries(s.competitors)
-          .map(([k, v]) => `${label(k)} ${fmtStat(v, s.unit)}`)
-          .join(", ") || "–"
-      } | ${s.verdict}${s.note ? ` (${s.note})` : ""} | ${s.losesTo.map(label).join(", ")} | ${s.tiesWith.map(label).join(", ")} |`,
-  ),
+  "## Real pages (headline)",
   "",
-  "Notes: dom = apps/dom-bench (5k rows = 285k elements, 50k reactive fields; Chromium bundled with Playwright; mount = warm-up cycle, forced GC (heap baseline), one unforced re-warm cycle, one macrotask, timed mount — protocol rewarm-2026-10-21); krausest = ratios to vanillajs (local Rivet/local vanilla vs published framework/vanillajs, Chrome 154), sizes absolute kB; resume = Slow 4G + 4x CPU, input → paint of the update; ssr = c1 closed loop, rivet-compiled vs static peers (Razor, Solid 1 hydratable:false), rivet-resume vs hydratable/resumable peers (Solid, Qwik), same generator/window/GC profile. Methodology: apps/dom-bench/README.md.",
+  real.length
+    ? `Totals: ${summary.realTotals.win} WIN / ${summary.realTotals.tie} TIE / ${summary.realTotals.lose} LOSE / ${summary.realTotals.na} n/a. Products listing, dashboard, settings form, docs article (apps/resume-bench/real-pages); identical markup + behaviour per lane (parity + behaviour gate); slow = Slow 4G + 4× CPU. Report: docs/benchmarks/2026-10-28-real-pages.md.`
+    : "Not run (`--suites` without `real`).",
+  "",
+  ...(real.length ? [...header, ...real.map(row), ""] : []),
+  "## Micro benchmarks (secondary)",
+  "",
+  `Totals: ${summary.totals.win} WIN / ${summary.totals.tie} TIE / ${summary.totals.lose} LOSE / ${summary.totals.na} n/a. Synthetic stress cases kept on purpose (removing losing cases would be cherry-picking): large keyed lists, krausest, the resume counter / 1,000-row fixture.`,
+  "",
+  ...header,
+  ...micro.map(row),
+  "",
+  "Notes: real = apps/resume-bench/real-pages (all lanes same run, fresh context per sample, rotating lane order); dom = apps/dom-bench (5k rows = 285k elements, 50k reactive fields; Chromium bundled with Playwright; mount = warm-up cycle, forced GC (heap baseline), one unforced re-warm cycle, one macrotask, timed mount — protocol rewarm-2026-10-21); krausest = ratios to vanillajs (local Rivet/local vanilla vs published framework/vanillajs, Chrome 154), sizes absolute kB; resume = Slow 4G + 4x CPU, input → paint of the update; ssr = c1 closed loop, rivet-compiled vs static peers (Razor, Solid 1 hydratable:false), rivet-resume vs hydratable/resumable peers (Solid, Qwik), same generator/window/GC profile. Methodology: apps/dom-bench/README.md.",
 ];
 const markdown = lines.join("\n") + "\n";
 console.log("\n" + markdown);

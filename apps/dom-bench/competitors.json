@@ -2,6 +2,8 @@
   "note": "Competitor numbers with provenance. ssr re-measured by docs/benchmarks/2026-10-23-ssr-comparison.md via apps/ssr-bench/fair-report.ts --store-competitors (other blocks: their own provenance); dom gzip = fixture+runtime bundle bytes (unchanged).",
   "labels": {
     "solid-stable": "Solid 1.9.15",
+    "qwik-stable": "Qwik 1.20.1",
+    "qwik": "Qwik 2.0.0-rc.0",
     "solid": "Solid 2.0.0-rc.13",
     "react": "React 19.3",
     "dotnet": "Razor (.NET 10)",

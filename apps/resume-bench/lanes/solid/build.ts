@@ -5,8 +5,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 import { cp, readFile, rm, writeFile } from "node:fs/promises";
 
-const root = fileURLToPath(new URL("./", import.meta.url));
-const work = resolve(root, "../../.build/solid");
+const laneRoot = fileURLToPath(new URL("./", import.meta.url));
+const root = process.env.RESUME_BENCH_SOURCE ?? laneRoot;
+const work = resolve(laneRoot, "../../.build/solid");
 
 /**
  * Solid 2 RC lane: classic Vite SSR (no Start mode). Client build of index.html (hydrate entry,

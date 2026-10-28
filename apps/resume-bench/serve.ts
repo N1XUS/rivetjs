@@ -8,7 +8,7 @@ import type { AddressInfo } from "node:net";
 
 const TYPES: Record<string, string> = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml" };
 
-export async function serve(dir: string): Promise<{ url: string; close: () => Promise<unknown> }> {
+export async function serve(dir: string, port = 0): Promise<{ url: string; close: () => Promise<unknown> }> {
   const cache = new Map<string, { body: Buffer; br: Buffer }>();
   const load = async (path: string) => {
     if (!cache.has(path)) {
@@ -37,7 +37,7 @@ export async function serve(dir: string): Promise<{ url: string; close: () => Pr
       res.writeHead(404).end("not found");
     }
   });
-  await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+  await new Promise<void>((done) => server.listen(port, "127.0.0.1", done));
   return {
     url: "http://127.0.0.1:" + (server.address() as AddressInfo).port,
     close: () => new Promise((done) => server.close(done)),

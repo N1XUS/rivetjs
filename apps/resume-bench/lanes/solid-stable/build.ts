@@ -4,8 +4,9 @@ import { resolve } from "node:path";
 import { cp, readFile, rm, writeFile } from "node:fs/promises";
 import { stableModule, stableRequire, stableSolidAliases, stableSolidIsolation } from "../../stable-dependencies.ts";
 
-const root = fileURLToPath(new URL("./", import.meta.url));
-const work = resolve(root, "../../.build/solid-stable");
+const laneRoot = fileURLToPath(new URL("./", import.meta.url));
+const root = process.env.RESUME_BENCH_SOURCE ?? laneRoot;
+const work = resolve(laneRoot, "../../.build/solid-stable");
 
 /** Solid 1 stable: production SSR + hydration with native resource state serialization. */
 export async function build(outDir: string): Promise<void> {

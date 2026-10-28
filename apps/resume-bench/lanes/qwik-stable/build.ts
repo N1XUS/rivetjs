@@ -12,8 +12,10 @@ const { qwikVite } = stableRequire('@builder.io/qwik/optimizer');
 const qwikRoot = stablePackage('@builder.io/qwik').root;
 
 const run = promisify(execFile);
-const laneDir = dirname(fileURLToPath(import.meta.url));
-const tmpRoot = resolve(laneDir, '../../.build/qwik-stable');
+const originalLaneDir = dirname(fileURLToPath(import.meta.url));
+// Real-page suite: RESUME_BENCH_SOURCE points at a generated page source; the toolchain config stays this lane's.
+const laneDir = process.env.RESUME_BENCH_SOURCE ?? originalLaneDir;
+const tmpRoot = resolve(originalLaneDir, '../../.build/qwik-stable');
 
 function config(clientOutDir: string, serverOutDir: string, ssr: boolean) {
   return {

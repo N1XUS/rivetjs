@@ -72,6 +72,8 @@ export async function writeBuildManifest(lane: Lane, outDir: string): Promise<vo
   const packages = await Promise.all(definition.packages.map((name) => packageInfo(name, stable)));
   const sourcePaths = [
     ...await files(resolve(root, "lanes", lane)),
+    // Real-page builds (dist/real/<lane>/<page>) are generated from real-pages/; micro builds do not depend on it.
+    ...(relative(resolve(root, "dist/real"), outDir).startsWith("..") ? [] : await files(resolve(root, "real-pages"))),
     ...["data.ts", "provenance.ts", "stable-dependencies.ts", "package.json"].map((path) => resolve(root, path)),
     resolve(repository, "package.json"), resolve(repository, "package-lock.json"),
     ...(stable ? [resolve(repository, "apps/bench-stable/package.json")] : []),

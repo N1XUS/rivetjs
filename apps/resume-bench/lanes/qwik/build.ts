@@ -9,8 +9,10 @@ import { build as viteBuild, type InlineConfig } from 'vite';
 import { qwikVite } from '@qwik.dev/core/optimizer';
 
 const run = promisify(execFile);
-const laneDir = dirname(fileURLToPath(import.meta.url));
-const tmpRoot = resolve(laneDir, '../../.build/qwik');
+const originalLaneDir = dirname(fileURLToPath(import.meta.url));
+// Real-page suite: RESUME_BENCH_SOURCE points at a generated page source; the toolchain config stays this lane's.
+const laneDir = process.env.RESUME_BENCH_SOURCE ?? originalLaneDir;
+const tmpRoot = resolve(originalLaneDir, '../../.build/qwik');
 
 function config(clientOutDir: string, serverOutDir: string, ssr: boolean): InlineConfig {
   return {

@@ -6,9 +6,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 import { cp, readFile, rm, writeFile } from "node:fs/promises";
 
-const root = fileURLToPath(new URL("./", import.meta.url));
-const work = resolve(root, "../../.build/rivet");
-const resume: RivetResumeOptions = { modules: ["root.tsx", "page.tsx", "detail.tsx"], roots: ["root.tsx"] };
+const laneRoot = fileURLToPath(new URL("./", import.meta.url));
+const root = process.env.RESUME_BENCH_SOURCE ?? laneRoot;
+const work = resolve(laneRoot, "../../.build/rivet");
+const resume: RivetResumeOptions = {
+  modules: process.env.RESUME_BENCH_SOURCE ? ["root.tsx", "page.tsx"] : ["root.tsx", "page.tsx", "detail.tsx"],
+  roots: ["root.tsx"],
+};
 
 /** Client (resume chunks) + SSR builds, then prerender `/` into outDir/index.html. */
 export async function build(outDir: string): Promise<void> {

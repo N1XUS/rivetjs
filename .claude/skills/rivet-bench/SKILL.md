@@ -14,7 +14,8 @@ Perf first: every runtime / compiler change is justified by measurement; no sema
 | Server CPU / page, TTFB, p50, peak RSS | `apps/ssr-bench` (Docker, Python 3.12; Rivet vs Solid / Qwik / Razor / React lanes) + `scripts/real-app-prof/run.ts` |
 | DOM mount / update / heap | `apps/dom-bench` (krausest + Rivet scenarios; writes `docs/benchmarks/perf-scoreboard.md`) |
 | Style / layout / paint cost | `apps/dom-bench/render/` |
-| Cold click-to-interactive | `apps/resume-bench` |
+| Realistic pages (headline: listing / dashboard / form / docs; bytes, CPU, LCP, TBT, input-to-paint) | `apps/resume-bench --suite real` (`real-pages/`) |
+| Cold click-to-interactive (micro: counter, 1,000-row fixture) | `apps/resume-bench` |
 | Shipped bytes | `npm run size-report -- --check`, `node scripts/size-report/frames.mjs --check` |
 | Islands / bridges | `apps/island-bench`, `apps/bridge-demo` |
 | Static / editorial sites | `apps/editorial-bench` |

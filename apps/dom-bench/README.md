@@ -6,7 +6,7 @@ Client DOM benchmarks for Rivet. The scoreboard runs only Rivet (plus a local va
 
 - **Large DOM** (`build.ts`, `run.ts`, `report.ts`): 1k/5k sections × 10 reactive fields (5k = 285k elements, 50k fields). Adapter contract: `window.bench.{mount,update,dispose}` in `adapters/<lane>.jsx`. A/B: `build.ts --base <dir>` (lane `rivet-base`), `--lane name=compiled.js` (hand-edited compiler output), `--emit` (`dist/rivet.compiled.js`); `mount-quick.ts` = mount-only interleaved A/B (`--gc 0` / `--rewarm 0 --yield 0` = old protocol / `--flags` / `--gc-trace`). Mount protocol: warm-up cycle, forced GC (heap baseline), one unforced re-warm cycle, one macrotask, timed mount. Mount notes: `docs/benchmarks/2026-10-20-dom-mount.md`.
 - **krausest-style** (`krausest/`): js-framework-benchmark keyed table. Lanes: `rivet` (`krausest/rivet.jsx`) and `vanilla` (`krausest/vanilla.js`). Contract: DOM only (`#run #runlots #add #update #clear #swaprows`, `tbody>tr`, `td:nth(2)>a` selects, `td:nth(3)>a>span` removes, `tr.danger`).
-- **Scoreboard** (`scoreboard.ts`): Rivet-only run of all suites vs stored numbers, WIN/TIE/LOSE per scenario (`verdict.ts`: ≥3% median gap + non-overlapping trial ranges, else TIE).
+- **Scoreboard** (`scoreboard.ts`): headline **real pages** section first (`apps/resume-bench --suite real`: products / dashboard / settings / article, every lane measured in the same run — no stored numbers), then the **micro** section: Rivet-only run of the dom / krausest / resume suites vs stored numbers, WIN/TIE/LOSE per scenario (`verdict.ts`: ≥3% median gap + non-overlapping trial ranges, else TIE).
 - **Props suite** (`props/`): component-heavy live props, Rivet vs Solid stable. 1000 rows × 6 components (`Row` → 2 × `Cell` → `Label`, `Badge`): getter props, one component spread (`{...props.badge}`), `mergeProps` defaults + `splitProps` + a DOM spread of the rest. Phases per sample: mount, relabel (every row's label), select (10 single selections: every row's `selected` getter re-runs), bump (every 10th count through spread → merge → split), dispose; heap after GC (mounted table held). `build.ts --base <dir>` (A/B runtime), `--lane name=compiled.js` (hand-edited compiler output: prototype an emission shape), `--emit` (compiler output → `dist/props/rivet.compiled.js`). Results: `docs/benchmarks/2026-10-08-props-suite.md`.
 - **Traces** (`trace.ts`, `trace-report.ts`): CPU profile + Performance trace + heap snapshot per lane/op, and a diff report.
 
@@ -19,7 +19,7 @@ node apps/dom-bench/krausest/compare.ts <results.json>
 node apps/dom-bench/trace.ts --suite dom --lane rivet --op mount|update1|update10|update100|dispose --rows 5000 [--lock]
 node apps/dom-bench/trace.ts --suite krausest --lane rivet --op 05_swap1k --throttle [--lock]
 node apps/dom-bench/trace-report.ts <dir> [<dir> ...] [--heap] [--md out.md]
-node apps/dom-bench/scoreboard.ts [--repo <worktree>] [--quick] [--ssr] [--suites dom,krausest,resume]
+node apps/dom-bench/scoreboard.ts [--repo <worktree>] [--quick] [--ssr] [--suites real,dom,krausest,resume] [--real-results <real-pages results.json>]
 ```
 
 - Lock: every timed phase takes the shared mkdir lock (`bench-lock.ts`, path `RIVET_BENCH_LOCK`; `none` disables when the caller holds it). krausest locks per benchmark.
