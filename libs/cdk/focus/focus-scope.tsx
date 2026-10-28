@@ -306,7 +306,9 @@ export function mountScope(mount: Mount): () => void {
     const focused = getActiveElement(doc);
     const restoring =
       restoreFocus && nodeToRestore && ((focused && isElementInChildScope(focused, scope)) || (focused === doc.body && shouldRestoreFocus(scope)));
-    if (wasActive && (!parent || parent.isConnected)) g.activeScope = parent;
+    // A portaled descendant can outlive this scope (overlapping popover exits). Keep that
+    // active scope: clearing it lets multiple surviving scopes pull focus back recursively.
+    if (wasActive && (!g.activeScope?.isConnected || scope.contains(g.activeScope)) && (!parent || parent.isConnected)) g.activeScope = parent;
     // Sibling scopes restoring into this scope restore to this scope's target instead.
     if (nodeToRestore)
       for (const other of doc.querySelectorAll(`[${SCOPE}]`)) {

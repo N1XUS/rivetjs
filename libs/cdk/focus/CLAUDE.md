@@ -24,6 +24,7 @@ Focus management: Rivet helpers (Tab containment, save/restore, roving tabindex,
 - useFocusRing (header): `isFocused`/`isFocusVisible` signals; modality listener subscribed from the focus handler, dropped on blur (no load-time client effect); resumed page without tracking adopts browser `:focus-visible` on first focus
 
 ## Rules / invariants
+- Overlapping popover exits (CX-ASYNC2): removing a scope preserves its active portaled descendant when that descendant is still connected outside the removed DOM subtree. Clearing it let two surviving scopes repeatedly redirect focus to each other. `tests/focus-scope-overlap.browser.test.tsx` pins the tree and containment behavior.
 - FocusScope attributes: `data-rv-focus-scope=<id>`, `data-rv-focus-parent=<parent id>`, `data-rv-contain=""` (only with `contain`); keydown handler only when `contain`
 - containment uses the key's `event.target`, not `activeElement`: on a resumed page the first Tab runs after the chunk loads, focus already moved (`index.ts:42`, `focus-scope.tsx:167`)
 - module state in one object `g` (resume-extracted symbols import module bindings read-only) (`focus-scope.tsx:58`); per-scope data in a WeakMap, never serialized

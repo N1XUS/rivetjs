@@ -1,6 +1,1 @@
-{
-  "async-data": {
-    "step": "{\"expect\":[\"#user\",\"Grace Hopper\"]}",
-    "reason": "RED-DOCS 2026-10-23, still red QUAR-SWEEP 2026-10-28 (796a831e3, same error): derived runtime \u2014 an adopted Async hole's live span (dom-derived.ts liveSpan proxy) is the insert's current list; the reconcile mutates the DOM while reading it (TypeError reading 'parentNode'), owner RED-COMP"
-  }
-}
+{}

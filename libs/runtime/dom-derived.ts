@@ -619,15 +619,6 @@ function spanOf(start: Node, end: Node): Node[] {
   for (let n: Node | null = start; n !== null; n = n === end ? null : n.nextSibling) out.push(n);
   return out;
 }
-// A slot's current holding an `Async` hole's range: read live (a streamed segment swaps its content in later).
-function liveSpan(hole: AHole): Node[] {
-  return new Proxy([] as Node[], {
-    get: (_, key) => Reflect.get(spanOf(hole.start!, hole.end!), key),
-    has: (_, key) => Reflect.has(spanOf(hole.start!, hole.end!), key),
-    ownKeys: () => Reflect.ownKeys(spanOf(hole.start!, hole.end!)),
-    getOwnPropertyDescriptor: (_, key) => Reflect.getOwnPropertyDescriptor(spanOf(hole.start!, hole.end!), key),
-  });
-}
 // After the adopt run of the unit holding it: the hole's content adopts with its value (a unit of its own, its `load`
 // not run: the first call answers the server's value), waits for its segment (the document still parses), or renders
 // in the browser (no value: failed, not data, the stream ended first).
@@ -863,13 +854,13 @@ function listAt(opener: Node, k: number): LRow | null | undefined {
   return lazy && rowAt(lazy, k, opener);
 }
 
-// A sole list's hole start (its span is a lazy view of its element's children), or an `Async` hole's (a live view).
+// A sole list or Async hole: leave its lazy snapshot unread while the slot returns its keep token.
 const soleOf = (a: UnitAlign, n: Node): boolean => {
   const hole = a.holes.get(n);
   return hole !== undefined && ((hole.kind === 1 && hole.sole !== null) || hole.kind === 2);
 };
-// A slot's current, captured on first use: row adoption may insert anchors before the
-// lazy list's first reconcile. Freeze then, so DOM mutations during reconcile cannot shift it.
+// A slot's current, captured on first use: row adoption may insert anchors and an Async
+// segment may replace its fallback before reconciliation. Freeze then, so DOM mutations cannot shift it.
 function lazyNodes(read: () => Node[]): Node[] {
   let got: Node[] | null = null;
   const at = (): Node[] => (got ??= read());
@@ -968,7 +959,10 @@ function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): numbe
     if (e < 0) return (mismatch(a, at, ll[j], hole.nodes[0]), j);
     hole.start = ll[j]!;
     hole.end = ll[e]!;
-    a.span.set(hole.nodes[0]!, liveSpan(hole));
+    a.span.set(
+      hole.nodes[0]!,
+      lazyNodes(() => spanOf(hole.start!, hole.end!)),
+    );
     a.span.set(hole.nodes[1]!, []);
     return e + 1;
   }

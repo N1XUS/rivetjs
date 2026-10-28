@@ -184,6 +184,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 - Public-export coverage (TEST-COV 2026-10-27): `public-collection-helpers`, `public-state-adapters`, `public-focus-dom`, `public-focus-visible`, `public-portal-outlet`, `public-scroll-adapters`, `public-color-aria`, `public-date-conversions`, `public-date-state`, `public-platform-probes` run in project `cdk`. Focus-visible and scroll-lock cases port React Aria tests at `06891de`; all run without Chromium.
 
 ## Rules / invariants
+- `focus-scope-overlap.browser.test.tsx` (CX-ASYNC2): an exiting parent scope unmounts while two portaled descendants survive; the active descendant stays active and contains focus without recursive redirects. This is the `popover-placement` stack-overflow shape.
 - `tests/date/*`: ports of `@internationalized/date` tests; header "Changes: imports point at @rivetjs/cdk/date; Jest globals come from @rivetjs/testing/jest" — keep Jest-style API via `@rivetjs/testing/jest`.
 - Moving a cdk source file: update root-path strings in `browser/*.test.ts` (`import("/overlay/position.ts")` style, Vite root = libs/cdk), `/libs/cdk/<folder>/<name>.ts` names in `angular-overlay.test.ts` (`modules` list), relative imports in fixtures.
 
