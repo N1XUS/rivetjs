@@ -777,6 +777,13 @@ function listenOf(list: string, type: string): string {
   if (type === "*" || list === "") return type;
   return hasType(list, type) ? list : list + " " + type;
 }
+// An `ev` string's types (interned `ev` strings: one split per distinct string).
+const evTypes = new Map<string, string[]>();
+const typesOf = (ev: string): string[] => {
+  let types = evTypes.get(ev);
+  if (types === undefined) evTypes.set(ev, (types = ev.split(" ")));
+  return types;
+};
 /** `type` is one of the space separated `list` (no allocation). */
 function hasType(list: string, type: string): boolean {
   for (let i = list.indexOf(type); i >= 0; i = list.indexOf(type, i + 1)) {
@@ -1821,6 +1828,18 @@ function flush(ctx: DerivedRender): FlushTail | null {
     ctx.flushed = ctx.boundaries.length;
     ctx.listen = [];
     return null;
+  }
+  // D5: a dropped `COND` record's unit runs in the browser inside its nearest kept ancestor's adopt run, so the types its
+  // unit listens to (spread listener props: a cdk Link's press handlers inside ui Breadcrumbs) are that ancestor's — else
+  // a cold `pointerdown` there adopted nothing and the press's `click` found no press started (REDS-UI 2026-10-28). After
+  // the inert check: listeners of static instances alone still ship nothing.
+  for (let i = ctx.boundaries.length - 1; i >= ctx.flushed; i--) {
+    const x = ctx.boundaries[i]!,
+      ev = x.ev;
+    if (!(x.flags & COND) || x.kept || !ev) continue;
+    let a = x.parent;
+    while (a && a.flags & COND && !a.kept) a = a.parent;
+    if (a && a.ev !== "*" && a.ev !== ev) a.ev = ev === "*" || !a.ev ? ev : typesOf(ev).reduce(listenOf, a.ev);
   }
   for (let i = ctx.flushed; i < ctx.boundaries.length; i++) {
     const boundary = ctx.boundaries[i]!;

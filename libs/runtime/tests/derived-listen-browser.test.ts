@@ -299,3 +299,31 @@ compiled("server-written `e`: a non-boundary helper's in-place handler adds its 
   } as never)) as string;
   assert.deepEqual(typesOf(html), { "src/l.tsx#Page": "click pointerdown" });
 });
+
+// A dropped conditional record's unit runs inside its nearest kept ancestor's adopt run: the listener props spread in it
+// (a cdk Link's press handlers inside ui Breadcrumbs) make that ancestor listen to their types (REDS-UI 2026-10-28: a cold
+// press on a breadcrumb link adopted the route on `click` only, after its `pointerdown` had acted natively — no press).
+const DROPPED = `import { signal } from "@rivetjs/reactivity";
+function link(props) {
+  return <a id="a" {...props}>home</a>;
+}
+export function Wrap(props) {
+  return <nav>{link({ href: "#home", onPointerDown: props.onDown })}</nav>;
+}
+export function Page() {
+  const n = signal(0);
+  return <main><button id="b" onClick={() => n.set(0)}>{n()}</button><Wrap onDown={() => n.set(n() + 1)} /></main>;
+}
+`;
+compiled("server-written `e`: listener props spread inside a dropped conditional record count for its kept ancestor", async () => {
+  const opts = { module: "src/d.tsx", boundaries: ["Page", "Wrap"], independent: ["Page"], conditional: ["Wrap"] };
+  const server = compile(DROPPED, { target: "server", filename: "d.tsx", resume: opts } as never);
+  assert.deepEqual(server.diagnostics, []);
+  const { Page } = await importServer<{ Page: () => ServerValue }>(server.code);
+  const html = (await derivedToString(() => Page(), {
+    manifest: { hash: "t", runtime: "/rt.js", symbols: { "src/d.tsx#Page": "/page.js", "src/d.tsx#Wrap": "/page.js" } },
+    preload: { lean: true },
+  } as never)) as string;
+  assert.doesNotMatch(html, /"src\/d\.tsx#Wrap"/, "Wrap's record is dropped");
+  assert.deepEqual(typesOf(html), { "src/d.tsx#Page": "click pointerdown" });
+});

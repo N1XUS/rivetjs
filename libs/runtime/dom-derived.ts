@@ -241,6 +241,9 @@ interface Keyed {
   wake: number[] | undefined;
   /** Lists whose rows read it only through keyed row writers: every write reruns them over the lazy rows. */
   rows: Map<Lazy, Writer[]> | null;
+  /** Written since the page loaded: a list made by a later adopt run (a unit whose chunk loaded after the write) whose
+   * rows read it shows stale server rows, so it materialises at once (`sample`). */
+  written?: true;
 }
 /** A cold event the loader held: the event, its path at dispatch, its default's replay, the target's form state then. */
 export type HeldEvent = [
@@ -452,10 +455,21 @@ function wakeAll(ids: number[]): void {
   for (const id of ids) {
     const r = recs.get(id);
     if (r && !r.done) {
-      const p = need(r);
+      const p = woken(r);
       if (p !== true) p.catch(report);
     }
   }
+}
+// A record a write wakes: `need`; a dependent one still not adopted after it sits in a lazy row of its adopted parent
+// (`need`: "inside a lazy row") — the units around its server node materialise, as an event there would (REDS-CDK
+// 2026-10-28: a resumed Table's TableHeaderRow, a row of TableHeader's `For`, never adopted, so its select-all checkbox
+// kept the server's state after a row selection).
+function woken(r: Rec): true | Promise<void> {
+  const p = need(r);
+  if (p !== true) return p.then(() => void (r.done || woken(r)));
+  if (r.done || r.hole || !r.parent || r.flags & INDEPENDENT) return true;
+  const at = r.flags & ATTR ? doc!.querySelector('[data-b="' + r.id + '"]') : opener(r.id);
+  return at ? around(at) : true;
 }
 function wakeLoose(): void {
   if (!loose?.size) return;
@@ -477,16 +491,11 @@ function counted(rec: Rec | null, n: number): void {
 // this write too (TOGGLE-TABS-COLD: a cold arrow key selected a tab, the force-mounted panels' list — created by the
 // TabPanels wake — kept the server's visible panel until the second change).
 function before(e: Keyed): void {
+  e.written = true;
   const wake = e.wake;
   if (wake) {
     e.wake = undefined;
-    for (const id of wake) {
-      const r = recs.get(id);
-      if (r && !r.done) {
-        const p = need(r);
-        if (p !== true) p.catch(report);
-      }
-    }
+    wakeAll(wake);
   }
   const fors = e.fors;
   if (fors) {
@@ -1229,7 +1238,9 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   for (const hole of au.holes) if (hole.kind === 2) landAsync(hole);
   for (const hole of au.holes) if (hole.kind === 3) landIsland(hole);
   for (const lazy of au.fors) sample(lazy);
-  counted(rec, au.made);
+  // A lazy row's run makes the row's signals only: its count is not the record's (REDS-CDK 2026-10-28: every row
+  // materialisation woke the readers of all the record's keys).
+  if (!au.row) counted(rec, au.made);
   shape = own;
   return owner;
 }
@@ -1333,7 +1344,9 @@ function runHole(r: Rec): void {
   loose?.delete(r);
   // The unit that claimed the hole is gone (a revalidation / navigation re-rendered the page before its idle / visible /
   // event trigger fired): its range left the page too, nothing to adopt (forms drawer: "Cannot run with a disposed owner").
-  if (hole.start && !(hole.owner as { disposed?: boolean } | null)?.disposed)
+  // Likewise a range the claiming unit removed itself before the idle adopt (a ternary / keyed Show step swapped on the
+  // first event): its end marker is detached ("Cannot read properties of null (reading 'insertBefore')", REDS-UI).
+  if (hole.start && hole.start.parentNode !== null && !(hole.owner as { disposed?: boolean } | null)?.disposed)
     r.owner = adoptUnit(hole.owner, hole.body!, hole.start, hole.end!, r, false, r.name);
 }
 
@@ -1392,7 +1405,14 @@ function sampleRow(lazy: Lazy, k: number): Sampled | null {
     untrack(() => _rootIn(lazy.owner, () => _insert(null, lazy.children!(out.item, out.index), anchor), holder));
     // Plain signals read by any effect the row made (a child component's spread / attribute bindings — `CarouselDot`'s
     // `aria-selected` — run no row writer): their first write wakes the list (M6-CUT: resumed carousel dots stayed stale).
-    for (const sig of _ownedReads(holder.owner)) if (!keyedOf.has(sig)) out.plain.add(sig);
+    // Keyed ones too unless a hoisted binding read them (its row writer reruns it): a row region reading keyed state
+    // through computeds (cdk `renderNodeAt`: the node at the row's key of a collection built from `items`) — REDS-CDK
+    // 2026-10-28: a resumed ListBox row kept the server's text after `createListData.update`.
+    for (const sig of _ownedReads(holder.owner)) {
+      const e = keyedOf.get(sig);
+      if (!e) out.plain.add(sig);
+      else if (!out.fxs.some((fx) => fx[2].has(e))) out.outside.add(e);
+    }
     // A nested list's items read keyed state through computeds the row did not run (cached: a collection built from a
     // sorted / filtered computed): those keyed signals wake this list too, so its rows — and the nested list — adopt
     // over the server's items before the write (M6-CUT: a resumed table's sort kept the server row order).
@@ -1478,6 +1498,10 @@ function sample(lazy: Lazy): void {
     if (mine?.length) (e.rows ??= new Map()).set(lazy, mine);
     else (e.fors ??= new Set()).add(lazy);
   }
+  // Adopted after a write its rows read (the write woke this unit, whose chunk was still loading: the write notified
+  // before the list existed): the server rows show the old value — they materialise over the current one now (REDS-CDK
+  // 2026-10-28: a resumed Table body row kept the server's cells after its `items` signal changed).
+  for (const e of reads) if (e.written) return wakeFor(lazy);
 }
 // Plain signals a lazy list's rows read (a `.ts` helper's state, `createCarouselState`: not keyed, no wake list): the
 // first write materialises those lists' rows before it notifies, like a keyed signal's `fors` (M6-CUT: a resumed
