@@ -826,6 +826,12 @@ export const entries: ApiEntryConfig[] = [
     summary: "Table: Root / ScrollContainer / Content (cdk Table) / Header / Column / Body / Row / Cell + sortable header, resizing and load-more parts.",
   },
   {
+    entry: "@rivetjs/ui/table-tanstack",
+    file: "ui/src/table-tanstack/index.ts",
+    runsOn: "both",
+    summary: "TanStack Table v9 adapter: createTable on signals, flexRender / FlexRender, sort descriptor bridge (optional peer @tanstack/table-core).",
+  },
+  {
     entry: "@rivetjs/ui/tabs",
     file: "ui/src/components/tabs/index.ts",
     runsOn: "both",

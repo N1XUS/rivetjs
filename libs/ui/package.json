@@ -660,6 +660,10 @@
       "types": "./src/components/prompt-input/index.ts",
       "default": "./src/components/prompt-input/index.ts"
     },
+    "./table-tanstack": {
+      "types": "./src/table-tanstack/index.ts",
+      "default": "./src/table-tanstack/index.ts"
+    },
     "./theme": {
       "types": "./src/theme/index.ts",
       "default": "./src/theme/index.ts"
@@ -685,7 +689,13 @@
   },
   "peerDependencies": {
     "tailwindcss": "^4.0.0",
-    "lucide": ">=1"
+    "lucide": ">=1",
+    "@tanstack/table-core": "^9.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/table-core": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24"

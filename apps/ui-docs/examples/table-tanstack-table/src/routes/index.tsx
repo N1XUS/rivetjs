@@ -1,11 +1,26 @@
 // Port of HeroUI v3.2.6 `apps/docs/src/demos/en/table/tanstack-table.tsx` (Apache-2.0, © 2025 NextUI Inc.; modified).
-// Not yet ported: TanStack Table has no Rivet adapter (`@tanstack/react-table` `useTable` / `flexRender`); the
-// sorting + pagination row models are computed from signals instead, same markup.
-import { computed, signal } from "@rivetjs/reactivity";
+// Rivet: `@tanstack/react-table` `useReactTable` / `flexRender` → `@rivetjs/ui/table-tanstack` `createTable` /
+// `flexRender` (TanStack Table v9 on signals); React state → signals (the sort descriptor shared with the Table header
+// through `sortingAtom`, the page in a `PaginationState` signal).
+import { signal } from "@rivetjs/reactivity";
 import type { SortDescriptor } from "@rivetjs/cdk/collections/types";
 import { Chip } from "@rivetjs/ui/chip";
 import { Pagination } from "@rivetjs/ui/pagination";
 import { Table } from "@rivetjs/ui/table";
+import {
+  createColumnHelper,
+  createPaginatedRowModel,
+  createSortedRowModel,
+  createTable,
+  flexRender,
+  rowPaginationFeature,
+  rowSortingFeature,
+  sortFn_alphanumeric,
+  sortFn_text,
+  sortingAtom,
+  tableFeatures,
+  type PaginationState,
+} from "@rivetjs/ui/table-tanstack";
 
 export const head = { title: "Table: TanStack Table" };
 
@@ -54,58 +69,72 @@ const users: User[] = [
   },
 ];
 
-// --- Column Definitions (TanStack `columnHelper.accessor` stand-in) -------
-const columns: { id: keyof User; header: string }[] = [
-  { header: "Name", id: "name" },
-  { header: "Role", id: "role" },
-  { header: "Status", id: "status" },
-  { header: "Email", id: "email" },
-];
+// --- Table features (sorting + pagination row models) ----------------------
+const features = tableFeatures({
+  paginatedRowModel: createPaginatedRowModel(),
+  rowPaginationFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: { alphanumeric: sortFn_alphanumeric, text: sortFn_text },
+});
 
-// --- Row models (TanStack sorted + paginated row model stand-in) ----------
-const PAGE_SIZE = 4;
+// --- Column Definitions ---------------------------------------------------
+const columnHelper = createColumnHelper<typeof features, User>();
 
-function sortRows(rows: User[], descriptor: SortDescriptor | null): User[] {
-  if (!descriptor) return rows;
-  const col = descriptor.column as keyof User;
-  const sign = descriptor.direction === "descending" ? -1 : 1;
-
-  return [...rows].sort((a, b) => sign * String(a[col]).localeCompare(String(b[col]), undefined, { numeric: true }));
-}
+const columns = columnHelper.columns([
+  columnHelper.accessor("name", { header: "Name" }),
+  columnHelper.accessor("role", { header: "Role" }),
+  columnHelper.accessor("status", {
+    cell: (info) => (
+      <Chip color={statusColorMap[info.getValue()]} size="sm" variant="soft">
+        {info.getValue()}
+      </Chip>
+    ),
+    header: "Status",
+  }),
+  columnHelper.accessor("email", { header: "Email" }),
+]);
 
 // --- Component ------------------------------------------------------------
+const PAGE_SIZE = 4;
+
 export function TanstackTable() {
   const sortDescriptor = signal<SortDescriptor | null>(null);
-  const pageIndex = signal(0);
+  const pagination = signal<PaginationState>({ pageIndex: 0, pageSize: PAGE_SIZE });
 
-  const pageCount = Math.ceil(users.length / PAGE_SIZE);
-  const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
-  const rows = computed(() => sortRows(users, sortDescriptor()).slice(pageIndex() * PAGE_SIZE, (pageIndex() + 1) * PAGE_SIZE));
-  const start = () => pageIndex() * PAGE_SIZE + 1;
-  const end = () => Math.min((pageIndex() + 1) * PAGE_SIZE, users.length);
+  const table = createTable({
+    columns,
+    data: users,
+    features,
+    getRowId: (row) => String(row.id),
+    state: { pagination, sorting: sortingAtom(sortDescriptor) },
+  });
+
+  const pages = Array.from({ length: table.getPageCount() }, (_, i) => i + 1);
+  const start = () => pagination().pageIndex * PAGE_SIZE + 1;
+  const end = () => Math.min((pagination().pageIndex + 1) * PAGE_SIZE, users.length);
 
   return (
     <Table>
       <Table.ScrollContainer>
         <Table.Content aria-label="TanStack Table example" class="min-w-[600px]" sortDescriptor={sortDescriptor}>
           <Table.Header>
-            {columns.map((column) => (
-              <Table.Column allowsSorting id={column.id} isRowHeader={column.id === "name"}>
-                {({ sortDirection }) => <Table.SortableColumnHeader sortDirection={sortDirection}>{column.header}</Table.SortableColumnHeader>}
+            {table.getHeaderGroups()[0]!.headers.map((header) => (
+              <Table.Column allowsSorting id={header.column.id} isRowHeader={header.column.id === "name"}>
+                {({ sortDirection }) => (
+                  <Table.SortableColumnHeader sortDirection={sortDirection}>
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </Table.SortableColumnHeader>
+                )}
               </Table.Column>
             ))}
           </Table.Header>
-          <Table.Body items={rows}>
-            {(user: User) => (
-              <Table.Row id={user.id}>
-                <Table.Cell>{user.name}</Table.Cell>
-                <Table.Cell>{user.role}</Table.Cell>
-                <Table.Cell>
-                  <Chip color={statusColorMap[user.status]} size="sm" variant="soft">
-                    {user.status}
-                  </Chip>
-                </Table.Cell>
-                <Table.Cell>{user.email}</Table.Cell>
+          <Table.Body items={() => table.getRowModel().rows}>
+            {(row: ReturnType<typeof table.getRowModel>["rows"][number]) => (
+              <Table.Row id={row.id}>
+                {row.getAllCells().map((cell) => (
+                  <Table.Cell>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Table.Cell>
+                ))}
               </Table.Row>
             )}
           </Table.Body>
@@ -118,20 +147,20 @@ export function TanstackTable() {
           </Pagination.Summary>
           <Pagination.Content>
             <Pagination.Item>
-              <Pagination.Previous isDisabled={pageIndex() === 0} onPress={() => pageIndex.update((p: number) => p - 1)}>
+              <Pagination.Previous isDisabled={!table.getCanPreviousPage()} onPress={() => table.previousPage()}>
                 <Pagination.PreviousIcon />
                 Prev
               </Pagination.Previous>
             </Pagination.Item>
             {pages.map((p) => (
               <Pagination.Item>
-                <Pagination.Link isActive={p === pageIndex() + 1} onPress={() => pageIndex.set(p - 1)}>
+                <Pagination.Link isActive={p === pagination().pageIndex + 1} onPress={() => table.setPageIndex(p - 1)}>
                   {p}
                 </Pagination.Link>
               </Pagination.Item>
             ))}
             <Pagination.Item>
-              <Pagination.Next isDisabled={pageIndex() === pageCount - 1} onPress={() => pageIndex.update((p: number) => p + 1)}>
+              <Pagination.Next isDisabled={!table.getCanNextPage()} onPress={() => table.nextPage()}>
                 Next
                 <Pagination.NextIcon />
               </Pagination.Next>

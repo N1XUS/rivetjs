@@ -363,6 +363,7 @@
 @rivetjs/ui/chat-attachment [server] acbe21a89a5a 14050 css 54fd0b795c45 1176825
 @rivetjs/ui/prompt-input [dom] c0a0ce78e61d 18610 css 54fd0b795c45 1176825
 @rivetjs/ui/prompt-input [server] bce487ab7a77 16642 css 54fd0b795c45 1176825
+@rivetjs/ui/table-tanstack 3be7eaa54140 2918
 @rivetjs/ui/theme fe6bbbbb0f68 23442
 @rivetjs/motion [dom] 287ad5aa2fe1 46227
 @rivetjs/motion [server] 23afc7eec026 38461

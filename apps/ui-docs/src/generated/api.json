@@ -3158,6 +3158,25 @@
    ]
   },
   {
+   "entry": "@rivetjs/ui/table-tanstack",
+   "summary": "TanStack Table v9 adapter: createTable on signals, flexRender / FlexRender, sort descriptor bridge (optional peer @tanstack/table-core).",
+   "runsOn": "both",
+   "href": "/api/rivetjs/ui/table-tanstack/",
+   "symbols": [
+    "CreateTableOptions",
+    "FlexRender",
+    "LiveSlice",
+    "TableAtom",
+    "createTable",
+    "flexRender",
+    "rivetReactivity",
+    "signalAtom",
+    "sortingAtom",
+    "toSortDescriptor",
+    "toSorting"
+   ]
+  },
+  {
    "entry": "@rivetjs/ui/tabs",
    "summary": "Tabs: ListContainer (scroll shadow + scroll buttons), List, Tab, Indicator (SelectionIndicator), Separator and Panel on the cdk Tabs / TabList / Tab / TabPanel (primary / secondary, align).",
    "runsOn": "both",
@@ -393057,6 +393076,333 @@
     "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/table/table.styles.ts#L8"
    },
    "href": "/api/rivetjs/ui/table/tableVariants/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#CreateTableOptions",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "CreateTableOptions",
+   "kind": "type",
+   "summary": "`createTable` options: TanStack `TableOptions` with live `data` / `columns` and Rivet state slices.",
+   "remarks": "`createTable` options: TanStack `TableOptions` with live `data` / `columns` and Rivet state slices.",
+   "signatures": [
+    "type CreateTableOptions<TFeatures extends TableFeatures, TData extends RowData> = Omit<TableOptions<TFeatures, TData>, \"data\" | \"columns\" | \"state\"> & { readonly columns: TableOptions<TFeatures, TData>[\"columns\"] | (() => TableOptions<…, …>[\"columns\"]); readonly data: ReadonlyArray<TData> | (() => ReadonlyArray<TData>); readonly state?: { [K in keyof TableState<TFeatures>]?: LiveSlice<TableState<TFeatures>[K]> } }"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 100,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L100"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/CreateTableOptions/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#FlexRender",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "FlexRender",
+   "kind": "function",
+   "summary": "`<FlexRender cell={cell} />` / `header={header}` / `footer={footer}`: `flexRender` of that part's template.",
+   "remarks": "`<FlexRender cell={cell} />` / `header={header}` / `footer={footer}`: `flexRender` of that part's template.",
+   "signatures": [
+    "function FlexRender<TFeatures extends TableFeatures, TData extends RowData, TValue extends unknown = unknown>(props: FlexRenderProps<TFeatures, TData, TValue>): any"
+   ],
+   "params": [
+    {
+     "name": "props",
+     "type": "FlexRenderProps<TFeatures, TData, TValue>",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "any",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 186,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L186"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/FlexRender/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#LiveSlice",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "LiveSlice",
+   "kind": "type",
+   "summary": "A state slice given to `createTable`: plain value, accessor, Rivet `Signal` (two-way) or TanStack atom.",
+   "remarks": "A state slice given to `createTable`: plain value, accessor, Rivet `Signal` (two-way) or TanStack atom.",
+   "signatures": [
+    "type LiveSlice<T> = T | Signal<T> | (() => T) | TableAtom<T>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 97,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L97"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/LiveSlice/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#TableAtom",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "TableAtom",
+   "kind": "interface",
+   "summary": "A TanStack Store atom shape (`@tanstack/store` `Atom`): what table-core reads and writes.",
+   "remarks": "A TanStack Store atom shape (`@tanstack/store` `Atom`): what table-core reads and writes.",
+   "signatures": [
+    "interface TableAtom<T>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "get",
+     "kind": "method",
+     "signature": "get(): T",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "set",
+     "kind": "method",
+     "signature": "set(value: T | ((previous: T) => T)): void",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "subscribe",
+     "kind": "method",
+     "signature": "subscribe(observer: ((value: T) => void) | { next?: (value: T) => void }): { unsubscribe: () => void }",
+     "doc": "",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 28,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L28"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/TableAtom/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#createTable",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "createTable",
+   "kind": "function",
+   "summary": "Create a TanStack table whose state lives in Rivet signals (`@tanstack/table-core` `constructTable` with `rivetReactivity()`).",
+   "remarks": "Create a TanStack table whose state lives in Rivet signals (`@tanstack/table-core` `constructTable` with\n`rivetReactivity()`). Every read of the instance (`getRowModel()`, `getHeaderGroups()`, `atoms.<slice>.get()`,\n`getCanNextPage()`, …) tracks in bindings / computeds; feature setters (`setSorting`, `nextPage`, …) write the\nowning signal. Call it in the component body.",
+   "signatures": [
+    "function createTable<TFeatures extends TableFeatures, TData extends RowData>(options: CreateTableOptions<TFeatures, TData>): Table<TFeatures, TData>"
+   ],
+   "params": [
+    {
+     "name": "options",
+     "type": "CreateTableOptions<TFeatures, TData>",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "Table<TFeatures, TData>",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 132,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L132"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/createTable/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#flexRender",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "flexRender",
+   "kind": "function",
+   "summary": "Render a column def template (`columnDef.header` / `cell` / `footer`): a function is called with the context (untracked, like a component; it may return JSX), any other value is returned as is.",
+   "remarks": "Render a column def template (`columnDef.header` / `cell` / `footer`): a function is called with the context\n(untracked, like a component; it may return JSX), any other value is returned as is.",
+   "signatures": [
+    "function flexRender<TProps extends object>(comp: unknown, props: TProps): any"
+   ],
+   "params": [
+    {
+     "name": "comp",
+     "type": "unknown",
+     "optional": false,
+     "doc": ""
+    },
+    {
+     "name": "props",
+     "type": "TProps",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "any",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 180,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L180"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/flexRender-2/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#rivetReactivity",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "rivetReactivity",
+   "kind": "function",
+   "summary": "table-core reactivity bindings on `@rivetjs/reactivity` (writable atom = signal, readonly atom = computed).",
+   "remarks": "table-core reactivity bindings on `@rivetjs/reactivity` (writable atom = signal, readonly atom = computed).",
+   "signatures": [
+    "function rivetReactivity(): TableReactivityBindings"
+   ],
+   "params": [],
+   "returns": "TableReactivityBindings",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 80,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L80"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/rivetReactivity/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#signalAtom",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "signalAtom",
+   "kind": "function",
+   "summary": "A TanStack atom over a Rivet signal: reads track, writes go to the signal (updater functions get the untracked value).",
+   "remarks": "A TanStack atom over a Rivet signal: reads track, writes go to the signal (updater functions get the untracked value).",
+   "signatures": [
+    "function signalAtom<T>(sig: Signal<T>): TableAtom<T>"
+   ],
+   "params": [
+    {
+     "name": "sig",
+     "type": "Signal<T>",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "TableAtom<T>",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 59,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L59"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/signalAtom/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#sortingAtom",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "sortingAtom",
+   "kind": "function",
+   "summary": "The `sorting` slice as an atom over a ui `Table` `sortDescriptor` signal: pass the same signal to `<Table.Content sortDescriptor={…}>` (two-way) and `sortingAtom(it)` to `createTable({ state: { sorting } })`.",
+   "remarks": "The `sorting` slice as an atom over a ui `Table` `sortDescriptor` signal: pass the same signal to\n`<Table.Content sortDescriptor={…}>` (two-way) and `sortingAtom(it)` to `createTable({ state: { sorting } })`.\nA header press writes the descriptor, `table.setSorting(…)` writes it back (first entry).",
+   "signatures": [
+    "function sortingAtom(descriptor: Signal<SortDescriptor | null>): TableAtom<SortingState>"
+   ],
+   "params": [
+    {
+     "name": "descriptor",
+     "type": "Signal<SortDescriptor | null>",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "TableAtom<SortingState>",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 217,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L217"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/sortingAtom/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#toSortDescriptor",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "toSortDescriptor",
+   "kind": "function",
+   "summary": "TanStack sorting → the cdk / ui Table `sortDescriptor` (first sort entry; none → null).",
+   "remarks": "TanStack sorting → the cdk / ui Table `sortDescriptor` (first sort entry; none → null).",
+   "signatures": [
+    "function toSortDescriptor(sorting: SortingState | null | undefined): SortDescriptor | null"
+   ],
+   "params": [
+    {
+     "name": "sorting",
+     "type": "SortingState | null | undefined",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "SortDescriptor | null",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 202,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L202"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/toSortDescriptor/"
+  },
+  {
+   "key": "@rivetjs/ui/table-tanstack#toSorting",
+   "entry": "@rivetjs/ui/table-tanstack",
+   "name": "toSorting",
+   "kind": "function",
+   "summary": "The cdk / ui Table `sortDescriptor` → TanStack sorting (one entry; null → none).",
+   "remarks": "The cdk / ui Table `sortDescriptor` → TanStack sorting (one entry; null → none).",
+   "signatures": [
+    "function toSorting(descriptor: SortDescriptor | null | undefined): SortingState"
+   ],
+   "params": [
+    {
+     "name": "descriptor",
+     "type": "SortDescriptor | null | undefined",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "SortingState",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/table-tanstack/index.ts",
+    "line": 208,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/table-tanstack/index.ts#L208"
+   },
+   "href": "/api/rivetjs/ui/table-tanstack/toSorting/"
   },
   {
    "key": "@rivetjs/ui/tabs#Tab",

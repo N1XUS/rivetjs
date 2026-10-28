@@ -60,6 +60,9 @@ const PEERS = [
   "nx",
   // @rivetjs/motion peer (motion.dev).
   "motion",
+  // @rivetjs/ui optional peer of `./table-tanstack` (TanStack Table v9 core; brings @tanstack/store).
+  "@tanstack/table-core",
+  "@tanstack/store",
   // Framework bridge consumers supply React/Preact and React's declaration packages.
   "react",
   "react-dom",

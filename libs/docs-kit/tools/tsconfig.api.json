@@ -1,6 +1,6 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": { "types": ["node"] },
-  "include": ["../../../libs/*/*.ts", "../../../libs/*/*.tsx", "../../../libs/*/*/*.ts", "../../../libs/*/*/*.tsx", "../../../libs/compiler/images/client.d.ts"],
+  "include": ["../../../libs/*/*.ts", "../../../libs/*/*.tsx", "../../../libs/*/*/*.ts", "../../../libs/*/*/*.tsx", "../../../libs/*/src/*/index.ts", "../../../libs/compiler/images/client.d.ts"],
   "exclude": ["../../../libs/*/tests/**", "../../../libs/*/bench/**", "../../../libs/*/oracle/**", "../../../libs/devtools/ui/**", "../../../libs/compiler/rust/**"]
 }

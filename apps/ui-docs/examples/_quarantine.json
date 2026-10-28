@@ -10,9 +10,5 @@
   "table-expandable-rows": {
     "step": "{\"matches\":\"tbody tr[data-key='2'][aria-expanded=true]\"}",
     "reason": "derived-only model (M6-CUT 2026-10-23): \"Duplicate For key\" on adopted table rows; runtime fix in lane RED-COMP"
-  },
-  "table-tanstack-table": {
-    "step": "{\"expect\":[\"tbody tr:nth-child(1)\",\"Davis Wilson\"]}",
-    "reason": "derived-only model (M6-CUT 2026-10-23): \"Duplicate For key\" on adopted table rows; runtime fix in lane RED-COMP"
   }
 }

@@ -14,7 +14,7 @@ test("package: exact dependency pins, no React", () => {
 
 test("package: every component subpath points at src/components/<name>/index.ts", () => {
   for (const [key, value] of Object.entries<any>(pkg.exports)) {
-    if (!/^\.\/[a-z-]+$/.test(key) || key === "./styles" || key === "./theme" || key === "./tv-merge") continue;
+    if (!/^\.\/[a-z-]+$/.test(key) || key === "./styles" || key === "./theme" || key === "./tv-merge" || key === "./table-tanstack") continue;
     assert.equal(value.default, `./src/components/${key.slice(2)}/index.ts`);
   }
 });
@@ -27,6 +27,17 @@ test("package: every src/components/<name>/ has its ./<name> export and an index
     assert.equal(pkg.exports[`./${name}`]?.default, `./src/components/${name}/index.ts`, `exports["./${name}"]`);
     assert.ok(barrel.includes(`export * from "./src/components/${name}/index.ts";`), `index.ts re-exports ${name}`);
   }
+});
+
+// Integrations over optional peers live outside src/components and outside the barrel: importing `@rivetjs/ui` must not
+// resolve a package the app may not have installed.
+test("package: ./table-tanstack = src/table-tanstack, optional @tanstack/table-core peer, not in the barrel", () => {
+  assert.equal(pkg.exports["./table-tanstack"]?.default, "./src/table-tanstack/index.ts");
+  assert.ok(pkg.peerDependencies["@tanstack/table-core"]);
+  assert.equal(pkg.peerDependenciesMeta?.["@tanstack/table-core"]?.optional, true);
+  assert.equal(pkg.dependencies["@tanstack/table-core"], undefined);
+  const barrel = readFileSync(new URL("../index.ts", import.meta.url), "utf8");
+  assert.ok(!barrel.includes("table-tanstack"));
 });
 
 // Upstream packages/react/src/index.ts: `export * from "./components"`, `"./hooks"`, `"./utils/dom"` and

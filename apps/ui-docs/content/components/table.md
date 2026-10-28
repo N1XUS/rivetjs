@@ -120,9 +120,64 @@ This example uses [TanStack Table](https://tanstack.com/table) for column
 definitions, sorting, and pagination — while Rivet UI handles styling and
 accessibility.
 
-:::warning
-Not yet ported: TanStack Table has no Rivet adapter (`@tanstack/react-table`); the demo computes the same sorted + paginated rows from signals
-:::
+`@rivetjs/ui/table-tanstack` is the Rivet adapter for TanStack Table v9 (in place of `@tanstack/react-table`). Install the optional peer `@tanstack/table-core` (^9.3.1); apps that never import the subpath need neither.
+
+- `createTable(options)` = `useReactTable` / `useTable`: TanStack `TableOptions` (`features`, `columns`, `data`, `getRowId`, …) on signals. Every read of the table (`getRowModel()`, `getHeaderGroups()`, `getCanNextPage()`, `atoms.sorting.get()`) tracks in bindings, so a sort re-runs only what reads the sorted rows. Call it in the component body.
+- `data` / `columns` take an array or an accessor (`data: () => rows()`): a new array reprocesses the rows.
+- `state.<slice>` takes a plain value (controlled, with `on<Slice>Change`), an accessor, a two-way `Signal` (the table writes it: `state: { pagination }`, no change handler) or an atom. `sortingAtom(sortDescriptor)` turns the Table's `sortDescriptor` signal into the `sorting` slice: a header press sorts the rows, `table.setSorting(…)` updates the header.
+- `flexRender(columnDef.header, header.getContext())` / `flexRender(columnDef.cell, cell.getContext())` (or `<FlexRender cell={cell} />`): a template function returns text or JSX.
+- Resumable pages: keep the state that must survive in signals of your component (`sortDescriptor`, `pagination`) and pass them in `state`; the table instance holds functions, is never serialized and is rebuilt when the component resumes. `toSortDescriptor` / `toSorting` convert between the two sort shapes.
+- The subpath re-exports `@tanstack/table-core` (features, row models, `createColumnHelper`, sort functions, types).
+
+```tsx
+import { signal } from "@rivetjs/reactivity";
+import type { SortDescriptor } from "@rivetjs/cdk/collections/types";
+import { Table } from "@rivetjs/ui/table";
+import {
+  createColumnHelper,
+  createSortedRowModel,
+  createTable,
+  flexRender,
+  rowSortingFeature,
+  sortFn_text,
+  sortingAtom,
+  tableFeatures,
+} from "@rivetjs/ui/table-tanstack";
+
+interface User {
+  id: number;
+  name: string;
+}
+
+const features = tableFeatures({ rowSortingFeature, sortedRowModel: createSortedRowModel(), sortFns: { text: sortFn_text } });
+const columnHelper = createColumnHelper<typeof features, User>();
+const columns = columnHelper.columns([columnHelper.accessor("name", { header: "Name" })]);
+
+export function Users(props: { users: User[] }) {
+  const sortDescriptor = signal<SortDescriptor | null>(null);
+  const table = createTable({ columns, data: props.users, features, getRowId: (user) => String(user.id), state: { sorting: sortingAtom(sortDescriptor) } });
+  return (
+    <Table.Content aria-label="Users" sortDescriptor={sortDescriptor}>
+      <Table.Header>
+        {table.getHeaderGroups()[0]!.headers.map((header) => (
+          <Table.Column allowsSorting id={header.column.id} isRowHeader>
+            {flexRender(header.column.columnDef.header, header.getContext())}
+          </Table.Column>
+        ))}
+      </Table.Header>
+      <Table.Body items={() => table.getRowModel().rows}>
+        {(row: ReturnType<typeof table.getRowModel>["rows"][number]) => (
+          <Table.Row id={row.id}>
+            {row.getAllCells().map((cell) => (
+              <Table.Cell>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Table.Cell>
+            ))}
+          </Table.Row>
+        )}
+      </Table.Body>
+    </Table.Content>
+  );
+}
+```
 
 ::example{id=table-tanstack-table}
 
@@ -404,6 +459,22 @@ Re-exported from the cdk `Collection` (`@rivetjs/cdk/collections/components`; Re
 | `padding`                | `number \| undefined` | 0       | The padding around the list.                                                                                                                                                      |
 
 ::api{symbol="@rivetjs/ui/table#TableRoot"}
+
+### TanStack adapter
+
+`@rivetjs/ui/table-tanstack` (optional peer `@tanstack/table-core`), see [TanStack Table](#tanstack-table).
+
+| Export                           | Description                                                                                                      |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `createTable(options)`           | TanStack table on signals; `data` / `columns` value or accessor, `state` slices value / accessor / Signal / atom |
+| `flexRender(template, context)`  | Header / cell / footer template: a function is called with the context, other values returned as is              |
+| `FlexRender`                     | `<FlexRender cell={cell} />`, `header={header}`, `footer={footer}`                                               |
+| `sortingAtom(sortDescriptor)`    | The `sorting` slice over a Table `sortDescriptor` signal (two-way)                                               |
+| `toSortDescriptor` / `toSorting` | TanStack `SortingState` to Table `SortDescriptor` and back (first entry)                                         |
+| `signalAtom(signal)`             | A TanStack atom over a Rivet signal                                                                              |
+| `rivetReactivity()`              | The table-core reactivity bindings (writable atom = signal, readonly atom = computed)                            |
+
+::api{symbol="@rivetjs/ui/table-tanstack#createTable"}
 
 ## Accessibility
 
