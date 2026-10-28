@@ -8,6 +8,7 @@ Status: one model since M6-CUT (2026-10-22) — the derived model (plan [derived
 - Options (`RivetResumeOptions`): `modules`, `appModules`, `roots`, `dev` (dev server serves resumable pages), `domData` (default `true` since DOMDATA-DEFAULT 2026-10-27; `false` opts out). Removed in M6: `entry`, `chunks`, `merge`, `cap`, `lazy`, `lazyOwned`, `lazyRows`, `model`, `preload.rules`; router `createApp` `preload` = `{ lean? }`.
 - Client build: one chunk per boundary module + the runtime entry (manifest `runtime` / `data-rt` = the `dom-derived-*.js` chunk holding the runtime, no re-export facade; boundary `symbols` likewise name the chunk holding the module's code, `vite.ts` `_foldFacade`); manifest `.vite/rivet-resume.json` `{ hash, runtime, symbols: boundary name → chunk, sizes, deps, builtins?, domData? }`.
 - Server: `renderResumable(() => <Page/>, writer, { manifest, signal, nonce })` / `resumableToString(…)` from `@rivetjs/runtime/server-resume` (façade over `renderDerived` / `derivedToString`, `@rivetjs/runtime/server-derived`).
+- `DEV` (`@rivetjs/runtime/dev`, public flag 2026-10-28): one value per build on both sides (dev server `true`, every plugin build `false` — `libs/compiler/vite.ts` resolves `dev/flag-off` in builds whatever the conditions), so `if (DEV)` in a render never mismatches and production drops the branch.
 - Playground (production build): file routes `/`, `/items/:id`, `/resume` ([resume-demo.tsx](../../apps/playground/src/resume-demo.tsx)).
 
 ## Mechanics

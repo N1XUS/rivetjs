@@ -1,6 +1,6 @@
 ---
 title: Utility APIs
-description: Generate element ids, restore an owner for a callback, select Set members, load functions lazily, and decode form data.
+description: Generate element ids, restore an owner for a callback, select Set members, load functions lazily, decode form data, and branch on development builds.
 template: reference
 related: [guides/components/context, guides/state/signals, guides/components/forms-and-input, guides/forms/forms, guides/performance/chunks]
 ---
@@ -116,6 +116,21 @@ escapeAttribute('Say "hello"'); // "Say &quot;hello&quot;"
 ```
 
 Neither helper validates a URL or sanitizes a whole HTML document.
+
+## Development builds: DEV
+
+`DEV` from `@rivetjs/runtime/dev` is `true` on the Vite dev server (and under `node --conditions=development`) and `false` everywhere else. A production build through the Rivet Vite plugin always gets `false`, even with a `development` condition in its config, so code guarded by `if (DEV)` is removed from the bundle:
+
+```ts check
+import { DEV } from "@rivetjs/runtime/dev";
+
+export function track(event: string) {
+  if (DEV) console.debug("track", event); // not in production bundles
+}
+```
+
+- Server and browser get the same value within one build, so a render may branch on `DEV` without a [resume mismatch](../learn/resuming.md#render-the-same-thing-twice).
+- Use it for diagnostics only: a check that guards correctness belongs in production code too.
 
 ## Form input: decodeFormData
 

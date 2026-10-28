@@ -2456,6 +2456,12 @@ function rivetPlugin(
         const target = join(dirname(file), (client ? "merge-off" : "merge-on") + file.slice(file.lastIndexOf(".")));
         if (existsSync(target)) return target;
       }
+      // Public `DEV` flag: a build is production whatever its conditions (a `development` condition in a build config,
+      // `--mode development`), so `if (DEV) …` in user code always folds away there; the dev server keeps the conditions.
+      if (id === "@rivetjs/runtime/dev" && built)
+        return this.resolve(id, importer, { skipSelf: true }).then((hit) =>
+          hit && !hit.external ? { ...hit, id: hit.id.replace(/([/\\]dev[/\\])flag-on(\.[cm]?[jt]s)$/, "$1flag-off$2") } : hit,
+        );
       if (id === LITE_RUNTIME || id === LITE_EMPTY || id.startsWith(LITE_PREFIX)) return id;
       // Lite graph (ZERO LITE-WIRE): an import of a lite module resolves as the ordinary one would (this plugin's aliases
       // included), then names that module's copy; stylesheets → an empty module.

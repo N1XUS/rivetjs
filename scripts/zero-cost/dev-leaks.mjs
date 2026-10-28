@@ -17,6 +17,7 @@ const DEV_FILES = [
   "libs/runtime/dev/dom.ts",
   "libs/runtime/dev/on.ts",
   "libs/runtime/dev/where.ts",
+  "libs/runtime/dev/flag-on.ts",
   "libs/router/client/dev.ts",
   "libs/forms/dev.ts",
   "libs/forms/autosave-dev.ts",
@@ -65,6 +66,8 @@ const DEV_MESSAGES = [
 ];
 /** Entries that are development tools themselves. */
 const DEV_ENTRIES = new Set(["@rivetjs/reactivity/debug", "@rivetjs/runtime/hot", "@rivetjs/runtime/hot-reactivity"]);
+/** Public flag entries (`DEV: boolean`): the development file is a one-line `true`, no devtools code; checked to differ from production. */
+const FLAG_ENTRIES = new Set(["@rivetjs/runtime/dev"]);
 /** Build-time (Node/Vite) entries: never in a shipped bundle. */
 const BUILD_ONLY = new Set(["@rivetjs/router/vite", "@rivetjs/router/routes", "@rivetjs/i18n/vite", "@rivetjs/kit/vite", "@rivetjs/bridge/vite"]);
 const PACKAGES = ["libs/reactivity", "libs/runtime", "libs/router", "libs/forms", "libs/i18n", "libs/kit", "libs/ui", "libs/motion", "libs/bridge"];
@@ -137,7 +140,11 @@ for (const pkg of PACKAGES) {
       for (const [key, dev] of devImports) if (modules.includes(dev)) devImportsSeen.add(key);
     }
     // The façade check can fail: the development resolution selects the façade.
-    if (value.development) {
+    if (value.development && FLAG_ENTRIES.has(name)) {
+      const dev = await bundle(`${root}/${pkg}/${value.development}`, ["import", "development", "default"]);
+      const prod = await bundle(`${root}/${pkg}/${file}`, ["import", "production", "default"]);
+      if (dev.code === prod.code) failures.push(`${name}: development flag resolves like production`);
+    } else if (value.development) {
       const { code } = await bundle(`${root}/${pkg}/${value.development}`, ["import", "development", "default"]);
       if (!code.includes("rivet.devtools") && !DEV_STRINGS.some((text) => literal(code, text)))
         failures.push(`${name}: development façade has no devtools code`);

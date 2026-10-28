@@ -67,3 +67,13 @@ test("production bundle (vite build) carries no development code", async () => {
   assert.match(code, /is not serializable/);
   assert.doesNotMatch(code, /values\(\)\[|\.keys\(\)\[|WeakMap/);
 });
+
+test("development: the public DEV flag (`@rivetjs/runtime/dev`) is true under the development condition, false by default", () => {
+  const flag = (conditions: string[]) =>
+    execFileSync(process.execPath, [...conditions, "--input-type=module", "-e", `import { DEV } from "@rivetjs/runtime/dev"; console.log(String(DEV));`], {
+      encoding: "utf8",
+      cwd: new URL("..", import.meta.url),
+    }).trim();
+  assert.equal(flag(["--conditions=development"]), "true");
+  assert.equal(flag([]), "false");
+});

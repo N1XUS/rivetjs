@@ -25,6 +25,11 @@
       "development": "./dev/dom.ts",
       "default": "./dom.ts"
     },
+    "./dev": {
+      "types": "./dev/flag-off.ts",
+      "development": "./dev/flag-on.ts",
+      "default": "./dev/flag-off.ts"
+    },
     "./dev/a11y": {
       "types": "./dev/a11y.ts",
       "development": "./dev/a11y.ts",

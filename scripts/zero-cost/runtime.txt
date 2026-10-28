@@ -5,6 +5,7 @@
 @rivetjs/runtime/server f73fa8d812bc 54909
 @rivetjs/runtime/dom 65bb07527e57 50036
 @rivetjs/runtime/dom [resumed] e6096b46cbd5 51857
+@rivetjs/runtime/dev 488ee5df3c18 28
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176
 @rivetjs/runtime/jsx-dev-runtime 25ccf3645071 176

@@ -66,6 +66,7 @@ The browser repeats a component's render over the server's HTML, so the render h
 - A value that differs between server and browser (`Date.now()`, `Math.random()`, `new Date()`, `crypto.randomUUID()`, `performance.now()`) in a component's render is an error ([RV2103](../errors/RV2103.md)). Keep such a value in a signal (`signal(Date.now())`: the server's value is written into the page and the browser starts from it), or compute it in a handler or `clientEffect`.
 - A signal created inside a loop is a warning ([RV2104](../errors/RV2104.md)): signals are matched by the place they are created, and a loop creates many at one place. A signal created under a condition is fine.
 - Code that reads browser globals (`window`, `localStorage`) in the render gives different markup in the browser; read them in a `clientEffect`.
+- `DEV` from `@rivetjs/runtime/dev` is safe in a render: server and browser get the same value within one build ([DEV](../reference/utilities.md#development-builds-dev)).
 
 If the markup still differs, that component renders in the browser instead of reusing the server nodes (development prints a warning naming it).
 
