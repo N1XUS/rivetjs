@@ -31,6 +31,20 @@
 //!   literal / live attributes and children (a static non-literal → ineligible); a static component child
 //!   (`derived_lite_static.rs`, RT-DIET2) makes `spec` `0`: the browser's rows are copies of the first server row.
 //!
+//! JS-DIET-2 (2026-10-28, runtime `dom-lite-cond.ts`, `LiteRec.p`):
+//! - live bindings, computeds, list `each` / `by` and handlers may read the props parameter (`props.data`) and the
+//!   props-rooted locals (`const { a } = props`): an `INDEPENDENT` record holds its props as data, so the residual
+//!   declares `const <param> = <rec>.p;` (+ the used props locals' declarators, verbatim) before its state; a destructured
+//!   parameter stays ineligible (`props pattern`). The server keeps a `DEMOTED` record whose residual reads props off the
+//!   lite path (manifest `lite.props`: the entry's `$a` functions that read `<rec>.p`);
+//! - `<select>` (not `multiple`) whose children are only native `<option>`s with literal attributes and literal text:
+//!   its options are static (never walked); a live `value` of it or of an `<input>` → `_lv` (property + attribute, the
+//!   `dom-attr.ts` `write` rules for that name; written after the options exist);
+//! - `{test ? <native element> : null}` (not the sole child; `undefined` alternate too; a live test) →
+//!   `_lo(opener, () => (test), (n) => { branch bindings }, spec)`: the branch binds like a list row (literal or live
+//!   values only, its markup as `lite_spec` data), nested conditionals allowed, lists / components inside not;
+//! - `<For each={() => …}>`: a closed-world live arrow as the list source (besides a keyed / computed local).
+//!
 //! Node paths mirror the server markup (`compile.rs` `walk_server` + `derived.rs` `slot_marks`): adjacent JSX text and
 //! folded literal children are one Text node; a dynamic child among others sits between `<!--[-->` / `<!--]-->` (path
 //! step `h` jumps from the opener to its closer); a sole dynamic child has no markers (its element is the target).
@@ -92,6 +106,14 @@ struct Unit<'s> {
     row: bool,
     /// `lite_refs`' last verdict read live state (a local function's body).
     last_live: bool,
+    /// JS-DIET-2: the props parameter's name (`function C(props)`), None without one or for a pattern.
+    props_name: Option<String>,
+    /// JS-DIET-2: live code / a handler reads the props parameter (the residual declares it from the record).
+    props_used: bool,
+    /// JS-DIET-2: props-rooted locals (`const { a } = props`) → their declarator's start and text.
+    props_texts: FxHashMap<SymbolId, (u32, &'s str)>,
+    /// JS-DIET-2: props-rooted locals live code / a handler reads (their declarators are copied).
+    props_locals_used: Vec<SymbolId>,
 }
 
 pub(super) struct Names {
@@ -106,6 +128,10 @@ pub(super) struct Names {
     pub lm: String,
     pub lq: String,
     pub lb: String,
+    /// JS-DIET-2: conditional subtree (`dom-lite-cond.ts`).
+    pub lo: String,
+    /// JS-DIET-2: `<input>` / `<select>` `value` (`dom-lite-attr.ts`).
+    pub lv: String,
 }
 
 pub(super) type Fail = &'static str;
@@ -146,10 +172,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
             lm: "__rivetL_m".into(),
             lq: "__rivetL_q".into(),
             lb: "__rivetL_b".into(),
+            lo: "__rivetL_o".into(),
+            lv: "__rivetL_v".into(),
         };
         let (node, rec) = ("__rivetLn".to_string(), "__rivetLr".to_string());
         let mut code = String::new();
-        let mut used = [false; 11];
+        let mut used = [false; 13];
         let mut covered: Vec<String> = Vec::new();
         let mut constants: Vec<SymbolId> = Vec::new();
         let mut signal_local: Option<String> = None;
@@ -161,7 +189,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     continue;
                 }
             };
-            for (i, local) in [&names.ls, &names.le, &names.lt, &names.lw, &names.la, &names.lc, &names.lf, &names.lk, &names.lm, &names.lq, &names.lb].iter().enumerate() {
+            for (i, local) in [&names.ls, &names.le, &names.lt, &names.lw, &names.la, &names.lc, &names.lf, &names.lk, &names.lm, &names.lq, &names.lb, &names.lo, &names.lv].iter().enumerate() {
                 used[i] |= text.contains(local.as_str());
             }
             for symbol in module_used {
@@ -176,9 +204,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if covered.is_empty() {
             return None;
         }
-        let exports = ["_ls", "_le", "_lt", "_lw", "_la", "_lc", "_lf", "_lk", "_lm", "_lq", "_lb"];
-        let locals = [&names.ls, &names.le, &names.lt, &names.lw, &names.la, &names.lc, &names.lf, &names.lk, &names.lm, &names.lq, &names.lb];
-        let specifiers: Vec<String> = (0..11).filter(|&i| used[i]).map(|i| format!("{} as {}", exports[i], locals[i])).collect();
+        let exports = ["_ls", "_le", "_lt", "_lw", "_la", "_lc", "_lf", "_lk", "_lm", "_lq", "_lb", "_lo", "_lv"];
+        let locals = [&names.ls, &names.le, &names.lt, &names.lw, &names.la, &names.lc, &names.lf, &names.lk, &names.lm, &names.lq, &names.lb, &names.lo, &names.lv];
+        let specifiers: Vec<String> = (0..13).filter(|&i| used[i]).map(|i| format!("{} as {}", exports[i], locals[i])).collect();
         let mut out = format!("import {{ {} }} from \"@rivetjs/runtime/dom-lite\";\n", specifiers.join(", "));
         // A never-written signal a handler reads: the lite world's `signal` (RT-DIET: residual state never meets
         // `@rivetjs/reactivity`, so a lite page ships none of it).
@@ -223,6 +251,16 @@ impl<'t, 'a> Compiler<'t, 'a> {
             vars: 0,
             row: false,
             last_live: false,
+            props_name: match &params.items[..] {
+                [only] if params.rest.is_none() => match &only.pattern.kind {
+                    BindingPatternKind::BindingIdentifier(id) => Some(id.name.to_string()),
+                    _ => None,
+                },
+                _ => None,
+            },
+            props_used: false,
+            props_texts: FxHashMap::default(),
+            props_locals_used: Vec::new(),
         };
         let mut decls: Vec<String> = Vec::new();
         // Keyed declarations in source order, emitted after the walk for the ones live code reads (RT-DIET).
@@ -241,10 +279,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     // `const { a, b: c } = props` / `const a = props.a`: props-derived locals (static, like props).
                     if declarator.init.as_ref().is_some_and(|init| props_rooted(tree, init, params.span)) {
                         let mut ok = true;
+                        let text = (declarator.span.start, tree.text_of(declarator.span));
                         bindings(&declarator.id, &mut |symbol| {
                             match symbol {
                                 Some(symbol) => {
                                     unit.locals.insert(symbol, Local::Props);
+                                    unit.props_texts.insert(symbol, text);
                                 }
                                 None => ok = false,
                             };
@@ -335,6 +375,15 @@ impl<'t, 'a> Compiler<'t, 'a> {
             }
         }
         let signal = if unit.frozen_used.is_empty() { None } else { unit.signal_local.clone() };
+        // JS-DIET-2: the recorded props first (state inits / computeds may read them), then the props locals they read.
+        if unit.props_used {
+            let mut pre = vec![format!("const {} = {rec}.p;", unit.props_name.as_deref().ok_or("props pattern")?)];
+            let mut texts: Vec<(u32, &str)> = unit.props_locals_used.iter().filter_map(|s| unit.props_texts.get(s).copied()).collect();
+            texts.sort_by_key(|(start, _)| *start);
+            texts.dedup();
+            pre.extend(texts.into_iter().map(|(_, text)| format!("const {text};")));
+            let _ = decls.splice(0..0, pre);
+        }
         decls.extend(unit.out);
         Ok((format!("export function {name}$a({node}, {rec}) {{\n  {}\n}}\n", decls.join("\n  ")), unit.module_used, signal))
     }
@@ -342,7 +391,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
     fn lite_element(&self, el: &'a JSXElement<'a>, path: &str, unit: &mut Unit<'_>) -> Result<(), Fail> {
         let tree = self.tree;
         let tag = tree.text_of(el.opening_element.name.span());
-        if OPAQUE_CONTENT.contains(&tag) || matches!(tag, "select" | "option" | "optgroup" | "script" | "style" | "svg" | "math") {
+        // JS-DIET-2: a `<select>` with static options only (its options are never walked: nothing in them binds).
+        let static_select = tag == "select" && self.lite_static_select(el);
+        if OPAQUE_CONTENT.contains(&tag) || (!static_select && matches!(tag, "select" | "option" | "optgroup")) || matches!(tag, "script" | "style" | "svg" | "math") {
             return Err("element kind");
         }
         // The element's node: `n` itself, else one `const __rivetLeN = _lw(n, path)` on first use.
@@ -429,6 +480,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     }
                     let html = if name == "htmlFor" { "for" } else { name };
                     let lower = html.to_ascii_lowercase();
+                    // JS-DIET-2: an `<input>` / `<select>` `value`: property + attribute (`_lv`, no `dom-attr.ts`).
+                    if lower == "value" && matches!(tag, "input" | "select") {
+                        unit.out.push(format!("{}({at}, () => ({}));", unit.names.lv, tree.text_of(e.span())));
+                        continue;
+                    }
                     // The lightest writer with the client's semantics for this name (RT-DIET): plain `setAttribute`,
                     // a boolean attribute (+ its property), else the full rules (`_la`: URLs, enumerated, form values).
                     if dom_v2::plain_attribute(html) {
@@ -440,6 +496,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     }
                 }
             }
+        }
+        if static_select {
+            return Ok(());
         }
         // `slot_marks`: a dynamic child is delimited unless it is the element's only child.
         let count = el
@@ -461,6 +520,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
             List(&'b JSXElement<'b>),
             /// A static component child (RT-DIET2, `derived_lite_static.rs`): between `<!--[-->` / `<!--]-->`, nothing to bind.
             Static,
+            /// JS-DIET-2: `{test ? <native element> : null}` between `<!--[-->` / `<!--]-->` (the element when the test held).
+            Cond(&'b Expression<'b>, &'b JSXElement<'b>),
         }
         let mut items: Vec<Item<'a>> = Vec::new();
         let mut run = String::new();
@@ -471,6 +532,17 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     let Some(e) = c.expression.as_expression() else { continue };
                     if let Some(text) = literal_child(tree, e) {
                         run.push_str(&text);
+                        continue;
+                    }
+                    if let Some((test, branch)) = lite_conditional(tree, e) {
+                        if sole {
+                            return Err("sole conditional");
+                        }
+                        if !run.is_empty() {
+                            items.push(Item::Text);
+                            run.clear();
+                        }
+                        items.push(Item::Cond(test, branch));
                         continue;
                     }
                     if may_render_jsx(e) || is_function_child(e) {
@@ -537,6 +609,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     at.push_str("hn");
                 }
                 Item::Static => at.push_str("hn"),
+                Item::Cond(test, branch) => {
+                    self.lite_cond(test, branch, &at, unit)?;
+                    at.push_str("hn");
+                }
             }
         }
         Ok(())
@@ -565,13 +641,23 @@ impl<'t, 'a> Compiler<'t, 'a> {
             }
         }
         let (Some(each), Some(by)) = (each, by) else { return Err("list without each / by") };
-        let Expression::Identifier(source) = strip_parens(each) else { return Err("list each") };
-        let symbol = tree.symbol_of_ref(source).ok_or("list each")?;
-        if !matches!(unit.locals.get(&symbol), Some(Local::Keyed | Local::KeyedStill | Local::Computed)) {
-            return Err("list each");
-        }
-        if !unit.keyed_used.contains(&symbol) {
-            unit.keyed_used.push(symbol);
+        match strip_parens(each) {
+            Expression::Identifier(source) => {
+                let symbol = tree.symbol_of_ref(source).ok_or("list each")?;
+                if !matches!(unit.locals.get(&symbol), Some(Local::Keyed | Local::KeyedStill | Local::Computed)) {
+                    return Err("list each");
+                }
+                if !unit.keyed_used.contains(&symbol) {
+                    unit.keyed_used.push(symbol);
+                }
+            }
+            // JS-DIET-2: `each={() => visible()}` — a closed-world live arrow (`_lf` calls it).
+            Expression::ArrowFunctionExpression(a) if !a.r#async && a.params.items.is_empty() && a.params.rest.is_none() => {
+                if self.lite_refs(each, unit, false)? != Class::Live {
+                    return Err("list each");
+                }
+            }
+            _ => return Err("list each"),
         }
         self.lite_refs(by, unit, true)?;
         let mut content = el.children.iter().filter(|c| !matches!(c, JSXChild::Text(t) if jsx_text(tree.text_of(t.span)).is_empty()));
@@ -623,6 +709,62 @@ impl<'t, 'a> Compiler<'t, 'a> {
             body.join("\n    ")
         ));
         Ok(())
+    }
+
+    /// JS-DIET-2: `{test ? <branch/> : null}` at content opener `at`: `_lo(opener, () => (test), (n) => { … }, spec)`.
+    /// The test must be live (a static one never changes what the server rendered: ineligible); the branch binds as a
+    /// list row does (built from `spec` when it appears: literal or live values only), conditionals nest.
+    fn lite_cond(&self, test: &'a Expression<'a>, branch: &'a JSXElement<'a>, at: &str, unit: &mut Unit<'_>) -> Result<(), Fail> {
+        let tree = self.tree;
+        if self.lite_refs(test, unit, false)? != Class::Live {
+            return Err("static conditional");
+        }
+        let spec = self.lite_spec(branch)?;
+        if spec.contains('\0') {
+            return Err("conditional component child");
+        }
+        let node = format!("__rivetLn{}", unit.vars);
+        unit.vars += 1;
+        let (outer_node, outer_out) = (std::mem::replace(&mut unit.node, node.clone()), std::mem::take(&mut unit.out));
+        let was = unit.row;
+        unit.row = true;
+        let done = self.lite_element(branch, "", unit);
+        unit.row = was;
+        let body = std::mem::replace(&mut unit.out, outer_out);
+        unit.node = outer_node;
+        done?;
+        let slot = format!("{}({}, {})", unit.names.lw, unit.node, quote(at));
+        unit.out.push(format!("{}({slot}, () => ({}), ({node}) => {{\n    {}\n  }}, {spec});", unit.names.lo, tree.text_of(test.span()), body.join("\n    ")));
+        Ok(())
+    }
+
+    /// JS-DIET-2: a `<select>` (no `multiple`) whose children are only native `<option>`s with literal attributes and
+    /// literal / text content (its server options never change; a live `value` writes the selection).
+    fn lite_static_select(&self, el: &'a JSXElement<'a>) -> bool {
+        let tree = self.tree;
+        let literal_attrs = |el: &JSXElement<'a>| {
+            el.opening_element.attributes.iter().all(|item| match item {
+                JSXAttributeItem::Attribute(attr) => !attr_name(tree, attr).contains(':') && (attr.value.is_none() || attr_string(tree, attr).is_some()),
+                JSXAttributeItem::SpreadAttribute(_) => false,
+            })
+        };
+        if el.opening_element.attributes.iter().any(|item| matches!(item, JSXAttributeItem::Attribute(attr) if attr_name(tree, attr) == "multiple")) {
+            return false;
+        }
+        el.children.iter().all(|child| match child {
+            JSXChild::Text(text) => jsx_text(tree.text_of(text.span)).is_empty(),
+            JSXChild::Element(option) => {
+                is_native(tree, option)
+                    && tree.text_of(option.opening_element.name.span()) == "option"
+                    && literal_attrs(option)
+                    && option.children.iter().all(|c| match c {
+                        JSXChild::Text(_) => true,
+                        JSXChild::ExpressionContainer(c) => c.expression.as_expression().map_or(true, |e| literal_child(tree, e).is_some()),
+                        _ => false,
+                    })
+            }
+            _ => false,
+        })
     }
 
     /// The static markup of a row element as the server renders it with every binding empty (RT-DIET lite v2):
@@ -700,6 +842,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
         let function = tree.span(unit.function);
         let id = tree.expr_id(e).ok_or("expression")?;
         let (mut live, mut props, mut module, mut call, mut other) = (false, false, false, false, false);
+        // JS-DIET-2: the props parameter / props locals read (declared from the record when live code reads them).
+        let mut props_locals: Vec<SymbolId> = Vec::new();
         let mut frozen: Vec<SymbolId> = Vec::new();
         let mut keyed: Vec<SymbolId> = Vec::new();
         let mut constants: Vec<SymbolId> = Vec::new();
@@ -723,7 +867,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
                                     }
                                     Local::KeyedStill => keyed.push(symbol),
                                     Local::Frozen => frozen.push(symbol),
-                                    Local::Props => props = true,
+                                    Local::Props => {
+                                        props = true;
+                                        props_locals.push(symbol);
+                                    }
                                     Local::Computed | Local::Row | Local::Fn(true) => {
                                         live = true;
                                         keyed.push(symbol);
@@ -779,10 +926,24 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 }
             }
         };
-        if handler {
-            if props {
-                return Err("handler reads props");
+        // JS-DIET-2: live code reading props declares them from the record (`const props = <rec>.p`).
+        let props_live = |unit: &mut Unit<'_>| -> Result<(), Fail> {
+            if !props {
+                return Ok(());
             }
+            if unit.props_name.is_none() {
+                return Err("props pattern");
+            }
+            unit.props_used = true;
+            for symbol in props_locals {
+                if !unit.props_locals_used.contains(&symbol) {
+                    unit.props_locals_used.push(symbol);
+                }
+            }
+            Ok(())
+        };
+        if handler {
+            props_live(unit)?;
             copy(unit, constants)?;
             mark(unit, keyed);
             for symbol in frozen {
@@ -793,9 +954,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
             return Ok(Class::Live);
         }
         if live {
-            if props {
-                return Err("live binding reads props");
-            }
+            props_live(unit)?;
             copy(unit, constants)?;
             mark(unit, keyed);
             for symbol in frozen {
@@ -863,6 +1022,18 @@ fn bindings(pattern: &BindingPattern<'_>, f: &mut dyn FnMut(Option<SymbolId>)) {
         }
         BindingPatternKind::ArrayPattern(_) | BindingPatternKind::AssignmentPattern(_) => f(None),
     }
+}
+
+/// JS-DIET-2: `test ? <native element> : null` (or `: undefined`, the global) → (test, element).
+fn lite_conditional<'b, 'a>(tree: &crate::tree::Tree<'a>, e: &'b Expression<'a>) -> Option<(&'b Expression<'a>, &'b JSXElement<'a>)> {
+    let Expression::ConditionalExpression(c) = strip_parens(e) else { return None };
+    let branch = as_jsx(&c.consequent)?;
+    let empty = match strip_parens(&c.alternate) {
+        Expression::NullLiteral(_) => true,
+        Expression::Identifier(ident) => ident.name == "undefined" && tree.symbol_of_ref(ident).is_none(),
+        _ => false,
+    };
+    (empty && is_native(tree, branch)).then_some((&c.test, branch))
 }
 
 fn as_jsx<'b, 'a>(e: &'b Expression<'a>) -> Option<&'b JSXElement<'a>> {

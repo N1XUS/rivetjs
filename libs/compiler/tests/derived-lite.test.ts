@@ -67,12 +67,13 @@ it("C3: props-derived locals (`const { a } = props`, `const a = props.a`) are st
 export function Card(props) { const { title, n: count } = props; const author = props.author; const read = signal(false);
   return <li><p>{title}</p><p>{author} {count}</p><button onClick={() => read.update((v) => !v)}>{read() ? "Read" : "Not read"}</button></li>; }`)?.code;
   assert.ok(code && code.includes("Card$a") && !code.includes("title") && !code.includes("author"), String(code));
-  // Read by live code or a handler: not lite.
-  assert.equal(
-    lite(`import { signal } from "@rivetjs/reactivity";
-export function Card(props) { const { title } = props; const read = signal(false); return <button onClick={() => read.set(!read())}>{read() ? title : "-"}</button>; }`),
-    undefined,
+  // JS-DIET-2: read by live code or a handler: declared from the record's props (`__rivetLr.p`) + the props local.
+  const live = lite(`import { signal } from "@rivetjs/reactivity";
+export function Card(props) { const { title } = props; const read = signal(false); return <button onClick={() => read.set(!read())}>{read() ? title : "-"}</button>; }`)!.code.replace(
+    /\s+/g,
+    " ",
   );
+  assert.match(live, /const props = __rivetLr\.p; const \{ title \} = props; const read = __rivetL_s\(/);
 });
 
 it("C1: a never-written signal a handler reads is re-declared (the lite world's `signal`, RT-DIET)", () => {
@@ -105,7 +106,8 @@ it("C1: ineligible boundaries keep the ordinary adopt (no residual)", () => {
     // RT-DIET2: a component child with a live prop (a static one is skipped, `derived-lite-static.test.ts`).
     component: `import { signal } from "@rivetjs/reactivity";\nimport { Icon } from "./icon.tsx";\nexport function Card() { const n = signal(0); return <button onClick={() => n.set(1)}><Icon n={n()} />{n()}</button>; }`,
     spread: `import { signal } from "@rivetjs/reactivity";\nexport function Card(props) { const n = signal(0); return <button {...props} onClick={() => n.set(1)}>{n()}</button>; }`,
-    propsInHandler: `import { signal } from "@rivetjs/reactivity";\nexport function Card(props) { const n = signal(0); return <button onClick={() => n.set(props.step)}>{n()}</button>; }`,
+    // JS-DIET-2: a handler over a destructured props parameter (no name to declare from the record).
+    propsPattern: `import { signal } from "@rivetjs/reactivity";\nexport function Card({ step }) { const n = signal(0); return <button onClick={() => n.set(step)}>{n()}</button>; }`,
     structural: `import { signal } from "@rivetjs/reactivity";\nexport function Card() { const n = signal(0); return <button onClick={() => n.set(1)}>{n() ? <b>x</b> : null}</button>; }`,
     nonDelegated: `import { signal } from "@rivetjs/reactivity";\nexport function Card() { const n = signal(0); return <div onScroll={() => n.set(1)}>{n()}</div>; }`,
     moduleSignal: `import { signal } from "@rivetjs/reactivity";\nconst shared = signal(0);\nexport function Card() { const n = signal(0); return <button onClick={() => { n.set(1); shared.set(1); }}>{n()}</button>; }`,

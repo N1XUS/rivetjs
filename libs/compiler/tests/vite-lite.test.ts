@@ -16,7 +16,8 @@ import { hasDerivedModel } from "../index.ts";
 import { rivet } from "../vite.ts";
 import { expandTail } from "@rivetjs/runtime/resume-format";
 
-// `Card`: a residual (keyed state, handler, live text; props static). `Stepper`: none (a handler reads a prop).
+// `Card`: a residual (keyed state, handler, live text; props static). `Stepper`: none (a handler reads a destructured props
+// parameter: no name to declare from the record, JS-DIET-2).
 const CARDS = `import { signal } from "@rivetjs/reactivity";
 export function Card(props: { title: string }) {
   const n = signal(0);
@@ -27,9 +28,9 @@ export function Card(props: { title: string }) {
     </div>
   );
 }
-export function Stepper(props: { step: number }) {
+export function Stepper({ step }: { step: number }) {
   const n = signal(0);
-  return <button type="button" id="step" onClick={() => n.set(n() + props.step)}>{n()}</button>;
+  return <button type="button" id="step" onClick={() => n.set(n() + step)}>{n()}</button>;
 }
 `;
 const LITE_PAGE = `import { Card } from "./cards.tsx";
