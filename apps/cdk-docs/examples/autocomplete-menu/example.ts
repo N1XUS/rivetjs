@@ -12,10 +12,13 @@ export default defineExample({
     { fill: ["#palette", "file"] },
     { absent: '[role=menuitem][data-key="save"]' },
     { matches: '[role=menuitem][data-key="open"]' },
-    { key: "ArrowDown" },
+    // Typing forward virtually focuses the first match (upstream disableAutoFocusFirst = false); the input keeps DOM focus.
     { attr: ['[role=menuitem][data-key="new"]', "data-focused", "true"] },
+    { matches: '#palette[aria-activedescendant$="-new"]' },
+    { key: "ArrowDown" },
+    { attr: ['[role=menuitem][data-key="open"]', "data-focused", "true"] },
     { focused: "#palette" },
     { key: "Enter" },
-    { expect: ["#ran", "Ran: new"] },
+    { expect: ["#ran", "Ran: open"] },
   ],
 });

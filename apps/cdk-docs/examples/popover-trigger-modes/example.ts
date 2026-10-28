@@ -30,6 +30,8 @@ export default defineExample({
     { described: ["#long-trigger", "Long press to see versions"] },
     { press: ["#long-trigger", "Enter"] },
     { matches: "#long-card" },
+    // The popover's dialog takes focus a frame after it mounts: Escape goes to the focused dialog.
+    { focused: "#long-card" },
     { key: "Escape" },
     { absent: "#long-card" },
   ],

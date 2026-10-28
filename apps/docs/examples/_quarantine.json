@@ -1,14 +1,14 @@
 {
   "async-data": {
     "step": "{\"expect\":[\"#user\",\"Grace Hopper\"]}",
-    "reason": "RED-DOCS 2026-10-23: derived runtime \u2014 an adopted Async hole's live span (dom-derived.ts liveSpan proxy) is the insert's current list; the reconcile mutates the DOM while reading it (TypeError reading 'parentNode'), owner RED-COMP"
+    "reason": "RED-DOCS 2026-10-23, still red QUAR-SWEEP 2026-10-28 (796a831e3, same error): derived runtime \u2014 an adopted Async hole's live span (dom-derived.ts liveSpan proxy) is the insert's current list; the reconcile mutates the DOM while reading it (TypeError reading 'parentNode'), owner RED-COMP"
   },
   "motion-layout": {
     "step": "{\"click\":\"#tab-2\"}",
-    "reason": "RED-DOCS 2026-10-23: derived \u2014 motion element.tsx mount() layout play reads its element ref (untrack(node)) before the ref is bound (TypeError reading 'isConnected'), owner runtime / motion"
+    "reason": "RED-DOCS 2026-10-23, still red QUAR-SWEEP 2026-10-28 (796a831e3, same error): derived \u2014 motion element.tsx mount() layout play reads its element ref (untrack(node)) before the ref is bound (TypeError reading 'isConnected'), owner runtime / motion"
   },
   "motion-presence": {
     "step": "{\"absent\":\"#task-1\"}",
-    "reason": "RED-DOCS 2026-10-23: derived \u2014 a Presence exit in an adopted For row never removes the row, owner runtime / motion"
+    "reason": "RED-DOCS 2026-10-23, still red QUAR-SWEEP 2026-10-28 (796a831e3, same error): derived \u2014 a Presence exit in an adopted For row never removes the row, owner runtime / motion"
   }
 }

@@ -35,6 +35,8 @@ export default defineExample({
     // Every reopen renders the whole content again (description and buttons, not only the title).
     { described: ["#delete", "This cannot be undone."] },
     { matches: "#delete-confirm" },
+    // The dialog takes focus a frame after it mounts (as on the first open above): Escape goes to the focused dialog.
+    { focused: "#delete" },
     { key: "Escape" },
     { absent: "#delete" },
   ],
