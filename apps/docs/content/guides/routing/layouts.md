@@ -81,7 +81,7 @@ Note the call: layout props are **functions**. Read them as `data()`, `params()`
 
 A page renders again for each URL, so its props are plain values. A page with `export const live = true` gets `data()` as a function too ([loading data](./loading-data.md)).
 
-Layout loaders and the page loader run at the same time, after all guards. A layout loader runs again on every navigation to a page inside it.
+Layout loaders and the page loader run at the same time, after all guards. During client navigation, the router can reuse layout data when that layout's own params have not changed. A loader that reads the URL runs again for URL changes; forms and `invalidate()` refresh data explicitly. Guards still run on the server.
 
 ## Root layout state survives navigation
 
@@ -90,9 +90,9 @@ When the user clicks a link, the router fetches the new page's data and swaps th
 | Layout | On client navigation |
 | --- | --- |
 | Root `_layout.tsx` | Stays on the page. Its signals keep their values (an open menu stays open). `data()` and `url()` update. |
-| Nested layouts (in folders) | Rendered again with the page. Their signals start fresh. |
+| Nested layouts (in folders) | Stay mounted while the next route shares that layout. Their signals survive; `data()`, `params()` and `url()` update. Leaving the layout disposes it. |
 
-So keep state that must survive navigation, such as a cart counter or a theme switch, in the root layout or outside the routes.
+Keep state needed across every route, such as a cart counter or a theme switch, in the root layout. A nested layout keeps state across its own pages.
 
 ## Show the current page in the menu
 
@@ -124,7 +124,7 @@ A `guard(…)` in `_layout.tsx` runs before every page and [endpoint](./endpoint
 
 - **Reading `data.user` instead of `data().user`.** In a layout, `data` is a function. In a page, `data` is a plain value.
 - **Expecting `params()` in the root layout.** The root layout wraps every route, so its `params()` is always empty. Read `url()` instead.
-- **Putting state that must survive navigation in a nested layout.** Nested layouts render again on every navigation. Move the state up to the root layout.
+- **Expecting nested state after leaving its layout.** Shared nested layouts survive navigation within their area. Move state to the root layout when it must survive leaving that area too.
 - **Expecting nested layouts around a server error page.** On a full page load, 404 and error pages render inside the root layout (with its data and `head`), not inside nested layouts; when the root layout's own guard or loader failed, without it. During client navigation the error renders inside the layouts that stay. See [errors and 404 pages](./errors-and-404.md#layouts-and-head).
 
 ## See also

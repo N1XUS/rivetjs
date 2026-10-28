@@ -76,7 +76,7 @@ await prerenderBuild({ dist: "dist", csp: false });
 
 ## Add sources and directives
 
-Some libraries need more than scripts from your origin. WebAssembly needs `'wasm-unsafe-eval'`, a worker built from a `blob:` URL needs `worker-src`, and a form posting to another service needs `connect-src`. Pass them as `directives`:
+Some libraries need more than scripts from your origin. WebAssembly needs `'wasm-unsafe-eval'`, a worker built from a `blob:` URL needs `worker-src`, and a fetch request to another service needs `connect-src` (a native form submission uses `form-action`). Pass them as `directives`:
 
 ```js title="prerender.js"
 await prerenderBuild({

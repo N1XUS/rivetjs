@@ -14,14 +14,14 @@ In Rivet, the server makes the page. Every page starts as HTML written by your c
 
 - **Components** run on the server and produce HTML. This is called :term[server rendering]{id=server-rendering}.
 - **Data loading, access checks and form handling** live in the page file, in server exports such as `load(…)`. They never reach the browser.
-- **The browser** receives HTML, CSS and a small loader script. It runs a component over the existing HTML when that component wakes up, then runs its handlers, client effects and reactive updates.
+- **The browser** receives HTML and CSS, plus a small loader script only when the page needs JavaScript. It runs a component over the existing HTML when that component wakes up, then runs its handlers, client effects and reactive updates.
 
 You opt in to browser code piece by piece, by writing an event handler or a client effect. You do not opt out of it.
 
 ## Why it matters
 
 - **Content appears fast.** The HTML already contains the text, images and links. The browser can show it before any JavaScript runs.
-- **Less code in the browser.** Static pages can ship no component code. An interactive page loads the modules needed by its interactive components, including their imports and any parents needed to restore context.
+- **Less code in the browser.** Static pages can ship no JavaScript at all. An interactive page loads the modules needed by its interactive components, including their imports and any parents needed to restore context.
 - **Secrets stay on the server.** Database clients, API keys and private logic in `.server.ts` modules are not part of the browser build.
 - **Links and forms work without JavaScript.** A plain `<a href>` navigates. A `<form method="post">` posts to the page's server code. Once the router's script has loaded, link clicks swap only the page instead of reloading the document, but links work before that too.
 

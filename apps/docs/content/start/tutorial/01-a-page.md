@@ -46,7 +46,7 @@ The JSX is close to HTML. Use `class` like in HTML. The `class` values here are 
 
 `Home()` runs on the server. In this static starter, "the server" is the build: `npm run build` calls `Home()` once and saves the result as `dist/client/index.html`.
 
-The page has no event handlers and no state. So the browser receives HTML and CSS, and does not need any code from this page. (The router adds a small script that handles link clicks; you see it in step 6.)
+The page has no event handlers and no state. So the browser receives HTML and CSS, and does not need any code from this page. With the default `clientRouter: false`, the router alone adds no JavaScript either; links load documents.
 
 ## Check that it works
 

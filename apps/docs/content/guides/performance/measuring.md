@@ -12,7 +12,7 @@ Rivet does not ship its own measuring tool for production pages. The browser's n
 
 ## Measure a production build
 
-The dev server serves code unbundled (one module per file, one chunk per component) and unminified, and editing a resumed component reloads the page. Numbers from `npm run dev` say nothing about production. See [Dev and production differ](../../gotchas/dev-and-production-differ.md).
+The dev server serves code unbundled (one file per module) and unminified, and editing a resumed component reloads the page. Numbers from `npm run dev` say nothing about production. See [Dev and production differ](../../gotchas/dev-and-production-differ.md).
 
 Build and serve the app the way you deploy it:
 
@@ -35,10 +35,10 @@ What to look at:
 | What | Where | What you want |
 | --- | --- | --- |
 | HTML size | The document request, **Size** column (compressed) and **Response** tab | Small. The page state is part of it. |
-| JavaScript before any interaction | Filter **JS** | Little. The resume loader is inline in the HTML. File-routed apps load the runtime and the router's app chunk after the first paint, so links can navigate inside the page. |
+| JavaScript before any interaction | Filter **JS** | None for static pages with no browser features. Interactive pages normally fetch code at idle without executing it; startup triggers and lean pages change the timing. See [Preloading](preloading.md). |
 | CSS | Filter **CSS** | One or a few stylesheets. |
 | Images | Filter **Img** | The main image loads early; images below the fold load later. |
-| Compression | Document request, **Headers**, `content-encoding` | `br` or `gzip` |
+| Compression | Document request, **Headers**, `content-encoding` | `zstd`, `br` or `gzip`; `dcz` when a supported client has the site dictionary |
 
 ### Read the page state
 
@@ -58,9 +58,9 @@ Keep the Network panel open, with the JS filter, after the page has loaded.
 
 What to look for:
 
-- **Requests during the click.** If a JS request starts only after `pointerdown`, the user waited for the network. Consider a stronger strategy (`visible` or `idle`) for that element.
+- **Requests during the click.** If a JS request starts only after `pointerdown`, the user waited for the network. Check the server's `preload.ahead` setting and whether Save-Data, a slow connection or a lean page suppressed fetch-ahead.
 - **Code that loaded but never ran.** Open the **Coverage** panel (Command menu, "Show Coverage"), reload, use the page, and look at unused bytes per file. Code loaded early but unused is a candidate for a weaker strategy.
-- **Chunk count.** Many small requests for one click can mean the grouping does not fit; try another [chunk grouping](chunks.md).
+- **Chunk count.** Many small requests for one click can mean the grouping does not fit; inspect [module boundaries and shared chunks](chunks.md).
 
 ## Check timing
 
@@ -78,7 +78,7 @@ For a page with [streaming](streaming.md), click the document request and open *
 ## Compare fairly
 
 - Measure several times and compare the middle value, not the best one.
-- Change one thing at a time: a preload rule, a chunk grouping, an image size.
+- Change one thing at a time: the page's fetch-ahead timing, a module boundary, an image size.
 - Write down the build, the browser, the throttling and the device with every number.
 
 ## See also

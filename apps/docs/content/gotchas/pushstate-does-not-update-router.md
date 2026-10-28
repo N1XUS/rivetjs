@@ -64,4 +64,4 @@ router.navigate("/items/42", { replace: true }); // replace the current entry
 Links whose path matches none of the app's page routes (an endpoint, a file in `public/`, a page another app serves on the same domain) skip the router on their own and load the whole page. A link to one of the app's pages that must load the whole page can carry `data-rivet-reload` (or `reload` on `Link`). Links with `download`, a `target` other than `_self`, or `rel="external"` are never intercepted.
 :::
 
-Pages in file-routed apps have no `navigate` function today: they do not receive the router. Use links, or `location.assign` for a full load.
+Pages in file-routed apps use the exported `navigate()` helper; they do not need a router instance as a prop. Use `location.assign` when you want a full document load.

@@ -205,19 +205,9 @@ Because a descriptor is plain JSON, you can use it without `Picture`:
 
 If an image is used only in server code, it may be missing from the client output when you run `vite build` and `vite build --ssr` as two steps. Vite then warns that image variants "may be missing from the client build". Build with Vite's app builder instead (`vite build --app`, or `createBuilder({ builder: {} })` and `buildApp()`), which builds the server first and then the client.
 
-### Picture adds browser code
+### Images inside an interactive component
 
-In a component that resumes, a `<Picture />` element becomes a small piece of browser code in the [chunk](../performance/chunks.md) that holds the component's code. The image never changes, so you can avoid this by calling `Picture` as a function and rendering the result. The playground does this for its banner:
-
-```tsx
-import { ImagePreload, Picture } from "@rivetjs/kit/image";
-
-import type { CompiledElement } from "@rivetjs/runtime/jsx-runtime";
-
-const banner = [ImagePreload({ image: hero }), Picture({ image: hero, alt: "", priority: true })] as unknown as CompiledElement[];
-
-return <header>{banner}</header>;
-```
+A static page can render `Picture` without browser JavaScript. Inside a component that adopts in the browser, image helpers can be part of that component's code. Calling `Picture` as a function does not by itself keep that call on the server: the component body runs again during adoption. Check the production [chunks](../performance/chunks.md) when optimizing an interactive page.
 
 ### Images with i18n
 

@@ -10,11 +10,11 @@ After this page you know which Rivet API replaces the one you use today, which h
 
 ## The one difference that matters
 
-In Rivet a component function runs **once, on the server**. The browser never runs it again: it :term[resumes]{id=resumability} the page from the HTML and the state the server wrote into it. Only handlers (`onClick`, …) and client effects run in the browser, and only when they are needed. See [Resuming](../learn/resuming.md).
+In Rivet a component function runs on the server, then runs over the existing HTML in the browser when an event, state change or configured trigger wakes it. This is :term[resuming]{id=resumability}. After adoption, signal changes update the bindings that read them without running the component body again. See [Resuming](../learn/resuming.md).
 
 Three rules follow from it, whatever framework you come from:
 
-- **Code in the component body is server code.** `window`, `document` and `localStorage` are not there. Put browser code in a handler or a `clientEffect`. See [browser-only code](../guides/components/browser-only.md).
+- **The component body must render the same thing on both sides.** `window`, `document` and `localStorage` are unavailable on the server. Put browser code in a handler or a `clientEffect`. See [browser-only code](../guides/components/browser-only.md).
 - **Route data must be data.** Loader results travel in the page: plain objects, arrays, `Date`, `Map`, `Set`. Handlers can use any value of their component, because the browser runs the component again when it wakes up. See [what reaches the browser](../learn/resuming.md#what-reaches-the-browser).
 - **Props are live, as in Solid.** `<Badge count={count()} />` updates the child when `count` changes, because the compiler passes a getter. Read `props.count` where it is shown; destructuring props reads once. See [components](../guides/components/components.md#props-are-live).
 
@@ -97,7 +97,7 @@ Qwik also resumes. The main change is that Rivet needs no `$` markers: the compi
 | `routeAction$`, `<Form>` | `actions(…)` and a plain `<form method="post">`, or [`@rivetjs/forms`](../guides/forms/forms.md) |
 | `server$` | an endpoint (`routes/api/x.ts` with `onPost(…)`) or an action |
 
-The serialization rules are smaller: only route data, signal values and plain-data props are written into the page. A component that gets a function or a class instance as a prop runs together with its parent in the browser.
+There are no handler capture rules: the browser rebuilds closures and objects when the component adopts. Only data is written into the page: route data, supported signal values and plain-data props. A component that gets a function or a class instance as a prop runs together with its parent in the browser.
 
 ## Reading without subscribing
 

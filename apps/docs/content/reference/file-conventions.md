@@ -46,7 +46,7 @@ Rules:
 
 | File | Applies to | What it does |
 | --- | --- | --- |
-| `_layout.tsx` | its folder and all folders below | Wraps the pages. Gets `children` plus `data`, `params`, `url` as accessors (`LayoutProps`). The root layout stays mounted across client navigation. Can export `guard(…)`, `load(…)` and other server exports for everything under it; the only special file that runs server code. |
+| `_layout.tsx` | its folder and all folders below | Wraps the pages. Gets `children` plus `data`, `params`, `url` as accessors (`LayoutProps`). Shared layouts stay mounted across client navigation, including nested layouts. Can export `guard(…)`, `load(…)` and other server exports for everything under it; the only special file that runs server code. |
 | `_404.tsx` | its folder and below | Shown for URLs that match no route, and when a loader throws `notFound()`. Gets `url`. |
 | `_error.tsx` | its folder and below | Shown when a loader or guard fails. Gets `error`. |
 
@@ -58,7 +58,7 @@ The nearest `_404` / `_error` up the folder chain wins. For unmatched URLs, a `_
 | --- | --- | --- |
 | `default` | component | The page. Props: `PageProps` = `{ data, params, url }`; `PageProps<typeof loader>` or `PageProps<"route/id">` types them. See [typed routes](../guides/routing/typed-routes.md). |
 | `head` | `Head` or `({ data, params, url }) => Head` | Title, meta tags and links. Merged from layouts to page; the inner value wins. |
-| `preload` | `"eager"` \| `"idle"` \| `"visible"` \| `"intent"` \| `"interaction"` | When the page's handler code loads (component level). See [preloading](../guides/performance/preloading.md). |
+| `live` | `boolean` | `true`: refresh a page's loader data in place with a `data()` accessor (`LivePageProps`), preserving local state. See [forms in overlays](../guides/forms/forms-in-overlays.md). |
 | `transition` | `false` or `{ types: string[] }` | View transition for navigations to this page (with `rivetRouter({ transitions })`). |
 
 ## Server exports
@@ -90,7 +90,7 @@ Files named `*.server.*`, modules that `import "@rivetjs/router/server-only"`, a
 | `app.tsx` | all | The app component: router, layouts, pages. |
 | `routes.ts` | server, static | Route table for the server. |
 | `entry.server.tsx` | server, static | Server build entry. |
-| `entry.dev.tsx` | server, static | Dev-only browser entry (dev pages render in the browser). |
+| `entry.dev.tsx` | server, static | Browser entry for client-rendered dev pages; ordinary dev pages resume by default. |
 | `entry.client.tsx` | csr | Browser entry that mounts the app. |
 | `routes.d.ts` | all | Route ids, parameters and typed paths for `Link`. |
 
@@ -100,7 +100,7 @@ Files named `*.server.*`, modules that `import "@rivetjs/router/server-only"`, a
 | --- | --- |
 | `dist/client/assets/` | Hashed JS and CSS. The Node adapter serves them with `Cache-Control: immutable`. |
 | `dist/client/.vite/manifest.json` | Vite manifest. |
-| `dist/client/.vite/rivet-resume.json` | Resume manifest: which chunk holds which handler. |
+| `dist/client/.vite/rivet-resume.json` | Resume manifest: boundary modules, their chunks and dependencies, plus eligible lite chunks. |
 | `dist/client/<path>/index.html` | Static mode: one prerendered page per URL. |
 | `dist/client/<path>/_data.json` | Static mode: route data for client navigation. Not written when no page resumes. |
 | `dist/client/404.html` | Static mode: the not-found page. |

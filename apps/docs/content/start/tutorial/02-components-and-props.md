@@ -63,7 +63,7 @@ export default function Home() {
 
 You pass props like HTML attributes: `title="Dune"`. To pass a value that is not a string, use braces, for example `pages={412}`.
 
-Import paths include the file extension (`BookCard.tsx`). The starter's TypeScript settings require it.
+These imports include the file extension (`BookCard.tsx`). The starter's TypeScript settings allow TypeScript extensions; Vite also resolves extensionless imports.
 
 ## Where this code runs
 

@@ -68,11 +68,11 @@ const open = signal(false);
 <Motion.div animate={() => (open() ? { height: 240, opacity: 1 } : { height: 0, opacity: 0 })} transition={{ duration: 0.25 }} />;
 ```
 
-On a resumed page the target is a binding: the animation code loads when the value first changes, not at load.
+On a resumed page the target is a binding. Its code can be fetched at idle with the owning boundary; the binding becomes active when that boundary adopts and animates later target changes.
 
 ## Springs
 
-Import Motion's spring and pass it as the type: `transition={{ type: spring, visualDuration: 0.4, bounce: 0.25 }}` (`import { spring } from "@rivetjs/motion"`). Entrances, live targets and gestures all take it. For entrances it becomes a CSS `linear()` easing. It adds about 1.8 KB, only where you use it. The string `type: "spring"` throws an error that names the import.
+Import Motion's spring and pass it as the type: `transition={{ type: spring, visualDuration: 0.4, bounce: 0.25 }}` (`import { spring } from "@rivetjs/motion"`). Entrances, live targets and gestures all take it. For entrances it becomes a CSS `linear()` easing. The spring helper is imported only where you use it. The string `type: "spring"` throws an error that names the import.
 
 ## Variants and stagger
 
@@ -110,12 +110,12 @@ When a gesture ends the element returns to the next active state (press, then ho
 | --- | --- | --- | --- |
 | `animate` only | final styles inline | nothing runs | styles set |
 | `initial` → `animate` | final styles + one CSS rule | CSS plays the entrance, no JS (constant props: no Motion code in the page either) | same rule |
-| live `animate={signal}` | current target inline | code loads on the first change | binding |
-| `whileHover` / `whilePress` / `whileFocus` | a small record for the element | the first hover / press / focus wakes the element alone and animates; the hover code is preloaded when the element is visible | handlers |
+| live `animate={signal}` | current target inline | binding attaches when its boundary adopts; code may be fetched ahead | binding |
+| `whileHover` / `whilePress` / `whileFocus` | a small record for the element | the first hover / press / focus wakes its boundary and any required ancestors; fetching follows the page preload policy | handlers |
 | `whileInView` | the `initial` state | an observer attaches when the element nears the viewport | same |
 | `exit` | nothing | plays when its [presence](./presence.md) leaves | same |
 
-"Nothing runs" holds for a page that does not resume at all (a static page ships no script). When the component around a `Motion` element resumes for another reason (a signal, a handler), the element's code is part of that component's code and loads with it, even for a CSS-only entrance: about 33 KB raw measured for one `<Motion.h1 initial animate>` on an otherwise small page. Keep CSS-only entrances out of interactive components when bytes before the first input matter.
+A constant entrance that meets the build-time conditions above becomes ordinary HTML and CSS, even inside an interactive component: it ships no Motion JavaScript. Other Motion uses keep their component code, which can load when their owning boundary adopts. Check the production output when measuring an entrance's cost.
 
 :::gotcha
 `whileInView` elements render their `initial` state on the server, so they stay hidden without JavaScript. Pass `viewport={{ ssr: "final" }}` to render the in-view state instead (nothing animates on view then).

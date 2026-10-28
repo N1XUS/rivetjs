@@ -5,7 +5,7 @@ template: guide
 related: [guides/components/components, guides/state/batching, guides/performance/preloading]
 ---
 
-Event handlers are where most browser work happens in Rivet. After reading this page you can handle element events, listen on `window` and `document`, and you know how Rivet loads handler code only when it is needed.
+Event handlers are where most browser work happens in Rivet. After reading this page you can handle element events, listen on `window` and `document`, and you know how Rivet fetches code ahead of interaction and runs handlers when an event arrives.
 
 ::example{id=counter}
 
@@ -89,7 +89,7 @@ For more control (passive listeners, `once`, media queries) use `clientEvent`. S
 
 ## How handler code reaches the browser
 
-On a server-rendered page, the browser does not download your handlers when the page loads. Rivet marks the element in the HTML and starts a tiny loader script.
+On a server-rendered page, handlers are rebuilt by their component during adoption. The inline loader can fetch the component code before the first interaction:
 
 1. The page has loaded and the browser is idle. Rivet downloads the handler code at low priority, without running it.
 2. You rest the pointer on the button or focus it. Rivet downloads what has not arrived yet, at high priority.
@@ -143,9 +143,9 @@ Passing a handler on is fine and binds once too: `onClick={props.onClick}`, `onC
 
 ## Common mistakes
 
-- **Using `this`.** Handlers cannot use `this`. Use `event.target` or a [ref](./refs.md).
+- **Reading the wrong event element.** `event.target` can be a child of the element with the handler. Use `event.currentTarget` for the element the handler belongs to, or a [ref](./refs.md).
 - **Choosing a handler from state.** `onClick={s() ? a : b}` would be read once, at render, so it does not compile (RV1016). Write `onClick={() => (s() ? a() : b())}` instead. See [handlers bind once](#handlers-bind-once).
-- **Defining handlers in a helper module that reads browser globals.** Write handlers inline in JSX or as local functions in the component.
+- **Reading browser globals at module scope.** Imported handler functions work, but their module can also run on the server. Read browser globals inside the handler, not while the module is imported.
 
 ## See also
 

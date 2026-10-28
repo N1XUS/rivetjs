@@ -30,7 +30,7 @@ export default function Greeting() {
 }
 ```
 
-The server renders the current value into the field. In the browser, the first time you type, Rivet copies the field into the signal. No code from your app has to load for that.
+The server renders the current value into the field. The field accepts typing before application code loads. Its first input event wakes the containing boundary; once its code arrives, adoption connects the field to the signal while preserving the text already typed.
 
 `model:value` works on:
 

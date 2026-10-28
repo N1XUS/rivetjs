@@ -171,7 +171,7 @@ export default function Layout({ children }: LayoutProps) {
 }
 ```
 
-`nav()` returns `{ state, location, from, type, shown }`. `state` is `"idle"` or `"loading"`; `shown` follows the indicator timing. This works in a resumed layout: the component does not run in the browser, only the bindings that read `nav()` update.
+`nav()` returns `{ state, location, from, type, shown }`. `state` is `"idle"` or `"loading"`; `shown` follows the indicator timing. A resumed layout runs once over its server HTML when it wakes up. After that, navigation updates the bindings that read `nav()` without running the layout body again.
 
 For loading states of changes inside a page (not navigations), see [Suspense and transitions](/guides/components/suspense.md).
 

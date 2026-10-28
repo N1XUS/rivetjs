@@ -153,7 +153,7 @@ When the router's script has loaded, it handles the click: it fetches the next p
 
 ## Where state lives
 
-The layout in `src/routes/_layout.tsx` stays on screen when you move between pages. The page inside it is replaced. So:
+During client navigation, the layout in `src/routes/_layout.tsx` stays on screen and the page inside it is replaced. A static page with no other JavaScript uses document navigation by default, which resets layout state too. Set `clientRouter: true` in `rivetRouter` if every page must navigate in place. With client navigation:
 
 - State in the root layout survives a page change.
 - State in a page, such as the books you added in `ReadingList`, is lost when you go to `/about` and back. The list starts again from `initialBooks`.

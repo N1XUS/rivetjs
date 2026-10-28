@@ -59,7 +59,7 @@ export default function Settings() {
 }
 ```
 
-`clientEffect` never runs on the server. The `when` option sets when it starts in the browser (`"idle"`, `"visible"`, `"interaction"`, `"media:(query)"`). See [effects](../state/effects.md#choose-when-it-starts) and the [dark mode recipe](/recipes/dark-mode-toggle.md).
+`clientEffect` never runs on the server. The `when` option can wake the component at idle or near the viewport. On resumed pages, `"interaction"` and `"media:(query)"` currently wait for another reason to adopt the component rather than installing a page-wide or media trigger. See [effects](../state/effects.md#choose-when-it-starts) and the [dark mode recipe](/recipes/dark-mode-toggle.md).
 
 ## Listen to browser events
 
@@ -81,13 +81,15 @@ Options:
 
 | Option | Meaning | Default |
 | --- | --- | --- |
-| `when` | When to attach the listener (same values as `clientEffect`) | `"load"` |
+| `when` | When the resumed component wakes: `"load"`, `"idle"`, `"visible"`; `"interaction"` and `"media:…"` wait for another reason to adopt | `"idle"` |
 | `passive` | Passive listener | `true` for `scroll`, `wheel`, `touchstart`, `touchmove`, `touchend`, `pointermove`, `resize` |
 | `capture` | Listen in the capture phase | `false` |
 | `once` | Remove after the first event | `false` |
-| `preload` | When to download the handler code (`"eager"`, `"idle"`, `"visible"`, `"intent"`, `"interaction"`) | chosen by Rivet |
+| `standalone` | Whether this listener alone can wake a resumed component; `false` waits for another reason to adopt | `true` |
+| `match` | Run only when the event target is inside an element matching this CSS selector | none |
+| `preload` | Accepted by the type, but has no effect on derived resume | none |
 
-The listener is cheap: the handler code downloads on the first event, unless `preload` says otherwise. The handler runs inside a [batch](../state/batching.md). The listener is removed when its part of the page goes away.
+The listener attaches when its component adopts, at idle by default. Code fetching follows the page's [preloading policy](../performance/preloading.md); `preload` does not select a separate handler chunk. With `standalone: false`, this listener alone ships no JavaScript. The handler runs inside a [batch](../state/batching.md). The listener is removed when its part of the page goes away.
 
 For a simple listener in JSX, `window:onKeyDown={…}` and `document:onClick={…}` also work. See [events](./events.md#listen-on-window-or-document).
 

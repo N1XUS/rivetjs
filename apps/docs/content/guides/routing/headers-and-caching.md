@@ -144,7 +144,7 @@ What the cache stores and serves:
 - **Encoded paths.** Rules match the decoded path, as routes do (`/%61dmin` is `/admin`). A path spelled with needless escapes is rendered every time and never stored.
 - **Dev** applies `headers` only, so your edits show up.
 
-The Node adapter sends a stored page before it builds a request object, like a static file, compressed once per page. In the editorial benchmark (1,000 articles, Node 26) a stored article costs about 0.02 ms of CPU per request, less than the shared static file server needs for the static build of that article (about 0.1 ms).
+The Node adapter sends a stored page before it builds a request object, like a static file, compressed once per page.
 
 ### Drop stored pages
 
@@ -228,7 +228,7 @@ A list qualifies when its rows show only fields of their item: native elements w
 - `createIncrCache({ maxBytes, maxLists })` (defaults 32 MiB and 1,000 lists) bounds the memory; least recently used lists go first. `cache.stats()` counts reused and rendered rows.
 - `createIncrCache({ verify: true })` renders every row anyway and logs a row whose stored bytes differ from a fresh render. Use it in tests or staging.
 
-On a 1,000-row list the server's time per page drops about 5× when nothing changed and about 4× when 1% of the rows changed; when most rows change, the cache steps aside and the cost is the same as without it.
+The saving depends on how many rows change. Measure your own workload with and without the cache.
 
 ## Partial prerendering: shell cache
 
@@ -275,10 +275,9 @@ The page's normal loader (the article) reads only its params, so its data belong
 
 What a hit costs depends on the holes:
 
-- **Holes only** (`x-rivet-cache: SHELL-HIT`): the shell does not render at all. The server keeps each hole's code from the first render and runs only that, with the visitor's deferred data. This costs about as much as rendering the holes alone: on a signed-in article, 2–4× less CPU than rendering the whole page (more when the shell loaders are slow).
+- **Holes only** (`x-rivet-cache: SHELL-HIT`): the shell does not render at all. The server keeps each hole's code from the first render and runs only that, with the visitor's deferred data. The saving depends on how much work belongs to the shell and its loaders.
 - **Shell replay** (`x-rivet-cache: SHELL-HIT-REPLAY`): the shell renders again with the stored data, but its bytes are only compared with the stored ones (nothing is sent twice) and its resume state is not encoded again. The saving is the shell's loaders and that state. A page whose shell loaders are cheap (data already in memory) gains mainly time to first byte, not CPU. The 64th-request check is a replay too.
 
-Under load the difference shows in throughput. On a signed-in article of the editorial benchmark (Node adapter, 10 connections, one process), the holes-only path served about 14,900 requests per second, about as many as an empty page (about 14,700), shell replay about 6,900, and rendering the whole page about 4,000. The gain is roughly the shell's share of the page's loader time and render CPU: a page that is mostly shell (an article with a user menu) gains the most, and a page that is mostly per-visitor data (a dashboard grid) gains nothing. Method and numbers: [shell cache benchmark](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-ppr-shell.md).
 
 ### Which holes skip the shell
 
@@ -359,7 +358,7 @@ closeOnSignals(serving);
 - **When it is sent.** For page `GET` and `HEAD` requests, before guards and loaders run. Data requests, actions and endpoints get none. A page served from the [page cache](#route-rules-and-page-caching) carries its stored `Link` header but gets no `103`, because nothing renders: early hints help uncached pages.
 - **The `Link` header.** Every page response also carries the same `Link` header. Cloudflare and Fastly turn it into a `103` for later requests, which is how the fetch adapter's `create({ earlyHints })` gets hints out.
 - **HTTP/2 only.** Browsers act on `103` over HTTP/2 or HTTP/3. Node serves HTTP/1.1, so the hints reach the browser through a proxy or CDN that forwards them (nginx `early_hints`, Cloudflare, Fastly).
-- **When it helps.** Only when the server is slow to answer. In a benchmark (Chromium, 100 ms round trip, a 200 ms loader) the first paint came 100 ms earlier, 420 → 320 ms; with a 50 ms round trip, 324 → 276 ms. When the page answers at once there is no gain: the `103` arrives together with the page.
+- **When it helps.** Only when the server is slow to answer. When the page answers at once there is no gain: the `103` arrives together with the page.
 
 Default off. `createApp({ earlyHints })` takes the same option for custom servers.
 
@@ -386,7 +385,7 @@ Pages of one site repeat most of their markup: the header, the navigation, the f
 
 Where the dictionaries come from:
 
-- **Static builds.** `prerenderBuild` builds one dictionary for the whole site from up to 12 pages of each route group (the first path segment) and their `_data.json` files, at most 128 KB. One dictionary for the site measured as good as one per group, for a single download.
+- **Static builds.** `prerenderBuild` builds one dictionary for the whole site from up to 12 pages of each route group (the first path segment) and their `_data.json` files, at most 128 KB.
 - **Server-rendered apps.** Name a few pages that stand for the site; the server renders them once when it starts:
 
 ```ts
@@ -395,7 +394,6 @@ import { start } from "@rivetjs/router/node";
 await start({ dictionary: { samples: ["/", "/docs/intro", "/blog/first-post"] } });
 ```
 
-What it saves, measured on built sites: a page of the UI documentation (69–213 KB of HTML) arrives in 14–37 % of its zstd size, about a quarter on average; a page of a generated news site (4–18 KB of HTML) in 35–73 %, about three quarters for an article, since most of an article is its own text. The dictionary is one download of 6–25 KB; on the documentation it pays for itself on the second page.
 
 - **Browsers.** Chromium-based browsers. Safari and Firefox do not send `Available-Dictionary` and get zstd, Brotli or gzip as before.
 - **Caches.** Answers under a dictionary's path carry `Vary: Accept-Encoding, Available-Dictionary`, so a shared cache never hands a `dcz` answer to a browser without the dictionary.

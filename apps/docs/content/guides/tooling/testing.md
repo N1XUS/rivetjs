@@ -143,7 +143,7 @@ On the first real mouse click of a page, Rivet applies the DOM update one task a
 
 Useful checks in such tests:
 
-- No component code before the first interaction: count script requests with `page.on("request")` until the first click.
+- Fetching versus execution: record script requests with `page.on("request")`, and separately check when component code runs. Idle prefetch can download a boundary before interaction without executing it. Use the server's `preload: { lean: true }` when testing a page that must avoid background downloads.
 - Errors: collect `page.on("pageerror")` and console errors and expect none. Check the response status of the server render too.
 
 ## Common mistakes

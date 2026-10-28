@@ -90,7 +90,7 @@ For the browser build, the compiler deletes every export made by a wrapper call 
 
 The build stops with an error when:
 
-- browser code (the component, `head`) uses a server export, for example calls `load(…)`;
+- code outside the server wrappers (for example the component or a `head` expression) uses a server export, for example calls `load(…)`;
 - browser code uses an import from a server-only module (`*.server.ts`, `node:…`, or a module that imports `@rivetjs/router/server-only`);
 - one `export const` declares a server export and a browser value together (`export const loader = load(…), x = …`);
 - a wrapper is used anywhere but as the whole value of a module-level `const` (`export const x = load(…)`);

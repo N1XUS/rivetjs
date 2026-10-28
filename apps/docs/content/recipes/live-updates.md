@@ -57,7 +57,7 @@ clientEffect(() => {
 ```
 
 - `EventSource` exists only in the browser. `clientEffect` runs only in the browser, so this is the right place.
-- By default the effect starts when the browser is idle, after the page has loaded. Pass `{ when: "visible" }` with a `ref` to wait until an element scrolls into view.
+- By default the effect starts when the browser is idle, after the page has loaded. Pass `{ when: "visible" }` to wake the component when its first element nears the viewport; this option takes no ref.
 - The returned function closes the connection when the page (or the component) goes away.
 - `EventSource` reconnects by itself after a network error. The status text shows that.
 

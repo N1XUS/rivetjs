@@ -116,7 +116,7 @@ import { Async } from "@rivetjs/runtime/dom";
 
 <Async
   load={async (work) => {
-    const res = await fetch("/api/user");
+    const res = await fetch("https://api.example.com/user", { signal: work.signal });
     const theme = work.get(ThemeContext); // still the provided value
     return { user: await res.json(), theme };
   }}
@@ -131,7 +131,7 @@ See [context gone after await](/gotchas/context-gone-after-await.md).
 
 - **Providing a plain value and expecting updates.** Provide a signal.
 - **Calling `useContext` inside a handler.** The handler runs later, in the browser. Call it at the top of the component and use the result in the handler.
-- **Putting services in context.** A database client or an API class cannot go into the page data. Load data on the server with a [loader](/guides/routing/loading-data.md) and pass the data.
+- **Putting server services in context.** Providers run again when their boundary adopts. Keep database clients in server code; load their data with a [loader](/guides/routing/loading-data.md). Browser-valid objects can be rebuilt by the provider; context has no capture-serialization rule.
 
 ## See also
 

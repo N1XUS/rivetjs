@@ -55,7 +55,7 @@ Remember that a component renders on the server, and in the browser only once it
 
 ### 4. What loads, and when
 
-The click handler is in its own small chunk. The browser fetches it at low priority when idle after the page has loaded (or as soon as the visitor points at or focuses the button) and runs it on the first click. The effect and the media listener need the Rivet runtime, which starts when the page has loaded.
+The handler, effect and media listener belong to the component's boundary. The page can fetch that code at idle or on earlier intent. `clientEffect` with `when: "load"` uses the idle trigger, as does `clientEvent` by default; adoption attaches the handler and listener and schedules the effect.
 
 ## Variations
 

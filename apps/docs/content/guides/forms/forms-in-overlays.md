@@ -36,7 +36,7 @@ On a live page, `data` is a function, like a layout's `data`. When the page's da
 - only the parts that read `data()` change. `<For>` with `by` keeps the existing rows and adds the new one;
 - signals, typed input, focus and scroll position stay as they were.
 
-Following a link to the same page with other search parameters (`?new`, `setSearchParams`, the back and forward buttons between them) also keeps the page: the router loads the data for the new address and updates `data` in place. Navigating to another page renders that page as usual. In an app with nested layouts that have their own loaders, a search change still renders the page again.
+Following a link to the same page with other search parameters (`?new`, `setSearchParams`, the back and forward buttons between them) also keeps the page: the router loads the data for the new address and updates `data` in place. Navigating to another page renders that page as usual. This works with nested layouts too: shared layouts stay mounted, and URL-dependent layout loaders refresh their data.
 
 ## Put the form in the drawer
 

@@ -37,9 +37,9 @@ The build script stays `vite build && vite build --ssr`.
 ## What every target does
 
 - **Same pages.** Every target runs the same request handler: the same HTML, the strict [Content Security Policy](../security/csp.md) with a new nonce per request, form actions with the same-origin check, the data endpoint for client navigation, and your 404 and error pages.
-- **Streaming.** Pages stream as they render. Nothing collects a whole page first.
+- **Streaming.** The fetch targets return a response stream. The Node adapter can buffer a small, immediately completed page into one response. Pending `Async` parts need the [streaming](../performance/streaming.md) option (deferred route loaders enable it themselves).
 - **Static files first.** Files from `dist/client` are served before your app runs. Files in `assets/` have a content hash in their name and get `Cache-Control: public, max-age=31536000, immutable`.
-- **No file system at run time.** The server build is one self-contained bundle. The browser build's manifests are written into it, so build the browser files first.
+- **Manifests in fetch targets.** The generated fetch and platform entries embed the browser manifests, so build the browser files first. The default Node adapter reads manifests from `dist/client`; Bun and Deno also read static files from disk.
 - **Base path.** `rivetRouter({ base: "/app" })` moves pages, files and cache rules under `/app`.
 
 ## Prerendered pages
@@ -62,7 +62,7 @@ The page gets a hash-based security policy instead of a nonce, as on [static hos
 
 ## Environment variables and platform data
 
-Read secrets the way your platform provides them: `process.env` on Node.js, Vercel, Netlify Functions and Bun, `Deno.env.get()` on Deno and Netlify Edge Functions. On Cloudflare, bindings arrive in `event.platform.env`. Where the platform passes a context object (Netlify, Vercel Edge, Cloudflare `ctx`), it is `event.platform.ctx`. The visitor's address is always `event.platform.clientAddress`.
+Read secrets the way your platform provides them: `process.env` on Node.js, Vercel, Netlify Functions and Bun, `Deno.env.get()` on Deno and `Netlify.env.get()` on Netlify Edge Functions. On Cloudflare, bindings arrive in `event.platform.env`. Where the platform passes a context object (Netlify, Vercel Edge, Cloudflare `ctx`), it is `event.platform.ctx`. The visitor's address is always `event.platform.clientAddress`.
 
 ## Common mistakes
 

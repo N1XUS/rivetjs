@@ -10,6 +10,10 @@ When a change moves elements (a list reorders, a card grows, an underline moves 
 
 ::example{id=motion-layout}
 
+:::gotcha[Current resume limitation]
+Layout animation during adoption has a known failure: the element ref can be read before it is attached. The `motion-layout` example is quarantined for this case. Test the first interaction on server-rendered pages before relying on layout animation.
+:::
+
 ## animateLayout
 
 Mark the elements with `layout` and make the change inside `animateLayout`:
@@ -36,7 +40,7 @@ const grid = ref<HTMLElement>();
 - It resolves to `{ finished, stop }`. Under reduced motion it only applies the update.
 - An element's reduced-motion policy (its `reducedMotion` or MotionConfig's) is read once, when the element is created: a later MotionConfig change reaches gestures, `animate` and exits, not layout (a live policy would add a binding to every layout element's resume state).
 - Use keyed lists (`For` with `by`): an element can only move if it is the same element before and after.
-- Resumed pages: the first interaction can apply `update` later (the region it re-creates loads its chunks first). `animateLayout` then measures once that re-creation ran; an element the re-created region rendered again animates from the server element with the same `id`.
+- Resumed pages: the first mouse click can defer the batched DOM update. `animateLayout` waits for it to settle before measuring. If the update replaces an element, a new layout element with the same `id` can use its previous box.
 
 :::note
 Elements animate inside `animateLayout`, not on every change: Rivet has no render cycle to compare. Without `@rivetjs/motion/layout` in your bundle, `layout` and `layoutId` only write an attribute and cost nothing. Importing any of its exports enables them, and so does a bare `import "@rivetjs/motion/layout";` when you only use `layoutId`.
@@ -75,4 +79,4 @@ import { layoutDriver } from "@rivetjs/motion/layout";
 </Masonry>;
 ```
 
-Both read the new positions from the masonry geometry (no measuring per item). On a 1000-item relayout at 4× CPU slowdown, both reached their first frame in about 36 ms; Motion's own layout engine read every box and took 112 ms and 24× the scripting, so `@rivetjs/motion` does not use it.
+Both read the new positions from the masonry geometry instead of measuring each item. The [layout-driver benchmark](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-12-motion.md#layout-drivers-d12-t12) compares them with Motion's box-measuring engine; its timings are a single-sample smoke run, not a repeated performance guarantee.

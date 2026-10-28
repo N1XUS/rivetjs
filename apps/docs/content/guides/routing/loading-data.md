@@ -68,7 +68,7 @@ A separate `index.server.ts` next to the page works too, with the same `load(…
 
 ## What a loader can return
 
-The data is written into the page, so the browser can use it without asking again. It must be a value Rivet can write down as data: objects, arrays, strings, numbers, booleans, `null`, `undefined`, `Date`, `Map`, `Set` and `BigInt` all work. Functions and class instances (a database row object with methods) do not. Return plain objects instead.
+The data is written into the page, so the browser can use it without asking again. It must be a value Rivet can write down as data: objects, arrays, strings, numbers, booleans, `null`, `undefined`, `Date`, `Map`, `Set` and `BigInt` all work. Functions and unregistered class instances (a database row object with methods) do not. Return plain objects, or [register a class](../../learn/resuming.md#classes-in-route-data) in a module both builds import.
 
 Return only what the page shows. Everything you return is visible in the page source, so never return password hashes, tokens or internal fields.
 

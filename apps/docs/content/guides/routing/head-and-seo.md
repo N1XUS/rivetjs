@@ -154,7 +154,7 @@ If your shell does not call `headTags`, the `head` exports have no effect. Pages
 
 When the user follows a link, the router updates `document.title` from the new page's head. Meta and link tags are not changed in the browser.
 
-In a CSR app (`mode: "csr"`) the `index.html` shell has no page head. The browser builds it from the `head` exports of the route's layouts and page on the first render and on every navigation, and sets `document.title` (with the layouts' `titleTemplate`). A `head` function gets `data: undefined` there, because CSR pages have no loaders. This is fine for search engines and link previews: they load each URL as a full page and read the HTML the server sends.
+In a CSR app (`mode: "csr"`) the `index.html` shell has no page head. The browser builds it from the `head` exports of the route's layouts and page on the first render and on every navigation, and sets `document.title` (with the layouts' `titleTemplate`). A `head` function gets `data: undefined` there, because CSR pages have no loaders. Use server or static mode when titles and social metadata must be present in the initial HTML: a CSR shell does not contain that route-specific head.
 
 With the [kit](../../ui/kit.md) installed, client navigation also updates meta tags, links and JSON-LD.
 
@@ -168,7 +168,7 @@ With the [kit](../../ui/kit.md) installed, client navigation also updates meta t
 
 ## Common mistakes
 
-- **Using server code in `head`.** `head` cannot call `load(…)` or use values imported from `*.server.ts` modules: the build checks route files as the browser sees them (and a CSR app runs `head` in the browser); the build stops with an error. Read the loader's result from `data`. See [server code in route files](./server-code-in-routes.md).
+- **Fetching the loader data again in `head`.** Read the loader's result from `data`. In server/static mode the route head is server data and leaves the client bundle; CSR runs it in the browser. Server-only reachability rules still apply to route modules; see [server-only code](../security/server-only-code.md#what-the-build-checks).
 - **Setting `document.title` in a component.** The component runs on the server, where there is no `document`. Use `head`, or `<Title>` from the [kit](../../ui/kit.md).
 - **Expecting meta tags to change after client navigation.** Without the kit, only the title updates in the browser.
 

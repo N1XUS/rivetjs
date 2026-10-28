@@ -21,7 +21,7 @@ With Save-Data on, or on a 2G connection, step 2 and the lazy components are ski
 
 A page whose only interactive part is its links (client navigation, nothing else reacts to events) also skips step 2 unless you set `ahead`: the runtime and the router load when the pointer rests on a link, or on the first click.
 
-Until the code has run, hover, pressed and keyboard-focus styles come from CSS (`:hover`, `:active`, `:focus-visible`): Rivet UI pairs its `data-hovered`, `data-pressed` and `data-focus-visible` styles with the pseudo-class, so the page looks the same before and after. Do the same in your own styles for headless components, except pressed transforms, scales and opacity: an `:active` rule changing those makes the first click about 20 ms slower (measured), so keep them on `data-pressed`.
+Until the code has run, hover, pressed and keyboard-focus styles come from CSS (`:hover`, `:active`, `:focus-visible`): Rivet UI pairs its `data-hovered`, `data-pressed` and `data-focus-visible` styles with the pseudo-class, so the page looks the same before and after. Do the same in your own styles for headless components, and measure the first click when adding pressed transforms, scales or opacity. See [measuring](measuring.md).
 
 ## Change the timing
 
@@ -51,13 +51,13 @@ await start({ dist: "dist", preload: { lean: (url) => url.pathname === "/" || un
 
 ## Per component
 
-Preload strategies per element (`preload="…"`), per component (`export const preload`) and per app (`resume.preload.rules`) have no effect: not yet on the derived model; tracked in plan M6.
+Per-element `preload="…"` and component `export const preload` settings do not select derived boundary fetch timing. `resume.preload.rules` is a removed configuration option. Use the server-side `preload: { ahead, lean }` settings above.
 
 ## Code that loads later
 
 Lazy components (`lazyComponent(() => import("./Chart.tsx"))`, the importer written inline) in the page's code are fetched after the rest of the page's code, at idle (see above), and run when they first render. Other code loaded with `import()`, such as other routes, a `clientOnly` component or an importer passed in from elsewhere, is fetched when it is needed.
 
-To keep analytics or other heavy code out of the first seconds, load it inside a `clientEffect` with `when: "idle"`:
+To defer analytics until the browser is idle after load, import it inside a `clientEffect` with `when: "idle"`. Idle can occur soon after load; it is not a fixed delay:
 
 ```tsx
 import { clientEffect } from "@rivetjs/runtime/dom";

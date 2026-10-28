@@ -135,7 +135,9 @@ A view is a fixed path. For list rows, whose index can change, build the path in
 
 ## In a resumed page
 
-A store is plain data with signals inside, so a handler or a binding can use it on a resumed page. The page state holds the data once, plus one small entry for each path the server read. When the compiler can tell which paths the browser code uses, the page holds only those paths and the ones the server read. It can tell when every use of a store created in the component is `read`, `write` or `at` with a literal path (`read(store, "user.name")`, `at(store, "todos.1")`), and every use of a view from `at` is `read`, `write` or `at` too. The page keeps the whole store when a path is held in a variable (below a view from `at(store, "user")`, the whole `user` part), when code reads or writes the whole store (`read(store)`), when the store or a view of it is passed to a function or a child component, aliased, or read through `view.s`, when the server read the whole store, and on a streamed page whose later parts are still loading when the store is sent. In development, reading a path the page did not ship prints a `Rivet resume: store path "…" was not shipped` warning. In the browser, a click that writes `"user.name"` updates only the parts that read it.
+A `createStore` call in a component gets a state key. The server records the store's whole data value, using the same plain-JSON rules as [signals](signals.md#values-in-a-resumed-page). An unchanged literal initializer can be omitted: the browser evaluates it again. When the component adopts, it creates the store from the saved value, then rebuilds path signals as the code reads them.
+
+There is no per-path payload pruning or serialized tree of path subscriptions. Keep large stores close to the component that needs them. Once adopted, a click that writes `"user.name"` updates only the bindings that read a changed path.
 
 ## Common mistakes
 

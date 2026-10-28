@@ -183,7 +183,7 @@ Keeping first-paint styles in classes also keeps pages compatible with a strict 
 
 ## Dark mode
 
-A common pattern is a `dark` class on `<html>`, toggled from a `clientEffect`, with Tailwind's `dark:` variant. The [dark mode recipe](/recipes/dark-mode-toggle.md) shows it end to end.
+The [dark mode recipe](/recipes/dark-mode-toggle.md) toggles `data-theme` on `<html>` from a `clientEffect` and defines a matching Tailwind `dark:` variant.
 
 ## Common mistakes
 

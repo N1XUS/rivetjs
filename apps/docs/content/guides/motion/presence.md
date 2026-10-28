@@ -10,6 +10,10 @@ An element that disappears usually unmounts at once. `exit` gives it an animatio
 
 ::example{id=motion-presence}
 
+:::gotcha[Current resume limitation]
+An exit animation in an adopted `For` row can leave the row in the DOM after the animation. The `motion-presence` example is quarantined for this case. Test dismissal on server-rendered pages before relying on it.
+:::
+
 ## Presence
 
 ```tsx
@@ -73,7 +77,7 @@ import { Motion } from "@rivetjs/motion";
 ```
 
 - The overlay's own CSS exit (a ui backdrop's fade) keeps its end state until the Motion exits finished; with no CSS animation (reduced motion, `animation: none`) the backdrop stays as it is during the Motion exit, then disappears with the overlay.
-- A server-open overlay dismissed as the first interaction of a resumed page exits the same way: the re-created overlay knows it was open (region state), and Motion elements created while it leaves start from their final state.
+- Motion elements created while their presence is already leaving start from their final state before exiting.
 
 ### Springs for overlays
 

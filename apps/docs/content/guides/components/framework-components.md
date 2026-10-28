@@ -138,7 +138,7 @@ A static island (no `client`) with a live prop loads nothing until the prop chan
 
 ## Callbacks into Rivet
 
-A function prop calls back into Rivet. Write it as an inline arrow or a local constant, as for any [event handler](events.md), so it can resume:
+A function prop calls back into Rivet. Write it as an ordinary function, as for any [event handler](events.md). The enclosing component rebuilds it during adoption:
 
 ```tsx
 import { signal } from "@rivetjs/reactivity";
@@ -177,7 +177,7 @@ Render props (a slot that React calls with arguments) are not supported. Use a c
 
 ## Pages with only islands
 
-When a page's only browser code is islands with plain JSON props, Rivet skips its own loader and runtime. The page gets a list of the islands and a small inline script (under 1 KB compressed) that starts each one by its policy. On file-router pages the router waits until the first link hover, focus or click.
+When a page's only browser code is islands with plain JSON props, Rivet skips its own loader and runtime. The page gets a list of the islands and a small inline script that starts each one by its policy. On file-router pages the router waits until the first link hover, focus or click.
 
 On other pages, too, every island with plain JSON props starts through that inline script. An island that needs Rivet (live props, callbacks, Rivet content in a slot, `client="intent"`) starts with the Rivet component that renders it: that component loads when the island's policy fires (`load`, `idle`, `visible`), takes over the server HTML and then hydrates the island. Rivet content in its slots renders again in the browser at that moment; an event held on the server's nodes runs on the new ones. A `visible` island of this kind still downloads its code near the viewport, not before. An island that needs Rivet but is rendered outside any interactive component stays static (development prints a warning naming it). See [Resuming](../../learn/resuming.md).
 
@@ -185,7 +185,7 @@ On other pages, too, every island with plain JSON props starts through that inli
 
 - **Writing React JSX in a plain `.tsx` file.** Rivet then compiles it as Rivet JSX and fails. Rename the file to `*.react.tsx`, add the pragma, or list the folder in `include`.
 - **Expecting clicks before hydration to work.** Events inside an island that has not started yet are lost. `intent` replays a click that arrives while the island loads, but not one that arrives before Rivet's own runtime has started on the page. Pick `load` for controls people press right away.
-- **Many small islands.** Each island is its own React root that hydrates on its own. Islands on one page share one copy of React, but its runtime alone is about 58 KB compressed (Preact's is 4 to 6 KB with hooks), so make islands wide (a whole table, a whole form), not one per button.
+- **Many small islands.** Each island is its own React root that hydrates on its own. Islands on one page share one copy of React, and download that framework's runtime too. Make islands wide (a whole table, a whole form), not one per button.
 - **Running the production server without `NODE_ENV=production`.** React then renders with its development build: slower, with development warnings. The starters' `serve.js` sets it unless you set it yourself; see [Node.js](../deploy/node.md#start-the-server).
 - **Sharing React context between islands.** Each island is a separate root, so React context does not cross from one island to another, and Rivet context does not reach React.
 - **Stopping propagation in React.** `stopPropagation` in a React handler stops the event at the island, so Rivet handlers above it do not run.
@@ -194,6 +194,6 @@ On other pages, too, every island with plain JSON props starts through that inli
 
 - [Browser-only code](browser-only.md)
 - [Slots](slots.md)
-- [Chunks](../performance/chunks.md): route chunks suit pages with islands.
+- [Chunks](../performance/chunks.md): inspect island modules and their shared framework dependencies.
 - [Config](../../reference/config.md): the `bridges` option.
 - [Bridges demo benchmark](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-12-bridges-demo.md): a React dashboard on Next 16 and inside Rivet.

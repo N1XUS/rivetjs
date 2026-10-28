@@ -60,11 +60,11 @@ The heading goes out right away with "Loading reviews…". The list follows when
 
 An `Async` without `fallback` is awaited as before: the server waits for it before sending that part.
 
-To stream several parts as one piece, wrap them in a [`Suspense`](../components/suspense.md) with a `fallback`: the parts inside never stream one by one, and the whole content arrives together once all of them are ready.
+On the derived model, [`Suspense`](../components/suspense.md) content is awaited in place; its fallback does not become a streamed group. Use separate `Async` boundaries with fallbacks outside `Suspense` for parts that should stream independently.
 
 ## What the browser receives
 
-1. The page with the fallback in place, and a small extra script (about 700 bytes compressed) that only streaming pages get.
+1. The page with the fallback in place, and a small extra script that only streaming pages get.
 2. Later in the same response, one piece per finished part: the HTML and the state it needs. Pieces arrive in the order they finish.
 3. The browser swaps the fallback for the finished HTML. Event handlers in the new part work like the rest of the page.
 
@@ -100,7 +100,7 @@ To check streaming, open the page with the network panel open and look at the ti
 
 - Only an `Async` that has its own place in the page streams. An `Async` inside a list row, or nested in another `Async` of the same component, is awaited instead.
 - Prefetching for handlers in the first part does not include code for bindings that arrive later. That code loads when it is needed.
-- Dev pages render in the browser, so they do not stream. Test streaming with a production build.
+- Dev pages resume by default, but the dev server does not take the production adapter's `stream` option. Test your streaming configuration with a production build.
 
 ## See also
 

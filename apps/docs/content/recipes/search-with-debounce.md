@@ -33,7 +33,7 @@ const text = signal("");  // updates on every key press
 const query = signal(""); // updates after the pause
 ```
 
-`model:value={text}` connects the input to `text`. Each key press writes the new value into the signal. No code of yours runs for that.
+`model:value={text}` connects the input to `text`. After the boundary adopts, each input event writes the new value through the compiled model binding. The native field accepts typing while its code loads.
 
 ### 3. The debounce is an effect with a cleanup
 

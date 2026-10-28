@@ -26,7 +26,7 @@ Your `tsconfig.json` needs two JSX settings. The starters already have them:
 - `jsx: "preserve"`: TypeScript checks the JSX but does not compile it. The Rivet compiler does that in Vite.
 - `jsxImportSource: "@rivetjs/runtime"`: the editor takes the JSX types (elements, attributes such as `class` and `model:value`) from Rivet.
 - `noUncheckedSideEffectImports: false`: TypeScript 6 and later report `import "./styles.css"` as an error (TS2882) by default. Vite handles these imports, so the starters turn the check off.
-- `.rivet/routes.d.ts`: the types of your routes. This file exists only after you run `vite` or `vite build` once.
+- `.rivet/routes.d.ts`: the types of your routes. Generate it with `rivet sync`, `vite` or `vite build` (`npm run check` starts with `rivet sync`).
 
 If the editor says "Cannot use JSX unless the '--jsx' flag is provided", the file belongs to no `tsconfig.json`. Check that the `include` list covers it.
 
@@ -86,7 +86,7 @@ TypeScript 7 (the native `tsgo`) does not load JavaScript plugins. Use TypeScrip
 ## Common mistakes
 
 - **Editor uses its bundled TypeScript.** JSX types may still work, but the Rivet plugin never loads. Switch to the workspace version.
-- **No route types.** `.rivet/routes.d.ts` is missing until Vite has run once. Run `npm run dev` or `npm run build`.
+- **No route types.** Run `npx rivet sync` or `npm run check` to generate `.rivet/routes.d.ts` without starting the dev server; dev and build generate it too.
 - **A file outside every `tsconfig.json`.** The editor then shows JSX errors that the build does not have. Add the folder to `include`.
 
 ## See also

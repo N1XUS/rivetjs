@@ -106,11 +106,11 @@ export default function Contact() {
 }
 ```
 
-- `createForm` makes the form's state: which fields were touched, which have problems, whether it is sending. It is small and travels to the browser with the page. The values themselves stay in the inputs.
+- `createForm` makes the form's state: which fields were touched, which have problems, whether it is sending. The browser recreates the form store when its boundary adopts, using the action result and input state. The values themselves stay in the inputs.
 - `result: actionResult()` hands over the server's answer after a failed post.
 - The helpers give each input its `id`, its typed `name`, its old value, `aria-invalid`, and `aria-describedby` that points to its error text.
 - `FieldError` shows a field's message. `ErrorSummary` lists all problems in a `role="alert"` box, with links to the fields.
-- The three handlers sit on the `<form>`, not on each input, so their code is one small file that loads on first use.
+- The three handlers sit on the `<form>`, not on each input. They are rebuilt when the form's boundary adopts; module placement and shared imports determine the chunks.
 - If your inputs keep native checks (`required`, `type="email"`) for visitors without JavaScript, also add `onInvalidCapture={(event) => onInvalid(contactForm, form, event)}` (import `onInvalid` from `@rivetjs/forms`). The browser's own check stops the very first submit before `onSubmit` runs; with this handler the library shows its messages for that attempt too, instead of the browser's bubbles.
 
 `name` values are typed: `fieldId(form, "emial")` is a TypeScript error.

@@ -17,7 +17,7 @@ There is no error message for this one. After a library or your own code changes
 
 Rivet requires untampered JavaScript built-ins after startup, the same rule React and Solid follow. "Built-ins" are the objects JavaScript itself provides: `Object`, `Array`, `Promise`, `Map`, `WeakMap`, their prototypes and methods.
 
-The server renderer relies on these behaving as the language standard says. Checking them on every render would make rendering slower: Rivet measured guards like that and found they cost about 20% of the rendering CPU time per list row. So Rivet does not check. It trusts the built-ins instead.
+The server renderer relies on these behaving as the language standard says. Rivet does not check their identity on every render. It trusts the built-ins instead.
 
 ## Fix
 

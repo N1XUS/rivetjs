@@ -9,7 +9,7 @@ related: [guides/routing/links-and-navigation, guides/performance/preloading, re
 
 Links that load a whole new document (a docs site, a blog, a page outside your app's routes) start that load before the click. When the pointer rests on a link, the browser fetches the next page. The click then shows a page that is already there.
 
-In Chromium, with the next page 100 ms away, the time from click to the next page's first paint drops from about 115 ms to about 15 ms once the pointer has rested on the link for 300 ms.
+The benefit depends on network latency, cache headers and how much of the next page arrives before the click. Measure click-to-paint with your production build.
 
 ## How it works
 
@@ -65,7 +65,7 @@ The Rivet docs use `document` for the side navigation and links in the text, and
 ### 4. What the browser does
 
 - **Chromium (Chrome, Edge).** Every page gets a `<script type="speculationrules">` with rules for the marked links, with `moderate` eagerness by default. The browser starts the fetch when the pointer rests on a link for about 200 ms, or on pointer down. `rivetRouter({ prefetchEagerness })` changes this (see Variations). It also limits how many pages it keeps, and drops unused ones after about five minutes. No JavaScript runs for this, and links added later are covered too.
-- **Other browsers.** A small inline script (about 1.4 kB, plus the route pattern) fetches the page when the pointer rests on a link for 65 ms (cancelled if it leaves earlier), when the link gets focus, or on touch or pointer down. It uses `<link rel="prefetch">` (Firefox) or `fetch()` with low priority (where `rel="prefetch"` is not supported). Each URL is fetched once. The first time, it checks that the page may be cached (see Cache headers). It does nothing when the visitor turned on Save-Data or is on a 2G connection.
+- **Other browsers.** A small inline script (plus the route pattern) fetches the page when the pointer rests on a link for 65 ms (cancelled if it leaves earlier), when the link gets focus, or on touch or pointer down. It uses `<link rel="prefetch">` (Firefox) or `fetch()` with low priority (where `rel="prefetch"` is not supported). Each URL is fetched once. The first time, it checks that the page may be cached (see Cache headers). It does nothing when the visitor turned on Save-Data or is on a 2G connection.
 
 The script has no imports and does not start the Rivet runtime, so it works on resumed pages as they are.
 
@@ -99,7 +99,7 @@ Each prefetch is a full page request. A visitor who moves the pointer over ten l
   rivetRouter({ prefetch: "document", prefetchEagerness: "conservative" });
   ```
 
-- **Reload links only.** In a client-routed app every page carries a pattern of all route paths, so links that no route matches load a document too. When every document link is a `reload` link (a docs site, for example), `rivetRouter({ prefetchPaths: false })` drops that pattern: only `reload` and `rel="external"` links are prefetched, and each page is smaller (about 7.7 KB uncompressed on the Rivet docs).
+- **Reload links only.** In a client-routed app every page carries a pattern of all route paths, so links that no route matches load a document too. When every document link is a `reload` link (a docs site, for example), `rivetRouter({ prefetchPaths: false })` drops that pattern: only `reload` and `rel="external"` links are prefetched, and each page omits that route-pattern payload.
 
   ```ts
   import { rivetRouter } from "@rivetjs/router/vite";
@@ -122,4 +122,4 @@ Each prefetch is a full page request. A visitor who moves the pointer over ten l
   `whenActivated(fn)` runs `fn` at once, or, on a page that is being prerendered (`document.prerendering`), on its `prerenderingchange` event. The router's own `onNavigate` and `rivet:navigate` fire only for client navigations, so they never fire in a hidden prerendered page. See the [analytics page views](./analytics-page-views.md) recipe.
 - **Side effects on load.** Code that runs when a page loads (an effect that marks a message read, a counter) also runs for prerendered pages. Use `whenActivated` there too, or use `document` instead of `prerender`.
 - **One URL, two kinds of links.** Chromium starts the prefetch for a URL when the pointer rests on any link to that URL. A client-routed link to the same URL as a `reload` link also starts it.
-- **Safari.** Safari 26 reports support for speculation rules, so the fallback stays off there, but in our tests it did not prefetch documents yet.
+- **Support detection.** A browser that reports speculation-rules support does not get the script fallback. Check actual document requests in the browsers you support.

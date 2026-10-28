@@ -21,7 +21,7 @@ export default defineConfig({
 
 | Mode | HTML is made | Needs a server at runtime | Resumes | Starter |
 | --- | --- | --- | --- | --- |
-| `server` (default) | for each request | yes (Node.js) | yes | `starter-server` |
+| `server` (default) | for each request | yes (a supported server adapter) | yes | `starter-server` |
 | `static` | once, at build time | no (any static host) | yes | `starter-static` |
 | `csr` | in the browser | no | no | — |
 
@@ -38,7 +38,7 @@ const serving = await start({ dist: "dist", port: 3000 });
 closeOnSignals(serving);
 ```
 
-The server sends the HTML as a stream: the browser can start showing the top of the page while the rest is still being made. Parts that wait for data inside an `Async` boundary can be streamed later with `start({ stream: { deadline } })`. See [streaming](../guides/performance/streaming.md).
+The Node adapter buffers HTML by default. Enable `start({ stream: {} })` to stream pending `Async` boundaries; an optional `deadline` hands unfinished work to the browser. Fetch adapters return the renderer's stream. See [streaming](../guides/performance/streaming.md).
 
 Use it for: apps with logins, per-user pages, forms that save data, content that changes often.
 
@@ -52,12 +52,12 @@ vite build && vite build --ssr && node prerender.js
 
 `prerender.js` calls `prerenderBuild({ dist: "dist" })` from `@rivetjs/router/static`. It writes `index.html` and a `_data.json` file per page into `dist/client`, plus `404.html`. Upload that folder to any static host.
 
-A page with nothing to resume (no handlers, signals, client effects or forms) ships no JavaScript, and its links load documents. When no page resumes, there are no `_data.json` files either. See [pages without JavaScript](../guides/deploy/static-hosts.md#pages-without-javascript).
+A page with nothing to resume (no client behavior that needs code) ships no JavaScript, and its links load documents. When no page resumes, there are no `_data.json` files either. See [pages without JavaScript](../guides/deploy/static-hosts.md#pages-without-javascript).
 
 Server code still works, but it runs at build time:
 
 - `load(…)` runs once per page during the build. Its result is saved into the page.
-- A page with a parameter, such as `src/routes/books/[id].tsx`, needs a `entries(…)` export. It returns the list of parameter values to build:
+- A page with a parameter, such as `src/routes/books/[id].tsx`, needs an `entries(…)` export. It returns the list of parameter values to build:
 
 ```tsx title="src/routes/books/[id].tsx"
 import type { PageProps, RequestEvent } from "@rivetjs/router";

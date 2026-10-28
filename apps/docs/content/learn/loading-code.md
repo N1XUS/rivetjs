@@ -43,7 +43,7 @@ A `clientEvent` without `when` wakes its component when the browser is idle: a l
 
 The loader fetches ahead only when the browser reports neither Save-Data nor a 2G connection, and not on [lean pages](../guides/performance/preloading.md#lean-pages) or with `preload: { ahead: "intent" }` ([change the timing](../guides/performance/preloading.md#change-the-timing)); then it fetches on intent.
 
-A `clientEffect` or `clientOnly` part with `when: "load" | "idle" | "visible"` wakes its component at that moment instead of on first use.
+`clientOnly` supports `when: "load" | "idle" | "visible"`. `clientEffect` can wake at idle or near the viewport; its `"load"` value also schedules idle startup. See [effect timing](../guides/state/effects.md#choose-when-it-starts).
 
 ## Change the timing
 

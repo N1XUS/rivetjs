@@ -59,7 +59,7 @@ export default function Todos() {
 }
 ```
 
-`For` takes three things, plus one option:
+`For` takes three things:
 
 | Prop | What it is |
 | --- | --- |
@@ -134,7 +134,7 @@ import { For } from "@rivetjs/runtime/dom";
 </For>
 ```
 
-On a resumed page, the items go into the page data (as the component's props or route data), so they must be :term[serializable]{id=serializable}: plain objects, arrays, strings, numbers.
+Keep saved list state as plain data. Signal records use JSON data; route loader data has its own richer encoding. Eligible keyed lists read their items back from the rendered rows instead of sending them twice. Lists built locally are rebuilt by the component during adoption; there is no handler capture rule for row values. See [lists on resumed pages](../../learn/resuming.md#lists).
 
 ## Animate rows in and out
 

@@ -86,7 +86,7 @@ So in a normal handler you do not need `batch`:
 Chrome holds back the next frame for about 25 to 45 ms when the first mouse click in a tab changes the page during its click event. To avoid that wait, Rivet updates the page for that one click in the next task instead of at the end of the handler:
 
 - The handler itself still runs during the click. `preventDefault()`, `stopPropagation()` and signal writes happen right away, and signal reads see the new values.
-- Only the page update (effects and DOM bindings) waits, for one task. In Chrome the click then paints after about 13 ms instead of about 45 ms.
+- Only the page update (effects and DOM bindings) waits, for one task. The [2026-10-07 investigation](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-07-speed-round.md) records the browser behavior and measured ranges; the timing is not a fixed runtime guarantee.
 - It applies to the first trusted mouse click per page whose handler changes a signal. Later clicks, keyboard presses, touch taps and events you dispatch yourself (`el.click()`, testing libraries) update the page before the handler returns, as above.
 - The waiting update never reorders: the next event, `batch`, or signal write outside a batch applies it first.
 

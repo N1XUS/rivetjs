@@ -65,7 +65,7 @@ related: [guides/motion/index, guides/motion/presence, guides/motion/layout, gui
 
 ## animate
 
-`animate(target, keyframes, options?)` and `animate(sequence, options?)`: Motion's hybrid `animate` (about 18 KB). Targets: an element, a selector, a `ref()`, an accessor, or an array of them. Browser only: call it in an event handler or a `clientEffect`; on the server it reports an error in development and does nothing in production.
+`animate(target, keyframes, options?)` and `animate(sequence, options?)`: Motion's hybrid `animate`. Targets: an element, a selector, a `ref()`, an accessor, or an array of them. Browser only: call it in an event handler or a `clientEffect`; on the server it reports an error in development and does nothing in production.
 
 ## Scroll, in-view, reduced motion
 

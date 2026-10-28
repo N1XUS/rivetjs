@@ -143,13 +143,15 @@ let input!: HTMLInputElement;
 
 The `!` after `input` tells TypeScript that the variable is set before you use it.
 
-`clientEvent` accepts a variable bound this way as its target. Use it for events that have no JSX attribute, or when you need options like `passive`:
+Attach a listener after the ref is filled, inside `clientEffect`. Calling `clientEvent(box, …)` before returning the JSX would pass `undefined`. Use it for events that have no JSX attribute, or when you need options like `passive`:
 
 ```tsx
-import { clientEvent } from "@rivetjs/runtime/dom";
+import { clientEffect, clientEvent } from "@rivetjs/runtime/dom";
 
 let box!: HTMLDivElement;
-clientEvent(box, "pointermove", (event: PointerEvent) => x.set(event.offsetX), { passive: true });
+clientEffect(() => {
+  clientEvent(box, "pointermove", (event: PointerEvent) => x.set(event.offsetX), { passive: true });
+});
 // ...
 <div ref={(el) => (box = el)} class="h-32 bg-slate-100" />;
 ```

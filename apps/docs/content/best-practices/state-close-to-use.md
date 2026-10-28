@@ -13,7 +13,7 @@ In Rivet, the browser runs a component only when it is used. It picks up where t
 
 - **Less data in the page.** A signal is written into the page with the component that created it, when that component is interactive. A signal in a small component travels with that small component only.
 - **Smaller updates.** When a signal changes, Rivet updates the parts that read it. If a large parent reads it in a JSX expression (`{open() ? <Panel /> : null}`), the whole expression is rebuilt. Read it deep in the tree and only that small part changes.
-- **Less code sent.** A click runs the code of the component it lands in. A signal read deep in a small component wakes up only that small component, not the page around it.
+- **Less code sent.** A click runs the code of the component it lands in. An independent component proven to need no ancestor context can wake alone. Context or non-data props can also require its ancestors to adopt.
 - **Easier to read.** The state and the code that changes it sit in one file.
 
 ## Do

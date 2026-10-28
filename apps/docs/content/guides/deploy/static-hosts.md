@@ -6,7 +6,7 @@ status: experimental
 related: [guides/deploy/node, guides/routing/loading-data, guides/security/csp, guides/routing/params]
 ---
 
-A static site needs no server of its own. At build time, Rivet renders every page to an HTML file. You upload the folder to any static host or CDN. The pages still resume in the browser: buttons and other interactive parts work without running your components again.
+A static site needs no server of its own. At build time, Rivet renders every page to an HTML file. You upload the folder to any static host or CDN. The pages still resume in the browser: buttons and other interactive parts adopt their server HTML when needed, without running the whole app on load.
 
 After reading this page you can build a static site, choose which pages to :term[prerender]{id=prerender}, preview it and deploy it.
 
@@ -94,9 +94,9 @@ execSync(`node -e "import('@rivetjs/router/static').then((m) => m.planCoload({ d
 execSync("vite build && node prerender.js", { env, stdio: "inherit" });
 ```
 
-With `RIVET_COLOAD` set, the browser build records its chunks there, and the second build applies the `plan.json` that `planCoload` wrote. A chunk joins a group only when every page that loads it before input loads the others too, and when no page reaches one without the others later on. So no page loads more code than before, and there are fewer files to fetch. The docs sites build this way: on the UI docs, pages over 100 KB of JavaScript load 3.5 % less.
+With `RIVET_COLOAD` set, the browser build records its chunks there, and the second build applies the `plan.json` that `planCoload` wrote. A chunk joins a group only when every page that loads it before input loads the others too, and when no page reaches one without the others later on. So no page loads more code than before, and there are fewer files to fetch. The docs sites use this two-pass build. Measure your own output to see the effect.
 
-The first build also records which components get both a `class` and a slot class (for example `classNames.base`) from some caller. In the second build, a `@rivetjs/ui` component that joins the two no longer loads `tailwind-merge` when no caller passes both. On the UI docs this takes 10 KB off each Scheduler page.
+The first build also records which components get both a `class` and a slot class (for example `classNames.base`) from some caller. In the second build, a `@rivetjs/ui` component that joins the two no longer loads `tailwind-merge` when no caller passes both. The saving depends on the components and overrides in the app.
 
 ## Site origin
 

@@ -37,7 +37,7 @@ On a server-rendered page, the component function runs on the server to produce 
 
 What this means for your code:
 
-- Code at the top of a component is server code. A `console.log` there prints in the terminal, not in the browser console.
+- Code at the top of a component runs on the server and can run again when the browser adopts it. A `console.log` there can print in both places; it does not run on each signal update.
 - Browser globals like `window` and `document` are not available there. The compiler stops with ``Browser global `document` is read during server rendering``. See [browser-only code](./browser-only.md).
 - A component runs in the browser only when it is used, from the signal values and props the server wrote into the page. See [resuming](/learn/resuming.md).
 
@@ -55,7 +55,7 @@ Spread works on components and elements. `<Card a={1} {...rest} />` builds one p
 
 ## Props are live
 
-Props update the child when the parent's value changes. The compiler turns a prop that reads a signal into a getter, so a binding that reads `props.name` tracks the signal itself. The component function does not run again; only the bindings that read the prop re-run:
+Props stay live when the caller passes a reactive value, such as `count={messages()}`. Passing a literal or a previously read snapshot does not make it reactive. The compiler turns a prop that reads a signal into a getter, so a binding that reads `props.name` tracks the signal itself. The component function does not run again; only the bindings that read the prop re-run:
 
 ::example{id=component-props}
 
@@ -83,7 +83,7 @@ Rules:
 - **JSX spreads stay live, object spreads do not.** `<button {...props} />` and `<Card {...props} />` follow later changes. A JavaScript object spread (`const copy = { ...props }`, `Object.assign`) reads every getter once. Use `mergeProps` and `splitProps` to combine or split props without reading them.
 - **Accessor props still work.** A prop typed `() => number` (`count={messages}`) is just a function the child calls. Use it for values the child also writes (`Signal<number>`), or when you want an explicit accessor.
 - **Getters re-run on every read.** A prop holding JSX (`icon={<Star />}`) creates new nodes each time the child reads it. Read it once, or pass a render function.
-- **Resumed pages.** On a page the server rendered, a changing prop updates the child's server-rendered nodes in place wherever the child reads `props.x` (`{props.count}`, `title={props.label}`, `{format(props.count)}`): the child is not created again. In two cases the child is still re-created on the first change, and its local signals start again from their initial values: the child destructures its props (`function Badge({ count })`), or it copies them through a helper. After that first change, the child follows every later change.
+- **Resumed pages.** The parent rebuilds live getters when it adopts, and the child reads those getters as in a client render. Destructuring or copying a prop still reads it once; resuming does not make that snapshot reactive. Use `props.count` in the binding that should update.
 
 ```tsx
 import { mergeProps, splitProps } from "@rivetjs/runtime/props";
@@ -119,7 +119,7 @@ export function Card(props: { title: string; children?: Content }) {
 </Card>
 ```
 
-A function child renders lazily and follows the signals its body reads, also on a resumed page: `<Card title="Cart">{() => <p>{items().length} items</p>}</Card>`. Render it with `{props.children}` directly; a copy in a local variable (`const content = props.children`) is not tracked on resumed pages yet.
+A function child renders lazily and follows the signals its body reads, also on a resumed page: `<Card title="Cart">{() => <p>{items().length} items</p>}</Card>`. Render it with `{props.children}` directly. Copying a getter into a local variable reads that getter once; the function itself still tracks signal reads when rendered.
 
 For several places for content (a header, a footer, a template per row), use [slots](./slots.md).
 

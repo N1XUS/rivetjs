@@ -63,13 +63,14 @@ import { clientEffect } from "@rivetjs/runtime/dom";
 
 type Policy = { createHTML(value: string): string };
 type TrustedTypes = { createPolicy(name: string, rules: Policy): Policy };
+let articlePolicy: Policy | undefined;
 
 export function Article(props: { html: string }) {
   let box!: HTMLDivElement;
   clientEffect(() => {
     // Only for HTML you have cleaned (sanitized) on the server.
     const tt = (window as unknown as { trustedTypes?: TrustedTypes }).trustedTypes;
-    const policy = tt?.createPolicy("article", { createHTML: (value) => value });
+    const policy = (articlePolicy ??= tt?.createPolicy("article", { createHTML: (value) => value }));
     box.innerHTML = policy ? policy.createHTML(props.html) : props.html;
   });
   return <div ref={(el) => (box = el)} />;

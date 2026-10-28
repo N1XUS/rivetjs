@@ -56,7 +56,7 @@ import { Link } from "@rivetjs/router/link";
 <Link to="/">Home</Link>;
 <Link to={`/items/${item.id}`} pending="opacity-60">{item.title}</Link>;
 <Link to="/settings" replace prefetch="none">Settings</Link>;
-<Link to="/export.csv">Download CSV</Link>;
+<a href="/export.csv" download>Download CSV</a>;
 <Link to="/account" reload>Account</Link>;
 ```
 
@@ -218,14 +218,14 @@ import { clientEvent } from "@rivetjs/runtime/dom";
 
 export default function Editor() {
   const dirty = signal(false);
-  // To cancel, the handler must run at once: load its code with the page ("eager").
+  // Wake on load so this document listener attaches early.
   clientEvent(
     document,
     "rivet:navigate",
     (event: Event) => {
       if (dirty() && !confirm("Leave without saving?")) event.preventDefault();
     },
-    { preload: "eager" },
+    { when: "load" },
   );
   return <textarea onInput={() => dirty.set(true)} />;
 }
@@ -252,7 +252,7 @@ The home page `/` never changes.
 ## Common mistakes
 
 - **A `<button>` with `onClick` that changes the URL.** Use a link. Links work without JavaScript, can open in a new tab, and are followed by search engines. See [links and forms without JavaScript](/best-practices/links-and-forms-without-js.md).
-- **Expecting state in a nested layout or page to survive a click.** Only the root layout stays mounted. See [layouts](./layouts.md#root-layout-state-survives-navigation).
+- **Expecting page state to survive every navigation.** Shared layouts stay mounted, including nested layouts; ordinary pages render again. Use a live page for in-place data refreshes. See [layouts](./layouts.md#root-layout-state-survives-navigation).
 - **Plain links without the base path.** Under `rivetRouter({ base })`, `<a href="/about">` leaves the app. Use `<Link to="/about">` or `href={withBase("/about")}`.
 - **Reading `useSearchParams()` in a handler.** Call it while the component is set up and keep the function; read `search()` in the handler or binding.
 - **Calling `navigate()` with the URL of an endpoint or a page outside the app.** `navigate()` always renders through the router and shows your 404 page. Use a link, or `location.assign(url)`.

@@ -133,7 +133,7 @@ The same check runs for every `POST`, `PUT`, `PATCH` and `DELETE` request, on pa
 - File inputs need `enctype="multipart/form-data"` on the form; `form.get("file")` is then a `File`.
 
 :::warning
-The router does not limit the size of request bodies. Check `File.size` and text lengths in your action and set a body size limit in your proxy, or use the forms library's `action()`, which caps body size.
+The adapters limit unsafe-method bodies to 1 MiB by default, or 10 MiB for multipart data (`maxBody` changes this). Check `File.size` and field lengths in your action too; the forms library's `action()` adds its own limits. See [Node options](../deploy/node.md#options).
 :::
 
 ## Confirm before deleting

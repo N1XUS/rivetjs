@@ -42,7 +42,7 @@ See also [Editor setup](../../start/editor-setup.md).
 
 ### Run Vite once
 
-Some features need information that only the build knows: which modules resume, your preload rules and your routes. The Vite plugins write it to `.rivet/editor.json` every time `vite` or `vite build` runs. Without that file, the compiler checks still run, but in plain mode, and route features are off.
+Some features need information that only the build knows: which modules resume and your routes. The Vite plugins write it to `.rivet/editor.json` every time `vite` or `vite build` runs. Without that file, the compiler checks still run, but in plain mode, and route features are off.
 
 Route types in `.rivet/routes.d.ts` also come from Vite. The editor never generates them.
 
@@ -64,6 +64,7 @@ export default function Page() {
 - A browser global read during server rendering ([RV2001](../../errors/RV2001.md)): wrap it in `clientEffect(() => { … })` and add the import.
 - An invalid `preload` value ([RV1102](../../errors/RV1102.md)): replace it with the closest valid one.
 - Children inside a void element like `<input>` ([RV1008](../../errors/RV1008.md)) or a `<textarea>` with `model:value` ([RV1009](../../errors/RV1009.md)): make it self-closing.
+- A signal self-write in an effect: use `.update` to avoid subscribing to the value being written. This language-service warning still runs with `--no-types`; writes inside a computed value have no automatic fix.
 - A handler expression that reads state when it binds ([RV1016](../../errors/RV1016.md)): wrap it in an arrow.
 - A namespace import of a target helper ([RV3002](../../errors/RV3002.md)): import the helper as a named binding.
 
@@ -77,7 +78,7 @@ On a resumed page, only some code runs in the browser. The language service show
 
 ### Preload values
 
-The `preload="…"` attribute is typed as `eager | idle | visible | intent | interaction`, so the editor completes and checks it.
+The `preload="…"` attribute is typed as `eager | idle | visible | intent | interaction`, so the editor completes and checks it. These values have no effect on derived loading; use the server's [preload options](../performance/preloading.md).
 
 ### Route links
 

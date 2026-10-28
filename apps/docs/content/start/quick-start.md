@@ -133,7 +133,7 @@ Open the preview address and the browser's developer tools, on the Network tab:
 2. Look at the scripts. After the page has loaded, a few files arrive at low priority: the page's own code and the part of the Rivet runtime it needs (the names depend on the page: a small page like this one gets `dom-lite-….js`, larger ones `derived-runtime-….js` and `dom-derived-abi-….js`). They are fetched ahead, but none of it runs yet.
 3. Click the button. The runtime starts, adopts the counter's existing button, and the click reaches its handler: the count goes up.
 
-Nothing ran in the browser until you used the page, and the click reused the server's nodes instead of rendering new ones. [Resuming](../learn/resuming.md) explains how.
+The inline loader ran on load, but the counter's code waited until you used it. The click reused the server's nodes instead of rendering new ones. [Resuming](../learn/resuming.md) explains how.
 
 ## Starters
 

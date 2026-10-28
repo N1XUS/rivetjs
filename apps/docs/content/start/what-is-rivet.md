@@ -61,10 +61,10 @@ For the counter above, the flow looks like this:
 
 Writing for Rivet feels like writing for other JSX frameworks, with a few rules that follow from "components run on the server, and in the browser only when used":
 
-- Code at the top of a component runs on the server only. Put browser work in event handlers or in `clientEffect`. See [browser-only code](../guides/components/browser-only.md).
+- Code at the top of a component runs on the server and again when the browser adopts it. Keep rendering deterministic, and put browser work in event handlers or in `clientEffect`. See [browser-only code](../guides/components/browser-only.md).
 - Handlers are not sent as data: the browser runs a component's code again when it wakes up, so a handler can use any value of its component. What is written into the page is data: signal values, plain-data props and route data. See [what reaches the browser](../learn/resuming.md#what-reaches-the-browser) and [function is not serializable](../gotchas/function-is-not-serializable.md).
 - Browser globals such as `window` and `document` are only available inside handlers and client effects. The compiler stops the build if you read them during server rendering.
-- The dev server resumes pages like production until you edit a file; then the page renders in the browser so hot reload can keep state. See [dev and production differ](../gotchas/dev-and-production-differ.md).
+- The dev server resumes pages like production; editing a resumed component reloads the page. Set `dev: { resume: false }` for client rendering with hot reload that keeps state. See [dev and production differ](../gotchas/dev-and-production-differ.md).
 
 ## Alpha status
 

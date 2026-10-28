@@ -6,7 +6,7 @@ status: experimental
 related: [learn/server-first, learn/loading-code, learn/signals, gotchas/component-did-not-run-again]
 ---
 
-Resuming means the browser picks up where the server left off. The server renders the page and writes down the little the browser will need later. The browser runs nothing on load; when you use a part of the page, it runs that part's code over the HTML that is already there. The glossary calls this :term[resumability]{id=resumability}.
+Resuming means the browser picks up where the server left off. The server renders the page and writes down the little the browser will need later. Without startup triggers, component execution waits until an event or state change needs it; the browser then runs that part's code over the HTML that is already there. The glossary calls this :term[resumability]{id=resumability}.
 
 ## What it is
 
@@ -15,7 +15,7 @@ Think of a board game you pause. You do not replay every move to continue tomorr
 A Rivet page works the same way:
 
 - The **server** runs your components once and writes the HTML. For each component that can react to input (it has a handler, reads a signal in its markup, or uses an effect), it also writes a short record: where the component is in the page, the values of the signals it created, and, when its props are plain data, those props.
-- The **browser** gets the HTML, those records and a small loader script (about 1.1 KB compressed). When you use the page, it loads the code of the component you touched and of the components around it that have not run yet, and runs them over the existing HTML, starting from the recorded values.
+- The **browser** gets the HTML, those records and a small loader script when the page needs JavaScript. When you use the page, it loads the code of the component you touched and of the components around it that have not run yet, and runs them over the existing HTML, starting from the recorded values.
 
 ## Why it matters
 
@@ -23,9 +23,9 @@ The common alternative is :term[hydration]{id=hydration}: the browser downloads 
 
 With resuming:
 
-- **The browser runs none of your component code on load.** A page that only shows content stays HTML and CSS, plus the loader. (With file routes, the router's code also loads after the page appears.)
-- **Work grows with what you use, not with page size.** A component with plain-data props waits for its own first use: a card that nobody touches never runs. The first event still runs the components around the one you touched (their handlers may see the event bubble): with file routes, the router's root, the layouts and the page, together with the components that run with them.
-- **The first click is fast.** After the page has loaded, the loader fetches the page's code at low priority without running it, and it starts loading a component's code when you point at or focus it.
+- **Static pages ship no JavaScript.** With the default `clientRouter: false`, a page with nothing to resume needs no boundary records, loader or runtime. Interactive components wait for an event, state change or configured startup trigger.
+- **Work grows with what you use, not with page size.** A component with plain-data props waits for its own first use: a card that nobody touches never runs. An independent boundary whose call site is proven to need no ancestor context can adopt alone. Other boundaries also run the ancestors needed for context, props and event handling; this can include the router root, layouts and page.
+- **Code can arrive before the first click.** By default, the loader fetches the page's code at idle without running it and raises fetch priority on intent. Lean pages, Save-Data and slow connections skip idle fetch-ahead; see [preloading](../guides/performance/preloading.md).
 
 ## How it works
 
@@ -53,7 +53,9 @@ A component whose subtree has nothing interactive gets no record and never runs 
 - a change of a signal it read on the server (another component writes it),
 - its trigger: a [`clientEffect`](../guides/state/effects.md#choose-when-it-starts) or `clientOnly` part with `when: "load" | "idle" | "visible"`.
 
-**Props decide who runs together.** A component whose props are plain data (strings, numbers, plain objects and arrays, dates, `Map` / `Set`, signals of its parent) waits for its own first use: its props are in its record. A component that gets a function, a JSX child with handlers or a value that is not data runs together with its parent, which passes it the real values. Passing plain data is what keeps the browser's work small.
+**Props decide who runs together.** Plain JSON props can be recorded for an independent component. Passing a reactive value keeps the prop live; it does not turn the signal function into JSON. Route payloads have a separate encoder for richer values (below). A component that gets a function, a JSX child with handlers or a value that is not data runs together with its parent, which passes it the real values. Passing plain data is what keeps the browser's work small.
+
+**Native controls need no resume code when the build proves their state is local.** Eligible switch, checkbox, accordion and button-family uses compile to native inputs, `<details>` or buttons with CSS state. Their native interaction works without loading Rivet. A live prop, callback or unsupported use keeps the component path.
 
 **Nodes stay where they are.** The browser walks the server's nodes instead of creating new ones, so focus, typed text, selection and scroll position survive. While a component first runs over them it writes nothing a node already holds: an `<iframe>` keeps its `src` (no reload), a `<details>` the visitor opened stays open, a picked radio stays picked. A press on an element whose code is still loading is held and replayed once it runs, with the focus a loaded page would have seen.
 
@@ -73,9 +75,9 @@ A build step that rewrites static text into richer markup after rendering (synta
 
 The page carries values, never code:
 
-- **Signal values** of the components that wake up. A signal created by a component holds data the browser can read back: strings, numbers, booleans, `null`, plain objects and arrays, `Date`, `Map`, `Set`, `URL`, `bigint`, typed arrays. A signal holding something else (a function, a class instance) starts again from its initial value in the browser.
+- **Signal values** of the components that wake up. A signal created by a component holds data the browser can read back: strings, finite numbers, booleans, `null`, and plain objects and arrays containing those values. These records use plain JSON data, not the route-data encoder. A signal holding something else (`Date`, `Map`, a function or a class instance) starts again from its initializer in the browser; keep a timestamp or other plain data when the exact server value must survive.
 - **Props** of components whose props are plain data.
-- **Route data**: with file routes, the page's root component gets the route's loader data as props, so the browser rebuilds the router and the current page from it without a data request. Loader data may hold values JSON cannot (a `Date`, a `Map`, a `Set`, a `BigInt`, a `URL`, shared objects); they arrive as the same values. A value Rivet cannot send (a function, a symbol, a promise, an instance of an unregistered class) prints a warning ([RV2107](../errors/RV2107.md)), and the page then renders in the browser instead of resuming.
+- **Route data**: with file routes, the page's root component gets the route's loader data as props, so the browser rebuilds the router and the current page from it without a data request. Loader data may hold values JSON cannot (a `Date`, a `Map`, a `Set`, a `BigInt`, a `URL`, shared objects); they arrive as the same values. A value Rivet cannot send (a function, a symbol, a promise, an instance of an unregistered class) prints a warning ([RV2107](../errors/RV2107.md)), and the affected root cannot resume from that payload. Return supported data instead; the warning does not promise an automatic client render.
 
 Functions and objects your components build are not sent: the browser builds them again when it runs the component. A handler can use any value of its component, a library object created in the render included, because the browser has the real one.
 
@@ -103,7 +105,7 @@ A keyed [`<For each={…} by={…}>`](../guides/components/lists.md) sends its i
 
 ### Data from the page
 
-The items of a `<For>` over a component's data props (a route's loader rows) are left out of the page when every value the rows show is the item's: the browser reads them back from the rows the page shows, the first time code uses them, and the rest in short idle slices after it starts. On by default: on a 1,000-row page the resume data goes from 8.5 KB to 0.3 KB brotli and the server spends less time per page, while the first click costs a few milliseconds more at 4× CPU slowdown (the rows are found and read in the browser). An app with no such list ships none of this code. To send the items with the props instead, turn it off with `resume: { domData: false }` on `rivetRouter(…)` (or `rivet(…)`):
+The items of a `<For>` over a component's data props (a route's loader rows) are left out of the page when every value the rows show is the item's: the browser reads them back from the rows the page shows, the first time code uses them, and the rest in short idle slices after it starts. This is on by default. It trades less data in the HTML for work finding and reading rows in the browser. An app with no such list ships none of this code. To send the items with the props instead, turn it off with `resume: { domData: false }` on `rivetRouter(…)` (or `rivet(…)`):
 
 ```ts
 // vite.config.ts
@@ -134,9 +136,9 @@ export default defineConfig({
 
 ## What it means for your code
 
-- **The component body runs on the server, and again in the browser when the component wakes up.** It never runs on load. A `console.log` there prints in the terminal, and in the browser console once the component is used. See [component did not run again](../gotchas/component-did-not-run-again.md).
+- **The component body runs on the server, and again in the browser when the component wakes up.** A startup trigger can wake it before input. A `console.log` there prints in the terminal, and in the browser console when the component adopts. See [component did not run again](../gotchas/component-did-not-run-again.md).
 - **Write browser behaviour as handlers or client effects.** `onClick`, `onInput`, `onSubmit`, `clientEffect` and `clientEvent` are the places where code runs in the browser on its own schedule.
-- **Pass data, not services.** A component with plain-data props wakes up alone; a function or service prop makes it run with its parent. See [pass data, not services](../best-practices/pass-data-not-services.md).
+- **Pass data, not services.** Plain-data props allow an independent record; ancestor context can still require parent adoption. A function or service prop makes the child run with its parent. See [pass data, not services](../best-practices/pass-data-not-services.md).
 - **Props are live when the caller passes a reactive value; literals are static.** A component counts as able to react to input when it has its own handler, client effect or event, its own signal, store or resource, reads module state (a signal or store from another module; a module constant holding a literal table or an imported asset is data), or renders such a component. A handler that may be absent (`onScroll={track ? sync : undefined}`, a forwarded `props.onSelect`) counts per use: only a use that gets a function is picked up. A component that only shows its props or a context value counts only when what flows in can change: a caller passes it a function, a signal's value, or a prop the caller itself gets live, or the provider of the context it reads is such a component. Each use is decided on the server: a use where nothing that flows in can change leaves nothing for the browser. `<Meter color="success" value={40}>` ships no JavaScript and is never picked up in the browser; `<Meter value={level()}>` inside a component with a `level` signal is picked up with that component.
 - **Keep state in signals.** A value the browser must see as the server had it (a time, a random pick, a value a request produced) belongs in a signal created by the component.
 - **Components outside `src/routes` resume too.** `rivetRouter` resumes every `.tsx`/`.jsx` component file in your project that a route imports; no list needed. To opt out, set `resume: { appModules: false }` and list files in `resume.modules`.

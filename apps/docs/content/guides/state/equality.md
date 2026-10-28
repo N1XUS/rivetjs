@@ -76,23 +76,20 @@ When `score` goes from 3 to 4, `level` computes again, gets `0` again, and nothi
 
 ## In a resumed page
 
-The comparison must also work in the browser, after the page resumes. Rivet can carry it over when the compiler can see the function:
+The component builds its comparator again when it adopts in the browser. There is no comparator serialization rule: an inline function, a named function and an options object built by a helper all work. Keep the options deterministic so server and browser use the same comparison.
 
-```ts
+```tsx check
 import { signal } from "@rivetjs/reactivity";
 
-// Works: a function written inside the options.
-signal(item, { equals: (a, b) => a.id === b.id });
+function comparison() {
+  return { equals: (a: { id: number }, b: { id: number }) => a.id === b.id };
+}
 
-// Works: a function from the same component or module.
-signal(item, { equals: sameId });
-
-// Fails: the options object is built at run time.
-const options = makeOptions();
-signal(item, options);
+export function Selection() {
+  const selected = signal({ id: 1 }, comparison());
+  return <button onClick={() => selected.set({ id: 2 })}>{selected().id}</button>;
+}
 ```
-
-The last case fails during the server render with `equals comparator is not resumable`. Write the options object inline in the `signal(...)` or `computed(...)` call.
 
 ## Common mistakes
 

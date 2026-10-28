@@ -7,7 +7,7 @@ related: [guides/state/effects, guides/routing/layouts, guides/performance/prelo
 
 ## What you will build
 
-A small component that reports page views to an analytics service. It sends one view when the page loads and one after each navigation inside the app. The analytics code is a separate file that loads only when the browser has nothing else to do, so it never slows down the first paint or the first click.
+A small component that reports page views to an analytics service. It sends one view when the page loads and one after each navigation inside the app. The analytics code is a separate file imported by an idle effect. It still uses network and main-thread time; measure its cost in a production build.
 
 The example uses a stand-in instead of a real service and shows what it sent.
 
@@ -69,7 +69,7 @@ export function pageView(path: string) {
 }
 ```
 
-`sendBeacon` delivers the request even if the user leaves the page right away. The `/api/views` URL can be a Rivet [endpoint](/guides/routing/endpoints.md): a plain `.ts` file with an `onPost(…)` export.
+`sendBeacon` queues the request for delivery, including during navigation; it does not guarantee delivery. The `/api/views` URL can be a Rivet [endpoint](/guides/routing/endpoints.md): a plain `.ts` file with an `onPost(…)` export.
 
 ## Variations
 

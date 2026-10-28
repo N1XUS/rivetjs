@@ -32,7 +32,7 @@ export default defineConfig({
 ## Open the panel
 
 - Press :kbd[Alt]+:kbd[Shift]+:kbd[R], or click the round **R** button at the bottom right of the page.
-- Close it with the same keys or the **×** button.
+- Close it with the same keys or the **Close** button.
 - **Pop out** moves the panel into its own window. It stays connected across page reloads.
 
 The panel is also served at `/__rivet/devtools/` under your Vite `base`.
@@ -77,7 +77,7 @@ Double-click a value in any tree to edit it. Pick the type (string, number, bool
 This works inside any value, including `Map` entries, `Set` members, dates, bigints, `undefined` and class instances. Containers have buttons to add and remove items:
 
 - **+ key** on objects, **+ entry** on maps, **+ member** on sets, **+ item** on arrays,
-- **×** next to a row removes it.
+- **Remove** next to a row removes it.
 
 How the write happens:
 
@@ -100,7 +100,7 @@ Overridden rows are marked **overridden** and show the real value next to the **
 
 ### Edit a context value
 
-If a provider supplies a signal (`<Provider context={Theme} value={theme}>`), edit it in **Context provided** and every consumer updates.
+If a provider supplies a signal (`<Provider token={Theme} value={theme}>`), edit it in **Context provided** and every consumer updates.
 
 A plain value is read-only: each consumer reads it once when it is set up, so a change could not reach it. To edit it live, provide a signal.
 
@@ -149,13 +149,13 @@ DevTools finds:
 - **Slow interactions**: clicks and key presses over 200 ms, split into input delay, processing and presentation, with the components that updated while handling them.
 - **Chunks loaded after input**: the files an interaction had to wait for.
 
-The component tree marks components with findings with **⚠** and the reason. Click it to see that component's findings.
+The component tree marks components with findings with a warning indicator and the reason. Click it to see that component's findings.
 
 **Highlight updates by frequency** flashes updated DOM nodes in colors: blue for one update, then green, amber and red for 8 or more updates a second.
 
 ## Resumed pages
 
-Dev pages resume like production pages: the browser does not run the components, so there is nothing to show in the component tree.
+Dev pages resume like production pages: the browser initially leaves the server HTML in place and adopts boundaries as they wake. Full component inspection uses the client-rendered mode below.
 
 DevTools measures first and inspects second:
 

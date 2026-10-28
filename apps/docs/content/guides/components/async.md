@@ -13,6 +13,10 @@ For the main data of a page, use a route [loader](/guides/routing/loading-data.m
 
 ::example{id=async-data}
 
+:::gotcha[Current resume limitation]
+The current derived runtime has a known failure when an adopted async result updates its live DOM range. The `async-data` example is quarantined for this case. Test async updates after the first interaction in a production build.
+:::
+
 ## Load data
 
 Import `Async` from `@rivetjs/runtime/dom`. Give it a `load` function and a child function that renders the result:
@@ -23,7 +27,7 @@ import { Async } from "@rivetjs/runtime/dom";
 export function Weather({ city }: { city: string }) {
   return (
     <Async
-      load={(work) => fetch(`/api/weather?city=${encodeURIComponent(city)}`, { signal: work.signal }).then((res) => res.json())}
+      load={(work) => fetch(`https://api.example.com/weather?city=${encodeURIComponent(city)}`, { signal: work.signal }).then((res) => res.json())}
       fallback={() => <p>Loading the weather…</p>}
       error={() => <p>Could not load the weather.</p>}
     >
@@ -85,7 +89,7 @@ export default function Person() {
 ```
 
 :::note
-Reading the signal inside `load` works too, on client-rendered and server-rendered pages: `load={(work) => fetchPerson(id(), work.signal)}`. Read it before the first `await`; reads after an `await` are not tracked.
+On a client-rendered `Async`, reading the signal inside `load` also tracks it: `load={(work) => fetchPerson(id(), work.signal)}`. On a resumed page, an adopted `Async` uses its saved result and skips `load`, so that read creates no browser subscription. Use the outer expression above to reload after adoption, or use `resource` with a reactive source. Reads after an `await` are never tracked.
 :::
 
 ## Data as a signal: resource
@@ -99,7 +103,7 @@ import { resource, Suspense } from "@rivetjs/runtime/dom";
 function User(props: { id: number }) {
   const user = resource(
     () => props.id,
-    (id, info) => fetch(`/api/users/${id}`, { signal: info.signal }).then((res) => res.json()),
+    (id, info) => fetch(`https://api.example.com/users/${id}`, { signal: info.signal }).then((res) => res.json()),
   );
   return (
     <div>
@@ -130,7 +134,7 @@ export function Profile() {
 - The first argument is the source: a signal read or a value. Each time it changes, the fetcher runs again. The previous load is aborted and a late answer from it is dropped. A source that is `false`, `null` or `undefined` loads nothing. Without a source (`resource((_, info) => …)`), the fetcher gets `true`.
 - The fetcher gets the source value and `info`: the `work` object of `Async` (`signal`, `get`, `run`) plus `info.value` (the previous value) and `info.refetching` (`false` for a source change, the `refetch` argument otherwise).
 - `user()` is the value: `undefined` until the first load is done. It throws the error when the last load failed, so an [error boundary](./error-boundaries.md) catches it.
-- Nothing loads until the resource is first read. It stops with the component that created it.
+- In the browser, the first read or method call starts an unseeded resource; a resumed resource can reuse the server's settled value. It stops with the component that created it.
 
 | Method | What it does |
 | --- | --- |
@@ -147,15 +151,15 @@ Options, as the last argument: `initialValue` (the value before the first load) 
 
 A resource created inside a [`Suspense`](./suspense.md) (in a component rendered there, as `User` above) shows its fallback while it loads, as an `Async` there would. A change made inside `startTransition` keeps the old value on screen until the new one is ready. A resource created outside the `Suspense` does not show its fallback in the browser: check `loading()` instead.
 
-On the server, the fetcher runs once, when the resource is created. A `Suspense` around the parts that read it waits for the load and sends the finished HTML (with streaming: the fallback first, the content later). The browser gets the value with the page and does not load it again; it loads when the source changes or on `refetch`. Read a resource inside a `Suspense`: outside one, the server cannot wait, sends the loading state, and the part reading it loads in the browser after the page starts. With `ssr: false` the server never runs the fetcher, and the browser loads it when the page starts.
+On the server, the fetcher runs once, when the resource is created. A `Suspense` around the parts that read it waits for the load and sends the finished HTML (also when streaming is enabled: `Suspense` is awaited in place on the derived model). The browser gets the value with the page and does not load it again; it loads when the source changes or on `refetch`. Read a resource inside a `Suspense`: outside one, the server cannot wait, sends the loading state, and the part reading it loads in the browser after the page starts. With `ssr: false` the server never runs the fetcher, and the browser loads it when the page starts.
 
 :::note
-Create the resource in the component as the whole value of one `const`, and call its methods on it: `user.refetch()`. The arguments can be anything: arrow functions, functions passed by name (`resource(loadUser)`), `initialValue`, `ssr: false`. A resource inside a `For` row or a `Show` branch works too. These forms work in the browser, but the server cannot hand them to the browser: a destructured resource (`const { refetch } = resource(…)`), a `let`, a resource put straight into JSX or an object, and one created in a helper such as `useUser()`. The compiler warns about them ([RV2016](../../errors/RV2016.md)).
+Create the resource in the component, as in the example above, so its lifetime belongs to that component. Its arguments can be arrow functions, named functions and options such as `initialValue` or `ssr: false`. A resource inside a `For` row or `Show` branch works too. The old restrictions on destructuring, `let` and helper-created resources were part of the serialized model; [RV2016](../../errors/RV2016.md) is retired. Check server-value reuse and reload behavior in the production page when extracting a resource into a helper.
 :::
 
 ## Load a component on demand
 
-`lazyComponent` keeps a component's code out of the code a page needs before its first interaction; the component runs when it is first rendered. Use it for big parts that many visitors never see:
+`lazyComponent` puts a component behind a dynamic import. It runs when first rendered, but the page can fetch its code at idle before any interaction. Use it for big parts that many visitors never see:
 
 ```tsx
 import { lazyComponent } from "@rivetjs/runtime/dom";

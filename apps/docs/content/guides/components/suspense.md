@@ -84,13 +84,13 @@ Following a link is already handled this way by the router: the old page stays u
 ## On the server
 
 - Normal rendering waits for every `Async` inside and sends the finished content. The fallback is not sent.
-- With [streaming](/guides/performance/streaming.md), a `Suspense` with a `fallback` whose parts are still loading sends the fallback first and then all its content in one piece. The parts inside never stream one by one. If nothing inside is loading, the content is sent in place.
-- If the stream ends early or a part fails without an error boundary, the browser loads the `Suspense` again.
+- On the derived resume model, `Suspense` content is awaited in place even when [streaming](/guides/performance/streaming.md) is enabled. Its fallback is a client loading state, not a streamed group. Use `Async` with a fallback outside `Suspense` to stream a part.
+- Settled, supported resource values resume without another fetch. A pending or unsupported value loads in the browser; if it suspends during adoption, the containing boundary renders again in the browser.
 
 ## Limits
 
 - A transition keeps the old content only for an `Async` that loads again in place. A part that is created anew (for example `{card(id())}`, or a new `Show` branch) shows its fallback.
-- On a resumed page, the first change of a part rendered on the server builds it again in the browser, so it shows its fallback once.
+- An adopted `Async` uses its saved result without rerunning `load`, so signal reads inside that skipped load are not subscribed. Re-create the `Async` from an outer reactive expression when it must reload, or use a `resource` with a reactive source. See [Async](./async.md#load-again-when-a-signal-changes).
 
 ## See also
 
