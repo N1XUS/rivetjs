@@ -83,7 +83,7 @@ export async function serveClient(client: string): Promise<{ url: string; close(
   return serve({
     client,
     static: "fs",
-    port: 0,
+    port: Number(process.env.DOCS_KIT_CHECK_PORT ?? 0),
     // A check closing its page while a prefetch is in flight: the file stream finds the response gone.
     onError: (error) => {
       if ((error as { code?: string } | null)?.code !== "ERR_STREAM_UNABLE_TO_PIPE") console.error(error);
@@ -326,7 +326,8 @@ export async function run(page: import("playwright").Page, step: Step, id: strin
   try {
     const target = "click" in step ? step.click : "tap" in step ? step.tap : "dblclick" in step ? step.dblclick : null;
     if (target !== null) await settled(page, target);
-    if (options.touch && ("click" in step || "tap" in step)) await page.tap("click" in step ? step.click : step.tap, { timeout: 5000 });
+    if ("viewport" in step) await page.setViewportSize({ width: step.viewport[0], height: step.viewport[1] });
+    else if (options.touch && ("click" in step || "tap" in step)) await page.tap("click" in step ? step.click : step.tap, { timeout: 5000 });
     else if ("click" in step) await page.click(step.click, { timeout: 5000 });
     else if ("dblclick" in step) await page.dblclick(step.dblclick, { timeout: 5000 });
     else if ("rightclick" in step) await page.click(step.rightclick, { button: "right", timeout: 5000 });

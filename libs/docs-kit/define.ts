@@ -2,6 +2,8 @@
 
 /** One scripted browser step, run by the example build (Playwright) against the production build. */
 export type Step =
+  /** Resize the viewport without user input (responsive layout checks; does not start the interaction measure). */
+  | { viewport: [width: number, height: number] }
   | { click: string }
   /** Double-click the element (fires `dblclick`, after two `click`s). */
   | { dblclick: string }

@@ -169,3 +169,26 @@ test("app-layout: < 1024 px hides the aside column + trigger, < 768 px shows the
     await page.waitForSelector('[data-mobile="true"]');
   }, 600);
 });
+
+test("app-layout: contained history stays inside the frame and resizes independently of the aside", async () => {
+  const page = await s.browser.newPage({ viewport: { width: 1440, height: 900 } });
+  try {
+    await page.goto(s.origin + "/app-layout-sheet");
+    const frame = await box(page, '[data-app-layout="sheet"]');
+    const panel = await box(page, '[data-app-layout="sheet"] [data-slot="sidebar-container"]');
+    assert.ok(frame && panel);
+    assert.ok(frame.x > 0 && frame.y > 0, "frame is inset from the viewport");
+    assert.equal(panel.x, frame.x);
+    assert.equal(panel.y, frame.y);
+    assert.equal(panel.height, frame.height);
+    const aside = await box(page, "#sheet-aside");
+    assert.ok(aside && aside.y >= frame.y && aside.y + aside.height <= frame.y + frame.height + 1);
+    const handle = page.getByRole("separator", { name: "Resize sidebar" });
+    const before = await handle.getAttribute("aria-valuenow");
+    await handle.press("ArrowRight");
+    await page.waitForFunction((before) => document.querySelector('[aria-label="Resize sidebar"]')?.getAttribute("aria-valuenow") !== before, before);
+    assert.equal(await page.locator("#sheet-aside").getAttribute("data-state"), "open");
+  } finally {
+    await page.close();
+  }
+});

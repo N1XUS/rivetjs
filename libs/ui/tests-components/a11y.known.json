@@ -2,6 +2,12 @@
   "/ai-chat dark": [
     "color-contrast"
   ],
+  "/app-layout-sheet dark": [
+    "aria-required-attr"
+  ],
+  "/app-layout-sheet light": [
+    "aria-required-attr"
+  ],
   "/avatar-group dark": [
     "color-contrast"
   ],

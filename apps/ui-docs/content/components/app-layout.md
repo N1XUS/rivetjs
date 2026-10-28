@@ -107,6 +107,10 @@ The aside column shows from 1024px. The aside demos set `asideMobile="sheet"`, s
 
 ::example{id=app-layout-aside}
 
+### Contained layout
+
+Set `contained` to keep the desktop sidebar inside a card or panel instead of the viewport. Give the layout a height with `class` or `style` (for example `class="h-[820px]"`); combine with `scrollMode="content"` to keep the main content and aside within that height. This forwards `Sidebar.Provider`’s contained mode without adding another provider. Mobile navigation and aside sheets keep their overlay behavior. The [AI chat showcase](/showcase/chat/) combines a contained, resizable history sidebar with an aside drawer.
+
 ### Content scroll mode
 
 `scrollMode="page"` (default) scrolls the document with a sticky header and aside; `"content"` fixes the layout to the viewport height and scrolls the main area.
@@ -186,6 +190,7 @@ See the [full module API](/api/rivetjs/ui/app-layout/) for every named export an
 | ------------------------------------------------------------ | ----------------------------------------------------------- | ------------------ |
 | `sidebar`, `navbar`, `aside`, `toolbar`, `footer`            | `() => JSX.Element`                                         | —                  |
 | `sidebarOpen` / `defaultSidebarOpen` / `onSidebarOpenChange` | `boolean \| Signal<boolean>` / `boolean` / `(open) => void` | `true`             |
+| `contained` | `boolean` | `false` |
 | `sidebarSide`                                                | `"left" \| "right"`                                         | `"left"`           |
 | `sidebarVariant`                                             | `"sidebar" \| "floating" \| "inset"`                        | `"sidebar"`        |
 | `sidebarCollapsible`                                         | `"icon" \| "offcanvas" \| "none"`                           | `"icon"`           |

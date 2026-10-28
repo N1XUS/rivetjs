@@ -2,6 +2,8 @@
 
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
+AppLayout `contained` forwards to the root SidebarProvider (read once, default false). Consumers supply the frame height and may use content scrolling; it does not add a nested provider or change mobile drawers.
+
 Ports of HeroUI v3.2.6 `packages/react/src/components/<name>/` (Apache-2.0, © 2025 NextUI Inc.). One dir per upstream dir; each is the package subpath `@rivetjs/ui/<name>` (`index.ts`).
 
 ## Components

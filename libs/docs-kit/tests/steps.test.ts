@@ -141,3 +141,18 @@ test("click waits for the target's entrance animation (no forced scroll closes t
     }
   }
 });
+
+test("viewport changes responsive layout without firing input", async () => {
+  page = await browser.newPage();
+  try {
+    await page.setContent(PAGE);
+    await run(page, { viewport: [375, 812] }, "steps-test");
+    assert.deepEqual(page.viewportSize(), { width: 375, height: 812 });
+    assert.equal(await page.evaluate(() => matchMedia("(width < 1024px)").matches), true);
+    assert.equal(await page.textContent("#log"), "");
+    await run(page, { viewport: [1440, 900] }, "steps-test");
+    assert.equal(await page.evaluate(() => matchMedia("(width < 1024px)").matches), false);
+  } finally {
+    await page.close();
+  }
+});

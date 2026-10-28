@@ -6,6 +6,8 @@
 
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
+AppLayout contained regression: `/app-layout-sheet` now frames the layout with a resizable history sidebar. `app-layout.test.ts` checks sidebar/aside bounds relative to that frame and independent keyboard resizing; existing cold responsive-sheet coverage still exercises 1023/1024px and Escape.
+
 Browser tests for `@rivetjs/ui`: resumed story app (production build + node adapter + Chromium), Tailwind v4 + vendored `@heroui/styles`.
 
 `removed-region.test.ts` also checks showcase-auth's computed password type: repeated show/hide toggles update both forms after resume and after the form step is removed and mounted again, keeping the password value.

@@ -2,6 +2,8 @@
 
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
+AppLayout contained mode (CX-CHATSIDE): `contained` forwards to Sidebar.Provider, keeping the desktop sidebar inside an explicitly sized frame; combine with `scrollMode="content"` for bounded main/aside scrolling. The mobile sheets are unchanged. Covered by AppLayout SSR and contained geometry/resize browser tests and the AI chat showcase.
+
 Rivet UI: styled compound components (`Card`, `Card.Header`, …) over `@rivetjs/cdk` + the forked style base (`styles/`, from `@heroui/styles`) + Tailwind v4. Derived from HeroUI v3.2.6 (`heroui-inc/heroui` @ `73000ea`, Apache-2.0, © 2025 NextUI Inc.; provenance pin `UPSTREAM`, no tracking): similar look and API, improved (identity spec `docs/design/specs/2026-10-11-ui-identity-design.md`).
 
 ## Entry points (`package.json` exports)

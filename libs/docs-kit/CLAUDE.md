@@ -1,6 +1,8 @@
 # @rivetjs/docs-kit
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
+Responsive example checks (CX-CHATSIDE): `{ viewport: [width, height] }` changes the Playwright viewport without counting as input, so manifests can cover desktop and drawer states. `DOCS_KIT_CHECK_PORT` pins the static check/cold server to an allowed port (default 0, ephemeral).
+
 Private docs-site engine: Markdown content → Rivet routes, examples as pages of the docs app itself (frame routes, Chromium checks), API reference (TypeDoc), Pagefind search, prerender, link check. Sites: `apps/docs`, `apps/cdk-docs`, `apps/ui-docs`.
 
 ## Entry points

@@ -60,3 +60,14 @@ test("app-layout SSR: resizable handles + width variables", async () => {
   assert.match(html, /role="separator"[^>]*aria-label="Resize sidebar"[^>]*aria-valuenow="22"/);
   assert.match(html, /aria-label="Resize aside"/);
 });
+
+test("app-layout SSR: contained forwards to the sidebar provider without leaking a DOM attribute", async () => {
+  const html = await renderToString(() => (
+    <AppLayout contained class="h-[760px]" sidebar={() => <Nav />} aside={() => <p>Details</p>}>
+      Main
+    </AppLayout>
+  ));
+  assert.match(html, /sidebar-wrapper--contained/);
+  assert.match(html, /h-\[760px\]/);
+  assert.doesNotMatch(html, / contained[= >]/);
+});

@@ -1,6 +1,8 @@
 # @rivetjs/docs-kit/tools
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
+`example-checks.ts`: `viewport` steps call `page.setViewportSize` without starting the first-interaction measure; shared by build and cold checks. `serveClient` accepts `DOCS_KIT_CHECK_PORT` (default 0) for restricted local port ranges.
+
 Node-side build tools behind `cli.ts`. Each command module exports `<name>Command(root, args)` plus a programmatic function.
 
 ## Layout

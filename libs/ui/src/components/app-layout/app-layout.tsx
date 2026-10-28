@@ -124,6 +124,9 @@ interface AppLayoutRootProps extends AppLayoutVariants {
   /** Main content. */
   children?: Content;
 
+  /** Keep the desktop sidebar inside a bounded layout. Set its height with `class` or `style`; mobile sheets are unchanged. @default false */
+  contained?: boolean;
+
   sidebarOpen?: boolean | Signal<boolean> | (() => boolean);
   /** @default true */
   defaultSidebarOpen?: boolean;
@@ -194,6 +197,7 @@ const ROOT_KEYS = [
   "class",
   "id",
   "style",
+  "contained",
   "sidebarOpen",
   "defaultSidebarOpen",
   "onSidebarOpenChange",
@@ -434,6 +438,7 @@ const AppLayoutRoot = (props: AppLayoutRootProps): JSX.Element => {
       data-scroll-mode={scrollMode}
       data-sidebar-side={sideRight ? "right" : "left"}
       data-aside-mobile={sheet ? "sheet" : "hidden"}
+      contained={local.contained}
       open={local.sidebarOpen}
       defaultOpen={local.defaultSidebarOpen}
       onOpenChange={local.onSidebarOpenChange}
