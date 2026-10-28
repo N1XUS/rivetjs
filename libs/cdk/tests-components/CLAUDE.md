@@ -74,6 +74,8 @@ Component tests for `@rivetjs/cdk`: resumed story app (production build + node a
 | sidebar-extensions | `/sidebar-extensions` (SSR: no `data-boot`, tree / guide lines / forceReload / hidden inactive page; resumed tree toggle, `navigate` + `isCurrent`, pages switch, cold Alt+S shortcut (Ctrl+B off), mobile `closeMobileOnAction` group false vs provider true (cdk default false = shadcn)) |
 | widgets | `/buttons /callbacks /dialog /focus-scope /forms /menu /popover` (`/forms` exclusive `<details>` group: a cold summary click is held until its chunk ran, the assert waits for `#faq-2` open — CEFF 2026-10-28) |
 
+- CX-CAR (2026-10-28): `carousel.test.ts` spacing case uses three fractional-width slides and a 4px gap, `align="start"`; the cold Next selects slide 1 with exactly one `onSelect`, then Next/Previous select 2/1. Center alignment groups leading slides into the first contained snap: slide 2 at snap 1 is not a double click.
+
 ## Rules / invariants
 - State/behaviour suites (calendar-*, date-picker-state) use Jest globals from `@rivetjs/testing/jest`.
 - Story routes are resumed pages: follow ../CLAUDE.md resumability rules (inline-arrow callbacks; plain children are lazy slots, function children for render props).

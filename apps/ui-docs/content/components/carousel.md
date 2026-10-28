@@ -239,7 +239,7 @@ shadcn sets `basis-*` on the items; here `--rv-carousel-slide-size` per breakpoi
 
 #### Spacing
 
-shadcn pairs `-ml-*` on the content with `pl-*` on the items; here one variable, `--carousel-gap`.
+shadcn pairs `-ml-*` on the content with `pl-*` on the items; here one variable, `--carousel-gap`. This demo uses `align="start"` so Next advances the leading slide. With the default centered alignment, edge containment can group several slides into the first snap; a snap index is not necessarily a slide index.
 
 ::example{id=carousel-shadcn-spacing}
 

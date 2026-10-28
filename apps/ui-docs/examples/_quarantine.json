@@ -2,9 +2,5 @@
   "app-layout-aside-shortcut": {
     "step": "{\"attr\":[\"#app-layout-aside-shortcut-aside\",\"data-state\",\"closed\"]}",
     "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): a cold keydown (Control+Shift+KeyE) sent right after the first click, while that click's adopt run is in flight, is lost (the aside stays open); the same shortcut 1.5 s later toggles it; owner runtime derived event hold (lane RED-COMP)"
-  },
-  "carousel-shadcn-spacing": {
-    "step": "{\"attr\":[\"#carousel-shadcn-spacing-slide-1\",\"data-snapped\",\"true\"]}",
-    "reason": "QUAR-SWEEP 2026-10-28 (re-checked on 796a831e3): the cold first click on Next advances two snaps (slide 2 snapped, slide 1 never), later clicks advance one: the held first click acts twice on the adopted carousel; owner runtime derived replay / cdk carousel (lane RED-COMP)"
   }
 }

@@ -10,9 +10,29 @@ const colors = ["Red", "Green", "Blue", "Cyan", "Magenta"];
 
 export default function CarouselStories() {
   const selected = signal(-1);
+  const spacingSelections = signal("");
   return (
     <main>
       <h1>Carousel</h1>
+      <Carousel
+        id="spacing"
+        aria-label="Spacing"
+        align="start"
+        slideCount={5}
+        style={{ "--rv-carousel-slide-size": "33.333%" }}
+        onSelect={(index) => spacingSelections.set(spacingSelections() + index + ",")}
+      >
+        <CarouselViewport style={{ width: "384px" }}>
+          <CarouselContainer style={{ gap: "4px" }}>
+            {colors.map((name) => (
+              <CarouselSlide style={{ height: "60px" }}>{name}</CarouselSlide>
+            ))}
+          </CarouselContainer>
+        </CarouselViewport>
+        <CarouselPrevious id="spacing-prev">Previous</CarouselPrevious>
+        <CarouselNext id="spacing-next">Next</CarouselNext>
+      </Carousel>
+      <output id="spacing-selections">{spacingSelections()}</output>
       <Carousel id="basic" aria-label="Basic" startIndex={1} slideCount={5} onSelect={(index) => selected.set(index)}>
         <CarouselViewport style={viewport}>
           <CarouselContainer>

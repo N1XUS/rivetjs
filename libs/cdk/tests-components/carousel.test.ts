@@ -185,3 +185,29 @@ test("carousel: resumed — loop wraps from the first slide to the last", async 
   assert.deepEqual(seen.errors, []);
   await page.close();
 });
+
+// CX-CAR: three fractional-width slides with a gap. A snap index is not a slide index under center alignment:
+// containScroll trims the first two slides into snap 0, so one Next selects slide 2. Start alignment keeps slide 1
+// at snap 1, as the spacing demo's first-click assertion requires. Count selections as well as checking the slide.
+test("carousel: a cold Next in the spacing layout selects slide 1 exactly once", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  try {
+    await page.goto(s.origin + "/carousel");
+    assert.equal(await page.locator("#spacing").getAttribute("data-ready"), null);
+    await page.click("#spacing-next");
+    await page.waitForFunction(() => document.querySelector("#spacing-selections")?.textContent === "1,", null, { timeout: 5000 });
+    assert.equal(await page.locator("#spacing-slide-1").getAttribute("data-snapped"), "true");
+    await settledAt(page, "#spacing", -132);
+    assert.equal(await page.locator("#spacing-selections").textContent(), "1,", "one engine selection for the held click");
+    await page.click("#spacing-next");
+    await page.waitForFunction(() => document.querySelector("#spacing-selections")?.textContent === "1,2,", null, { timeout: 5000 });
+    assert.equal(await page.locator("#spacing-slide-2").getAttribute("data-snapped"), "true");
+    await page.click("#spacing-prev");
+    await page.waitForFunction(() => document.querySelector("#spacing-selections")?.textContent === "1,2,1,", null, { timeout: 5000 });
+    assert.equal(await page.locator("#spacing-slide-1").getAttribute("data-snapped"), "true");
+    assert.deepEqual(seen.errors, []);
+  } finally {
+    await page.close();
+  }
+});

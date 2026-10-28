@@ -2,7 +2,7 @@ import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
   title: "Carousel: shadcn spacing",
-  summary: "shadcn/ui's Spacing demo: a tighter gap between the cards (--carousel-gap: 0.25rem), two from md and three from lg.",
+  summary: "shadcn/ui's Spacing demo: a tighter gap between the cards (--carousel-gap: 0.25rem), start-aligned, two from md and three from lg.",
   tags: ["carousel", "shadcn", "responsive"],
   status: "experimental",
   frame: {
@@ -12,6 +12,10 @@ export default defineExample({
   test: [
     { attr: ["#carousel-shadcn-spacing-slide-0", "data-snapped", "true"] },
     { click: "#carousel-shadcn-spacing-next" },
+    { attr: ["#carousel-shadcn-spacing-slide-1", "data-snapped", "true"] },
+    { click: "#carousel-shadcn-spacing-next" },
+    { attr: ["#carousel-shadcn-spacing-slide-2", "data-snapped", "true"] },
+    { click: "#carousel-shadcn-spacing-prev" },
     { attr: ["#carousel-shadcn-spacing-slide-1", "data-snapped", "true"] },
   ],
 });
