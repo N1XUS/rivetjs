@@ -351,7 +351,11 @@ test("live props: controlled values (NumberField / RadioGroup / CheckboxGroup / 
     tree: 1,
   };
   assert.deepEqual(await read(), off);
-  const ids = ["lc-number", "lc-radio", "lc-checks", "lc-combo", "lc-color", "lc-date", "lc-toggles", "lc-disclosures", "lc-list", "lc-tree"];
+  // Tree is not in the first-change list: its keyed state holds Sets (expanded / selected keys), which the derived tail does
+  // not ship (`isData`: plain JSON only → record `UNKEYED`), so the browser renders it on its first wake instead of adopting
+  // it. Before TREE-PRE (2026-10-28) its idle `clientEffect` trigger did that render at load, unseen by this check; it is
+  // checked in place on the second change below.
+  const ids = ["lc-number", "lc-radio", "lc-checks", "lc-combo", "lc-color", "lc-date", "lc-toggles", "lc-disclosures", "lc-list"];
   for (const id of ids) await mark(page, `[data-testid=${id}]`);
   await mark(page, "[data-testid=lc-combo] input");
   await flip(page);
@@ -373,10 +377,12 @@ test("live props: controlled values (NumberField / RadioGroup / CheckboxGroup / 
   // ComboBox: the input's value binding re-syncs the text (`comboInputText`), the input node is kept.
   for (const id of ids) assert.ok(await kept(page, `[data-testid=${id}]`), id + " kept (no re-creation)");
   assert.ok(await kept(page, "[data-testid=lc-combo] input"), "combobox input kept");
+  await mark(page, "[data-testid=lc-tree]");
   await flip(page);
   await page.waitForFunction(() => document.querySelectorAll("[data-testid=lc-tree] [role=row]").length === 1);
   assert.deepEqual(await read(), off);
   assert.ok(await kept(page, "[data-testid=lc-combo] input"), "combobox input kept");
+  for (const id of [...ids, "lc-tree"]) assert.ok(await kept(page, `[data-testid=${id}]`), id + " kept on the second change");
   assert.deepEqual(seen.errors, []);
   await page.close();
 });

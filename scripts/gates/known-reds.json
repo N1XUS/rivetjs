@@ -56,13 +56,6 @@
       "reason": "derived resume (RED-COMP): a cold programmatic / fast-Tab focus on the Select trigger is not held by the loader (`focus` not in the trigger's `data-events`; `_rListens` deliberately does not widen to focus/blur, protects Select typeahead), so onFocus is lost before the unit adopts. Triaged REDS-CDK 2026-10-28; a Tab-focus test variant fails the same way",
       "owner": "runtime (RED-COMP lane)",
       "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/tree.test.ts > Tree SSR: should render without errors (server rows, resumed rows, update)",
-      "reason": "\"no library code before interaction\": in the full project run cdk chunks (components / slot / hidden / live / button / resumed-id / focus-visible ...) load before the first interaction; passes alone. Red on 796a831e3 code too (bisected 2026-10-28 with the facts and route-css changes reverted), first seen 04:44Z; root cause in lane TREE-PRE",
-      "owner": "cdk / runtime (lane TREE-PRE)",
-      "since": "2026-10-28"
     }
   ]
 }

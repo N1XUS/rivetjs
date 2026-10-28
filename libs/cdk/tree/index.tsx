@@ -300,15 +300,21 @@ export function Tree<T>(inProps: TreeProps<T>) {
   const rootRef = mergeRefValues<HTMLDivElement>(el as RefValue<HTMLDivElement>, userRef);
   // react-aria useHasTabbableChild (empty state with a tabbable child: the grid leaves the tab order).
   const hasTabbableChild = signal(false);
-  clientEffect(() => {
-    const root = el();
-    if (!root || flat().size !== 0) return;
-    const update = () => hasTabbableChild.set(!!getFocusableTreeWalker(root, { tabbable: true }).nextNode());
-    update();
-    const observer = new MutationObserver(update);
-    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["tabIndex", "disabled"] });
-    return () => observer.disconnect();
-  });
+  // Resumed pages: only a tree rendered empty needs this before its first interaction (TREE-PRE 2026-10-28: an
+  // unconditional idle trigger booted every Tree page at load and fetched the whole Tree closure before any input).
+  // A tree that empties later does so in the browser, after it adopted; the effect runs whenever the component runs there.
+  clientEffect(
+    () => {
+      const root = el();
+      if (!root || flat().size !== 0) return;
+      const update = () => hasTabbableChild.set(!!getFocusableTreeWalker(root, { tabbable: true }).nextNode());
+      update();
+      const observer = new MutationObserver(update);
+      observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["tabIndex", "disabled"] });
+      return () => observer.disconnect();
+    },
+    { when: untrack(() => flat().size) === 0 ? "idle" : "interaction" },
+  );
   const focused = signal(false);
   const focusVisible = signal(false);
   const rootInteraction: InteractionStateOptions = { states: { isFocused: focused, isFocusVisible: focusVisible } };
@@ -349,8 +355,9 @@ export function Tree<T>(inProps: TreeProps<T>) {
   const slot = props.slot || undefined;
   const dom = globalDOMProps(props, TREE_OWNED);
   const description = () => gridListHighlightDescription(gridOpts, view());
-  // useTreeState: reset the focused key when its item leaves the collection.
-  clientEffect(() => resetTreeFocusedKey(state, flat()));
+  // useTreeState: reset the focused key when its item leaves the collection. The server's collection holds its focused
+  // key, so nothing to do before the first interaction (or a wake: a write the tree reads adopts it first).
+  clientEffect(() => resetTreeFocusedKey(state, flat()), { when: "interaction" });
   if (props.render) {
     // Accessors are object-literal arrows over `gridAttr` (a local const): only those resume (a `liveProps` loop made them closures).
     // `tabindex` lowercase: see CalendarCell.

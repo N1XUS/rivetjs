@@ -35,6 +35,10 @@ test("Tree SSR: should render without errors (server rows, resumed rows, update)
     ["2", null],
     ["2", null],
   ]);
+  // Settle first: a boot the page starts by itself (an idle `clientEffect` trigger) requests its chunks just after
+  // `load`, so an assert right after `goto` raced it (TREE-PRE 2026-10-28: red under host load, green alone).
+  await page.waitForLoadState("networkidle");
+  assert.equal(await page.$('script[type="rivet/boundaries"][data-boot]'), null, "nothing boots by itself");
   assert.deepEqual(libraryScripts(seen), [], "no library code before interaction");
 
   // And that it updates correctly.
