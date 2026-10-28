@@ -109,7 +109,7 @@ Drag empty cells/slots, or Shift+Arrow then Enter, to emit a continuous range. M
 | `events` / `defaultEvents` | `readonly SchedulerEvent<T>[]`; `events` also accepts a signal or accessor | `[]` | A signal is two-way; a value/accessor is controlled. Defaults are read once. |
 | `view` / `defaultView` | `"month"` / `"week"` / `"day"`; `view` also accepts a signal or accessor | `"month"` | Active view. |
 | `date` / `defaultDate` | `SchedulerDate`; `date` also accepts a signal or accessor | today in the resolved zone | Anchor date, written back in its original form. |
-| `timeZone` | `string` or accessor | creation zone: UTC on the server | Wall-clock zone used for layout; pass explicitly for SSR. |
+| `timeZone` | `string` or accessor | creation zone: UTC on the server, kept by the resumed page | Wall-clock zone used for layout; pass explicitly for SSR. |
 | `locale` | `string` or accessor | ambient locale | Labels, time formatting and week/weekend defaults. |
 | `firstDayOfWeek` | `"sun"` … `"sat"` or accessor | locale | First column of month/week views. |
 | `hiddenDays` / `weekendDays` | `readonly number[]` or accessor | `[]` / locale weekends | Weekday numbers; Sunday is 0. |

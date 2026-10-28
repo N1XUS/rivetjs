@@ -1,8 +1,9 @@
 // Scheduler on a resumed page (story `/scheduler`): the month view boots nothing at load, its server HTML carries
 // every visible chip and the `+N more` button; a cold press opens the panel (chips listed, `onMoreAction` once,
 // focus inside) and Escape closes it without page errors. Story `/scheduler-zone` (no `timeZone`, browser in
-// America/Los_Angeles): the resumed page keeps the server's UTC layout on its first recompute.
-import { test, afterAll, beforeAll } from "vitest";
+// America/Los_Angeles, clock pinned where the UTC and Los Angeles dates differ): the resumed page keeps the server's
+// UTC zone (keyed `state.zone`) for chip layout, `data-today` and the default date's week.
+import { test, afterAll, beforeAll, vi } from "vitest";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { brotliCompressSync } from "node:zlib";
@@ -34,24 +35,45 @@ test("scheduler month: final server HTML, nothing boots, cold +N more panel", as
   await page.close();
 });
 
+// Monday 03:00 UTC = Sunday 20:00 in Los Angeles: the UTC and browser dates differ (and fall in different `mon` weeks),
+// pinned on both sides (server `Date` in this process, page clock) so the mismatch runs at any wall-clock time.
+const SKEWED_NOW = Date.parse("2026-10-26T03:00:00Z");
+
 test("scheduler without timeZone: a resumed recompute keeps the server's zone (no chip jump, data-today stable)", async () => {
   const context = await s.browser.newContext({ timezoneId: "America/Los_Angeles" });
+  await context.clock.setFixedTime(SKEWED_NOW);
   const page = await context.newPage();
   const seen = watch(page);
-  await page.goto(s.origin + "/scheduler-zone");
+  vi.useFakeTimers({ toFake: ["Date"], now: SKEWED_NOW });
+  try {
+    await page.goto(s.origin + "/scheduler-zone");
+  } finally {
+    vi.useRealTimers();
+  }
   const chip = page.locator('#zoned [data-rv-event-id="z"]');
   const top = () => chip.evaluate((el) => (el as HTMLElement).style.getPropertyValue("--rv-scheduler-event-top"));
   const todayIndex = () =>
     page.evaluate(() =>
       Array.from(document.querySelectorAll("#zoned .rv-SchedulerTimeGrid-day-header")).findIndex((el) => el.getAttribute("data-today") === "true"),
     );
+  const headers = () => page.locator("#zoned .rv-SchedulerTimeGrid-day-header").evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")));
+  const week = await headers();
   const before = await top();
   const today = await todayIndex();
   expect09(before);
+  assert.equal(today, 0, "the server's Monday (UTC) is the week's first day");
   await page.click("#zone-refresh");
   await page.waitForTimeout(100);
   assert.equal(await chip.count(), 1);
   assert.equal(await top(), before, "09:00 UTC stays at 09:00 (the server's zone), not 01:00 / 02:00 Los Angeles");
+  assert.equal(await todayIndex(), today);
+  assert.deepEqual(await headers(), week, "the default date (server's today) keeps the server's week");
+  // A chip the browser renders itself (week away and back), not the adopted server chip: same zone.
+  await page.getByRole("button", { name: "Next week", exact: true }).click();
+  await page.waitForFunction(() => document.querySelectorAll('#zoned [data-rv-event-id="z"]').length === 0);
+  await page.getByRole("button", { name: "Previous week", exact: true }).click();
+  await chip.waitFor();
+  assert.equal(await top(), before, "a browser-rendered chip lays out in the server's zone too");
   assert.equal(await todayIndex(), today);
   assert.deepEqual(seen.errors, []);
   await context.close();

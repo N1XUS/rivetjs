@@ -21,7 +21,8 @@ import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { DEV, devWhere } from "#dev";
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 import { CalendarDate } from "../date/CalendarDate.ts";
-import { getDayOfWeek, getLocalTimeZone, isWeekend, type DayOfWeek } from "../date/queries.ts";
+import { getDayOfWeek, isWeekend, type DayOfWeek } from "../date/queries.ts";
+import { resumedZone } from "./zone.tsx";
 import {
   addCalendarMonths,
   civilFromDay,
@@ -270,7 +271,9 @@ export function createSchedulerState<T = unknown>(props: SchedulerStateProps<T> 
     ...options
   } = props;
   const given = untrack(() => read(options.timeZone));
-  const zone = defaultTimeZone();
+  // Keyed state (`zone.tsx`): the server's zone survives resume, so layout, `data-today` and the default date agree on
+  // both sides (also with a `timeZone` accessor that later reads `undefined`).
+  const zone = untrack(resumedZone);
   if (DEV && given === undefined && isServer() && !warnedZone) {
     warnedZone = true;
     console.warn(
@@ -311,10 +314,6 @@ export function createSchedulerState<T = unknown>(props: SchedulerStateProps<T> 
 }
 
 let warnedZone = false;
-
-function defaultTimeZone(): string {
-  return isServer() ? "UTC" : getLocalTimeZone();
-}
 
 function todayString(timeZone: string): string {
   const [y, m, d] = civilFromDay(todayDay(timeZone));
