@@ -96,7 +96,7 @@ A press starts the progress (no hold needed). `onComplete` fires after `duration
 
 ### Standalone Ripple
 
-Outside a `PressableFeedback` root, `.Ripple` follows its parent element's own press: a pointer or touch press ripples from the press point, Space / Enter on the parent from the centre; a parent that is `:disabled`, `aria-disabled="true"` or `data-disabled="true"` gets none. The parent needs a position (a ui `Button` has one) and its own corner radius (the ripple inherits it). On a resumed page the first press loads the ripple and still shows it. See also [Button, Adding Ripple Effect](button.md#adding-ripple-effect).
+Outside a `PressableFeedback` root, `.Ripple` follows its parent element's own press: a pointer or touch press ripples from the press point, Space / Enter on the parent from the centre, and Space on a native checkbox or radio inside it from the centre too (selectable cards keep focus on their hidden input: [CheckboxButtonGroup](checkbox-button-group.md#with-ripple), [RadioButtonGroup](radio-button-group.md#with-ripple)); a parent that is `:disabled`, `aria-disabled="true"` or `data-disabled="true"` gets none. The parent needs a position (a ui `Button` has one) and its own corner radius (the ripple inherits it). On a resumed page the first press loads the ripple and still shows it. See also [Button, Adding Ripple Effect](button.md#adding-ripple-effect).
 
 ::example{id=pressable-feedback-standalone-ripple}
 

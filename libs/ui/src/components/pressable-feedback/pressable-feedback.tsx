@@ -11,7 +11,8 @@
 //   restarts the grow animation (`data-pressed`); press end fades it (`data-released`) after `minimumPressDuration`.
 //   Standalone (no root context: inside a ui `Button` or any positioned pressable element) it drives itself from its parent
 //   element: native `pointerdown` (press point; release on the document's `pointerup` / `pointercancel`) and `keydown`
-//   Space / Enter on the parent itself (centred; release on `keyup` / its `click` / `focusout`, Enter at once); a parent that is
+//   Space / Enter on the parent itself, or Space on a native checkbox / radio inside it (a selectable card whose focus sits on
+//   its hidden input) (centred; release on `keyup` / its `click` / `focusout`, Enter at once); a parent that is
 //   `:disabled` / `aria-disabled` / `data-disabled` gets none. The listeners attach when the ripple's node is created or
 //   adopted (a cold page: the first press adopts the parent's unit, the runtime records listeners added meanwhile and
 //   replays the held press into them) and drop themselves once the ripple left that parent.
@@ -144,13 +145,24 @@ const selfDriven = (el: HTMLElement, layer: Required<Pick<Layer, "start" | "end"
     begin(pointerType, clientX - box.left, clientY - box.top);
   });
   for (const type of ["pointerup", "pointercancel"]) listen(type, () => active !== "keyboard" && end());
+  // The key target: the parent itself (Space / Enter, as a button) or a native checkbox / radio inside it (Space only, as
+  // the input): a selectable card (`label`, e.g. CheckboxButtonGroup / RadioButtonGroup items) keeps its keyboard focus on
+  // its visually hidden input.
+  let keyed: EventTarget | null = null;
+  const pressKey = (target: EventTarget | null, key: string): boolean => {
+    if (target === host) return key === " " || key === "Enter";
+    const input = target as HTMLInputElement | null;
+    return key === " " && input?.localName === "input" && (input.type === "checkbox" || input.type === "radio") && !input.disabled && host.contains(input);
+  };
   listen("keydown", (e) => {
     const { key, repeat, target } = e as KeyboardEvent;
-    if (!repeat && target === host && (key === " " || key === "Enter") && begin("keyboard") && key === "Enter") end();
+    if (repeat || !pressKey(target, key) || !begin("keyboard")) return;
+    keyed = target;
+    if (key === "Enter") end();
   });
-  // A cold keyup is not held (not a delegated type) and may land before the adopt run: the native button's Space click,
-  // which is held and replayed, ends the press too.
-  for (const type of ["keyup", "focusout", "click"]) listen(type, (e) => e.target === host && active === "keyboard" && end());
+  // A cold keyup is not held (not a delegated type) and may land before the adopt run: the native button's / input's
+  // Space click, which is held and replayed, ends the press too.
+  for (const type of ["keyup", "focusout", "click"]) listen(type, (e) => e.target === keyed && active === "keyboard" && end());
 };
 
 const PressableFeedbackRipple = (props: PressableFeedbackRippleProps): JSX.Element => {

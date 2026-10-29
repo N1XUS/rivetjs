@@ -100,9 +100,9 @@ A function child of `Item` receives the render props (accessors such as `isSelec
 
 ### With Ripple
 
-:::warning
-Not ported yet: no ripple demo for the cards (a [`PressableFeedback.Ripple`](pressable-feedback.md#standalone-ripple) follows its parent's press, but a card's keyboard focus sits on its hidden input, which the ripple does not follow). Pressed cards scale down slightly instead (`data-pressed`, none with reduced motion).
-:::
+Put a [`PressableFeedback.Ripple`](pressable-feedback.md#standalone-ripple) first in each item: it follows the card's own press, from the pointer, or from the centre when Space toggles the focused card (keyboard focus sits on the card's visually hidden input). Pressed cards also scale down slightly (`data-pressed`, none with reduced motion).
+
+::example{id=checkbox-button-group-with-ripple}
 
 ## Styling Reference
 

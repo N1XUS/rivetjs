@@ -113,3 +113,56 @@ test("pressable feedback: standalone ripple follows its parent ui Button (pointe
   assert.equal(off.querySelector("[data-slot=pressable-feedback-ripple]")!.hasAttribute("data-pressed"), false);
   unmount();
 });
+
+test("pressable feedback: standalone ripple in selectable cards follows the card press and Space on its hidden input", async () => {
+  const { CheckboxButtonGroup } = await import("../src/components/checkbox-button-group/index.ts");
+  const { RadioButtonGroup } = await import("../src/components/radio-button-group/index.ts");
+  const W2 = window as unknown as { KeyboardEvent: typeof KeyboardEvent };
+  const key = (el: Element, type: string, k: string) => el.dispatchEvent(new W2.KeyboardEvent(type, { key: k, bubbles: true, cancelable: true }));
+  const { container, unmount } = render(() => (
+    <div>
+      <CheckboxButtonGroup aria-label="Checks">
+        <CheckboxButtonGroup.Item value="a">
+          <PressableFeedback.Ripple minimumPressDuration={0} />A
+        </CheckboxButtonGroup.Item>
+        <CheckboxButtonGroup.Item value="off" isDisabled>
+          <PressableFeedback.Ripple minimumPressDuration={0} />
+          Off
+        </CheckboxButtonGroup.Item>
+      </CheckboxButtonGroup>
+      <RadioButtonGroup aria-label="Radios">
+        <RadioButtonGroup.Item value="r">
+          <PressableFeedback.Ripple minimumPressDuration={0} />R
+        </RadioButtonGroup.Item>
+      </RadioButtonGroup>
+    </div>
+  ));
+  await wait(10);
+  for (const slot of ["checkbox-button-group-item", "radio-button-group-item"]) {
+    const card = container.querySelector(`[data-slot=${slot}]`)!;
+    const ripple = card.querySelector("[data-slot=pressable-feedback-ripple]") as HTMLElement;
+    assert.equal(ripple.parentElement, card, `${slot}: the ripple sits in the card`);
+    down(card);
+    assert.equal(ripple.getAttribute("data-pressed"), "true", `${slot}: pointer`);
+    up(card);
+    await wait(10);
+    assert.equal(ripple.getAttribute("data-released"), "true");
+    // Keyboard focus sits on the hidden input: Space there ripples the card (centred), the key going up releases it.
+    const input = card.querySelector("input")!;
+    input.focus();
+    key(input, "keydown", "Enter");
+    assert.equal(ripple.hasAttribute("data-released"), true, `${slot}: Enter does not press an input`);
+    key(input, "keydown", " ");
+    assert.equal(ripple.hasAttribute("data-released"), false, `${slot}: Space`);
+    assert.equal(ripple.getAttribute("data-pressed"), "true");
+    key(input, "keyup", " ");
+    await wait(10);
+    assert.equal(ripple.getAttribute("data-released"), "true");
+  }
+  // A disabled card gets none.
+  const off = container.querySelectorAll("[data-slot=checkbox-button-group-item]")[1]!;
+  down(off);
+  key(off.querySelector("input")!, "keydown", " ");
+  assert.equal(off.querySelector("[data-slot=pressable-feedback-ripple]")!.hasAttribute("data-pressed"), false);
+  unmount();
+});

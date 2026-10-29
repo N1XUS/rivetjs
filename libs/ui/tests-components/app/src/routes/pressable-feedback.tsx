@@ -1,11 +1,14 @@
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
+import { CheckboxButtonGroup } from "@rivetjs/ui/checkbox-button-group";
 import { PressableFeedback } from "@rivetjs/ui/pressable-feedback";
+import { RadioButtonGroup } from "@rivetjs/ui/radio-button-group";
 
 export const head = { title: "PressableFeedback" };
 
 // Rivet addition (feature set inspired by HeroUI Pro's public Pressable Feedback docs): ripple + highlight, hold to confirm,
-// progress feedback; a standalone Ripple inside a ui Button (`#pf-button`). Resumes on the first press.
+// progress feedback; a standalone Ripple inside a ui Button (`#pf-button`) and inside selectable cards (`#pf-checks`,
+// `#pf-radios`: keyboard focus on the hidden input). Resumes on the first press.
 export default function PressableFeedbackStory() {
   const held = signal(0);
   const sent = signal(0);
@@ -34,6 +37,18 @@ export default function PressableFeedbackStory() {
         <PressableFeedback.Ripple />
         Button ripple
       </Button>
+      <CheckboxButtonGroup id="pf-checks" aria-label="Checks" class="w-72">
+        <CheckboxButtonGroup.Item value="a">
+          <PressableFeedback.Ripple />
+          <CheckboxButtonGroup.ItemContent>Check card</CheckboxButtonGroup.ItemContent>
+        </CheckboxButtonGroup.Item>
+      </CheckboxButtonGroup>
+      <RadioButtonGroup id="pf-radios" aria-label="Radios" class="w-72">
+        <RadioButtonGroup.Item value="a">
+          <PressableFeedback.Ripple />
+          <RadioButtonGroup.ItemContent>Radio card</RadioButtonGroup.ItemContent>
+        </RadioButtonGroup.Item>
+      </RadioButtonGroup>
     </main>
   );
 }
