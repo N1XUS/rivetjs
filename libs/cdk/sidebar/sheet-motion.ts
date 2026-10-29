@@ -12,8 +12,9 @@
 // - Units: distance towards the closed edge, 0 = open … sheet width = off-screen; rendered as an inline
 //   `transform: translateX(…)` (the overlay CSS animates `translate`, the two compose); the underlay fades with it.
 // - `prefers-reduced-motion: reduce` or the provider's `reduceMotion` → the release jumps (duration 0), as the motion
-//   docs prescribe.
+//   docs prescribe. Timing of open / close and of the dismiss fade = the stylesheet's (ui: the overlay tokens, as a Drawer).
 import { DragRelease, Motion1D, VelocityTracker } from "../motion/index.ts";
+import { cssTiming } from "../utils/css-timing.ts";
 
 export interface SidebarSheetMotionOptions {
   /** The edge the sheet is attached to. */
@@ -121,20 +122,26 @@ export function sidebarSheetMotion(sheet: HTMLElement, options: SidebarSheetMoti
   };
   // Dismiss = close right away (ui Drawer's rule): the sheet keeps its inline offset and the overlay's exit
   // (`data-exiting` animation / transition on `translate`) slides it on from there; the underlay fades from its
-  // dragged opacity (a script animation, above the theme's CSS fade). Settling the spring first left the underlay
-  // blocking the page for ~1.5 s of an invisible tail.
+  // dragged opacity (a script animation above the theme's CSS fade) with the exit timing the stylesheet gives it
+  // (`cssTiming` after `close()` flipped `data-exiting`: no duration / curve in JS; none = reduced motion or no
+  // stylesheet). Settling the spring first left the underlay blocking the page for ~1.5 s of an invisible tail.
   const dismiss = (current: number): void => {
     motion.stop();
     render(current);
     sheet.style.transition = "";
-    if (backdrop) {
-      backdrop.style.transition = "";
-      const from = backdrop.style.opacity || "1";
-      backdrop.style.opacity = "0";
-      if (!(reduceMotion?.() || view.matchMedia?.("(prefers-reduced-motion: reduce)").matches))
-        backdrop.animate?.([{ opacity: from }, { opacity: 0 }], { duration: 200, easing: "ease-in" });
-    }
     close();
+    if (!backdrop) return;
+    const from = backdrop.style.opacity || "1";
+    // After `close()`: the inline 0 starts the CSS fade under the exit rules (not the enter fade's duration).
+    const fade = (): void => {
+      backdrop.style.transition = "";
+      backdrop.style.opacity = "0";
+      const timing = reduceMotion?.() ? null : cssTiming(backdrop, "opacity");
+      if (timing) backdrop.animate?.([{ opacity: from }, { opacity: 0 }], timing);
+    };
+    // `close()` commits `data-exiting` synchronously when nothing batches it; else read the exit rules a frame later.
+    if (backdrop.hasAttribute("data-exiting")) fade();
+    else view.requestAnimationFrame(fade);
   };
   // A mouse drag that starts on a link (menu buttons with `href`) or an image would become a native drag-and-drop: the
   // browser fires `pointercancel` and stops sending moves. No native drag inside the sheet while a pointer is down.

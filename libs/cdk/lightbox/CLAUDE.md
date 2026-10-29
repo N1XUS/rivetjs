@@ -37,7 +37,7 @@ No children = default parts (carousel, Close, Previous, Next). Styled layer: `@r
 
 ## Rulings (deviations from YARL; user brief 2026-10-08, rulings mine)
 - Parts instead of YARL modules + plugin augmentation; every plugin = own subpath (0 B unless imported).
-- Modal = cdk `ModalOverlay` > `Modal` (div overlay layer, focus trap + restore, Escape `closeOnEscape`, scroll lock, `inert` outside); container is `role="dialog"` (Modal does not forward role / aria). Fade = CSS on `data-entering` / `data-exiting`, duration `--rv-lightbox-fade`.
+- Modal = cdk `ModalOverlay` > `Modal` (div overlay layer, focus trap + restore, Escape `closeOnEscape`, scroll lock, `inert` outside); container is `role="dialog"` (Modal does not forward role / aria). Fade = CSS on `data-entering` / `data-exiting`, duration `--rv-lightbox-fade` (inline only for an explicit `animation.fade`; unset = the stylesheet's timing, ui = overlay tokens; gesture settles still use 250 ms).
 - Motion = house `Motion1D` (`../motion`): track x + pull y; navigation keeps the visual position and settles to 0. ms options → embla units `msToMotion` (ms / 20); easing options dropped. A settled motion renders its target (last interpolated frame can stop short: flaky stuck transform before).
 - Layout: container = CSS grid (`top` / `start` / `main` / `end` / `bottom`); carousel in `main`, thumbnails strip in its side's area; toolbar / nav / captions absolutely positioned (styled layer).
 - Media sizing CSS only: slide box `container-type: size`; images `max-width/height`, video / embed / PDF `min(100cqw, 100cqh × ratio)` + `aspect-ratio`. Image `sizes` = `min(100vw, ratio vh)`; zoom raises `sizes` to the zoomed width.

@@ -71,8 +71,9 @@ Design preferences, look, composition rules for `@rivetjs/ui`, `@rivetjs/cdk` st
 
 ## Motion
 
-- Duration tokens: `--duration-fast` 120, `--duration-base` 180, `--duration-slow` 260 ms; overlay enter 180 / exit 120. Colour transitions ≈ 150, transform ≈ 200.
-- Easing `--ease-smooth: cubic-bezier(0.2, 0, 0, 1)`.
+- Same role = same duration + easing (+ same physics for drags). Roles (ui role tokens, `libs/ui/styles/CLAUDE.md` "Motion"): state feedback 120 ms smooth; small transforms 180 smooth; collapse / expand 180 `ease-out-quad`; selection indicator 180 fluid; anchored popups 120 / 120 smooth; toast-like entrances 260 in / 180 out fluid; overlays (modal, drawer, sheet, alert, command, lightbox, mobile sidebar / nav menu) 500 panel / 400 backdrop / 260 exit on the iOS sheet curve `cubic-bezier(0.32, 0.72, 0, 1)`.
+- Primitives: `--duration-fast` 120, `--duration-base` 180, `--duration-slow` 260 ms; `--ease-smooth: cubic-bezier(0.2, 0, 0, 1)`. Components use the role tokens, not the primitives.
+- JS that follows CSS motion reads the computed timing (cdk `cssTiming`, `getAnimations()`), never a copied number.
 - Press feedback `scale(0.97)` on pill controls only.
 - Animate opacity / transform; never delay navigation or input for an animation; honour `prefers-reduced-motion`.
 - Custom element animation → `@rivetjs/motion` (`<Motion.*>`, `Presence`, layout); CSS-only entrances ship 0 JS. Drag / flick physics → cdk Embla-based motion (carousel, slider, drawer, sidebar).

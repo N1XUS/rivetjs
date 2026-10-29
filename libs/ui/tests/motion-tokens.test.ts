@@ -73,12 +73,30 @@ test("theme declares the motion tokens and the standard easing", () => {
   assert.match(theme, /--overlay-exit-duration: var\(--duration-slow\);/);
 });
 
-test("Drawer / Sheet / Modal take their timing from the overlay tokens only", () => {
-  for (const name of ["drawer", "sheet", "modal"]) {
+/** Overlay panels (role "overlay", TW-146 / TW-186): enter, backdrop fade and exit only from the overlay tokens. */
+const OVERLAYS: Record<string, RegExp> = {
+  drawer: /[\s\S]*/,
+  sheet: /[\s\S]*/,
+  modal: /[\s\S]*/,
+  "alert-dialog": /[\s\S]*/,
+  command: /[\s\S]*/,
+  // Sidebar mobile sheet = a Drawer on the same side; navbar mobile menu; Lightbox (backdrop fade).
+  sidebar: /\.sidebar__sheet[\s\S]*/,
+  navbar: /\.navbar__menu \{[\s\S]*?\n\}/,
+  lightbox: /\.lightbox__backdrop \{[\s\S]*?\n\}/,
+};
+
+test("overlay panels (Drawer / Sheet / Modal / AlertDialog / Command / sidebar sheet / navbar menu / Lightbox) take their timing from the overlay tokens only", () => {
+  for (const [name, part] of Object.entries(OVERLAYS)) {
     const css = readFileSync(new URL(`${name}.css`, dir), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-    assert.doesNotMatch(css, /cubic-bezier\(0\.32/, `${name}: literal sheet curve`);
-    assert.match(css, /var\(--overlay-duration\)|duration-\(--overlay-duration\)/, `${name}: panel enter`);
-    assert.match(css, /--overlay-exit-duration/, `${name}: exit`);
+    const block = css.match(part)?.[0] ?? "";
+    assert.ok(block, `${name}: overlay rules not found`);
+    assert.doesNotMatch(block, /cubic-bezier\(0\.32/, `${name}: literal sheet curve`);
+    if (part.source !== "[\\s\\S]*")
+      assert.doesNotMatch(block, /cubic-bezier|--duration-(fast|base|slow)|--ease-/, `${name}: primitive / literal timing in an overlay part`);
+    assert.match(block, /--overlay-(duration|fade-duration)/, `${name}: enter`);
+    assert.match(block, /--overlay-exit-duration/, `${name}: exit`);
+    assert.match(block, /--overlay-ease/, `${name}: curve`);
   }
 });
 

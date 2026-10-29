@@ -20,14 +20,15 @@
     background-color: color-mix(in oklab, var(--backdrop) calc(var(--rv-lightbox-pull-opacity, 1) * 100%), transparent);
   }
 
+  /* Overlay motion tokens = a Modal backdrop (TWEAKS.md TW-186); an explicit `animation.fade` (--rv-lightbox-fade) wins */
   &[data-entering="true"] {
-    @apply animate-in ease-out fade-in-0;
-    animation-duration: var(--rv-lightbox-fade, var(--duration-base));
+    @apply animate-in ease-(--overlay-ease) fade-in-0;
+    animation-duration: var(--rv-lightbox-fade, var(--overlay-fade-duration));
   }
 
   &[data-exiting="true"] {
-    @apply animate-out ease-out fade-out-0;
-    animation-duration: var(--rv-lightbox-fade, var(--duration-base));
+    @apply animate-out ease-(--overlay-ease) fade-out-0;
+    animation-duration: var(--rv-lightbox-fade, var(--overlay-exit-duration));
   }
 
   &[data-exiting="true"],

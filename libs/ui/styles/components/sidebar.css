@@ -790,18 +790,23 @@
  */
 .sidebar__sheet-backdrop {
   @apply fixed inset-0 z-(--z-index-overlay) h-(--visual-viewport-height) w-full bg-backdrop;
-  transition: opacity var(--duration-base) cubic-bezier(0.32, 0.72, 0, 1);
+  /* Overlay motion tokens = a Drawer on the same side (TWEAKS.md TW-186): fade-in, exit of panel + backdrop. */
+  transition: opacity var(--overlay-fade-duration) var(--overlay-ease);
   @apply motion-reduce:transition-none;
 
   &[data-entering="true"],
   &[data-exiting="true"] {
     opacity: 0;
   }
+
+  &[data-exiting="true"] {
+    transition-duration: var(--overlay-exit-duration);
+  }
 }
 
 .sidebar__sheet {
   @apply fixed inset-y-0 flex h-full w-(--sidebar-width) max-w-[85vw] flex-col bg-overlay text-foreground shadow-overlay outline-none;
-  transition: translate var(--duration-base) cubic-bezier(0.32, 0.72, 0, 1);
+  transition: translate var(--overlay-duration) var(--overlay-ease);
   @apply motion-reduce:transition-none;
 
   &[data-side="left"] {
@@ -827,7 +832,7 @@
   }
 
   &[data-exiting="true"] {
-    transition-duration: var(--duration-base);
+    transition-duration: var(--overlay-exit-duration);
   }
 }
 

@@ -49,14 +49,14 @@
   @apply flex flex-row items-center justify-center;
   @apply h-(--visual-viewport-height) w-full;
 
-  /* Entering animation */
+  /* Entering animation (Rivet: overlay motion tokens = Modal, TWEAKS.md TW-186) */
   &[data-entering="true"] {
-    @apply animate-in duration-(--duration-fast) ease-out fade-in-0;
+    @apply animate-in duration-(--overlay-fade-duration) ease-(--overlay-ease) fade-in-0;
   }
 
   /* Exiting animation */
   &[data-exiting="true"] {
-    @apply animate-out duration-(--duration-fast) ease-out fade-out-0;
+    @apply animate-out duration-(--overlay-exit-duration) ease-(--overlay-ease) fade-out-0;
   }
 
   /**
@@ -103,7 +103,7 @@
 
   /* Entering animation */
   &[data-entering="true"] {
-    @apply animate-in duration-(--duration-base) ease-out-quad fade-in-0 zoom-in-105;
+    @apply animate-in duration-(--overlay-duration) ease-(--overlay-ease) fade-in-0 zoom-in-105;
 
     &[data-placement="auto"] {
       @apply slide-in-from-bottom-1;
@@ -125,7 +125,7 @@
 
   /* Exiting animation */
   &[data-exiting="true"] {
-    @apply animate-out duration-(--duration-fast) ease-out-quad fade-out-0 zoom-out-95;
+    @apply animate-out duration-(--overlay-exit-duration) ease-(--overlay-ease) fade-out-0 zoom-out-95;
   }
 
   /**

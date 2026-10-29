@@ -7,10 +7,11 @@
 //   per-drag data lives in a module WeakMap keyed by the handle (browser only, never serialized).
 // - dragging below half the minimum collapses the sidebar (`setSidebarOpen(false)`: `onOpenChange` + cookie; the
 //   `collapsible` mode picks offcanvas / icon) and dragging back out re-opens it; the open / close snap is the
-//   sidebar's own CSS collapse transition (200 ms ease-out-quad), off for the plain width changes of a drag
+//   sidebar's own CSS collapse transition (window read from the container's computed transition), off for the plain width changes of a drag
 //   (`data-resizing` on the root).
 import { untrack, type Signal } from "@rivetjs/reactivity";
 import { controllable, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
+import { cssTransitionMs } from "../utils/css-timing.ts";
 import { setSidebarOpen, type SidebarState } from "./state.ts";
 
 /** A sidebar width: a number = px, a string = a CSS length (`"18rem"`, `"280px"`, `"20vw"`). */
@@ -108,15 +109,16 @@ interface Drag {
   startX: number;
   startWidth: number;
   dir: 1 | -1;
-  /** Until then a collapse / expand snap animates (no `data-resizing`). */
+  /** Until then a collapse / expand snap animates (no `data-resizing`; window = the container's CSS transition). */
   snapUntil: number;
   moved: boolean;
 }
 const drags = new WeakMap<Element, Drag>();
-const SNAP_MS = 220;
 
 const rootOf = (handle: Element): HTMLElement | null => handle.closest('[data-slot="sidebar"]');
 const containerOf = (handle: Element): HTMLElement | null => handle.closest('[data-slot="sidebar-container"]');
+/** The collapse / expand snap window: the container's transition without `data-resizing` (theme CSS; 0 = none). */
+const snapMs = (handle: Element, root: HTMLElement): number => cssTransitionMs(containerOf(handle) ?? root);
 
 /** +1 when moving the pointer right grows the panel (left side LTR, right side RTL), else -1. */
 function growDirection(root: HTMLElement): 1 | -1 {
@@ -202,14 +204,14 @@ export function sidebarResizePointerMove(event: PointerEvent, s: SidebarState, r
   if (rs.collapseBelowMin && raw < min / 2) {
     if (open) {
       root.removeAttribute("data-resizing");
-      drag.snapUntil = now + SNAP_MS;
+      drag.snapUntil = now + snapMs(handle, root);
       setSidebarOpen(s, false);
     }
     return;
   }
   if (!open) {
     root.removeAttribute("data-resizing");
-    drag.snapUntil = now + SNAP_MS;
+    drag.snapUntil = now + snapMs(handle, root);
     setSidebarOpen(s, true);
   }
   if (now >= drag.snapUntil) root.setAttribute("data-resizing", "true");

@@ -1088,7 +1088,7 @@
     height: var(--visual-viewport-height);
     background-color: var(--backdrop);
     width: 100%;
-    transition: opacity var(--duration-base) cubic-bezier(.32, .72, 0, 1);
+    transition: opacity var(--overlay-fade-duration) var(--overlay-ease);
     position: fixed;
     inset: 0;
   }
@@ -1107,6 +1107,10 @@
     opacity: 0;
   }
 
+  .sidebar__sheet-backdrop[data-exiting="true"] {
+    transition-duration: var(--overlay-exit-duration);
+  }
+
   .sidebar__sheet {
     height: 100%;
     width: var(--sidebar-width);
@@ -1116,7 +1120,7 @@
     --tw-shadow: var(--overlay-shadow);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
-    transition: translate var(--duration-base) cubic-bezier(.32, .72, 0, 1);
+    transition: translate var(--overlay-duration) var(--overlay-ease);
     outline-style: none;
     flex-direction: column;
     display: flex;
@@ -1155,7 +1159,7 @@
   }
 
   .sidebar__sheet[data-exiting="true"] {
-    transition-duration: var(--duration-base);
+    transition-duration: var(--overlay-exit-duration);
   }
 
   .sidebar__sheet-dialog {

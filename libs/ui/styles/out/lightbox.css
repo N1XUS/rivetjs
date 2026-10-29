@@ -23,18 +23,18 @@
 
   .lightbox__backdrop[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-enter-opacity: 0;
-    animation-duration: var(--rv-lightbox-fade, var(--duration-base));
+    animation-duration: var(--rv-lightbox-fade, var(--overlay-fade-duration));
   }
 
   .lightbox__backdrop[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-exit-opacity: 0;
-    animation-duration: var(--rv-lightbox-fade, var(--duration-base));
+    animation-duration: var(--rv-lightbox-fade, var(--overlay-exit-duration));
   }
 
   .lightbox__backdrop[data-exiting="true"], .lightbox__backdrop[data-entering="true"] {

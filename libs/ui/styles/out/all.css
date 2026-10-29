@@ -3955,7 +3955,7 @@
     height: var(--visual-viewport-height);
     background-color: var(--backdrop);
     width: 100%;
-    transition: opacity var(--duration-base) cubic-bezier(.32, .72, 0, 1);
+    transition: opacity var(--overlay-fade-duration) var(--overlay-ease);
     position: fixed;
     inset: 0;
   }
@@ -3974,6 +3974,10 @@
     opacity: 0;
   }
 
+  .sidebar__sheet-backdrop[data-exiting="true"] {
+    transition-duration: var(--overlay-exit-duration);
+  }
+
   .sidebar__sheet {
     height: 100%;
     width: var(--sidebar-width);
@@ -3983,7 +3987,7 @@
     --tw-shadow: var(--overlay-shadow);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
-    transition: translate var(--duration-base) cubic-bezier(.32, .72, 0, 1);
+    transition: translate var(--overlay-duration) var(--overlay-ease);
     outline-style: none;
     flex-direction: column;
     display: flex;
@@ -4022,7 +4026,7 @@
   }
 
   .sidebar__sheet[data-exiting="true"] {
-    transition-duration: var(--duration-base);
+    transition-duration: var(--overlay-exit-duration);
   }
 
   .sidebar__sheet-dialog {
@@ -15540,18 +15544,18 @@
 
   .lightbox__backdrop[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-enter-opacity: 0;
-    animation-duration: var(--rv-lightbox-fade, var(--duration-base));
+    animation-duration: var(--rv-lightbox-fade, var(--overlay-fade-duration));
   }
 
   .lightbox__backdrop[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-exit-opacity: 0;
-    animation-duration: var(--rv-lightbox-fade, var(--duration-base));
+    animation-duration: var(--rv-lightbox-fade, var(--overlay-exit-duration));
   }
 
   .lightbox__backdrop[data-exiting="true"], .lightbox__backdrop[data-entering="true"] {
@@ -16583,19 +16587,19 @@
 
   .alert-dialog__backdrop[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--overlay-fade-duration);
+    transition-duration: var(--overlay-fade-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-enter-opacity: 0;
   }
 
   .alert-dialog__backdrop[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--overlay-exit-duration);
+    transition-duration: var(--overlay-exit-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-exit-opacity: 0;
   }
 
@@ -16652,12 +16656,12 @@
 
   .alert-dialog__container[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
-    --tw-ease: cubic-bezier(.25, .46, .45, .94);
+    --tw-duration: var(--overlay-duration);
+    transition-duration: var(--overlay-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-enter-opacity: 0;
     --tw-enter-scale: calc(105*1%);
-    transition-timing-function: cubic-bezier(.25, .46, .45, .94);
   }
 
   .alert-dialog__container[data-entering="true"][data-placement="auto"] {
@@ -16684,12 +16688,12 @@
 
   .alert-dialog__container[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: cubic-bezier(.25, .46, .45, .94);
+    --tw-duration: var(--overlay-exit-duration);
+    transition-duration: var(--overlay-exit-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-exit-opacity: 0;
     --tw-exit-scale: .95;
-    transition-timing-function: cubic-bezier(.25, .46, .45, .94);
   }
 
   .alert-dialog__container[data-exiting="true"], .alert-dialog__container[data-entering="true"] {
@@ -17560,9 +17564,9 @@
     z-index: 40;
     --navbar-height: 4rem;
     --navbar-max-width: 1024px;
-    --navbar-transition-duration: var(--duration-slow);
+    --navbar-transition-duration: var(--overlay-exit-duration);
     width: 100%;
-    transition: translate var(--navbar-transition-duration) cubic-bezier(.32, .72, 0, 1);
+    transition: translate var(--navbar-transition-duration) var(--overlay-ease);
     position: relative;
     translate: 0;
   }
@@ -17847,7 +17851,7 @@
     padding-block: calc(var(--spacing, .25rem) * 3);
     height: calc(100dvh - var(--navbar-height));
     opacity: 1;
-    transition: opacity var(--duration-base) var(--ease-smooth), translate var(--duration-base) var(--ease-smooth), display var(--duration-base) allow-discrete;
+    transition: opacity var(--overlay-fade-duration) var(--overlay-ease), translate var(--overlay-duration) var(--overlay-ease), display var(--overlay-duration) allow-discrete;
     inset-inline: 0;
     flex-direction: column;
     display: flex;
@@ -17858,6 +17862,7 @@
   }
 
   .navbar__menu:not([data-open="true"]) {
+    transition-duration: var(--overlay-exit-duration);
     opacity: 0;
     display: none;
     translate: 0 -.5rem;
@@ -23207,8 +23212,10 @@
 
   .command__backdrop[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--overlay-fade-duration);
+    transition-duration: var(--overlay-fade-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-enter-opacity: 0;
   }
 
@@ -23224,8 +23231,10 @@
 
   .command__backdrop[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--overlay-exit-duration);
+    transition-duration: var(--overlay-exit-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-exit-opacity: 0;
   }
 
@@ -23265,13 +23274,13 @@
 
   .command__container[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
-    --tw-ease: cubic-bezier(.2, 0, 0, 1);
+    --tw-duration: var(--overlay-duration);
+    transition-duration: var(--overlay-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-enter-opacity: 0;
     --tw-enter-scale: .95;
     --tw-enter-translate-y: calc(2*var(--spacing)*-1);
-    transition-timing-function: cubic-bezier(.2, 0, 0, 1);
   }
 
   .command__container[data-entering="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .command__container[data-entering="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .command__container[data-entering="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -23286,12 +23295,12 @@
 
   .command__container[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: cubic-bezier(.2, 0, 0, 1);
+    --tw-duration: var(--overlay-exit-duration);
+    transition-duration: var(--overlay-exit-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-exit-opacity: 0;
     --tw-exit-scale: .95;
-    transition-timing-function: cubic-bezier(.2, 0, 0, 1);
   }
 
   .command__container[data-exiting="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .command__container[data-exiting="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .command__container[data-exiting="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

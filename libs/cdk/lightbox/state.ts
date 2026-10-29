@@ -176,7 +176,7 @@ export interface LightboxCarouselSettings {
 
 /** Animation settings in milliseconds (YARL `AnimationSettings`; easing → embla physics). */
 export interface LightboxAnimationSettings {
-  /** Fade-in / fade-out duration (CSS, `--rv-lightbox-fade`). @default 250 */
+  /** Fade-in / fade-out duration (CSS, `--rv-lightbox-fade`, written only when given: unset = the stylesheet's timing; gestures use 250). @default 250 */
   fade: number;
   /** Swipe settle duration. @default 500 */
   swipe: number;

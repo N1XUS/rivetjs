@@ -13,7 +13,7 @@ related: [components/carousel, components/modal, foundations/motion, foundations
 ## Anatomy
 
 ```html
-<div class="rv-LightboxOverlay" data-lightbox-overlay="" style="position:fixed;inset:0;--rv-lightbox-fade:250ms">
+<div class="rv-LightboxOverlay" data-lightbox-overlay="" style="position:fixed;inset:0">
   <div class="rv-Lightbox" data-lightbox-root="" style="position:absolute;inset:0">
     <div role="dialog" aria-modal="true" aria-label="Photos" class="rv-LightboxContainer" data-lightbox-container="" tabindex="-1" style="display:grid;…">
       <div role="region" aria-roledescription="carousel" class="rv-LightboxCarousel" data-lightbox-carousel="">
@@ -124,7 +124,7 @@ Without children the lightbox renders its default parts: the carousel, a Close b
 | Prop         | Settings (defaults)                                                                                                                                                                                                                        |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `carousel`   | `finite` (`false`: wraps around), `preload` (2 slides each side), `padding` (`"16px"`), `spacing` (`"30%"`), `imageFit` (`"contain"`)                                                                                                      |
-| `animation`  | `fade` (250 ms, CSS `--rv-lightbox-fade`), `swipe` (500 ms), `navigation` (= `swipe`), `zoom` (500 ms)                                                                                                                                     |
+| `animation`  | `fade` (250 ms; given → inline CSS `--rv-lightbox-fade`, unset → the stylesheet's fade timing), `swipe` (500 ms), `navigation` (= `swipe`), `zoom` (500 ms)                                                                                                                                     |
 | `controller` | `closeOnEscape` (`true`), `closeOnBackdropClick`, `closeOnPullDown`, `closeOnPullUp` (`false`), `touchAction` (`"none"` or `"pan-y"`), `disableSwipeNavigation`, `preventDefaultWheelX` (`true`), `preventDefaultWheelY`, `focus` (`true`) |
 | `labels`     | every visible and accessible string (`Previous`, `Next`, `Close`, `"{index} of {total}"`, `Zoom in`, …)                                                                                                                                    |
 

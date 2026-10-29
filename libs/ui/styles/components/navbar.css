@@ -12,10 +12,11 @@
   @apply relative z-40 w-full;
   --navbar-height: 4rem;
   --navbar-max-width: 1024px;
-  --navbar-transition-duration: var(--duration-slow);
+  /* Hide / reveal slides like an overlay exit (overlay motion tokens, TWEAKS.md TW-186). */
+  --navbar-transition-duration: var(--overlay-exit-duration);
 
   translate: 0 0;
-  transition: translate var(--navbar-transition-duration) cubic-bezier(0.32, 0.72, 0, 1);
+  transition: translate var(--navbar-transition-duration) var(--overlay-ease);
 
   &[data-hidden="true"] {
     translate: 0 calc(-100% - 1rem);
@@ -204,12 +205,14 @@ html:has(.navbar[data-menu-open="true"][data-block-scroll="true"]) {
   height: calc(100dvh - var(--navbar-height));
   opacity: 1;
   translate: 0 0;
+  /* Overlay motion tokens (= Drawer / Sheet / Modal, TWEAKS.md TW-186): fade + slide in, one exit duration. */
   transition:
-    opacity var(--duration-base) var(--ease-smooth),
-    translate var(--duration-base) var(--ease-smooth),
-    display var(--duration-base) allow-discrete;
+    opacity var(--overlay-fade-duration) var(--overlay-ease),
+    translate var(--overlay-duration) var(--overlay-ease),
+    display var(--overlay-duration) allow-discrete;
 
   &:not([data-open="true"]) {
+    transition-duration: var(--overlay-exit-duration);
     display: none;
     opacity: 0;
     translate: 0 -0.5rem;

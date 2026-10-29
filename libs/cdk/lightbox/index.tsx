@@ -7,7 +7,7 @@
 //   `LightboxNext`; plugins are parts in their own subpaths (`@rivetjs/cdk/lightbox/zoom`, …): 0 B unless imported.
 // - Focus containment / restoration, Escape (`controller.closeOnEscape`), scroll lock and `inert` outside = cdk
 //   `ModalOverlay` (YARL Portal + NoScroll). Fade = CSS on `[data-entering]` / `[data-exiting]` (duration
-//   `--rv-lightbox-fade`); `onEntering` / `onEntered` / `onExiting` / `onExited` follow the overlay's enter / exit.
+//   `--rv-lightbox-fade`, written only for an explicit `animation.fade`); `onEntering` / `onEntered` / `onExiting` / `onExited` follow the overlay's enter / exit.
 // - Layout: the container is a CSS grid (`top` / `start` / `main` / `end` / `bottom` areas): the carousel fills `main`,
 //   the Thumbnails strip takes its side's area (YARL shrinks the carousel by the thumbnails size); toolbar, navigation and
 //   captions are absolutely positioned (not grid items).
@@ -132,14 +132,15 @@ export function Lightbox(props: LightboxProps) {
     overlayStyle = props.overlayStyle,
     containerCls = props.containerClass;
   const label = props["aria-label"] ?? translateLabel(state.labels, "Lightbox");
-  const fade = `${state.animation.fade}ms`;
+  // `--rv-lightbox-fade` only when `animation.fade` is given: unset, the stylesheet's own timing applies (ui: overlay tokens).
+  const fade = props.animation?.fade;
   const on = state.on;
   return (
     <Provider token={OverlayTriggerStateContext} value={overlay}>
       <ModalOverlay
         isKeyboardDismissDisabled={!state.controller.closeOnEscape}
         class={overlayCls}
-        style={{ "--rv-lightbox-fade": fade, ...overlayStyle } as never}
+        style={(fade == null ? overlayStyle : { "--rv-lightbox-fade": `${fade}ms`, ...overlayStyle }) as never}
         data-lightbox-overlay=""
         onEnter={() => on.onEntering?.()}
         onExit={() => on.onExiting?.()}

@@ -54,19 +54,19 @@
 
   .alert-dialog__backdrop[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--overlay-fade-duration);
+    transition-duration: var(--overlay-fade-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-enter-opacity: 0;
   }
 
   .alert-dialog__backdrop[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--overlay-exit-duration);
+    transition-duration: var(--overlay-exit-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-exit-opacity: 0;
   }
 
@@ -123,12 +123,12 @@
 
   .alert-dialog__container[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
-    --tw-ease: cubic-bezier(.25, .46, .45, .94);
+    --tw-duration: var(--overlay-duration);
+    transition-duration: var(--overlay-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-enter-opacity: 0;
     --tw-enter-scale: calc(105*1%);
-    transition-timing-function: cubic-bezier(.25, .46, .45, .94);
   }
 
   .alert-dialog__container[data-entering="true"][data-placement="auto"] {
@@ -155,12 +155,12 @@
 
   .alert-dialog__container[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: cubic-bezier(.25, .46, .45, .94);
+    --tw-duration: var(--overlay-exit-duration);
+    transition-duration: var(--overlay-exit-duration);
+    --tw-ease: var(--overlay-ease);
+    transition-timing-function: var(--overlay-ease);
     --tw-exit-opacity: 0;
     --tw-exit-scale: .95;
-    transition-timing-function: cubic-bezier(.25, .46, .45, .94);
   }
 
   .alert-dialog__container[data-exiting="true"], .alert-dialog__container[data-entering="true"] {

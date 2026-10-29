@@ -130,6 +130,92 @@ test("sidebar: mobile sheet below 768px opens with the sheet classes; Escape clo
     { width: 500, height: 800 },
   ));
 
+/** Running CSS transitions of the panel (`panel`) and backdrop (`backdrop`) shortly after `act`: [property, ms, easing]. */
+async function overlayTimings(page: Page, act: () => Promise<unknown>, panel: string, backdrop: string): Promise<string[]> {
+  await act();
+  await page.waitForTimeout(40);
+  return page.evaluate(
+    ([panel, backdrop]) =>
+      document
+        .getAnimations()
+        .filter((a) => a instanceof CSSTransition && (a.effect as KeyframeEffect).target instanceof Element)
+        .map((a) => {
+          const el = (a.effect as KeyframeEffect).target as Element;
+          const role = el.matches(panel) ? "panel" : el.matches(backdrop) ? "backdrop" : null;
+          const t = a.effect!.getTiming();
+          return role ? `${role} ${(a as CSSTransition).transitionProperty} ${t.duration}ms ${t.easing}` : null;
+        })
+        .filter((x): x is string => x != null)
+        .sort(),
+    [panel, backdrop],
+  );
+}
+
+// MOTION-HARMONY (TW-186): the mobile sheet slides / fades exactly like a left Drawer (overlay tokens), both ways.
+test("sidebar: the mobile sheet enters and exits with a left Drawer's timing", async () => {
+  const context: BrowserContext = await s.browser.newContext({ viewport: { width: 500, height: 800 } });
+  const page = await context.newPage();
+  try {
+    await page.goto(s.origin + "/drawer");
+    await page.waitForLoadState("networkidle");
+    const drawerPanel = '[data-slot="drawer-dialog"]',
+      drawerBackdrop = '[data-slot="drawer-backdrop"]';
+    const drawerIn = await overlayTimings(page, () => page.click("#dr-left"), drawerPanel, drawerBackdrop);
+    await page.waitForTimeout(700);
+    const drawerOut = await overlayTimings(page, () => page.keyboard.press("Escape"), drawerPanel, drawerBackdrop);
+    await page.goto(s.origin + "/sidebar");
+    await page.waitForLoadState("networkidle");
+    const sheetPanel = '[data-mobile="true"]',
+      sheetBackdrop = ".sidebar__sheet-backdrop";
+    const sheetIn = await overlayTimings(page, () => page.click("#sb-trigger"), sheetPanel, sheetBackdrop);
+    await page.waitForTimeout(700);
+    const sheetOut = await overlayTimings(page, () => page.keyboard.press("Escape"), sheetPanel, sheetBackdrop);
+    assert.deepEqual(
+      drawerIn.map((t) => t.split(" ").slice(0, 2).join(" ")),
+      ["backdrop opacity", "panel translate"],
+    );
+    assert.deepEqual(sheetIn, drawerIn);
+    assert.equal(drawerOut.length, 2);
+    assert.deepEqual(sheetOut, drawerOut);
+  } finally {
+    await context.close();
+  }
+});
+
+test("sidebar: a swipe dismiss fades the underlay with the stylesheet's exit timing (no JS duration)", () =>
+  onPage(
+    async (page, seen) => {
+      await page.waitForLoadState("networkidle");
+      await page.click("#sb-trigger");
+      await page.waitForSelector("[role=dialog]");
+      await page.waitForTimeout(700);
+      const box = (await page.locator('[data-mobile="true"]').boundingBox())!;
+      const y = box.y + box.height / 2;
+      await page.mouse.move(box.x + box.width - 20, y);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width - 60, y, { steps: 2 });
+      await page.mouse.move(box.x + box.width - 160, y, { steps: 3 });
+      await page.mouse.up();
+      await page.waitForTimeout(40);
+      const fades = await page.evaluate(() =>
+        document
+          .getAnimations()
+          .filter((a) => ((a.effect as KeyframeEffect | null)?.target as Element | null)?.matches(".sidebar__sheet-backdrop"))
+          .map((a) => `${a.constructor.name} ${a.effect!.getTiming().duration}ms ${a.effect!.getTiming().easing}`),
+      );
+      // The script fade takes the backdrop's exit transition (overlay tokens) — the same numbers as that CSS transition.
+      const script = fades.filter((f) => f.startsWith("Animation "));
+      assert.equal(script.length, 1, fades.join(" / "));
+      assert.ok(
+        fades.some((f) => f.startsWith("CSSTransition ") && f.slice(14) === script[0]!.slice(10)),
+        fades.join(" / "),
+      );
+      await page.waitForFunction(() => !document.querySelector("[role=dialog]"));
+      assert.deepEqual(seen.errors, []);
+    },
+    { width: 500, height: 800 },
+  ));
+
 test("sidebar: a menu press in the mobile sheet closes it (ui closeMobileOnAction default)", () =>
   onPage(
     async (page, seen) => {

@@ -5,17 +5,17 @@
  * -----------------------------------------------------------------------------------------------*/
 
 /**
- * Element: backdrop - fixed fullscreen layer
+ * Element: backdrop - fixed fullscreen layer (overlay motion tokens = Modal, TWEAKS.md TW-186)
  */
 .command__backdrop {
   @apply fixed inset-0 z-50 flex justify-center px-4;
 
   &[data-entering="true"] {
-    @apply animate-in duration-(--duration-fast) fade-in-0 motion-reduce:animate-none;
+    @apply animate-in duration-(--overlay-fade-duration) ease-(--overlay-ease) fade-in-0 motion-reduce:animate-none;
   }
 
   &[data-exiting="true"] {
-    @apply animate-out duration-(--duration-fast) fade-out-0 motion-reduce:animate-none;
+    @apply animate-out duration-(--overlay-exit-duration) ease-(--overlay-ease) fade-out-0 motion-reduce:animate-none;
   }
 }
 
@@ -40,11 +40,11 @@
   padding-top: 15vh;
 
   &[data-entering="true"] {
-    @apply animate-in duration-(--duration-base) ease-smooth fade-in-0 zoom-in-95 slide-in-from-top-2 motion-reduce:animate-none;
+    @apply animate-in duration-(--overlay-duration) ease-(--overlay-ease) fade-in-0 zoom-in-95 slide-in-from-top-2 motion-reduce:animate-none;
   }
 
   &[data-exiting="true"] {
-    @apply animate-out duration-(--duration-fast) ease-smooth fade-out-0 zoom-out-95 motion-reduce:animate-none;
+    @apply animate-out duration-(--overlay-exit-duration) ease-(--overlay-ease) fade-out-0 zoom-out-95 motion-reduce:animate-none;
   }
 }
 

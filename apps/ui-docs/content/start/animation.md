@@ -59,7 +59,7 @@ All component transitions draw on three durations and one easing curve defined i
 | `--duration-slow` | 260 ms                       | large surfaces (drawers, sidebars, calendars)           |
 | `--ease-smooth`   | `cubic-bezier(0.2, 0, 0, 1)` | the default curve: fast start, soft stop                |
 
-Full-screen overlays (Modal, Drawer, Sheet) share a separate timing based on the iOS sheet curve, so they all open and close the same way:
+Full-screen overlays (Modal, AlertDialog, Drawer, Sheet, Command, Lightbox, the Sidebar's mobile sheet and the Navbar's mobile menu) share a separate timing based on the iOS sheet curve, so they all open and close the same way (the Sidebar's mobile sheet slides exactly like a Drawer on the same side):
 
 | Token                     | Value                            | Used for                                    |
 | ------------------------- | -------------------------------- | ------------------------------------------- |

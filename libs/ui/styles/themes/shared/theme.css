@@ -138,6 +138,26 @@
   --overlay-duration: 500ms;
   --overlay-fade-duration: 400ms;
   --overlay-exit-duration: var(--duration-slow);
+  /* Rivet: motion roles (MOTION-HARMONY, TWEAKS.md TW-186): component CSS times every transition / animation with the
+     tokens of its role, never a primitive (`--duration-*`, `--ease-*`) or a literal; libs/ui/tests/motion-tokens.test.ts.
+     state = colour / background / border / shadow / opacity feedback; move = small transforms (press scale, chevrons,
+     indicators, thumbs, check draws); collapse = size changes (accordion, disclosure, tree, sidebar rail, aside);
+     indicator = a selection pill sliding between items (Tabs, Segment); popup = anchored popups (popover, tooltip, menus,
+     pickers); enter / exit = notification-like entrances (toast, action bar, chat rows); overlay = the tokens above. */
+  --motion-state-duration: var(--duration-fast);
+  --motion-state-ease: var(--ease-smooth);
+  --motion-move-duration: var(--duration-base);
+  --motion-move-ease: var(--ease-smooth);
+  --motion-collapse-duration: var(--duration-base);
+  --motion-collapse-ease: var(--ease-out-quad);
+  --motion-indicator-duration: var(--duration-base);
+  --motion-indicator-ease: var(--ease-out-fluid);
+  --motion-enter-duration: var(--duration-slow);
+  --motion-exit-duration: var(--duration-base);
+  --motion-enter-ease: var(--ease-out-fluid);
+  --popup-duration: var(--duration-fast);
+  --popup-exit-duration: var(--duration-fast);
+  --popup-ease: var(--ease-smooth);
   /* Rivet: morph icons (default Select / ComboBox / Autocomplete / CellSelect / NativeSelect chevron, Navbar burger; TWEAKS.md
      TW-149): apple.com's nav timings, each SMIL spline pair (keyTimes 0 / .5 / 1) sampled as one linear() curve. Chevron
      expand = (.12 0 .38 0, .2 1 .68 1), collapse = (.2 0 .68 0, .2 1 .68 1); burger = (.42 0 1 1, 0 0 .58 1). */

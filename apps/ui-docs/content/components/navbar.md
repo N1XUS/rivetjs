@@ -191,11 +191,11 @@ Root data attributes: `data-position`, `data-hide-on-scroll`, `data-hide-mode="j
 
 ### CSS Variables
 
-| Variable                       | Default                | What                                                |
-| ------------------------------ | ---------------------- | --------------------------------------------------- |
-| `--navbar-height`              | `4rem` (`height` prop) | bar height; the menu fills the rest of the viewport |
-| `--navbar-max-width`           | per `maxWidth`         | header content width                                |
-| `--navbar-transition-duration` | `300ms`                | hide / reveal slide                                 |
+| Variable                       | Default                                  | What                                                                                  |
+| ------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------- |
+| `--navbar-height`              | `4rem` (`height` prop)                   | bar height; the menu fills the rest of the viewport                                   |
+| `--navbar-max-width`           | per `maxWidth`                           | header content width                                                                  |
+| `--navbar-transition-duration` | `var(--overlay-exit-duration)` (`260ms`) | hide / reveal slide (curve `--overlay-ease`; the mobile menu uses the overlay tokens) |
 
 ## API Reference
 
