@@ -63,8 +63,9 @@ test("search: a cold Ctrl+K fetches only the palette + light overlay primitives;
     await page.waitForLoadState("networkidle");
     // The DOM runtime chunk (RT-DIET2 DOCS-CHROME: docs pages boot no runtime before input, so the first overlay brings
     // it; once per page, shared with the theme menu / drawer) is not the palette's. The docs page script (DOCS-ZERO:
-    // fetched on this first intent, 5 KB) is counted.
-    const fetched = js.slice(mark).filter(([path]) => !/\/dom-derived(?:-abi)?-[\w-]+\.js$/.test(path));
+    // fetched on this first intent, 5 KB) is counted. Rolldown names that shared chunk after one of its modules, and the
+    // pick flips between builds (`dom-derived-abi-*` or `derived-runtime-*`, LITE-BOOT 2026-10-29: same 90 KB chunk).
+    const fetched = js.slice(mark).filter(([path]) => !/\/(?:dom-derived(?:-abi)?|derived-runtime)-[\w-]+\.js$/.test(path));
     assert.ok(js.slice(mark).length - fetched.length <= 1, "one DOM runtime chunk");
     const bytes = fetched.reduce((sum, [, size]) => sum + size, 0);
     assert.ok(bytes <= PALETTE_BUDGET, `palette fetched ${bytes} B: ${fetched.map(([path, size]) => `${path} ${size}`).join(", ")}`);

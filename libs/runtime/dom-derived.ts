@@ -2239,6 +2239,13 @@ let typed = new WeakMap<EventTarget, [unknown, unknown]>();
 // focused].
 // Reset by any other held event (a press or input between them was the user's own focus move) and when the queue empties.
 let keyed: [EventTarget, Element] | undefined;
+// Held keys follow a hidden press's focus too (LITE-BOOT 2026-10-29): a press queued while it dispatched (the runtime
+// already running, its chunk not yet adopted: a primed router page's `ready` hop) has its native focus move undone, so
+// the keys typed after it target where focus stayed (the body), where a loaded page sent them to what the press focused
+// (its default focus, or a handler's: RA usePress focuses on pointerup after canceling mousedown). [element focus stayed
+// on, press dispatch time]: a held key dispatched to that element after the press goes to the element focused at its
+// replay. Reset by the next press and when the queue empties.
+let steered: [EventTarget, number] | undefined;
 // A cold event as it is queued (dom-resume `cold`'s synchronous part): link a press's pointerdown + mousedown, mark the
 // focus events of a pre-boot press's native move, hide the move of a press queued while it dispatches.
 function queued([event, , , state]: HeldEvent): void {
@@ -2264,7 +2271,11 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     // node at its place in the browser's render (`retargets`), dropped when there is none.
     shifted = target && !target.isConnected,
     // A held key sent where an earlier key's replay moved focus from (`keyed`): replayed there.
-    follow = key && keyed?.[0] === target && keyed[1].isConnected && keyed[1];
+    focused = doc!.activeElement,
+    follow =
+      key &&
+      ((keyed?.[0] === target && keyed[1].isConnected && keyed[1]) ||
+        (steered?.[0] === target && event.timeStamp >= steered[1] && focused !== target && focused !== doc!.body && focused));
   if (shifted || follow) {
     const to = (follow || retargets.get(target)) as HTMLInputElement | undefined;
     if (!to?.isConnected) return;
@@ -2274,6 +2285,7 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
   if (!key && !/^(focus|blur)/.test(type)) keyed = undefined;
   hide();
   const press = isPress(event),
+    hid = press && hiddenMove.has(event),
     pair = linked.has(event),
     before = doc!.activeElement,
     // Focus sits where the press left it: on its target (the native move landed) or where it was at dispatch (the move
@@ -2283,6 +2295,7 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     // A linked mousedown follows its pointerdown's verdict (that replay already put focus back).
     fresh = pair && type === "mousedown" ? pairFresh : !!press && before === ((hiddenMove.has(event) ? state[2] : press[0]) ?? doc!.body);
   if (pair && type === "pointerdown") pairFresh = fresh;
+  if (hid) steered = [(state[2] as Element | null) ?? doc!.body, event.timeStamp];
   // A linked mousedown after a canceled pointerdown (FUZZ-UI ui `/app-layout-sheet`: the sidebar resize handle's
   // `preventDefault`): the browser dispatches no compatibility mousedown, so its handlers do not run and no default focus
   // follows — the pointerdown's replay already put focus back. Recorded as a canceled press (`undone`).
@@ -2449,7 +2462,7 @@ async function drain(): Promise<void> {
     pending.shift();
   }
   typed = new WeakMap();
-  keyed = undefined;
+  keyed = steered = undefined;
   record(0);
 }
 

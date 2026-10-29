@@ -159,3 +159,79 @@ compiled("cold keys follow the focus their replays move; a key sent to another e
     { delays: { "/segments.js": cold } },
   );
 });
+
+// LITE-BOOT 2026-10-29: a press queued while it dispatches (the runtime already running — a primed page, or an earlier
+// boundary's event — while this boundary's chunk still loads) has its native focus move undone, so the keys typed after
+// it target the body. A loaded page sent them to what the press focused (here its pointerup handler, as RA usePress
+// after canceling mousedown; cdk Calendar "repeat arrow keydown"): the held keys follow the focus the press's replay
+// left, and each key's own focus move as before.
+const CELLS = `export function Cells() {
+  const move = (e: KeyboardEvent) => {
+    if (e.key !== "ArrowRight") return;
+    e.preventDefault();
+    ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement | null)?.focus();
+  };
+  return (
+    <div id="cells">
+      {[0, 1, 2, 3].map((i) => (
+        <span id={"c" + i} tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onPointerUp={(e) => (e.currentTarget as HTMLElement).focus()} onKeyDown={move}>
+          {i}
+        </span>
+      ))}
+    </div>
+  );
+}
+`;
+const OTHER = `import { signal } from "@rivetjs/reactivity";
+export function Other() {
+  const n = signal(0);
+  return <button id="other" onClick={() => n.set(n() + 1)}>{n()}</button>;
+}
+`;
+
+compiled("cold keys after a press queued while the runtime runs follow the focus its replay left", async () => {
+  const one = (source: string, name: string) => {
+    const resume3 = { module: `src/${name.toLowerCase()}.tsx`, boundaries: [name], independent: [name] };
+    const server = compile(source, { target: "server", filename: `${name}.tsx`, resume: resume3 } as never);
+    const dom = compile(source, { target: "dom", filename: `${name}.tsx`, resume: resume3 } as never);
+    assert.deepEqual(server.diagnostics, []);
+    assert.deepEqual(dom.diagnostics, []);
+    return { server, dom };
+  };
+  const cells = one(CELLS, "Cells"),
+    other = one(OTHER, "Other");
+  const { Cells } = await importServer<{ Cells: () => ServerValue }>(cells.server.code);
+  const { Other } = await importServer<{ Other: () => ServerValue }>(other.server.code);
+  const symbols = { "src/cells.tsx#Cells": "/cells.js", "src/other.tsx#Other": "/other.js" };
+  const html = (await derivedToString(() => [Other(), Cells()] as never, {
+    manifest: { hash: "t", runtime: "/rt.js", symbols },
+    preload: { lean: true },
+  } as never)) as string;
+  let release!: () => void;
+  const cold = new Promise<void>((resolve) => (release = resolve));
+  const served = {
+    ...DERIVED_BUILD,
+    "/": "<!doctype html><html><body>" + html + "</body></html>",
+    "/rt.js": 'export { default } from "/dom-derived.ts";',
+    "/cells.js": rewrite(cells.dom.code),
+    "/other.js": rewrite(other.dom.code),
+  };
+  await withPage(
+    served,
+    async (page) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto("http://rivet.test/");
+      // The runtime starts (and adopts Other) on this first click; Cells' chunk is held back.
+      await page.click("#other");
+      await page.waitForFunction(() => document.querySelector("#other")!.textContent === "1");
+      await page.click("#c0");
+      await page.keyboard.press("ArrowRight");
+      await page.keyboard.press("ArrowRight");
+      release();
+      await page.waitForFunction(() => document.activeElement?.id === "c2", undefined, { timeout: 5000 });
+      assert.deepEqual(errors, []);
+    },
+    { delays: { "/cells.js": cold } },
+  );
+});
