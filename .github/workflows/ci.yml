@@ -114,6 +114,19 @@ jobs:
           path: apps/ui-docs/.artifacts/cold/cold.*
           if-no-files-found: ignore
 
+  # Backend examples (examples/CLAUDE.md): build + boot on fakes, no Docker. Compose stacks never run here.
+  examples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run --project examples --maxWorkers=1
+
   zero-cost:
     runs-on: ubuntu-latest
     steps:

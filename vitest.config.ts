@@ -111,6 +111,8 @@ export default defineConfig({
       // @rivetjs/nx: generators / inference / executors on in-memory trees + an e2e Nx workspace (`e2e.test.ts`).
       node("nx", ["libs/nx/tests/*.test.ts"]),
       node("scripts", ["scripts/tests/*.test.ts"]),
+      // Backend examples (examples/CLAUDE.md): build + boot each example on in-process fakes / node:sqlite; no Docker, no network.
+      node("examples", ["examples/*/tests/*.test.ts"], { testTimeout: 180_000, hookTimeout: 180_000 }),
       node("docs", ["apps/docs/tests/*.test.ts"]),
       node("ui-docs", ["apps/ui-docs/tests/*.test.ts"]),
       node("dom-bench", ["apps/dom-bench/tests/*.test.ts"]),

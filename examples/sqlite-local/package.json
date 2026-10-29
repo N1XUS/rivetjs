@@ -1,0 +1,42 @@
+{
+  "name": "rivet-example-sqlite-local",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "rivetExample": {
+    "name": "sqlite-local",
+    "title": "SQLite, local file",
+    "summary": "Bookmarks on node:sqlite: search, tag filter, keyset pagination, JS-off forms, JSON import / export.",
+    "services": [],
+    "backends": [
+      "memory",
+      "sqlite"
+    ],
+    "jsBudgetKB": 40
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr",
+    "start": "node serve.ts",
+    "migrate": "node scripts/migrate.ts",
+    "seed": "node scripts/seed.ts",
+    "check": "rivet sync && rivet-check && node ../../scripts/tsc.ts -p ."
+  },
+  "dependencies": {
+    "@rivetjs/kit": "experimental",
+    "@rivetjs/reactivity": "experimental",
+    "@rivetjs/router": "experimental",
+    "@rivetjs/runtime": "experimental",
+    "lucide": "^1.52.0"
+  },
+  "devDependencies": {
+    "@rivetjs/compiler": "experimental",
+    "@rivetjs/language-core": "experimental",
+    "@rivetjs/typescript-plugin": "experimental",
+    "@types/node": "^24.0.0",
+    "vite": "^8.3.2"
+  }
+}
