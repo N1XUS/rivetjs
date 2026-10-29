@@ -15,7 +15,7 @@ Living plan, updated 2026-10-29 (previous: 2026-10-12). Status: **done** · **in
 
 | Item | Status | Links / notes |
 | --- | --- | --- |
-| Peak SSR memory vs Qwik (the last SSR metric we lose) | in progress — SSR-MEM 2026-10-29: 1000 rows 837 → 729 KB/page, RSS 318 → 302 MiB, no leak (peak = V8 garbage high-water); next: ~40 fixed per-request router objects (~46 KB/request) | [2026-10-28 SSR comparison](docs/benchmarks/2026-10-28-ssr-comparison.md) |
+| Peak SSR memory vs Qwik (the last SSR metric we lose) | in progress — SSR-MEM 2026-10-29: 1000 rows 837 → 729 KB/page, RSS 318 → 302 MiB, no leak (peak = V8 garbage high-water); SSR-MEM-2 2026-10-29: router handler fixed allocation 12.9 → 10.7 KB/req, `/resume` 100 rows 160 → 154 KB/req and 165 → 155 µs; peak RSS unchanged (warm-up spike, V8 page pool); next: a design aimed at peak RSS ([`2026-10-29-ssr-mem-2`](docs/benchmarks/2026-10-29-ssr-mem-2.md)) | [2026-10-28 SSR comparison](docs/benchmarks/2026-10-28-ssr-comparison.md) |
 | First input on router pages | done 2026-10-29 (ROUTER-PRIME): the idle prime runs `Root.ready`; first click slow 4G 181 → 14–18 ms, fast 31 → 15 ms, 0 requests after the click (cost: +1 eager request on nested-layout pages) | [router-prime](docs/benchmarks/2026-10-29-router-prime.md) |
 | GitHub CI | repository public since 2026-10-29: Actions run again; first green run pending | `.github/workflows/ci.yml` |
 | Lane harness (launch / watch / retry / intake for agent lanes) | designed — spec uncommitted, two questions open | `docs/design/specs/2026-10-28-lane-harness-design.md` |
