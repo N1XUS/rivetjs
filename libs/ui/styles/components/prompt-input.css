@@ -3,11 +3,16 @@
  * PromptInput Component Styles
  * Block: prompt-input (parts: shell / content / attachments / textarea / toolbar / toolbar-start / toolbar-end / action
  *        / send / send-icon / footer / queue / queue-list / queue-item(-handle/-body/-icon/-content/-description
- *        /-attachments/-attachments-overflow/-actions/-action))
+ *        /-attachments/-attachments-overflow/-actions/-action) / token-field / token-mirror / token-input / token
+ *        / token-suggestions / token-suggestion)
  * States: [data-layout="stacked|compact|inline"], [data-size="sm|md|lg"], [data-variant="primary|secondary"],
  *         [data-status="ready|submitted|streaming|error"], [data-disabled="true"], [data-expanded="true"] (compact),
  *         shell [data-drop-target="true"]
- * Variables: --prompt-input-max-height (set from `maxHeight`)
+ * Token states: token [data-token] [data-selected="true"] [data-disabled="true"], token-suggestions [data-open="true"]
+ *         [data-placement="bottom start|bottom end|top start|top end"], token-suggestion [data-focused="true"]
+ *         [data-disabled="true"]
+ * Variables: --prompt-input-max-height (set from `maxHeight`), --prompt-input-token-x / -top / -bottom (caret box, set
+ *            on the suggestions while open)
  * -----------------------------------------------------------------------------------------------*/
 
 .prompt-input {
@@ -77,6 +82,115 @@
 
   &:disabled {
     @apply cursor-not-allowed opacity-70;
+  }
+}
+
+/* Token input: a native textarea over a mirror that draws the same text with token pills (same box, font, wrapping).
+   The textarea text is transparent (caret, selection and IME stay native); the mirror never takes pointer events. */
+.prompt-input__token-field {
+  @apply relative min-w-0;
+}
+
+.prompt-input__token-input,
+.prompt-input__token-mirror {
+  @apply m-0 border-0 px-1.5 py-1 leading-6;
+  font-size: var(--prompt-input-text);
+  font-family: inherit;
+  letter-spacing: inherit;
+  tab-size: 4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  scrollbar-gutter: stable;
+}
+
+.prompt-input__token-input {
+  @apply relative block w-full min-w-0 resize-none appearance-none bg-transparent outline-none placeholder:text-field-placeholder;
+  color: transparent;
+  caret-color: var(--foreground);
+  field-sizing: content;
+  min-height: 1.5rem;
+  max-height: var(--prompt-input-max-height);
+  overflow-y: auto;
+
+  &::selection {
+    color: transparent;
+    background-color: color-mix(in oklab, var(--accent) 28%, transparent);
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed;
+  }
+}
+
+.prompt-input__token-mirror {
+  @apply pointer-events-none absolute inset-0 overflow-hidden text-foreground select-none;
+}
+
+.prompt-input__token-field:has(.prompt-input__token-input:disabled) .prompt-input__token-mirror {
+  @apply opacity-70;
+}
+
+.prompt-input__token {
+  @apply rounded-md bg-accent-soft text-accent-soft-foreground;
+  /* Paint-only padding: the pill may not change the text metrics (the textarea wraps the same text). */
+  box-shadow: 0 0 0 0.125rem var(--accent-soft);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+
+  &[data-selected="true"] {
+    @apply bg-accent text-accent-foreground;
+    box-shadow: 0 0 0 0.125rem var(--accent);
+  }
+
+  &[data-disabled="true"] {
+    @apply opacity-70;
+  }
+}
+
+.prompt-input__token-suggestions {
+  @apply absolute z-50 flex max-h-64 w-64 max-w-[calc(100%-1rem)] flex-col gap-0.5 overflow-y-auto bg-overlay p-1.5 text-sm;
+  --r-inner: calc(var(--radius-2xl) - 0.375rem);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--overlay-shadow);
+  inset-inline-start: clamp(0.5rem, var(--prompt-input-token-x, 0.5rem), calc(100% - 16.5rem));
+
+  &[data-placement^="bottom"] {
+    top: calc(var(--prompt-input-token-bottom, 100%) + 0.375rem);
+  }
+
+  &[data-placement^="top"] {
+    bottom: calc(100% - var(--prompt-input-token-top, 0px) + 0.375rem);
+  }
+
+  &[data-placement$="end"] {
+    inset-inline-start: auto;
+    inset-inline-end: 0.5rem;
+  }
+
+  &[hidden],
+  &:not(:has([role="option"])) {
+    @apply hidden;
+  }
+
+  &[data-open="true"] {
+    @apply animate-in duration-(--duration-fast) ease-smooth fade-in-0 zoom-in-95 motion-reduce:animate-none;
+  }
+}
+
+.prompt-input__token-suggestion {
+  @apply flex min-h-9 w-full items-center gap-2.5 px-2 py-1.5 text-foreground outline-none select-none;
+  border-radius: var(--r-inner);
+  cursor: var(--cursor-interactive);
+  transition: background-color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  &[data-focused="true"] {
+    @apply bg-default;
+  }
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
   }
 }
 

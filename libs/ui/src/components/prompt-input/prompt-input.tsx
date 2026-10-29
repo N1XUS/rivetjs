@@ -14,8 +14,9 @@
 // - `TextArea` = native `<textarea>` sized by CSS `field-sizing: content` up to `--prompt-input-max-height` (fallback
 //   `@rivetjs/cdk/chat` `autosizeTextArea` on input). Compact layout: one row until the text wraps / has a newline /
 //   attachments show (`data-expanded`, written on input).
-// - Gaps (see libs/ui/CLAUDE.md Known diffs): TokenInput / Tokens / TokenSuggestions / Token / usePromptInputTokens (RAC
-//   alpha TokenField, contenteditable) and Queue.List drag reordering (`onReorder` / `axis`) are not ported.
+// - Token input (TokenInput / Tokens / TokenSuggestions / Token / usePromptInputTokens): subpath `prompt-input-tokens/`, on a
+//   native textarea instead of Pro's contenteditable RAC TokenField; it hands this root its text + reset via the context.
+// - Gap (see libs/ui/CLAUDE.md Known diffs): Queue.List drag reordering (`onReorder` / `axis`) is not ported.
 import { autosizeTextArea, isSubmitKey } from "@rivetjs/cdk/chat";
 import { controllable, setControlledValue } from "@rivetjs/cdk/interactions";
 import type { ControlledState } from "@rivetjs/cdk/interactions";
@@ -45,6 +46,10 @@ interface PromptInputContext {
   layout?: PromptInputLayout;
   submit?: () => void;
   stop?: () => void;
+  /** Set by `TokenInput` while it renders: the token field owns the prompt (its flattened text). */
+  text?: () => string;
+  /** Set by `TokenInput`: clears the token field after an uncontrolled submit. */
+  reset?: () => void;
 }
 
 const PromptInputContext = createContext<PromptInputContext>({});
@@ -110,16 +115,25 @@ const PromptInputRoot = (props: PromptInputRootProps): JSX.Element => {
   };
   const onSubmit = local.onSubmit;
   const onStop = local.onStop;
-  const submit = (): void => {
-    const text = state.value();
-    if (disabled() || isRunning(status()) || !text.trim()) return;
-    onSubmit?.(text);
-    if (!state.isControlled) setControlledValue(state, "");
-  };
   const stop = (): void => onStop?.();
   const layout = local.layout ?? "stacked";
   const maxHeight = local.maxHeight ?? 240;
-  const context: PromptInputContext = { state, status, disabled, lockInputOnRun: local.lockInputOnRun !== false, layout, submit, stop };
+  const context: PromptInputContext = {
+    state,
+    status,
+    disabled,
+    lockInputOnRun: local.lockInputOnRun !== false,
+    layout,
+    submit: () => {
+      const text = context.text ? context.text() : state.value();
+      if (disabled() || isRunning(status()) || !text.trim()) return;
+      onSubmit?.(text);
+      if (state.isControlled) return;
+      setControlledValue(state, "");
+      context.reset?.();
+    },
+    stop,
+  };
   const body = () => (
     <div
       class={composeSlotClassName(SLOTS.base, local.class)}
@@ -176,6 +190,15 @@ const PromptInputFooter = (props: Omit<JSX.IntrinsicElements["p"], "class" | "ch
 /* -------------------------------------------------------------------------------------------------
  * TextArea
  * -----------------------------------------------------------------------------------------------*/
+/** Compact layout: expand (`data-expanded`) once the text wraps or has a newline; collapse when emptied. */
+const syncCompactExpanded = (textarea: HTMLTextAreaElement): void => {
+  const root = textarea.closest("[data-slot=prompt-input]");
+  const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 24;
+  const expanded = textarea.value.includes("\n") || textarea.scrollHeight > lineHeight * 1.5 + 1;
+  if (expanded) root?.setAttribute("data-expanded", "true");
+  else if (!textarea.value) root?.removeAttribute("data-expanded");
+};
+
 interface PromptInputTextAreaProps extends Omit<JSX.IntrinsicElements["textarea"], "class" | "children" | "value"> {
   /** Turn off growing with the content. */
   disableAutosize?: boolean;
@@ -211,13 +234,7 @@ const PromptInputTextArea = (props: PromptInputTextAreaProps): JSX.Element => {
         const textarea = event.currentTarget as HTMLTextAreaElement;
         if (state) setControlledValue(state, textarea.value);
         if (autosize) autosizeTextArea(textarea);
-        if (compact) {
-          const root = textarea.closest("[data-slot=prompt-input]");
-          const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 24;
-          const expanded = textarea.value.includes("\n") || textarea.scrollHeight > lineHeight * 1.5 + 1;
-          if (expanded) root?.setAttribute("data-expanded", "true");
-          else if (!textarea.value) root?.removeAttribute("data-expanded");
-        }
+        if (compact) syncCompactExpanded(textarea);
       }}
       onKeyDown={(event: KeyboardEvent) => {
         if (!isSubmitKey(event, allowsNewlines)) return;
@@ -275,7 +292,8 @@ const PromptInputSend = (props: PromptInputSendProps): JSX.Element => {
   const stopLabel = local.stopLabel ?? "Stop generating";
   const isDisabled = (): boolean => {
     if (local.isDisabled === true || context.disabled?.()) return true;
-    return !isRunning(status()) && !(state ? state.value().trim() : "");
+    const text = context.text ? context.text() : state ? state.value() : "";
+    return !isRunning(status()) && !text.trim();
   };
   return (
     <ButtonRoot
@@ -457,7 +475,10 @@ export {
   PromptInputQueueItemRemove,
   PromptInputQueueItemMore,
 };
+// Internal (token input parts in `../prompt-input-tokens/prompt-input-tokens.tsx`).
+export { PromptInputContext, isRunning as promptInputIsRunning, syncCompactExpanded as promptInputSyncCompactExpanded };
 export type {
+  PromptInputContext as PromptInputContextValue,
   PromptInputStatus,
   PromptInputLayout,
   PromptInputRootProps,

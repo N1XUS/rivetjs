@@ -315,3 +315,227 @@ export function followHeight(el: HTMLElement, active: () => boolean, options: Fo
     if (pinned) release();
   };
 }
+
+/* -------------------------------------------------------------------------------------------------
+ * Prompt tokens (mentions / commands in a plain textarea)
+ * -----------------------------------------------------------------------------------------------*/
+// The value is a segment list; its flattened text is exactly the textarea's text, so the field stays a native
+// `<textarea>` (no contenteditable): tokens are atomic ranges of that text. Edits that touch a token remove the whole
+// token; the caret never rests inside one. Pure functions: callers (ui `PromptInputTokenInput`) apply the result to the
+// textarea and their state.
+
+/** A run of plain text. */
+export interface PromptTextSegment {
+  type: "text";
+  text: string;
+}
+
+/** An atomic token (`@ana`, `/summarize`): `text` is what the field shows, `value` an optional id. */
+export interface PromptTokenSegment {
+  type: "token";
+  text: string;
+  /** Identifier carried with the token (user id, command name). */
+  value?: string;
+  /** The trigger that opened the menu the token was picked from (`@`, `/`). */
+  trigger?: string;
+}
+
+export type PromptSegment = PromptTextSegment | PromptTokenSegment;
+
+/** A prompt as segments (resume-format data: plain objects). */
+export type PromptTokenValue = readonly PromptSegment[];
+
+/** An edit result: the next value and the caret to place (flat text offset). */
+export interface PromptTokenEdit {
+  value: PromptSegment[];
+  caret: number;
+}
+
+/** The active trigger before the caret: `start` = the trigger's offset, `query` = the text typed after it. */
+export interface PromptTokenMatch {
+  trigger: string;
+  start: number;
+  query: string;
+}
+
+/** The value as one string (what the textarea shows; what Send submits). */
+export function promptTokenText(value: PromptTokenValue): string {
+  let text = "";
+  for (const segment of value) text += segment.text;
+  return text;
+}
+
+/** Merge neighbouring text runs, drop empty runs and empty tokens. */
+export function normalizePromptTokens(value: PromptTokenValue): PromptSegment[] {
+  const out: PromptSegment[] = [];
+  for (const segment of value) {
+    if (!segment.text) continue;
+    const last = out[out.length - 1];
+    if (segment.type === "text" && last?.type === "text") out[out.length - 1] = { type: "text", text: last.text + segment.text };
+    else out.push(segment.type === "text" ? { type: "text", text: segment.text } : { ...segment });
+  }
+  return out;
+}
+
+/** Every token with its flat `[start, end)` range. */
+export function promptTokenRanges(value: PromptTokenValue): Array<{ start: number; end: number; token: PromptTokenSegment; index: number }> {
+  const ranges: Array<{ start: number; end: number; token: PromptTokenSegment; index: number }> = [];
+  let offset = 0;
+  value.forEach((segment, index) => {
+    const end = offset + segment.text.length;
+    if (segment.type === "token") ranges.push({ start: offset, end, token: segment, index });
+    offset = end;
+  });
+  return ranges;
+}
+
+/** The segments covering flat `[start, end)` (text runs cut at the edges; tokens are kept whole or dropped by the caller). */
+function slicePromptTokens(value: PromptTokenValue, start: number, end: number): PromptSegment[] {
+  const out: PromptSegment[] = [];
+  let offset = 0;
+  for (const segment of value) {
+    const a = offset;
+    const b = offset + segment.text.length;
+    offset = b;
+    if (b <= start || a >= end) continue;
+    if (segment.type === "token") {
+      out.push({ ...segment });
+      continue;
+    }
+    out.push({ type: "text", text: segment.text.slice(Math.max(0, start - a), Math.min(segment.text.length, end - a)) });
+  }
+  return out;
+}
+
+/** Grow `[start, end)` to whole tokens: any token the range overlaps (or a caret strictly inside) is included. */
+export function expandToPromptTokens(value: PromptTokenValue, start: number, end: number): [number, number] {
+  let from = start;
+  let to = end;
+  for (const range of promptTokenRanges(value)) {
+    const overlaps = start === end ? range.start < start && start < range.end : range.start < end && range.end > start;
+    if (!overlaps) continue;
+    from = Math.min(from, range.start);
+    to = Math.max(to, range.end);
+  }
+  return [from, to];
+}
+
+/** Replace flat `[start, end)` (grown to whole tokens) with `insert`. The caret lands after the insertion. */
+export function replacePromptTokens(value: PromptTokenValue, start: number, end: number, insert: readonly PromptSegment[] = []): PromptTokenEdit {
+  const [from, to] = expandToPromptTokens(value, start, end);
+  const total = promptTokenText(value).length;
+  const next = normalizePromptTokens([...slicePromptTokens(value, 0, from), ...insert, ...slicePromptTokens(value, to, total)]);
+  return { value: next, caret: from + promptTokenText(insert).length };
+}
+
+/**
+ * Reconcile a native textarea edit: `text` is the field's new text, `caret` its caret after the edit (bounds the diff so
+ * repeated characters resolve to the caret's side). The changed range is grown to whole tokens: deleting or typing into a
+ * token removes it. Returns the next value (its text may differ from `text`: write it back with the caret).
+ */
+export function applyPromptTextEdit(value: PromptTokenValue, text: string, caret = text.length): PromptTokenEdit {
+  const previous = promptTokenText(value);
+  if (previous === text) return { value: normalizePromptTokens(value), caret };
+  const limit = Math.min(previous.length, text.length);
+  let suffix = 0;
+  const suffixLimit = Math.min(limit, Math.max(0, text.length - caret));
+  while (suffix < suffixLimit && previous[previous.length - 1 - suffix] === text[text.length - 1 - suffix]) suffix++;
+  let prefix = 0;
+  const prefixLimit = limit - suffix;
+  while (prefix < prefixLimit && previous[prefix] === text[prefix]) prefix++;
+  const inserted = text.slice(prefix, text.length - suffix);
+  return replacePromptTokens(value, prefix, previous.length - suffix, inserted ? [{ type: "text", text: inserted }] : []);
+}
+
+/**
+ * Backspace (`"backward"`) / Delete (`"forward"`) at a collapsed caret next to a token: removes the whole token. Returns
+ * null when no token touches the caret on that side (let the native key run).
+ */
+export function deletePromptToken(value: PromptTokenValue, caret: number, direction: "backward" | "forward"): PromptTokenEdit | null {
+  for (const range of promptTokenRanges(value)) {
+    const hit = direction === "backward" ? range.start < caret && caret <= range.end : range.start <= caret && caret < range.end;
+    if (hit) return replacePromptTokens(value, range.start, range.end);
+  }
+  return null;
+}
+
+/**
+ * Where a collapsed caret may rest: a caret inside a token moves to its nearer edge (`"nearest"`), or past it in the
+ * movement direction (`"backward"` / `"forward"`: arrow keys step over a token in one press).
+ */
+export function snapPromptCaret(value: PromptTokenValue, caret: number, direction: "nearest" | "backward" | "forward" = "nearest"): number {
+  for (const range of promptTokenRanges(value)) {
+    if (!(range.start < caret && caret < range.end)) continue;
+    if (direction === "backward") return range.start;
+    if (direction === "forward") return range.end;
+    return caret - range.start <= range.end - caret ? range.start : range.end;
+  }
+  return caret;
+}
+
+/** The token whose edge an arrow key at `caret` would cross (`ArrowLeft` from its end, `ArrowRight` from its start). */
+export function promptTokenStep(value: PromptTokenValue, caret: number, direction: "backward" | "forward"): number | null {
+  for (const range of promptTokenRanges(value)) {
+    if (direction === "backward" && caret === range.end) return range.start;
+    if (direction === "forward" && caret === range.start) return range.end;
+  }
+  return null;
+}
+
+/**
+ * The trigger the caret is typing after: a trigger string at a word boundary (field start or after whitespace) in the
+ * plain text before the caret, followed by a query without a newline (and without spaces unless `allowsSpaces`). The
+ * nearest trigger before the caret wins; null inside / right after a token run without a trigger.
+ */
+export function findPromptTrigger(value: PromptTokenValue, caret: number, triggers: readonly string[], allowsSpaces = false): PromptTokenMatch | null {
+  if (!triggers.length) return null;
+  // The plain-text run that ends at the caret (tokens bound it).
+  let runStart = 0;
+  for (const range of promptTokenRanges(value)) {
+    if (range.start < caret && caret < range.end) return null;
+    if (range.end <= caret) runStart = range.end;
+  }
+  const text = promptTokenText(value);
+  if (caret > text.length) return null;
+  const before = text.slice(runStart, caret);
+  let best: PromptTokenMatch | null = null;
+  for (const trigger of triggers) {
+    if (!trigger) continue;
+    let index = before.lastIndexOf(trigger);
+    while (index >= 0) {
+      const start = runStart + index;
+      const boundary = start === 0 || /\s/.test(text[start - 1]!);
+      const query = before.slice(index + trigger.length);
+      if (boundary && !query.includes("\n") && (allowsSpaces || !/\s/.test(query))) {
+        if (!best || start > best.start) best = { trigger, start, query };
+        break;
+      }
+      index = index > 0 ? before.lastIndexOf(trigger, index - 1) : -1;
+    }
+  }
+  return best;
+}
+
+/**
+ * Insert a token for `match` (replacing the trigger and its query), with a trailing space unless one follows already
+ * (`appendSpace`, default true). The caret lands after the token / space.
+ */
+export function insertPromptToken(
+  value: PromptTokenValue,
+  match: { start: number; trigger?: string },
+  caret: number,
+  token: { text: string; value?: string },
+  appendSpace = true,
+): PromptTokenEdit {
+  const text = promptTokenText(value);
+  const segment: PromptTokenSegment = { type: "token", text: token.text };
+  if (token.value !== undefined) segment.value = token.value;
+  if (match.trigger !== undefined) segment.trigger = match.trigger;
+  const insert: PromptSegment[] = [segment];
+  const next = text[caret];
+  if (appendSpace && (next === undefined || !/\s/.test(next))) insert.push({ type: "text", text: " " });
+  const edit = replacePromptTokens(value, match.start, caret, insert);
+  // A space that already followed: step over it.
+  if (appendSpace && next !== undefined && /\s/.test(next) && next !== "\n") edit.caret += 1;
+  return edit;
+}
