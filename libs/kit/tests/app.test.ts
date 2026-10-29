@@ -76,7 +76,7 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
     const nonce = /'nonce-([^']+)'/.exec(first.headers.get("content-security-policy") ?? "")![1]!;
     const head = /<head>([\s\S]*)<\/head>/.exec(html)![1]!;
     assert.match(head, /<title>Home \| Kit<\/title>/, head);
-    const order = ["<title>", /<link rel="stylesheet"|<style nonce/, "rivet-scripts", 'name="description"', 'rel="icon"', "ld+json"].map((s) =>
+    const order = ["<title>", /<link rel="stylesheet"|<style(?: data-href="[^"]+")? nonce/, "rivet-scripts", 'name="description"', 'rel="icon"', "ld+json"].map((s) =>
       typeof s === "string" ? head.indexOf(s) : head.search(s),
     );
     assert.ok(
@@ -91,7 +91,7 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
     // The page's css`` sheet is written for this route only: linked, or inline with the nonce when small
     // (`rivetRouter({ inlineStylesheets })` default "auto").
     const sheetsOf = (text: string) =>
-      [...text.matchAll(/<link rel="stylesheet" href="([^"]+)">|<style nonce="([^"]+)">([^<]*)<\/style>/g)].map((m) =>
+      [...text.matchAll(/<link rel="stylesheet" href="([^"]+)">|<style(?: data-href="[^"]+")? nonce="([^"]+)">([^<]*)<\/style>/g)].map((m) =>
         m[1] !== undefined ? { href: m[1] } : { nonce: m[2]!, css: m[3]! },
       );
     const homeCSS = sheetsOf(head);
