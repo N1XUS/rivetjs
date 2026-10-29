@@ -1,7 +1,7 @@
 import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
-  title: "PressableFeedback: Progress Without Reset",
+  title: "PressableFeedback: Progress Feedback No Reset",
   summary: "autoReset={false} keeps the completed state.",
   tags: ["pressable-feedback"],
   status: "experimental",

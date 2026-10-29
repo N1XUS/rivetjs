@@ -4,7 +4,7 @@ import { signal } from "@rivetjs/reactivity";
 import { PressableFeedback } from "@rivetjs/ui/pressable-feedback";
 import { Trash2 } from "lucide";
 
-export const head = { title: "PressableFeedback: Hold Confirm" };
+export const head = { title: "PressableFeedback: Hold Confirm Callback" };
 
 // #region demo
 export function HoldConfirm() {

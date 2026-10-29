@@ -1,7 +1,7 @@
 // Rivet-authored PressableFeedback demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
 import { PressableFeedback } from "@rivetjs/ui/pressable-feedback";
 
-export const head = { title: "PressableFeedback: Sweep" };
+export const head = { title: "PressableFeedback: Hold Confirm Sweep" };
 
 // #region demo
 export function Sweep() {

@@ -2,7 +2,7 @@
 import { signal } from "@rivetjs/reactivity";
 import { PressableFeedback } from "@rivetjs/ui/pressable-feedback";
 
-export const head = { title: "PressableFeedback: Progress Feedback" };
+export const head = { title: "PressableFeedback: Progress Feedback Callback" };
 
 // #region demo
 export function Progress() {

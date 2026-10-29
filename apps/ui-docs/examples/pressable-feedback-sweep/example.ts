@@ -1,7 +1,7 @@
 import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
-  title: "PressableFeedback: Sweep",
+  title: "PressableFeedback: Hold Confirm Sweep",
   summary: "sweep picks the edge the reveal moves toward: right (default), left, down or up. Works the same on ProgressFeedback.",
   tags: ["pressable-feedback"],
   status: "experimental",

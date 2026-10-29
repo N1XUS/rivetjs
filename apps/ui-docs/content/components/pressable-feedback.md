@@ -42,27 +42,53 @@ Additional exported parts: `PressableFeedback.Root`.
 
 ::example{id=pressable-feedback-comparison}
 
-### Hold Confirm
+### Disabled
 
-Hold with the pointer, or hold Space / Enter. `duration` sets the hold time and `releaseDuration` the snap-back; `onComplete` fires when the hold finishes. `resetOnComplete={false}` keeps the overlay after a completed hold.
+::example{id=pressable-feedback-disabled}
+
+### Hold Confirm Callback
+
+Hold with the pointer, or hold Space / Enter. `onComplete` fires when the hold reaches `duration`; releasing early snaps back over `releaseDuration`.
 
 ::example{id=pressable-feedback-hold-confirm}
 
-### Sweep
+### Hold Confirm Durations
+
+`duration` sets the hold time until confirmed, `releaseDuration` the snap-back after an early release.
+
+::example{id=pressable-feedback-hold-confirm-durations}
+
+### Hold Confirm Sweep
+
+`sweep` picks the edge the reveal moves toward: `right` (default), `left`, `down` or `up`.
 
 ::example{id=pressable-feedback-sweep}
-
-### Progress Feedback
-
-::example{id=pressable-feedback-progress}
-
-### Progress Without Reset
-
-::example{id=pressable-feedback-no-reset}
 
 ### Pressable Cards
 
 ::example{id=pressable-feedback-cards}
+
+### Progress Feedback Callback
+
+A press starts the progress (no hold needed). `onComplete` fires after `duration`; with `autoReset` (default) the overlay resets after `resetDelay` and `onReset` fires.
+
+::example{id=pressable-feedback-progress}
+
+### Progress Feedback Durations
+
+`duration` sets the progress time, `releaseDuration` the snap-back once it resets.
+
+::example{id=pressable-feedback-progress-durations}
+
+### Progress Feedback No Reset
+
+`autoReset={false}` keeps the completed state.
+
+::example{id=pressable-feedback-no-reset}
+
+### Progress Feedback Sweep
+
+::example{id=pressable-feedback-progress-sweep}
 
 ### Standalone Highlight
 
@@ -70,25 +96,27 @@ Hold with the pointer, or hold Space / Enter. `duration` sets the hold time and 
 
 ### Standalone Ripple
 
-Outside a `PressableFeedback` root, `.Ripple` follows its parent element's own press: a pointer or touch press ripples from the press point, Space / Enter on the parent from the centre; a parent that is `:disabled`, `aria-disabled="true"` or `data-disabled="true"` gets none. The parent needs a position (a ui `Button` has one) and its own corner radius (the ripple inherits it). On a resumed page the first press loads the ripple and still shows it. Live demo: [Button, Adding Ripple Effect](button.md#adding-ripple-effect).
+Outside a `PressableFeedback` root, `.Ripple` follows its parent element's own press: a pointer or touch press ripples from the press point, Space / Enter on the parent from the centre; a parent that is `:disabled`, `aria-disabled="true"` or `data-disabled="true"` gets none. The parent needs a position (a ui `Button` has one) and its own corner radius (the ripple inherits it). On a resumed page the first press loads the ripple and still shows it. See also [Button, Adding Ripple Effect](button.md#adding-ripple-effect).
 
-```tsx
-import { Button } from "@rivetjs/ui/button";
-import { PressableFeedback } from "@rivetjs/ui/pressable-feedback";
+::example{id=pressable-feedback-standalone-ripple}
 
-export function RippleButton() {
-  return (
-    <Button variant="secondary">
-      <PressableFeedback.Ripple />
-      Click me
-    </Button>
-  );
-}
-```
+### With Highlight
 
-### Disabled
+::example{id=pressable-feedback-with-highlight}
 
-::example{id=pressable-feedback-disabled}
+### With Hold Confirm
+
+Layers combine: Highlight and Ripple under a HoldConfirm overlay. `resetOnComplete={false}` keeps the overlay after a completed hold.
+
+::example{id=pressable-feedback-with-hold-confirm}
+
+### With Progress Feedback
+
+::example{id=pressable-feedback-with-progress}
+
+### With Ripple
+
+::example{id=pressable-feedback-with-ripple}
 
 ## Styling Reference
 

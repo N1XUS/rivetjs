@@ -1,7 +1,7 @@
 import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
-  title: "PressableFeedback: Progress Feedback",
+  title: "PressableFeedback: Progress Feedback Callback",
   summary: "A press starts the progress (no hold needed); onComplete fires after duration and the overlay resets after resetDelay (onReset).",
   tags: ["pressable-feedback"],
   status: "experimental",
