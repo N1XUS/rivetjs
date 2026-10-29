@@ -49,9 +49,21 @@ Additional exported parts: `FloatingToc.Root`.
 
 ::example{id=floating-toc-press-mode}
 
+### Press Mode In Page
+
+::example{id=floating-toc-press-mode-in-page}
+
+`triggerMode="press"` with the [In Page Context](#in-page-context) wiring: the list opens on press (touch friendly) and an item scrolls to its section.
+
 ### Left Placement
 
 ::example{id=floating-toc-left}
+
+### Left Aligned Bars
+
+::example{id=floating-toc-left-bars}
+
+`data-placement="left"` on `FloatingToc.Trigger` grows the bars from the left edge while the TOC stays on the right (the list still opens to the left). The root `placement` sets both.
 
 ### Custom Delays
 
@@ -64,6 +76,12 @@ Additional exported parts: `FloatingToc.Root`.
 ### In Page Context
 
 ::example{id=floating-toc-in-page}
+
+### Virtualized
+
+::example{id=floating-toc-virtualized}
+
+For hundreds of sections, render a fixed window of bars around the active one and put a [virtualized ListBox](/components/list-box/) in `FloatingToc.Content`: only the rows in view are rendered. Its selection is the active section; close the list from `onSelectionChange` through a controlled `open` signal.
 
 ## Styling Reference
 
@@ -108,7 +126,7 @@ The cdk `DialogTrigger`.
 
 ### FloatingToc.Trigger
 
-A cdk `Button` (`aria-label` defaults to "Table of contents").
+A cdk `Button` (`aria-label` defaults to "Table of contents"). `data-placement` defaults to the root `placement`; pass it to align the bars independently.
 
 ### FloatingToc.Bar
 
