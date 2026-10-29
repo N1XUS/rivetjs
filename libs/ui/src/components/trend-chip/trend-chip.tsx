@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no trend chip). Feature set inspired by HeroUI Pro's public TrendChip
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no trend chip). Feature set inspired by commercial UI kits' public TrendChip
 // docs (direction of a change with an icon and a colour; sizes, variants, prefix / suffix, custom indicator); independent
 // implementation, Rivet-authored styles.
 // - `trend` up / down / neutral picks the lucide icon (`TrendingUp` / `TrendingDown` / `Minus`); the colour follows whether

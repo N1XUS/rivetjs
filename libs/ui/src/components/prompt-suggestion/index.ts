@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): suggested prompts for empty chats; feature set inspired by HeroUI Pro's
+// Rivet addition (no HeroUI v3.2.6 counterpart): suggested prompts for empty chats; feature set inspired by commercial UI kits'
 // public PromptSuggestion docs, independent implementation (see `prompt-suggestion.tsx`).
 import {
   PromptSuggestionDescription,

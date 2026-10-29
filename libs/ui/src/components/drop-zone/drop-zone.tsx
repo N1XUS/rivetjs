@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no drop zone). Feature set inspired by HeroUI Pro's public Drop Zone
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no drop zone). Feature set inspired by commercial UI kits' public Drop Zone
 // docs (a drag-and-drop upload area + file list: parts `Area` / `Icon` / `Label` / `Description` / `Trigger` / `Input` /
 // `FileList` / `FileItem` (`status`) / `FileFormatIcon` (`format`, `color`) / `FileInfo` / `FileName` / `FileMeta` /
 // `FileProgress` (+ `Track` / `Fill`) / `FileRetryTrigger` / `FileRemoveTrigger`; classes `.drop-zone__*`; states
@@ -8,7 +8,7 @@
 //   `DropItem`s, `getDropOperation`, `isDisabled`). `Label` = cdk `Text slot="label"` (names the area).
 // - No context functions (resumable): `Trigger` finds the root's `Input` through the DOM (`[data-drop-zone]` →
 //   `input[data-drop-zone-input]`), clears its value and clicks it; the input's `onSelect(FileList)` runs on `change`.
-// - `FileList` / `FileItem`: a list; the entrance is a CSS animation (Pro: Motion AnimatePresence + layout), removal is
+// - `FileList` / `FileItem`: a list; the entrance is a CSS animation (commercial kits: Motion AnimatePresence + layout), removal is
 //   immediate.
 // - `FileFormatIcon`: lucide `File` + a format badge; `color` = `gray` (default) / `blue` / `green` / `orange` / `red` /
 //   `default` / `accent` / `success` / `warning` / `danger` (theme tokens; named colours map onto them).

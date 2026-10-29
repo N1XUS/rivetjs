@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no kanban). Feature set inspired by HeroUI Pro's public Kanban docs
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no kanban). Feature set scoped from public docs of commercial UI kits
 // (a drag-and-drop board: `.Column`, `.ColumnHeader` with `.ColumnIndicator` / `.ColumnTitle` / `.ColumnCount` /
 // `.ColumnActions`, `.ColumnBody`, `.ScrollShadow`, `.CardList` with `renderEmptyState`, `.Card` with `.CardContent`,
 // `.DragHandle`, `.DropIndicator`; sizes sm / md / lg; a board data hook); independent implementation, Rivet-authored styles.
@@ -19,7 +19,7 @@
 // - `KanbanComposer` (`kanban-composer.tsx`): the "add a card" row (ghost trigger → inline TextField form): its own export,
 //   not a compound part, so a board without one loads no Button / TextField code (measured +33 KB gz on kanban-basic as a part).
 // - Context `KanbanContext` `{ keyboard, describedBy, describedBySelection }` (plain data) from the root to its cards.
-// - Card selection (KANBAN-SELECT 2026-10-29; Pro docs: `.CardList` `selectionMode`, cards `data-selected`): a `.CardList`
+// - Card selection (KANBAN-SELECT 2026-10-29; public kit docs: `.CardList` `selectionMode`, cards `data-selected`): a `.CardList`
 //   with `selectionMode` "single" / "multiple" is a cdk GridList over its rendered cards: `role="grid"` (+
 //   `aria-multiselectable`), cards `role="row"` with a `role="gridcell"` wrapper (`display: contents`), `aria-selected`,
 //   roving `tabindex`, `data-key` / `data-collection`. State = a `@rivetjs/cdk/collections/list-state` `ListState`

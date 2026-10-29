@@ -1,4 +1,4 @@
-// Rivet-authored Resizable demo (collapsible panel + imperative handle; section from HeroUI Pro's public Resizable docs).
+// Rivet-authored Resizable demo (collapsible panel + imperative handle; independent implementation).
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup, usePanelRef } from "@rivetjs/ui/resizable";

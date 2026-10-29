@@ -1,5 +1,5 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no app layout). Compound API `AppLayout.*`; feature set inspired by
-// HeroUI Pro's public AppLayout docs, independent implementation. Sidebar = `@rivetjs/ui/sidebar` (shadcn/ui behaviour).
+// commercial UI kits' public AppLayout docs, independent implementation. Sidebar = `@rivetjs/ui/sidebar` (shadcn/ui behaviour).
 import { AppLayoutAsideTrigger, AppLayoutMenuToggle, AppLayoutMobileAside, AppLayoutRoot, useAppLayout } from "./app-layout.tsx";
 import type { AppLayoutAsideTriggerProps, AppLayoutMenuToggleProps, AppLayoutMobileAsideProps, AppLayoutRootProps } from "./app-layout.tsx";
 

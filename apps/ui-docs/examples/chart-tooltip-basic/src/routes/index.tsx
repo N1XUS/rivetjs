@@ -1,4 +1,4 @@
-// Rivet-authored ChartTooltip demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ChartTooltip demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { ChartTooltip } from "@rivetjs/ui/chart-tooltip";
 
 export const head = { title: "ChartTooltip: Usage" };

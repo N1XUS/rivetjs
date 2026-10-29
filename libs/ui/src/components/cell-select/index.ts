@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): settings-row select; feature set inspired by HeroUI Pro's public docs,
+// Rivet addition (no HeroUI v3.2.6 counterpart): settings-row select; feature set scoped from public docs of commercial UI kits,
 // independent implementation (see `cell-select.tsx`).
 import { CellSelectIndicator, CellSelectItem, CellSelectLabel, CellSelectPopover, CellSelectRoot, CellSelectTrigger, CellSelectValue } from "./cell-select.tsx";
 import type {

@@ -9,7 +9,7 @@ related: [foundations/motion, components/sidebar, components/modal]
 `@rivetjs/cdk/sheet-motion` makes an element attached to a screen edge follow the pointer. Drag it towards its edge to dismiss it, or release it between snap points to resize it. It runs on [`@rivetjs/cdk/motion`](./motion.md) (embla's physics), so a release settles the same way a carousel does. The ui [Sheet](site:ui/components/sheet/) uses it. Apps that do not import it pay nothing.
 
 :::note
-Rivet addition: no upstream module. The feature set (snap points, close threshold, sequential snapping, handle-only drags, backdrop fade from a snap index) is inspired by HeroUI Pro's public Sheet docs; this is an independent implementation.
+Rivet addition: no upstream module. The feature set (snap points, close threshold, sequential snapping, handle-only drags, backdrop fade from a snap index) is scoped from public docs of commercial UI kits; this is an independent implementation.
 :::
 
 ::example{id=sheet-motion-basic}

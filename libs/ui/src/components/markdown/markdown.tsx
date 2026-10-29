@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no markdown renderer). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no markdown renderer). Feature set inspired by commercial UI kits' public
 // Markdown docs (renders an assistant response string, memoized blocks so a streaming response only re-renders the block
 // being written, incomplete-markdown repair + caret while streaming, fenced code as a CodeBlock); independent
 // implementation, Rivet-authored styles.
@@ -17,7 +17,7 @@
 //   height with `followHeight` (`@rivetjs/cdk/chat`, a `clientEffect` on a root `ref()`, disposed with the Markdown):
 //   no line / block jumps. Only when `isStreaming` is an accessor; on a resumed page the effect waits for its trigger
 //   (nothing boots at load). A ref callback would not resume (server render error).
-// - Pro's `components` override map is not ported (gap): style the `markdown__*` classes instead.
+// - the commercial kit's `components` override map is not ported (gap): style the `markdown__*` classes instead.
 import { followHeight } from "@rivetjs/cdk/chat";
 import { closeOpenMarks, parseMarkdown, splitBlocks } from "@rivetjs/cdk/markdown";
 import type { MarkdownBlock, MarkdownInline, MarkdownListItem } from "@rivetjs/cdk/markdown";

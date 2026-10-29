@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no number display). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no number display). Feature set inspired by commercial UI kits' public
 // Number Value docs (locale-aware decimal / currency / percent / unit / compact formatting, sign display, prefix /
 // suffix, render function); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Formatting: `Intl.NumberFormat(locale, options)` cached per locale + options (`cachedIntl`); options = the

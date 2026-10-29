@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): inline message action buttons; feature set inspired by HeroUI Pro's public
+// Rivet addition (no HeroUI v3.2.6 counterpart): inline message action buttons; feature set inspired by commercial UI kits' public
 // ChatMessageActions docs, independent implementation (see `chat-message-actions.tsx`).
 import { ChatMessageAction, ChatMessageActionsRoot, ChatMessageCopy } from "./chat-message-actions.tsx";
 import type { ChatMessageActionProps, ChatMessageActionsRootProps, ChatMessageCopyProps } from "./chat-message-actions.tsx";

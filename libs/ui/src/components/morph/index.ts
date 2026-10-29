@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): a surface that morphs between a collapsed element and an expanded panel;
-// feature set inspired by HeroUI Pro's public MorphButton docs, independent implementation (see `morph.tsx`).
+// feature set scoped from public docs of commercial UI kits, independent implementation (see `morph.tsx`).
 import { MorphClose, MorphCollapsedContent, MorphExpandedContent, MorphRoot, MorphTrigger } from "./morph.tsx";
 import type { MorphCloseProps, MorphCollapsedContentProps, MorphExpandedContentProps, MorphRootProps, MorphTriggerProps } from "./morph.tsx";
 

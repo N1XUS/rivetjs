@@ -1,5 +1,5 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): loading placeholders for assistant turns; feature set inspired by HeroUI
-// Pro's public ChatLoader docs, independent implementation (see `chat-loader.tsx`).
+// Rivet addition (no HeroUI v3.2.6 counterpart): loading placeholders for assistant turns; feature set inspired by commercial UI kits'
+//  public ChatLoader docs, independent implementation (see `chat-loader.tsx`).
 import {
   ChatLoaderDots,
   ChatLoaderPulse,
@@ -18,7 +18,7 @@ import type {
 } from "./chat-loader.tsx";
 
 /* -------------------------------------------------------------------------------------------------
- * Compound Component (namespace: no root element, as Pro)
+ * Compound Component (namespace: no root element)
  * -----------------------------------------------------------------------------------------------*/
 export const ChatLoader = {
   Dots: ChatLoaderDots,

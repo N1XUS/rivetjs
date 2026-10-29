@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): assistant / user message layouts; feature set inspired by HeroUI Pro's
+// Rivet addition (no HeroUI v3.2.6 counterpart): assistant / user message layouts; feature set inspired by commercial UI kits'
 // public ChatMessage docs, independent implementation (see `chat-message.tsx`).
 import {
   ChatMessageActionsRow,
@@ -13,7 +13,7 @@ import {
 import type { ChatMessageAvatarProps, ChatMessagePartProps, ChatMessageRootProps } from "./chat-message.tsx";
 
 /* -------------------------------------------------------------------------------------------------
- * Compound Component (namespace: two roots, as Pro)
+ * Compound Component (namespace: two roots)
  * -----------------------------------------------------------------------------------------------*/
 export const ChatMessage = {
   Assistant: ChatMessageAssistant,

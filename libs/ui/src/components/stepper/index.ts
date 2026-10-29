@@ -1,5 +1,5 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no stepper). Compound API `Stepper.*`; feature set inspired by
-// HeroUI Pro's public Stepper docs, independent implementation. Behaviour = `@rivetjs/cdk/stepper` (Angular CDK port).
+// commercial UI kits' public Stepper docs, independent implementation. Behaviour = `@rivetjs/cdk/stepper` (Angular CDK port).
 import {
   StepperContent,
   StepperDescription,

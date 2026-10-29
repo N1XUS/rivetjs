@@ -1,5 +1,5 @@
 // Rivet-authored (no React Aria / Angular CDK counterpart): a small regex tokenizer for code in AI responses. Feature set
-// (syntax-highlighted code blocks for common languages) inspired by HeroUI Pro's public CodeBlock docs, which use Shiki;
+// (syntax-highlighted code blocks for common languages) scoped from public docs of commercial UI kits, which use Shiki;
 // this is an independent, dependency-free implementation: no grammar files, no WASM, synchronous, same output on the
 // server and in the browser. Tokens are plain data (`{ type, value }`); renderers wrap them in spans (no HTML strings).
 // - Languages: JavaScript / TypeScript (+ JSX / TSX), JSON, CSS / SCSS, HTML / XML / SVG / Vue, shell, Python, SQL,

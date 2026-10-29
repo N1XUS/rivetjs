@@ -1,4 +1,4 @@
-// Rivet-authored ChainOfThought demo (Rivet addition; "Agent Trace Streaming" section of HeroUI Pro's public docs, own content).
+// Rivet-authored ChainOfThought demo (Rivet addition, own content).
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
 import { ChainOfThought } from "@rivetjs/ui/chain-of-thought";

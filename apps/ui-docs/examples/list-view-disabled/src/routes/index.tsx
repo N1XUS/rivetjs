@@ -1,4 +1,4 @@
-// Rivet-authored ListView demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ListView demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { ListView } from "@rivetjs/ui/list-view";
 
 export const head = { title: "ListView: Disabled Items" };

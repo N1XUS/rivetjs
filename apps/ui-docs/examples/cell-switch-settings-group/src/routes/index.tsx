@@ -1,4 +1,4 @@
-// Rivet-authored CellSwitch demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored CellSwitch demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { CellSwitch } from "@rivetjs/ui/cell-switch";
 
 export const head = { title: "CellSwitch: Settings Group" };

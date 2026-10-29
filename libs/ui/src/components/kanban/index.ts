@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): a drag-and-drop board on `@rivetjs/cdk/drag-drop`; feature set inspired by
-// HeroUI Pro's public Kanban docs, independent implementation (see `kanban.tsx`).
+// commercial UI kits' public Kanban docs, independent implementation (see `kanban.tsx`).
 import {
   KanbanCard,
   KanbanCardContent,

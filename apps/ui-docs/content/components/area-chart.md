@@ -9,7 +9,7 @@ related: [components/chart, components/chart-tooltip, components/kpi]
 `AreaChart` draws one or more series as filled areas under a line. Like the other [charts](/components/chart/) it is computed and rendered on the server from plain data: no chart library, no canvas and no script in the browser. With tooltips enabled, every x value is a labelled, focusable slot whose tooltip, guide and dots appear on hover and keyboard focus with CSS alone.
 
 :::note
-Rivet addition. The section list follows HeroUI Pro's public Area Chart docs; the implementation and the demo content are Rivet's own.
+Rivet addition. The section list covers the usual Area Chart patterns; the implementation and the demo content are Rivet's own.
 :::
 
 ## Usage

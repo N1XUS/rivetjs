@@ -1,5 +1,5 @@
 // Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no message composer). Token input for `PromptInput`, feature set
-// inspired by the "Token Input" section of HeroUI Pro's public PromptInput docs (`usePromptInputTokens` with `triggers`
+// inspired by the "Token Input" section of commercial UI kits' public PromptInput docs (`usePromptInputTokens` with `triggers`
 // (`@`, `/`) / `allowsSpaces` / `value` / `defaultValue` / `onChange`, returning `value` / `setValue` / `inputRef` /
 // `anchor` / `query` / `trigger` / `isOpen` / `insertToken(text, { appendSpace, value })` / `close()`; parts `TokenInput`,
 // `Tokens`, `TokenSuggestions` (`placement` "bottom start" default, hides without items), `Token` (`data-selected` /

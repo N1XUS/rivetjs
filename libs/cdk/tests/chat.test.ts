@@ -1,4 +1,4 @@
-// `@rivetjs/cdk/chat` (Rivet-authored chat behaviour; feature set inspired by HeroUI Pro's public AI docs): composer keys,
+// `@rivetjs/cdk/chat` (Rivet-authored chat behaviour; feature set scoped from public docs of commercial UI kits): composer keys,
 // stick-to-bottom measurements (normal + column-reverse), accept filters, streamed text into a signal, simulated stream
 // (fixed + jittered cadence), followHeight (pin, follow content height, release).
 import { test } from "vitest";

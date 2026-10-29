@@ -1,8 +1,8 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no code block). Feature set inspired by HeroUI Pro's public CodeBlock
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no code block). Feature set inspired by commercial UI kits' public CodeBlock
 // docs (parts `Header` / `Code` (`code`, `language` default "plaintext") / `CopyButton` (`code`, aria-label "Copy code",
 // check icon after copying)); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Highlighting = `@rivetjs/cdk/highlight` (Rivet regex tokenizer, synchronous, identical on the server and in the
-//   browser) instead of Pro's Shiki: no grammar / WASM download, no async flash. Pro's `theme` prop is dropped: token
+//   browser) instead of Shiki: no grammar / WASM download, no async flash. the commercial kit's `theme` prop is dropped: token
 //   colours are CSS variables on HeroUI tokens, so light / dark follow the page theme.
 // - `Code` takes `code` as a value or an accessor (streaming): the token spans re-render when it changes.
 // - Rivet extra `CodeBlock.Language` (the header label, `languageLabel(language)` unless children are given).

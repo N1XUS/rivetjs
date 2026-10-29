@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): dashboard widget shell; feature set inspired by HeroUI Pro's public Widget
+// Rivet addition (no HeroUI v3.2.6 counterpart): dashboard widget shell; feature set inspired by commercial UI kits' public Widget
 // docs, independent implementation (see `widget.tsx`).
 import { WidgetContent, WidgetDescription, WidgetFooter, WidgetHeader, WidgetLegend, WidgetLegendItem, WidgetRoot, WidgetTitle } from "./widget.tsx";
 import type { WidgetLegendItemProps, WidgetPartProps, WidgetRootProps, WidgetTextProps } from "./widget.tsx";

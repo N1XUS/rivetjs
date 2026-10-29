@@ -1,4 +1,4 @@
-// Rivet-authored Chart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored Chart demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { DonutChart } from "@rivetjs/ui/chart";
 
 export const head = { title: "Chart: Donut" };

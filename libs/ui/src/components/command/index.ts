@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): command palette; feature set inspired by HeroUI Pro's public Command docs,
+// Rivet addition (no HeroUI v3.2.6 counterpart): command palette; feature set scoped from public docs of commercial UI kits,
 // independent implementation (see `command.tsx`).
 import {
   CommandBackdrop,

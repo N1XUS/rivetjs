@@ -7,12 +7,12 @@
 //   `data-slot` / `data-sidebar` / state attributes as the cdk (= shadcn) parts.
 // - `Sidebar.Trigger` default content: lucide `PanelLeft` (via `@rivetjs/kit/icon`); the cdk trigger adds the visually hidden "Toggle Sidebar"
 //   label after any children (= shadcn's `PanelLeftIcon` + `sr-only` span; cdk `visuallyHidden` inline style).
-// - Extensions (feature set inspired by HeroUI Pro's public Sidebar docs; independent implementation): `MenuTrigger`,
+// - Extensions (feature set scoped from public docs of commercial UI kits; independent implementation): `MenuTrigger`,
 //   `MenuIndicator` (default lucide `ChevronRight`), `MenuActions`, `MenuChip` (cdk MenuBadge with HeroUI chip classes),
 //   `Pages` / `Page`; the provider / Sidebar / menu props pass through to the cdk parts.
 // - `Sidebar resizable` (Rivet extension, cdk `./resize.ts`): a window-splitter handle on the panel's inner edge
 //   (`sidebar__resize-handle`: 1 px separator line on hover, 2 px accent while dragging / focused, `col-resize`).
-// - `Sidebar.Provider` `closeMobileOnAction` defaults to `true` (app-shell navigation closes the mobile sheet, HeroUI Pro);
+// - `Sidebar.Provider` `closeMobileOnAction` defaults to `true` (app-shell navigation closes the mobile sheet);
 //   the cdk default is `false` (= shadcn).
 // - Live props: `class` (and MenuButton `size` / `variant`) are read lazily (`splitLive`); a live one goes to the cdk part
 //   as a class function (cdk structural parts / Button / Link call it in a binding); static path = one string.
@@ -128,7 +128,7 @@ const SidebarProvider = (props: SidebarProviderProps): JSX.Element => {
   const contained = !!local.contained;
   const wrapper = contained ? sidebarVariants({ contained }).wrapper : SLOTS.wrapper;
   const cls = hasLiveProp(local, ["class"]) ? () => wrapper({ class: local.class }) : wrapper({ class: local.class });
-  // Rivet ui: an app-shell sidebar closes its mobile sheet on navigation (HeroUI Pro); the cdk default (= shadcn) keeps it.
+  // Rivet ui: an app-shell sidebar closes its mobile sheet on navigation; the cdk default (= shadcn) keeps it.
   return (
     <SidebarProviderPrimitive
       {...(rest as SidebarProviderPrimitiveProps)}

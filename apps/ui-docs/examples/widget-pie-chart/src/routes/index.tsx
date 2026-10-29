@@ -1,4 +1,4 @@
-// Rivet-authored Widget demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored Widget demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Widget } from "@rivetjs/ui/widget";
 import { DonutChart } from "@rivetjs/ui/chart";
 

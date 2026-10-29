@@ -8,7 +8,7 @@
 //   (`orientation`, `defaultLayout`, `onLayoutChange(d)`, `groupRef`, `defaultSize` / `minSize` / `maxSize`, `collapsible`,
 //   `collapsedSize`, `panelRef`, `disabled`, …).
 // - Handle `type` (`line` / `drag` / `pill` / `handle`), `variant` (`primary` / `secondary` / `tertiary` = separator
-//   tokens), `withIndicator` and the `ResizableIndicator` part (`pill` / `drag`): names from HeroUI Pro's public Resizable
+//   tokens), `withIndicator` and the `ResizableIndicator` part (`pill` / `drag`): names from commercial UI kits' public Resizable
 //   docs, independent implementation (UI-PORT-C, TWEAKS TW-166). `withHandle` (shadcn) = the `drag` grip chip.
 // - Grip / drag dots = lucide `GripVertical` (horizontal group) / `GripHorizontal` (vertical group) via `@rivetjs/kit/icon`
 //   (shadcn rotates one `GripVertical`); the handle shows `col-resize` / `row-resize` before the engine boots.

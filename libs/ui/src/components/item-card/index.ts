@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): list row card; feature set inspired by HeroUI Pro's public Item Card docs,
+// Rivet addition (no HeroUI v3.2.6 counterpart): list row card; feature set scoped from public docs of commercial UI kits,
 // independent implementation (see `item-card.tsx`).
 import { ItemCardAction, ItemCardContent, ItemCardDescription, ItemCardIcon, ItemCardIndicator, ItemCardRoot, ItemCardTitle } from "./item-card.tsx";
 import type { ItemCardPartProps, ItemCardRootProps, ItemCardTextProps } from "./item-card.tsx";

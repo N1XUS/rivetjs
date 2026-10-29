@@ -1,5 +1,5 @@
 // Rivet-authored Scheduler demo: range selection, density and locale.
-// Functional examples adapt the author's MIT-licensed scheduler examples; no Pro source is used.
+// Functional examples adapt the author's MIT-licensed scheduler examples; all code is original or from that MIT-licensed project.
 import { signal } from "@rivetjs/reactivity";
 import { Scheduler, type SchedulerEvent, type SchedulerHeaderApi } from "@rivetjs/cdk/scheduler";
 import { Button } from "@rivetjs/cdk/button";

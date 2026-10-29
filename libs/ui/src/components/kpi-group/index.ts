@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): KPI cards on one shared surface; feature set inspired by HeroUI Pro's public
+// Rivet addition (no HeroUI v3.2.6 counterpart): KPI cards on one shared surface; feature set inspired by commercial UI kits' public
 // KPI Group docs, independent implementation (see `kpi-group.tsx`).
 import { KpiGroupRoot, KpiGroupSeparator } from "./kpi-group.tsx";
 import type { KpiGroupRootProps, KpiGroupSeparatorProps } from "./kpi-group.tsx";

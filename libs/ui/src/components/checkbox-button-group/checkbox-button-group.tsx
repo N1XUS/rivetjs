@@ -1,5 +1,5 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): a checkbox group drawn as selectable cards. Feature set inspired by HeroUI
-// Pro's public docs (CheckboxButtonGroup: `layout` flex / grid; parts `.Item` (Checkbox props), `.Indicator`, `.ItemContent`,
+// Rivet addition (no HeroUI v3.2.6 counterpart): a checkbox group drawn as selectable cards. Feature set inspired by commercial UI kits'
+//  public docs (CheckboxButtonGroup: `layout` flex / grid; parts `.Item` (Checkbox props), `.Indicator`, `.ItemContent`,
 // `.ItemIcon`; render-prop item children); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Root = cdk `CheckboxGroup` (`role="group"`, native checkboxes sharing a `name`: Tab per item, Space toggles, form submission
 //   without JS; value / defaultValue (string[]) / two-way Signal / onChange, isRequired / isInvalid / validate, Label /

@@ -1,4 +1,4 @@
-// Rivet-authored demo (AppLayout is a Rivet addition: feature set inspired by HeroUI Pro's public docs; independent implementation on @rivetjs/ui/sidebar).
+// Rivet-authored demo (AppLayout is a Rivet addition: feature set scoped from public docs of commercial UI kits; independent implementation on @rivetjs/ui/sidebar).
 import { Icon } from "@rivetjs/kit/icon";
 import { Folder, House, Inbox, Settings } from "lucide";
 import { signal } from "@rivetjs/reactivity";

@@ -1,4 +1,4 @@
-// Rivet-authored Resizable demo (editor-style nested groups; section from HeroUI Pro's public Resizable docs).
+// Rivet-authored Resizable demo (editor-style nested groups; independent implementation).
 import { Icon } from "@rivetjs/kit/icon";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@rivetjs/ui/resizable";
 import { FileCode, Folder, SquareTerminal } from "lucide";

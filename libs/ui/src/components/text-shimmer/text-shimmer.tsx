@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no text shimmer). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no text shimmer). Feature set inspired by commercial UI kits' public
 // TextShimmer docs (shimmering label for streaming / thinking states, `currentColor`, text at 45% alpha, a sweeping
 // highlight that only animates `translate`, `--spread`, solid text under reduced motion); independent implementation,
 // Rivet-authored styles.

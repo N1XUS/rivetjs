@@ -1,4 +1,4 @@
-// Rivet-authored Scheduler demo: unconfirmed and read-only events (sections from HeroUI Pro's public Agenda docs; own
+// Rivet-authored Scheduler demo: unconfirmed and read-only events (own
 // implementation on the event model: `data.status` + `renderEvent` + CSS, per-event `isDraggable` / `isResizable`).
 import { Icon } from "@rivetjs/kit/icon";
 import { signal } from "@rivetjs/reactivity";

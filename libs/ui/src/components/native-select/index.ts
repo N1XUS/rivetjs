@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): native `<select>` field; feature set inspired by HeroUI Pro's public docs,
+// Rivet addition (no HeroUI v3.2.6 counterpart): native `<select>` field; feature set scoped from public docs of commercial UI kits,
 // independent implementation (see `native-select.tsx`).
 import { NativeSelectIndicator, NativeSelectOptGroup, NativeSelectOption, NativeSelectRoot, NativeSelectTrigger } from "./native-select.tsx";
 import type {

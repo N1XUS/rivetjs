@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): data-driven radar chart with CSS-only tooltips; feature set inspired by
-// HeroUI Pro's public Radar Chart docs, independent implementation (see `radar-chart.tsx`).
+// commercial UI kits' public Radar Chart docs, independent implementation (see `radar-chart.tsx`).
 export { RadarChart } from "./radar-chart.tsx";
 export type { RadarChartProps, RadarSeries } from "./radar-chart.tsx";
 

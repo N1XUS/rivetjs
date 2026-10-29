@@ -1,7 +1,7 @@
 // Rivet-authored (no upstream): morphing surface behaviour — a collapsed in-flow element (a "bag" pill, a button) whose
 // surface grows into a panel and back. Feature set (footprint = the collapsed size, auto-measured collapsed / expanded
 // targets, eight logical directions, controlled `isOpen` / `onOpenChange`, `isDisabled`, animation off switch, content
-// cross-fade + scale) inspired by HeroUI Pro's public MorphButton docs (React Native); independent web implementation.
+// cross-fade + scale) scoped from public docs of commercial UI kits (React Native); independent web implementation.
 // Motion = the house motion `@rivetjs/cdk/motion` (embla-carousel 8.6.0 physics, MIT, © David Jerleke; user decision
 // 2026-10-08: no CSS transitions / hand-rolled easing in components that adopt it).
 //
@@ -65,7 +65,7 @@ export interface MorphMotionOptions {
 
 // Defaults: embla's update rule `v = f·(v + Δ/d)` is a damped spring; d = 10, f = 0.6 gives a slightly under-damped
 // response (|λ| = √f ≈ 0.77 per 60 Hz step: visually settled in ~300 ms, < 1 % overshoot), the feel of the MorphButton
-// spring in HeroUI Pro's public docs (damping 25, stiffness 300, mass 0.8 ≈ ζ 0.8). Embla's carousel default (25 / 0.68)
+// spring in commercial UI kits' public docs (damping 25, stiffness 300, mass 0.8 ≈ ζ 0.8). Embla's carousel default (25 / 0.68)
 // is over-damped and tails for ~1 s on a box this size.
 /** Default morph duration (embla units). */
 export const MORPH_DURATION = 10;

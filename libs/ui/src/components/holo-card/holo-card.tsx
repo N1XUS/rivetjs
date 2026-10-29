@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no holo card). Feature set inspired by HeroUI Pro's public Holo Card
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no holo card). Feature set inspired by commercial UI kits' public Holo Card
 // docs (a 3D tilting card with a pointer-tracked holographic glare: parts `.Rotator` / `.Frame` / `.Surface` / `.Image` /
 // `.Inset` / `.Pattern` / `.Content` / `.Shine` / `.ShinePattern`; props `gradient`, `patternSize`,
 // `isInteractive`, `isDisabled`, `parallaxStrength`; `--holo-card-*` variables); independent implementation, Rivet-authored styles.

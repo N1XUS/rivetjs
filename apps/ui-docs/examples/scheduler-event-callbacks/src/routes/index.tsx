@@ -1,5 +1,4 @@
-// Rivet-authored Scheduler demo: every editing callback writes one line to a log (section "Event Callbacks" of HeroUI Pro's
-// public Agenda docs; own content, no Pro source).
+// Rivet-authored Scheduler demo: every editing callback writes one line to a log (own content).
 import { signal } from "@rivetjs/reactivity";
 import { Scheduler, type SchedulerEvent } from "@rivetjs/ui/scheduler";
 

@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): read-only chronology; feature set inspired by HeroUI Pro's public Timeline
+// Rivet addition (no HeroUI v3.2.6 counterpart): read-only chronology; feature set inspired by commercial UI kits' public Timeline
 // docs, independent implementation (see `timeline.tsx`).
 import { TimelineConnector, TimelineContent, TimelineItem, TimelineMarker, TimelineRail, TimelineRoot } from "./timeline.tsx";
 import type {

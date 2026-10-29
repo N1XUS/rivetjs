@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no floating TOC). Feature set inspired by HeroUI Pro's public Floating
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no floating TOC). Feature set inspired by commercial UI kits' public Floating
 // TOC docs (a compact bar indicator per section that opens a floating list of sections on hover or press: root `placement`
 // left / right, `triggerMode` hover / press, `open` / `defaultOpen` / `onOpenChange`, `openDelay` 200 / `closeDelay` 300;
 // parts `.Trigger`, `.Bar` (`active`, `level`), `.Content` (popover, `offset` 8), `.Item` (`active`, `level`); classes

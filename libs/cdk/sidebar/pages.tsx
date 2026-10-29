@@ -1,4 +1,4 @@
-// Rivet (no shadcn upstream; feature set inspired by HeroUI Pro's public Sidebar docs, independent implementation):
+// Rivet (no shadcn upstream; feature set scoped from public docs of commercial UI kits, independent implementation):
 // an animated page switcher inside the sidebar — `SidebarPages` (value / defaultValue / onValueChange) holds the active
 // page, `SidebarPage value` is one page. Drill-in / back navigation: a menu button sets the value
 // (`useSidebarPages().setActiveValue("settings")`).

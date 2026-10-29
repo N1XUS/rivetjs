@@ -1,4 +1,4 @@
-// Rivet-authored ContextMenu demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ContextMenu demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { ContextMenu } from "@rivetjs/ui/context-menu";
 
 export const head = { title: "ContextMenu: Long Press" };

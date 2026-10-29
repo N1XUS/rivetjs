@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no navbar). Feature set (props, defaults) inspired by HeroUI Pro's
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no navbar). Feature set (props, defaults) inspired by commercial UI kits'
 // public Navbar docs; independent implementation. Serializable navbar state (plain data + signals + the caller's
 // callbacks); free functions take the state first.
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "@rivetjs/cdk/interactions";

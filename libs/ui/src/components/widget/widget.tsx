@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no dashboard widget). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no dashboard widget). Feature set inspired by commercial UI kits' public
 // Widget docs (a tinted shell around a raised content area for charts, tables or KPIs; header with title, description and
 // an inline legend; footer); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - `Widget` takes `render` (the `dom.div` contract) for another root element; parts are plain elements.

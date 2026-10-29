@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): 3D tilting card with a pointer-tracked holographic glare; feature set
-// inspired by HeroUI Pro's public Holo Card docs, independent implementation (see `holo-card.tsx`).
+// scoped from public docs of commercial UI kits, independent implementation (see `holo-card.tsx`).
 import {
   HoloCardContent,
   HoloCardFrame,

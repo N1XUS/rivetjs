@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no pressable feedback). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no pressable feedback). Feature set inspired by commercial UI kits' public
 // Pressable Feedback docs (a press layer for any element: `.Highlight` opacity overlay, `.Ripple` M3-style radial ripple,
 // `.HoldConfirm` clip-path hold-to-confirm, `.ProgressFeedback` clip-path click-to-progress; classes `.pressable-feedback*`,
 // `data-sweep` / `data-holding` / `data-progressing` / `data-complete`, `--pressable-feedback-*` variables); independent

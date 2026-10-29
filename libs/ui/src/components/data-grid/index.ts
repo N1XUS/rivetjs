@@ -1,10 +1,10 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 OSS has no data grid). Feature set inspired by HeroUI Pro's public
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 OSS has no data grid). Feature set inspired by commercial UI kits' public
 // DataGrid docs; independent implementation. Behaviour = `@rivetjs/cdk/data-grid`; look = vendored HeroUI OSS table classes.
 import { DataGrid } from "./data-grid.tsx";
 import type { DataGridProps } from "./data-grid.tsx";
 
 /* -------------------------------------------------------------------------------------------------
- * Component (not compound: data + columns, as HeroUI Pro)
+ * Component (not compound: data + columns,)
  * -----------------------------------------------------------------------------------------------*/
 export { DataGrid };
 

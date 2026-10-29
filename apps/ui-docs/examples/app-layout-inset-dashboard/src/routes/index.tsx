@@ -1,4 +1,4 @@
-// Rivet-authored demo (AppLayout is a Rivet addition: "Inset Dashboard" section of HeroUI Pro's public docs, own content).
+// Rivet-authored demo (AppLayout is a Rivet addition, own content).
 import { Icon } from "@rivetjs/kit/icon";
 import { ChartColumn, ChevronsUpDown, CreditCard, House, LogOut, Settings, User, Users } from "lucide";
 import { AppLayout } from "@rivetjs/ui/app-layout";

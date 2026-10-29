@@ -1,5 +1,5 @@
 // Rivet-authored demo (Carousel is a Rivet addition: embla-carousel behaviour from @rivetjs/cdk/carousel, HeroUI look).
-// Section "Modal Type" of HeroUI Pro's public Carousel docs; own content.
+// Own content.
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
 import { Carousel } from "@rivetjs/ui/carousel";

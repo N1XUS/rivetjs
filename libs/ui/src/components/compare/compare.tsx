@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 and HeroUI Pro have no compare / image-compare component). Before /
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no compare / image-compare component). Before /
 // after comparison in the HeroUI visual language: two overlapped layers (images or any content), a divider line and a
 // round surface handle with a lucide grip icon, optional "Before" / "After" label badges; Rivet-authored styles on HeroUI
 // tokens (`styles/components/compare.css`).

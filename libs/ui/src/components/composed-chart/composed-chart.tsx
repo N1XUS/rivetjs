@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by HeroUI Pro's public Composed Chart
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by commercial UI kits' public Composed Chart
 // docs (bar, line and area series on one set of axes: stacked bars with a line, area with a line, bar with an area, multi
 // type; grid, axes, tooltip); independent implementation with the data-driven API of `@rivetjs/ui/chart` (`data` + `index`
 // + `series`, each series with a `type`):

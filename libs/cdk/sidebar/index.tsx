@@ -23,7 +23,7 @@
 //   SidebarMenuButton / SidebarMenuSubButton = cdk Link with `href`, else cdk Button; tooltip = cdk
 //   TooltipTrigger (disabled unless collapsed and not mobile) + Tooltip `placement="right"`, delay 0
 //   (new-york `TooltipProvider delayDuration={0}`).
-// Rivet extensions (feature set inspired by HeroUI Pro's public Sidebar docs; independent implementation), shadcn API kept:
+// Rivet extensions (feature set scoped from public docs of commercial UI kits; independent implementation), shadcn API kept:
 // - provider `toggleShortcut` / `reduceMotion` / `closeMobileOnAction` / `navigate` (+ `useHref`: a cdk RouterProvider
 //   for the subtree; default = native links, which `@rivetjs/router` routes client-side when a route matches);
 // - tree menus: `expandable` (or `defaultExpanded` / `isExpanded` / `onExpandedChange`) on SidebarMenuItem /

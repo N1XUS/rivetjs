@@ -1,4 +1,4 @@
-// Rivet-authored EmptyState demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored EmptyState demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { EmptyState } from "@rivetjs/ui/empty-state";
 
 export const head = { title: "EmptyState: minimal" };

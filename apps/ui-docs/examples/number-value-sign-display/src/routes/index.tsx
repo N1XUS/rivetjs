@@ -1,4 +1,4 @@
-// Rivet-authored NumberValue demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored NumberValue demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { NumberValue } from "@rivetjs/ui/number-value";
 
 export const head = { title: "NumberValue: Sign Display" };

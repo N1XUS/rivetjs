@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by HeroUI Pro's public Pie Chart docs
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set scoped from public docs of commercial UI kits
 // (pie and donut with labels, legend, centre content, nested rings, breakdown, custom tooltip); independent implementation
 // with the data-driven API of `@rivetjs/ui/chart` (`data` of `{ label, value, color? }`):
 // - Server-rendered SVG sectors (`../chart/polar-math.ts`) in a 0…100 viewBox. Each sector is its own layer

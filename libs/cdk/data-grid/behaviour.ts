@@ -1,4 +1,4 @@
-// Rivet-authored (not a port): event handlers of `@rivetjs/cdk/data-grid`. Feature set inspired by HeroUI Pro's public
+// Rivet-authored (not a port): event handlers of `@rivetjs/cdk/data-grid`. Feature set inspired by commercial UI kits' public
 // DataGrid docs; independent implementation. Keyboard / selection semantics follow React Aria's table (useGrid /
 // useTableColumnHeader / useSelectableCollection / useSelectableItem, Apache-2.0, © Adobe) over flat data rows:
 // - rows are focusable (row focus), ArrowLeft / ArrowRight move into cells and back to the row (wrapping like RA's

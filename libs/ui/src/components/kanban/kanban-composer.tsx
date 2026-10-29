@@ -1,4 +1,4 @@
-// Rivet addition (SHOWCASE-1 2026-10-27; no HeroUI / HeroUI Pro counterpart): the "add a card" row of a Kanban column.
+// Rivet addition (SHOWCASE-1 2026-10-27; no HeroUI counterpart): the "add a card" row of a Kanban column.
 // - Closed: a full-width ghost ui `Button` (lucide Plus + `label`). Open: an inline `form` with a ui `TextField` > `Input`
 //   (focused on open) + an Add (submit) and a Cancel button. Enter submits, Escape (in the field) or Cancel closes; an
 //   empty / blank title is ignored. After a submit the field clears and the composer closes (focus back on the trigger),

@@ -1,4 +1,4 @@
-// Rivet-authored demo (DataGrid is a Rivet addition; "Alignment" / "Vertical Alignment" sections of HeroUI Pro's public docs, own data).
+// Rivet-authored demo (DataGrid is a Rivet addition, own data).
 import { signal } from "@rivetjs/reactivity";
 import { DataGrid } from "@rivetjs/ui/data-grid";
 import { Segment } from "@rivetjs/ui/segment";

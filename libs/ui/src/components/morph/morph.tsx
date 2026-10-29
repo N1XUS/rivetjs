@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no morph). Feature set inspired by HeroUI Pro's public MorphButton
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no morph). Feature set inspired by commercial UI kits' public MorphButton
 // docs (React Native: parts `CollapsedContent` / `ExpandedContent`, footprint = collapsed size, auto-measured sizes, eight
 // logical directions (default `top`), variants `primary` (inverted) / `secondary`, controlled `isOpen` / `onOpenChange`,
 // `defaultOpen`, `isDisabled`, `animation` off switch, content cross-fade + scale); independent web implementation,

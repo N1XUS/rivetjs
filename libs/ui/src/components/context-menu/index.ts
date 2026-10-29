@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): right-click / long-press menu; feature set inspired by HeroUI Pro's public
+// Rivet addition (no HeroUI v3.2.6 counterpart): right-click / long-press menu; feature set inspired by commercial UI kits' public
 // Context Menu docs, independent implementation (see `context-menu.tsx`). Item / ItemIndicator / Section / SubmenuTrigger /
 // SubmenuIndicator are the Dropdown parts.
 import { DropdownItem, DropdownItemIndicator, DropdownSection, DropdownSubmenuIndicator, DropdownSubmenuTrigger } from "../dropdown/dropdown.tsx";

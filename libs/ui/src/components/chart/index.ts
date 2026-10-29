@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): data-driven area / line / bar / donut charts and sparklines with CSS-only
-// tooltips; feature set inspired by HeroUI Pro's public chart docs, independent implementation (see `chart.tsx`).
+// tooltips; feature set scoped from public docs of commercial UI kits, independent implementation (see `chart.tsx`).
 export { AreaChart, LineChart, BarChart, DonutChart, Sparkline } from "./chart.tsx";
 export type {
   AreaChartProps,

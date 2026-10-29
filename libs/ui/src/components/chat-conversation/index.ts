@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): stick-to-bottom chat viewport; feature set inspired by HeroUI Pro's
+// Rivet addition (no HeroUI v3.2.6 counterpart): stick-to-bottom chat viewport; feature set inspired by commercial UI kits'
 // public ChatConversation docs, independent implementation (see `chat-conversation.tsx`).
 import { ChatConversationContent, ChatConversationRoot, ChatConversationScrollAnchor, ChatConversationScrollButton } from "./chat-conversation.tsx";
 import type { ChatConversationContentProps, ChatConversationRootProps, ChatConversationScrollButtonProps } from "./chat-conversation.tsx";

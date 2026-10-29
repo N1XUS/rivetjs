@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): a settings-cell slider, the whole cell is the track. Feature set inspired by
-// HeroUI Pro's public docs (CellSlider: `variant` default / secondary; parts `.Label`, `.Output`, `.Track`, `.Fill`, `.Thumb`);
+// commercial UI kits' public docs (CellSlider: `variant` default / secondary; parts `.Label`, `.Output`, `.Track`, `.Fill`, `.Thumb`);
 // independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Root = cdk `Slider` (value / defaultValue / two-way Signal / onChange / onChangeEnd, minValue / maxValue / step,
 //   formatOptions, isDisabled; stepped sliders drag freely and snap with an animated release, cdk `snap`). Context

@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no context menu). Feature set inspired by HeroUI Pro's public Context
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no context menu). Feature set inspired by commercial UI kits' public Context
 // Menu docs (a right-click menu at the pointer with sections, selection and submenus, long press on touch; parts `.Trigger`,
 // `.Popover`, `.Menu`, `.Item`, `.ItemIndicator`, `.Section`, `.SubmenuTrigger`, `.SubmenuIndicator`, `.Separator`);
 // independent implementation, Rivet-authored styles on HeroUI tokens.

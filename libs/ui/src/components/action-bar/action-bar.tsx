@@ -1,6 +1,6 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no action bar). Feature set (parts `ActionBar` / `Prefix` / `Content`
 // / `Suffix`, props `isOpen` / `aria-label` "Actions" / `isAttached` true / `orientation`, classes `action-bar*`, responsive
-// labels) inspired by HeroUI Pro's public ActionBar docs; independent implementation, Rivet-authored styles on HeroUI tokens.
+// labels) scoped from public docs of commercial UI kits; independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Selection-agnostic: the bar knows nothing about a collection; `isOpen` (a value, a live prop or an accessor) shows it,
 //   the caller renders the count / actions (DataGrid, Table, ListBox, ListView …).
 // - Root = fixed bottom-centre `div.action-bar` (`data-open`, pointer events only on the pill) around a ui `Toolbar`

@@ -1,4 +1,4 @@
-// Rivet-authored Markdown demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored Markdown demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { simulateStream, streamText } from "@rivetjs/cdk/chat";
 import { signal } from "@rivetjs/reactivity";
 import { Show } from "@rivetjs/runtime/dom";

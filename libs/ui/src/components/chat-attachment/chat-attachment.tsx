@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no chat attachments). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no chat attachments). Feature set inspired by commercial UI kits' public
 // ChatAttachment docs (attachment tile / file card: `mediaType` (inferred), `mimeType`, `name`, `size` (bytes), `src`;
 // parts `Preview` / `Icon` / `Info` / `Name` / `Size` / `Remove`; `data-variant` media / file; helpers
 // `inferChatAttachmentFileKind` / `formatChatAttachmentSize`; `ChatAttachmentGroup`; `ChatAttachmentInput` (`accept`,

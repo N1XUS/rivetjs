@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): locale-aware formatted number; feature set inspired by HeroUI Pro's public
+// Rivet addition (no HeroUI v3.2.6 counterpart): locale-aware formatted number; feature set inspired by commercial UI kits' public
 // Number Value docs, independent implementation (see `number-value.tsx`).
 import { NumberValuePrefix, NumberValueRoot, NumberValueSuffix, NumberValueValue } from "./number-value.tsx";
 import type { NumberValuePartProps, NumberValueRootProps } from "./number-value.tsx";

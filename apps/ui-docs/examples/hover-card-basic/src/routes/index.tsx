@@ -1,4 +1,4 @@
-// Rivet-authored HoverCard demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored HoverCard demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Avatar } from "@rivetjs/ui/avatar";
 import { HoverCard } from "@rivetjs/ui/hover-card";
 import avatarBlueImage from "../assets/avatar-blue.jpg?image";

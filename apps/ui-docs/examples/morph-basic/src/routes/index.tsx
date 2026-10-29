@@ -1,4 +1,4 @@
-// Rivet-authored Morph demo (Rivet addition; feature set inspired by HeroUI Pro's public MorphButton docs, own demo content).
+// Rivet-authored Morph demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Icon } from "@rivetjs/kit/icon";
 import { Button } from "@rivetjs/ui/button";
 import { Morph } from "@rivetjs/ui/morph";

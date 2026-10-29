@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by HeroUI Pro's public Radial Chart docs
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set scoped from public docs of commercial UI kits
 // (concentric radial bars: gauges, gauge grids, progress rings, legend; `barSize`, `innerRadius`, `outerRadius`,
 // `startAngle` 90, `endAngle` −270, background track); independent implementation with the data-driven API of
 // `@rivetjs/ui/chart` (`data` of `{ label, value, color? }`, one ring per entry, outside first):

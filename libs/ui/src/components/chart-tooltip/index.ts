@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): a composable tooltip card for chart data points; feature set inspired by
-// HeroUI Pro's public Chart Tooltip docs, independent implementation (see `chart-tooltip.tsx`).
+// commercial UI kits' public Chart Tooltip docs, independent implementation (see `chart-tooltip.tsx`).
 import {
   ChartTooltipContent,
   ChartTooltipHeader,

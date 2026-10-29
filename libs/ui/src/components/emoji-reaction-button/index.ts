@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): emoji reaction toggle; feature set inspired by HeroUI Pro's public Emoji
+// Rivet addition (no HeroUI v3.2.6 counterpart): emoji reaction toggle; feature set inspired by commercial UI kits' public Emoji
 // Reaction Button docs, independent implementation (see `emoji-reaction-button.tsx`).
 import { EmojiReactionButtonCount, EmojiReactionButtonEmoji, EmojiReactionButtonRoot } from "./emoji-reaction-button.tsx";
 import type { EmojiReactionButtonPartProps, EmojiReactionButtonRootProps } from "./emoji-reaction-button.tsx";

@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 / HeroUI Pro counterpart): before / after comparison with a draggable divider on
+// Rivet addition (no HeroUI v3.2.6 counterpart): before / after comparison with a draggable divider on
 // `@rivetjs/cdk/compare` (see `compare.tsx`).
 import { CompareAfter, CompareBefore, CompareDivider, CompareHandle, CompareLabel, CompareRoot, CompareThumb } from "./compare.tsx";
 import type {

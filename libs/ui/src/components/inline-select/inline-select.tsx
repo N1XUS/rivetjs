@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): a minimal inline dropdown that flows with the surrounding text (team / project
-// switchers, sentence pickers, breadcrumb item switchers). Feature set inspired by HeroUI Pro's public docs (InlineSelect: parts
+// switchers, sentence pickers, breadcrumb item switchers). Feature set scoped from public docs of commercial UI kits (InlineSelect: parts
 // `.Trigger`, `.Value`, `.Indicator`, `.Popover` with `placement` default "bottom end"; CSS variables
 // `--inline-select-value-max-width` / `--inline-select-indicator-size`); independent implementation, Rivet-authored styles.
 // - Root = the cdk Select parts form (`@rivetjs/cdk/select/parts`): single / multiple selection, value / two-way Signal,

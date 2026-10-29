@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no item card group). Feature set inspired by HeroUI Pro's public Item
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no item card group). Feature set inspired by commercial UI kits' public Item
 // Card Group docs (item cards as one divided list surface or a 2 / 3 column grid, optional section header, five surface
 // variants); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - `layout="list"`: the group is the surface (its `variant`), the `ItemCard`s inside become transparent rows with hairline

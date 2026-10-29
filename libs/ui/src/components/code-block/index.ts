@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): highlighted code with a language label and a copy button; feature set
-// inspired by HeroUI Pro's public CodeBlock docs, independent implementation (see `code-block.tsx`).
+// scoped from public docs of commercial UI kits, independent implementation (see `code-block.tsx`).
 import { CodeBlockCode, CodeBlockCopyButton, CodeBlockHeader, CodeBlockLanguage, CodeBlockRoot } from "./code-block.tsx";
 import type { CodeBlockCodeProps, CodeBlockCopyButtonProps, CodeBlockHeaderProps, CodeBlockLanguageProps, CodeBlockRootProps } from "./code-block.tsx";
 

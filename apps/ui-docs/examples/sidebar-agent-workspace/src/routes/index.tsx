@@ -1,4 +1,4 @@
-// Rivet-authored demo (Sidebar is a Rivet addition: "Agent Workspace" section of HeroUI Pro's public docs, own content).
+// Rivet-authored demo (Sidebar is a Rivet addition, own content).
 import { signal } from "@rivetjs/reactivity";
 import { Icon } from "@rivetjs/kit/icon";
 import { Archive, FolderGit2, GitBranch, Plus, Settings, SquarePen } from "lucide";

@@ -1,4 +1,4 @@
-// Rivet-authored Markdown demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored Markdown demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Markdown } from "@rivetjs/ui/markdown";
 
 export const head = { title: "Markdown: Usage" };

@@ -1,4 +1,4 @@
-// Rivet-authored demo (Stepper is a Rivet addition: feature set inspired by HeroUI Pro's public docs; independent implementation on @rivetjs/cdk/stepper).
+// Rivet-authored demo (Stepper is a Rivet addition: feature set scoped from public docs of commercial UI kits; independent implementation on @rivetjs/cdk/stepper).
 import { Icon } from "@rivetjs/kit/icon";
 import { House, Package, PackageCheck, Truck } from "lucide";
 import { Stepper } from "@rivetjs/ui/stepper";

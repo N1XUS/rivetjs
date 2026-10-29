@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no rating). Feature set inspired by HeroUI Pro's public Rating docs
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no rating). Feature set scoped from public docs of commercial UI kits
 // (read-only display with fractional values, interactive selection, sizes, max value, disabled); independent implementation,
 // Rivet-authored styles on HeroUI tokens.
 // - Read-only (`isReadOnly`, or no `value` / `defaultValue` / `onChange` handling needed): `div role="img"` named

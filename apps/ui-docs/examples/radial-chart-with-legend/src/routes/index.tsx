@@ -1,4 +1,4 @@
-// Rivet-authored RadialChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored RadialChart demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { RadialChart } from "@rivetjs/ui/radial-chart";
 
 export const head = { title: "RadialChart: With Legend" };

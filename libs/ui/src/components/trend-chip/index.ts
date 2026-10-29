@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): change indicator (icon + colour by direction); feature set inspired by
-// HeroUI Pro's public TrendChip docs, independent implementation (see `trend-chip.tsx`).
+// commercial UI kits' public TrendChip docs, independent implementation (see `trend-chip.tsx`).
 import { TrendChipIndicator, TrendChipPrefix, TrendChipRoot, TrendChipSuffix } from "./trend-chip.tsx";
 import type { TrendChipPartProps, TrendChipProps } from "./trend-chip.tsx";
 

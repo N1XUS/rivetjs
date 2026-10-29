@@ -1,4 +1,4 @@
-// Rivet-authored ChainOfThought demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ChainOfThought demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { ChainOfThought } from "@rivetjs/ui/chain-of-thought";
 
 export const head = { title: "ChainOfThought: Usage" };

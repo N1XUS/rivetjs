@@ -1,4 +1,4 @@
-// Rivet-authored demo (Sidebar is a Rivet addition: "Meeting Notes" section of HeroUI Pro's public docs, own content).
+// Rivet-authored demo (Sidebar is a Rivet addition, own content).
 import { signal } from "@rivetjs/reactivity";
 import { Icon } from "@rivetjs/kit/icon";
 import { ChevronsUpDown, FileText, Hash, Plus, Search, Settings, Trash2, Users } from "lucide";

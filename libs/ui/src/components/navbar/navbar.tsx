@@ -1,5 +1,5 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no navbar). Feature set (parts, props, defaults, data attributes,
-// CSS variables) inspired by HeroUI Pro's public Navbar docs; independent implementation.
+// CSS variables) scoped from public docs of commercial UI kits; independent implementation.
 // - Root = `nav` landmark in a `NavbarContext` provider (`{ state, size }`: `./navbar-state.ts` state).
 //   Everything is server markup + delegated handlers: no client effect, so a resumed page boots no runtime at load.
 // - Hide on scroll: CSS scroll-state container query (zero JS). JS fallback (`parentRef`, browsers without scroll-state

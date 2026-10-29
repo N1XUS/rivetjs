@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): segmented control. Feature set inspired by HeroUI Pro's public docs
+// Rivet addition (no HeroUI v3.2.6 counterpart): segmented control. Feature set scoped from public docs of commercial UI kits
 // (Segment: `variant` default / ghost, `size` sm / md / lg, `selectedKey` / `defaultSelectedKey` / `onSelectionChange(key)`,
 // `Segment.Item` / `Segment.Separator`); independent implementation, Rivet-authored styles on HeroUI tokens.
 // Behaviour = `@rivetjs/cdk/toggle-button-group` in single selection (`role="radiogroup"`, items `role="radio"` +

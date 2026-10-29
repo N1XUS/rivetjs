@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no conversation view). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no conversation view). Feature set inspired by commercial UI kits' public
 // ChatConversation docs (scrollable root viewport that sticks to the bottom while a response streams, centred `Content`
 // column, `ScrollButton` shown only away from the bottom, `ScrollAnchor`); independent implementation, Rivet-authored
 // styles.

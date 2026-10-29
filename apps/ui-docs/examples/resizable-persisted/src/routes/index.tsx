@@ -1,5 +1,5 @@
-// Rivet-authored Resizable demo (cookie-persisted layout rendered by the server; section from HeroUI Pro's public
-// Resizable docs, independent implementation on `useDefaultLayout` + `cookieStorage`).
+// Rivet-authored Resizable demo (cookie-persisted layout rendered by the server;
+// independent implementation on `useDefaultLayout` + `cookieStorage`).
 import type { PageProps, RequestEvent } from "@rivetjs/router";
 import { load } from "@rivetjs/router";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup, cookieStorage, useDefaultLayout } from "@rivetjs/ui/resizable";

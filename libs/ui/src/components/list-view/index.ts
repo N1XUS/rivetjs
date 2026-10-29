@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): single-column interactive list on `@rivetjs/cdk/grid-list`; feature set
-// inspired by HeroUI Pro's public List View docs, independent implementation (see `list-view.tsx`).
+// scoped from public docs of commercial UI kits, independent implementation (see `list-view.tsx`).
 import { ListViewDescription, ListViewEmptyState, ListViewItem, ListViewItemAction, ListViewItemContent, ListViewRoot, ListViewTitle } from "./list-view.tsx";
 import type { ListViewDivProps, ListViewItemProps, ListViewRootProps, ListViewSpanProps } from "./list-view.tsx";
 

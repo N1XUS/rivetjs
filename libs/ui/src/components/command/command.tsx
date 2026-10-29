@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no command palette). Feature set inspired by HeroUI Pro's public Command
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no command palette). Feature set inspired by commercial UI kits' public Command
 // docs (a modal palette: search, filtered list with groups, header / footer; sizes; backdrop variants; parts `.Backdrop`,
 // `.Container`, `.Dialog`, `.Header`, `.InputGroup` (+ `.Prefix` / `.Input` / `.ClearButton` / `.Suffix`), `.List`, `.Group`,
 // `.Item`, `.Separator`, `.Footer`); independent implementation, Rivet-authored styles on HeroUI tokens.

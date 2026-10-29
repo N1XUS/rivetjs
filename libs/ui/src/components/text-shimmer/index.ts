@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): shimmering label; feature set inspired by HeroUI Pro's public TextShimmer
+// Rivet addition (no HeroUI v3.2.6 counterpart): shimmering label; feature set inspired by commercial UI kits' public TextShimmer
 // docs, independent implementation (see `text-shimmer.tsx`).
 import { TextShimmerRoot } from "./text-shimmer.tsx";
 import type { TextShimmerProps } from "./text-shimmer.tsx";

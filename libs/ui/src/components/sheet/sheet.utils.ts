@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set inspired by HeroUI Pro's public Sheet docs;
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set scoped from public docs of commercial UI kits;
 // independent implementation. DOM side of `Sheet.Dialog`, called from its client effects (browser only): the drag / snap
 // gesture (`@rivetjs/cdk/sheet-motion`), background scaling, nested-sheet step back, auto focus, `onAnimationEnd`.
 import { sheetMotion, type SheetMotionController } from "@rivetjs/cdk/sheet-motion";

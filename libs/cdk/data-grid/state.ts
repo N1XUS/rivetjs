@@ -1,5 +1,5 @@
 // Rivet-authored (not a port): the data pipeline and pure state helpers of `@rivetjs/cdk/data-grid`.
-// Feature set inspired by HeroUI Pro's public DataGrid docs (prop / column names); independent implementation.
+// Feature set scoped from public docs of commercial UI kits (prop / column names); independent implementation.
 // Plain data in, plain data out: no signals, no closures kept, no DOM — the component (`./index.tsx`) wraps these in
 // computeds, so a resumed page rebuilds every derived value from the serialized inputs.
 //

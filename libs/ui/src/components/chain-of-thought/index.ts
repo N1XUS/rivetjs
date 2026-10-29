@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): collapsible reasoning / agent trace; feature set inspired by HeroUI Pro's
+// Rivet addition (no HeroUI v3.2.6 counterpart): collapsible reasoning / agent trace; feature set inspired by commercial UI kits'
 // public ChainOfThought docs, independent implementation (see `chain-of-thought.tsx`).
 import { ChainOfThoughtContent, ChainOfThoughtRoot, ChainOfThoughtStep, ChainOfThoughtSteps, ChainOfThoughtTrigger } from "./chain-of-thought.tsx";
 import type {

@@ -1,7 +1,7 @@
 // Rivet-authored (no upstream): drag-to-dismiss + snap points for an edge-attached sheet, on the house motion
 // `@rivetjs/cdk/motion` (embla-carousel 8.6.0 physics, MIT, © David Jerleke; user decision 2026-10-08: no hand-rolled
 // physics / JS easing). Feature set (snap points, close threshold, sequential snapping, handle-only drags, backdrop fade
-// from a snap index) inspired by HeroUI Pro's public Sheet docs; independent implementation. Generalises the Sidebar's
+// from a snap index) scoped from public docs of commercial UI kits; independent implementation. Generalises the Sidebar's
 // mobile sheet swipe (`../sidebar/sheet-motion.ts`) to four placements, so the Sidebar can adopt it later.
 // - Units: `offset` = px the sheet is pushed towards its closed edge: 0 = fully shown, `size` (its own extent along the
 //   axis) = off-screen. Rendered as an inline `transform: translate{X|Y}(…)` (an overlay's CSS enter / exit animates

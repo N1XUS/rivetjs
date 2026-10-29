@@ -1,4 +1,4 @@
-// Rivet-authored ChatMessageActions demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ChatMessageActions demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Icon } from "@rivetjs/kit/icon";
 import { ChatMessageActions } from "@rivetjs/ui/chat-message-actions";
 import { Bookmark, Flag, Languages, Volume2 } from "lucide";

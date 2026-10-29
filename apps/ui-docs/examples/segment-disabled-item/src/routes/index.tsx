@@ -1,4 +1,4 @@
-// Rivet-authored Segment demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored Segment demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Segment } from "@rivetjs/ui/segment";
 
 export const head = { title: "Segment: Disabled Item" };

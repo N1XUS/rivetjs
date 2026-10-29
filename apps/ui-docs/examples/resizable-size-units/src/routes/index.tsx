@@ -1,4 +1,4 @@
-// Rivet-authored Resizable demo (CSS-unit sizes + `groupResizeBehavior`; section from HeroUI Pro's public Resizable docs).
+// Rivet-authored Resizable demo (CSS-unit sizes + `groupResizeBehavior`; independent implementation).
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@rivetjs/ui/resizable";
 
 export const head = { title: "Resizable: Size units" };

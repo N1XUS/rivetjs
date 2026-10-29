@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no reasoning trace). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no reasoning trace). Feature set inspired by commercial UI kits' public
 // ChainOfThought docs (a collapsible reasoning / agent trace: `Trigger` label that shimmers while `isStreaming`,
 // `Content` with `Steps` / `Step` (`label`), `defaultExpanded` / `isExpanded`); independent implementation,
 // Rivet-authored styles.

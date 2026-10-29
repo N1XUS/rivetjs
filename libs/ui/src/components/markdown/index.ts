@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): safe, streaming-friendly Markdown for AI responses; feature set inspired
-// by HeroUI Pro's public Markdown docs, independent implementation (see `markdown.tsx`).
+// by commercial UI kits' public Markdown docs, independent implementation (see `markdown.tsx`).
 import { MarkdownRoot } from "./markdown.tsx";
 import type { MarkdownProps } from "./markdown.tsx";
 

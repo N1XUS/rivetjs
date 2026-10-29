@@ -1,4 +1,4 @@
-// Rivet-authored CellColorPicker demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored CellColorPicker demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { CellColorPicker } from "@rivetjs/ui/cell-color-picker";
 import { ColorSwatchPicker } from "@rivetjs/ui/color-swatch-picker";
 

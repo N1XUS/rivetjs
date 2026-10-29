@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no timeline). Feature set inspired by HeroUI Pro's public Timeline
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no timeline). Feature set inspired by commercial UI kits' public Timeline
 // docs (read-only chronology: `ol` of `li` events; rail with marker + connector; start or centered axis with content side /
 // alternate; sizes; density; status tones; `aria-current` on the current event); independent implementation,
 // Rivet-authored styles on HeroUI tokens.

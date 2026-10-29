@@ -9,7 +9,7 @@ related: [components/chart, components/area-chart, components/chart-tooltip]
 `LineChart` draws one or more series as lines over an x axis: trends, comparisons with a previous period or a target, and series with missing values. Like the other [charts](/components/chart/) it is computed and rendered on the server from plain data: no chart library, no canvas and no script in the browser. With tooltips enabled, every x value is a labelled, focusable slot whose tooltip, guide and dots appear on hover and keyboard focus with CSS alone.
 
 :::note
-Rivet addition. The section list follows HeroUI Pro's public Line Chart docs (plus Missing Values); the implementation and the demo content are Rivet's own.
+Rivet addition. The section list covers the usual Line Chart patterns (plus Missing Values); the implementation and the demo content are Rivet's own.
 :::
 
 ## Usage

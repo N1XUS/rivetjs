@@ -178,7 +178,7 @@ CSS transitions only: the sort indicator fades in and turns for descending, the 
 
 ### Notes
 
-- Independent implementation of the public feature set; no Pro code, styles or demos.
+- Independent implementation of the public feature set; no third-party code, styles or demos.
 - Class props are `class` / `*Class` (Rivet), not `className` / `*ClassName`.
 - `header` functions get `sortDirection` as an accessor (`sortDirection()`).
 - `dragAndDropHooks` (React Aria drag and drop between collections) is not supported: `onReorder` covers reordering within the grid.
@@ -193,7 +193,7 @@ The component’s parts emit these additional `data-slot` values: `checkbox-cont
 - Variants: `table-root--primary` (default: the table is a surface card on the secondary background) and `table-root--secondary` (flat rows).
 - Root attributes: `data-vertical-align` (`top` / `middle` / `bottom`), `data-selection-mode`, `data-virtualized`, `data-scrolled-start` / `data-scrolled-end` (pinned-edge shadows).
 - Row attributes: `data-selected`, `data-disabled`, `data-dragging`, `data-level`; cells: `data-column`, `data-pinned`, `data-pinned-edge`, `data-tree-column`; columns: `data-allows-sorting`, `data-sort-direction`, `data-resizing`.
-- Class props: `class`, `contentClass`, `scrollContainerClass`, `footerClass` (Pro: `className`, `contentClassName`, `scrollContainerClassName`, `footerClassName`) plus `headerClass`, `columnClass`, `bodyClass`, `rowClass`, `cellClass`, `checkboxClass`, `resizerClass`, `expandButtonClass`, `dragHandleClass`, `emptyClass`, `loadMoreClass`, `dropIndicatorClass`.
+- Class props: `class`, `contentClass`, `scrollContainerClass`, `footerClass` plus `headerClass`, `columnClass`, `bodyClass`, `rowClass`, `cellClass`, `checkboxClass`, `resizerClass`, `expandButtonClass`, `dragHandleClass`, `emptyClass`, `loadMoreClass`, `dropIndicatorClass`.
 
 ## API Reference
 

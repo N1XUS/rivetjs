@@ -1,4 +1,4 @@
-// Rivet-authored ChatMessage demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ChatMessage demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { ChatLoader } from "@rivetjs/ui/chat-loader";
 import { ChatMessage } from "@rivetjs/ui/chat-message";
 

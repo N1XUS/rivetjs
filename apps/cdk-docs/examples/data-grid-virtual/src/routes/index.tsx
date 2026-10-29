@@ -1,4 +1,4 @@
-// Rivet-authored demo (`@rivetjs/cdk/data-grid`: feature set inspired by HeroUI Pro's public DataGrid docs, independent implementation).
+// Rivet-authored demo (`@rivetjs/cdk/data-grid`: feature set scoped from public docs of commercial UI kits, independent implementation).
 import { DataGrid } from "@rivetjs/cdk/data-grid";
 
 export const head = { title: "DataGrid: virtualized" };

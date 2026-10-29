@@ -1,4 +1,4 @@
-// Rivet-authored ChatTool demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ChatTool demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { ChatTool, ChatToolGroup } from "@rivetjs/ui/chat-tool";
 
 export const head = { title: "ChatTool: Grouped" };

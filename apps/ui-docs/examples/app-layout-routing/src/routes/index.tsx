@@ -1,4 +1,4 @@
-// Rivet-authored demo (AppLayout is a Rivet addition: "Client-Side Routing" section of HeroUI Pro's public docs, own content).
+// Rivet-authored demo (AppLayout is a Rivet addition, own content).
 import { Icon } from "@rivetjs/kit/icon";
 import { signal } from "@rivetjs/reactivity";
 import { CreditCard, House, Users } from "lucide";

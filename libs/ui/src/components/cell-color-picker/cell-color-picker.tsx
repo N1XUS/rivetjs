@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no cell color picker). Feature set inspired by HeroUI Pro's public Cell
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no cell color picker). Feature set inspired by commercial UI kits' public Cell
 // Color Picker docs (a settings row: label start, hex value + swatch end, the whole row opens a color picker popover; variants
 // default / secondary; parts `.Label`, `.Trigger`, `.ValueDisplay`, `.Swatch`, `.Popover` with `placement` "bottom end"); independent
 // implementation, Rivet-authored styles on HeroUI tokens.

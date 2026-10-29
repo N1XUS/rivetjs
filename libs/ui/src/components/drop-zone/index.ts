@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): drag-and-drop upload area + file list on `@rivetjs/cdk/drop-zone`; feature
-// set inspired by HeroUI Pro's public Drop Zone docs, independent implementation (see `drop-zone.tsx`).
+// set scoped from public docs of commercial UI kits, independent implementation (see `drop-zone.tsx`).
 import {
   DropZoneArea,
   DropZoneDescription,

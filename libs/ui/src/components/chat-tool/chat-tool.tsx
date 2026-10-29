@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no tool-call card). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no tool-call card). Feature set inspired by commercial UI kits' public
 // ChatTool docs (collapsible tool-call card: `toolName`, `state` input-streaming / input-available / output-available /
 // output-error / requires-action, `triggerPrefix`, `input` / `output` as JSON, `argsText`, `errorText`, `onApprove` /
 // `onReject`, `defaultExpanded` / `isExpanded`; preset or composable `Trigger` / `StatusIcon` / `Content` / `Args` /

@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no prompt suggestion). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no prompt suggestion). Feature set inspired by commercial UI kits' public
 // PromptSuggestion docs (header Title / Description, Items, Item as a button with ItemTitle / ItemDescription / ItemMeta /
 // ItemTags / ItemFooter slots, a card layout for richer starters); independent implementation, Rivet-authored styles.
 // - `variant` `"pill"` (default: a wrapping row of pills) / `"card"` (a responsive grid of cards). `Item` = cdk Button

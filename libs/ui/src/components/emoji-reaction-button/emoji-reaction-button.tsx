@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no emoji reaction button). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no emoji reaction button). Feature set inspired by commercial UI kits' public
 // Emoji Reaction Button docs (a pill toggle with an emoji and a count; sizes sm / md / lg; `isReadOnly`; parts `.Emoji`,
 // `.Count`); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Root = cdk `ToggleButton` (`aria-pressed`, `data-selected`; `isSelected` value or two-way Signal / `defaultSelected` /

@@ -11,7 +11,7 @@
 //   upstream). The mobile / desktop split before that is CSS (desktop root hidden below 768 px).
 // - `sidebarCookieOpen` (Rivet): reads the persisted `sidebar_state` cookie for SSR (`defaultOpen`), the hook
 //   point upstream documents for server components (`cookies().get("sidebar_state")`).
-// - Rivet extensions (feature set inspired by HeroUI Pro's public Sidebar docs; independent implementation):
+// - Rivet extensions (feature set scoped from public docs of commercial UI kits; independent implementation):
 //   `toggleShortcut` (a `mod+b`-style string, `false` / `null` off; parsed at event time), `reduceMotion`,
 //   `closeMobileOnAction` — plain data in the state.
 import { createContext, signal, untrack, type Signal } from "@rivetjs/reactivity";

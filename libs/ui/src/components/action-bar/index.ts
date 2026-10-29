@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): floating selection toolbar; feature set inspired by HeroUI Pro's public docs,
+// Rivet addition (no HeroUI v3.2.6 counterpart): floating selection toolbar; feature set scoped from public docs of commercial UI kits,
 // independent implementation (see `action-bar.tsx`).
 import { ActionBarContent, ActionBarPrefix, ActionBarRoot, ActionBarSuffix } from "./action-bar.tsx";
 import type { ActionBarContentProps, ActionBarPrefixProps, ActionBarRootProps, ActionBarSuffixProps } from "./action-bar.tsx";

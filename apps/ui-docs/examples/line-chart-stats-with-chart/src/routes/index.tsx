@@ -1,4 +1,4 @@
-// Rivet-authored LineChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored LineChart demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Card } from "@rivetjs/ui/card";
 import { LineChart } from "@rivetjs/ui/chart";
 import { TrendChip } from "@rivetjs/ui/trend-chip";

@@ -1,4 +1,4 @@
-// Rivet-authored FloatingToc demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored FloatingToc demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import type { Selection } from "@rivetjs/cdk/listbox";
 import { computed, signal } from "@rivetjs/reactivity";
 import { FloatingToc } from "@rivetjs/ui/floating-toc";

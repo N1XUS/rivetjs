@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): a styled native `<select>` field. Feature set inspired by HeroUI Pro's public
+// Rivet addition (no HeroUI v3.2.6 counterpart): a styled native `<select>` field. Feature set inspired by commercial UI kits' public
 // docs (NativeSelect: `variant` primary / secondary, `fullWidth`; parts `.Trigger` (positioned wrapper + select),
 // `.Indicator`, `.Option`, `.OptGroup`; composes with Label / Description / FieldError); independent implementation,
 // Rivet-authored styles on HeroUI field tokens.
@@ -9,7 +9,7 @@
 //   fullWidth }` (getters when live); slots come from a module-level memo per `variant|fullWidth`.
 // - Indicator: an HTML `<select>` cannot hold non-option content, so `.Trigger` renders its children inside the select and the
 //   indicator next to it through the `indicator` prop (default `<NativeSelect.Indicator />` = the morph chevron; `null` hides
-//   it). Pro writes `.Indicator` as a Trigger child: here it is `indicator={<NativeSelect.Indicator>…</NativeSelect.Indicator>}`.
+//   it). Commercial kits write `.Indicator` as a Trigger child: here it is `indicator={<NativeSelect.Indicator>…</NativeSelect.Indicator>}`.
 // - Shorthand (identity spec §4.2): no children = Label (`label`) + Trigger with one Option per `items` entry + Description
 //   (`description`) + FieldError (`errorMessage`), the compound form's markup; `items` is a keyed `<For>` by
 //   `value` (live). Explicit `children` win: the shorthand props are ignored (dev warning, `utils/shorthand.ts`).

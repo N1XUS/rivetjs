@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): segmented control; feature set inspired by HeroUI Pro's public docs, independent
+// Rivet addition (no HeroUI v3.2.6 counterpart): segmented control; feature set scoped from public docs of commercial UI kits, independent
 // implementation (see `segment.tsx`).
 import { SegmentItem, SegmentRoot, SegmentSeparator } from "./segment.tsx";
 import type { SegmentItemProps, SegmentRootProps, SegmentSeparatorSpanProps } from "./segment.tsx";

@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): thread list rows for chat sidebars; feature set inspired by HeroUI Pro's
+// Rivet addition (no HeroUI v3.2.6 counterpart): thread list rows for chat sidebars; feature set inspired by commercial UI kits'
 // public ChatListView docs, independent implementation (see `chat-list-view.tsx`).
 import {
   ChatListViewIcon,

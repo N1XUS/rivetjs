@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): press feedback layers (highlight, ripple, hold to confirm, progress) on
-// `@rivetjs/cdk/button`; feature set inspired by HeroUI Pro's public Pressable Feedback docs, independent implementation (see
+// `@rivetjs/cdk/button`; feature set scoped from public docs of commercial UI kits, independent implementation (see
 // `pressable-feedback.tsx`).
 import {
   PressableFeedbackHighlight,

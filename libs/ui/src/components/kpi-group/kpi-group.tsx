@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no KPI group). Feature set inspired by HeroUI Pro's public KPI Group
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no KPI group). Feature set inspired by commercial UI kits' public KPI Group
 // docs (several KPI cards on one shared surface, horizontal / vertical, separators); independent implementation,
 // Rivet-authored styles on HeroUI tokens.
 // - `KpiGroup` is a `div role="group"`; the `Kpi` cards inside drop their own surface (CSS) and share the width.

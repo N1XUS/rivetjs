@@ -1,4 +1,4 @@
-// Rivet-authored Resizable demo (`withIndicator` + a composed `ResizableIndicator`; names from HeroUI Pro's public docs).
+// Rivet-authored Resizable demo (`withIndicator` + a composed `ResizableIndicator`; independent implementation).
 import { ResizableHandle, ResizableIndicator, ResizablePanel, ResizablePanelGroup } from "@rivetjs/ui/resizable";
 
 export const head = { title: "Resizable: With indicator" };

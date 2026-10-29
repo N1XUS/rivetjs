@@ -1,4 +1,4 @@
-// Rivet-authored Resizable demo (handle variants = separator tokens; names from HeroUI Pro's public Resizable docs).
+// Rivet-authored Resizable demo (independent implementation).
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@rivetjs/ui/resizable";
 
 export const head = { title: "Resizable: Variants" };

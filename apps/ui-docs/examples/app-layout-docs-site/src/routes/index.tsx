@@ -1,4 +1,4 @@
-// Rivet-authored demo (AppLayout is a Rivet addition: "Docs Site" section of HeroUI Pro's public docs, own content).
+// Rivet-authored demo (AppLayout is a Rivet addition, own content).
 import { Icon } from "@rivetjs/kit/icon";
 import { Monitor, Moon, Sun } from "lucide";
 import { AppLayout } from "@rivetjs/ui/app-layout";

@@ -1,5 +1,4 @@
-// Rivet-authored Scheduler demo: month spanning events and date navigation (sections from HeroUI Pro's public Agenda docs;
-// own implementation: two-way `view` / `date` signals + `onSlotAction`).
+// Rivet-authored Scheduler demo: month spanning events and date navigation (own implementation: two-way `view` / `date` signals + `onSlotAction`).
 import { signal } from "@rivetjs/reactivity";
 import type { SchedulerDate } from "@rivetjs/cdk/scheduler/layout";
 import { Button } from "@rivetjs/ui/button";

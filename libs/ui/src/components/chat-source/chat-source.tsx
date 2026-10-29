@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no citations). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no citations). Feature set inspired by commercial UI kits' public
 // ChatSource docs (citation pill for a URL or document: `href`, `title` (default: the domain), `description` (shown in the
 // hover preview), `enablePreview`, `faviconUrl`, `sourceType` (inferred); parts `Trigger` / `Icon` / `Title` /
 // `Preview`; `ChatSources` = a disclosure grouping citations: `Trigger` / `Content` / `List`); independent

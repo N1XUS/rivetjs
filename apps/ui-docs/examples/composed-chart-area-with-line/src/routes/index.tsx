@@ -1,4 +1,4 @@
-// Rivet-authored ComposedChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ComposedChart demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { ComposedChart } from "@rivetjs/ui/composed-chart";
 
 export const head = { title: "ComposedChart: Area With Line" };

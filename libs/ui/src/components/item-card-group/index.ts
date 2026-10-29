@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): item cards as a list or grid; feature set inspired by HeroUI Pro's public
+// Rivet addition (no HeroUI v3.2.6 counterpart): item cards as a list or grid; feature set inspired by commercial UI kits' public
 // Item Card Group docs, independent implementation (see `item-card-group.tsx`).
 import { ItemCardGroupDescription, ItemCardGroupHeader, ItemCardGroupRoot, ItemCardGroupTitle } from "./item-card-group.tsx";
 import type { ItemCardGroupDescriptionProps, ItemCardGroupHeaderProps, ItemCardGroupRootProps, ItemCardGroupTitleProps } from "./item-card-group.tsx";

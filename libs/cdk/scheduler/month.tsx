@@ -7,7 +7,7 @@
 //   to the default (today, else the 1st of the anchor month, else the first cell) whenever the range moves.
 // - popover = cdk `Popover` (standalone, `triggerRef` = the open day's `+N more` button, non-modal, no underlay: drag
 //   hit-testing reaches the grid); the panel is derived from the day index, never a snapshot (malva rule).
-// - Rivet additions: `showWeekNumbers` (row headers, ISO weeks), `data-weekend` (Pro Weekend Highlighting).
+// - Rivet additions: `showWeekNumbers` (row headers, ISO weeks), `data-weekend` (weekend highlighting).
 // - Chip drag / resize: delegated `schedulerPress` on the grid + the panel (T6); the panel stays mounted but hidden
 //   (`visibility: hidden`) while a gesture runs, so the grid under it is the drop target (malva rule).
 // - Range selection (T7): the pointerdown of `schedulerPress` hands empty-cell presses to the lazy `select.ts`; cells

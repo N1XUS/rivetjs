@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no app layout). Feature set inspired by HeroUI Pro's public AppLayout
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no app layout). Feature set inspired by commercial UI kits' public AppLayout
 // docs; independent implementation. Serializable state of `AppLayout` (aside open state, mobile aside sheet, panel sizes)
 // as plain signals + free functions (resume-safe: no closures are created here).
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "@rivetjs/cdk/interactions";

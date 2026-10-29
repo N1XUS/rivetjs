@@ -1,5 +1,4 @@
-// `@rivetjs/cdk/chat` prompt token model (Rivet-authored; feature set inspired by the "Token Input" section of HeroUI Pro's
-// public PromptInput docs): flatten / normalize, textarea edit reconcile (typing next to a token, edits touching a token
+// `@rivetjs/cdk/chat` prompt token model (Rivet-authored; feature set scoped from public docs of commercial UI kits): flatten / normalize, textarea edit reconcile (typing next to a token, edits touching a token
 // remove it whole, repeated characters resolve to the caret), Backspace / Delete next to a token, caret snapping and
 // arrow steps, trigger detection (word boundary, spaces, newlines, nearest trigger, inside tokens), token insertion with
 // the trailing space.

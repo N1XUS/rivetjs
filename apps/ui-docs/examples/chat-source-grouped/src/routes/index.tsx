@@ -1,4 +1,4 @@
-// Rivet-authored ChatSource demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ChatSource demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { ChatSource, ChatSources } from "@rivetjs/ui/chat-source";
 
 export const head = { title: "ChatSource: Grouped" };

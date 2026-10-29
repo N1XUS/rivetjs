@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): settings-cell slider; feature set inspired by HeroUI Pro's public docs,
+// Rivet addition (no HeroUI v3.2.6 counterpart): settings-cell slider; feature set scoped from public docs of commercial UI kits,
 // independent implementation (see `cell-slider.tsx`).
 import { CellSliderFill, CellSliderLabel, CellSliderOutput, CellSliderRoot, CellSliderThumb, CellSliderTrack } from "./cell-slider.tsx";
 import type {

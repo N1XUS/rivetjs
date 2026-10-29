@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): AI tool-call cards + groups; feature set inspired by HeroUI Pro's public
+// Rivet addition (no HeroUI v3.2.6 counterpart): AI tool-call cards + groups; feature set inspired by commercial UI kits' public
 // ChatTool docs, independent implementation (see `chat-tool.tsx`).
 import {
   ChatToolApproval,

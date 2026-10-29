@@ -1,5 +1,5 @@
-// Rivet-authored (not a port): `@rivetjs/cdk/data-grid`, a headless, data-driven grid. Feature set inspired by HeroUI
-// Pro's public DataGrid docs (prop and column names); independent implementation (no Pro source, styles or demos).
+// Rivet-authored (not a port): `@rivetjs/cdk/data-grid`, a headless, data-driven grid. Feature set inspired by commercial UI kits'
+//  public DataGrid docs (prop and column names); independent implementation (no third-party source, styles or demos).
 // Semantics follow React Aria's table (ARIA grid / treegrid, row + cell focus, selection, sorting, resizing; see
 // `./behaviour.ts`); the RAC `@rivetjs/cdk/table` stays the faithful composable port — this module is the
 // data-first, virtualization-first sibling (no collection build pass: rows are plain data through `./state.ts`).

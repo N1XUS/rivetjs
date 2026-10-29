@@ -1,5 +1,5 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): citation pills + grouped source lists; feature set inspired by HeroUI
-// Pro's public ChatSource docs, independent implementation (see `chat-source.tsx`).
+// Rivet addition (no HeroUI v3.2.6 counterpart): citation pills + grouped source lists; feature set inspired by commercial UI kits'
+//  public ChatSource docs, independent implementation (see `chat-source.tsx`).
 import {
   ChatSourceIcon,
   ChatSourcePreview,

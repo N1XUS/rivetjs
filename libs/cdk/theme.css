@@ -833,7 +833,7 @@
     block-size: 1.75rem;
     padding: 0;
   }
-  /* Sidebar Rivet extensions (feature set inspired by HeroUI Pro's public docs; independent implementation): tree items,
+  /* Sidebar Rivet extensions (feature set scoped from public docs of commercial UI kits; independent implementation): tree items,
      guide lines, an actions group, pages, backdrops, reduce motion. */
   :where(.rv-SidebarMenuIndicator) {
     display: inline-flex;

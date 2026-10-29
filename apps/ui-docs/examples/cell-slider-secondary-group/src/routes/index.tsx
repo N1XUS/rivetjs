@@ -1,4 +1,4 @@
-// Rivet-authored CellSlider demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored CellSlider demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { CellSlider } from "@rivetjs/ui/cell-slider";
 
 export const head = { title: "CellSlider: Secondary Group" };

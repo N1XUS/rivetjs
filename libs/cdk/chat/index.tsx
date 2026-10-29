@@ -1,5 +1,5 @@
 // Rivet-authored (no React Aria / Angular CDK counterpart). Headless behaviour for chat surfaces; feature set inspired by
-// HeroUI Pro's public AI component docs (PromptInput Enter / Shift+Enter, autosizing composer, stick-to-bottom
+// commercial UI kits' public AI component docs (PromptInput Enter / Shift+Enter, autosizing composer, stick-to-bottom
 // conversation with a jump-to-bottom button, file drop on the composer, streamed responses); independent implementation.
 // - Plain functions called from resumable handlers (`onKeyDown={(e) => { if (isSubmitKey(e)) … }}`): nothing runs at load.
 // - Stick-to-bottom is CSS first (`flex-direction: column-reverse` scroll container: the browser starts at the bottom and

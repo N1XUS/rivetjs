@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): metric card; feature set inspired by HeroUI Pro's public KPI docs,
+// Rivet addition (no HeroUI v3.2.6 counterpart): metric card; feature set scoped from public docs of commercial UI kits,
 // independent implementation (see `kpi.tsx`).
 import {
   KpiActions,

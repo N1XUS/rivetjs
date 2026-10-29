@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no chat message). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no chat message). Feature set inspired by commercial UI kits' public
 // ChatMessage docs (parts `Assistant` / `User` / `Avatar` / `Body` / `Bubble` / `Content` / `Actions`); independent
 // implementation, Rivet-authored styles on HeroUI tokens.
 // - `Assistant` = avatar column + body column (full width: markdown, tools, sources); `User` = an end-aligned bubble.

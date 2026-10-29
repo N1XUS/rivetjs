@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no message actions). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no message actions). Feature set inspired by commercial UI kits' public
 // ChatMessageActions docs (root action group + `Action` icon buttons for copy / retry / rating / share, own icons);
 // independent implementation, Rivet-authored styles.
 // - Root = `role="group"` named by `aria-label` (default "Message actions"). `Action` = ui Button (ghost, sm, icon-only

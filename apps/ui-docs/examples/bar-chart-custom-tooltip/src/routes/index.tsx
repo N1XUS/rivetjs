@@ -1,4 +1,4 @@
-// Rivet-authored BarChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored BarChart demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { BarChart } from "@rivetjs/ui/chart";
 import { ChartTooltip } from "@rivetjs/ui/chart-tooltip";
 

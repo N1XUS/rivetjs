@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no item card). Feature set inspired by HeroUI Pro's public Item Card
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no item card). Feature set inspired by commercial UI kits' public Item Card
 // docs (a row with a leading icon, title + description and a trailing action such as a Switch or Select; five surface
 // variants; pressable); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - `ItemCard` takes `render` (the `dom.div` contract): render an `<a>` / `<button>` for a pressable card (hover / pressed

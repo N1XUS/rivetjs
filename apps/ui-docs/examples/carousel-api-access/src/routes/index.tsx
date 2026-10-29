@@ -1,4 +1,4 @@
-// Rivet-authored demo (Carousel is a Rivet addition; "API Access" section of HeroUI Pro's public docs, own content):
+// Rivet-authored demo (Carousel is a Rivet addition, own content):
 // `onApi` hands over the embla API; buttons outside the carousel drive it, `select` events update them.
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";

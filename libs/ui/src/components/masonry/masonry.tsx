@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 and HeroUI Pro have no masonry / bento grid). Masonry (Pinterest
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no masonry / bento grid). Masonry (Pinterest
 // columns) and Bento (span tiles) in the HeroUI visual language: rounded item surfaces, accent focus ring, selected
 // ring, loader + empty state slots; Rivet-authored styles on HeroUI tokens (`styles/components/masonry.css`).
 // - Behaviour, placement and resumability = `@rivetjs/cdk/masonry` (server-exact inline CSS, measured / virtualized

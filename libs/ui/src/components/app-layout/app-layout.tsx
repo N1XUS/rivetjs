@@ -1,5 +1,5 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no app layout). Feature set (props, parts, defaults, class / variable
-// names) inspired by HeroUI Pro's public AppLayout docs; independent implementation. Scaffold over `@rivetjs/ui/sidebar`
+// names) scoped from public docs of commercial UI kits; independent implementation. Scaffold over `@rivetjs/ui/sidebar`
 // (shadcn/ui Sidebar behaviour via `@rivetjs/cdk/sidebar`): full-height sidebar + sticky navbar + main + optional aside.
 // Rivet:
 // - Root = ui `Sidebar.Provider` (wrapper `div.sidebar-wrapper.app-layout`): `sidebarOpen` / `defaultSidebarOpen` /

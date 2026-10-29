@@ -1,5 +1,5 @@
 // Rivet-authored (no React Aria / Angular CDK counterpart): a small, safe Markdown parser for AI responses. Feature set
-// inspired by HeroUI Pro's public Markdown docs (memoized blocks for streaming, incomplete-markdown repair while a
+// scoped from public docs of commercial UI kits (memoized blocks for streaming, incomplete-markdown repair while a
 // response streams); independent implementation (no react-markdown / remark / marked / streamdown code).
 // - Output is a plain-data AST (no HTML strings): renderers build elements, so nothing is ever parsed as HTML and raw
 //   HTML in the source stays text. URLs pass `safeUrl` (http / https / mailto / tel / relative only).

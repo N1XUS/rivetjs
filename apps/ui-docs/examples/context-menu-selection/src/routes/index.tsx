@@ -1,4 +1,4 @@
-// Rivet-authored ContextMenu demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored ContextMenu demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import type { Selection } from "@rivetjs/cdk/menu";
 import { signal } from "@rivetjs/reactivity";
 import { ContextMenu } from "@rivetjs/ui/context-menu";

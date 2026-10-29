@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): a settings-row color picker on the ui ColorPicker; feature set inspired by
-// HeroUI Pro's public Cell Color Picker docs, independent implementation (see `cell-color-picker.tsx`).
+// commercial UI kits' public Cell Color Picker docs, independent implementation (see `cell-color-picker.tsx`).
 import {
   CellColorPickerLabel,
   CellColorPickerPopover,

@@ -1,5 +1,5 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): a compact pill stepper with an animated value. Feature set inspired by HeroUI
-// Pro's public docs (NumberStepper: `size` sm / md / lg, `formatOptions` + every NumberField prop; parts `.Group`, `.Value`
+// Rivet addition (no HeroUI v3.2.6 counterpart): a compact pill stepper with an animated value. Feature set inspired by commercial UI kits'
+//  public docs (NumberStepper: `size` sm / md / lg, `formatOptions` + every NumberField prop; parts `.Group`, `.Value`
 // (`format`, render-function children), `.DecrementButton`, `.IncrementButton`); independent implementation, Rivet-authored
 // styles on HeroUI tokens.
 // - Root = cdk `NumberField` (value / defaultValue / two-way Signal / onChange, minValue / maxValue / step, formatOptions, locale,

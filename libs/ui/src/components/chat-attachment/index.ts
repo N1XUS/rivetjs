@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): chat attachments, groups and the picker / dropzone; feature set inspired
-// by HeroUI Pro's public ChatAttachment docs, independent implementation (see `chat-attachment.tsx`).
+// by commercial UI kits' public ChatAttachment docs, independent implementation (see `chat-attachment.tsx`).
 import {
   ChatAttachmentGroup,
   ChatAttachmentIcon,

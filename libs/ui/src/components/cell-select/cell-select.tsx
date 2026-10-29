@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): a settings-row select, the whole cell is the trigger with the label on the left
-// and the selected value + chevron on the right. Feature set inspired by HeroUI Pro's public docs (CellSelect: `variant` default /
+// and the selected value + chevron on the right. Feature set scoped from public docs of commercial UI kits (CellSelect: `variant` default /
 // secondary; parts `.Trigger`, `.Label`, `.Value`, `.Indicator`, `.Popover` with `placement` default "bottom end"); independent
 // implementation, Rivet-authored styles on HeroUI tokens.
 // - Root = the cdk Select parts form (`@rivetjs/cdk/select/parts`): selection (single / multiple), value / two-way

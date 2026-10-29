@@ -3,7 +3,7 @@
 //   string) renders the default text; Rivet JSX children are lazy slots (always truthy), so an element child renders as given.
 //   Live props: `children` / `class` / `size` are read lazily (`splitLive`), so a changed `class` / `size` updates in place.
 // - `size` sm / md / lg (Rivet addition: HeroUI v3.2.6 EmptyState has one size; identity spec §3.6).
-// - Rivet addition (UI-PORT S7; feature set inspired by HeroUI Pro's public Empty State docs, independent implementation):
+// - Rivet addition (UI-PORT S7; feature set scoped from public docs of commercial UI kits, independent implementation):
 //   parts `.Header` / `.Media` (`variant` default / icon) / `.Title` (h3) / `.Description` (p) / `.Content` (actions); with
 //   a header or content part the root becomes a centred column (CSS `:has()`, no prop); `variant="outline"` = dashed
 //   border. A root with plain text keeps the HeroUI look (collection empty states).

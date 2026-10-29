@@ -1,11 +1,11 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 OSS has no data grid). Feature set inspired by HeroUI Pro's public
-// DataGrid docs (part / prop names); independent implementation — no Pro source, styles, class names or demo code.
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 OSS has no data grid). Feature set inspired by commercial UI kits' public
+// DataGrid docs (part / prop names); independent implementation — no third-party source, styles, class names or demo code.
 // Behaviour = `@rivetjs/cdk/data-grid` (ARIA grid / treegrid, keyboard navigation, selection, sorting, resizing, pinning,
 // tree rows, reordering, virtualization, client filter / pagination); look = the vendored HeroUI OSS `table*` classes +
 // Rivet-authored `data-grid*` classes (`styles/components/data-grid.css`) on HeroUI tokens.
 // Rivet:
-// - Not compound (as Pro): `data` + `columns`; every cdk prop passes through (the cdk prop docs apply).
-// - Pro `className` / `contentClassName` / `scrollContainerClassName` / `footerClassName` → `class` / `contentClass` /
+// - Not compound: `data` + `columns`; every cdk prop passes through (the cdk prop docs apply).
+// - React-style `className` / `contentClassName` / `scrollContainerClassName` / `footerClassName` → `class` / `contentClass` /
 //   `scrollContainerClass` / `footerClass` (Rivet class props); the slot classes are prepended.
 // - `variant` (`primary` default / `secondary`) = the vendored table variants.
 // - Defaults: HeroUI checkbox look for the selection column (lucide `Check` / `Minus`), lucide `ChevronUp` sort indicator

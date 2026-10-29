@@ -1,4 +1,4 @@
-// Rivet-authored demo (Sidebar is a Rivet addition: "Agent Hub" section of HeroUI Pro's public docs, own content).
+// Rivet-authored demo (Sidebar is a Rivet addition, own content).
 import { signal } from "@rivetjs/reactivity";
 import { Icon } from "@rivetjs/kit/icon";
 import { Archive, Bot, ChevronsUpDown, Headset, LogOut, MessageSquare, Rocket, Search, Settings, SquarePen, User } from "lucide";

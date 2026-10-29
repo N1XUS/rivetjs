@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no cell switch). Feature set inspired by HeroUI Pro's public Cell Switch
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no cell switch). Feature set inspired by commercial UI kits' public Cell Switch
 // docs (a settings row: label start, switch end, the whole row toggles; variants default / secondary; parts `.Trigger`,
 // `.Label`, `.Control`); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Root = ui `Switch` (cdk `SwitchField`: isSelected value or two-way Signal / defaultSelected / onChange / isDisabled / name /

@@ -1,5 +1,5 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set (parts, props, defaults, data attributes)
-// inspired by HeroUI Pro's public Sheet docs; independent implementation. Structure follows `../drawer/drawer.tsx`:
+// scoped from public docs of commercial UI kits; independent implementation. Structure follows `../drawer/drawer.tsx`:
 // - Root = cdk `DialogTrigger` in a `SheetContext` provider; the context carries the sheet state (`./sheet-state.ts`,
 //   state: plain data + signals + the caller's callbacks → resumes). Parts read slots from a module memo.
 // - Backdrop = cdk `ModalOverlay` (div overlay layer: inert outside, focus trap, scroll lock; never native dialog /

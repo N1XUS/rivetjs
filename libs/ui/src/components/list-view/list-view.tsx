@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no list view). Feature set inspired by HeroUI Pro's public List View
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no list view). Feature set inspired by commercial UI kits' public List View
 // docs (a single-column interactive list on GridList: variants primary / secondary, selection modes with automatic
 // selection checkboxes, disabledKeys, onAction, renderEmptyState, virtualized + rowHeight; parts `Item` / `ItemContent` /
 // `Title` / `Description` / `ItemAction`; classes `.list-view*`); independent implementation, Rivet-authored styles.

@@ -1,4 +1,4 @@
-// Rivet-authored NativeSelect demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored NativeSelect demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Description } from "@rivetjs/ui/description";
 import { Label } from "@rivetjs/ui/label";
 import { NativeSelect } from "@rivetjs/ui/native-select";

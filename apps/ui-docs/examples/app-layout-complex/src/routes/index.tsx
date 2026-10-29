@@ -1,4 +1,4 @@
-// Rivet-authored demo (AppLayout is a Rivet addition: "Complex" section of HeroUI Pro's public docs, own content).
+// Rivet-authored demo (AppLayout is a Rivet addition, own content).
 import { signal } from "@rivetjs/reactivity";
 import { Show } from "@rivetjs/runtime/dom";
 import { Icon } from "@rivetjs/kit/icon";

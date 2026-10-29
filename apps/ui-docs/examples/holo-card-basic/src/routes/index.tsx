@@ -1,4 +1,4 @@
-// Rivet-authored HoloCard demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored HoloCard demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { HoloCard } from "@rivetjs/ui/holo-card";
 
 export const head = { title: "HoloCard: Usage" };

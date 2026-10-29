@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no chat loader). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no chat loader). Feature set inspired by commercial UI kits' public
 // ChatLoader docs (parts `Dots` / `Pulse` / `Spinner` / `Skeleton` + skeleton primitives `SkeletonAvatar` /
 // `SkeletonBlock` / `SkeletonLine`); independent implementation, Rivet-authored styles.
 // - Every loader is a polite `role="status"` named by `aria-label` (default "Loading"); the moving parts are

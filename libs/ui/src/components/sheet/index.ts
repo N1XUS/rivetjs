@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set inspired by HeroUI Pro's public Sheet docs;
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set scoped from public docs of commercial UI kits;
 // independent implementation. `@rivetjs/ui/sheet`: compound `Sheet.*`, named parts, prop types, `sheetVariants`.
 import {
   SheetBackdrop,

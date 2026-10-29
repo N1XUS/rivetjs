@@ -9,7 +9,7 @@ related: [components/chart, components/area-chart, components/chart-tooltip]
 `BarChart` compares values across categories as vertical or horizontal bars, grouped side by side or stacked. Like the other [charts](/components/chart/) it is computed and rendered on the server from plain data: no chart library, no canvas and no script in the browser. With tooltips enabled, every category is a labelled, focusable slot whose tooltip appears on hover and keyboard focus with CSS alone.
 
 :::note
-Rivet addition. The section list follows HeroUI Pro's public Bar Chart docs; the implementation and the demo content are Rivet's own.
+Rivet addition. The section list covers the usual Bar Chart patterns; the implementation and the demo content are Rivet's own.
 :::
 
 ## Usage

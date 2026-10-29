@@ -1,5 +1,5 @@
 // Rivet-only helper (no HeroUI counterpart): the copy-button behaviour shared by `ChatMessageActions.Copy` and
-// `CodeBlock.CopyButton` (feature set inspired by HeroUI Pro's public AI docs; independent implementation).
+// `CodeBlock.CopyButton` (feature set scoped from public docs of commercial UI kits; independent implementation).
 // A plain function called from a resumable press handler: copies with `@rivetjs/cdk/clipboard` `copy`, then marks the
 // button `data-copied="true"` + swaps its `aria-label` for `resetAfter` ms (icons swap in CSS). No signal: nothing is
 // serialized, nothing runs before the press. `.tsx`: server-rewritten like the component modules.

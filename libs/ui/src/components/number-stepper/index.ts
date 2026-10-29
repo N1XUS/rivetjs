@@ -1,5 +1,5 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): pill number stepper with an animated value; feature set inspired by HeroUI
-// Pro's public docs, independent implementation (see `number-stepper.tsx`).
+// Rivet addition (no HeroUI v3.2.6 counterpart): pill number stepper with an animated value; feature set inspired by commercial UI kits'
+//  public docs, independent implementation (see `number-stepper.tsx`).
 import { NumberStepperDecrementButton, NumberStepperGroup, NumberStepperIncrementButton, NumberStepperRoot, NumberStepperValue } from "./number-stepper.tsx";
 import type { NumberStepperButtonProps, NumberStepperGroupProps, NumberStepperRootProps, NumberStepperValueProps } from "./number-stepper.tsx";
 

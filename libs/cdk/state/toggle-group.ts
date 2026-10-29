@@ -15,7 +15,7 @@
 // - Rivet extension (no RAC counterpart; RAC Tabs / Select / RadioGroup shape): `selectedKey` / `defaultSelectedKey` for single
 //   selection. A `Signal<Key | null>` is two-way (`keySource`, written with the first key of the new set or `null`); a plain key is
 //   controlled (= `selectedKeys: [key]`); `defaultSelectedKey` = `defaultSelectedKeys: [key]`. `selectedKeys` wins when both are given.
-//   Used by `@rivetjs/ui/segment` (feature set inspired by HeroUI Pro's public docs).
+//   Used by `@rivetjs/ui/segment` (feature set scoped from public docs of commercial UI kits).
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import type { Key } from "../collections/types.ts";
 

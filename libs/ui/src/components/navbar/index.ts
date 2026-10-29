@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no navbar). Feature set inspired by HeroUI Pro's public Navbar docs;
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no navbar). Feature set scoped from public docs of commercial UI kits;
 // independent implementation. `@rivetjs/ui/navbar`: compound `Navbar.*`, named parts, `useNavbar`, prop types, `navbarVariants`.
 import {
   NavbarBrand,

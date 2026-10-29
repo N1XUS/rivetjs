@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no chat list). Feature set inspired by HeroUI Pro's public
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no chat list). Feature set inspired by commercial UI kits' public
 // ChatListView docs (thread rows with Icon / ItemContent / Title / Preview / Meta, compact variant for dense sidebars);
 // independent implementation, Rivet-authored styles.
 // - Root = `div` (wrap it in a `nav` / landmark of your own); `variant` `"default"` (title + preview) / `"compact"` (one

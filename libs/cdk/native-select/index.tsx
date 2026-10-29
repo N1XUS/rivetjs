@@ -9,7 +9,7 @@
 // - `NativeSelectOption` marks `selected` from the select's current value (`NativeSelectValueContext`): the server markup shows
 //   the value (a `<select>` has no `value` attribute in HTML), and the client keeps the property in sync through the `value`
 //   binding. `NativeSelectOptGroup` = `<optgroup>`.
-// - Used by `@rivetjs/ui/native-select` (feature set inspired by HeroUI Pro's public docs).
+// - Used by `@rivetjs/ui/native-select` (feature set scoped from public docs of commercial UI kits).
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { hasLive, liveAt, liveOmit, readOnce } from "../utils/live.tsx";
 import { liveRenderProps } from "../slots/index.tsx";

@@ -1,4 +1,4 @@
-// Rivet-authored demo (AppLayout is a Rivet addition: "With Breadcrumbs" section of HeroUI Pro's public docs, own content).
+// Rivet-authored demo (AppLayout is a Rivet addition, own content).
 import { Icon } from "@rivetjs/kit/icon";
 import { Folder, House, ListTodo, Settings } from "lucide";
 import { AppLayout } from "@rivetjs/ui/app-layout";

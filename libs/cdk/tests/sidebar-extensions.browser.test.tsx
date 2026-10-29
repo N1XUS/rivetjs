@@ -1,4 +1,4 @@
-// Behaviour tests for the Rivet extensions of `@rivetjs/cdk/sidebar` (feature set inspired by HeroUI Pro's public
+// Behaviour tests for the Rivet extensions of `@rivetjs/cdk/sidebar` (feature set inspired by commercial UI kits' public
 // Sidebar docs; independent implementation): provider defaults (side / variant / collapsible), `toggleShortcut`,
 // `reduceMotion`, `navigate`, tree items (expandable SidebarMenuItem + SidebarMenuTrigger / SidebarMenuIndicator),
 // guide lines, `isCurrent` / `forceReload` / external links, `closeMobileOnAction`, SidebarMenuActions, the mobile

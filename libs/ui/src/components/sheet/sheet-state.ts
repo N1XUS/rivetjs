@@ -1,4 +1,4 @@
-// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set (props, defaults) inspired by HeroUI Pro's public
+// Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set (props, defaults) inspired by commercial UI kits' public
 // Sheet docs; independent implementation. Sheet state (plain data + signals + the caller's callbacks); free functions take
 // the state first (handlers resume).
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "@rivetjs/cdk/interactions";

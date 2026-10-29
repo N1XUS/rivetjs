@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by HeroUI Pro's public Chart Tooltip
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by commercial UI kits' public Chart Tooltip
 // docs (a tooltip card for chart data points: parts `.Header`, `.Item`, `.Indicator` (dot / line), `.Label`, `.Value`;
 // `active`, `indicator`; an auto `.Content` with `hideHeader`, `labelFormatter`, `valueFormatter`); independent
 // implementation, Rivet-authored styles on HeroUI tokens.

@@ -1,5 +1,5 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no stepper). Feature set (parts, prop names / defaults, data
-// attributes, CSS variable names) inspired by HeroUI Pro's public Stepper docs; independent implementation. Behaviour =
+// attributes, CSS variable names) scoped from public docs of commercial UI kits; independent implementation. Behaviour =
 // `@rivetjs/cdk/stepper` (port of Angular CDK stepper, MIT, © Google LLC) in its `list` semantics; look = HeroUI tokens
 // (vendored-format tv slots in `styles/src/components/stepper/`, BEM CSS `styles/components/stepper.css`, both Rivet-authored).
 // Rivet:

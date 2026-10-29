@@ -1,4 +1,4 @@
-// Rivet-authored PressableFeedback demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored PressableFeedback demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Icon } from "@rivetjs/kit/icon";
 import { PressableFeedback } from "@rivetjs/ui/pressable-feedback";
 import { CreditCard, Landmark, Wallet } from "lucide";

@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no KPI). Feature set inspired by HeroUI Pro's public KPI docs
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no KPI). Feature set scoped from public docs of commercial UI kits
 // (a metric card: title, icon, formatted value, trend, description, chart slot, footer); independent implementation,
 // Rivet-authored styles on HeroUI tokens.
 // - `Kpi.Value` formats `value` with `Intl.NumberFormat(locale, formatOptions)` (value, accessor or live prop: the text

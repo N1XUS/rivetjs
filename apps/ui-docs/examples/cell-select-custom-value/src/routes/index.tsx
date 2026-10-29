@@ -1,4 +1,4 @@
-// Rivet-authored CellSelect demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored CellSelect demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { selectedKeys } from "@rivetjs/cdk/select";
 import { CellSelect } from "@rivetjs/ui/cell-select";
 import { ListBox } from "@rivetjs/ui/list-box";

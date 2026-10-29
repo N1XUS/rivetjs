@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): star rating, read-only (fractional) or interactive (native radios);
-// feature set inspired by HeroUI Pro's public Rating docs, independent implementation (see `rating.tsx`).
+// feature set scoped from public docs of commercial UI kits, independent implementation (see `rating.tsx`).
 import { RatingRoot } from "./rating.tsx";
 import type { RatingProps } from "./rating.tsx";
 

@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): a radio group drawn as selectable cards. Feature set inspired by HeroUI Pro's
+// Rivet addition (no HeroUI v3.2.6 counterpart): a radio group drawn as selectable cards. Feature set inspired by commercial UI kits'
 // public docs (RadioButtonGroup: `layout` flex / grid; parts `.Item` (Radio props), `.Indicator`, `.ItemContent`, `.ItemIcon`;
 // render-prop item children); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Root = cdk `RadioGroup` (compound form: `role="radiogroup"`, native radios sharing a `name` = arrow keys, one tab stop and

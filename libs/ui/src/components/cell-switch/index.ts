@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): settings-row switch; feature set inspired by HeroUI Pro's public Cell Switch
+// Rivet addition (no HeroUI v3.2.6 counterpart): settings-row switch; feature set inspired by commercial UI kits' public Cell Switch
 // docs, independent implementation (see `cell-switch.tsx`).
 import { CellSwitchControl, CellSwitchLabel, CellSwitchRoot, CellSwitchTrigger } from "./cell-switch.tsx";
 import type { CellSwitchControlProps, CellSwitchLabelProps, CellSwitchRootProps, CellSwitchTriggerProps } from "./cell-switch.tsx";

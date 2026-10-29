@@ -1,4 +1,4 @@
-// Rivet-authored Navbar demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored Navbar demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { RouterProvider } from "@rivetjs/cdk/link";
 import { signal } from "@rivetjs/reactivity";
 import { Navbar } from "@rivetjs/ui/navbar";

@@ -1,4 +1,4 @@
-// Rivet-authored RadarChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored RadarChart demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { RadarChart } from "@rivetjs/ui/radar-chart";
 
 export const head = { title: "RadarChart: Comparison" };

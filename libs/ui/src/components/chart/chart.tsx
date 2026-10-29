@@ -1,5 +1,5 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by HeroUI Pro's public chart docs
-// (area / line / bar / pie-donut charts with tooltip, legend, grid and axes on HeroUI tokens; Pro wraps recharts with a
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set scoped from public docs of commercial UI kits
+// (area / line / bar / pie-donut charts with tooltip, legend, grid and axes on HeroUI tokens; commercial kits wrap recharts with a
 // children API). Independent implementation with a data-driven API (`data` + `index` + `series`, like a table's columns):
 // - Server-rendered SVG (area / line, 0…100 viewBox stretched to the plot, `vector-effect: non-scaling-stroke`) or HTML
 //   (bars, axes, labels: crisp at any width). Monotone cubic curves (Fritsch–Carlson, `chart-math.ts`).
@@ -12,7 +12,7 @@
 // - Missing values (`null` / absent key, UI-PORT-C): area / line series break into separate runs (a gap) unless
 //   `connectNulls`; a bar is left out; tooltips and slot names skip the series. Stacked series count a gap as 0.
 // - `showDots` (area / line) draws a dot on every point; a series `dashed` draws its line dashed; a bar chart with
-//   `orientation="horizontal"` lays the categories down the side and grows the bars along the inline axis (HeroUI Pro's
+//   `orientation="horizontal"` lays the categories down the side and grows the bars along the inline axis (commercial UI kits'
 //   `layout="vertical"`).
 // - The helpers below (`prepare`, `renderFrame`, `renderTooltip`, `colorOf`, …) are shared with `../pie-chart`,
 //   `../radar-chart`, `../radial-chart` and `../composed-chart` (not part of the `@rivetjs/ui/chart` entry).
@@ -98,7 +98,7 @@ interface BarChartProps extends CartesianChartProps {
   stacked?: boolean;
   /**
    * `vertical` (default): categories along the x axis, bars grow up. `horizontal`: categories down the side, bars grow
-   * along the inline axis (HeroUI Pro / Recharts `layout="vertical"`).
+   * along the inline axis (Recharts `layout="vertical"`).
    */
   orientation?: "vertical" | "horizontal";
   /** Width of the category labels of a horizontal bar chart (any CSS length). @default "6rem" */

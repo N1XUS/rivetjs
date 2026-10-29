@@ -1,4 +1,4 @@
-// `@rivetjs/cdk/highlight` (Rivet-authored regex tokenizer; feature set inspired by HeroUI Pro's public CodeBlock docs):
+// `@rivetjs/cdk/highlight` (Rivet-authored regex tokenizer; feature set scoped from public docs of commercial UI kits):
 // tokens round-trip the source, language aliases + labels, key token types per language.
 import { test } from "vitest";
 import assert from "node:assert/strict";

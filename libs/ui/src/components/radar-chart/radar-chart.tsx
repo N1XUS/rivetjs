@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by HeroUI Pro's public Radar Chart docs
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set scoped from public docs of commercial UI kits
 // (multivariate comparison: polygon / circle grid, angle labels, optional radius axis, filled or outline shapes, dots,
 // multiple series, tooltip); independent implementation with the data-driven API of `@rivetjs/ui/chart` (`data` + `index` +
 // `series`):

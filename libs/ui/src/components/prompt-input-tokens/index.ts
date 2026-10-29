@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): token input for `PromptInput` (mentions / commands / tags), feature set
-// inspired by the "Token Input" section of HeroUI Pro's public PromptInput docs, independent implementation (see
+// inspired by the "Token Input" section of commercial UI kits' public PromptInput docs, independent implementation (see
 // `prompt-input-tokens.tsx`). Own subpath, not on the `PromptInput` compound: a composer without tokens ships none of
 // this code (zero-cost: a compound static, or a re-export from the `prompt-input` barrel, puts it in that chunk).
 export {

@@ -1,4 +1,4 @@
-// Rivet-authored Rating demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored Rating demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Rating } from "@rivetjs/ui/rating";
 
 export const head = { title: "Rating: fractional read-only" };

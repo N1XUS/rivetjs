@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): hover preview card; feature set inspired by HeroUI Pro's public Hover Card
+// Rivet addition (no HeroUI v3.2.6 counterpart): hover preview card; feature set inspired by commercial UI kits' public Hover Card
 // docs, independent implementation (see `hover-card.tsx`).
 import { HoverCardArrow, HoverCardContent, HoverCardRoot, HoverCardTrigger } from "./hover-card.tsx";
 import type { HoverCardArrowProps, HoverCardContentProps, HoverCardRootProps, HoverCardTriggerProps } from "./hover-card.tsx";

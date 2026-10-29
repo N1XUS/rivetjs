@@ -1,5 +1,5 @@
 // Rivet addition (no HeroUI v3.2.6 counterpart): floating table of contents (bar indicators + a popover list) on
-// `@rivetjs/cdk/dialog` + `@rivetjs/cdk/popover`; feature set inspired by HeroUI Pro's public Floating TOC docs, independent
+// `@rivetjs/cdk/dialog` + `@rivetjs/cdk/popover`; feature set scoped from public docs of commercial UI kits, independent
 // implementation (see `floating-toc.tsx`).
 import { FloatingTocBar, FloatingTocContent, FloatingTocItem, FloatingTocRoot, FloatingTocTrigger } from "./floating-toc.tsx";
 import type { FloatingTocBarProps, FloatingTocContentProps, FloatingTocItemProps, FloatingTocRootProps, FloatingTocTriggerProps } from "./floating-toc.tsx";

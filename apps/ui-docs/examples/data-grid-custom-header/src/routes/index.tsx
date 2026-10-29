@@ -1,4 +1,4 @@
-// Rivet-authored demo (DataGrid is a Rivet addition: @rivetjs/cdk/data-grid behaviour, HeroUI table look; feature set inspired by HeroUI Pro's public docs, own data).
+// Rivet-authored demo (DataGrid is a Rivet addition: @rivetjs/cdk/data-grid behaviour, HeroUI table look; feature set scoped from public docs of commercial UI kits, own data).
 import { Icon } from "@rivetjs/kit/icon";
 import { DataGrid } from "@rivetjs/ui/data-grid";
 import { CalendarDays, UserRound } from "lucide";

@@ -1,4 +1,4 @@
-// Rivet-authored Timeline demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored Timeline demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { Timeline } from "@rivetjs/ui/timeline";
 import { Chip } from "@rivetjs/ui/chip";
 

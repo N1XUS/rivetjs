@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): radio group as selectable cards; feature set inspired by HeroUI Pro's public
+// Rivet addition (no HeroUI v3.2.6 counterpart): radio group as selectable cards; feature set inspired by commercial UI kits' public
 // docs, independent implementation (see `radio-button-group.tsx`).
 import {
   RadioButtonGroupIndicator,

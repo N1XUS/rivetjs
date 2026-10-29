@@ -1,4 +1,4 @@
-// Rivet addition (no HeroUI v3.2.6 / HeroUI Pro counterpart): Masonry + Bento grids on `@rivetjs/cdk/masonry` (see
+// Rivet addition (no HeroUI v3.2.6 counterpart): Masonry + Bento grids on `@rivetjs/cdk/masonry` (see
 // `masonry.tsx`). Data-driven components (items + render function), no compound parts.
 export { Masonry, Bento } from "./masonry.tsx";
 export type { MasonryProps, BentoProps } from "./masonry.tsx";

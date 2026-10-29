@@ -1,4 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no hover card). Feature set inspired by HeroUI Pro's public Hover Card
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no hover card). Feature set inspired by commercial UI kits' public Hover Card
 // docs (a preview card on hover / keyboard focus / touch long press; `openDelay` 700 / `closeDelay` 300; parts `.Trigger`,
 // `.Content` (placement top, offset 8), `.Arrow`); independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Root = cdk `PreviewTrigger` (RAC PreviewTrigger: shared warmup with tooltips, safe area between trigger and card, Escape

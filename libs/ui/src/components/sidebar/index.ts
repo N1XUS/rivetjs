@@ -1,7 +1,7 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sidebar). Compound API in the HeroUI shape (`Sidebar.Header`,
 // `Sidebar.Menu`, `Sidebar.MenuButton`, …) mapping 1:1 to the shadcn/ui Sidebar parts (shadcn@4.21.4, MIT, © 2023 shadcn)
 // of `@rivetjs/cdk/sidebar` + its Rivet extensions (MenuTrigger / MenuIndicator / MenuActions / MenuChip / Pages / Page;
-// feature set inspired by HeroUI Pro's public docs, independent implementation).
+// feature set scoped from public docs of commercial UI kits, independent implementation).
 import {
   SidebarContent,
   SidebarFooter,

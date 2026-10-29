@@ -1,4 +1,4 @@
-// `@rivetjs/cdk/markdown` (Rivet-authored safe Markdown parser; feature set inspired by HeroUI Pro's public Markdown docs):
+// `@rivetjs/cdk/markdown` (Rivet-authored safe Markdown parser; feature set scoped from public docs of commercial UI kits):
 // block split for streaming keys, CommonMark / GFM subset AST, safe URLs, raw HTML stays text, open-mark repair.
 import { test } from "vitest";
 import assert from "node:assert/strict";
