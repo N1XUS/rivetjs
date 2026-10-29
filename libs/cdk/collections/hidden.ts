@@ -4,7 +4,7 @@
 // collection builder (zero-cost; BIG-UI: the builder chunk was ~5 KB gz on every overlay page).
 // `components.tsx` provides `HiddenContext` (true) around every build pass. The server field slot probe flag
 // (`slotProbing`) lives in `./server-on.tsx` (cdk `#server` import: the constant `false` in browsers).
-import { createContext, useContext } from "@rivetjs/reactivity";
+import { createContext, useContext, type Owner } from "@rivetjs/reactivity";
 import type { CollectionNodeSpec } from "./base.ts";
 import type { Key } from "./types.ts";
 
@@ -29,6 +29,10 @@ export interface BuildScope {
 }
 export interface BuildRun {
   o: object | null;
+  /** Specs registered and not yet claimed by a retention segment (`components.tsx` `segment`); absent in probes. */
+  log?: CollectionNodeSpec<any>[];
+  /** The build's segment roots that own something (eager JSX props' bindings), released with the build. */
+  held?: { owner: Owner; refs: number }[];
 }
 /** The collection build pass (`components.tsx` provides it). */
 export const BuildContext = createContext<BuildScope | null>(null);

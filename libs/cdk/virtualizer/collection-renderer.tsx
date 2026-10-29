@@ -24,6 +24,7 @@ import { For, Provider } from "@rivetjs/runtime/dom";
 import {
   CollectionRendererContext,
   DefaultCollectionRenderer,
+  retainBuild,
   sameRender,
   type CollectionBranchProps,
   type CollectionRenderer,
@@ -125,7 +126,9 @@ function renderNode(model: VirtualizerModel<unknown, unknown>, key: Key): unknow
   return () => {
     node();
     const n = untrack(at);
-    return n?.render ? untrack(() => n.render!(n)) : null;
+    if (n === null || !n.render) return null;
+    retainBuild(n);
+    return untrack(() => n.render!(n));
   };
 }
 

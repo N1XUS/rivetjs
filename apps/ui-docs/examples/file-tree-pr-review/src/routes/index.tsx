@@ -96,7 +96,8 @@ function ReviewRow(props: { entry: Entry; viewed: () => ReadonlySet<string> }) {
       id={entry.id}
       textValue={entry.name}
       icon={icon}
-      // A function title renders with the row (inside TreeItemContent), not while the tree collects its items.
+      // A function title renders with the row, so a resumed page adopts its server nodes (an eager JSX title works too, but
+      // is built while the tree collects its items and re-created when the tree wakes).
       title={() => (
         <span class="flex w-full min-w-0 items-center gap-2">
           <span class={`truncate ${entry.change === "deleted" ? "line-through" : ""} ${done() ? "text-muted" : ""}`}>{entry.name}</span>

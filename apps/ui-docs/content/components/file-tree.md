@@ -64,7 +64,7 @@ The tree has no expand animation; its transitions are the chevron turn and the r
 
 ::example{id=file-tree-pr-review}
 
-A code review file list built from ui parts: `title` takes any content, here the name plus a Chip per change status, +/− counts and a comment count, with `textValue` keeping typeahead on the file name. Pass a title holding ui components as a function (`title={() => …}`): it then renders with the row instead of while the tree collects its items. `selectionMode="single"` with `selectionBehavior="replace"` selects a row without a checkbox; the panel beside the tree reads the selected key, and its "Viewed" Checkbox marks the file (or every file in a selected folder) as reviewed.
+A code review file list built from ui parts: `title` takes any content, here the name plus a Chip per change status, +/− counts and a comment count, with `textValue` keeping typeahead on the file name. The title is a function (`title={() => …}`): it renders with its row, so a resumed page keeps the server markup; plain JSX works as well, but it is built while the tree collects its items and re-created when the tree first wakes. `selectionMode="single"` with `selectionBehavior="replace"` selects a row without a checkbox; the panel beside the tree reads the selected key, and its "Viewed" Checkbox marks the file (or every file in a selected folder) as reviewed.
 
 ### Custom Indicator
 

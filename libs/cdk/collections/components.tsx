@@ -32,11 +32,15 @@
 // `renderRow` (Rivet, DnD): a host's row renderer for built rows (`@rivetjs/cdk/dnd` `dropIndicatorRow`: RAC
 //   `useCollectionRender` with `renderDropIndicator`): keeps drop-indicator code out of collections without DnD.
 import {
+  _dispose,
+  _hiddenRoot,
   _observer,
   _reobserve,
   _scoped,
   computed,
   createContext,
+  getOwner,
+  onCleanup,
   provide,
   runWithOwner,
   signal,
@@ -137,14 +141,21 @@ export { isCollectionProbe, isHidden } from "./hidden.ts";
  * reads; call inside a `computed` (`collectionOf`) to rebuild on change.
  */
 export function buildCollectionFrom<C extends BaseCollection<any> = BaseCollection<any>>(content: unknown, createCollection?: () => C): C {
-  const run: BuildRun = { o: _observer() };
+  const run: BuildRun = { o: _observer(), log: [] };
   const scope: BuildScope = { specs: [], parentKey: null, ids: { n: 0 }, run };
-  // The build pass renders nothing: keep the resume recorder out of it (no dead regions/ids).
+  // The build pass renders nothing: keep the resume recorder out of it (no dead regions/ids). It runs as hidden-root
+  // segments (`segment`): what the content creates there — eager JSX props (`title={<span>… <Chip/></span>}`, built by
+  // the caller before the part runs) and the bindings / signals of their components — is the DOM a row later shows, so
+  // it must neither throw on signal writes (computed purity) nor die with the build computed's next run (`retainBuild`).
   try {
-    _rUnrecorded(() => provide(BuildContext, scope, () => provide(HiddenContext, true, () => tracked(scope, () => evaluate(content)))));
+    _rUnrecorded(() => provide(BuildContext, scope, () => provide(HiddenContext, true, () => segment(run, () => tracked(scope, () => evaluate(content))))));
   } finally {
     run.o = null;
   }
+  const held = run.held;
+  // The build's own hold on its segments (a collection computed's run): released on its next run / disposal. No owner:
+  // never released (nothing owned them before either).
+  if (held !== undefined && getOwner() !== null) onCleanup(() => held.forEach(releaseRoot));
   const keyed = typeof content === "function" || (typeof content === "object" && content !== null);
   try {
     const built = buildCollection(scope.specs, createCollection) as C;
@@ -161,6 +172,58 @@ export function buildCollectionFrom<C extends BaseCollection<any> = BaseCollecti
 }
 /** The last collection each content built (`buildCollectionFrom`'s duplicate-key tolerance on rebuilds). */
 let lastBuilt: WeakMap<object, BaseCollection<any>> | undefined;
+
+/**
+ * A build segment's hidden root with what holds it: the build (until the next one / the host's disposal) and every row
+ * rendering one of its nodes (`retainBuild`). Disposed when the last one lets go: a row kept across a rebuild
+ * (`sameRender`) keeps showing the eager DOM of the build that rendered it, its bindings live.
+ */
+interface BuildRoot {
+  owner: Owner;
+  refs: number;
+}
+/** The segment root of a built node, by node `render` thunk (shared with the node's clones: `withExpandedKeys`, filters). */
+let buildRoots: WeakMap<object, BuildRoot> | undefined;
+/**
+ * Evaluate `fn` as one retention segment of the build (the whole content; each `Collection items` row): in its own
+ * reactivity `_hiddenRoot`, mapped to the specs registered meanwhile that no nested segment claimed. A row keeps only
+ * its own segment alive (an added row does not hold a whole rebuild's eager DOM). Segments that own nothing cost no map
+ * entry. Probe scopes (no `log`) run `fn` as is.
+ */
+function segment<R>(run: BuildRun, fn: () => R): R {
+  const log = run.log;
+  if (log === undefined) return fn();
+  const start = log.length;
+  let value!: R;
+  const owner = _hiddenRoot(() => {
+    value = fn();
+  });
+  if (owner !== null) {
+    const held: BuildRoot = { owner, refs: 1 };
+    const map = (buildRoots ??= new WeakMap());
+    for (let i = start; i < log.length; i++) {
+      const render = log[i].render;
+      if (render) map.set(render, held);
+    }
+    (run.held ??= []).push(held);
+  }
+  // Claimed: an enclosing segment's range skips them.
+  log.length = start;
+  return value;
+}
+function releaseRoot(held: BuildRoot): void {
+  if (--held.refs === 0) _dispose(held.owner);
+}
+/**
+ * @internal A row region rendering built node `n`: keeps the segment root that created `n` (its eager JSX props'
+ * bindings) alive until the region re-runs / is disposed. No-op for nodes whose segment owned nothing.
+ */
+export function retainBuild(n: Node<unknown>): void {
+  const held = n.render ? buildRoots?.get(n.render) : undefined;
+  if (held === undefined || getOwner() === null) return;
+  held.refs++;
+  onCleanup(() => releaseRoot(held));
+}
 
 /**
  * Rivet (server): evaluate `content` in build mode registering nothing, so the collection root in it (ListBox / Menu /
@@ -474,6 +537,7 @@ export function createLeafComponent<P extends object, E extends Element = HTMLEl
           ),
       };
       build.specs.push(spec);
+      build.run.log?.push(spec);
       return buildMark(spec);
     }
     const scope = useContext(CollectionScopeContext);
@@ -531,6 +595,7 @@ export function createBranchComponent<P extends { children?: unknown }, E extend
         children: [],
       };
       build.specs.push(spec);
+      build.run.log?.push(spec);
       provide(BuildContext, { specs: spec.children, parentKey: key, ids: { n: 0 }, run: build.run }, () =>
         provide(CollectionItemContext, null, () => tracked(build, () => evaluate(() => useChildren(childProps(props, all, id))))),
       );
@@ -600,7 +665,10 @@ export function collectionChildren<T>(props: CollectionProps<T>): unknown {
   const build = useContext(BuildContext);
   if (build) {
     // Build mode: synchronous loop, tracked by the build (an `items` signal / accessor rebuilds the collection).
-    return tracked(build, () => toArray(items).map((item) => provide(CollectionItemContext, { id: itemId(item), value: item }, () => evaluate(render(item)))));
+    // Each row is its own retention segment (`segment`): its eager JSX props live as long as a row shows its node.
+    return tracked(build, () =>
+      toArray(items).map((item) => provide(CollectionItemContext, { id: itemId(item), value: item }, () => segment(build.run, () => evaluate(render(item))))),
+    );
   }
   const each = () => toArray(items);
   return (
@@ -792,7 +860,9 @@ export function renderNodeAt(collection: () => ICollection<Node<unknown>> | null
     node();
     // The current node (the cut-off computed keeps the first of equal ones; `depends` re-renders with the latest).
     const n = untrack(() => collection()?.getItem(key()) ?? null);
-    return n?.render ? untrack(() => n.render!(n)) : null;
+    if (n === null || !n.render) return null;
+    retainBuild(n);
+    return untrack(() => n.render!(n));
   });
 }
 

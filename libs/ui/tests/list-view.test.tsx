@@ -1,5 +1,6 @@
 // DOM-target suite: ListView (Rivet addition): row press selects (single / multiple) through `onSelectionChange`, `onAction`
-// fires without selection, disabled rows ignore presses (keyboard / resume / virtualization: story `/list-view`).
+// fires without selection, disabled rows ignore presses (keyboard / resume / virtualization: story `/list-view`); a row
+// wrapper given eager JSX holding ui components renders it (TITLE-JSX: built in the GridList's collection build pass).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { installOverlayDom } from "./install-overlay-dom.ts";
@@ -7,6 +8,7 @@ import { installOverlayDom } from "./install-overlay-dom.ts";
 const window = installOverlayDom();
 const { render } = await import("@rivetjs/runtime/testing");
 const { ListView } = await import("../src/components/list-view/index.ts");
+const { Chip } = await import("../src/components/chip/index.ts");
 
 const flush = () => new Promise((r) => setTimeout(r, 20));
 const W = window as unknown as { PointerEvent: typeof PointerEvent; MouseEvent: typeof MouseEvent };
@@ -65,5 +67,33 @@ test("list view: onAction without selection", async () => {
   await flush();
   assert.deepEqual(actions, ["a"]);
   assert.equal(container.querySelectorAll(".list-view__selection-cell").length, 0);
+  unmount();
+});
+
+test("list view: eager JSX prop of a row wrapper holding a ui component (TITLE-JSX)", async () => {
+  function Row(props: { id: string; label: unknown }) {
+    return (
+      <ListView.Item id={props.id} textValue={props.id}>
+        {props.label as never}
+      </ListView.Item>
+    );
+  }
+  const { container, unmount } = render(() => (
+    <ListView aria-label="Files">
+      <Row
+        id="a"
+        label={
+          <span>
+            a.ts{" "}
+            <Chip>
+              <Chip.Label>M</Chip.Label>
+            </Chip>
+          </span>
+        }
+      />
+    </ListView>
+  ));
+  await flush();
+  assert.match(container.textContent ?? "", /a\.ts M/);
   unmount();
 });

@@ -1183,6 +1183,31 @@ export function _reobserve<T>(observer: object | null, fn: () => T): T {
   try { return fn(); } finally { currentObserver = previous; }
 }
 
+/**
+ * @internal Runtime ABI (cdk collection build pass = RAC's hidden render): run `fn` in a fresh root that sees the current
+ * owner's context but is not its child (the running computed's next run does not dispose it), still tracked by the current
+ * observer, with signal writes allowed (component bodies and eager JSX props evaluated by the pass create DOM, bindings and
+ * signals that a rendered row later shows). Returns the root when `fn` left an effect, computed or cleanup in it, else null
+ * (nothing to dispose); dispose it with `_dispose`.
+ */
+export function _hiddenRoot(fn: () => void): OwnerHandle | null {
+  const node = new Owner(currentOwner), previousOwner = currentOwner, depth = computedDepth;
+  // Not linked into the parent (`unlink` of a node whose parent is set would reset the parent's list).
+  node.parent = null;
+  currentOwner = node; computedDepth = 0;
+  try { fn(); }
+  catch (error) { try { dispose(node); } catch { /* Preserve the evaluation failure. */ } throw error; }
+  finally { currentOwner = previousOwner; computedDepth = depth; }
+  // Any effect / computed / cleanup below? Owners alone (context providers) hold nothing to dispose.
+  for (let item: Owner | null = node; item !== null; ) {
+    if (item.kind !== OWNER || item.cleanups !== null) return node as unknown as OwnerHandle;
+    if (item.first !== null) { item = item.first; continue; }
+    while (item !== null && item !== node && item.next === null) item = item.parent;
+    item = item === null || item === node ? null : item.next;
+  }
+  return null;
+}
+
 /** Execute synchronously without recording reactive dependencies. */
 export function untrack<T>(fn: () => T): T {
   const previous = currentObserver; currentObserver = null;
