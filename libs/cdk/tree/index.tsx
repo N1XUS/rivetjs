@@ -330,9 +330,9 @@ export function Tree<T>(inProps: TreeProps<T>) {
       }
     : {};
   const dndProviders = (dnd?.providers ?? []) as never[];
-  // The provider's one child: the rows, after the root drop indicator with drag hooks. One child slot either way: a
-  // second (null) slot before the rows shifted a resumed tree's row adoption, and a later structural change (a
-  // `createTreeData.move`) then reconciled against the wrong anchors (TREE-LEVEL 2026-10-29, cdk-docs `data-tree`).
+  // The provider's one child: the rows, after the root drop indicator with drag hooks. One child slot either way (one
+  // insertion less). A second (null) slot before the rows once broke a resumed tree's `createTreeData.move` (TREE-LEVEL
+  // 2026-10-29); the runtime cause — a `<For>` in an array child reconciled against stale nodes — is fixed (NULL-SLOT).
   const collectionContent = () => {
     const rows = (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
       collection: flat as () => ICollection<Node<unknown>>,

@@ -280,6 +280,12 @@ type Current = Node | Node[] | null;
 /** @internal An insertion's slot: the nodes it shows now (`dom-adopt.ts` adopt runs seed new slots). */
 export interface InsertSlot {
   current: Current;
+  /**
+   * `[index, list, length]` triples: where `current` (a flattened array) took a `<For>`'s node list (the array its
+   * accessor returned, refreshed in place on its next read) or a lazily adopted list's keep token (`n()`: its live nodes).
+   * Set only on slots that flattened one (NULL-SLOT).
+   */
+  lists?: unknown[] | null;
 }
 type Slot = InsertSlot;
 /**
@@ -349,7 +355,10 @@ function within<T>(parent: Node, fn: () => T): T {
 function cells(value: readonly unknown[], at: () => Parent): unknown[] {
   return value.map((item) => {
     if (Array.isArray(item)) return hasAccessor(item) ? cells(item, at) : item;
-    if (typeof item !== "function") return item;
+    // A `<For>` accessor is no cell (NULL-SLOT 2026-10-29): the array's binding reads it, right before it reconciles. Its
+    // rows re-render in effects of their own, so a cell's node list (read before them) went stale, and the reconcile
+    // re-inserted a re-rendered row's removed nodes (a resumed cdk Tree's `[rootIndicator, rows]`: rows doubled / lost).
+    if (typeof item !== "function" || forFns.has(item)) return item;
     // The first run seeds the cell's signal instead of writing it: creating the binding writes nothing, so
     // content rendered under a `computed` (a collection build pass, cdk `buildCollectionFrom`) may hold cells.
     let out: Signal<unknown> | null = null,
@@ -380,7 +389,8 @@ function hasAccessor(value: readonly unknown[]): boolean {
 
 function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null): void {
   // Everything but scalars / nullish (nodes, fragments, arrays) becomes one flat node list.
-  let nodes: Node[] | null = null;
+  let nodes: Node[] | null = null,
+    lists: unknown[] | null = null;
   let inner: unknown = null;
   const evaluate = (): unknown => {
     if (typeof value === "function") {
@@ -396,7 +406,7 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
       // A `_for` node list is flat already (its own array, kept as the slot's current: see `_for`'s accessor).
       // Dropped at once: a module-level reference would retain a cleared list's nodes.
       if (value === forNodes) ((nodes = value as Node[]), (forNodes = null));
-      else flatten(Array.isArray(value) ? value : [value], (nodes = []));
+      else lists = flatten(Array.isArray(value) ? value : [value], (nodes = []), null);
     }
     return value;
   };
@@ -407,7 +417,10 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
   // anchors, and an inner update must insert where the marker is now (`tests/dom-v2-children-browser.test.ts` movedParent).
   if (read !== null) return nested(marker === null ? () => parent : () => marker.parentNode as Parent, read, slot, marker);
   // Unwrap a derived lazy snapshot once, before replacement can mutate its DOM range.
-  const current = DERIVED && Array.isArray(slot.current) && _adoption.snapshot ? _adoption.snapshot(slot.current) : slot.current;
+  let current = DERIVED && Array.isArray(slot.current) && _adoption.snapshot ? _adoption.snapshot(slot.current) : slot.current;
+  // The lists this slot flattened last: their live nodes now (a ranged row re-rendered since; NULL-SLOT).
+  if (slot.lists && Array.isArray(current)) current = relisted(current, slot.lists);
+  if (slot.lists || lists) slot.lists = lists;
   const t = typeof value;
   if (t === "string" || t === "number" || t === "bigint") {
     const text = String(value);
@@ -441,21 +454,39 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
   }
 }
 
-function flatten(value: readonly unknown[], nodes: Node[]): void {
+// Flatten `value` into `nodes`; returns `lists` with the `[index, list, length]` triples of the lists it took
+// (`InsertSlot.lists`): a `<For>`'s node list (its accessor ran just now) or a derived lazy list's keep token.
+function flatten(value: readonly unknown[], nodes: Node[], lists: unknown[] | null): unknown[] | null {
   for (let i = 0; i < value.length; i++) {
     let item = value[i];
     while (typeof item === "function") item = (item as () => unknown)();
     if (item == null || item === true || item === false) continue;
-    if (Array.isArray(item)) flatten(item, nodes);
     // Derived builds: a lazily adopted list inside an array (or a cell) stands for its server rows.
-    else if (DERIVED && _adoption.keep?.has(item)) flatten((item as { n(): Node[] }).n(), nodes);
-    else if (typeof item === "object") {
+    let kept: boolean | undefined = false;
+    if (Array.isArray(item) || (kept = DERIVED && _adoption.keep?.has(item as object))) {
+      const at = nodes.length,
+        list = kept || item === forNodes;
+      if (item === forNodes) forNodes = null;
+      lists = flatten(kept ? (item as { n(): Node[] }).n() : (item as unknown[]), nodes, lists);
+      if (list) (lists ??= []).push(at, item, nodes.length - at);
+    } else if (typeof item === "object") {
       if ((item as Node).nodeType === 11) for (const n of Array.from((item as Node).childNodes)) nodes.push(n);
       else if ((item as Node).nodeType !== undefined) nodes.push(item as Node);
       else if (typeof (item as PromiseLike<unknown>).then === "function") throw TypeError("Promise DOM children require an Async boundary");
       else unsupported();
     } else nodes.push(LAZY_ROWS && _adoption.node ? _adoption.node(host.doc().createTextNode(coerce(item)), 1) : host.doc().createTextNode(coerce(item)));
   }
+  return lists;
+}
+
+// `current` with each list it flattened (`InsertSlot.lists`) as that list's nodes are now (from the last: indexes hold).
+function relisted(current: Node[], lists: unknown[]): Node[] {
+  for (let k = lists.length - 3; k >= 0; k -= 3) {
+    const at = lists[k] as number,
+      list = lists[k + 1] as Node[] | { n(): Node[] };
+    current = current.slice(0, at).concat(Array.isArray(list) ? list : list.n(), current.slice(at + (lists[k + 2] as number)));
+  }
+  return current;
 }
 
 function appendAll(parent: Parent, nodes: Node[], marker: Node | null): void {
@@ -722,6 +753,8 @@ const NO_NODES: Node[] = [],
   NO_ROWS: readonly ForRow[] = [];
 // The node list a `_for` accessor returned last: `assign` takes it as is (no `flatten` copy).
 let forNodes: Node[] | null = null;
+// `_for` accessors (and a derived lazy list's): read by the insertion that shows them, never through a cell (`cells`).
+const forFns = new WeakSet<object>();
 // Reconcile pass counter shared by every `_for` (row stamps compare against their list's current pass only).
 let forPass = 0;
 /** Push the rows' nodes (a ranged row: its live nodes between its anchors); true when a row is ranged. */
@@ -756,7 +789,7 @@ export function _for<T, K>(props: {
 }): () => Node[] {
   if (DERIVED && _adoption.list) {
     const held = _adoption.list(props as never);
-    if (held !== undefined) return held;
+    if (held !== undefined) return (forFns.add(held), held);
   }
   const owner = getOwner(),
     // The insertion parent the list is created under: rows built later (effect re-runs) see it too, so
@@ -920,7 +953,7 @@ export function _for<T, K>(props: {
   let shown: Node[] = NO_NODES,
     shownRows: readonly ForRow[] = NO_ROWS,
     ranged = false;
-  return () => {
+  const read = (): Node[] => {
     const rows = out(),
       n = rows.length;
     if (ranged) {
@@ -937,6 +970,8 @@ export function _for<T, K>(props: {
     shownRows = rows;
     return (forNodes = shown = nodes);
   };
+  forFns.add(read);
+  return read;
 }
 
 // ---- control flow (Show / Switch / Match) ----

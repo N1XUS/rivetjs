@@ -556,7 +556,8 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
     real: null,
     bad: false,
     tick: signal(0),
-    token: { n: () => (hole.sole ? kids(hole.sole) : hole.span!) },
+    // Live: a slot that flattened the token reconciles against these nodes as they are (rows re-rendered since, NULL-SLOT).
+    token: { n: () => (hole.sole ? kids(hole.sole) : hole.span!.length ? spanOf(hole.span![0]!, hole.span![hole.span!.length - 1]!) : hole.span!) },
     children: props.children as Lazy["children"],
     read: itemRead,
     owner: getOwner(),
