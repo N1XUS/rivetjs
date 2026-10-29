@@ -278,6 +278,16 @@ const runtime: DerivedRuntime = {
   },
   w(target) {
     if (full) return full.w(target);
+    // The loader's prime (LITE-BOOT, target = the document): every lite record's module, loaded quietly (a failure
+    // surfaces when an event adopts that record), so the first event adopts inside its own task.
+    if (target == doc) {
+      for (const r of recs.values())
+        if (!mixed || r[1] in mixed)
+          Promise.resolve(r)
+            .then(load)
+            .catch(() => {});
+      return;
+    }
     const rs = around(target);
     if (!rs) return void fallback().then((rt) => rt.w(target), report);
     for (const r of rs) if (!r[4]) void Promise.resolve(load(r)).catch(report);

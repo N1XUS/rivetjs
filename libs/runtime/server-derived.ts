@@ -417,7 +417,9 @@ export interface ResumeManifest {
  * - `ahead: "idle"` (default): low-priority modulepreloads in the first idle period after `load`;
  * - `"load"`: right after `load`;
  * - `"intent"` (= `lean: true`): nothing before the first intent: a page nobody touches fetches no JS.
- * Save-Data / 2G connections skip the background fetch. Nothing is ever evaluated before an event or trigger.
+ * Save-Data / 2G connections skip the background fetch. The background fetch also primes (LITE-BOOT): the loader starts
+ * the runtime and it loads the listening chunks, so a first event after idle adopts in its own task; no component runs
+ * before an event or trigger.
  * The page's lazy parts (manifest `lazy`, tail `data-fl`) follow once the fetch-ahead list has loaded, in the next idle
  * period, at low priority (whenever the fetch-ahead list ran: background or intent; never under Save-Data / 2G).
  */
@@ -2254,7 +2256,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   if (!tail) return lean ? template([lean]) : null;
   if (!options?.manifest?.runtime) return template([lean + '<script type="rivet/boundaries">' + encodeTail(tail) + "</script>"]);
   // Fetch-ahead (DERIVED-C): the runtime, the chunks of the page's boundaries (tail `m`) and their static import closures
-  // (manifest `deps`) as modulepreloads (`data-fo`; fetched + compiled, never evaluated before an event): in the background
+  // (manifest `deps`) as modulepreloads (`data-fo`; fetched + compiled; in the background the loader's prime then evaluates them, LITE-BOOT): in the background
   // after `load` per `data-fw` (ZERO ONDEMAND: idle by default, `load`, or `intent` = none), and at once on the first
   // intent, so the first click evaluates modules already in the module map instead of an import waterfall.
   // The script's attributes and the loader are a pure function of (manifest, fetch-ahead list, extra event types, boot,

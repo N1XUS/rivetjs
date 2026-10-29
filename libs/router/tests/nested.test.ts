@@ -171,12 +171,12 @@ test(
         fresh.on("request", (request) => request.resourceType() === "document" && loads.push(new URL(request.url()).pathname));
         fresh.on("request", (request) => request.resourceType() !== "document" && scripts.push(new URL(request.url()).pathname));
         await fresh.goto(app.url + "/shop/a");
-        // Z1, cold: nothing of the router (runtime, App chunk) runs at idle; they are only fetched (low-priority
-        // modulepreload links the loader adds after the load event, tail `data-fo`). The first link click (no intent before it) is held by
-        // the loader, boots the router from the module map (no refetch) and is replayed as a client navigation.
+        // Z1, cold: the router (runtime, App chunk) is fetched at idle (low-priority modulepreload links the loader adds
+        // after the load event, tail `data-fo`) and primed (LITE-BOOT: the runtime starts and loads the App chunk; no
+        // component runs). The first link click adopts the router in its own task (no refetch) and navigates on the client.
         await fresh.waitForLoadState("networkidle");
         await fresh.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 100))));
-        assert.equal(await fresh.evaluate(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function"), false, "runtime not booted at idle");
+        assert.equal(await fresh.evaluate(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function"), true, "runtime primed at idle");
         const prefetched = await fresh.$$eval('link[rel="modulepreload"][fetchpriority="low"]', (links) =>
           links.map((link) => new URL((link as HTMLLinkElement).href).pathname),
         );
@@ -210,8 +210,10 @@ test(
         await fresh.close();
 
         // Z1, cold click after a hover: the derived loader warms on press / focus / touch only (no hover boot, so no route
-        // data prefetch on a cold page's hover: plan M6 gap); the click is held, boots the router and navigates.
+        // data prefetch on a cold page's hover: plan M6 gap); the click is held, boots the router and navigates. Save-Data:
+        // no background fetch-ahead, so no LITE-BOOT prime boots the page first.
         const hovered = await browser.newPage();
+        await hovered.addInitScript(() => Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true }));
         const hoverErrors: string[] = [];
         hovered.on("pageerror", (error) => hoverErrors.push(error.message));
         await hovered.goto(app.url + "/shop/a");

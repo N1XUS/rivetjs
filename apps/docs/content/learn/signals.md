@@ -72,7 +72,7 @@ The compiler sees that `{quantity()}` reads a signal and turns it into a binding
 Across server and browser:
 
 1. **Server.** `Cart()` runs with `quantity` set to `1`. The HTML carries a boundary record. The unchanged literal initializer `1` is omitted from its signal data because the browser can evaluate it.
-2. **Browser, before use.** The component has not run. Its code may be fetched ahead without running.
+2. **Browser, before use.** The component has not run. Its code may be fetched and loaded ahead; the component itself does not run.
 3. **Browser, first click.** The runtime adopts the button and creates `quantity` before dispatching the handler. The signal starts from `1`; the handler sets it to `2`, and its text binding updates.
 
 A binding that reads no signal, such as `{title}` with a plain string, is static. It needs no reactive update. Its code can still be part of a component that the browser adopts.

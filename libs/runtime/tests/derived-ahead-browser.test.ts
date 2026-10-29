@@ -5,6 +5,8 @@
 // (no import waterfall) and the event replays. Hover events boot like any held event in the background modes (a pass
 // adopts before the press); on `intent` pages they never boot by themselves: a pointer passing over a listening boundary
 // loads nothing, and the hover it left is dropped (no stale enter after a later adopt).
+// Prime (LITE-BOOT): in the background modes the loader also starts the runtime with the list and loads the listening
+// chunks (`rt.w(document)`), so a first input after idle adopts and runs inside its own task.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
@@ -35,16 +37,18 @@ export function Outer(props) {
 `;
 const compiled = hasDerivedModel() ? test : test.skip;
 const resume = { module: "src/page.tsx", boundaries: ["Root", "Inner", "Outer"], independent: ["Root", "Inner", "Outer"] };
+// `free` (CTXFREE): the counters adopt standalone, without the non-listening Root (whose chunk is not in the list).
+const free = { ...resume, free: ["Inner", "Outer"] };
 const symbols = { "src/page.tsx#Root": "/root.js", "src/page.tsx#Inner": "/inner.js", "src/page.tsx#Outer": "/outer.js" };
 
-async function render(preload?: object): Promise<string> {
-  const server = compile(SOURCE, { target: "server", filename: "page.tsx", resume } as never);
+async function render(preload?: object, options: object = resume): Promise<string> {
+  const server = compile(SOURCE, { target: "server", filename: "page.tsx", resume: options } as never);
   assert.deepEqual(server.diagnostics, []);
   const { Root } = await importServer<{ Root: () => ServerValue }>(server.code);
   return (await derivedToString(() => Root(), { manifest: { hash: "t", runtime: "/rt.js", symbols }, ...(preload ? { preload } : {}) } as never)) as string;
 }
-function site(html: string): Record<string, string> {
-  const dom = compile(SOURCE, { target: "dom", filename: "page.tsx", resume } as never);
+function site(html: string, options: object = resume): Record<string, string> {
+  const dom = compile(SOURCE, { target: "dom", filename: "page.tsx", resume: options } as never);
   assert.deepEqual(dom.diagnostics, []);
   const code = rewrite(dom.code);
   return {
@@ -77,7 +81,7 @@ compiled("fetch-ahead timing: data-fw per preload option; the list ships in ever
   assert.equal(lean, intent, "lean = ahead: intent");
 });
 
-compiled("fetch-ahead: idle (default) preloads the list at low priority after load, evaluating nothing; Save-Data skips it", async () => {
+compiled("fetch-ahead: idle (default) preloads the list at low priority after load and primes the runtime; Save-Data skips it", async () => {
   const html = await render();
   await withPage(site(html), async (page, requests) => {
     await page.goto("http://rivet.test/");
@@ -110,6 +114,27 @@ compiled("fetch-ahead: idle (default) preloads the list at low priority after lo
   });
 });
 
+compiled("LITE-BOOT prime: after the idle fetch-ahead the runtime starts and loads the listening chunks; the first click adopts in its own task", async () => {
+  const html = await render(undefined, free);
+  await withPage(site(html, free), async (page, requests) => {
+    await page.goto("http://rivet.test/");
+    await page.waitForFunction(() => "$rdp" in document, null, { timeout: 5000 });
+    await page.waitForTimeout(200);
+    assert.equal(await page.evaluate(() => "$$click" in document.querySelector("#inner")!), false, "started, nothing adopted");
+    assert.ok(!requests.includes("/root.js"), "only the list: " + requests.join(" "));
+    await page.evaluate(() =>
+      addEventListener("click", () => {
+        const w = window as unknown as { live: [boolean, string] };
+        w.live = ["$$click" in document.querySelector("#inner")!, document.querySelector("#inner")!.textContent!];
+      }),
+    );
+    await page.click("#inner");
+    // Adopted and handled in the click task; the first mouse click's DOM write still lands one task later.
+    assert.deepEqual(await page.evaluate(() => (window as unknown as { live?: unknown }).live), [true, "1"]);
+    await page.waitForFunction(() => document.querySelector("#inner")!.textContent === "2");
+  });
+});
+
 compiled("fetch-ahead: intent loads nothing before the first intent, then the whole list at once (high) and the press replays", async () => {
   const html = await render({ ahead: "intent" });
   await withPage(site(html), async (page, requests) => {
@@ -136,14 +161,16 @@ compiled("fetch-ahead: intent loads nothing before the first intent, then the wh
   });
 });
 
-compiled("hover, idle / load (default): a pointer passing over a listening boundary boots and adopts before any press", async () => {
+compiled("hover, idle / load (default), before the prime: a pointer passing over a listening boundary boots and adopts before any press", async () => {
   for (const preload of [undefined, { ahead: "load" }]) {
     const html = await render(preload);
     const files = { ...site(html), "/rt.js": 'export { default } from "/dom-derived.ts";\nwindow.__rt = (window.__rt || 0) + 1;' };
     await withPage(files, async (page) => {
+      // Before the background fetch-ahead and its prime (LITE-BOOT; held here by Save-Data, which skips both).
+      await page.addInitScript(() => Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true }));
       await page.goto("http://rivet.test/");
-      await page.waitForFunction(() => document.querySelectorAll('link[rel="modulepreload"]').length === 3);
-      assert.equal(await page.evaluate(() => (window as unknown as { __rt?: number }).__rt), undefined, "preloaded, not evaluated");
+      await page.waitForTimeout(300);
+      assert.equal(await page.evaluate(() => (window as unknown as { __rt?: number }).__rt), undefined, "not evaluated before input");
       const [ox, oy] = await center(page, "#outer"),
         [tx, ty] = await center(page, "#text");
       // A pass (no rest): the held hover boots the runtime at once, so the press after it pays no adopt.

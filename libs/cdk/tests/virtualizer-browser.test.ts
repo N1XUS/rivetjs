@@ -23,6 +23,8 @@ type W = { kept: Element };
 test("list: server window, no library JS before scroll, new window on scroll, keyed reuse, measured heights", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
+  // Save-Data: no background fetch-ahead, so no idle prime (LITE-BOOT: it starts the runtime and loads the listening chunks).
+  await page.addInitScript(() => Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true }));
   await page.goto(s.origin + "/virtualizer");
   // Server window: 300px viewport + overscan at 32px estimated rows (rows 0..13).
   const first = await views(page, "#list");

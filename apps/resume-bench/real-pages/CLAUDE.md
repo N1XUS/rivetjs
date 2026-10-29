@@ -45,3 +45,7 @@ HTML bytes (source) + HTML transfer, JS transfer + requests before input (CDP `e
 - JS before input: Rivet 3.5–4.8 KB / 1 request on every page (was ~25.7 KB / 4) vs Solid 1 7.5–7.9 KB / 1, Solid 2 ~21–22 KB / 1, Qwik 1 ~24 KB / 3, Qwik 2 RC 38–44 KB / 14–31. The lite runtime + page residual ship as one chunk.
 - Slow main interaction → paint: products 32.3 vs Solid 1 48 ms, dashboard 35.4 vs 54.1, article 32.8 vs 48.5; settings 53.6 vs 52 (tie). Fast paint ~32–33 ms except settings 49.7 vs 34.3 (first-mouse-click deferral frame quantum).
 - Main-thread CPU before input (slow) lowest on every page (44.5–64 ms vs Solid 1 46.6–67.6).
+
+## LITE-BOOT 2026-10-29 (report `docs/benchmarks/2026-10-29-lite-boot.md`, A/B n = 7, load1 3.4–6.4)
+
+- Loader prime (runtime started + page modules loaded with the idle fetch-ahead): settings paint fast 49.6 → 36.4 ms (Solid 1 34.3), slow 50.6 → 38.1; mutation 36.9 → 1.6 / 41.2 → 7.8. Products / dashboard / article within frame noise (click handlers keep the first-click deferral); CPU before input +0..+4 ms slow.

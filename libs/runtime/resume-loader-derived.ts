@@ -23,6 +23,9 @@
 // it would leave is "not hovered"; the page's CSS `:hover` drew the hover meanwhile).
 // Fetch-ahead timing (`data-fw`, ZERO ONDEMAND): absent = after `load`, in the first idle period; `load` = right after
 // `load`; `intent` = nothing before the first intent. None in the background under Save-Data or a 2G connection.
+// Prime (LITE-BOOT): with the background fetch-ahead (not on `intent` pages, under Save-Data / 2G or on `data-boot` pages) the
+// runtime starts and loads the listening boundaries' modules (`rt.w(document)`): a first event after that adopts and runs
+// in its own task instead of waiting for an import (which resolves only after the next frame).
 // Lazy parts (`data-fl`, IDLE-PREFETCH): pages with one ship the loader with `derivedFetchLater` in place of the fetch-ahead's
 // link loop: once every fetch-ahead link loaded, the lazy parts follow in the next idle period, at low priority.
 import type { DerivedLoaderApi, DerivedRuntime, HeldEvent } from "./dom-derived.ts";
@@ -50,8 +53,8 @@ export function derivedLoader(): void {
     prune = (): void => {
       if (lazy) for (let i = q.length; i--;) hover.test(q[i]![0].type) && !hovered(q[i]![0].target) && q.splice(i, 1);
     };
-  // The fetch-ahead list as modulepreloads (fetched + compiled, never evaluated), once: low priority in the background,
-  // high on intent.
+  // The fetch-ahead list as modulepreloads (fetched + compiled; the links evaluate nothing, the background prime below
+  // does), once: low priority in the background, high on intent.
   let ahead = (priority?: string): unknown =>
     fo &&
     ((ahead = () => {}),
@@ -214,11 +217,21 @@ export function derivedLoader(): void {
   // their static closures as low-priority modulepreloads in the first idle period after `load` (default) or right after it
   // (`load`), so the first event evaluates modules already in the module map; `intent`: none before the first intent.
   // None in the background under Save-Data / 2G (intent still fetches).
+  // Prime (LITE-BOOT): with the fetch-ahead, the runtime starts and loads the page's boundary modules (`rt.w(document)`),
+  // so the first event adopts and runs in its own task (no import / promise hop: a held event replays after the next
+  // frame). Not on trigger pages (`data-boot`: they boot themselves); a failed prime leaves the boot to the first event.
+  const prime = (): unknown =>
+    script.hasAttribute("data-boot") ||
+    booting ||
+    boot(1).then(
+      (r) => r.w(d),
+      () => (booting = undefined),
+    );
   const net = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
   lazy ||
     net?.saveData ||
     /2g/.test(net?.effectiveType!) ||
-    addEventListener("load", () => (fw ? ahead() : (self.requestIdleCallback || setTimeout)(() => ahead())));
+    addEventListener("load", () => (fw ? (ahead(), prime()) : (self.requestIdleCallback || setTimeout)(() => (ahead(), prime()))));
 }
 
 /**

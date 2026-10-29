@@ -25,7 +25,7 @@ With resuming:
 
 - **Static pages ship no JavaScript.** With the default `clientRouter: false`, a page with nothing to resume needs no boundary records, loader or runtime. Interactive components wait for an event, state change or configured startup trigger.
 - **Work grows with what you use, not with page size.** A component with plain-data props waits for its own first use: a card that nobody touches never runs. An independent boundary whose call site is proven to need no ancestor context can adopt alone. Other boundaries also run the ancestors needed for context, props and event handling; this can include the router root, layouts and page.
-- **Code can arrive before the first click.** By default, the loader fetches the page's code at idle without running it and raises fetch priority on intent. Lean pages, Save-Data and slow connections skip idle fetch-ahead; see [preloading](../guides/performance/preloading.md).
+- **Code can arrive before the first click.** By default, the loader fetches the page's code at idle and loads it without running any component, so the first click is handled in its own task; it raises fetch priority on intent. Lean pages, Save-Data and slow connections skip idle fetch-ahead; see [preloading](../guides/performance/preloading.md).
 
 ## How it works
 

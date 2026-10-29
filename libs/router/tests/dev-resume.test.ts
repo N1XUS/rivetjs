@@ -81,12 +81,12 @@ test("dev resume: the page resumes like production, an interaction loads its chu
     await page.waitForLoadState("networkidle");
     // Resumed: no component ran in the browser before it is used (its module is only fetched ahead).
     assert.equal(await runs(page), 0);
-    // Z1: the router's listeners load on interaction, so nothing boots the runtime at idle (it and the App
-    // chunk are only fetched: low-priority modulepreload hints).
+    // Z1 + LITE-BOOT: the runtime and the App chunk are fetched at idle (low-priority modulepreload hints) and the
+    // prime starts the runtime with them, so the first event adopts in its own task; no component runs before it.
     assert.equal(
       await page.evaluate(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function"),
-      false,
-      "the resume runtime did not boot at idle",
+      true,
+      "the resume runtime is primed at idle",
     );
     await page.getByRole("button", { name: "Likes 0" }).click();
     await page.getByRole("button", { name: "Likes 1" }).waitFor();
@@ -103,10 +103,11 @@ test("dev resume: the page resumes like production, an interaction loads its chu
     assert.deepEqual(log.documents, ["/items/1"]);
     assert.deepEqual(log.errors, []);
 
-    // A cold link click (fresh page, nothing booted): the loader holds it, loads the runtime + router
-    // and replays it, so it navigates in the document too, as in production (Z1).
+    // A cold link click (fresh page, nothing booted: Save-Data, no background fetch-ahead and no LITE-BOOT prime): the
+    // loader holds it, loads the runtime + router and replays it, so it navigates in the document too, as in production (Z1).
     const cold = await browser.newPage();
     const coldLog = await watch(cold);
+    await cold.addInitScript(() => Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true }));
     await cold.goto(origin + "/items/1");
     await cold.waitForLoadState("networkidle");
     assert.equal(await cold.evaluate(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function"), false);

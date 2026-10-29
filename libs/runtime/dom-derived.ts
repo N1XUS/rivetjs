@@ -2566,10 +2566,14 @@ const runtime: DerivedRuntime = {
     // Intent (D5): the units of the listening records around the target (innermost first; while no name lists types the
     // outermost record's), else of the document click listeners matching it (tail `g`): the chunk, then what its component needs
     // before adopting (`ready`), nothing runs.
-    const warm = (r: Rec | undefined): void => {
+    const warm = (r: Rec | undefined, quiet?: 1): void => {
       while (r && !r.done && !r.hole && r.parent && !(r.flags & INDEPENDENT) && !r.parent.done) r = r.parent;
-      if (r && !r.done && !r.hole) load(r.name).then(() => void prepare(r!, modules.get(r!.name)!), report);
+      // The prime loads the chunk only: `ready` (the router's page modules) may fetch what the list does not hold.
+      if (r && !r.done && !r.hole) load(r.name).then(() => void (quiet || prepare(r!, modules.get(r!.name)!)), quiet ? () => {} : report);
     };
+    // The loader's prime (LITE-BOOT, target = the document): every listening record's chunk, quietly (a failure surfaces
+    // when an event needs that record), so the first event adopts inside its own task.
+    if (target === doc) return void recs.forEach((r) => listens(r) && warm(r, 1));
     const units = enclosing(target as Node | null).filter(([kind, id]) => !kind && recs.has(id));
     if (!listened) return warm(recs.get(units[0]?.[1]!));
     let found = false;

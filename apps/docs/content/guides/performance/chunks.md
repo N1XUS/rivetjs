@@ -21,7 +21,7 @@ A production client build of resumed pages contains:
 - **The built-in values chunk.** It reads regular expressions, `URLSearchParams`, binary data and errors back from the page. It loads only on pages and route data that hold such a value.
 - **`.vite/rivet-resume.json`.** A manifest that maps each interactive component to its chunk URL (and its lite chunk, under `lite`), with sizes and each chunk's static imports. The server uses it to write the page.
 
-The page itself carries no application bundle. The server writes the chunks of the page's interactive components into the `<script type="rivet/boundaries">` near the end of `<body>`; the inline loader fetches them after the page loads and runs one when it is needed (see [Preloading](preloading.md)).
+The page itself carries no application bundle. The server writes the chunks of the page's interactive components into the `<script type="rivet/boundaries">` near the end of `<body>`; the inline loader fetches and loads them after the page loads and runs a component when it is needed (see [Preloading](preloading.md)).
 
 `resume.chunks` (including `"route"`), `merge` and `cap` are removed options. Current resume builds emit boundary modules and shared dependencies; `ChunkGroup` does not regroup them. For static sites, the optional [two-pass build](../deploy/static-hosts.md#fewer-script-files) can combine shared chunks that the same pages always load together.
 

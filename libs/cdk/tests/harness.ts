@@ -76,7 +76,9 @@ export const libraryScripts = (seen: Watch, extra?: RegExp): string[] => seen.sc
 /** Library chunks the page imported (not the derived loader's low-priority fetch-ahead `modulepreload`s, which are
  *  fetched and compiled, never evaluated — Chromium reports them with initiator `script`, so they are told apart by the
  *  `<link rel="modulepreload">` hrefs): resource entries matching the library pattern that no preload link names. A started
- *  derived runtime (it installs `document.$rdp`) counts too: it evaluates the boundary chunks it adopts. */
+ *  derived runtime (it installs `document.$rdp`) counts too: it evaluates the boundary chunks it adopts — and the default
+ *  idle prime (LITE-BOOT) starts it with the listening chunks, so callers asserting zero library JS turn the background
+ *  fetch off (Save-Data). */
 export const libraryImports = (page: Page): Promise<string[]> =>
   page.evaluate((source) => {
     const preloaded = new Set([...document.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"]')].map((l) => l.href));

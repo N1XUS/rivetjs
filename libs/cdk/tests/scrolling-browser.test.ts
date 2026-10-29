@@ -15,6 +15,8 @@ const settle = (page: import("playwright").Page) => page.evaluate(() => new Prom
 test("viewport: server range, no library JS before scroll, scroll renders the window with keyed reuse", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
+  // Save-Data: no background fetch-ahead, so no idle prime (LITE-BOOT: it starts the runtime and loads the listening chunks).
+  await page.addInitScript(() => Object.defineProperty(navigator, "connection", { value: { saveData: true }, configurable: true }));
   await page.goto(s.origin + "/scrolling");
   assert.deepEqual(
     await texts(page, "#fixed .row"),

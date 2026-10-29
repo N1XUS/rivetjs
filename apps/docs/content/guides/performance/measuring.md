@@ -35,7 +35,7 @@ What to look at:
 | What | Where | What you want |
 | --- | --- | --- |
 | HTML size | The document request, **Size** column (compressed) and **Response** tab | Small. The page state is part of it. |
-| JavaScript before any interaction | Filter **JS** | None for static pages with no browser features. Interactive pages normally fetch code at idle without executing it; startup triggers and lean pages change the timing. See [Preloading](preloading.md). |
+| JavaScript before any interaction | Filter **JS** | None for static pages with no browser features. Interactive pages normally fetch and load code at idle without running components; startup triggers and lean pages change the timing. See [Preloading](preloading.md). |
 | CSS | Filter **CSS** | One or a few stylesheets. |
 | Images | Filter **Img** | The main image loads early; images below the fold load later. |
 | Compression | Document request, **Headers**, `content-encoding` | `zstd`, `br` or `gzip`; `dcz` when a supported client has the site dictionary |

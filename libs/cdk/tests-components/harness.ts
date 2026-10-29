@@ -131,7 +131,7 @@ export const codeOf = (match: RegExp): Set<string> => {
 
 /**
  * Chunk paths the page itself hints before any input: the preload plan (`data-preload`: scheduled fetch + evaluate) and
- * the fetch-ahead list (`data-fo`: low priority after `load`, fetched, never evaluated). Under route chunks one chunk holds
+ * the fetch-ahead list (`data-fo`: low priority after `load`, fetched, then loaded by the idle prime). Under route chunks one chunk holds
  * every component of the page, so a hint for one component brings the others' code along — a "no X code before
  * interaction" check compares against these, not against an empty list. Includes the hinted chunks' static import
  * closure (manifest `deps`: a preloaded route chunk pulls its shared `rivet-merge-…` imports). A `.deps.js` list counts

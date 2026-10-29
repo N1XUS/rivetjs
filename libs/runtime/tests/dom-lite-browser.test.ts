@@ -99,6 +99,47 @@ compiled("lite page: a cold click adopts only its boundary through the residual;
   });
 });
 
+compiled("LITE-BOOT: primed at idle, the first input adopts and runs inside its own task; the first mouse click still flushes one task later", async () => {
+  const site = await files(2);
+  // In-task probe: a window bubble listener runs after the document's delegation in the same dispatch.
+  const probe = (page: Page) =>
+    page.evaluate(() => {
+      const w = window as unknown as { seen: [string, boolean, string][] };
+      w.seen = [];
+      addEventListener("click", (e) => {
+        const b = document.querySelectorAll(".inc")[1] as unknown as Record<string, unknown>;
+        w.seen.push([e.type, b.$$click !== undefined, document.querySelectorAll(".n")[1]!.textContent!]);
+      });
+    });
+  await withPage(site, async (page, requests) => {
+    await page.goto("http://rivet.test/");
+    // The prime: the fetch-ahead list, the runtime started and the boundary modules loaded — nothing adopted.
+    await page.waitForFunction(() => performance.getEntriesByType("resource").some((e) => e.name.endsWith("/c.js")));
+    await page.waitForTimeout(100);
+    assert.deepEqual(await handled(page), [false, false], "primed, not adopted");
+    await probe(page);
+    await page.click(".c:nth-child(2) .inc");
+    assert.deepEqual(
+      await page.evaluate(() => (window as unknown as { seen: unknown }).seen),
+      [["click", true, "Count: 0"]],
+      "adopted in the click task, DOM one task later",
+    );
+    await page.waitForFunction(() => document.querySelectorAll(".n")[1]!.textContent === "Count: 1");
+    assert.deepEqual(await handled(page), [false, true], "only the clicked boundary adopted");
+    assert.ok(!requests.includes("/c-full.js") && !requests.includes("/dom-derived.ts"), requests.join(" "));
+  });
+  // Keyboard: no deferral — the write lands inside the keydown's activation click.
+  await withPage(site, async (page) => {
+    await page.goto("http://rivet.test/");
+    await page.waitForFunction(() => performance.getEntriesByType("resource").some((e) => e.name.endsWith("/c.js")));
+    await page.waitForTimeout(100);
+    await page.focus(".c:nth-child(2) .inc");
+    await probe(page);
+    await page.keyboard.press("Enter");
+    assert.deepEqual(await page.evaluate(() => (window as unknown as { seen: unknown }).seen), [["click", true, "Count: 1"]]);
+  });
+});
+
 compiled("lite page: document listeners and adopt work are constant in the number of boundaries", async () => {
   const measure = async (n: number) =>
     withPage(await files(n), async (page) => {

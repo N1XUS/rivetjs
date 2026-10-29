@@ -6,14 +6,14 @@ status: experimental
 related: [guides/performance/chunks, learn/loading-code, guides/performance/measuring]
 ---
 
-A Rivet page arrives as finished HTML. The JavaScript of a button is not needed until someone uses the button, but waiting for the network on the first click would make it slow. Rivet downloads that code ahead of time without running it. This is called :term[preloading]{id=preload}.
+A Rivet page arrives as finished HTML. The JavaScript of a button is not needed until someone uses the button, but waiting for the network on the first click would make it slow. Rivet downloads that code ahead of time and gets it ready, without running any component. This is called :term[preloading]{id=preload}.
 
 ## What happens by default
 
 1. The page loads. The inline loader starts; no component code runs.
-2. When the browser is idle after the load, the loader asks it to fetch the runtime and the chunks of the page's interactive components (with their static imports) at low priority. Nothing of it runs yet.
+2. When the browser is idle after the load, the loader asks it to fetch the runtime and the chunks of the page's interactive components (with their static imports) at low priority. As they arrive, the runtime starts and loads those modules (their top-level code runs), so the first event needs no further loading step. No component runs yet.
 3. When the pointer moves onto a component that reacts to hover, rests on an element (80 ms), it gets focus, a key is pressed, or a finger or the pointer goes down, the loader fetches every file of that list that has not arrived, at high priority and all at once.
-4. On the event, the runtime runs the component and the components around it that have not run yet (with file routes: up to the router's root, unless the build proved the component reads nothing they provide), then the handler. An event that comes before its code is held and replayed.
+4. On the event, in the same task, the runtime runs the component and the components around it that have not run yet (with file routes: up to the router's root, unless the build proved the component reads nothing they provide), then the handler. An event that comes before its code is held and replayed.
 
 After step 2 (or after the list that intent fetched in step 3), once all of it has arrived, the browser fetches the page's lazy components at low priority, at the next idle moment: the chunks of the `lazyComponent(() => import("…"))` calls in that code, with their static imports. Nothing of them runs until a component renders them, so opening one later costs no extra round trip.
 
