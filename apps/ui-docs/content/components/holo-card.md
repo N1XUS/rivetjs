@@ -50,6 +50,12 @@ Additional exported parts: `HoloCard.Root`, `HoloCard.ShinePattern`.
 
 Render one `HoloCard.Content` per band of the card and position its children with flex utilities. Content layers drift against the tilt (`parallax={false}` turns that off) and sit above the glare so text stays readable. Put full-bleed art in `HoloCard.Image` (below the glare), not in a content layer.
 
+### Image Only
+
+::example{id=holo-card-image-only}
+
+Leave out `HoloCard.Content` and the art is the whole face: `Pattern` and `Shine` blend over it. Size the card to the art's aspect ratio with `--holo-card-width` / `--holo-card-height` (default 302 × 453 px). Without an `img`, a `gradient` alone is the card's background.
+
 ### Custom Gradient
 
 ::example{id=holo-card-custom-gradient}
@@ -69,6 +75,12 @@ With reduced motion enabled, `isInteractive={false}`, or `isDisabled`, the card 
 ### Static
 
 ::example{id=holo-card-static}
+
+### Membership Card
+
+::example{id=holo-card-membership}
+
+Three `HoloCard.Content` bands (header, portrait and name, member number and expiry) over a `gradient`. Give the portrait meaningful `alt` text: it is content, not decoration.
 
 ### Credit Card
 
