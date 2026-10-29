@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/kit",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Rivet kit: document head (title, meta, links, scripts, JSON-LD, fonts), CSP, Transition, lucide Icon, scoped styles.",
   "license": "MIT",
   "private": true,
@@ -43,9 +43,9 @@
     }
   },
   "dependencies": {
-    "@rivetjs/reactivity": "0.1.0-alpha.1",
-    "@rivetjs/router": "0.1.0-alpha.1",
-    "@rivetjs/runtime": "0.1.0-alpha.1"
+    "@rivetjs/reactivity": "0.1.0-alpha.2",
+    "@rivetjs/router": "0.1.0-alpha.2",
+    "@rivetjs/runtime": "0.1.0-alpha.2"
   },
   "engines": {
     "node": ">=24"

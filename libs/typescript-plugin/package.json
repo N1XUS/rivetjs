@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/typescript-plugin",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "dist"
   ],
   "dependencies": {
-    "@rivetjs/language-core": "0.1.0-alpha.1"
+    "@rivetjs/language-core": "0.1.0-alpha.2"
   },
   "peerDependencies": {
     "typescript": ">=5.6"

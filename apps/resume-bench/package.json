@@ -5,13 +5,13 @@
   "type": "module",
   "dependencies": {
     "@qwik.dev/core": "2.0.0-rc.0",
-    "@rivetjs/reactivity": "0.1.0-alpha.1",
-    "@rivetjs/runtime": "0.1.0-alpha.1",
+    "@rivetjs/reactivity": "0.1.0-alpha.2",
+    "@rivetjs/runtime": "0.1.0-alpha.2",
     "@solidjs/web": "2.0.0-rc.13",
     "solid-js": "2.0.0-rc.13"
   },
   "devDependencies": {
-    "@rivetjs/compiler": "0.1.0-alpha.1",
+    "@rivetjs/compiler": "0.1.0-alpha.2",
     "@solidjs/vite-plugin": "3.0.0-next.47",
     "vite": "8.3.2"
   }
