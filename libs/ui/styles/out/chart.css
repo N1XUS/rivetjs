@@ -3,12 +3,6 @@
 @layer properties, theme, base, components, utilities;
 @layer components {
   .chart {
-    --chart-1: var(--accent);
-    --chart-2: oklch(62% .105 200);
-    --chart-3: oklch(60% .2 300);
-    --chart-4: oklch(62% .145 60);
-    --chart-5: oklch(65% .2 350);
-    --chart-6: oklch(62% .13 150);
     --chart-height: 240px;
     --chart-y-axis-width: 3rem;
     gap: calc(var(--spacing, .25rem) * 3);
@@ -21,12 +15,6 @@
     display: flex;
     position: relative;
     container-type: inline-size;
-  }
-
-  .dark .chart, [data-theme="dark"] .chart {
-    --chart-2: oklch(72% .14 200);
-    --chart-4: oklch(72% .16 60);
-    --chart-6: oklch(70% .14 150);
   }
 
   .chart__legend {

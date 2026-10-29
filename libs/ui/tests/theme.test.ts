@@ -13,6 +13,7 @@ import {
   apcaContrast,
   auditContrast,
   CHART_PALETTE,
+  chartPalette,
   auditVariables,
   contrastRatio,
   deriveTheme,
@@ -186,12 +187,18 @@ test("theme: the shipped rivet.css passes the same audit (resolved against the v
   // The Classic (upstream default) theme misses AA on white-on-accent (3.6:1): the reason the Rivet accent is deeper.
   assert.ok(auditContrast(CLASSIC_PRESET, "light").some((r) => r.fg === "--accent-foreground" && !r.pass));
   assert.equal(CONTRAST_PAIRS.length, 35);
-  // The chart palette the audit uses is the one chart.css ships (light block + dark override).
-  const chart = read("components/chart.css");
-  for (const [name, value] of Object.entries(CHART_PALETTE.light)) assert.ok(chart.includes(`${name}: ${value};`), `light ${name}`);
-  const darkChart = chart.slice(chart.indexOf(".dark .chart"));
-  for (const [name, value] of Object.entries(CHART_PALETTE.dark))
-    assert.ok(darkChart.slice(0, darkChart.indexOf("}")).includes(`${name}: ${value};`) || chart.includes(`${name}: ${value};`), `dark ${name}`);
+  // The chart palette the audit uses is the one the theme ships (theme tokens, not `.chart`-only: Widget legends read
+  // `var(--chart-N)` outside a chart), light + dark blocks, `--chart-1` = the accent.
+  const theme = read("themes/rivet.css");
+  const darkAt = theme.indexOf("  .dark,");
+  for (const [mode, block] of [
+    ["light", theme.slice(0, darkAt)],
+    ["dark", theme.slice(darkAt)],
+  ] as const)
+    for (const [name, value] of Object.entries(chartPalette(mode))) assert.ok(block.includes(`${name}: ${value};`), `${mode} ${name}`);
+  assert.doesNotMatch(read("components/chart.css"), /--chart-[1-6]:/);
+  assert.equal(themeVariables(RIVET_PRESET, "dark")["--chart-4"], CHART_PALETTE.dark["--chart-4"]);
+  assert.equal(themeVariables(RIVET_PRESET, "light")["--chart-1"], "var(--accent)");
 });
 
 test("theme: generated stylesheets are current; entries wire the themes", () => {

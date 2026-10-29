@@ -68,11 +68,11 @@ The component’s parts emit these additional `data-slot` values: `chart-plot`.
 
 ### CSS Variables
 
-| Variable                  | Default                                  | Description                    |
-| ------------------------- | ---------------------------------------- | ------------------------------ |
-| `--chart-1` … `--chart-6` | accent, cyan, violet, amber, pink, green | Segment palette                |
-| `--chart-color`           | -                                        | Colour of one segment (inline) |
-| `--chart-polar-size`      | `200px`                                  | Plot size (`size`)             |
+| Variable                  | Default                                  | Description                                                 |
+| ------------------------- | ---------------------------------------- | ----------------------------------------------------------- |
+| `--chart-1` … `--chart-6` | accent, cyan, violet, amber, pink, green | Segment palette (theme tokens, also usable outside a chart) |
+| `--chart-color`           | -                                        | Colour of one segment (inline)                              |
+| `--chart-polar-size`      | `200px`                                  | Plot size (`size`)                                          |
 
 ### Data Attributes
 

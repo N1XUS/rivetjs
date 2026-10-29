@@ -420,8 +420,36 @@ export const RADIUS_FORMULAS: Record<string, string> = {
 };
 
 /**
+ * The chart series palette per mode (`--chart-2` … `--chart-6`; `--chart-1` = `var(--accent)`, `CHART_ACCENT`): theme
+ * tokens (`themes/rivet.css`, `scoped.css`, `presets.css`, `themeVariables`), so `var(--chart-N)` also works outside a
+ * chart (Widget legend dots, custom legends). Every series holds 3:1 + APCA Lc 30 on `--surface` (`CONTRAST_PAIRS`).
+ */
+export const CHART_PALETTE: Readonly<Record<ThemeMode, Readonly<Record<string, string>>>> = {
+  light: {
+    "--chart-2": "oklch(0.62 0.105 200)",
+    "--chart-3": "oklch(0.6 0.2 300)",
+    "--chart-4": "oklch(0.62 0.145 60)",
+    "--chart-5": "oklch(0.65 0.2 350)",
+    "--chart-6": "oklch(0.62 0.13 150)",
+  },
+  dark: {
+    "--chart-2": "oklch(0.72 0.14 200)",
+    "--chart-3": "oklch(0.6 0.2 300)",
+    "--chart-4": "oklch(0.72 0.16 60)",
+    "--chart-5": "oklch(0.65 0.2 350)",
+    "--chart-6": "oklch(0.7 0.14 150)",
+  },
+};
+
+/** `--chart-1` follows the accent; declared beside it so a scope that changes the accent re-resolves it. */
+export const CHART_ACCENT = { "--chart-1": "var(--accent)" } as const;
+
+/** The chart palette tokens for `mode` (`--chart-1` … `--chart-6`). */
+export const chartPalette = (mode: ThemeMode): Record<string, string> => ({ ...CHART_ACCENT, ...CHART_PALETTE[mode] });
+
+/**
  * Every variable a scoped element needs to show the theme in one mode (upstream `computeThemeVars` minus the
- * font): radius + base tokens + derived formulas. Set on an element (e.g. as its `style`) to preview a theme
+ * font): radius + base tokens + derived formulas + the chart palette. Set on an element (e.g. as its `style`) to preview a theme
  * inside a page that uses another one.
  */
 export function themeVariables(params: ThemeParams, mode: ThemeMode, tokens: ThemeTokens = deriveTheme(params)): Record<string, string> {
@@ -430,6 +458,7 @@ export function themeVariables(params: ThemeParams, mode: ThemeMode, tokens: The
     "--radius": RADIUS_CSS[params.radius ?? "medium"],
     ...RADIUS_FORMULAS,
     ...derivedFormulas(mode, { vibrant: params.vibrant }),
+    ...chartPalette(mode),
     // after the formulas: a preset may override a formula (`overrides`)
     ...tokens[mode],
   };

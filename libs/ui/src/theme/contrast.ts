@@ -3,7 +3,7 @@
 // contrast + APCA Lc (APCA-W3 0.1.9) of the text / background pairs the components paint.
 
 import { apcaContrast, compositeRgb, contrastRatio, hexToOklch, mixOklab, oklabToRgb, oklchToOklab, parseOklch, type Oklab, type Rgb } from "./color.ts";
-import { deriveTheme, themeVariables, type ThemeMode, type ThemeParams, type ThemeTokens } from "./derive.ts";
+import { CHART_PALETTE, deriveTheme, themeVariables, type ThemeMode, type ThemeParams, type ThemeTokens } from "./derive.ts";
 import { RIVET_BRAND } from "./presets.ts";
 
 const TRANSPARENT: Oklab = { l: 0, a: 0, b: 0, alpha: 0 };
@@ -75,24 +75,6 @@ export interface ContrastPair {
   /** Required APCA |Lc| (APCA-W3 0.1.9): 60 body text, 45 large text, 30 non-text UI parts. */
   lc: number;
 }
-
-/** The `.chart` series palette per mode (`styles/components/chart.css`; `--chart-1` = `--accent`), for the series pairs. */
-export const CHART_PALETTE: Readonly<Record<ThemeMode, Readonly<Record<string, string>>>> = {
-  light: {
-    "--chart-2": "oklch(0.62 0.105 200)",
-    "--chart-3": "oklch(0.6 0.2 300)",
-    "--chart-4": "oklch(0.62 0.145 60)",
-    "--chart-5": "oklch(0.65 0.2 350)",
-    "--chart-6": "oklch(0.62 0.13 150)",
-  },
-  dark: {
-    "--chart-2": "oklch(0.72 0.14 200)",
-    "--chart-3": "oklch(0.6 0.2 300)",
-    "--chart-4": "oklch(0.72 0.16 60)",
-    "--chart-5": "oklch(0.65 0.2 350)",
-    "--chart-6": "oklch(0.7 0.14 150)",
-  },
-};
 
 /** The `Button variant="brand"` gradient stops (`button.css`): the logo's deep stops, `--rivet-*` (`RIVET_BRAND`). */
 export const BRAND_STOPS = ["--rivet-blue", "--rivet-indigo", "--rivet-violet", "--rivet-purple"] as const;

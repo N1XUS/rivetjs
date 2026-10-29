@@ -51,10 +51,10 @@ The component’s parts emit these additional `data-slot` values: `chart-slot`.
 
 ### CSS Variables
 
-| Variable                  | Default                                  | Description            |
-| ------------------------- | ---------------------------------------- | ---------------------- |
-| `--chart-1` … `--chart-6` | accent, cyan, violet, amber, pink, green | Series palette         |
-| `--chart-height`          | `240px`                                  | Plot height (`height`) |
+| Variable                  | Default                                  | Description                                                |
+| ------------------------- | ---------------------------------------- | ---------------------------------------------------------- |
+| `--chart-1` … `--chart-6` | accent, cyan, violet, amber, pink, green | Series palette (theme tokens, also usable outside a chart) |
+| `--chart-height`          | `240px`                                  | Plot height (`height`)                                     |
 
 ## API Reference
 

@@ -53,11 +53,11 @@ The component’s parts emit these additional `data-slot` values: `chart-plot`, 
 
 ### CSS Variables
 
-| Variable                  | Default                                  | Description                 |
-| ------------------------- | ---------------------------------------- | --------------------------- |
-| `--chart-1` … `--chart-6` | accent, cyan, violet, amber, pink, green | Ring palette                |
-| `--chart-color`           | -                                        | Colour of one ring (inline) |
-| `--chart-polar-size`      | `240px`                                  | Plot size (`size`)          |
+| Variable                  | Default                                  | Description                                              |
+| ------------------------- | ---------------------------------------- | -------------------------------------------------------- |
+| `--chart-1` … `--chart-6` | accent, cyan, violet, amber, pink, green | Ring palette (theme tokens, also usable outside a chart) |
+| `--chart-color`           | -                                        | Colour of one ring (inline)                              |
+| `--chart-polar-size`      | `240px`                                  | Plot size (`size`)                                       |
 
 ## API Reference
 

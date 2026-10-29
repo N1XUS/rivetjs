@@ -4,28 +4,14 @@
  * Block: chart (parts: legend / frame / y-axis / plot / grid / svg / area / line / points / bars / slot / guide / dot / tooltip /
  * x-axis / donut)
  * Modifiers: chart--area / --line / --bar / --donut / --sparkline; chart--horizontal (horizontal bars)
- * Variables: --chart-1 … --chart-6 (palette), --chart-color (per series), --chart-height (plot), --chart-y-axis-width
+ * Variables: --chart-1 … --chart-6 (palette: theme tokens in themes/rivet.css, src/theme CHART_PALETTE), --chart-color (per series), --chart-height (plot), --chart-y-axis-width
  * -----------------------------------------------------------------------------------------------*/
 
 .chart {
-  /* ≥ 3 : 1 + APCA Lc 30 on --surface per mode (`@rivetjs/ui/theme` CHART_PALETTE, tests/theme.test.ts) */
-  --chart-1: var(--accent);
-  --chart-2: oklch(0.62 0.105 200);
-  --chart-3: oklch(0.6 0.2 300);
-  --chart-4: oklch(0.62 0.145 60);
-  --chart-5: oklch(0.65 0.2 350);
-  --chart-6: oklch(0.62 0.13 150);
   --chart-height: 240px;
   --chart-y-axis-width: 3rem;
   @apply relative m-0 flex min-w-0 flex-col gap-3 text-xs text-muted;
   container-type: inline-size;
-}
-
-.dark .chart,
-[data-theme="dark"] .chart {
-  --chart-2: oklch(0.72 0.14 200);
-  --chart-4: oklch(0.72 0.16 60);
-  --chart-6: oklch(0.7 0.14 150);
 }
 
 /* Legend */

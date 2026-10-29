@@ -9,7 +9,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { DARK_SELECTORS, LIGHT_SELECTORS, RADIUS_CSS, deriveTheme, themeVariables } from "../src/theme/derive.ts";
+import { DARK_SELECTORS, LIGHT_SELECTORS, RADIUS_CSS, chartPalette, deriveTheme, themeVariables } from "../src/theme/derive.ts";
 import { RIVET_BRAND, RIVET_PRESET, THEME_PRESETS, resolveParams } from "../src/theme/presets.ts";
 
 const STYLES = new URL("../styles/", import.meta.url);
@@ -73,7 +73,7 @@ const SHADOWS_DARK: Decl[] = [
   ["--overlay-shadow", HAIRLINE],
 ];
 
-/** Rivet light / dark token lists (derived base tokens + radius + shadows), as declarations. */
+/** Rivet light / dark token lists (derived base tokens + radius + shadows + chart palette), as declarations. */
 function rivetDecls() {
   const tokens = deriveTheme(RIVET_PRESET);
   const light: Decl[] = [
@@ -81,8 +81,9 @@ function rivetDecls() {
     ["--radius", RADIUS_CSS[RIVET_PRESET.radius]],
     ["--field-radius", RADIUS_CSS[RIVET_PRESET.formRadius]],
     ...SHADOWS_LIGHT,
+    ...(Object.entries(chartPalette("light")) as Decl[]),
   ];
-  const dark: Decl[] = [...(Object.entries(tokens.dark) as Decl[]), ...SHADOWS_DARK];
+  const dark: Decl[] = [...(Object.entries(tokens.dark) as Decl[]), ...SHADOWS_DARK, ...(Object.entries(chartPalette("dark")) as Decl[])];
   return { light, dark };
 }
 
@@ -93,6 +94,7 @@ export function rivetCss(): string {
  * Rivet brand theme: the HeroUI v3.2.6 default theme (variables, derived hover / soft / border formulas, component
  * customizations) with the Rivet tokens on top: accent from the logo blue / indigo, neutrals tinted toward it,
  * contrast fixes (AA). Logo gradient stops as --rivet-* tokens (+ --color-rivet-* for Tailwind) for special surfaces.
+ * Chart palette --chart-1 … --chart-6 (theme tokens: charts, Widget legends, any var(--chart-N)).
  */
 @import "./default/index.css";
 

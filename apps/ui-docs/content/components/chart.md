@@ -69,7 +69,7 @@ The component’s parts emit these additional `data-slot` values: `chart-legend`
 
 | Variable                  | Default                                  | Description                                                   |
 | ------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
-| `--chart-1` … `--chart-6` | accent, cyan, violet, amber, pink, green | Series palette                                                |
+| `--chart-1` … `--chart-6` | accent, cyan, violet, amber, pink, green | Series palette (theme tokens, also usable outside a chart)    |
 | `--chart-color`           | -                                        | Colour of one series / segment (inline)                       |
 | `--chart-height`          | `240px`                                  | Plot height (`height` prop)                                   |
 | `--chart-y-axis-width`    | `3rem`                                   | Width of the y axis labels (horizontal bars: `categoryWidth`) |

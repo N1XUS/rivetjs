@@ -173,6 +173,12 @@
     --radius-4xl: calc(var(--radius) * 4);
     --r-min: var(--radius-sm);
     --overlay-exit-duration: var(--duration-slow);
+    --chart-1: var(--accent);
+    --chart-2: oklch(0.62 0.105 200);
+    --chart-3: oklch(0.6 0.2 300);
+    --chart-4: oklch(0.62 0.145 60);
+    --chart-5: oklch(0.65 0.2 350);
+    --chart-6: oklch(0.62 0.13 150);
   }
 
   .dark [data-ui-theme="rivet"],
@@ -253,5 +259,11 @@
     --field-border: transparent;
     --success: oklch(73.29% 0.1954 152.03);
     --success-foreground: oklch(21.03% 0.0059 152.03);
+    --chart-1: var(--accent);
+    --chart-2: oklch(0.72 0.14 200);
+    --chart-3: oklch(0.6 0.2 300);
+    --chart-4: oklch(0.72 0.16 60);
+    --chart-5: oklch(0.65 0.2 350);
+    --chart-6: oklch(0.7 0.14 150);
   }
 }

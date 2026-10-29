@@ -5,7 +5,6 @@ import { LineChart } from "@rivetjs/ui/chart";
 export const head = { title: "LineChart: Traffic Source" };
 
 // #region demo
-// Global theme tokens: the `--chart-N` palette is defined on `.chart` only, and the legend list sits outside the chart.
 const SOURCES = [
   { key: "organic", label: "Organic search", color: "var(--accent)" },
   { key: "direct", label: "Direct", color: "var(--success)" },

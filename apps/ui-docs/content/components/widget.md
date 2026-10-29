@@ -90,7 +90,7 @@ Use `variant="secondary"` on the [Table](/components/table/) to drop its own bac
 
 - `--widget-inset` - Shell padding around the content (default `--spacing(1.5)`).
 - `--widget-radius` - Shell radius; the content's radius is `--widget-radius` minus `--widget-inset`.
-- `--widget-legend-color` - Dot colour of one legend item (set by `color`).
+- `--widget-legend-color` - Dot colour of one legend item (set by `color`). The chart palette `--chart-1` … `--chart-6` is a theme token, so `color="var(--chart-N)"` matches the chart series anywhere on the page.
 
 ### Data Attributes
 
@@ -111,10 +111,10 @@ Also takes `div` props.
 
 ### Widget.LegendItem
 
-| Prop       | Type      | Default | Description                      |
-| ---------- | --------- | ------- | -------------------------------- |
-| `color`    | `string`  | -       | CSS colour of the dot (required) |
-| `children` | `Content` | -       | Label                            |
+| Prop       | Type      | Default | Description                                             |
+| ---------- | --------- | ------- | ------------------------------------------------------- |
+| `color`    | `string`  | -       | CSS colour of the dot, e.g. `var(--chart-3)` (required) |
+| `children` | `Content` | -       | Label                                                   |
 
 ### Other parts
 

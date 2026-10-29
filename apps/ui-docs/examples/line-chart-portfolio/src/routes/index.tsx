@@ -22,7 +22,6 @@ const VALUE = [
   { month: "Dec", portfolio: 102.4, benchmark: 94.9 },
 ];
 
-// Global theme tokens: the `--chart-N` palette is defined on `.chart` only, and this bar sits outside the chart.
 const ALLOCATION = [
   { name: "Equities", share: 0.62, color: "var(--accent)" },
   { name: "Bonds", share: 0.28, color: "var(--success)" },
