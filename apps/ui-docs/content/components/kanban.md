@@ -1,6 +1,6 @@
 ---
 title: Kanban
-description: "A drag-and-drop board: columns, card lists, cards with an optional drag handle, keyboard moves, an add-a-card composer and three sizes."
+description: "A drag-and-drop board: columns, card lists, cards with an optional drag handle, card selection, keyboard moves, an add-a-card composer and three sizes."
 template: reference
 status: experimental
 related: [showcase/kanban, components/scroll-shadow, components/chip]
@@ -76,9 +76,11 @@ Additional exported parts: `Kanban.Root`.
 
 ::example{id=kanban-composer}
 
-### Not Yet Supported
+### Card Selection
 
-- Card selection (`selectionMode`).
+`selectionMode` on a `Kanban.CardList` (`"single"` or `"multiple"`) makes the list a grid of selectable cards with GridList semantics: the list is `role="grid"` (`aria-multiselectable` for multiple), each card a `role="row"` with `aria-selected` and one tab stop per list (roving `tabindex`). Click, Space or Enter toggles a card (`selectionBehavior="replace"`: a press replaces the selection, Shift / Ctrl / Cmd extend it), Up / Down / Home / End / Page Up / Page Down move focus, typing jumps to a card by its text, Ctrl / Cmd + A selects all and Escape clears. Selection happens on press release, and a press that turns into a drag never selects. Keys are the cards' `data` as strings; `selectedKeys` takes a signal (two-way) or a value (controlled), `defaultSelectedKeys` an initial selection, and `onSelectionChange` reports changes. Each list keeps its own selection: a card moved to another column is not selected there. With `onCardMove` on the board, Enter picks a card up and drops it while Space selects (the cards' instructions say so, `messages.selectionInstructions`). The selection handlers load on the list's first event; a board without `selectionMode` loads none of them.
+
+::example{id=kanban-selection}
 
 ## Styling Reference
 
@@ -90,7 +92,7 @@ The component’s parts emit these additional `data-slot` values: `kanban-column
 - `.kanban__column`, `.kanban__column-header`, `.kanban__column-indicator` (`[data-icon]` with children), `.kanban__column-title`, `.kanban__column-count`, `.kanban__column-actions` (revealed on header hover / focus) - Columns.
 - `.kanban__column-body`, `.kanban__scroll-shadow` - Column container and its optional scroll wrapper.
 - `.kanban__card-list` - The drop list (`.cdk-drop-list-dragging` / `-receiving` while dragging).
-- `.kanban__card`, `.kanban__card-content` - Cards (`.cdk-drag-preview` = the dragged copy, `.cdk-drag-placeholder` = the slot it left, `[data-grabbed]` = picked up with the keyboard).
+- `.kanban__card`, `.kanban__card-content` - Cards (`.cdk-drag-preview` = the dragged copy, `.cdk-drag-placeholder` = the slot it left, `[data-grabbed]` = picked up with the keyboard, `[data-selected="true"]` = selected: accent-soft surface).
 - `.kanban__composer`, `.kanban__composer-trigger`, `.kanban__composer-form`, `.kanban__composer-actions` - `KanbanComposer`.
 - `.kanban__drag-handle` - The grip (`Kanban.DragHandle`), shown on card hover / focus.
 - `.kanban__drop-indicator` - A custom landing slot (`Kanban.DropIndicator`).
@@ -112,6 +114,7 @@ The component’s parts emit these additional `data-slot` values: `kanban-column
 - `[data-slot]`: `kanban`, `kanban-column`, `kanban-column-header`, `kanban-card-list`, `kanban-card`, `kanban-card-content`, `kanban-empty`, `kanban-composer`, `kanban-composer-trigger`, `kanban-composer-form`, …
 - `[data-kanban-column]` on each card list (its `data`), `[data-kanban-key]` on each card (its `data`).
 - Keyboard moves: `[data-grabbed]` on the picked-up card; `[data-kanban-grabbed]` (the card key) on the board.
+- Card selection: `[data-selection-mode]` (`single` / `multiple`) and `[data-collection]` on the list; `[data-selected="true"]`, `[data-key]`, `aria-selected` on each card.
 
 ## API Reference
 
@@ -141,21 +144,30 @@ Also supports the cdk `DropListGroup` props and native attributes.
 
 ### Kanban.CardList
 
-| Prop               | Type                        | Default | Description                                          |
-| ------------------ | --------------------------- | ------- | ---------------------------------------------------- |
-| `data`             | `string`                    | -       | The column id (what `onDropped` receives)            |
-| `onDropped`        | `(event: DragDrop) => void` | -       | A card was dropped here (`createKanban().onDropped`) |
-| `renderEmptyState` | `() => Content`             | -       | Shown while the list has no cards                    |
+| Prop                     | Type                                              | Default            | Description                                                                |
+| ------------------------ | ------------------------------------------------- | ------------------ | -------------------------------------------------------------------------- |
+| `data`                   | `string`                                          | -                  | The column id (what `onDropped` receives)                                  |
+| `onDropped`              | `(event: DragDrop) => void`                       | -                  | A card was dropped here (`createKanban().onDropped`)                       |
+| `renderEmptyState`       | `() => Content`                                   | -                  | Shown while the list has no cards                                          |
+| `selectionMode`          | `"none"` \| `"single"` \| `"multiple"`            | `"none"`           | Card selection                                                             |
+| `selectionBehavior`      | `"toggle"` \| `"replace"`                         | `"toggle"`         | A press toggles a card, or replaces the selection (Shift / Mod extend)     |
+| `selectedKeys`           | `Signal<Selection>` \| `"all"` \| `Iterable<Key>` | -                  | Selected card keys (signal: two-way, value: controlled)                    |
+| `defaultSelectedKeys`    | `"all"` \| `Iterable<Key>`                        | -                  | Initial selection (uncontrolled)                                           |
+| `onSelectionChange`      | `(keys: Selection) => void`                       | -                  | The selection changed                                                      |
+| `disabledKeys`           | `Iterable<Key>`                                   | -                  | Cards that cannot be selected or focused                                   |
+| `disallowEmptySelection` | `boolean`                                         | `false`            | Keep at least one card selected                                            |
+| `escapeKeyBehavior`      | `"clearSelection"` \| `"none"`                    | `"clearSelection"` | Whether Escape clears the selection                                        |
+| `onAction`               | `(key: Key) => void`                              | -                  | A card was actioned (Enter without `onCardMove`, a press with `"replace"`) |
 
 Also supports every cdk `DropList` prop (`orientation`, `disabled`, `sortingDisabled`, `enterPredicate`, …).
 
 ### Kanban.Card
 
-| Prop        | Type      | Default | Description                                                 |
-| ----------- | --------- | ------- | ----------------------------------------------------------- |
-| `data`      | `string`  | -       | The card key                                                |
-| `textValue` | `string`  | -       | Accessible name (`role="group"` + `aria-label` on the card) |
-| `disabled`  | `boolean` | `false` | Not draggable                                               |
+| Prop        | Type      | Default | Description                                                                          |
+| ----------- | --------- | ------- | ------------------------------------------------------------------------------------ |
+| `data`      | `string`  | -       | The card key                                                                         |
+| `textValue` | `string`  | -       | Accessible name (`aria-label`; `role="group"`, or `role="row"` in a selectable list) |
+| `disabled`  | `boolean` | `false` | Not draggable                                                                        |
 
 Also supports every cdk `Drag` prop.
 
@@ -212,6 +224,7 @@ Returns `{ items, itemsOf(column), move(key, column, index), onDropped, onCardMo
 - Columns are `section`s; name each with `aria-labelledby` pointing at its `Kanban.ColumnTitle` (an `h3`).
 - Name every card with `textValue` (its `aria-label`).
 - Pass `onCardMove` so keyboard and screen reader users can move cards: each card gets `tabindex="0"` and `aria-describedby` pointing at the instructions; every pick up, move, drop and cancel is announced with the card's name, column and position.
+- A list with `selectionMode` is a `grid` of `row`s (each card's content sits in a `gridcell`) with `aria-selected` and one tab stop; name it with `aria-labelledby` pointing at its column title. Selection changes are announced (cdk GridList).
 - `KanbanComposer`'s field is named by its `label`; Escape closes it and returns focus to the trigger.
 
 ## Related Components

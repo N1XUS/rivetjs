@@ -4,6 +4,8 @@
 export interface KanbanMessages {
   /** Card description (`aria-describedby` of every card). */
   instructions: string;
+  /** Card description in a selectable `.CardList` (Space selects there, so Enter picks up). */
+  selectionInstructions: string;
   pickedUp: (card: string, column: string, position: number, total: number) => string;
   moved: (card: string, column: string, position: number, total: number) => string;
   dropped: (card: string, column: string, position: number, total: number) => string;
@@ -12,6 +14,7 @@ export interface KanbanMessages {
 
 export const KANBAN_MESSAGES: KanbanMessages = {
   instructions: "Press Space to pick up the card. Then use the arrow keys to move it, Space to drop it, Escape to cancel.",
+  selectionInstructions: "Press Space to select the card, Enter to pick it up. Then use the arrow keys to move it, Enter to drop it, Escape to cancel.",
   pickedUp: (card, column, position, total) => `Picked up ${card}. ${column}, position ${position} of ${total}.`,
   moved: (card, column, position, total) => `${card}: ${column}, position ${position} of ${total}.`,
   dropped: (card, column, position, total) => `Dropped ${card} in ${column}, position ${position} of ${total}.`,

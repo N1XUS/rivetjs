@@ -567,6 +567,7 @@ test("package: barrel exports = ported components + upstream root utils (dom, tv
     "KanbanContext",
     "KanbanDragHandle",
     "KanbanDropIndicator",
+    "KanbanListContext",
     "KanbanRoot",
     "KanbanScrollShadow",
     "Kbd",

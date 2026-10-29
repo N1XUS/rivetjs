@@ -21518,6 +21518,17 @@
     box-shadow: var(--overlay-shadow);
   }
 
+  .kanban__card[data-selected="true"] .kanban__card-content {
+    background-color: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent), var(--surface-shadow);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .kanban__card[data-selected="true"] .kanban__card-content {
+      box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent), var(--surface-shadow);
+    }
+  }
+
   .kanban__card.cdk-drag-animating, .kanban__card-list.cdk-drop-list-dragging .kanban__card:not(.cdk-drag-placeholder) {
     transition: transform var(--duration-base) var(--ease-smooth);
   }

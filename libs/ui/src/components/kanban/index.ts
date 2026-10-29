@@ -54,6 +54,7 @@ export type Kanban = {
  * -----------------------------------------------------------------------------------------------*/
 export {
   KanbanContext,
+  KanbanListContext,
   KanbanRoot,
   KanbanColumn,
   KanbanColumnHeader,
@@ -76,6 +77,7 @@ export { KANBAN_MESSAGES } from "./messages.ts";
 export type {
   KanbanCardMove,
   KanbanContextValue,
+  KanbanListContextValue,
   KanbanMessages,
   KanbanRootProps,
   KanbanRootProps as KanbanProps,

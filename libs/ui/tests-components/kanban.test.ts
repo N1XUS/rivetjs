@@ -50,3 +50,69 @@ test("kanban: cold drag across columns and within a column", async () => {
   assert.equal(await page.locator("#kb-doing .kanban__empty").isVisible(), true);
   await page.close();
 });
+
+// KANBAN-SELECT (2026-10-29): `.CardList selectionMode` = cdk GridList semantics over the rendered cards. Server markup
+// carries the grid / row roles, roving tabindex and the default selection; the first (cold) press selects.
+test("kanban selection: server markup, cold click, keyboard selection", async () => {
+  const page = await s.browser.newPage({ viewport: { width: 1100, height: 900 } });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto(s.origin + "/kanban");
+  await page.waitForLoadState("networkidle");
+  const attrs = (sel: string, names: string[]) => page.$eval(sel, (el, names) => names.map((n) => el.getAttribute(n)), names);
+  assert.deepEqual(await attrs("#kbs-todo", ["role", "aria-multiselectable", "tabindex"]), ["grid", "true", "0"]);
+  assert.deepEqual(await attrs("#kbs-doing", ["role", "aria-multiselectable"]), ["grid", null]);
+  assert.deepEqual(await attrs("#kbs-card-s1", ["role", "aria-selected", "tabindex", "data-selected"]), ["row", "false", "-1", null]);
+  assert.deepEqual(await attrs("#kbs-card-s2", ["role", "aria-selected", "data-selected"]), ["row", "true", "true"]);
+  assert.equal(await page.locator("#kbs-card-s1 > [role=gridcell]").count(), 1);
+  // Cold click: toggles s1 into the selection (multiple, toggle behaviour).
+  await page.click("#kbs-card-s1");
+  await page.waitForFunction(() => document.querySelector("#kbs-selected")?.textContent === "s1 s2", undefined, { timeout: 5000 });
+  assert.equal(await page.getAttribute("#kbs-card-s1", "aria-selected"), "true");
+  assert.equal(await page.getAttribute("#kbs-card-s1", "tabindex"), "0");
+  assert.equal(await page.getAttribute("#kbs-todo", "tabindex"), "-1");
+  // Keyboard: ArrowDown moves focus, Space toggles, Escape clears.
+  await page.keyboard.press("ArrowDown");
+  await page.waitForFunction(() => document.activeElement?.id === "kbs-card-s2", undefined, { timeout: 5000 });
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press(" ");
+  await page.waitForFunction(() => document.querySelector("#kbs-selected")?.textContent === "s1 s2 s3", undefined, { timeout: 5000 });
+  await page.keyboard.press(" ");
+  await page.waitForFunction(() => document.querySelector("#kbs-selected")?.textContent === "s1 s2", undefined, { timeout: 5000 });
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => document.querySelector("#kbs-selected")?.textContent === "", undefined, { timeout: 5000 });
+  assert.equal(await page.locator("#kbs [data-selected]").count(), 0);
+  // Single selection in Doing: a click selects, a second card replaces it.
+  await page.click("#kbs-card-s4");
+  await page.waitForFunction(() => document.querySelector("#kbs-card-s4")?.getAttribute("aria-selected") === "true", undefined, { timeout: 5000 });
+  await page.click("#kbs-card-s5");
+  await page.waitForFunction(() => document.querySelector("#kbs-card-s5")?.getAttribute("aria-selected") === "true", undefined, { timeout: 5000 });
+  assert.equal(await page.getAttribute("#kbs-card-s4", "aria-selected"), "false");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("kanban selection: cold Tab focuses the selected card, Enter picks up (board keyboard moves), drag does not select", async () => {
+  const page = await s.browser.newPage({ viewport: { width: 1100, height: 900 } });
+  await page.goto(s.origin + "/kanban");
+  await page.waitForLoadState("networkidle");
+  assert.equal((await page.getAttribute("#kbs-card-s1", "aria-describedby")) !== null, true);
+  await page.focus("#kbs-todo");
+  await page.waitForFunction(() => document.activeElement?.id === "kbs-card-s2", undefined, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForSelector("#kbs-card-s2[data-grabbed]", { timeout: 5000 });
+  await page.keyboard.press("ArrowRight");
+  await page.waitForFunction(() => document.querySelector("#kbs-order")?.textContent?.includes("s2:doing"), undefined, { timeout: 5000 });
+  await page.waitForFunction(() => document.activeElement?.id === "kbs-card-s2", undefined, { timeout: 5000 });
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => !document.querySelector("#kbs [data-grabbed]"), undefined, { timeout: 5000 });
+  // The moved card is not selected in its new (single selection) list; To do keeps a tab stop.
+  assert.equal(await page.getAttribute("#kbs-card-s2", "aria-selected"), "false");
+  assert.equal(await page.getAttribute("#kbs-todo", "tabindex"), "0");
+  // A mouse drag from To do into Doing moves the card without selecting it.
+  await drag(page, "#kbs-card-s3", "#kbs-doing");
+  await page.waitForFunction(() => document.querySelector("#kbs-order")?.textContent?.includes("s3:doing"), undefined, { timeout: 5000 });
+  assert.equal(await page.textContent("#kbs-selected"), "s2");
+  assert.equal(await page.getAttribute("#kbs-card-s3", "aria-selected"), "false");
+  await page.close();
+});

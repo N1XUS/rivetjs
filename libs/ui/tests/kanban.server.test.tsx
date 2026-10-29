@@ -100,3 +100,46 @@ test("createKanban: move within, across, clamped; onDropped", () => {
   );
   assert.deepEqual(moves, ["a>todo@1", "b>done@0", "a>done@2", "c>later@0"]);
 });
+
+// KANBAN-SELECT (2026-10-29): a selectable card list renders GridList markup on the server (grid / row / gridcell,
+// roving tabindex, the default selection, disabled keys); a list without `selectionMode` keeps the group markup.
+test("kanban SSR: card selection markup", async () => {
+  const k = board();
+  const html = await renderToString(() => (
+    <Kanban>
+      <Kanban.Column>
+        <Kanban.CardList data="todo" aria-label="To do" selectionMode="multiple" defaultSelectedKeys={["b"]} disabledKeys={["a"]}>
+          {k.itemsOf("todo").map((t) => (
+            <Kanban.Card data={t.id} textValue={`Task ${t.id}`}>
+              <Kanban.CardContent>{t.id}</Kanban.CardContent>
+            </Kanban.Card>
+          ))}
+        </Kanban.CardList>
+        <Kanban.CardList data="done" selectionMode="single">
+          {k.itemsOf("done").map((t) => (
+            <Kanban.Card data={t.id} textValue={`Task ${t.id}`}>
+              <Kanban.CardContent>{t.id}</Kanban.CardContent>
+            </Kanban.Card>
+          ))}
+        </Kanban.CardList>
+      </Kanban.Column>
+    </Kanban>
+  ));
+  const list = (html.match(/<div[^>]*class="cdk-drop-list kanban__card-list"[^>]*>/g) ?? []) as string[];
+  assert.equal(list.length, 2);
+  assert.match(list[0]!, /role="grid"/);
+  assert.match(list[0]!, /aria-multiselectable="true"/);
+  assert.match(list[0]!, /tabindex="0"/);
+  assert.match(list[0]!, /data-selection-mode="multiple"/);
+  assert.doesNotMatch(list[1]!, /aria-multiselectable/);
+  const card = (key: string) => html.match(new RegExp(`<div[^>]*data-kanban-key="${key}"[^>]*>`))?.[0] ?? "";
+  assert.match(card("a"), /role="row"/);
+  assert.match(card("a"), /aria-disabled="true"/);
+  assert.doesNotMatch(card("a"), /aria-selected/);
+  assert.match(card("b"), /aria-selected="true"/);
+  assert.match(card("b"), /data-selected="true"/);
+  assert.match(card("b"), /tabindex="-1"/);
+  assert.match(card("c"), /aria-selected="false"/);
+  assert.equal((html.match(/role="gridcell"/g) ?? []).length, 3);
+  assert.doesNotMatch(html, /role="group"/);
+});
