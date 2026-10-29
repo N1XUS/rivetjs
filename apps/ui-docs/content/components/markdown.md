@@ -34,6 +34,12 @@ Pass an accessor as `content` and `isStreaming`. The text is split into top-leve
 
 ::example{id=markdown-streaming}
 
+### Custom components
+
+`components` replaces the element rendered for a node type. Keys are HTML tag names: `h1`–`h6`, `p`, `blockquote`, `ul`, `ol`, `li`, `hr`, `a`, `img`, `strong`, `em`, `del`, `code` (inline code), `pre` (a fenced block, replacing the whole [CodeBlock](/components/code-block/)), `table`, `th`, `td`, `br` and `input` (the task-list checkbox). Each override is a function of `{ class, children, …attributes }` that returns the element: `class` is the default Markdown class, `children` is already rendered (and live while streaming: finished blocks keep their nodes, the block being written keeps its words), and nodes carry their own attributes (`href`, `src`, `alt`, `level`, `start`, `code` / `language` / `closed` for `pre`). Elements are still built from the parsed AST, never from HTML, so an override cannot receive unsafe URLs or raw markup. Tight list-item paragraphs have no `<p>`, so `p` is not called for them. The map is read once when the Markdown is created.
+
+::example{id=markdown-custom-components}
+
 ### With Streamdown
 
 There is no Streamdown adapter: the built-in streaming mode above covers mark repair and the caret.
@@ -76,9 +82,10 @@ See the [full module API](/api/rivetjs/ui/markdown/) for every named export and 
 | `children`    | `string`                   | —       |
 | `isStreaming` | `boolean \| () => boolean` | `false` |
 | `showCaret`   | `boolean`                  | `true`  |
+| `components`  | `MarkdownComponents`       | —       |
 | `class`       | `string`                   | —       |
 
-Other `div` attributes pass to the root. Not supported: per-element `components` overrides, reference links, footnotes, raw HTML blocks.
+Other `div` attributes pass to the root. Not supported: reference links, footnotes, raw HTML blocks.
 
 ::api{symbol="@rivetjs/ui/markdown#MarkdownProps"}
 

@@ -17,7 +17,7 @@ export type Markdown = {
  * Named Component
  * -----------------------------------------------------------------------------------------------*/
 export { MarkdownRoot } from "./markdown.tsx";
-export type { MarkdownProps, MarkdownProps as MarkdownRootProps } from "./markdown.tsx";
+export type { MarkdownProps, MarkdownProps as MarkdownRootProps, MarkdownComponents, MarkdownElementProps } from "./markdown.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * Variants

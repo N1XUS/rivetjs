@@ -17,13 +17,18 @@
 //   height with `followHeight` (`@rivetjs/cdk/chat`, a `clientEffect` on a root `ref()`, disposed with the Markdown):
 //   no line / block jumps. Only when `isStreaming` is an accessor; on a resumed page the effect waits for its trigger
 //   (nothing boots at load). A ref callback would not resume (server render error).
-// - the commercial kit's `components` override map is not ported (gap): style the `markdown__*` classes instead.
+// - `components` (scoped from public docs of commercial UI kits): per-node-type override map, keys = HTML tag names
+//   (`h1`-`h6`, `p`, `blockquote`, `ul`, `ol`, `li`, `hr`, `a`, `img`, `strong`, `em`, `del`, `code` (inline), `pre` (fenced
+//   block: `{ code, language, closed }`), `table`, `th`, `td`, `br`, `input` (task checkbox)). A component is called with the
+//   default `class`, the node's attributes and `children` (already rendered, live while streaming) and returns the element
+//   that replaces the default one; elements are still built from the AST (never innerHTML). Tight list-item paragraphs have
+//   no `<p>`, so `p` is not called for them. Style-only overrides: the `markdown__*` classes.
 import { followHeight } from "@rivetjs/cdk/chat";
 import { closeOpenMarks, parseMarkdown, splitBlocks } from "@rivetjs/cdk/markdown";
 import type { MarkdownBlock, MarkdownInline, MarkdownListItem } from "@rivetjs/cdk/markdown";
 import { clientEffect, For, ref as createRef, Show } from "@rivetjs/runtime/dom";
 import { computed, untrack } from "@rivetjs/reactivity";
-import type { JSX } from "@rivetjs/runtime/jsx-runtime";
+import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import { markdownVariants } from "../../../styles/src/components/markdown/index.ts";
 import { composeSlotClassName } from "../../utils/compose.tsx";
@@ -34,9 +39,68 @@ const SLOTS = markdownVariants();
 
 type Node = JSX.Element;
 
+/** Props every element override receives: the default slot `class` and the rendered `children`. */
+interface MarkdownElementProps {
+  /** Default slot class (absent for `br`, `th`, `td`). */
+  class?: string;
+  children?: Content;
+}
+type Override<P = unknown> = (props: MarkdownElementProps & P) => JSX.Element;
+interface MarkdownHeadingProps {
+  readonly level: 1 | 2 | 3 | 4 | 5 | 6;
+}
+/**
+ * Per-node-type element overrides of `Markdown` (`components` prop). Keys are HTML tag names; each component receives the
+ * default `class`, the node's attributes and `children`, and returns the element rendered in place of the default one.
+ */
+interface MarkdownComponents {
+  h1?: Override<MarkdownHeadingProps>;
+  h2?: Override<MarkdownHeadingProps>;
+  h3?: Override<MarkdownHeadingProps>;
+  h4?: Override<MarkdownHeadingProps>;
+  h5?: Override<MarkdownHeadingProps>;
+  h6?: Override<MarkdownHeadingProps>;
+  p?: Override;
+  blockquote?: Override;
+  ul?: Override<{ "data-task"?: "true" }>;
+  ol?: Override<{ start?: number }>;
+  li?: Override<{ "data-task"?: "true" }>;
+  hr?: Override;
+  a?: Override<{ href: string; title?: string; target: string; rel: string }>;
+  img?: Override<{ src: string; alt: string; title?: string; loading: "lazy"; decoding: "async" }>;
+  strong?: Override;
+  em?: Override;
+  del?: Override;
+  /** Inline code (`children` = the code text). */
+  code?: Override;
+  /** Fenced code block (replaces the whole `CodeBlock`). */
+  pre?: Override<{ code: string; language: string; closed: boolean }>;
+  table?: Override;
+  th?: Override<{ scope: "col"; style?: { "text-align": string } }>;
+  td?: Override<{ style?: { "text-align": string } }>;
+  br?: Override;
+  /** Task list checkbox (`children` unused). */
+  input?: Override<{ type: "checkbox"; checked: boolean; disabled: true; "aria-label": string }>;
+}
+
+/** The override for `key` called with `props()`, else `fallback()` (props are only built for an override). */
+function custom<K extends keyof MarkdownComponents>(
+  cx: MarkdownComponents | undefined,
+  key: K,
+  props: () => Parameters<NonNullable<MarkdownComponents[K]>>[0],
+  fallback: () => Node,
+): Node {
+  const C = cx?.[key] as ((props: unknown) => Node) | undefined;
+  return C ? C(props()) : fallback();
+}
+
+// Literal class strings (BEM, no utilities: the class-override scan of `libs/compiler/class-merge.ts` reads them as safe; two resolver
+// results joined in a template would count as an override source and pull tailwind-merge into every page with a Markdown).
+const ORDERED_LIST = "markdown__list markdown__list--ordered";
+
 const caret = (): Node => <span class={SLOTS.caret()} aria-hidden="true" data-slot="markdown-caret" />;
 
-function renderInline(nodes: readonly MarkdownInline[]): Node[] {
+function renderInline(nodes: readonly MarkdownInline[], cx?: MarkdownComponents): Node[] {
   const out: Node[] = [];
   for (const node of nodes) {
     switch (node.type) {
@@ -44,29 +108,85 @@ function renderInline(nodes: readonly MarkdownInline[]): Node[] {
         out.push(node.value as unknown as Node);
         break;
       case "strong":
-        out.push(<strong class={SLOTS.strong()}>{renderInline(node.children)}</strong>);
+        out.push(
+          custom(
+            cx,
+            "strong",
+            () => ({ class: SLOTS.strong(), children: renderInline(node.children, cx) }),
+            () => <strong class={SLOTS.strong()}>{renderInline(node.children, cx)}</strong>,
+          ),
+        );
         break;
       case "em":
-        out.push(<em class={SLOTS.em()}>{renderInline(node.children)}</em>);
+        out.push(
+          custom(
+            cx,
+            "em",
+            () => ({ class: SLOTS.em(), children: renderInline(node.children, cx) }),
+            () => <em class={SLOTS.em()}>{renderInline(node.children, cx)}</em>,
+          ),
+        );
         break;
       case "del":
-        out.push(<del class={SLOTS.del()}>{renderInline(node.children)}</del>);
+        out.push(
+          custom(
+            cx,
+            "del",
+            () => ({ class: SLOTS.del(), children: renderInline(node.children, cx) }),
+            () => <del class={SLOTS.del()}>{renderInline(node.children, cx)}</del>,
+          ),
+        );
         break;
       case "code":
-        out.push(<code class={SLOTS.inlineCode()}>{node.value}</code>);
+        out.push(
+          custom(
+            cx,
+            "code",
+            () => ({ class: SLOTS.inlineCode(), children: node.value }),
+            () => <code class={SLOTS.inlineCode()}>{node.value}</code>,
+          ),
+        );
         break;
       case "br":
-        out.push(<br />);
+        out.push(
+          custom(
+            cx,
+            "br",
+            () => ({}),
+            () => <br />,
+          ),
+        );
         break;
       case "link":
         out.push(
-          <a class={SLOTS.link()} href={node.href} title={node.title} target="_blank" rel="noopener noreferrer">
-            {renderInline(node.children)}
-          </a>,
+          custom(
+            cx,
+            "a",
+            () => ({
+              class: SLOTS.link(),
+              href: node.href,
+              title: node.title,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              children: renderInline(node.children, cx),
+            }),
+            () => (
+              <a class={SLOTS.link()} href={node.href} title={node.title} target="_blank" rel="noopener noreferrer">
+                {renderInline(node.children, cx)}
+              </a>
+            ),
+          ),
         );
         break;
       case "image":
-        out.push(<img class={SLOTS.image()} src={node.src} alt={node.alt} title={node.title} loading="lazy" decoding="async" />);
+        out.push(
+          custom(
+            cx,
+            "img",
+            () => ({ class: SLOTS.image(), src: node.src, alt: node.alt, title: node.title, loading: "lazy", decoding: "async" }),
+            () => <img class={SLOTS.image()} src={node.src} alt={node.alt} title={node.title} loading="lazy" decoding="async" />,
+          ),
+        );
         break;
     }
   }
@@ -75,8 +195,32 @@ function renderInline(nodes: readonly MarkdownInline[]): Node[] {
 
 const withCaret = (children: Node[], tail: boolean): Node[] => (tail ? [...children, caret()] : children);
 
-function heading(level: number, children: Node[], extra?: string): Node {
-  const cls = `${SLOTS.heading()} ${SLOTS.heading()}--${level}${extra ? ` ${extra}` : ""}`;
+function heading(level: number, children: Node[], live?: boolean, cx?: MarkdownComponents): Node {
+  const cls = live
+    ? level === 1
+      ? "markdown__heading markdown__heading--1 markdown__live"
+      : level === 2
+        ? "markdown__heading markdown__heading--2 markdown__live"
+        : level === 3
+          ? "markdown__heading markdown__heading--3 markdown__live"
+          : level === 4
+            ? "markdown__heading markdown__heading--4 markdown__live"
+            : level === 5
+              ? "markdown__heading markdown__heading--5 markdown__live"
+              : "markdown__heading markdown__heading--6 markdown__live"
+    : level === 1
+      ? "markdown__heading markdown__heading--1"
+      : level === 2
+        ? "markdown__heading markdown__heading--2"
+        : level === 3
+          ? "markdown__heading markdown__heading--3"
+          : level === 4
+            ? "markdown__heading markdown__heading--4"
+            : level === 5
+              ? "markdown__heading markdown__heading--5"
+              : "markdown__heading markdown__heading--6";
+  const C = cx?.[`h${level}` as "h1"] as Override<MarkdownHeadingProps> | undefined;
+  if (C) return C({ class: cls, level: level as 1, children });
   switch (level) {
     case 1:
       return <h1 class={cls}>{children}</h1>;
@@ -94,36 +238,65 @@ function heading(level: number, children: Node[], extra?: string): Node {
 }
 
 /** Elements of `blocks`; `tail` puts the streaming caret at the end of the last one. `tight` = list item paragraphs inline. */
-function renderBlocks(blocks: readonly MarkdownBlock[], tail: boolean, tight = false): Node[] {
+function renderBlocks(blocks: readonly MarkdownBlock[], tail: boolean, tight = false, cx?: MarkdownComponents): Node[] {
   const out: Node[] = [];
   blocks.forEach((block, index) => {
     const last = tail && index === blocks.length - 1;
     switch (block.type) {
       case "heading":
-        out.push(heading(block.level, withCaret(renderInline(block.children), last)));
+        out.push(heading(block.level, withCaret(renderInline(block.children, cx), last), undefined, cx));
         break;
       case "paragraph":
-        if (tight) out.push(...withCaret(renderInline(block.children), last));
-        else out.push(<p class={SLOTS.paragraph()}>{withCaret(renderInline(block.children), last)}</p>);
+        if (tight) out.push(...withCaret(renderInline(block.children, cx), last));
+        else
+          out.push(
+            custom(
+              cx,
+              "p",
+              () => ({ class: SLOTS.paragraph(), children: withCaret(renderInline(block.children, cx), last) }),
+              () => <p class={SLOTS.paragraph()}>{withCaret(renderInline(block.children, cx), last)}</p>,
+            ),
+          );
         break;
       case "blockquote":
-        out.push(<blockquote class={SLOTS.blockquote()}>{renderBlocks(block.children, last)}</blockquote>);
+        out.push(
+          custom(
+            cx,
+            "blockquote",
+            () => ({ class: SLOTS.blockquote(), children: renderBlocks(block.children, last, false, cx) }),
+            () => <blockquote class={SLOTS.blockquote()}>{renderBlocks(block.children, last, false, cx)}</blockquote>,
+          ),
+        );
         break;
       case "hr":
-        out.push(<hr class={SLOTS.hr()} />);
+        out.push(
+          custom(
+            cx,
+            "hr",
+            () => ({ class: SLOTS.hr() }),
+            () => <hr class={SLOTS.hr()} />,
+          ),
+        );
         if (last) out.push(caret());
         break;
       case "code": {
         const code = block.value;
         const lang = block.lang || "plaintext";
         out.push(
-          <CodeBlockRoot class={SLOTS.codeBlock()} data-streaming={block.closed ? undefined : "true"}>
-            <CodeBlockHeader>
-              <CodeBlockLanguage language={lang} />
-              <CodeBlockCopyButton code={code} />
-            </CodeBlockHeader>
-            <CodeBlockCode code={code} language={lang} />
-          </CodeBlockRoot>,
+          custom(
+            cx,
+            "pre",
+            () => ({ class: SLOTS.codeBlock(), code, language: lang, closed: block.closed }),
+            () => (
+              <CodeBlockRoot class={SLOTS.codeBlock()} data-streaming={block.closed ? undefined : "true"}>
+                <CodeBlockHeader>
+                  <CodeBlockLanguage language={lang} />
+                  <CodeBlockCopyButton code={code} />
+                </CodeBlockHeader>
+                <CodeBlockCode code={code} language={lang} />
+              </CodeBlockRoot>
+            ),
+          ),
         );
         break;
       }
@@ -131,53 +304,102 @@ function renderBlocks(blocks: readonly MarkdownBlock[], tail: boolean, tight = f
         const items = block.items.map((item, i) => {
           const lastItem = last && i === block.items.length - 1;
           const task = item.checked !== undefined;
-          return (
-            <li class={SLOTS.listItem()} data-task={task ? "true" : undefined}>
-              {task ? (
-                <input class={SLOTS.taskCheckbox()} type="checkbox" checked={item.checked} disabled aria-label={item.checked ? "Done" : "To do"} />
-              ) : null}
-              {renderBlocks(item.children, lastItem, block.tight)}
-            </li>
+          const box = task
+            ? custom(
+                cx,
+                "input",
+                () => ({
+                  class: SLOTS.taskCheckbox(),
+                  type: "checkbox",
+                  checked: item.checked === true,
+                  disabled: true,
+                  "aria-label": item.checked ? "Done" : "To do",
+                }),
+                () => <input class={SLOTS.taskCheckbox()} type="checkbox" checked={item.checked} disabled aria-label={item.checked ? "Done" : "To do"} />,
+              )
+            : null;
+          const taskAttr = task ? ("true" as const) : undefined;
+          return custom(
+            cx,
+            "li",
+            () => ({ class: SLOTS.listItem(), "data-task": taskAttr, children: [box, renderBlocks(item.children, lastItem, block.tight, cx)] }),
+            () => (
+              <li class={SLOTS.listItem()} data-task={taskAttr}>
+                {box}
+                {renderBlocks(item.children, lastItem, block.tight, cx)}
+              </li>
+            ),
           );
         });
+        const listTask = block.items.some((item) => item.checked !== undefined) ? ("true" as const) : undefined;
         out.push(
-          block.ordered ? (
-            <ol class={`${SLOTS.list()} ${SLOTS.list()}--ordered`} start={block.start === 1 ? undefined : block.start}>
-              {items}
-            </ol>
-          ) : (
-            <ul class={SLOTS.list()} data-task={block.items.some((item) => item.checked !== undefined) ? "true" : undefined}>
-              {items}
-            </ul>
-          ),
+          block.ordered
+            ? custom(
+                cx,
+                "ol",
+                () => ({ class: ORDERED_LIST, start: block.start === 1 ? undefined : block.start, children: items }),
+                () => (
+                  <ol class={ORDERED_LIST} start={block.start === 1 ? undefined : block.start}>
+                    {items}
+                  </ol>
+                ),
+              )
+            : custom(
+                cx,
+                "ul",
+                () => ({ class: SLOTS.list(), "data-task": listTask, children: items }),
+                () => (
+                  <ul class={SLOTS.list()} data-task={listTask}>
+                    {items}
+                  </ul>
+                ),
+              ),
         );
         break;
       }
       case "table": {
         const align = block.align;
         const cellStyle = (i: number): { "text-align": string } | undefined => (align[i] ? { "text-align": align[i]! } : undefined);
+        const head = block.head.map((cell, i) =>
+          custom(
+            cx,
+            "th",
+            () => ({ scope: "col", style: cellStyle(i), children: renderInline(cell, cx) }),
+            () => (
+              <th scope="col" style={cellStyle(i)}>
+                {renderInline(cell, cx)}
+              </th>
+            ),
+          ),
+        );
+        const body = block.rows.map((row) => (
+          <tr>
+            {row.map((cell, i) =>
+              custom(
+                cx,
+                "td",
+                () => ({ style: cellStyle(i), children: renderInline(cell, cx) }),
+                () => <td style={cellStyle(i)}>{renderInline(cell, cx)}</td>,
+              ),
+            )}
+          </tr>
+        ));
+        const tableRows = [
+          <thead>
+            <tr>{head}</tr>
+          </thead>,
+          <tbody>{body}</tbody>,
+        ];
         out.push(
           <div class={SLOTS.tableWrapper()} role="region" tabIndex={0} aria-label="Table">
-            <table class={SLOTS.table()}>
-              <thead>
-                <tr>
-                  {block.head.map((cell, i) => (
-                    <th scope="col" style={cellStyle(i)}>
-                      {renderInline(cell)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {block.rows.map((row) => (
-                  <tr>
-                    {row.map((cell, i) => (
-                      <td style={cellStyle(i)}>{renderInline(cell)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {custom(
+              cx,
+              "table",
+              () => ({ class: SLOTS.table(), children: tableRows }),
+              () => (
+                <table class={SLOTS.table()}>{tableRows}</table>
+              ),
+            )}
           </div>,
         );
         if (last) out.push(caret());
@@ -209,15 +431,15 @@ const liveText = (text: () => string): Node => (
 
 const inlineKey = (node: MarkdownInline, index: number): string => `${index}:${node.type}`;
 
-function liveInline(nodes: () => readonly MarkdownInline[]): Node {
+function liveInline(nodes: () => readonly MarkdownInline[], cx?: MarkdownComponents): Node {
   return (
     <For each={nodes} by={inlineKey}>
-      {(node: () => MarkdownInline) => liveInlineNode(node)}
+      {(node: () => MarkdownInline) => liveInlineNode(node, cx)}
     </For>
   );
 }
 
-function liveInlineNode(node: () => MarkdownInline): Node {
+function liveInlineNode(node: () => MarkdownInline, cx?: MarkdownComponents): Node {
   const first = node();
   const children = (): readonly MarkdownInline[] => {
     const n = node();
@@ -227,24 +449,62 @@ function liveInlineNode(node: () => MarkdownInline): Node {
     case "text":
       return liveText(() => (node() as { value: string }).value);
     case "strong":
-      return <strong class={SLOTS.strong()}>{liveInline(children)}</strong>;
+      return custom(
+        cx,
+        "strong",
+        () => ({ class: SLOTS.strong(), children: liveInline(children, cx) }),
+        () => <strong class={SLOTS.strong()}>{liveInline(children, cx)}</strong>,
+      );
     case "em":
-      return <em class={SLOTS.em()}>{liveInline(children)}</em>;
+      return custom(
+        cx,
+        "em",
+        () => ({ class: SLOTS.em(), children: liveInline(children, cx) }),
+        () => <em class={SLOTS.em()}>{liveInline(children, cx)}</em>,
+      );
     case "del":
-      return <del class={SLOTS.del()}>{liveInline(children)}</del>;
+      return custom(
+        cx,
+        "del",
+        () => ({ class: SLOTS.del(), children: liveInline(children, cx) }),
+        () => <del class={SLOTS.del()}>{liveInline(children, cx)}</del>,
+      );
     case "code":
-      return <code class={`${SLOTS.inlineCode()} ${SLOTS.word()}`}>{(node() as { value: string }).value}</code>;
+      return custom(
+        cx,
+        "code",
+        () => ({ class: `${SLOTS.inlineCode()} ${SLOTS.word()}`, children: (node() as { value: string }).value }),
+        () => <code class={`${SLOTS.inlineCode()} ${SLOTS.word()}`}>{(node() as { value: string }).value}</code>,
+      );
     case "br":
-      return <br />;
+      return custom(
+        cx,
+        "br",
+        () => ({}),
+        () => <br />,
+      );
     case "link":
-      return (
-        <a class={SLOTS.link()} href={(node() as { href: string }).href} target="_blank" rel="noopener noreferrer">
-          {liveInline(children)}
-        </a>
+      return custom(
+        cx,
+        "a",
+        () => ({
+          class: SLOTS.link(),
+          get href() {
+            return (node() as { href: string }).href;
+          },
+          target: "_blank",
+          rel: "noopener noreferrer",
+          children: liveInline(children, cx),
+        }),
+        () => (
+          <a class={SLOTS.link()} href={(node() as { href: string }).href} target="_blank" rel="noopener noreferrer">
+            {liveInline(children, cx)}
+          </a>
+        ),
       );
     case "image":
       // One element (not the array): a single-element row is the cheaper list row (no anchors).
-      return renderInline([first])[0]!;
+      return renderInline([first], cx)[0]!;
   }
 }
 
@@ -263,15 +523,15 @@ const blockKind = (block: MarkdownBlock): string =>
 
 const liveCaret = (on: () => boolean): Node => <Show when={on}>{caret()}</Show>;
 
-function liveBlocks(blocks: () => readonly MarkdownBlock[], caretOn: () => boolean, tight = false): Node {
+function liveBlocks(blocks: () => readonly MarkdownBlock[], caretOn: () => boolean, tight = false, cx?: MarkdownComponents): Node {
   return (
     <For each={blocks} by={(block: MarkdownBlock, index: number) => `${index}:${blockKind(block)}`}>
-      {(block: () => MarkdownBlock, index: () => number) => liveBlock(block, () => caretOn() && index() === blocks().length - 1, tight)}
+      {(block: () => MarkdownBlock, index: () => number) => liveBlock(block, () => caretOn() && index() === blocks().length - 1, tight, cx)}
     </For>
   );
 }
 
-function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: boolean): Node {
+function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: boolean, cx?: MarkdownComponents): Node {
   const first = block();
   const inline = (): readonly MarkdownInline[] => {
     const b = block();
@@ -284,27 +544,41 @@ function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: bo
       if (tight)
         return (
           <span>
-            {liveInline(inline)}
+            {liveInline(inline, cx)}
             {liveCaret(caretOn)}
           </span>
         );
-      return (
-        <p class={`${SLOTS.paragraph()} ${live}`}>
-          {liveInline(inline)}
-          {liveCaret(caretOn)}
-        </p>
+      return custom(
+        cx,
+        "p",
+        () => ({ class: `${SLOTS.paragraph()} ${live}`, children: [liveInline(inline, cx), liveCaret(caretOn)] }),
+        () => (
+          <p class={`${SLOTS.paragraph()} ${live}`}>
+            {liveInline(inline, cx)}
+            {liveCaret(caretOn)}
+          </p>
+        ),
       );
     case "heading":
-      return heading(first.level, [liveInline(inline), liveCaret(caretOn)], live);
-    case "blockquote":
-      return (
-        <blockquote class={`${SLOTS.blockquote()} ${live}`}>
-          {liveBlocks(() => {
+      return heading(first.level, [liveInline(inline, cx), liveCaret(caretOn)], true, cx);
+    case "blockquote": {
+      const quoted = (): Node =>
+        liveBlocks(
+          () => {
             const b = block();
             return b.type === "blockquote" ? b.children : [];
-          }, caretOn)}
-        </blockquote>
+          },
+          caretOn,
+          false,
+          cx,
+        );
+      return custom(
+        cx,
+        "blockquote",
+        () => ({ class: `${SLOTS.blockquote()} ${live}`, children: quoted() }),
+        () => <blockquote class={`${SLOTS.blockquote()} ${live}`}>{quoted()}</blockquote>,
       );
+    }
     case "list": {
       const items = (): readonly MarkdownListItem[] => {
         const b = block();
@@ -313,24 +587,40 @@ function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: bo
       const tightList = first.tight;
       const rows = (
         <For each={items} by={(_item: MarkdownListItem, index: number) => index}>
-          {(item: () => MarkdownListItem, index: () => number) => (
-            <li class={`${SLOTS.listItem()} ${live}`}>
-              {liveBlocks(
+          {(item: () => MarkdownListItem, index: () => number) => {
+            const content = (): Node =>
+              liveBlocks(
                 () => item().children,
                 () => caretOn() && index() === items().length - 1,
                 tightList,
-              )}
-            </li>
-          )}
+                cx,
+              );
+            return custom(
+              cx,
+              "li",
+              () => ({ class: `${SLOTS.listItem()} ${live}`, children: content() }),
+              () => <li class={`${SLOTS.listItem()} ${live}`}>{content()}</li>,
+            );
+          }}
         </For>
       );
-      return first.ordered ? (
-        <ol class={`${SLOTS.list()} ${SLOTS.list()}--ordered`} start={first.start === 1 ? undefined : first.start}>
-          {rows}
-        </ol>
-      ) : (
-        <ul class={SLOTS.list()}>{rows}</ul>
-      );
+      return first.ordered
+        ? custom(
+            cx,
+            "ol",
+            () => ({ class: ORDERED_LIST, start: first.start === 1 ? undefined : first.start, children: rows }),
+            () => (
+              <ol class={ORDERED_LIST} start={first.start === 1 ? undefined : first.start}>
+                {rows}
+              </ol>
+            ),
+          )
+        : custom(
+            cx,
+            "ul",
+            () => ({ class: SLOTS.list(), children: rows }),
+            () => <ul class={SLOTS.list()}>{rows}</ul>,
+          );
     }
     case "code":
       if (!first.closed) {
@@ -339,23 +629,35 @@ function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: bo
           const b = block();
           return b.type === "code" ? b.value : "";
         };
-        return (
-          <CodeBlockRoot class={`${SLOTS.codeBlock()} ${live}`} data-streaming="true">
-            <CodeBlockHeader>
-              <CodeBlockLanguage language={lang} />
-            </CodeBlockHeader>
-            <div class="code-block__code" data-slot="code-block-code">
-              <pre class="code-block__pre">
-                <code>{liveText(code)}</code>
-              </pre>
-            </div>
-          </CodeBlockRoot>
+        return custom(
+          cx,
+          "pre",
+          () => ({
+            class: `${SLOTS.codeBlock()} ${live}`,
+            get code() {
+              return code();
+            },
+            language: lang,
+            closed: false,
+          }),
+          () => (
+            <CodeBlockRoot class={`${SLOTS.codeBlock()} ${live}`} data-streaming="true">
+              <CodeBlockHeader>
+                <CodeBlockLanguage language={lang} />
+              </CodeBlockHeader>
+              <div class="code-block__code" data-slot="code-block-code">
+                <pre class="code-block__pre">
+                  <code>{liveText(code)}</code>
+                </pre>
+              </div>
+            </CodeBlockRoot>
+          ),
         );
       }
-      return renderBlocks([first], false)[0]!;
+      return renderBlocks([first], false, false, cx)[0]!;
     default:
       // hr / table / closed code: small or atomic, rendered whole (re-rendered when the block's text changes).
-      return renderBlocks([first], false)[0]!;
+      return renderBlocks([first], false, false, cx)[0]!;
   }
 }
 
@@ -374,11 +676,13 @@ interface MarkdownProps extends Omit<JSX.IntrinsicElements["div"], "class" | "ch
   isStreaming?: boolean | (() => boolean);
   /** Caret after the streamed text while `isStreaming`. @default true */
   showCaret?: boolean;
+  /** Per-node-type element overrides (`h1`, `p`, `a`, `code`, `pre`, …): see `MarkdownComponents`. Read once at creation. */
+  components?: MarkdownComponents;
   class?: string;
 }
 
 const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class", "children", "content", "isStreaming", "showCaret"]);
+  const [local, rest] = splitLive(props, ["class", "children", "content", "isStreaming", "showCaret", "components"]);
   const source = (): string => {
     const value = local.content ?? local.children;
     const text = typeof value === "function" ? (value as () => unknown)() : value;
@@ -397,6 +701,7 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
     });
   };
   const caretOn = local.showCaret !== false;
+  const cx = local.components;
   const isStreaming = local.isStreaming;
   // Streaming accessor only: the root follows its content height while streaming (disposed with the Markdown).
   const follow = typeof isStreaming === "function" ? createRef<HTMLDivElement>() : undefined;
@@ -423,12 +728,12 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
           // Every row is one element: cheaper to reconcile than a row of several nodes between anchors (a perf choice;
           // since 2026-10-09 the runtime also keeps a ranged row's later nodes in place when rows are added / removed).
           if (!tail) {
-            const nodes = renderBlocks(parseMarkdown(raw), false);
+            const nodes = renderBlocks(parseMarkdown(raw), false, false, cx);
             return nodes.length === 1 ? nodes[0]! : <div class={SLOTS.tail()}>{nodes}</div>;
           }
           // The tail row persists while it grows: its blocks are reactive (keyed) over the repaired text.
           const blocks = computed(() => parseMarkdown(closeOpenMarks(row().raw)));
-          return <div class={SLOTS.tail()}>{liveBlocks(blocks, () => caretOn)}</div>;
+          return <div class={SLOTS.tail()}>{liveBlocks(blocks, () => caretOn, false, cx)}</div>;
         }}
       </For>
     </div>
@@ -436,4 +741,4 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
 };
 
 export { MarkdownRoot };
-export type { MarkdownProps };
+export type { MarkdownProps, MarkdownComponents, MarkdownElementProps };

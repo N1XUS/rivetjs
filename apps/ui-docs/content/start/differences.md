@@ -41,7 +41,7 @@ export default function Switcher() {
 
 ## Rendering
 
-- **No hydration.** The server HTML stays in place. Hydration-only hooks (`useIsHydrated`, `useMounted`, `useIsSSR`) do not exist.
+- **No hydration.** The server HTML stays in place. `useIsHydrated` and `useMounted` exist for API parity but return an accessor that is `false` on the server and `true` once the browser ran the client effects (see [Hooks](/start/hooks/)); `useIsSSR` is not ported (check `typeof document` or use `useMounted`). Hooks are plain functions that return accessors, not React hooks.
 - **Avatar images load on the client.** The server renders the fallback; the image replaces it once loaded.
 - **Icons are lucide.** Built-in icons (alert indicators, spinner, close and external-link icons) render through `@rivetjs/kit/icon` with lucide glyphs and keep their `data-slot` attributes. They are stroked, not filled.
 - **Close buttons align with the header.** `CloseTrigger` in a Drawer, Modal, AlertDialog or Sheet is vertically centred on the header's first row (the heading, or a leading icon or back button) instead of sitting at a fixed corner offset. Browsers without CSS anchor positioning fall back to the corner position.

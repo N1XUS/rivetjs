@@ -15,6 +15,7 @@ export const groups: NavGroup[] = [
       "start/animation",
       "start/composition",
       "start/forms",
+      "start/hooks",
       "start/differences",
     ],
   },
