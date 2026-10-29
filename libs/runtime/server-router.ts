@@ -9,7 +9,7 @@ export interface ServerRouter {
   location(): URL;
 }
 
-import { compileRoutes as compileLinear, routeMatcher, renderRoute } from "./router.ts";
+import { compileRoutes as compileLinear, compilePattern, routeMatcher, renderRoute, type _PathMatch } from "./router.ts";
 import { _bucketPaths } from "./router-buckets.ts";
 
 /**
@@ -18,6 +18,15 @@ import { _bucketPaths } from "./router-buckets.ts";
  */
 export function compileRoutes<T, V>(routes: readonly RouteDefinition<T, V>[]): (url: URL) => RouteMatch<T, V> | null {
   return compileLinear(routes, _bucketPaths);
+}
+
+/**
+ * @internal The request handler's matcher (`@rivetjs/router`): the same bucketed first match as `compileRoutes`, answering
+ * the declaration index and decoded params only — no `RouteMatch`, so no URL copy per hit (~0.4 KB and a parse a request,
+ * which the handler, holding the URL already, never read).
+ */
+export function _routeIndexes(paths: readonly string[]): (url: URL) => _PathMatch | null {
+  return _bucketPaths(paths.map((path) => compilePattern(path)));
 }
 
 /** Snapshot an absolute HTTP(S) request URL; no browser state is accessed. */

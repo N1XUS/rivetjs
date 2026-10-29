@@ -56,3 +56,31 @@ test("a page renders inside the shell with its body attributes and end-of-body s
   assert.match(html, /<body data-page="feed">/);
   assert.match(html, /page body.*<script nonce="N2">wire\(\)<\/script><\/body><\/html>$/s);
 });
+
+test("rankMerge gives the same result for rank-ordered and shuffled entries (sorted fast path)", () => {
+  const entries = [
+    { level: 0, phase: 0 as const, seq: 0, head: { title: "outer", meta: [{ name: "description", content: "a" }] } },
+    {
+      level: 1,
+      phase: 0 as const,
+      seq: 1,
+      head: {
+        meta: [
+          { name: "description", content: "b" },
+          { name: "robots", content: "x" },
+        ],
+      },
+    },
+    { level: 2, phase: 1 as const, seq: 2, head: { title: "inner" } },
+  ];
+  const ordered = rankMerge(entries);
+  const shuffled = rankMerge([entries[2]!, entries[0]!, entries[1]!]);
+  assert.deepEqual(shuffled, ordered);
+  assert.equal(ordered?.title, "inner");
+  assert.deepEqual(
+    ordered?.meta?.find((m) => m.name === "description"),
+    { name: "description", content: "b" },
+  );
+  assert.equal(rankMerge([]), undefined);
+  assert.equal(entries[0]!.level, 0);
+});

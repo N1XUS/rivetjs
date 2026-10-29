@@ -1,6 +1,6 @@
 // Web-standard request handler: route match → guards → parallel loaders → render, plus the data
 // endpoint client navigation uses (so guards always run on the server) and form actions.
-import { compileRoutes } from "@rivetjs/runtime/router/server";
+import { _routeIndexes } from "@rivetjs/runtime/router/server";
 import { createEncoder, _builtinKinds } from "@rivetjs/runtime/resume-format";
 import { HttpError, isHttpError } from "../shared/errors.ts";
 import { isActionFailure } from "../shared/actions.ts";
@@ -387,21 +387,26 @@ function accessHint(route: AppRoute, index: number, failure: unknown): never {
 class LoaderEvent {
   readonly #event: RequestEvent;
   readonly #index: number;
-  readonly #byURL: Set<number> | null;
+  readonly #byURL: number[] | null;
   readonly #deps: Set<string>[];
-  constructor(event: RequestEvent, index: number, byURL: Set<number> | null, deps: Set<string>[]) {
+  constructor(event: RequestEvent, index: number, byURL: number[] | null, deps: Set<string>[]) {
     this.#event = event;
     this.#index = index;
     this.#byURL = byURL;
     this.#deps = deps;
   }
   get request(): Request {
-    this.#byURL?.add(this.#index);
+    this.#read();
     return this.#event.request;
   }
   get url(): URL {
-    this.#byURL?.add(this.#index);
+    this.#read();
     return this.#event.url;
+  }
+  // Layouts (few): an array with a membership check, not a Set per request.
+  #read(): void {
+    const byURL = this.#byURL;
+    if (byURL !== null && !byURL.includes(this.#index)) byURL.push(this.#index);
   }
   // A getter (closure made when read): loaders destructure it (`({ depends }) => …`).
   get depends(): RequestEvent["depends"] {
@@ -454,9 +459,13 @@ export function createHandler(options: AppOptions): AppHandler {
   const reply = (value: ActionAnswer | DataAnswer, status: number, headers: Headers, origin: string): Response =>
     json(value, status, headers, options.builtins?.(), origin);
   const report = options.onError ?? ((error: unknown, _request: Request, info?: ErrorInfo) => console.error("[rivet] digest " + info?.digest + ":", error));
-  const match = compileRoutes(routes.map((route) => ({ path: route.pattern, render: () => route })));
+  const match = _routeIndexes(routes.map((route) => route.pattern));
   // The root layout's server module (layout id `/`): unmatched URLs' error pages render inside it.
   const rootLayout = routes.find((route) => route.keys?.[0] === "/");
+  // Dev: hot edits bring new module objects, so nothing is kept.
+  const moduleCache = dev
+    ? undefined
+    : new WeakMap<AppRoute, { layouts: AppRoute["layouts"]; server: AppRoute["server"]; list: readonly (ServerModule | undefined)[] }>();
 
   return async (request, context = {}) => {
     const url = new URL(request.url);
@@ -471,7 +480,7 @@ export function createHandler(options: AppOptions): AppHandler {
     // Seeded by the caller (`context.locals`): the same object, so what guards / loaders write comes back to the caller.
     const locals: Record<string, unknown> = context.locals ?? {};
     const found = match(url);
-    const route = found ? (found.route.render(undefined, found) as AppRoute) : undefined;
+    const route = found ? routes[found.index] : undefined;
     const method = request.method === "HEAD" ? "GET" : request.method;
     // `?/save&next=/b`: the action name ends at the first `&`. Bad percent-encoding → 400 (after CSRF).
     let action: string | undefined;
@@ -599,7 +608,7 @@ export function createHandler(options: AppOptions): AppHandler {
     // Each loader gets its own view of the event: `depends()` records its keys (route data index);
     // `track` (layouts) also notes reads of the URL or request (such data is not kept across URL changes).
     const deps: Set<string>[] = [];
-    const byURL = new Set<number>();
+    const byURL: number[] = [];
     const loaderEvent = (i: number, track: boolean): RequestEvent => new LoaderEvent(event, i, track ? byURL : null, deps) as unknown as RequestEvent;
     // Only when a loader called `depends()`: one entry per loader, undefined for the others.
     const depsOf = (): { deps?: LoaderDeps } => (deps.length ? { deps: Array.from(modules, (_, i) => (deps[i] ? [...deps[i]!] : undefined)) } : {});
@@ -664,7 +673,16 @@ export function createHandler(options: AppOptions): AppHandler {
       }
     }
     try {
-      modules = await Promise.all([...route.layouts.map(loadServer), loadServer(route.server)]);
+      // Production: a route's modules are loaded once (the loaders return the same normalized modules every time); the next
+      // requests skip the import promises and `Promise.all` (~1.5 KB and three microtask hops a request). A failed load is
+      // not kept; a route whose loaders were replaced (`layouts` / `server`) loads again.
+      let cached = moduleCache?.get(route);
+      if (cached === undefined || cached.layouts !== route.layouts || cached.server !== route.server) {
+        const list = await Promise.all([...route.layouts.map(loadServer), loadServer(route.server)]);
+        cached = { layouts: route.layouts, server: route.server, list };
+        moduleCache?.set(route, cached);
+      }
+      modules = cached.list;
       const own = modules[modules.length - 1];
       const known = METHODS.has(method);
       const on = method === "OPTIONS" ? "onOptions" : known ? ON[method as Method] : undefined;
@@ -804,11 +822,13 @@ export function createHandler(options: AppOptions): AppHandler {
           return reply({ action: performed }, status, headers, url.origin);
         }
       }
-      const skip = new Set<number>();
+      // Data requests with kept layouts only.
+      let skip: Set<number> | undefined;
       if (kept) {
+        skip = new Set<number>();
         const ids = new Set(kept.split(","));
         const allowed = await options.keepable?.(route);
-        route.keys?.forEach((id, i) => ids.has(id) && allowed?.[i] !== false && skip.add(i));
+        route.keys?.forEach((id, i) => ids.has(id) && allowed?.[i] !== false && skip!.add(i));
         // `.`: the page's own loader (same-URL `invalidate(key)` of layout keys only).
         if (ids.has(KEEP_PAGE) && allowed?.[route.layouts.length] !== false) skip.add(route.layouts.length);
       }
@@ -821,7 +841,7 @@ export function createHandler(options: AppOptions): AppHandler {
         lazy = await (deferredModule ??= import("./deferred.ts"));
       const loaded = await Promise.all(
         modules.map((module, i) => {
-          if (skip.has(i) || !module?.load) return (loads[i] = undefined);
+          if (skip?.has(i) || !module?.load) return (loads[i] = undefined);
           if (lazy && (module.load as { [DEFER]?: true })[DEFER]) {
             // Deferred loaders are the shell's holes: live on every request, never tracked.
             const view = lazy.lateEvent(loaderEvent(i, i < route.layouts.length));
@@ -847,7 +867,7 @@ export function createHandler(options: AppOptions): AppHandler {
           return (loads[i] = dev && i < route.layouts.length ? load.catch((failure) => accessHint(route, i, failure)) : load);
         }),
       );
-      shell?.loaded?.(loaded.slice(), [...byURL], depsOf().deps);
+      shell?.loaded?.(loaded.slice(), byURL.slice(), depsOf().deps);
       if (promises) promises.forEach((promise, i) => (loaded[i] = shell?.handle ? shell.handle(promise!, dev, i) : lazy!.deferredHandle(promise!, dev)));
       const head = await options.head?.(route, loaded, { params: found.params, url, locals });
       if (data) {
@@ -858,8 +878,8 @@ export function createHandler(options: AppOptions): AppHandler {
             data: loaded,
             status,
             ...(head ? { head } : {}),
-            ...(skip.size ? { keep: [...skip] } : {}),
-            ...(byURL.size ? { byURL: [...byURL] } : {}),
+            ...(skip?.size ? { keep: [...skip] } : {}),
+            ...(byURL.length ? { byURL: byURL.slice() } : {}),
             ...depsOf(),
           },
           status,
@@ -870,7 +890,8 @@ export function createHandler(options: AppOptions): AppHandler {
       if (!headers.has("cache-control")) headers.set("cache-control", "no-cache");
       if (setsCookie) privateCache(headers);
       phase = "render";
-      return await render({
+      // Assigned key by key: the spread chain made a temporary object per optional key on every request.
+      const input: { -readonly [K in keyof RenderInput]: RenderInput[K] } = {
         request,
         url,
         route,
@@ -882,11 +903,16 @@ export function createHandler(options: AppOptions): AppHandler {
         action: performed,
         locals: event.locals,
         head,
-        byURL: shell?.byURL ?? (byURL.size ? [...byURL] : NO_LAYOUTS),
-        ...(shell?.data ? (shell.deps ? { deps: shell.deps } : {}) : depsOf()),
-        ...(promises ? { deferred: true, moved: () => moved } : {}),
-        ...(shell ? { shell } : {}),
-      });
+        byURL: shell?.byURL ?? (byURL.length ? byURL.slice() : NO_LAYOUTS),
+      };
+      const given = shell?.data ? shell.deps : depsOf().deps;
+      if (given) input.deps = given;
+      if (promises) {
+        input.deferred = true;
+        input.moved = () => moved;
+      }
+      if (shell) input.shell = shell;
+      return await render(input);
     } catch (failure) {
       return settle(failure);
     }

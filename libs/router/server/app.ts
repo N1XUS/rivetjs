@@ -10,7 +10,7 @@ import { inlineStylesFor, type InlineStyleManifest } from "./inline-styles.ts";
 import type { TrailingSlash } from "../shared/slash.ts";
 import { escapeJSON } from "@rivetjs/runtime/resume-format";
 import { createHandler, _digest, encodeData, type AppHandler, type AppRoute, type BodyLimit, type ErrorInfo, type ShellPhase } from "./handler.ts";
-import { renderDocument, type DocumentShell, type RenderPageOptions } from "./render.ts";
+import { renderDocument, type DocumentInput, type DocumentShell, type RenderPageOptions } from "./render.ts";
 import type { EarlyHintsOptions, Hinter, HintWriter } from "./early-hints.ts";
 import type { CachePolicy, CachingHandler, RouteCacheOptions, RouteRules } from "./route-cache.ts";
 import { SHELL_BUILD } from "./shell-build.ts";
@@ -410,64 +410,67 @@ export function createApp(config: AppConfig): AppHandler {
     const leanOption = config.preload?.lean;
     const prime = routeId !== undefined && pageManifest?.ready?.routes[routeId] !== undefined;
     const lean = typeof leanOption === "function" ? leanOption(page.url) : leanOption;
-    const run = () =>
-      renderDocument(
-        entry.page(page),
-        {
-          head: page.head,
-          nonce,
-          url: page.url,
-          status,
-          styles: pageStyles,
-          ...(inlineStyles ? { inlineStyles } : {}),
-          ...(locale ? { locale } : {}),
-          ...(dir ? { dir } : {}),
-          ...(sink ? { managed: { persistent } } : {}),
+    const run = () => {
+      const factory = entry.page(page);
+      // Built by assignment, not spread chains: a `...(cond ? { k } : {})` per optional key allocated a temporary object
+      // each and grew the result one property at a time (~0.5 KB a request).
+      const input: { -readonly [K in keyof DocumentInput]: DocumentInput[K] } = { head: page.head, nonce, url: page.url, status, styles: pageStyles };
+      if (inlineStyles) input.inlineStyles = inlineStyles;
+      if (locale) input.locale = locale;
+      if (dir) input.dir = dir;
+      if (sink) input.managed = { persistent };
+      const options: RenderPageOptions = {
+        document,
+        signal,
+        onError: (error: unknown) => {
+          // Route rules: a page that rendered an error fallback is not stored (`route-cache.ts` `RENDER_FAILED`).
+          (request as unknown as Record<symbol, boolean>)[RENDER_FAILED] = true;
+          const digest = _digest();
+          report(error, request, { digest, phase: "render", ...(routeId !== undefined ? { route: routeId } : {}) });
+          return digest;
         },
-        {
-          document,
-          ...(sink
-            ? {
-                hold: {
-                  head: () => {
-                    sink.close();
-                    for (const { level, head } of sink.entries)
-                      if (level === 0) for (const entry of [...(head.meta ?? []), ...(head.links ?? []), ...(head.scripts ?? [])]) persistent.add(entry);
-                    const merged = rankMerge([...exports, ...sink.entries]);
-                    if (routeId !== undefined) hinter?.learn(routeId, merged);
-                    return merged;
-                  },
-                },
-              }
-            : {}),
-          ...(pageManifest ? { manifest: pageManifest } : {}),
-          ...(incrCache ? { incr: incrCache, ...(incrPartition ? { incrPartition: incrPartition(request) } : {}) } : {}),
-          ...(variant ? { variant } : {}),
-          // Deferred loaders: their boundaries stream out of order (shell first) even when the app set no `stream`.
-          // Shell routes (`routeRules` `shell`) always stream: the stored shell ends where the first boundary would stream.
-          ...(config.stream ? { stream: config.stream } : page.deferred || page.shell ? { stream: {} } : {}),
-          // ROUTER-PRIME: a route the manifest lists (`ready`): its page chunk joins the fetch-ahead list, the prime runs `Root.ready`.
-          ...(lean || config.preload?.ahead || prime
-            ? { preload: { ...(lean ? { lean } : config.preload?.ahead ? { ahead: config.preload.ahead } : {}), ...(prime ? { route: routeId } : {}) } }
-            : {}),
-          signal,
-          ...(nonce !== undefined ? { nonce } : {}),
-          onError: (error: unknown) => {
-            // Route rules: a page that rendered an error fallback is not stored (`route-cache.ts` `RENDER_FAILED`).
-            (request as unknown as Record<symbol, boolean>)[RENDER_FAILED] = true;
-            const digest = _digest();
-            report(error, request, { digest, phase: "render", ...(routeId !== undefined ? { route: routeId } : {}) });
-            return digest;
+      };
+      if (sink) {
+        const collected = sink;
+        options.hold = {
+          head: () => {
+            collected.close();
+            for (const { level, head } of collected.entries)
+              if (level === 0) for (const entry of [...(head.meta ?? []), ...(head.links ?? []), ...(head.scripts ?? [])]) persistent.add(entry);
+            const merged = rankMerge([...exports, ...collected.entries]);
+            if (routeId !== undefined) hinter?.learn(routeId, merged);
+            return merged;
           },
-          ...(config.devScripts && !built ? { around: devAround(page, status, nonce, locale, devMode) } : {}),
-          // Deferred loaders' redirects (status already sent): the browser navigates at the document's end.
-          ...(page.moved ? { epilogue: () => moveScript(page.moved!(), nonce) } : {}),
-          ...(devMode === "check" ? { discardState: true } : {}),
-          // Shell fills / replays (`shell-cache.ts`): byte-counting / compare-only body writer, recorder hook.
-          ...(page.shell?.render as Pick<RenderPageOptions, "body" | "shell" | "holes"> | undefined),
-        },
-        { status, headers },
-      );
+        };
+      }
+      if (pageManifest) options.manifest = pageManifest;
+      if (incrCache) {
+        options.incr = incrCache;
+        if (incrPartition) options.incrPartition = incrPartition(request);
+      }
+      if (variant) options.variant = variant;
+      // Deferred loaders: their boundaries stream out of order (shell first) even when the app set no `stream`.
+      // Shell routes (`routeRules` `shell`) always stream: the stored shell ends where the first boundary would stream.
+      if (config.stream) options.stream = config.stream;
+      else if (page.deferred || page.shell) options.stream = {};
+      // ROUTER-PRIME: a route the manifest lists (`ready`): its page chunk joins the fetch-ahead list, the prime runs `Root.ready`.
+      if (lean || config.preload?.ahead || prime) {
+        const preload: NonNullable<RenderPageOptions["preload"]> = {};
+        if (lean) preload.lean = lean;
+        else if (config.preload?.ahead) preload.ahead = config.preload.ahead;
+        if (prime) preload.route = routeId;
+        options.preload = preload;
+      }
+      if (nonce !== undefined) options.nonce = nonce;
+      if (config.devScripts && !built) options.around = devAround(page, status, nonce, locale, devMode);
+      // Deferred loaders' redirects (status already sent): the browser navigates at the document's end.
+      if (page.moved) options.epilogue = () => moveScript(page.moved!(), nonce);
+      if (devMode === "check") options.discardState = true;
+      // Shell fills / replays (`shell-cache.ts`): byte-counting / compare-only body writer, recorder hook.
+      const shell = page.shell?.render as Pick<RenderPageOptions, "body" | "shell" | "holes"> | undefined;
+      if (shell) Object.assign(options, shell);
+      return renderDocument(factory, input, options, { status, headers });
+    };
     return withCache
       ? withCache(
           {
@@ -491,6 +494,15 @@ export function createApp(config: AppConfig): AppHandler {
         fragments = null;
       })
     : null;
+  // A route's universal modules (`head` exports) in production: loaded once, then answered without a promise a request.
+  type UniversalModules = [number, { head?: unknown }][];
+  const universals = dev ? undefined : new Map<string, UniversalModules>();
+  const universalOf = (id: string): UniversalModules | Promise<UniversalModules> | undefined => {
+    const known = universals?.get(id);
+    if (known) return known;
+    const loading = entry.universal[id]?.();
+    return universals && loading ? loading.then((modules) => (universals.set(id, modules), modules)) : loading;
+  };
   const app = createHandler({
     routes: entry.routes,
     dev,
@@ -509,39 +521,34 @@ export function createApp(config: AppConfig): AppHandler {
           },
         }
       : {}),
-    async head(route, data, match) {
-      const modules = await entry.universal[route.id]?.();
-      if (!modules) return config.head ? rankMerge(ranked([], config.head)) : undefined;
-      return routeHead(modules, data, match.params, match.url, match.locals, Infinity);
+    head(route, data, match) {
+      const merge = (modules: UniversalModules | undefined) =>
+        modules ? routeHead(modules, data, match.params, match.url, match.locals, Infinity) : config.head ? rankMerge(ranked([], config.head)) : undefined;
+      const modules = universalOf(route.id);
+      return modules instanceof Promise ? modules.then(merge) : merge(modules);
     },
     // A layout whose `head` is a function of its data reruns its loader (the merged head needs it).
     async keepable(route) {
-      const modules = await entry.universal[route.id]?.();
+      const modules = await universalOf(route.id);
       const out: boolean[] = [];
       for (const [index, module] of modules ?? []) if (typeof module.head === "function") out[index] = false;
       return out;
     },
-    render: (input) =>
-      respond(
-        {
-          data: input.data,
-          // Shell fills: a URL whose named query reads outside the rule's key are recorded (`shell-cache.ts`).
-          url: input.shell?.url ?? input.url,
-          head: input.head,
-          ...(input.action ? { action: input.action } : {}),
-          ...(input.byURL ? { byURL: input.byURL } : {}),
-          ...(input.deps ? { deps: input.deps } : {}),
-          ...(input.deferred ? { deferred: input.deferred } : {}),
-          ...(input.moved ? { moved: input.moved } : {}),
-          ...(input.shell ? { shell: input.shell } : {}),
-        },
-        input.status,
-        input.headers,
-        input.nonce,
-        input.request,
-        input.locals,
-        input.route.id,
-      ),
+    render: (input) => {
+      const page: { -readonly [K in keyof PageInput]: PageInput[K] } = {
+        data: input.data,
+        // Shell fills: a URL whose named query reads outside the rule's key are recorded (`shell-cache.ts`).
+        url: input.shell?.url ?? input.url,
+        head: input.head,
+      };
+      if (input.action) page.action = input.action;
+      if (input.byURL) page.byURL = input.byURL;
+      if (input.deps) page.deps = input.deps;
+      if (input.deferred) page.deferred = input.deferred;
+      if (input.moved) page.moved = input.moved;
+      if (input.shell) page.shell = input.shell;
+      return respond(page, input.status, input.headers, input.nonce, input.request, input.locals, input.route.id);
+    },
     renderError: async (input) => {
       const locals = await errorLocals(input.locals, input.request, input.url);
       const layouts = input.layouts ?? [];

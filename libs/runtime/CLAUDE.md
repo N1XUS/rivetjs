@@ -204,3 +204,5 @@ node scripts/zero-cost/runtime-hashes.mjs "$PWD" | diff scripts/zero-cost/runtim
 - `docs/dom.md`, `docs/resume.md`, `docs/server.md`, `docs/jsx.md` (this package, read on demand); `dev/CLAUDE.md`; `tests/CLAUDE.md`.
 - Repo docs: `../../docs/guides/resumability.md`, `../../docs/guides/slots.md`, `../../docs/design/compiled-runtime-milestone.md`, `../../docs/design/plans/2026-10-05-beat-everyone.md` (DOM v2 plan).
 - `../reactivity/CLAUDE.md` (the `_*` ABI this package consumes), `../compiler/CLAUDE.md`.
+
+- `router.ts` exports `compilePattern` (`@internal`, plain `//` comment: a JSDoc block would ship in client chunks); `server-router.ts` `_routeIndexes(paths)` = bucketed first match returning `_PathMatch` (index + params) for the router handler.

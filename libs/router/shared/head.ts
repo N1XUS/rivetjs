@@ -56,23 +56,33 @@ export function scriptKey(script: HeadScript): string {
  */
 export function rankMerge(entries: readonly RankedHead[]): Head | undefined {
   if (!entries.length) return undefined;
-  const sorted = [...entries].sort((a, b) => a.level - b.level || a.phase - b.phase || a.seq - b.seq);
+  // Route exports arrive in rank order (outer → inner): the sorted copy is only made for the rest.
+  let sorted = entries;
+  for (let i = 1; i < entries.length; i++) {
+    const a = entries[i - 1]!,
+      b = entries[i]!;
+    if ((a.level - b.level || a.phase - b.phase || a.seq - b.seq) > 0) {
+      sorted = [...entries].sort((x, y) => x.level - y.level || x.phase - y.phase || x.seq - y.seq);
+      break;
+    }
+  }
   let title: string | undefined, template: string | undefined, base: Head["base"];
   let html: Head["html"], body: Head["body"];
-  const meta = new Map<string, HeadMeta>(),
-    links = new Map<string, HeadLink>(),
-    scripts = new Map<string, HeadScript>(),
-    styles = new Map<string, HeadStyle>();
+  // Keyed maps are made when the first entry of their kind arrives (most heads carry only some of them).
+  let meta: Map<string, HeadMeta> | undefined,
+    links: Map<string, HeadLink> | undefined,
+    scripts: Map<string, HeadScript> | undefined,
+    styles: Map<string, HeadStyle> | undefined;
   for (const { head } of sorted) {
     if (head.title !== undefined) title = head.title;
     if (head.titleTemplate !== undefined) template = head.titleTemplate;
     if (head.base) base = head.base;
     if (head.html) html = { ...html, ...head.html };
     if (head.body) body = { ...body, ...head.body };
-    for (const entry of head.meta ?? []) meta.set(metaKey(entry), entry);
-    for (const entry of head.links ?? []) links.set(linkKey(entry), entry);
-    for (const entry of head.scripts ?? []) scripts.set(scriptKey(entry), entry);
-    for (const entry of head.styles ?? []) styles.set(entry.key ?? entry.css, entry);
+    if (head.meta) for (const entry of head.meta) (meta ??= new Map()).set(metaKey(entry), entry);
+    if (head.links) for (const entry of head.links) (links ??= new Map()).set(linkKey(entry), entry);
+    if (head.scripts) for (const entry of head.scripts) (scripts ??= new Map()).set(scriptKey(entry), entry);
+    if (head.styles) for (const entry of head.styles) (styles ??= new Map()).set(entry.key ?? entry.css, entry);
   }
   if (title !== undefined && template !== undefined) title = template.replace("%s", title);
   // The template stays alongside the final title: client head updates template component titles.
@@ -82,10 +92,10 @@ export function rankMerge(entries: readonly RankedHead[]): Head | undefined {
     ...(html ? { html } : {}),
     ...(body ? { body } : {}),
     ...(base ? { base } : {}),
-    ...(meta.size ? { meta: [...meta.values()] } : {}),
-    ...(links.size ? { links: [...links.values()] } : {}),
-    ...(scripts.size ? { scripts: [...scripts.values()] } : {}),
-    ...(styles.size ? { styles: [...styles.values()] } : {}),
+    ...(meta?.size ? { meta: [...meta.values()] } : {}),
+    ...(links?.size ? { links: [...links.values()] } : {}),
+    ...(scripts?.size ? { scripts: [...scripts.values()] } : {}),
+    ...(styles?.size ? { styles: [...styles.values()] } : {}),
   };
 }
 

@@ -42,7 +42,8 @@ const EMPTY: Readonly<Record<string, string>> = Object.freeze(Object.create(null
 function checkPath(path: unknown): asserts path is string {
   if (typeof path !== "string" || !path.startsWith("/") || /[?#\\]/.test(path)) throw new TypeError("Route path must be an absolute path pattern");
 }
-function compilePattern(path: unknown): _Segment[] {
+// Exported for the server index matcher.
+export function compilePattern(path: unknown): _Segment[] {
   checkPath(path);
   const parts = segments(path),
     names = new Set<string>();

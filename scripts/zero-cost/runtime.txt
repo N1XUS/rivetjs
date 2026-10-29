@@ -11,10 +11,10 @@
 @rivetjs/runtime/jsx-dev-runtime 25ccf3645071 176
 @rivetjs/runtime/async 82848baeb0de 866
 @rivetjs/runtime/lazy 3c11119c2312 697
-@rivetjs/runtime/router bd3c70cbcceb 2796
+@rivetjs/runtime/router 1aecdd16db12 2816
 @rivetjs/runtime/router/dom 3263ac61f5c3 18219
 @rivetjs/runtime/router/dom [resumed] b4370b66d989 18642
-@rivetjs/runtime/router/server b00240071d79 8228
+@rivetjs/runtime/router/server db8a514727c4 8288
 @rivetjs/runtime/server-resume f646c02870e3 58552
 @rivetjs/runtime/server-resume [domData] 492d9f3b49a9 64452
 @rivetjs/runtime/server-shell db5084de55b1 38202

@@ -6,8 +6,7 @@ import type * as RouterApi from "../server-router.ts";
 import type { AsyncWork } from "../async.ts";
 
 /** Renders here are asynchronous, so the `string | Promise` / `void | Promise` results are promises. */
-const rejects = (value: unknown, error: Parameters<typeof assert.rejects>[1]): Promise<void> =>
-  assert.rejects(value as Promise<unknown>, error);
+const rejects = (value: unknown, error: Parameters<typeof assert.rejects>[1]): Promise<void> => assert.rejects(value as Promise<unknown>, error);
 
 type ServerValue = Parameters<typeof renderToString>[0];
 type Routes = Parameters<typeof RouterApi.Router>[0]["routes"];
@@ -30,9 +29,7 @@ test("server router snapshots HTTP URL and renders synchronous routes or notFoun
   router.location().pathname = "/changed";
   assert.equal(router.location().href, "https://routes.test/a?q=yes#hash");
   for (const invalid of ["/a", "file:///a", "javascript:alert(1)"]) assert.throws(() => api.createRouter(invalid));
-  const routes = [
-    api.defineRoute("/:id", { render: (data: unknown, match: MatchView) => `${match.params.id}:${match.url.search}:${String(data)}` }),
-  ];
+  const routes = [api.defineRoute("/:id", { render: (data: unknown, match: MatchView) => `${match.params.id}:${match.url.search}:${String(data)}` })];
   assert.equal(
     renderToString(() => api.Router({ router, routes })),
     "a:?q=yes:undefined",
@@ -77,12 +74,8 @@ test("compiled server routes isolate interleaved request URLs and captured provi
     b = deferred(),
     ea: string[] = [],
     eb: string[] = [];
-  const first = renderToString(() =>
-    Page({ name: "A", url: "https://routes.test/user/1?q=a", gate: a.promise, events: ea }),
-  );
-  const second = renderToString(() =>
-    Page({ name: "B", url: "https://routes.test/user/2?q=b", gate: b.promise, events: eb }),
-  );
+  const first = renderToString(() => Page({ name: "A", url: "https://routes.test/user/1?q=a", gate: a.promise, events: ea }));
+  const second = renderToString(() => Page({ name: "B", url: "https://routes.test/user/2?q=b", gate: b.promise, events: eb }));
   b.resolve();
   assert.equal(await second, "<b>B:2:?q=b</b>");
   assert.deepEqual(eb, ["route-clean", "request-clean"]);
@@ -139,12 +132,8 @@ test("server route abort cancels loader and suppresses late rendering/errors wit
 test("server route handles load errors while render errors escape", async () => {
   assert.equal(typeof api.Router, "function");
   const router = api.createRouter("https://routes.test/a");
-  const render = (routes: Routes) =>
-    renderToString(() => api.Router({ router, routes, error: (e: unknown) => "caught:" + (e as Error).message }));
-  assert.equal(
-    await render([{ path: "/a", load: () => Promise.reject(Error("load")), render: () => "wrong" }]),
-    "caught:load",
-  );
+  const render = (routes: Routes) => renderToString(() => api.Router({ router, routes, error: (e: unknown) => "caught:" + (e as Error).message }));
+  assert.equal(await render([{ path: "/a", load: () => Promise.reject(Error("load")), render: () => "wrong" }]), "caught:load");
   assert.equal(
     await render([
       {
@@ -217,4 +206,18 @@ test("createRouter reads a URL argument without aliasing it", () => {
   input.search = "?other";
   assert.equal(router.location().href, "https://example.com/a/b?q=1");
   assert.throws(() => api.createRouter(new URL("ftp://example.com/")), /absolute HTTP\(S\) URL/);
+});
+
+test("_routeIndexes returns the same first match (index + params) as compileRoutes", () => {
+  const paths = ["/", "/a", "/a/:id", "/a/*rest", "/b/:x/c", "/:slug", "/files/*path"];
+  const routes = paths.map((path) => api.defineRoute(path, { render: () => "" }));
+  const byRoute = api.compileRoutes(routes);
+  const byIndex = api._routeIndexes(paths);
+  for (const p of ["/", "/a", "/a/1", "/a/1/2", "/b/1/c", "/b/1", "/zzz", "/files/x/y", "/a%20b", "/nope/deep/er"]) {
+    const url = new URL("http://localhost" + p);
+    const a = byRoute(url),
+      b = byIndex(url);
+    assert.equal(b?.index ?? -1, a ? paths.indexOf(a.route.path) : -1, p);
+    assert.deepEqual({ ...(b?.params ?? {}) }, { ...(a?.params ?? {}) }, p);
+  }
 });
