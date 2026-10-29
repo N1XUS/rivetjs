@@ -85,6 +85,12 @@ Additional exported parts: `Kpi.Root`.
 
 ::example{id=kpi-with-chart-bottom}
 
+### With Chart Tooltip
+
+::example{id=kpi-with-chart-tooltip}
+
+`Sparkline` has no tooltip. For one, put an [AreaChart](/components/chart/) with its axes, grid and legend off in `Kpi.Chart` and pass a [ChartTooltip](/components/chart-tooltip/) through its `tooltip` prop: hovering or focusing a day shows its value.
+
 ## Styling Reference
 
 ### CSS Classes
