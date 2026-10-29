@@ -60,6 +60,12 @@ The tree has no expand animation; its transitions are the chevron turn and the r
 
 ::example{id=file-tree-selection}
 
+### PR File Review
+
+::example{id=file-tree-pr-review}
+
+A code review file list built from ui parts: `title` takes any content, here the name plus a Chip per change status, +/− counts and a comment count, with `textValue` keeping typeahead on the file name. Pass a title holding ui components as a function (`title={() => …}`): it then renders with the row instead of while the tree collects its items. `selectionMode="single"` with `selectionBehavior="replace"` selects a row without a checkbox; the panel beside the tree reads the selected key, and its "Viewed" Checkbox marks the file (or every file in a selected folder) as reviewed.
+
 ### Custom Indicator
 
 `indicator` replaces the rotating chevron. `icon` and `indicator` can be functions of the row's render props (accessors such as `isExpanded()`).
