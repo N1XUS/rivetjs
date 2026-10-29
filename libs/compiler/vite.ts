@@ -12,7 +12,6 @@ import { liteFamilies, litePlan, type LiteFamily } from "./native-lite.ts";
 import { explainText, placementTable, placeVerdicts, type PlacementOption, type PlacementTable } from "./place.ts";
 import { islandGetters } from "./island-props.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
-import { setCallCache } from "./wasm.ts";
 import { compile, moduleFacts, type CompileOptions, type CompileResult, type ModuleFacts } from "./index.ts";
 import { docsUrl } from "./codes.ts";
 import { appFrames, codeFrame, displayPath, formatDiagnostic, remedyLines, groupDiagnostics, summary } from "./diagnostics-format.ts";
@@ -275,13 +274,6 @@ export interface RivetOptions {
    * every language the app serves. Undeclared: every table ships whole (exact for any locale). See `locale-tables.ts`.
    */
   locales?: readonly string[];
-  /**
-   * Persistent compiler cache (INCR-BUILD, default on): every compiler request (compile, module facts) is answered from
-   * `<Vite cacheDir>/rivet-compile/` when the same request (source + options, cross-module facts included) was answered by
-   * the same compiler module before (`wasm.ts` `setCallCache`; byte-identical output). Size cap: env
-   * `RIVET_COMPILE_CACHE_MB` (default 512, least recently used go first). `false` or env `RIVET_COMPILE_CACHE=0` turns it off.
-   */
-  compileCache?: boolean;
 }
 
 /** A file that asks for another JSX runtime in its leading comments (`@jsxImportSource react`, or a
@@ -770,9 +762,8 @@ export function rivet({
   serverOnly,
   comptime = true,
   locales,
-  compileCache = true,
 }: RivetOptions = {}): Plugin | Plugin[] {
-  const plugin = rivetPlugin(resume, devtools, css, serverExports, { include, exclude }, icons, serverOnly ?? [], comptime, locales, compileCache);
+  const plugin = rivetPlugin(resume, devtools, css, serverExports, { include, exclude }, icons, serverOnly ?? [], comptime, locales);
   // Bridges: framework plugins first (they own their modules), then the facade host, then the Rivet compiler.
   const framed = bridges?.length ? [...bridges.flatMap((entry) => entry.plugins()), bridgeHost(bridges), plugin] : [plugin];
   if (images) framed.push(imagesPlugin(images));
@@ -865,7 +856,6 @@ function rivetPlugin(
   serverOnly: readonly ServerOnlyPattern[],
   comptimeOption: boolean | ComptimeOptions = true,
   localesOption?: readonly string[],
-  compileCache = true,
 ): Plugin {
   // `include` / `exclude` (resolved against the Vite root once it is known).
   let selected: (id: string) => boolean = () => true;
@@ -1116,15 +1106,8 @@ function rivetPlugin(
     const cls = classText.get(filename);
     return cls && cls.from === lighter ? cls.to : lighter;
   };
-  // Read live on the dev server (the router adds route modules while it runs); builds resolve the list once per build
-  // (`routeSet`, reset by `buildStart`): a scan per call was ~0.8 s of a ui-docs client build (thousands of routes).
-  let routeSet: Set<string> | null = null;
-  const isRoute = (filename: string) => {
-    if (!serverExports) return false;
-    if (serve) return serverExports.modules.some((path) => resolve(root, path) === resolve(filename));
-    routeSet ??= new Set(serverExports.modules.map((path) => resolve(root, path)));
-    return routeSet.has(resolve(filename));
-  };
+  // Read live: the router adds route modules while the dev server runs.
+  const isRoute = (filename: string) => !!serverExports?.modules.some((path) => resolve(root, path) === resolve(filename));
   const split = (filename: string) => (isRoute(filename) ? { serverExports: true } : {});
   // Compile options contributed by sibling plugins (`api.rivetCompileOptions`, e.g. @rivetjs/i18n),
   // given the target and the module id (with its query) when one is being transformed.
@@ -2411,8 +2394,6 @@ function rivetPlugin(
       root = config.root ?? root;
       base = config.base ?? "/";
       comptimeCache = config.cacheDir;
-      routeSet = null;
-      setCallCache(compileCache && config.cacheDir ? join(config.cacheDir, "rivet-compile") : null);
       built = config.command === "build";
       routed = !!config.plugins?.some((plugin) => plugin.name === "vite-plugin-rivet-router");
       if (patterns.include != null || patterns.exclude != null) selected = createFilter(patterns.include, patterns.exclude, { resolve: root });
@@ -2451,7 +2432,6 @@ function rivetPlugin(
       if (!serve && (diagnosticErrors || diagnosticWarnings)) diagnosticLogger?.warn(`[rivet:compiler] ${summary(diagnosticErrors, diagnosticWarnings)}`);
     },
     async buildStart() {
-      routeSet = null;
       if (!serve) {
         warned.clear();
         diagnosticErrors = diagnosticWarnings = 0;

@@ -37,7 +37,6 @@ import {
   devRouteCSS,
   INLINE_CSS,
   inlineCSS,
-  brotliSizes,
   mergeRouteCSS,
   pageSheets,
   rewriteCSSDeps,
@@ -145,12 +144,6 @@ export interface RivetRouterOptions {
    * its first lookup and may show `en-US` strings until then. Undeclared: every table ships whole.
    */
   locales?: RivetOptions["locales"];
-  /**
-   * Persistent compiler cache (`rivet({ compileCache })`, default on): compiler answers kept in `<Vite cacheDir>/rivet-compile/`,
-   * keyed by the whole request (source + options incl. cross-module facts) and the compiler build. `false` (or env
-   * `RIVET_COMPILE_CACHE=0`) turns it off.
-   */
-  compileCache?: RivetOptions["compileCache"];
   /**
    * Route transitions (View Transitions) + pending UI. Off by default; `true` = defaults. The
    * transitions module loads on the first navigation intent.
@@ -549,7 +542,6 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     ...(options.staticIcons === undefined ? {} : { staticIcons: options.staticIcons }),
     ...(options.comptime === undefined ? {} : { comptime: options.comptime }),
     ...(options.locales === undefined ? {} : { locales: options.locales }),
-    ...(options.compileCache === undefined ? {} : { compileCache: options.compileCache }),
   };
   const compilerOptions = mode === "csr" ? { devtools, serverExports, ...css, ...icons } : { resume, devtools, serverExports, ...css, ...icons };
   const bridges = options.bridges?.length ? options.bridges : undefined;
@@ -842,11 +834,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         if (Object.keys(css).length) this.emitFile({ type: "asset", fileName: ROUTE_CSS, source: JSON.stringify(css, null, 2) + "\n" });
         // Sheets the handler may write inline (`inlineStylesheets`; decided per page, `server/inline-styles.ts`).
         const limit = this.environment?.config?.build.assetsInlineLimit;
-        // Brotli sizes memoized across builds in the Vite cacheDir (`compileCache: false` / `RIVET_COMPILE_CACHE=0`: this build only).
-        const cacheDir = options.compileCache === false || process.env.RIVET_COMPILE_CACHE === "0" ? undefined : this.environment?.config?.cacheDir;
-        const sizes = brotliSizes(cacheDir);
-        const inline = inlineCSS(bundle, assets, base, options.inlineStylesheets ?? "auto", typeof limit === "number" ? limit : 4096, sizes.size);
-        sizes.save();
+        const inline = inlineCSS(bundle, assets, base, options.inlineStylesheets ?? "auto", typeof limit === "number" ? limit : 4096);
         if (inline) this.emitFile({ type: "asset", fileName: INLINE_CSS, source: JSON.stringify(inline) + "\n" });
         return;
       }
@@ -1053,21 +1041,14 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
   // Server / static apps: route modules' `head` export leaves the client build (server data; `head-strip.ts`). Builds only:
   // on the dev server the hot wrapper (compiler `hot.ts`) has listed `head` among the module's exports before this post
   // transform, so a stripped export made every edit look like an export change (`invalidate`: a reload, state lost).
-  let headRoutes: Set<string> | undefined;
   const headStrip: Plugin = {
     name: "vite-plugin-rivet-router-head",
     enforce: "post",
     apply: "build",
-    buildStart() {
-      headRoutes = undefined;
-    },
     transform(code, id, transformOptions) {
       if (mode === "csr" || transformOptions?.ssr || this.environment?.config?.consumer === "server") return null;
       const file = id.split("?")[0]!;
-      // Build only (`apply`): the route list is final once `config` ran; resolved once per build (a scan per call was
-      // ~0.7 s of a ui-docs client build).
-      headRoutes ??= new Set(serverExports.modules.map((path) => resolve(root, path)));
-      if (!headRoutes.has(file)) return null;
+      if (!serverExports.modules.some((path) => resolve(root, path) === file)) return null;
       const out = unexportHead(code);
       return out === null ? null : { code: out, map: null };
     },

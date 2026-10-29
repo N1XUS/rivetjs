@@ -1,7 +1,5 @@
 // Synchronous loader for the Rust/oxc compiler module: JSON request in, JSON response out.
-import { createHash } from "node:crypto";
-import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 
 interface Exports {
   memory: WebAssembly.Memory;
@@ -64,8 +62,8 @@ class Fatal {
   }
 }
 
-function send<T>(wasm: Exports, request: Record<string, unknown>, json = JSON.stringify(request, wellFormed), keep?: (text: string) => void): T {
-  const bytes = encoder.encode(json);
+function send<T>(wasm: Exports, request: Record<string, unknown>): T {
+  const bytes = encoder.encode(JSON.stringify(request, wellFormed));
   const ptr = wasm.alloc(bytes.length);
   new Uint8Array(wasm.memory.buffer, ptr, bytes.length).set(bytes);
   let out: number;
@@ -74,134 +72,9 @@ function send<T>(wasm: Exports, request: Record<string, unknown>, json = JSON.st
   } catch (error) {
     throw new Fatal(error);
   }
-  const text = decoder.decode(new Uint8Array(wasm.memory.buffer, out, wasm.result_len()));
-  const response = JSON.parse(text) as { ok: T } | { error: string };
+  const response = JSON.parse(decoder.decode(new Uint8Array(wasm.memory.buffer, out, wasm.result_len()))) as { ok: T } | { error: string };
   if ("error" in response) throw new Error("rivet compiler: " + response.error);
-  keep?.(text);
   return response.ok;
-}
-
-// INCR-BUILD persistent call cache (`setCallCache`): the compiler is a pure function of its request, the module it was
-// built from and the static-call tables registered in the instance (the only state an instance keeps: `tables`, replayed
-// into a replacement). Key = sha256(wasm bytes, tables, request JSON) → the response text, one file per key. Cross-module
-// facts (boundary verdicts, call-site proofs, native-lite twins, class joins) reach the compiler only as request options,
-// so a change anywhere that alters a module's output alters its key: never stale, no invalidation to get wrong.
-let cacheDir: string | null = null;
-let wasmDigest: string | undefined;
-let tablesDigest: string | undefined;
-/** Hits / misses / writes of this process (tests, build logs). */
-export const callCacheStats = { hits: 0, misses: 0, writes: 0 };
-/** Default size cap of the call cache (MB; env `RIVET_COMPILE_CACHE_MB`). */
-export const CALL_CACHE_MB = 512;
-const PRUNE_STAMP = ".pruned";
-/** A directory pruned by one process is not scanned again by the next for this long (a build runs 3–4 Vite children). */
-const PRUNE_EVERY_MS = 10 * 60 * 1000;
-
-/**
- * Persist compiler responses under `dir` (`null` = off, the default). Called by the Vite plugin with
- * `<Vite cacheDir>/rivet-compile`; env `RIVET_COMPILE_CACHE=0` turns it off everywhere. Least recently used entries
- * (file mtime, touched on a hit) go once the directory is over `maxMB` (default `CALL_CACHE_MB`).
- */
-export function setCallCache(dir: string | null, maxMB = Number(process.env.RIVET_COMPILE_CACHE_MB) || CALL_CACHE_MB): void {
-  if (process.env.RIVET_COMPILE_CACHE === "0") dir = null;
-  if (dir === cacheDir) return;
-  cacheDir = dir;
-  if (!dir) return;
-  try {
-    mkdirSync(dir, { recursive: true });
-    pruneCallCache(dir, maxMB * 1024 * 1024);
-  } catch {
-    cacheDir = null;
-  }
-}
-
-/** Drop least recently used entries until `dir` holds ≤ 80 % of `maxBytes` (when over `maxBytes`). */
-export function pruneCallCache(dir: string, maxBytes: number, force = false): number {
-  const stamp = join(dir, PRUNE_STAMP);
-  if (!force) {
-    try {
-      if (Date.now() - statSync(stamp).mtimeMs < PRUNE_EVERY_MS) return 0;
-    } catch {}
-  }
-  writeFileSync(stamp, "");
-  const files: { path: string; size: number; time: number }[] = [];
-  let total = 0;
-  for (const sub of readdirSync(dir)) {
-    if (sub === PRUNE_STAMP) continue;
-    let names: string[];
-    try {
-      names = readdirSync(join(dir, sub));
-    } catch {
-      continue;
-    }
-    for (const name of names) {
-      const path = join(dir, sub, name);
-      try {
-        const stat = statSync(path);
-        files.push({ path, size: stat.size, time: stat.mtimeMs });
-        total += stat.size;
-      } catch {}
-    }
-  }
-  if (total <= maxBytes) return 0;
-  files.sort((a, b) => a.time - b.time);
-  let removed = 0;
-  for (const file of files) {
-    if (total <= maxBytes * 0.8) break;
-    try {
-      unlinkSync(file.path);
-      total -= file.size;
-      removed++;
-    } catch {}
-  }
-  return removed;
-}
-
-function callKey(json: string): string {
-  wasmDigest ??= createHash("sha256")
-    .update(readFileSync(new URL("./rivet_compiler.wasm", import.meta.url)))
-    .digest("hex");
-  if (tablesDigest === undefined) {
-    const hash = createHash("sha256");
-    for (const id of [...tables.keys()].sort()) hash.update(JSON.stringify(tables.get(id), wellFormed)).update("\0");
-    tablesDigest = hash.digest("hex");
-  }
-  return createHash("sha256").update(wasmDigest).update("\0").update(tablesDigest).update("\0").update(json).digest("hex");
-}
-
-/** The cached response of `json`, or `undefined` (and a writer for the fresh response). */
-function cached<T>(dir: string, json: string): { hit: true; value: T } | { hit: false; keep: (text: string) => void } {
-  const key = callKey(json);
-  const file = join(dir, key.slice(0, 2), key.slice(2) + ".json");
-  let text: string | undefined;
-  try {
-    text = readFileSync(file, "utf8");
-  } catch {}
-  if (text !== undefined) {
-    try {
-      const value = (JSON.parse(text) as { ok: T }).ok;
-      callCacheStats.hits++;
-      try {
-        const now = new Date();
-        utimesSync(file, now, now);
-      } catch {}
-      return { hit: true, value };
-    } catch {} // torn / foreign file: recompute and overwrite
-  }
-  callCacheStats.misses++;
-  return {
-    hit: false,
-    keep(text) {
-      try {
-        mkdirSync(join(dir, key.slice(0, 2)), { recursive: true });
-        // Atomic: concurrent build children write the same key with the same bytes.
-        const temp = file + "." + process.pid + ".tmp";
-        writeFileSync(temp, text);
-        renameSync(temp, file);
-        callCacheStats.writes++;
-      } catch {}
-    },
-  };
 }
 
 /**
@@ -213,18 +86,10 @@ function cached<T>(dir: string, json: string): { hit: true; value: T } | { hit: 
  * `MEMORY_LIMIT` is replaced after the call (linear memory never shrinks).
  */
 export function call<T>(request: Record<string, unknown>): T {
-  let json: string | undefined;
-  let keep: ((text: string) => void) | undefined;
-  if (cacheDir && request.op !== "registerTable") {
-    json = JSON.stringify(request, wellFormed);
-    const entry = cached<T>(cacheDir, json);
-    if (entry.hit) return entry.value;
-    keep = entry.keep;
-  }
   const wasm = instance();
   try {
-    const result = send<T>(wasm, request, json, keep);
-    if (request.op === "registerTable") (tables.set(String(request.id), request), (tablesDigest = undefined));
+    const result = send<T>(wasm, request);
+    if (request.op === "registerTable") tables.set(String(request.id), request);
     if (wasm.memory.buffer.byteLength > MEMORY_LIMIT) exports = undefined;
     return result;
   } catch (thrown) {

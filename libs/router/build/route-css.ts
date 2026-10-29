@@ -1,7 +1,6 @@
 // Per-route stylesheets: the CSS a route's layouts and page can render (their chunks' static
 // import closure), outer → inner, so SSR links exactly the route's CSS in the head.
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { brotliCompressSync, constants } from "node:zlib";
 import type { InlineStyleManifest } from "../server/inline-styles.ts";
 import { posix, resolve } from "node:path";
@@ -141,7 +140,6 @@ export function inlineCSS(
   base: string,
   mode: InlineStylesheets,
   limit: number,
-  brotliSize: (css: string) => number = brotliLength,
 ): InlineStyleManifest | undefined {
   if (mode === "never") return undefined;
   const always = mode === "always";
@@ -155,60 +153,10 @@ export function inlineCSS(
     const css = unmarked(source);
     if (!css || RELATIVE_REFERENCE.test(css)) continue;
     const bytes = Buffer.byteLength(css);
-    const br = brotliSize(css);
+    const br = brotliCompressSync(css, { params: { [constants.BROTLI_PARAM_QUALITY]: 11, [constants.BROTLI_PARAM_SIZE_HINT]: bytes } }).length;
     if (always || br <= maxTotalBrotli || bytes <= limit) sheets[base + fileName] = { css, bytes, br };
   }
   return Object.keys(sheets).length ? { mode: always ? "always" : "auto", maxTotalBrotli, limit, sheets } : undefined;
-}
-
-/** Brotli (quality 11) size of a stylesheet, as `inlineCSS` measures it. */
-export const brotliLength = (css: string): number =>
-  brotliCompressSync(css, { params: { [constants.BROTLI_PARAM_QUALITY]: 11, [constants.BROTLI_PARAM_SIZE_HINT]: Buffer.byteLength(css) } }).length;
-
-/** Brotli size memo file under the Vite `cacheDir` (`brotliSizes`). */
-export const BROTLI_SIZES = "rivet-css-brotli.json";
-/** Entries kept in the memo file (least recently used beyond it go). */
-export const BROTLI_SIZES_MAX = 50_000;
-
-/**
- * Persistent memo of `brotliLength` (INCR-BUILD): sha256 of the CSS → its brotli size, in `<cacheDir>/rivet-css-brotli.json`
- * (the brotli library version is part of the file's identity). Quality-11 compression of every client stylesheet was
- * ~9 s of each ui-docs client build; a size is a pure function of the bytes, so the manifest is byte-identical.
- * `dir` undefined = no file (an in-memory memo for this build only). `save()` writes the entries used, most recent last.
- */
-export function brotliSizes(dir: string | undefined): { size(css: string): number; save(): void; hits: number; misses: number } {
-  const file = dir ? resolve(dir, BROTLI_SIZES) : undefined;
-  const version = `${process.versions.brotli ?? "?"}/q11`;
-  const known = new Map<string, number>();
-  if (file)
-    try {
-      const data = JSON.parse(readFileSync(file, "utf8")) as { version?: string; sizes?: Record<string, number> };
-      if (data.version === version) for (const [key, n] of Object.entries(data.sizes ?? {})) if (Number.isInteger(n)) known.set(key, n);
-    } catch {}
-  const memo = {
-    hits: 0,
-    misses: 0,
-    size(css: string): number {
-      const key = createHash("sha256").update(css).digest("base64url");
-      let n = known.get(key);
-      if (n === undefined) ((n = brotliLength(css)), memo.misses++);
-      else (known.delete(key), memo.hits++);
-      known.set(key, n);
-      return n;
-    },
-    save(): void {
-      if (!file) return;
-      const entries = [...known];
-      const sizes = Object.fromEntries(entries.slice(Math.max(0, entries.length - BROTLI_SIZES_MAX)));
-      try {
-        mkdirSync(dir!, { recursive: true });
-        const temp = file + "." + process.pid + ".tmp";
-        writeFileSync(temp, JSON.stringify({ version, sizes }));
-        renameSync(temp, file);
-      } catch {}
-    },
-  };
-  return memo;
 }
 
 /**

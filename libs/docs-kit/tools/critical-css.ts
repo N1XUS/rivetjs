@@ -17,9 +17,7 @@
 // links (any attribute order; links with other attributes, e.g. `media`, stay render-blocking) are rewritten;
 // `criticalSkip` names the reason for the others (the build logs them). `restoreLinks` undoes it (incremental
 // prerender compares and rewrites pages without it).
-import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile } from "node:fs/promises";
-import { buildCache, digest, sourceDigest, type BuildCache } from "./build-cache.ts";
 import { join, relative, resolve, sep } from "node:path";
 import { frameIdOf } from "../frame-theme.ts";
 
@@ -469,63 +467,19 @@ export async function sitePages(client: string): Promise<string[]> {
     .filter((file) => !/^(assets|\.vite|pagefind)\//.test(file) && frameIdOf("/" + file) === undefined);
 }
 
-/**
- * The persistent per-page store of an app (INCR-BUILD, `build-cache.ts`), scoped to this module's source: an entry =
- * the page's new head (everything before the unchanged rest of the page; `inlineCritical` only rewrites the head) +
- * the content hashes of the stylesheets it read. Selector matching was ~9.5 s of a ui-docs build.
- */
-export function criticalCache(root: string): BuildCache {
-  return buildCache(root, "critical", sourceDigest(new URL(import.meta.url)));
-}
-
-interface CriticalEntry {
-  /** Stylesheet href → sha256 of its text, for every sheet the page read. */
-  sheets: [string, string][];
-  /** Output = `head` + input.slice(`keep`). */
-  keep: number;
-  head: string;
-}
-
-/**
- * Inline critical CSS into page files of a built client dir (default: `sitePages`); counts pages and inline bytes.
- * `cache`: persistent results per page (`criticalCache`): key = page HTML + `added` + selectors, checked against the
- * current text of each stylesheet the entry read.
- */
+/** Inline critical CSS into page files of a built client dir (default: `sitePages`); counts pages and inline bytes. */
 export async function inlineCriticalPages(
   client: string,
-  options: { files?: readonly string[]; added?: (html: string) => RegExp | undefined; extraSelectors?: readonly string[]; cache?: BuildCache } = {},
-): Promise<{ pages: number; bytes: number; skipped: { file: string; why: string }[]; reused: number }> {
+  options: { files?: readonly string[]; added?: (html: string) => RegExp | undefined; extraSelectors?: readonly string[] } = {},
+): Promise<{ pages: number; bytes: number; skipped: { file: string; why: string }[] }> {
   const files = options.files ?? (await sitePages(client));
-  let reused = 0;
-  const extraList = [...CLIENT_SELECTORS, ...(options.extraSelectors ?? [])];
-  const extra = selectorNames(extraList);
-  const texts = new Map<string, Promise<string>>();
-  const text = (href: string) => {
-    let read = texts.get(href);
-    if (!read) texts.set(href, (read = readFile(resolve(client, "." + href), "utf8")));
-    return read;
-  };
-  const hashes = new Map<string, Promise<string>>();
-  const hashOf = (href: string) => {
-    let hash = hashes.get(href);
-    if (!hash)
-      hashes.set(
-        href,
-        (hash = text(href).then(
-          (css) => createHash("sha256").update(css).digest("hex"),
-          () => "",
-        )),
-      );
-    return hash;
-  };
+  const extra = selectorNames([...CLIENT_SELECTORS, ...(options.extraSelectors ?? [])]);
   const sheets = new Map<string, Promise<Sheet>>();
   const sheet = (href: string) => {
     let parsed = sheets.get(href);
-    if (!parsed) sheets.set(href, (parsed = text(href).then(parseSheet)));
+    if (!parsed) sheets.set(href, (parsed = readFile(resolve(client, "." + href), "utf8").then(parseSheet)));
     return parsed;
   };
-  const cache = options.cache;
-  const extraKey = JSON.stringify(extraList);
   let pages = 0;
   let bytes = 0;
   const skipped: { file: string; why: string }[] = [];
@@ -538,34 +492,11 @@ export async function inlineCriticalPages(
       skipped.push({ file, why });
       continue;
     }
-    const added = options.added?.(source);
-    let out: string | undefined;
-    const key = cache && digest(source, added?.source, added?.flags, extraKey);
-    if (cache && key) {
-      const hit = cache.get(key);
-      const entry = hit === undefined ? undefined : (JSON.parse(hit) as CriticalEntry);
-      if (entry && (await Promise.all(entry.sheets.map(async ([href, hash]) => (await hashOf(href)) === hash))).every(Boolean))
-        ((out = entry.head + source.slice(entry.keep)), reused++);
-    }
-    if (out === undefined) {
-      const read = new Set<string>();
-      out = await inlineCritical(source, (href) => (read.add(href), sheet(href)), added, extra);
-      if (cache && key) {
-        let same = 0;
-        const max = Math.min(out.length, source.length);
-        while (same < max && out.charCodeAt(out.length - 1 - same) === source.charCodeAt(source.length - 1 - same)) same++;
-        const entry: CriticalEntry = {
-          sheets: await Promise.all([...read].sort().map(async (href) => [href, await hashOf(href)] as [string, string])),
-          keep: source.length - same,
-          head: out.slice(0, out.length - same),
-        };
-        cache.set(key, JSON.stringify(entry));
-      }
-    }
+    const out = await inlineCritical(source, sheet, options.added?.(source), extra);
     if (out === html) continue;
     await writeFile(path, out);
     pages++;
     bytes += CRITICAL.exec(out)?.[0].length ?? 0;
   }
-  return { pages, bytes, skipped, reused };
+  return { pages, bytes, skipped };
 }
