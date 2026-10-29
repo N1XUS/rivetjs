@@ -128,7 +128,7 @@ Global DOM events and attributes land on the part's root. The trigger's press ha
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `DisclosureGroup` (`<div>`), `Disclosure` (`<div>`), `DisclosurePanel` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `DisclosureGroup` (`<div>`), `Disclosure` (`<div>`), `DisclosurePanel` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <DisclosureGroup render={(props) => <div {...(props as {})} />}>…</DisclosureGroup>
@@ -144,7 +144,6 @@ Global DOM events and attributes land on the part's root. The trigger's press ha
 ## Resumability
 
 - Server HTML is final (`aria-expanded`, `hidden`, `data-expanded`); nothing runs before the first press.
-- Callbacks (`onExpandedChange`, `onOpened`, …) are inline arrows or local consts.
 
 ## Upstream
 

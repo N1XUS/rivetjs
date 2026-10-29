@@ -415,7 +415,7 @@ Owned events (the part's behaviour runs first, yours after): the table handles `
 
 - The server renders every row with its final `aria-selected`, `aria-sort`, `aria-expanded` and `tabindex`, and the selection checkboxes checked. No Table code runs before the first interaction.
 - Built collection: the table's code loads on the first interaction and rebuilds the collection from the parts; unchanged rows keep their DOM.
-- Callbacks (`onRowAction`, `onSelectionChange`, `onSortChange`, `onResize…`, `onLoadMore`, press / hover events) must be inline arrows or local functions. For derived `items` / `columns`, pass a `computed` (or a signal).
+- For derived `items` / `columns`, pass a `computed` (or a signal).
 - `on…Capture` handlers do not resume yet.
 
 ## Testing

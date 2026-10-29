@@ -182,7 +182,7 @@ A `class` value replaces the default class (RAC `className`); `class={(rp) => �
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `TextField` (`<div>`), `Input` (`<input>`), `TextArea` (`<textarea>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `TextField` (`<div>`), `Input` (`<input>`), `TextArea` (`<textarea>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <TextField render={(props) => <div {...(props as {})} />}>…</TextField>
@@ -202,7 +202,6 @@ Native text input keys; :kbd[Enter] submits the enclosing form.
 - The server renders the value, the attributes and server errors. Typing works before any code loads; the field's handlers resume on the first input or focus.
 - The server keeps both the description and error ids in `aria-describedby`; once code runs, ids of parts that do not render are dropped.
 - Native mode renders the custom error as `data-rv-error`, so a `<Form>` can block a submit before the field ran code.
-- Callbacks (`validate`, `onChange`, …) must be inline arrows or local consts.
 
 ## Hooks
 

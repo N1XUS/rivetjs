@@ -201,7 +201,7 @@ The [first example](#toast) styles the default class names and data attributes i
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `ToastRegion` (`<div>`), `ToastList` (`<ol>`), `Toast` (`<div>`), `ToastContent` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `ToastRegion` (`<div>`), `ToastList` (`<ol>`), `Toast` (`<div>`), `ToastContent` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <ToastRegion render={(props) => <div {...(props as {})} />}>…</ToastRegion>

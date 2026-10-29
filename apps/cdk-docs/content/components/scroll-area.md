@@ -149,7 +149,7 @@ With `dir="rtl"` (or inside `<Dir dir="rtl">` from `@rivetjs/cdk/bidi-dir`), the
 
 ## Render
 
-`render` replaces a part's `<div>` with your own element. This is the Rivet form of Radix `asChild`, and every part supports it. It receives the part's attributes: `ref`, `class`, `style` (with the behaviour-critical declarations), `data-*`, handlers and `children`, with reactive entries as accessors. Spread them onto the element you return. Write `render` as an inline arrow so it stays resumable.
+`render` replaces a part's `<div>` with your own element. This is the Rivet form of Radix `asChild`, and every part supports it. It receives the part's attributes: `ref`, `class`, `style` (with the behaviour-critical declarations), `data-*`, handlers and `children`, with reactive entries as accessors. Spread them onto the element you return.
 
 ```tsx
 <ScrollAreaViewport render={(props) => <section {...(props as {})} />}>…</ScrollAreaViewport>
@@ -201,7 +201,6 @@ The scrolling stays the browser's. Keyboard scrolling (arrows, :kbd[PageDown], :
 - The activating event is not lost. A `hover` area activated by the pointer shows its scrollbars at once. A `scroll` area activated by a scroll shows the scrolled axis.
 - The activation handlers resume with `preload="visible"`: their code is fetched when the area comes into view and runs only on the activating event. On a slow network (150 ms RTT, 4x CPU), the first hover shows the thumb in about 0.12 s; with nothing fetched before the event it took about 1.5 s. With `render` on the root or the viewport, put `preload="visible"` on your element to keep this.
 - Part state (visibility, measures, presence) is component-owned, so it survives the part's first run in the browser.
-- Handlers you pass follow the usual rule: inline arrows or local consts.
 
 ## Upstream
 

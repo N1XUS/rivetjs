@@ -135,7 +135,7 @@ const state = createToggleState({ defaultSelected: false });
 
 ## Render
 
-`render` replaces the default `<button>` with your own element (React Aria Components `render`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default `<button>` with your own element (React Aria Components `render`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <ToggleButton render={(props) => <div {...(props as {})} />}>Bold</ToggleButton>
@@ -157,8 +157,7 @@ const state = createToggleState({ defaultSelected: false });
 ## Resumability
 
 - The server renders `aria-pressed` and `data-selected` from the state; nothing runs before the first press.
-- `isSelected` is a signal and resumes with its value; callbacks must be inline arrows or local functions.
-- `toggleButtonPressOptions` creates functions: call it inside handlers (functions created in `.ts` modules are not resumable).
+- `isSelected` is a signal and resumes with its value.
 
 ## Upstream
 

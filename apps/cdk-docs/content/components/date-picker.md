@@ -287,7 +287,7 @@ The group owns `onPointerDown` / `onPointerUp` (a press focuses a segment) and t
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `DatePicker` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `DatePicker` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <DatePicker render={(props) => <div {...(props as {})} />}>…</DatePicker>
@@ -315,7 +315,7 @@ The group owns `onPointerDown` / `onPointerUp` (a press focuses a segment) and t
 ## Resumability
 
 - Server HTML: the label, the segments (with `data-rk`: Rivet holds those keys while the code loads), the button, the hidden inputs. A closed picker ships no popover and no calendar markup.
-- The picker state (value, open state, focus flags) is region state: the first open creates only the popover and its calendar, from serializable locals.
+- The picker state (value, open state, focus flags) is signals: the first open creates only the popover and its calendar.
 - Popover content as plain JSX works (as in the examples); content holding your own stateful components is safest as a render function (`{() => …}`).
 - `on…Capture` handlers do not resume yet.
 

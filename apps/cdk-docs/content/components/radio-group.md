@@ -175,7 +175,7 @@ A `<SelectionIndicator />` (`@rivetjs/cdk/selection-indicator`) in the radio con
 ## Resumability
 
 - The server renders the checked radio; arrow keys and submission work before any code loads.
-- Item callbacks must be inline arrows or local functions; `children` is a slot, write it inline.
+- `children` is a slot, write it inline.
 
 ## Testing
 

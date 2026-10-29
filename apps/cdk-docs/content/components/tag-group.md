@@ -204,7 +204,7 @@ The grid handles `onKeyDown`, `onFocusIn`, `onFocusOut` and `onMouseDown` itself
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `TagGroup` (`<div>`), `TagList` (`<div>`), `Tag` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `TagGroup` (`<div>`), `TagList` (`<div>`), `Tag` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <TagGroup render={(props) => <div {...(props as {})} />}>…</TagGroup>
@@ -249,7 +249,7 @@ The grid handles `onKeyDown`, `onFocusIn`, `onFocusOut` and `onMouseDown` itself
 
 - The server renders every tag with its final `aria-selected`, `aria-disabled`, `tabindex` and the remove button labels. No TagGroup code runs before the first interaction.
 - Live collection: the handlers read the tags (`data-key`, `data-text-value`, `aria-disabled`, `data-href`) back from the grid's DOM, so no item model is serialized.
-- `onRemove`, `onAction` and the other callbacks must be inline arrows or local functions. A `createListData` list resumes: its actions are resumable.
+- A `createListData` list resumes with its items; its actions work in handlers on the resumed page.
 - `on…Capture` handlers do not resume yet.
 
 ## Testing

@@ -88,7 +88,7 @@ The first example on this page uses Tailwind utilities on the parts.
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Meter` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Meter` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Meter render={(props) => <div {...(props as {})} />}>…</Meter>

@@ -264,8 +264,8 @@ Give `onLoadMore` (and usually `isLoading`) to append a loader node (key `LOADER
 
 - **Before interaction**: the server window is plain HTML. The scroller has `preload="interaction"`; the first `scroll` or `focusin` loads the engine.
 - **First scroll**: the engine starts from the scroller's real size (`clientWidth` / `clientHeight`) and scroll position, adopts the server rows by key (same DOM nodes), and measures estimated views.
-- `layout` and `children` must be resumable: inline arrows or local consts. The layout instance itself is never serialized.
-- `items`, `layoutOptions`, `persistedKeys` and the server window are sent in resume state. Keep items compact, or derive them from an accessor.
+- `layout` and `children` can be any function. The layout instance itself is never written into the page: the browser creates it when the component first runs.
+- `items`, `layoutOptions`, `persistedKeys` and the server window are written into the page with the component's state. Keep items compact, or derive them from an accessor.
 - A resumed binding keeps its kind: a view that renders an element on the server must keep rendering an element. Toggle `hidden` on a loader instead of switching between `null` and an element.
 
 ### Known limitations

@@ -27,7 +27,7 @@ import { mergeIds } from "@rivetjs/cdk/id";
 | `mergeRefs(...refs)` | One callback ref for callback refs and `{ current }` objects. Cleanups returned by callback refs are chained; refs without a cleanup are reset to `null`. A single ref is returned as is. |
 | `mergeIds(a, b)` | From `@rivetjs/cdk/id`: equal ids stay; otherwise reactive ids holding one switch to the other (see [Ids](ids.md)). |
 
-There is one `mergeProps` / `chain` / `mergeRefs` implementation (`@rivetjs/cdk/interactions/merge-props`, re-exported by `@rivetjs/cdk/utils`). It is a resume-compiled module, so the chained handlers it returns are resumable symbols: a merged bag of resumable handlers (hook `xxxProps` bags, inline arrows) stays resumable when spread on a native element.
+There is one `mergeProps` / `chain` / `mergeRefs` implementation (`@rivetjs/cdk/interactions/merge-props`, re-exported by `@rivetjs/cdk/utils`). Its chained handlers work on resumed pages like any other handler: spread the merged bag on a native element, and the handlers attach when the component first runs in the browser.
 
 ## Controlled and uncontrolled values
 
@@ -93,7 +93,7 @@ const current = controlledValue(state);
 ## Resumability
 
 - Pure helpers (`mergeProps`, `clamp`, `snapValueToStep`, `useLabels`, …) can run while the server renders.
-- `mergeProps` / `chain` / `mergeRefs` return resumable functions; merged handlers must themselves be resumable (inline arrows, local functions, hook bags) to resume when spread.
+- `mergeProps` / `chain` / `mergeRefs` accept any function: inline, local, imported or from another library.
 - `useDescription`, `useFormReset`, `runAfterTransition` and `updateEffect` touch the DOM or create effects: call them from client effects or handlers and return their cleanups.
 
 ## Upstream
@@ -102,6 +102,5 @@ React Aria `utils`: `chain`, `mergeProps`, `mergeRefs`, `mergeIds`, `runAfterTra
 
 ## Common mistakes
 
-- **Merging handlers that are not resumable.** `mergeProps` chains whatever it is given; a module-level or imported function in the bag still does not resume. Use inline arrows / local functions / hook bags.
 - **Mixing the overloads.** The three-argument form returns `ControlledState`, not a Signal. Read `state.value()` and write with `setControlledValue`; do not call `.set` on a read-only controlled value.
 - **Focusing during an exit transition.** Wait with `runAfterTransition`, or focus lands on an element that is about to disappear.

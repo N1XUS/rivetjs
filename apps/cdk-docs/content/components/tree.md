@@ -263,7 +263,7 @@ Indent rows with `--tree-item-level`, rotate the chevron icon from `isExpanded()
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Tree` (`<div>`), `TreeItem` (`<div>`), `TreeSection` (`<div>`), `TreeHeader` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Tree` (`<div>`), `TreeItem` (`<div>`), `TreeSection` (`<div>`), `TreeHeader` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Tree render={(props) => <div {...(props as {})} />}>…</Tree>
@@ -279,7 +279,7 @@ Indent rows with `--tree-item-level`, rotate the chevron icon from `isExpanded()
 | `treeItemProps({ node, focusMode?, allowsArrowNavigation?, hasChildItems?, locale?, … }, state)` | `{ rowProps, gridCellProps, descriptionProps, expandButtonProps, isSelected, isDisabled, isFocused, … }`: row attributes; the chevron props (`id` `<row id>-chevron`, localized label). Row handlers: `gridListItem<Event>`. |
 | `treeItemExpandPress(event, { node }, state, isDisabled?)` | The chevron's press: toggles the row and moves focus state to it. |
 
-`state` is a grid-list view of a tree state (`createTreeState` from `@rivetjs/cdk/collections/tree-state`, react-stately `useTreeState`), rebuilt per event: never capture it in a resumable closure.
+`state` is a grid-list view of a tree state (`createTreeState` from `@rivetjs/cdk/collections/tree-state`, react-stately `useTreeState`), rebuilt per event: read it in the handler, do not keep it.
 
 ## Accessibility
 
@@ -309,7 +309,7 @@ Indent rows with `--tree-item-level`, rotate the chevron icon from `isExpanded()
 
 - The server renders the visible rows with their final `aria-expanded`, `aria-selected`, `aria-level` and tabindex; no Tree code runs before the first interaction.
 - The collection is built from the content in a resumable `computed` (flattened by the expanded keys): expanding adds rows in place, resumed rows are adopted.
-- Pass `items` as a `computed` or signal; callbacks (`onAction`, `onSelectionChange`, `onLoadMore`) as inline arrows or local functions.
+- Pass `items` as a `computed` or signal.
 - Interactive row content (text fields, inputs) belongs in a function child of `TreeItemContent`: plain JSX passed as item props is evaluated in the collection build pass.
 - `on…Capture` handlers do not resume yet.
 

@@ -28,9 +28,9 @@ The server HTML of a ToggleButton and a ListBox (from the example below, runtime
 - **`data-rk` holds cold keys.** Keyboard widgets (ListBox, Menu, Tabs, Select, Toolbar, Calendar, GridList, Tree, Slider and ColorSlider thumbs, ColorArea, ColorWheel, NumberField, ColorField, Wheel) list the keys they handle. While their code loads, the loader prevents the default action of those keys, so a first :kbd[ArrowDown] does not scroll the page; the widget's handler then runs for that key.
 - **Closed overlays render nothing.** A closed Dialog, Popover, Menu or Tooltip has no markup on the server; its content is created when it opens.
 
-## Callbacks: inline arrows or local constants
+## Callbacks
 
-Callbacks such as `onPress`, `onChange`, `onSelectionChange`, `onAction`, `onOpenChange` are not sent with the page: the browser builds them again when it runs your component. Write them inline or as a local constant, or pass any function you like:
+Callbacks such as `onPress`, `onChange`, `onSelectionChange`, `onAction`, `onOpenChange` are not sent with the page: the browser builds them again when it runs your component. Any function works: an inline arrow, a local constant, a module-level or imported function, a function from another library, a `.bind(…)`:
 
 ::example{id=resumability-callbacks}
 

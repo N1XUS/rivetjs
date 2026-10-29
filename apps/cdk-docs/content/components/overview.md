@@ -153,8 +153,7 @@ During development, Rivet warns in the browser console about common mistakes in 
 
 ## Common mistakes
 
-- **A prop that reads a signal.** Component props are read when the component renders. `<TextField invalid={!email().includes("@")} />` reads `email`, so each change renders the whole field again and keyboard focus leaves it. Pass the signal itself (`value={email}`, `selected={tab}`), and change props such as `invalid` on submit or on blur.
-- **A callback Rivet did not compile.** Inline arrows and local functions resume; functions from other libraries and a `.bind(…)` written inside an object literal do not (see [Callbacks](#callbacks)).
+- **A prop value read once.** A prop written as an expression stays live: `<TextField value={email} isInvalid={!email().includes("@")} />` updates the field's invalid state in place while the user types, and focus stays in the input. A value read into a local first (`const bad = !email().includes("@")`, then `isInvalid={bad}`) is read once, when the component renders, and never changes. Write the expression in the prop, or pass an accessor (`isInvalid={() => !email().includes("@")}`).
 - **Expecting a centered modal without `theme.css`.** The underlay is fixed over the viewport inline, but centering and backdrop are looks: add them to your `ModalOverlay` `class` (`flex items-center justify-center bg-black/50`) or import `theme.css`.
 - **Plain children in an overlay.** Closed dialogs and popovers render nothing; content created on open that holds resumable components needs a function child (`{() => …}` or `({ close }) => …`).
 - **No `<Announcer />`.** Without it, the first announcement creates the live regions and screen readers may skip it.

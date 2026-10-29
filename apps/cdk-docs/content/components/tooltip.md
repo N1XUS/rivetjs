@@ -208,7 +208,7 @@ A `class` replaces the default `rv-*` class. `@rivetjs/cdk/theme.css` does not s
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Tooltip` (`<div>`), `OverlayArrow` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Tooltip` (`<div>`), `OverlayArrow` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Tooltip render={(props) => <div {...(props as {})} />}>…</Tooltip>
@@ -230,7 +230,6 @@ A `class` replaces the default `rv-*` class. `@rivetjs/cdk/theme.css` does not s
 ## Resumability
 
 - Before interaction: the trigger's server HTML and an empty binding site per `Tooltip`; no tooltip code loads until the first hover or focus.
-- Callbacks (`onOpenChange`, DOM events): inline arrows or local consts.
 - Known limitations: a standalone `Tooltip` with `isOpen` and `onOpenChange` props may not open on a resumed page (use an `isOpen` signal and read it); the first open on a resumed page sets no `data-entering`.
 
 ## Testing

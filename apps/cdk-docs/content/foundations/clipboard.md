@@ -64,7 +64,7 @@ pending.destroy();
 
 ## Resumability
 
-The functions are plain module functions: a handler calls them without capturing a service object, so the handler resumes. Nothing runs at import time or on the server (they touch `document` / `navigator` only when called).
+The functions are plain module functions: a handler calls them directly, with no service object to create first. Nothing runs at import time or on the server (they touch `document` / `navigator` only when called).
 
 ## Upstream
 

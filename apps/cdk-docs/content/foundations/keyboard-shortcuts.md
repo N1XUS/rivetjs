@@ -50,7 +50,7 @@ Keys without a binding call `event.continuePropagation?.()`.
 
 ## Resumability
 
-Create the handler inside the event handler, as the example does: `onKeyDown={(e) => createKeyboardShortcutHandler({ … })(e)}`. The bindings close over the component's signals and are rebuilt per key press, which is cheap. A handler created in the component body is a run-time function that a resumed page cannot capture.
+Create the handler in the component body (`const onKeyDown = createKeyboardShortcutHandler({ … })`) or inside the event handler, as the example does: `onKeyDown={(e) => createKeyboardShortcutHandler({ … })(e)}`. Both work on a resumed page: the component body runs again in the browser on the first key, so the bindings close over its signals there.
 
 ## Accessibility
 
@@ -66,4 +66,3 @@ React Aria `createKeyboardShortcutHandler` and its helpers from `@react-aria/int
 
 - **`"Ctrl+s"`.** `Ctrl` is read as the key and then replaced by `s`, so the binding becomes plain :kbd[S]. Write `"Control+s"` or `"Mod+s"`.
 - **Expecting a prefix match.** `"Mod+z"` does not fire with Shift held; bind `"Mod+Shift+z"` too.
-- **Building the handler in the component body.** It does not resume; build it in the event handler.

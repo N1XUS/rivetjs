@@ -172,7 +172,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Form` (`<form>`), `FieldError` (`<span>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Form` (`<form>`), `FieldError` (`<span>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Form render={(props) => <form {...(props as {})} />}>…</Form>
@@ -193,7 +193,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 
 - The form is plain HTML: submitting works before code loads, and server errors are part of the server render.
 - Native mode: each field renders its custom error as `data-rv-error`; Form's submit handler applies those before checking validity, so fields that never ran code still block the submit.
-- `validationErrors` as an object, signal or accessor resumes; callbacks must be inline arrows or local consts.
+- `validationErrors` as an object, signal or accessor resumes.
 - `FieldError` is a region: an error appearing on the client mounts it.
 
 ## Testing

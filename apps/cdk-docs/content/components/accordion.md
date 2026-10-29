@@ -112,7 +112,7 @@ Use a heading around each trigger button and meaningful trigger text. :kbd[Enter
 ## Resumability
 
 - Server HTML is final; nothing runs before the first press.
-- The group state holds signals, keys and your callbacks: a handler capturing a state from `createDisclosureGroupState` resumes with it.
+- The group state holds signals, keys and your callbacks: a handler that uses a state from `createDisclosureGroupState` works on the resumed page.
 - `onOpened` / `onClosed` compare against the server-rendered state, so a resumed page reports the first change correctly.
 
 ## Testing

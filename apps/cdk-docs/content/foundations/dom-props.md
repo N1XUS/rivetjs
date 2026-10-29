@@ -95,13 +95,13 @@ The component pages list the exact elements under their "DOM events and attribut
 | `TextInputDOMEvents<E>` | Text input events of an `<input>` / `<textarea>` (default `E`: `HTMLInputElement`). |
 | `textInputDOMProps(props, owned = ["onInput"])` | The text input events set on `props`, minus `owned`. |
 
-Call the filters once in the component body, not inside JSX: a spread over `props` itself would make the resumed element capture the whole props object, children included. Name the events you handle in `owned` and call the caller's handler from yours.
+Call the filters once in the component body, not inside JSX: a spread over `props` itself would put the whole props object on the element, children included. Name the events you handle in `owned` and call the caller's handler from yours.
 
 ::example{id=dom-props-custom}
 
 ## Resumability
 
-- Forwarded handlers follow the usual rules: inline arrows or local `const`s; handlers on item objects too.
+- Forwarded handlers can be any function, handlers on item objects too.
 - Handlers of an element resume on its first event, owned ones chained inside the component's own handler.
 - Known limitation: `on…Capture` handlers do not resume yet.
 

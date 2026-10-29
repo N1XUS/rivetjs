@@ -206,7 +206,7 @@ List semantics: native buttons in the Tab order (no arrow keys).
 
 ## Resumability
 
-The server renders every step and the selected panel; no stepper code runs at load. The root has `preload="visible"`: its handlers are fetched once it scrolls into view, so the first click is synchronous. Callbacks (`onSelectedIndexChange`, `stepControl` accessors) must be inline arrows or local functions of a `.tsx` module.
+The server renders every step and the selected panel; no stepper code runs at load. The root has `preload="visible"`: its handlers are fetched once it scrolls into view, so the first click is synchronous.
 
 ## Upstream
 

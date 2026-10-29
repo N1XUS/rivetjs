@@ -248,7 +248,7 @@ React Aria's `ListKeyboardDelegate` answers "which key is below / above / left /
 
 - `nextIndex`, `typeahead` and `Toolbar` keep no state that needs serializing: the handler reads the DOM on each key. The typeahead buffers live in `WeakMap`s in the browser.
 - Key managers and delegates are browser objects: build them in the handler, or once per element in a `WeakMap`, from the DOM. Keep anything the server must render (the active index for `tabindex`) in a signal.
-- Handlers: module functions, local consts or inline arrows. Set `data-rk` to the keys you handle, so the first cold key does not scroll the page.
+- Handlers can be any function. Set `data-rk` to the keys you handle, so the first cold key does not scroll the page.
 
 ## Upstream
 

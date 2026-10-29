@@ -244,7 +244,7 @@ The grid handles `onKeyDown`, `onFocusIn`, `onFocusOut`, `onMouseDown` and `onSc
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `GridList` (`<div>`), `GridListItem` (`<div>`), `GridListSection` (`<div>`), `GridListHeader` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `GridList` (`<div>`), `GridListItem` (`<div>`), `GridListSection` (`<div>`), `GridListHeader` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <GridList render={(props) => <div {...(props as {})} />}>…</GridList>
@@ -297,7 +297,7 @@ Rows must carry `data-key` and `data-collection` (the grid id): the handlers rea
 
 - The server renders every row with its final `aria-selected`, `aria-disabled` and `tabindex`, and the selection checkboxes checked. No GridList code runs before the first interaction.
 - The collection is built from the children or `items` (as React Aria builds it): the rows render from it, and no item model is serialized: the browser rebuilds it from the same children on the first interaction.
-- Callbacks (`onAction`, `onSelectionChange`, `onLoadMore`, press / hover events) must be inline arrows or local functions. For derived `items`, pass a `computed` (or a signal).
+- For derived `items`, pass a `computed` (or a signal).
 - `GridListLoadMoreItem` observes its sentinel once the GridList code has loaded.
 - `on…Capture` handlers do not resume yet.
 

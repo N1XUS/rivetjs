@@ -138,7 +138,7 @@ Global DOM events and attributes set on the `TextField` land on its root `<div>`
 
 ## Render
 
-`render` replaces the default `<select>` with your own element (React Aria Components `render`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; write `render` as an inline arrow so it stays resumable.
+`render` replaces the default `<select>` with your own element (React Aria Components `render`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return. `render` can be any function: inline, local or imported.
 
 ## Accessibility
 

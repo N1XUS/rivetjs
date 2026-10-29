@@ -47,7 +47,7 @@ import { FieldInputContext, SelectableCollectionContext, AutocompleteStateContex
 
 ## Filtering
 
-`createFilter(options?, locale?)` (react-aria `useFilter`) returns `{ startsWith, endsWith, contains }` over an `Intl.Collator` with `usage: "search"`; `{ sensitivity: "base" }` ignores case and accents. Create it at module level or inside a handler (the functions are plain closures and do not serialize), and pass `filter` as an inline arrow. `getCollator(locale, options)` returns the cached collator.
+`createFilter(options?, locale?)` (react-aria `useFilter`) returns `{ startsWith, endsWith, contains }` over an `Intl.Collator` with `usage: "search"`; `{ sensitivity: "base" }` ignores case and accents. Create it at module level, in the component body or inside a handler, and pass `filter` as any function. `getCollator(locale, options)` returns the cached collator.
 
 | Export | What it does |
 | --- | --- |
@@ -91,7 +91,7 @@ The collection merges `SelectableCollectionContext`: `ListBox`, `Menu`, `GridLis
 ## Resumability
 
 - `Autocomplete` renders only providers; the field and the collection render on the server as usual.
-- The state (`createAutocompleteState`: the text, the focused node id) serializes. Callbacks (`filter`, `onInputChange`) must be inline arrows or local consts.
+- The state (`createAutocompleteState`: the text, the focused node id) is signals; their values are written into the page.
 - RA's `focusin` / `beforeinput` listeners are context props (`onFocusIn`, `onBeforeInput`), so they resume as delegated handlers.
 
 ## Custom markup

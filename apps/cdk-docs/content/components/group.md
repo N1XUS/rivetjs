@@ -108,7 +108,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Group` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Group` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Group render={(props) => <div {...(props as {})} />}>…</Group>
@@ -126,7 +126,6 @@ None of its own: Tab moves through the controls inside. For arrow-key navigation
 ## Resumability
 
 - The server renders the static attributes; focus and hover handlers load on the first focus inside / pointer over it.
-- Hover callbacks must be inline arrows or local functions.
 
 ## Testing
 

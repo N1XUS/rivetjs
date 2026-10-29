@@ -115,7 +115,7 @@ The first example on this page styles the group with `styles.css` (`.rv-ToggleBu
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `ToggleButtonGroup` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `ToggleButtonGroup` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <ToggleButtonGroup render={(props) => <div {...(props as {})} />}>…</ToggleButtonGroup>
@@ -143,7 +143,7 @@ The first example on this page styles the group with `styles.css` (`.rv-ToggleBu
 ## Resumability
 
 - The server renders roles, `aria-checked` / `aria-pressed` and `data-selected` from the state; no script loads until the first interaction.
-- The group state is region state: `defaultSelectedKeys` and a `selectedKeys` signal resume with their values. `onSelectionChange` must be an inline arrow or local function.
+- The group state is signals: `defaultSelectedKeys` and a `selectedKeys` signal resume with their values.
 
 ## Upstream
 

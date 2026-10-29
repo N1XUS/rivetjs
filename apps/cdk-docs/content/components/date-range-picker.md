@@ -269,7 +269,7 @@ The root owns `onFocusIn` / `onFocusOut`; the group owns `onKeyDown`, `onPointer
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `DateRangePicker` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `DateRangePicker` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <DateRangePicker render={(props) => <div {...(props as {})} />}>…</DateRangePicker>
@@ -296,7 +296,7 @@ The root owns `onFocusIn` / `onFocusOut`; the group owns `onKeyDown`, `onPointer
 ## Resumability
 
 - Server HTML: the group, both fields with every segment, the two form inputs, the button and the value description. The popover and its calendar render on the first open (nothing calendar-related ships before it).
-- The state is plain signals plus strings (region state): the value, the partial input, the open state and the validation resume without re-rendering.
+- The state is plain signals plus strings: the value, the partial input, the open state and the validation resume without re-rendering.
 - Parts may come from your own components (`<RangeFields />`, `<RangePopover />` in the examples): they read the picker's contexts.
 - `on…Capture` handlers do not resume yet.
 

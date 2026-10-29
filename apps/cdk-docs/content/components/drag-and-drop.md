@@ -409,7 +409,6 @@ Name the elements with `role` and `aria-*` props (`<Drag role="group" aria-label
 
 - Nothing runs before the first press: the server renders the elements with their classes, `data-*` attributes, handle styles and `freeDragPosition` transform; a `Drag` or `DropList` creates its instance from the props it captured when it is pressed. Handles, groups, previews and placeholders ship no code (they are found in the DOM).
 - The components declare `preload = "visible"`: their code is fetched when they scroll into view, so the first drag after that starts synchronously. A press before the code arrived is replayed once it has loaded.
-- Callbacks (`onDropped`, `enterPredicate`, `sortPredicate`, `constrainPosition`) must be inline arrows or local constants, like every resumable handler.
 - A keyed `For` inside a `DropList` reorders the same elements after a drop on a resumed page.
 
 ## Upstream

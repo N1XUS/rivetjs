@@ -13,7 +13,7 @@ Notes:
 - `class`, not `className`. Dates come from `@rivetjs/cdk/date` (the `@internationalized/date` port); `I18nProvider` from `@rivetjs/cdk/i18n-provider`, `useLocale` from `@rivetjs/cdk/i18n`.
 - Controlled `value` / `focusedValue` / `isYearPickerOpen` take a two-way signal; dates in a signal are their string form (a range: `{ start: "2025-12-20", end: "2025-12-31" }`). Uncontrolled props (`defaultValue`, `minValue`, …) take date objects or strings; they reach the cdk calendar as strings so the page resumes.
 - `visibleDuration` and the bounds are read once (as React Aria's memoized state): re-create the calendar to change them (Week View / Day View demos use `<Show keyed>`; upstream a `key`). `isInvalid` follows the prop (`isInvalid={isInvalid()}` in the Invalid demo: calendar and message follow the range).
-- Cell render props are accessors (`({ isUnavailable }) => isUnavailable()`; `formattedDate` is a string). A reactive child inside a cell is captured for resume: read plain values from the date first (Real-World Example).
+- Cell render props are accessors (`({ isUnavailable }) => isUnavailable()`; `formattedDate` is a string). In a reactive child inside a cell, read plain values from the date first (Real-World Example).
 - Navigation icons are lucide `ChevronLeft` / `ChevronRight`.
 - The Week View / Day View demos hold the Select value in a two-way key signal (`signal<Key | null>("1")`) and re-create the calendar per count with `<Show keyed>`.
 

@@ -191,7 +191,7 @@ Put `group` on the button and style the box with `group-data-[selected]:`, `grou
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `CheckboxField` (`<div>`), `CheckboxButton` (`<label>`), `Checkbox` (`<label>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable. A `render` that ignores `children` drops the hidden input and breaks the control.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `CheckboxField` (`<div>`), `CheckboxButton` (`<label>`), `Checkbox` (`<label>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. A `render` that ignores `children` drops the hidden input and breaks the control.
 
 ```tsx
 <CheckboxField render={(props) => <div {...(props as {})} />}>…</CheckboxField>
@@ -214,7 +214,7 @@ Put `group` on the button and style the box with `group-data-[selected]:`, `grou
 ## Resumability
 
 - The server renders the checked state, the `data-*` attributes and the parts; no Checkbox code runs before the first interaction.
-- Signals and accessors passed as `isSelected` / `isIndeterminate` / `isInvalid` / `isDisabled` resume with their values. Callbacks must be inline arrows or local consts.
+- Signals and accessors passed as `isSelected` / `isIndeterminate` / `isInvalid` / `isDisabled` resume with their values.
 - Native validation: the realtime error is rendered as `data-rv-error`, so a `<Form>` blocks a submit before the checkbox ever ran code.
 - **Known issue:** on some resumed pages (a larger form), a cold :kbd[Space] on a checkbox does not toggle on the first press; a click always does.
 

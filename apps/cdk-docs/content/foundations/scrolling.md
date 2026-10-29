@@ -269,8 +269,8 @@ Browsers disagree on `scrollLeft` in RTL containers. `getRtlScrollAxisType()` pr
 
 - **Before interaction**: the server range is plain HTML. The viewport resumes on `scroll`, `wheel`, `pointerdown`, `focusin` and `keydown`; `scrollable: "window"` adds a document `scroll` listener.
 - `createVirtualScroll` must run in the component; keep the state in a `const`. Callbacks are component props (`onScrolledIndexChange`, `onRenderedRangeChange`), not state options.
-- Row templates are render functions; `trackBy` must be resumable (an inline arrow).
-- `items` is sent in resume state: keep it compact.
+- Row templates are render functions; `trackBy` can be any function.
+- `items` is written into the page with the component's state: keep it compact.
 
 ### Known limitations
 

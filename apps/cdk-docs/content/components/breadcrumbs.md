@@ -149,7 +149,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Breadcrumbs` (`<ol>`), `Breadcrumb` (`<li>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Breadcrumbs` (`<ol>`), `Breadcrumb` (`<li>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Breadcrumbs render={(props) => <ol {...(props as {})} />}>…</Breadcrumbs>
@@ -173,8 +173,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 
 ## Resumability
 
-- `onAction` and render functions must be inline arrows or local functions.
-- `renderOverflow` must be an inline arrow; with `overflowMode="collapse"` pass a `ref()` as `ref` (a callback ref is not measured on a resumed page). The measurement starts when the list becomes visible.
+- With `overflowMode="collapse"` pass a `ref()` as `ref` (a callback ref is not measured on a resumed page). The measurement starts when the list becomes visible.
 - `isCurrent` reads the live collection: appending an item moves the current breadcrumb on a resumed page.
 - See [Link](link.md#not-yet-supported) for the known first-press issue on press-handling links.
 

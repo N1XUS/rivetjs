@@ -72,7 +72,7 @@ The server renders `defaultVisibleItems` (default: every item), then the browser
 
 ## Resumability
 
-`createOverflow` must be called in a `.tsx` component: the measuring client effect resumes with its captures (`ref()`, the `items` accessor, the options). Write `items`, `onMeasureAll` and the overflow render function as inline arrows or `computed`s.
+`createOverflow` must be called in a `.tsx` component: on a resumed page, its measuring client effect starts when the component runs in the browser. Pass `items` as an accessor or `computed`, so a change reaches the measurement. `onMeasureAll` and the overflow render function can be any function.
 
 ## Accessibility
 

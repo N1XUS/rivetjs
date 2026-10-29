@@ -95,7 +95,7 @@ The first and the [indeterminate](#indeterminate) examples use Tailwind utilitie
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `ProgressBar` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `ProgressBar` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <ProgressBar render={(props) => <div {...(props as {})} />}>…</ProgressBar>

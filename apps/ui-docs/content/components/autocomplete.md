@@ -11,7 +11,7 @@ related: [components/select, components/search-field, components/list-box]
 Notes:
 
 - `class`, not `className`. `value` / `isOpen` / `inputValue` take a signal (two-way) or a value; render props are accessors (`({ isPlaceholder, state }) => isPlaceholder() ? … : …`), and the selected keys come from `selectedKeys(state)` (`@rivetjs/cdk/select`).
-- `useFilter` is the cdk `createFilter` (`@rivetjs/cdk/i18n/filter`), created once at module level; pass the filter as an inline arrow (`filter={(text, input) => contains(text, input)}`) so it resumes.
+- `useFilter` is the cdk `createFilter` (`@rivetjs/cdk/i18n/filter`), created once at module level; pass the filter as a function (`filter={(text, input) => contains(text, input)}`).
 - The default indicator is a CSS morph chevron (see [Indicator](#indicator)); the clear icon is lucide `X`.
 - The asynchronous demo uses the cdk `createAsyncList` (react-stately `useAsyncList` port). The virtualization demo wraps the popover's `ListBox` in the cdk `CollectionVirtualizer` (`ListLayout`, as [ListBox](/components/list-box/#virtualization)): only the visible options render, and filtering re-windows the list.
 
@@ -382,7 +382,7 @@ Rivet addition: `ListBox.Item` props (`id`, `textValue`, `isDisabled`, …) plus
 
 ### useFilter Hook
 
-React Aria's `useFilter` is the cdk `createFilter(options, locale?)` (`@rivetjs/cdk/i18n/filter`). Create it once at module level and pass the filter as an inline arrow so the handler resumes.
+React Aria's `useFilter` is the cdk `createFilter(options, locale?)` (`@rivetjs/cdk/i18n/filter`). Create it once at module level and pass the filter as a function (`filter={contains}` works too).
 
 ```tsx
 import { createFilter } from "@rivetjs/cdk/i18n/filter";

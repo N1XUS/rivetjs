@@ -84,7 +84,7 @@ Router helpers (from `@rivetjs/cdk/link`): `useRouter()`, `createRouter(navigate
 
 ## Render
 
-`render` replaces the default `<a>` with your own element (React Aria Components `render`). It receives the part's props, including `ref`, `class`, `data-*` state attributes and handlers, and the render props (`isCurrent()`, `isPressed()`, `isDisabled()` and the other accessors). Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default `<a>` with your own element (React Aria Components `render`). It receives the part's props, including `ref`, `class`, `data-*` state attributes and handlers, and the render props (`isCurrent()`, `isPressed()`, `isDisabled()` and the other accessors). Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Link href="/docs" render={(props) => <b {...(props as {})} />}>Docs</Link>
@@ -137,7 +137,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 ## Resumability
 
 - An `<a href>` is plain HTML until it is hovered, focused or pressed: then its handlers resume.
-- Callbacks resume with the component; callbacks must be inline arrows or local functions. `navigate` and `useHref` resume too.
+- Callbacks, `navigate` and `useHref` can be any function; they run with the component on the resumed page.
 
 ## Testing
 

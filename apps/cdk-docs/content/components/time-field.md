@@ -152,7 +152,7 @@ Same selectors as [DateField](date-field.md#styling), with `.rv-TimeField` as th
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `TimeField` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `TimeField` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <TimeField render={(props) => <div {...(props as {})} />}>…</TimeField>
@@ -166,7 +166,7 @@ Same selectors as [DateField](date-field.md#styling), with `.rv-TimeField` as th
 ## Resumability
 
 - Server HTML has every segment with its text, ARIA and `data-rk` keys; the first key typed into a cold field is held while the code loads.
-- The value lives in a signal as a string; `onChange`, `validate` and the event handlers must be inline arrows or local functions.
+- The value lives in a signal as a string.
 
 ## Upstream
 

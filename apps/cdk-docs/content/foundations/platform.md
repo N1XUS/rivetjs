@@ -68,7 +68,7 @@ import { supports, isMac, isIOS, getPlatform, isCtrlKeyPressed, isVirtualClick }
 
 ## Resumability
 
-Every export is a plain function: handlers that call them resume without capturing anything. None of them reads `document` or `navigator` at import time.
+Every export is a plain function, so handlers can call them on resumed pages. None of them reads `document` or `navigator` at import time.
 
 ## Upstream
 

@@ -67,7 +67,7 @@ Context values may be **accessors** (`"aria-invalid": () => invalid()`, `childre
 - Server render: no check effect, so a resumed page does not start the runtime for it. The id stays in the server HTML while its part may still render (`slotIdRef(slotId, expected)`, default `true`; a FieldError passes the field's validity).
 - Server slot probe: ComboBox, Select, TextField, SearchField, NumberField, CheckboxGroup / CheckboxField, SwitchField, RadioGroup / RadioField, DateField, DatePicker, ColorField, ListBox and Menu items and alert dialogs run their children once on the server before writing the attribute (`probeSlots` from `@rivetjs/cdk/slot-probe`), so it names only the description, error, label and value parts that render. Field children therefore render twice on the server: keep them pure (effects created during the probe never run; its scope is disposed). Browser builds resolve the probe to a no-op (0 bytes). The choice is the `browser` export condition: a server bundle must resolve `@rivetjs/cdk` without it (Node, and the Rivet adapters' server builds, do). A server build that sets `browser` (some edge / worker bundler configs) gets the no-op, and the attributes can then name parts that never render; in development the server warns once (`cdk slot probe is disabled: …`).
 
-Read it as `aria-describedby={slotIdRef(slotId)}`. `deps` must be a signal or a local const, not an inline arrow argument.
+Read it as `aria-describedby={slotIdRef(slotId)}`. `deps` is a function (a signal or an arrow); the check re-runs when the signals it reads change.
 
 :::note
 Deviation from React Aria: on a resumed page, a server id whose part never rendered stays in the attribute until that binding updates for another reason. Assistive technology ignores an id with no element.
@@ -93,8 +93,8 @@ Parts keep RAC's default classes (`rv-Heading`, `rv-Text`, `rv-Label`, `rv-Separ
 
 ## Resumability
 
-- Every part context is registered for resume (`rv-heading`, `rv-text`, `rv-label`, `rv-input`, …), so a region re-created on a resumed page still sees its container's props.
-- Provided values must serialize: plain data, signals, `ref()`, and inline-arrow or local-const functions.
+- A part that reads a context runs together with the component that provides it, so on a resumed page it still sees its container's props.
+- Provided values can be anything: data, signals, `ref()` and functions of any origin.
 
 ## Upstream
 
@@ -103,7 +103,7 @@ Parts keep RAC's default classes (`rv-Heading`, `rv-Text`, `rv-Label`, `rv-Separ
 - `Pressable`, `PressResponder`, `useFocusable` → `focusableProps`, `Focusable`, `FocusableProvider`.
 - Deviations:
   - no `data-rac`; `render` (`DOMRenderProps`, `DOMRenderFunction`) is a per-part prop, re-exported here;
-  - `DEFAULT_SLOT` is a string (it must serialize);
+  - `DEFAULT_SLOT` is a string;
   - `Pressable` / `Focusable` take a render-function child instead of cloning their child.
 
 ## Common mistakes

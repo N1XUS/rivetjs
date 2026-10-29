@@ -80,7 +80,7 @@ import { Label } from "@rivetjs/cdk/label";
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `ColorField` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `ColorField` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <ColorField render={(props) => <div {...(props as {})} />}>…</ColorField>
@@ -100,7 +100,6 @@ import { Label } from "@rivetjs/cdk/label";
 ## Resumability
 
 - Typing, commit and increments work on a resumed page; values stay plain strings in signals.
-- Callbacks: inline arrows or local consts.
 
 ## Upstream
 

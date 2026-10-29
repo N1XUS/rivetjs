@@ -104,7 +104,7 @@ import { sidebarCookieOpen, SIDEBAR_COOKIE_NAME } from "@rivetjs/cdk/sidebar/sta
 | `reduceMotion` | `boolean` | `false` | Rivet: no collapse, sheet, sub-menu or page transitions (`data-reduce-motion="true"`). `prefers-reduced-motion: reduce` always applies. |
 | `closeMobileOnAction` | `boolean` | `false` | Rivet: pressing a menu button closes the mobile sheet (off = upstream: the sheet stays open; `@rivetjs/ui` turns it on). Group, menu and item levels override it (nearest wins). |
 | `side`, `variant`, `collapsible` | as `Sidebar` | none | Rivet: defaults for every `Sidebar` inside; its own props win. |
-| `navigate`, `useHref` | `(href, routerOptions) => void`, `(href) => string` | none | Rivet: a [RouterProvider](link.md) for the subtree's links (inline arrow or local function). Not needed with `@rivetjs/router`. |
+| `navigate`, `useHref` | `(href, routerOptions) => void`, `(href) => string` | none | Rivet: a [RouterProvider](link.md) for the subtree's links. Not needed with `@rivetjs/router`. |
 | `class`, `style`, `children`, `id`, DOM props | | | On the wrapper `<div>`; `style` merges over the width variables. |
 | `render` | `(props) => element` | none | Replaces the wrapper `<div>` (upstream `asChild`). |
 
@@ -317,7 +317,6 @@ Rivet extension (shadcn has no resize handle). `resizable` renders `[data-slot="
 - The provider's handler code, and the code of every binding that reads the sidebar state, is fetched when the provider is visible. It runs only on an interaction, so the first click needs no further download.
 - Tree items resume as Disclosures (the panel height animates once the runtime runs); pages resume with their active value. Nothing extra runs before the first interaction, and a page without `SidebarPages` loads no pages code.
 - The resize handle renders the server width (`width` / `defaultWidth`, else no inline variable) and runs nothing until a pointer down, key or focus on it.
-- Callbacks (`onOpenChange`, `onPress`, `onExpandedChange`, `onValueChange`, `onWidthChange`, `onWidthChangeEnd`, `navigate`) are inline arrows or local consts; `render` is an inline arrow.
 
 ## Upstream
 

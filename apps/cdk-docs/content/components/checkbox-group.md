@@ -174,7 +174,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `CheckboxGroup` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `CheckboxGroup` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <CheckboxGroup render={(props) => <div {...(props as {})} />}>…</CheckboxGroup>
@@ -195,7 +195,7 @@ Global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-p
 ## Resumability
 
 - The server renders every checkbox with its checked state; nothing runs before the first interaction.
-- The group state (values, validation) is plain data and resumes with the page. Callbacks must be inline arrows or local consts.
+- The group state (values, validation) is plain data and resumes with the page.
 
 ## Hooks
 

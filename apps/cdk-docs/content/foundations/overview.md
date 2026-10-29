@@ -64,6 +64,6 @@ Each row above links to its module's API and examples. For text-oriented interfa
 - Keep state in signals and plain objects, so the page can resume it.
 - Read the rendered items from the DOM in event handlers. You do not need to keep a copy of the list.
 - Use the native element when one exists, such as `<button>`, `<details>` and inputs. The CDK adds only what the browser does not do. Overlays are the exception: use the div overlay layer (`overlay()`, `overlayPosition()`, `<Overlay>`), not `popover` or `<dialog>`.
-- Write handlers as functions in your own code: `onKeyDown={…}`, or inline functions in an attribute object you spread (`{...{ onKeyDown: (e) => … }}`). Functions Rivet did not compile (from another library, `.bind(…)`) do not resume.
+- Handlers can be any function: inline, local, imported, from another library, or `.bind(…)`. A component that receives a function runs together with the component that passes it, the first time it is used in the browser.
 - List the keys a composite widget handles in `data-rk` (`navigationKeys()` builds the list), so a cold arrow key does not scroll the page while the widget's code loads.
 - In a component's module, reach the document through an element (`event.currentTarget.ownerDocument`): the compiler rejects a bare `document` it cannot prove runs only in the browser.

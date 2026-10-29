@@ -215,7 +215,7 @@ Do not override the inline `position`, `top`, `inset-inline-start`, `width`, `as
 - On a resumed page, the first change of `items` re-creates the item rows (resume adoption keeps only rows whose render read no signals); later changes keep them. A test pins this gap.
 - Rows are keyed (`getKey`, default `item.id`, then `item.key`, then the index): a reorder or a removal moves the same nodes. An immutable refetch that clones every item re-renders every row (a new object = a changed item); with the default index key (items without `id` / `key`), a reorder looks like changed items, so give items stable keys.
 - Virtualized layout boots one client effect too: the first window is rendered at `initialSize` (default 800 × 600), and the effect starts the virtualizer at the real size when they differ.
-- Handlers are delegated on the grid, the focus and anchor keys are resumable region state, and the item renderer is captured like any component child: follow the [resumability rules](site:docs/learn/resuming) for the functions you pass.
+- Handlers are delegated on the grid; the focus and anchor keys are signals that resume with their values. The item renderer can be any function (see [Resuming](site:docs/learn/resuming)).
 
 ## Performance
 

@@ -196,7 +196,7 @@ Sections do not render on the server yet (see [Tree sections](tree.md#sections))
 ## Resumability
 
 - The server renders the rows with `data-current`, `data-current-ancestor` and `aria-current` for the initial `selectedRoute`; no tree code runs before the first interaction.
-- `selectedRoute` as a signal or accessor updates the marks in place; the router's `navigate` must be an inline arrow or local function.
+- `selectedRoute` as a signal or accessor updates the marks in place.
 - The route focus sync runs in a client effect.
 - Known issue: an item without `href` that holds a `Link` (the link then toggles the item) does not resume yet; give every item an `href`.
 

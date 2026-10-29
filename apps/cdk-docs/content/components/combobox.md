@@ -279,8 +279,7 @@ The combobox owns the input's `onKeyDown`, `onFocus`, `onBlur`, `onInput`, `onTo
 ## Resumability
 
 - The server renders the closed field (label, input with its text, button, hidden inputs). The popover and its listbox render on the client when it opens; no combobox code loads before the first interaction.
-- The state (`createComboBoxCore`: value, text, open flag, focused key, validation) is region state and serializes; the collection is rebuilt from the children on use.
-- Callbacks (`onChange`, `onInputChange`, `onOpenChange`, `defaultFilter`, …) must be inline arrows or local consts.
+- The state (`createComboBoxCore`: value, text, open flag, focused key, validation) is signals whose values are written into the page; the collection is rebuilt from the children on use.
 - Dynamic `{() => cond() ? <ListBoxItem/> : null}` children of the `ListBox` are not tracked: derive `items` / `defaultItems` (an accessor) instead.
 - On a resumed page the first keystrokes after load can be lost while the input's `value` is re-applied from the server state.
 
@@ -290,7 +289,7 @@ The combobox owns the input's `onKeyDown`, `onFocus`, `onBlur`, `onInput`, `onTo
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `ComboBox` (`<div>`), `ComboBoxValue` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `ComboBox` (`<div>`), `ComboBoxValue` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <ComboBox render={(props) => <div {...(props as {})} />}>…</ComboBox>

@@ -239,7 +239,7 @@ See [Styling](../start/styling.md) (`styling-transitions`): CSS transitions or k
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Popover` (`<div>`), `OverlayArrow` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Popover` (`<div>`), `OverlayArrow` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Popover render={(props) => <div {...(props as {})} />}>…</Popover>
@@ -261,7 +261,6 @@ See [Styling](../start/styling.md) (`styling-transitions`): CSS transitions or k
 
 - Before interaction: the trigger and an empty anchor. The overlay, position engine and focus code load on the first press; the popover region is re-created on open.
 - Content holding components (a `Dialog` with handlers, form fields) inside a closed popover: a render-function child (`{({ close }) => …}` on `Dialog`, or `{() => …}`), so it is created on open with the right contexts.
-- Callbacks (`onOpenChange`, `shouldCloseOnInteractOutside`, DOM events): inline arrows or local functions of the component.
 - Known limitations: a `Popover` without a `Dialog` inside does not take focus when it opens on a resumed page (wrap the content in a `Dialog`); `PortalProvider` does not reach a popover created on a resumed page (it renders in `body`).
 
 ## Testing

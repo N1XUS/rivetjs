@@ -34,7 +34,7 @@ Main Rivet docs site (framework: reactivity, runtime, router, compiler, i18n, to
 - Files: `example.ts` (`export default defineExample({...})` from `@rivetjs/docs-kit/define.ts`), `src/routes/**.tsx`, `src/styles.css`, optional `src/components/*.tsx` (auto-listed as resume modules), optional server files. Merged over `templates/starter-static` (or `starter-server` with `mode: "server"`).
 - `defineExample`: `title`, `summary`, `tags`, `status`, `mode`, `frame: { height, auto?, width?, theme? }` (`auto`: frame follows its content height; [libs/docs-kit/CLAUDE.md](../../libs/docs-kit/CLAUDE.md) "Frame height"), `show: [files]`, `test: Step[]`. `Step` schema: [libs/docs-kit/CLAUDE.md](../../libs/docs-kit/CLAUDE.md#example-step-schema-definets-runner-toolsexamplests-run).
 - `test` steps run in Chromium on a production build; a failing step or console error FAILS the build.
-- `// #region demo` / `// #endregion` marks the focused code. Callbacks: inline arrows or local consts (resumable).
+- `// #region demo` / `// #endregion` marks the focused code. Callbacks: any function works on resumed pages (inline arrows are style only).
 - `src/generated/examples.json` is what `<Example>` reads (server only, from disk); `docs-kit examples apps/docs` regenerates it and lists the code-only examples (server mode, i18n, own document, dynamic pages, absolute links) with the reason.
 - `examples/motion-*` (`@rivetjs/motion` guide pages `content/guides/motion/*`, dep `@rivetjs/motion` + `motion`): example frames render after the head is sent, so Motion entrances take the custom-property form — examples with entrances import `@rivetjs/motion/entrance.css` (test steps assert `data-mvv`, not `data-mve`).
 - `examples/todo-list/src/routes/index.tsx`: user's WIP, don't touch.

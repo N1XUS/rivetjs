@@ -236,7 +236,7 @@ The popover renders at the end of `<body>`: select it by class, not as a descend
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Menu` (`<div>`), `MenuSection` (`<section>`), `MenuItem` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Menu` (`<div>`), `MenuSection` (`<section>`), `MenuItem` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Menu render={(props) => <div {...(props as {})} />}>…</Menu>
@@ -265,7 +265,6 @@ The popover renders at the end of `<body>`: select it by class, not as a descend
 - Server HTML: the trigger only; a closed menu renders nothing. The trigger carries `data-rk` so a cold :kbd[ArrowDown] opens the menu instead of scrolling.
 - A `trigger="contextMenu"` trigger carries `data-cm` instead: a cold right click opens your menu, not the browser's.
 - Menu and item behaviour is one delegated handler on the menu element; item callbacks are registered by key.
-- `onAction`, item events and render functions: inline arrows or local functions.
 
 ## Testing
 

@@ -282,7 +282,7 @@ Not supported: options get no `aria-haspopup` (ARIA does not allow it on `option
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `ListBox` (`<div>`), `ListBoxSection` (`<section>`), `ListBoxItem` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `ListBox` (`<div>`), `ListBoxSection` (`<section>`), `ListBoxItem` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <ListBox render={(props) => <div {...(props as {})} />}>…</ListBox>
@@ -332,7 +332,7 @@ The state is `createListState(props)` from `@rivetjs/cdk/collections/list-state`
 
 - The server renders every option with its final `aria-selected`, `aria-disabled` and `tabindex`. No ListBox code runs before the first interaction; `data-rk` holds a cold navigation key so it does not scroll the page while the handler loads.
 - The collection is built from the children or `items` (as React Aria builds it): the options render from it, and no item model is serialized: the browser rebuilds it from the same children on the first interaction.
-- Option callbacks (`onAction`, press, hover, key events) are attached only when given. Callbacks must be inline arrows or local functions.
+- Option callbacks (`onAction`, press, hover, key events) are attached only when given.
 - For derived `items`, pass a `computed` (or a signal).
 - `on…Capture` handlers do not resume yet.
 

@@ -15,7 +15,7 @@ API + behaviour = [shadcn/ui Sidebar](https://ui.shadcn.com/docs/components/side
 Rivet differences from shadcn/ui:
 
 - Compound parts (`Sidebar.Menu`, `Sidebar.MenuButton`, …) next to the named exports (`SidebarMenu`, …). `class`, not `className`; `render` instead of `asChild`.
-- `open` takes a value, a two-way signal or an accessor; `onOpenChange` must be an inline arrow or a local function (resumable).
+- `open` takes a value, a two-way signal or an accessor; `onOpenChange` can be any function.
 - The mobile sheet is a cdk `Modal` on Rivet's div overlay layer (no Radix Dialog); it slides with a CSS transition. Rivet adds swipe-to-dismiss: a sideways drag follows the pointer and the release velocity decides close vs settle back (`@rivetjs/cdk/motion`, Embla's physics).
 - `data-active` is `"true"` or absent (shadcn writes `"false"` too).
 - Rivet extensions on the same API: tree items (`expandable` items, `Sidebar.MenuTrigger`, `Sidebar.MenuIndicator`, guide lines), `Sidebar.MenuChip`, `Sidebar.MenuActions`, `isCurrent` / `forceReload` links, `Sidebar.Pages`, a configurable `toggleShortcut`, `reduceMotion`, `closeMobileOnAction`, provider-level `side` / `variant` / `collapsible` defaults, a client router (`navigate`), the sheet `backdrop` and a resize handle (`resizable`).
@@ -431,20 +431,20 @@ See the [full module API](/api/rivetjs/ui/sidebar/) for every named export and p
 
 ### Sidebar.Provider
 
-| Prop                               | Type                                            | Default   | Description                                                           |
-| ---------------------------------- | ----------------------------------------------- | --------- | --------------------------------------------------------------------- |
-| `defaultOpen`                      | `boolean`                                       | `true`    | Initial open state (uncontrolled)                                     |
-| `open`                             | `boolean \| Signal<boolean> \| (() => boolean)` | -         | Controlled open state (signal = two-way)                              |
-| `onOpenChange`                     | `(open: boolean) => void`                       | -         | Called when the open state changes                                    |
-| `toggleShortcut`                   | `string \| false`                               | `"mod+b"` | Toggle chord (`mod` = Cmd/Ctrl, `shift`, `alt`); `false` = off        |
-| `reduceMotion`                     | `boolean`                                       | `false`   | No sidebar transitions (collapse, sheet, sub menus, pages)            |
-| `closeMobileOnAction`              | `boolean`                                       | `true`    | Close the mobile sheet when a menu item is pressed                    |
-| `contained`                        | `boolean`                                       | `false`   | Panel inside the provider (not the viewport); read once               |
-| `side` / `variant` / `collapsible` | as `Sidebar`                                    | -         | Defaults for every `Sidebar` inside (its own props win)               |
-| `navigate`                         | `(href, routerOptions) => void`                 | -         | Client router for the subtree's links (inline arrow / local function) |
-| `useHref`                          | `(href) => string`                              | -         | Maps router hrefs to DOM hrefs (with `navigate`)                      |
-| `class`                            | `string`                                        | -         | Additional CSS classes                                                |
-| `style`                            | `StyleObject`                                   | -         | Merged after `--sidebar-width` variables                              |
+| Prop                               | Type                                            | Default   | Description                                                    |
+| ---------------------------------- | ----------------------------------------------- | --------- | -------------------------------------------------------------- |
+| `defaultOpen`                      | `boolean`                                       | `true`    | Initial open state (uncontrolled)                              |
+| `open`                             | `boolean \| Signal<boolean> \| (() => boolean)` | -         | Controlled open state (signal = two-way)                       |
+| `onOpenChange`                     | `(open: boolean) => void`                       | -         | Called when the open state changes                             |
+| `toggleShortcut`                   | `string \| false`                               | `"mod+b"` | Toggle chord (`mod` = Cmd/Ctrl, `shift`, `alt`); `false` = off |
+| `reduceMotion`                     | `boolean`                                       | `false`   | No sidebar transitions (collapse, sheet, sub menus, pages)     |
+| `closeMobileOnAction`              | `boolean`                                       | `true`    | Close the mobile sheet when a menu item is pressed             |
+| `contained`                        | `boolean`                                       | `false`   | Panel inside the provider (not the viewport); read once        |
+| `side` / `variant` / `collapsible` | as `Sidebar`                                    | -         | Defaults for every `Sidebar` inside (its own props win)        |
+| `navigate`                         | `(href, routerOptions) => void`                 | -         | Client router for the subtree's links                          |
+| `useHref`                          | `(href) => string`                              | -         | Maps router hrefs to DOM hrefs (with `navigate`)               |
+| `class`                            | `string`                                        | -         | Additional CSS classes                                         |
+| `style`                            | `StyleObject`                                   | -         | Merged after `--sidebar-width` variables                       |
 
 ### Sidebar
 
@@ -477,7 +477,7 @@ See the [full module API](/api/rivetjs/ui/sidebar/) for every named export and p
 | `variant`             | `"default" \| "outline"`     | `"default"` | Outline adds a border ring                                       |
 | `tooltip`             | `string \| TooltipProps`     | -           | Shown while collapsed to icons (desktop only)                    |
 | `href`                | `string`                     | -           | Renders a link                                                   |
-| `onPress`             | `(e: PressEvent) => void`    | -           | Press handler (inline arrow on resumed pages)                    |
+| `onPress`             | `(e: PressEvent) => void`    | -           | Press handler                                                    |
 | `render`              | `DOMRenderFunction`          | -           | Custom element                                                   |
 
 ### Sidebar.MenuSubButton

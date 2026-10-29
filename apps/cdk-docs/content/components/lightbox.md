@@ -226,7 +226,7 @@ The parts are headless: default `rv-Lightbox*` classes when `class` is omitted, 
 ## Resumability
 
 - A closed lightbox renders only its overlay anchor on the server: no slides, no media requests, no code at load. Opening it creates the parts in the browser.
-- Slides and settings are plain data; event callbacks must be inline arrows. The parts are a render function (`{() => …}`), so they are created inside the open lightbox.
+- Slides and settings are plain data. The parts are a render function (`{() => …}`), so they are created inside the open lightbox.
 - Media state follows the DOM after each slide change (videos paused / played, the current thumbnail scrolled into view): no effects run while the lightbox is closed.
 
 ## Upstream

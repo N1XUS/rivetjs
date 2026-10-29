@@ -134,7 +134,7 @@ The Angular CDK `InteractivityChecker` (frames, iOS rules, audio / video) is on 
 - The wrapper has a resumable `keydown` handler, so containment works from the first Tab on a resumed page.
 - Restore, auto focus and the document listeners run in a client effect: on a resumed page when the scope is visible (a scope inside `Show` mounts when shown).
 - The element to restore is read when the scope renders. A resumed page re-creates a server-rendered region on its first change; restore then finds the replacement by its `id`, so give openers an `id`.
-- `useFocusManager()` holds no state and serializes as symbols.
+- `useFocusManager()` holds no state, so nothing of it is written into the page.
 
 ## Upstream
 

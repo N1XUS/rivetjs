@@ -240,7 +240,7 @@ Every part takes the global DOM events and attributes (`GlobalDOMAttributes` fro
 
 ## Custom elements
 
-Each part takes `render`: return your own element and spread the props it receives (ARIA attributes, handlers, reactive attributes as accessors). `render` must be an inline arrow.
+Each part takes `render`: return your own element and spread the props it receives (ARIA attributes, handlers, reactive attributes as accessors). `render` can be any function.
 
 ::example{id=tabs-custom}
 

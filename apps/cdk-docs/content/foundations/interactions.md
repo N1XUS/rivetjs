@@ -45,10 +45,10 @@ Each `xProps` returns React Aria's result object (`{ pressProps, isPressed }`): 
 
 ## Rules for every hook
 
-- **Call the hook in the component body**, spread its props on exactly one element. Options with callbacks: inline arrows or local `const`s (the resume compiler serializes them).
+- **Call the hook in the component body**, spread its props on exactly one element. Callback options can be any function: inline, local or imported.
 - **Options are read at event time.** `isDisabled` (and `pressProps`'s `isPressed`) may be a signal or accessor: `pressProps({ isDisabled: disabled })`.
 - **State is a signal.** Write it to a data attribute for styling: `data-pressed={isPressed() || undefined}`.
-- **Nothing runs at load.** The handlers are resumable symbols; global listeners (pointerup on the document, the touch tracker of `hoverProps`) install inside the first handler call. Exceptions: `watchInteractOutside` and `scrollWheelProps(props, ref)` register client listeners at load.
+- **Nothing runs at load.** The handlers attach when the component first runs in the browser (its first event); global listeners (pointerup on the document, the touch tracker of `hoverProps`) install inside the first handler call. Exceptions: `watchInteractOutside` and `scrollWheelProps(props, ref)` register client listeners at load.
 - **Combine hooks with `mergeProps`** when two of them handle the same event (your own `onPointerDown` next to `pressProps`, `class` values to join). A plain double spread would keep only the last handler.
 - **Delegated events.** The press and hover bags hold bubbling handlers (`pointerdown`, `pointerover`, …): the runtime handles them with one document listener per event type (shadow roots included), so a mounted hooked element adds no listener of its own. Events React Aria only needs mid-interaction bind on the element for that interaction and unbind after: `pointerenter` / `pointerleave` / `dragstart` during a pointer press, `pointerleave` while hovered. With callbacks, `hoverProps` (`pointerenter` / `pointerleave`) and `focusProps` (`focus` / `blur`) bind native listeners instead, so handlers merged around them run in `mergeProps` order, as in React Aria.
 
@@ -185,7 +185,7 @@ The listeners are client events on `document`: a page using the hook boots the r
 
 ## mergeProps and chain
 
-`mergeProps(...bags)` merges prop objects: later keys win, `on*` handlers chain (earlier first), `class` / `className` and `aria-describedby` / `aria-labelledby` join with a space. The chained handlers stay resumable when the merged object is spread on a native element. `chain(...fns)` calls each function in order.
+`mergeProps(...bags)` merges prop objects: later keys win, `on*` handlers chain (earlier first), `class` / `className` and `aria-describedby` / `aria-labelledby` join with a space. Spread the merged object on a native element; its chained handlers attach with that element. `chain(...fns)` calls each function in order.
 
 ::example{id=merge-props}
 

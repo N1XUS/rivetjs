@@ -175,7 +175,7 @@ Put `group` on the label and style the track with `group-data-[selected]:`, `gro
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Switch` (`<label>`), `SwitchField` (`<div>`), `SwitchButton` (`<label>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable. A `render` that ignores `children` drops the hidden input and breaks the control.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Switch` (`<label>`), `SwitchField` (`<div>`), `SwitchButton` (`<label>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. A `render` that ignores `children` drops the hidden input and breaks the control.
 
 ```tsx
 <Switch render={(props) => <label {...(props as {})} />}>…</Switch>
@@ -196,7 +196,7 @@ Put `group` on the label and style the track with `group-data-[selected]:`, `gro
 ## Resumability
 
 - The server renders the state and the attributes; no Switch code runs before the first interaction.
-- Signals and accessors passed as `isSelected` / `isDisabled` resume with their values; callbacks must be inline arrows or local consts.
+- Signals and accessors passed as `isSelected` / `isDisabled` resume with their values.
 - `ToggleStateContext` is resumable: a child reading it keeps the state after resume.
 
 ## Hooks

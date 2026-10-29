@@ -160,12 +160,12 @@ Every part takes the global DOM events and attributes (`GlobalDOMAttributes`: mo
 ## Resumability
 
 - The server renders the whole field (`data-empty`, the value). No SearchField code runs before the first interaction.
-- The state (`createSearchFieldState`: the controlled / uncontrolled value) serializes; callbacks must be inline arrows or local consts.
+- The state (`createSearchFieldState`: the controlled / uncontrolled value) is signals; their values are written into the page.
 - The server's `aria-describedby` lists the description and error ids even when the part is absent; the client corrects it on first use.
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `SearchField` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `SearchField` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <SearchField render={(props) => <div {...(props as {})} />}>…</SearchField>

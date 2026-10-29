@@ -61,7 +61,6 @@ Any child that consumes press events works: a `Link`, or your own element inside
 ## Resumability
 
 - Server-rendered markup is final; the press handler resumes on the first press of the child.
-- `onSelect` must be an inline arrow or local function.
 
 ## Upstream
 

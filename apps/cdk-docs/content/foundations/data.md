@@ -21,7 +21,7 @@ import { createListData, createAsyncList, createTreeData } from "@rivetjs/cdk/da
 | `listDataState(list)` | React's `{...state}` of `useListData` | A snapshot `{ items, selectedKeys, filterText }` (reads the signals). |
 | types | | `ListOptions`, `ListData`, `ListActions`, `ListDataState`, `AsyncListOptions`, `AsyncListData`, `AsyncListLoadFunction`, `AsyncListLoadOptions`, `AsyncListStateUpdate`, `TreeOptions`, `TreeData`, `TreeNode` |
 
-Call a factory once in a component body (or at module scope for data shared by several components). Its state is region state: a region re-created on a resumed page keeps its data.
+Call a factory once in a component body (or at module scope for data shared by several components). Its state is signals: on a resumed page the component starts from the server's values.
 
 ## createListData
 
@@ -36,7 +36,7 @@ Manages an immutable list of items with a selection and an optional filter.
 | `initialItems` | `T[]` | `[]` | |
 | `initialSelectedKeys` | `Iterable<Key> \| "all"` | empty | |
 | `initialFilterText` | `string` | `""` | |
-| `getKey` | `(item: T) => Key` | `item.id ?? item.key` | Inline arrow or local function (captured). |
+| `getKey` | `(item: T) => Key` | `item.id ?? item.key` | Any function. |
 | `filter` | `(item: T, filterText: string) => boolean` | none | Without it `items()` ignores the filter text. |
 
 ### ListData
@@ -158,8 +158,8 @@ In a `Tree`, removing a row (`remove`, `removeSelectedItems`) logs an error from
 
 ## Resumability
 
-- The returned objects are signals plus arrow functions of a resume-compiled module: handlers and bindings of a resumed page share them.
-- Options that are functions (`getKey`, `filter`, `getChildren`, `load`, `sort`) are captured: inline arrows or local functions, never module-level functions.
+- The returned objects are signals plus functions: handlers and bindings of a resumed page share them. Keep item values plain JSON data (strings, numbers, booleans, `null`, plain objects and arrays): the signals' values are written into the page, and a signal holding something else (a `Date`, a `Map`, a class instance) starts again from its initial value in the browser.
+- Options that are functions (`getKey`, `filter`, `getChildren`, `load`, `sort`) can be any function: inline, local, module-level or imported.
 - `createAsyncList` keeps in-flight `AbortController`s in the browser only; the initial load runs in a client effect.
 - Pass `list.items` itself (a computed / accessor) to `items`, not `list.items()` (a value read once).
 

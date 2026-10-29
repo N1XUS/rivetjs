@@ -110,7 +110,7 @@ import { I18nProvider } from "@rivetjs/cdk/i18n-provider";
 | `selectionAlignment` | `"start" \| "center" \| "end"` | start when the range is longer than the visible months, else center | Alignment of the visible months around the selection (or today) on first render. |
 | `firstDayOfWeek` | `"sun" \| "mon" \| … \| "sat"` | the locale's | Day that starts the week. |
 | `weeksInMonth` | `number` | the locale's | Rows per month. |
-| `createCalendar` | `(identifier: CalendarIdentifier) => Calendar` | `createCalendar` of `@rivetjs/cdk/date` | Display calendar system factory (inline arrow or local const). |
+| `createCalendar` | `(identifier: CalendarIdentifier) => Calendar` | `createCalendar` of `@rivetjs/cdk/date` | Display calendar system factory. |
 | `autoFocus` | `boolean` | `false` | Focuses the focused cell once mounted. |
 | `aria-label`, `aria-labelledby`, `aria-describedby`, `aria-details` | `string` | none | Labelling: a range calendar has no visible label part. The root label is `"<aria-label>, <visible range>"`. |
 | `id` | `string` | generated | Root id and prefix of `<id>-error`, `<id>-start-prompt`, `<id>-finish-prompt`. |
@@ -232,7 +232,7 @@ Every part takes the global DOM events and attributes: `RangeCalendar` on the ro
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `RangeCalendar` (`<div>`), `CalendarGrid` (`<table>`), `CalendarGridHeader` (`<thead>`), `CalendarHeaderCell` (`<th>`), `CalendarGridBody` (`<tbody>`), `CalendarCell` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `RangeCalendar` (`<div>`), `CalendarGrid` (`<table>`), `CalendarGridHeader` (`<thead>`), `CalendarHeaderCell` (`<th>`), `CalendarGridBody` (`<tbody>`), `CalendarCell` (`<div>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <RangeCalendar render={(props) => <div {...(props as {})} />}>…</RangeCalendar>
@@ -262,7 +262,7 @@ Pointer: mouse press anchors, hover previews, a second press (or the release of 
 ## Resumability
 
 - The server renders every grid, cell state and label; no calendar code ships before the first interaction. Grid handlers are delegated (one per `table`, `data-rk` keys).
-- State is signals plus JSON (dates as strings). `isDateUnavailable` (two arguments), `onChange`, `onFocusChange`, `createCalendar` and DOM handlers must be inline arrows or local consts.
+- State is signals plus JSON (dates as strings). `isDateUnavailable` takes two arguments.
 - Render functions (`CalendarGrid` children, picker children) must not capture date objects or other class instances in bindings: read plain fields into locals.
 - `on…Capture` handlers do not resume yet.
 

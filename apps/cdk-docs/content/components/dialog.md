@@ -115,7 +115,7 @@ A render function child receives `{ close }`: use it for content with handlers, 
 - Default: :kbd[Escape] closes, a press on the underlay does nothing.
 - `isDismissable`: a press outside the modal closes it, and a visually hidden "Dismiss" button is rendered in the modal.
 - `isKeyboardDismissDisabled`: :kbd[Escape] is ignored; give the user a button.
-- `shouldCloseOnInteractOutside={(element) => …}`: `false` keeps the dialog open. Pass an inline arrow.
+- `shouldCloseOnInteractOutside={(element) => …}`: `false` keeps the dialog open.
 
 ## Controlled and standalone
 
@@ -169,7 +169,7 @@ Target the default class names and `[data-entering]` / `[data-exiting]`. For a r
 
 ## Render
 
-`render` replaces the default element with your own (React Aria Components `render`). Supported on `Dialog` (`<section>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default element with your own (React Aria Components `render`). Supported on `Dialog` (`<section>`). It receives the part's props (`ref`, `class`, `style`, `data-*` state attributes, handlers, `children`) and the render props as accessors. Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Dialog render={(props) => <section {...(props as {})} />}>…</Dialog>
@@ -191,7 +191,6 @@ Target the default class names and `[data-entering]` / `[data-exiting]`. For a r
 ## Resumability
 
 - Before interaction: the trigger button with a delegated handler. The overlay code loads on the first press; the overlay region is re-created on open.
-- Callbacks (`onOpenChange`, `shouldCloseOnInteractOutside`, DOM events) must be inline arrows or local functions of the component.
 - An open dialog (`defaultOpen`) is server-rendered (React Aria renders none on the server).
 
 ## Testing

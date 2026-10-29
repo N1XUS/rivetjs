@@ -146,7 +146,7 @@ A `<Focusable>` child needs an interactive ARIA role (`role="link"`, `role="butt
 
 - Before interaction: the trigger's server HTML (with `aria-haspopup` / `aria-expanded`) and two empty binding sites; no preview or popover code loads before the first hover, focus or touch.
 - The long press and focus-restore listeners are installed on the trigger at its first pointer enter or focus.
-- Popover content with components or callbacks: a render function `{() => …}`. Callbacks: inline arrows or local consts.
+- Popover content with components or callbacks: a render function `{() => …}`.
 - Known limitations: `isDisabled` does not stop keyboard focus from opening the preview; the long press accessibility description ("Long press to open preview") is not set.
 
 ## Behaviour hooks

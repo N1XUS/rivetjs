@@ -136,7 +136,7 @@ The button handles `onPointerDown`, `onPointerUp`, `onMouseDown`, `onClick` and 
 
 ## Render
 
-`render` replaces the default `<button>` with your own element (React Aria Components `render`). It receives the part's props, including `ref`, `class`, `data-*` state attributes and handlers, and the render props (`isPressed()`, `isHovered()`, `isDisabled()` and the other accessors). Spread the props onto the element you return; the `ref` inside the spread attaches. Write `render` as an inline arrow so it stays resumable.
+`render` replaces the default `<button>` with your own element (React Aria Components `render`). It receives the part's props, including `ref`, `class`, `data-*` state attributes and handlers, and the render props (`isPressed()`, `isHovered()`, `isDisabled()` and the other accessors). Spread the props onto the element you return; the `ref` inside the spread attaches.
 
 ```tsx
 <Button render={(props) => <a {...(props as {})} href="/docs" />}>Docs</Button>
