@@ -231,6 +231,8 @@ test("scheduler UI: warm drag frame layout cost (CDP trace)", () =>
     assert.equal(await ghost.evaluate((el) => getComputedStyle(el).borderTopStyle), "dashed");
     assert.equal(await ghost.evaluate((el) => getComputedStyle(el).opacity), "0.9");
     assert.equal(await ghost.evaluate((el) => getComputedStyle(el).pointerEvents), "none");
+    // The source chip fades to 0.4 through a transition: on a loaded host a read can land mid-fade (0.400155).
+    await chip.evaluate((el) => new Promise<void>((resolve) => (getComputedStyle(el).opacity === "0.4" ? resolve() : el.addEventListener("transitionend", () => resolve(), { once: true }))));
     assert.equal(await chip.evaluate((el) => getComputedStyle(el).opacity), "0.4");
     const frame = () => page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
     await frame();
