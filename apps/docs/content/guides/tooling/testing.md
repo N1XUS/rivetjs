@@ -21,6 +21,11 @@ Rivet code is tested at three levels: components rendered in a DOM (fast, many t
 | `@rivetjs/runtime/testing/server` | `renderToString(() => <App />)`: the server HTML, as a promise. |
 | `@rivetjs/testing/jest-dom` | `@testing-library/jest-dom` matchers on Vitest's `expect` (`toHaveAttribute`, `toHaveTextContent`, …). Import it once as a setup file. |
 | `@rivetjs/testing/user` | Testers for accessible widgets (listbox, menu, select, tabs, …), ported from React Aria. Used mostly with [@rivetjs/cdk](site:cdk/start/testing/). |
+| `@rivetjs/testing/html` | `normalizedHTML(node, options?, self?)`: markup without Rivet's anchors, for exact assertions. See [normalized markup](#normalized-markup). |
+| `@rivetjs/testing/fuzz` | Resume fuzz: drives every interactive element of a resumed page and of the same page built in the browser, and compares the two. See [resume fuzz](#resume-fuzz). |
+| `@rivetjs/testing/browser-env` | Setup file for Vitest browser mode: installs the headless cursor guard in the test page. |
+| `@rivetjs/testing/headless-cursor` | `guardOriginPointer()` and `installPlaywrightGuard(playwright)`: the headless cursor guard on its own. See [headless Chromium on Linux](#headless-chromium-on-linux). |
+| `@rivetjs/testing/cleanup`, `@rivetjs/testing/serializer` | The auto-cleanup setup file and snapshot serializer that `rivetTest()` registers. Add them by hand to a config without `rivetTest()`. |
 
 `@testing-library/user-event` and `@testing-library/dom` work as they are; no Rivet wrapper is needed.
 
@@ -145,6 +150,74 @@ Useful checks in such tests:
 
 - Fetching versus execution: record script requests with `page.on("request")`, and separately check when component code runs. Idle prefetch can download a boundary before interaction without executing it. Use the server's `preload: { lean: true }` when testing a page that must avoid background downloads.
 - Errors: collect `page.on("pageerror")` and console errors and expect none. Check the response status of the server render too.
+
+## Normalized markup
+
+`view.html()` drops Rivet's marker comments. `normalizedHTML` from `@rivetjs/testing/html` goes further, so one expected string fits every compile target and live form state:
+
+- comments and empty text anchors are dropped, adjacent text is merged;
+- attributes are sorted by name, every element gets a closing tag (void elements too), SVG elements print as `svg:<name>`;
+- live form state prints as `:value`, `:checked` and `:selected` pseudo-attributes (`properties: false` leaves them out);
+- the focused element gets `:focus` (`focus: false` leaves it out).
+
+It prints the children of `node`; pass `true` as the third argument to include `node` itself.
+
+```tsx title="src/Field.test.tsx"
+import { expect, test } from "vitest";
+import { render } from "@rivetjs/runtime/testing";
+import { normalizedHTML } from "@rivetjs/testing/html";
+
+test("typed value shows up", () => {
+  const view = render(() => <input name="q" type="text" />);
+  const input = view.find("input") as HTMLInputElement;
+  input.value = "rivet";
+  expect(normalizedHTML(view.container, { focus: false })).toBe('<input :value="rivet" name="q" type="text"></input>');
+});
+```
+
+## Resume fuzz
+
+`@rivetjs/testing/fuzz` finds pages that behave differently after resuming. For each route it opens two Playwright pages against a production server: the server-rendered document, which resumes, and the route reached by client-side navigation from `from` (default `/`), which renders in the browser. It clicks every interactive element, types into text fields, presses its keys and Escape, and compares the normalized DOM after each step. Playwright is an optional peer dependency.
+
+```ts title="tests/resume-fuzz.test.ts"
+import { chromium } from "playwright";
+import { start } from "@rivetjs/router/node";
+import { fuzzSuite, storyRoutes } from "@rivetjs/testing/fuzz";
+
+fuzzSuite({
+  project: "resume-fuzz",
+  routes: storyRoutes(new URL("../src/routes/", import.meta.url)),
+  start: async () => {
+    const app = await start({ dist: "dist", port: 0 });
+    const browser = await chromium.launch();
+    return {
+      origin: app.url,
+      browser,
+      close: async () => {
+        await browser.close();
+        await app.close();
+      },
+    };
+  },
+});
+```
+
+- `storyRoutes(dir, { exclude })` lists the static routes of a routes folder. Layouts, `*.server.ts` files and dynamic segments are left out.
+- `fuzzSuite` registers one Vitest test per route. A finding fails the test. Its kinds are `resume-error`, `page-error`, `csr-error`, `mismatch`, `recreated`, `missing`, `load` and `reload`.
+- `pins: [{ route, kind, match, owner, note }]` records a known finding as an expected failure (`test.fails`), so the suite stays green until it is fixed. `design: true` only filters the finding.
+- `options` passes `fuzzRoute` options to every route: `seed` (default 1), `maxSteps` (default 40), `text` (default `"Rivet 7"`), `viewport`, `minimize` (shorten each reproduction, default on), `skip` (CSS selectors to leave alone).
+- `fuzzRoute(route, options)` runs one route without the suite and returns `{ elements, steps, findings, ms }`.
+
+Environment variables: `RIVET_FUZZ_ROUTES` (comma-separated substrings or a `/regex/`), `RIVET_FUZZ_SHARD=i/n`, `RIVET_FUZZ_STEPS`, `RIVET_FUZZ_SEED`, `RIVET_FUZZ_LOG` (print each finding with a rerun command) and `RIVET_FUZZ_OUT` (a file for JSON lines). Pins are skipped while `RIVET_FUZZ_STEPS` or `RIVET_FUZZ_SEED` is set.
+
+## Headless Chromium on Linux
+
+Headless Chromium on Linux keeps a virtual cursor at screen (0, 0). After layout it sends trusted `pointerover`, `pointerenter`, `pointermove` and the matching mouse events to whatever element sits there, so a test can see hover state it never scripted. macOS does not do this, so such tests pass locally and fail in CI.
+
+- `guardOriginPointer()` runs in the page. It swallows those events at screen (0, 0), and the out / leave events of elements whose arrival it swallowed. CSS `:hover` is not affected.
+- `installPlaywrightGuard(playwright)` adds `guardOriginPointer` to every browser context the given Playwright instance creates.
+- `@rivetjs/testing/browser-env` calls `guardOriginPointer()`. Add it to `setupFiles` of a Vitest browser-mode project.
+- `RIVET_HEADLESS_CURSOR=origin` moves the mouse to (0, 0) on every page load, which comes close to CI behaviour on macOS.
 
 ## Common mistakes
 

@@ -9,7 +9,7 @@ related: [foundations/scrolling, foundations/collections, foundations/selection,
 `@rivetjs/cdk/virtualizer` provides a virtualization engine (`Virtualizer`, `Layout`, `LayoutInfo`, `Rect`, `ReusableView`, overscan, scroll anchoring), its layouts (`ListLayout`, `GridLayout`, `WaterfallLayout`, `TableLayout`), and `ScrollView` and item measurement. With `<Virtualizer>`, you pass a `layout` and `layoutOptions`, and only the views inside the visible rect (plus overscan and persisted keys) are in the DOM. It renders its own `items`, or it wraps a `ListBox`, `GridList`, `Menu`, `Tree` or `Table` (see [Collection components](#collection-components)).
 
 - **Server**: the engine runs at `initialSize` and renders the first window; views are absolutely positioned.
-- **Browser**: no library code runs until the first scroll or focus on the scroller (`preload="interaction"`). Then the engine starts from the scroller's real size and adopts the server rows, keyed by item key.
+- **Browser**: no library code runs until the first scroll or focus on the scroller. Then the engine starts from the scroller's real size and adopts the server rows, keyed by item key.
 - **After that**: views come and go with scrolling, resizes go through a `ResizeObserver`, and estimated sizes are measured.
 
 ::example{id=virtualizer-list}
@@ -262,7 +262,7 @@ Give `onLoadMore` (and usually `isLoading`) to append a loader node (key `LOADER
 
 ## Resumability
 
-- **Before interaction**: the server window is plain HTML. The scroller has `preload="interaction"`; the first `scroll` or `focusin` loads the engine.
+- **Before interaction**: the server window is plain HTML and no virtualizer code runs. The code is fetched at low priority when the browser is idle after the load (or on intent), and the engine starts on the first `scroll` or `focusin` on the scroller; see [preloading](site:docs/guides/performance/preloading/).
 - **First scroll**: the engine starts from the scroller's real size (`clientWidth` / `clientHeight`) and scroll position, adopts the server rows by key (same DOM nodes), and measures estimated views.
 - `layout` and `children` can be any function. The layout instance itself is never written into the page: the browser creates it when the component first runs.
 - `items`, `layoutOptions`, `persistedKeys` and the server window are written into the page with the component's state. Keep items compact, or derive them from an accessor.

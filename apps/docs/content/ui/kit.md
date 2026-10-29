@@ -154,7 +154,7 @@ import { Script } from "@rivetjs/kit";
 | `idle` | When the browser is idle after load (at most 4 seconds later). |
 | `interaction` | On the first pointer, key or wheel input. |
 
-`load`, `idle` and `interaction` use one small inline script per page (under 400 bytes gzipped), added only to pages that need it. In the browser, `loadScript(src)` loads a script file once.
+`load`, `idle` and `interaction` use one small inline script per page (under 400 bytes gzipped), added only to pages that need it. In the browser, `loadScript(src, { type?, integrity?, crossorigin? })` loads a script file once and resolves on its `load` event; a script already in the document (server-rendered or loaded by `<Script>`) resolves at once. Import it from `@rivetjs/kit`: the `kit()` Vite plugin resolves that import to `@rivetjs/kit/dom`, the browser half with the same exports, in the client build. On the server, `loadScript` does nothing and resolves. Do not import `@rivetjs/kit/dom` directly from code that also runs on the server.
 
 Inline code needs `unsafeInlineScript(code)`. Plain strings and objects are refused. The name is a warning: only pass code you have reviewed, because it runs with the page's CSP permission.
 

@@ -19,6 +19,10 @@ const label = languageLabel("ts"); // "TypeScript"
 const original = tokens.map((token) => token.value).join("");
 ```
 
+::example{id=highlight-code-block}
+
+The example renders on the server only: a plain `.map` over the tokens, a `span` with a `tok-<type>` class for each non-plain token, and CSS variables for the colors. The page ships no highlighter code.
+
 ## API
 
 | Export | Signature / type | Result |

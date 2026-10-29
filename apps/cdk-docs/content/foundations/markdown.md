@@ -18,6 +18,10 @@ const label = textOf(parseInline("Read **release notes**"));
 const href = safeUrl("/releases");
 ```
 
+::example{id=markdown-render}
+
+The renderer in the example maps each node type to an element, renders code blocks as text and renders a link whose URL `safeUrl` rejects as plain text.
+
 ## API
 
 | Export | Signature | Result |

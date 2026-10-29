@@ -181,6 +181,16 @@ When a page's only browser code is islands with plain JSON props, Rivet skips it
 
 On other pages, too, every island with plain JSON props starts through that inline script. An island that needs Rivet (live props, callbacks, Rivet content in a slot, `client="intent"`) starts with the Rivet component that renders it: that component loads when the island's policy fires (`load`, `idle`, `visible`), takes over the server HTML and then hydrates the island. Rivet content in its slots renders again in the browser at that moment; an event held on the server's nodes runs on the new ones. A `visible` island of this kind still downloads its code near the viewport, not before. An island that needs Rivet but is rendered outside any interactive component stays static (development prints a warning naming it). See [Resuming](../../learn/resuming.md).
 
+## Write an adapter
+
+An adapter connects one framework to the bridge. `@rivetjs/bridge/adapter` holds the contract the React and Preact adapters implement; the API may still change while bridges are experimental. An adapter package has three modules:
+
+- **A server module** that exports `adapter: ServerAdapter`. `render(component, props, slots, ctx)` returns the island's HTML (a string, `{ html, head }` for hoisted head entries, or a promise). Each `slots[name].html` is the exact empty element to write where Rivet content goes. `ctx.id` is the island id, to use as the framework's id prefix; `ctx.nonce` is the page's CSP nonce. `head(ctx)` (optional) returns markup written once per page before the first island of that framework.
+- **A client module** that exports `adapter: ClientAdapter`, with `hydrate` (start on the server HTML), `mount` (client-only islands, and after a failed hydration), `update(handle, props)` for live props and `unmount(handle)`. When the framework throws the server HTML away, call `islandRecovered(framework, id, error, root)`: it logs `RV2149` with the island id and, in development, shows the error in DevTools.
+- **A Vite entry** that returns a `BridgeEntry` for `rivet({ bridges: [...] })`: `name`, the `server` and `client` module specifiers, `owns(id, source)` and `specifiers` (which files and npm packages belong to the framework; `ownership()` from `@rivetjs/bridge/vite` builds them from file suffixes, `@jsxImportSource` pragmas and `include` / `exclude`), `plugins()` (the framework's own Vite plugins), and optionally `dedupe` and `optimize`.
+
+`defineAdapter(adapter)` returns its argument unchanged; it only types the object. Read `@rivetjs/bridge-preact` for a small complete adapter.
+
 ## Common mistakes
 
 - **Writing React JSX in a plain `.tsx` file.** Rivet then compiles it as Rivet JSX and fails. Rename the file to `*.react.tsx`, add the pragma, or list the folder in `include`.

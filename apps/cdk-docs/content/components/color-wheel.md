@@ -74,6 +74,11 @@ import { ColorThumb } from "@rivetjs/cdk/color-thumb";
 | :kbd[ArrowLeft] / :kbd[ArrowDown] | hue − 1° |
 | :kbd[PageUp] / :kbd[PageDown] | next / previous 15° step |
 
+## Common mistakes
+
+- **Sizing the wheel with CSS.** The track gets `width` and `height` of twice `outerRadius` inline, and the ring is clipped from `innerRadius` to `outerRadius`. Change the radii to resize it; a `width` or `height` in your stylesheet loses to the inline size.
+- **Expecting a press in the middle to pick a color.** Only presses on the ring (between the two radii) move the thumb.
+
 ## Resumability
 
 - Server-rendered: gradients, thumb position, hidden inputs and labels are in the HTML; no component code runs until the first interaction.

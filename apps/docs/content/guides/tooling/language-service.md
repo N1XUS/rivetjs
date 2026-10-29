@@ -140,6 +140,14 @@ Every code has its own page with the message, the fix, a before / after pair and
 
 For any code, `explain_diagnostic` in the [Rivet MCP server](ai.md) returns the same explanation.
 
+The registry is also a module, for scripts and your own tools. `@rivetjs/compiler/codes` exports `CODES` (every code in order: `code`, `severity`, `title`, `docs`, and `retired` for codes no longer reported; codes are never reused), `RESERVED` (blocks owned by other packages), `codeInfo(code)` and `docsUrl(code)`:
+
+```ts
+import { codeInfo, docsUrl } from "@rivetjs/compiler/codes";
+
+console.log(codeInfo("RV2103")?.title, docsUrl("RV2103"));
+```
+
 ## Limits
 
 - TypeScript 7 (the native `tsgo`) does not load JavaScript plugins. Use TypeScript 5.x or 6.x in the editor. A standalone language server is planned.

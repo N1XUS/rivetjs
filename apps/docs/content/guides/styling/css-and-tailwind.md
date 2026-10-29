@@ -136,7 +136,7 @@ To switch single classes, use `class:name` or a class object. Both combine with 
 <article class={["card", active() && "card--active"]}>…</article>
 ```
 
-A truthy value adds the class, a falsy one removes it. Class objects and arrays are normalized when written in the attribute. For a class value held in a variable or prop, join it with `cx(value)` from `@rivetjs/runtime/css`.
+A truthy value adds the class, a falsy one removes it. Class objects and arrays are normalized when written in the attribute. For a class value held in a variable or prop, join it with `cx(value)` from `@rivetjs/runtime/css`. `cx` takes any number of parts; `classNames(value)` from `@rivetjs/runtime/style` does the same for a single class value. Both skip falsy parts and do not remove duplicates.
 
 With Tailwind, write the full class names in your code, like `"bg-teal-700"`. Tailwind finds classes by scanning your files for these strings. A class built from pieces at run time, like `"bg-" + color()`, is not found and has no CSS.
 

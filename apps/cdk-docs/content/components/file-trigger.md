@@ -70,6 +70,8 @@ Any child that consumes press events works: a `Link`, or your own element inside
 
 Deviations: `ref` points at the input (as upstream); the child is wired through `PressResponder` like RAC.
 
-## Not yet supported
+## Common mistakes
 
-- `DropZone` (drag-and-drop file target) — separate component.
+- **A native `<button>` as the child.** FileTrigger passes its press handler through `PressResponder`, which only press-aware children read (`Button`, `Link`, `<Pressable>`). A plain `<button>` gets no handler and opens nothing.
+- **Trusting `acceptedFileTypes`.** It becomes the input's `accept` attribute, a hint for the file dialog. Check the type and size of each file in `onSelect`.
+- **Expecting drag and drop.** FileTrigger only opens the file dialog. For a drop target, use [DropZone](drop-zone.md), with a FileTrigger inside it for people who do not drag.

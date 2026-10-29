@@ -43,6 +43,12 @@ import { Heading, HeadingContext } from "@rivetjs/cdk/heading";
 
 Choose `level` to fit the document hierarchy. A heading supplies document structure, not an interactive focus target or keyboard behavior. When replacing its element through `render`, preserve the heading semantics and any id supplied by the containing dialog.
 
+## Common mistakes
+
+- **Changing `level` later.** The tag is chosen when the heading first renders; render a new `Heading` (for example with a keyed `Show`) to change it.
+- **Skipping levels for size.** Choose `level` for the outline of the page and set the size with CSS.
+- **Overriding the dialog title id.** Inside a Dialog, the `slot="title"` heading takes its id from `HeadingContext` so that the dialog's `aria-labelledby` finds it; do not set your own `id` there.
+
 ## Upstream
 
 - React Aria Components `Heading`.

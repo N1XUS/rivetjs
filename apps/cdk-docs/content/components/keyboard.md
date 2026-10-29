@@ -36,6 +36,18 @@ To *handle* shortcuts, see [Keyboard shortcuts](../foundations/keyboard-shortcut
 <Keyboard render={(props) => <kbd {...(props as {})} />}>…</Keyboard>
 ```
 
+## Accessibility
+
+- `Keyboard` only shows a shortcut; it does not handle the keys. Bind them yourself ([Keyboard shortcuts](../foundations/keyboard-shortcuts.md)) and keep the text in sync with the binding.
+- Inside a cdk `MenuItem`, the item gives its `Keyboard` an id and adds it to the item's `aria-describedby`, so screen readers read the shortcut after the item name.
+- `dir="ltr"` keeps `Ctrl+C` in reading order inside right-to-left text; keep it unless the shortcut text itself is right-to-left.
+- Write key names as users see them on their keyboard (`Ctrl`, `Cmd`, `Shift`); for per-platform labels, decide in the browser with the [Platform](../foundations/platform.md) checks.
+
+## Common mistakes
+
+- **Expecting the shortcut to work.** Showing `Ctrl+S` in a `Keyboard` binds nothing.
+- **A shortcut that differs per platform rendered on the server.** The server does not know the platform; render the neutral text, or switch it in a client effect.
+
 ## Upstream
 
 - React Aria Components `Keyboard`.

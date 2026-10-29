@@ -36,6 +36,12 @@ Children read the value from their contexts (`ColorAreaContext`, `ColorSliderCon
 
 ColorPicker itself creates no focus target or keyboard handlers. Label each composed control and follow the keyboard maps of [ColorArea](color-area.md#accessibility), [ColorSlider](color-slider.md#accessibility) and [ColorField](color-field.md#accessibility). The shared value does not supply an accessible name for those controls.
 
+## Common mistakes
+
+- **A `Color` object in a Signal on a resumed page.** Keep the value as a string (`signal("#0485F7")`) and parse it with `parseColor` where you need channels; a class instance is not resume data.
+- **Expecting a picker UI from `ColorPicker` alone.** It renders nothing; compose a ColorArea, ColorSlider, ColorField or ColorSwatchPicker inside it.
+- **Setting `value` on the children too.** A child's own `value` wins over the shared one and splits it from the picker; leave the value to `ColorPicker`.
+
 ## Resumability
 
 One `createColorPickerState` (plain signal state) shared by all children; works on a resumed page.

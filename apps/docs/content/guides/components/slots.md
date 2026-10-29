@@ -72,7 +72,7 @@ Content inside `<slot>` is the fallback. It renders when nobody filled the slot:
 
 ## Slot content is lazy
 
-Content passed with `r:slot` is not rendered until the component renders the slot. If the component never shows a slot, its content costs nothing. The default slot (plain children) is rendered right away. To make it lazy too, pass a function child:
+Content passed with `r:slot` is not rendered until the component renders the slot. If the component never shows a slot, its content costs nothing. Plain children that contain elements or expressions are compiled the same way: they render where the component places them, after the component's context providers, so `useContext` in the children sees them. Text-only children stay plain values. To make any child lazy explicitly, pass a function child:
 
 ```tsx
 <Panel>{() => <ExpensiveChart />}</Panel>
@@ -153,6 +153,25 @@ Where you use it, pass a function with the same arguments:
 ```
 
 Pass the arguments as functions (`() => value`), like the `item` and `index` of [For](./lists.md). `Slot<[...]>` types the arguments, so TypeScript checks the function you pass.
+
+## Read children in your own code
+
+Most components only place `children` with `<slot />` or `{children}`. A component that needs to look at its children first, or that accepts both content and a render function, uses the helpers from `@rivetjs/runtime/slot`:
+
+| Helper | Does |
+| --- | --- |
+| `isSlot(value)` | `true` for children the compiler wrapped as lazy content, `false` for a function the caller wrote (such as `(item) => <li>{item}</li>`). |
+| `renderSlot(value, ...args)` | Renders `value`: lazy content is called, a caller's function is called with `args`, anything else is returned as it is. Call it once, where the content goes. |
+| `slotText(value)` | The plain value behind a `{expr}` text child. On a resumed server page such a child is a text binding record, not a string; `slotText` gives the same primitive on both sides, so a component that wraps text children (for example in a label) renders the same markup on the server and in the browser. |
+
+```tsx title="src/components/Row.tsx"
+import { renderSlot } from "@rivetjs/runtime/slot";
+import type { Content } from "@rivetjs/runtime/jsx-runtime";
+
+export function Row(props: { item: string; children?: Content | ((item: string) => Content) }) {
+  return <li>{renderSlot(props.children, props.item)}</li>;
+}
+```
 
 ## Slots on a resumed page
 

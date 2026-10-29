@@ -17,7 +17,7 @@ related: [components/tabs, components/disclosure, foundations/key-manager]
 - Indicator types (`number`, `edit`, `done`, `error` or a custom `state`) as render props, with `showError` and `displayDefaultIndicatorType`.
 - Two ARIA patterns: `semantics="tabs"` (Material's tablist, or buttons + regions when vertical) and `semantics="list"` (an ordered list with `aria-current="step"`, read-only if needed).
 - Keyboard: arrow keys move between headers (wrap, Home / End, RTL), Enter / Space select.
-- Resumable: nothing runs at load. Handlers are fetched when the stepper scrolls into view.
+- Resumable: nothing runs at load. Handlers are fetched when the browser is idle after the load, or on intent.
 
 ## Anatomy
 
@@ -206,7 +206,7 @@ List semantics: native buttons in the Tab order (no arrow keys).
 
 ## Resumability
 
-The server renders every step and the selected panel; no stepper code runs at load. The root has `preload="visible"`: its handlers are fetched once it scrolls into view, so the first click is synchronous.
+The server renders every step and the selected panel; no stepper code runs at load. Its handlers are fetched at low priority when the browser is idle after the load (or on intent: pointer rest, focus, pointer down), so the first click does not wait for the network; see [preloading](site:docs/guides/performance/preloading/).
 
 ## Upstream
 

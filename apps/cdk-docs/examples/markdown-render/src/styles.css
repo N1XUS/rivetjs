@@ -1,0 +1,31 @@
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+:root[data-theme="dark"] body {
+  color: #e2e8f0;
+}
+.demo {
+  margin: 16px;
+  max-width: 480px;
+}
+.demo h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.demo ul {
+  padding-left: 20px;
+}
+.demo li p {
+  display: inline;
+  margin: 0;
+}
+.demo pre {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(148 163 184 / 0.15);
+  overflow-x: auto;
+}

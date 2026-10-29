@@ -33,6 +33,10 @@ export function Attachments() {
 }
 ```
 
+::example{id=drop-zone-basic}
+
+The live example above lists the names of dropped or chosen files. A paste goes to the zone's hidden button: focus it with :kbd[Tab] (it is named by `aria-label`) and paste.
+
 ## Anatomy
 
 | Part | Element | Styling / role |

@@ -1,0 +1,60 @@
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+  color: #0f172a;
+  --tok-keyword: #7c3aed;
+  --tok-string: #047857;
+  --tok-comment: #64748b;
+  --tok-number: #b45309;
+  --tok-function: #0360fa;
+}
+:root[data-theme="dark"] body {
+  color: #e2e8f0;
+  --tok-keyword: #c4b5fd;
+  --tok-string: #6ee7b7;
+  --tok-comment: #94a3b8;
+  --tok-number: #fcd34d;
+  --tok-function: #93c5fd;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  margin: 16px;
+  max-width: 480px;
+}
+.code {
+  margin: 0;
+}
+.code figcaption {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.code pre {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(148 163 184 / 0.15);
+  font:
+    13px/1.5 ui-monospace,
+    monospace;
+  overflow-x: auto;
+}
+.tok-keyword {
+  color: var(--tok-keyword);
+}
+.tok-string {
+  color: var(--tok-string);
+}
+.tok-comment {
+  color: var(--tok-comment);
+  font-style: italic;
+}
+.tok-number {
+  color: var(--tok-number);
+}
+.tok-function,
+.tok-property {
+  color: var(--tok-function);
+}

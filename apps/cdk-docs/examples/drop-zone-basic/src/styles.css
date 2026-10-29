@@ -1,0 +1,40 @@
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+:root[data-theme="dark"] body {
+  color: #e2e8f0;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  margin: 16px;
+  max-width: 420px;
+}
+.zone {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 20px;
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+}
+.zone[data-drop-target] {
+  border-color: #2563eb;
+  background: rgb(37 99 235 / 0.08);
+}
+.zone[data-focus-visible] {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.pick {
+  padding: 4px 12px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}

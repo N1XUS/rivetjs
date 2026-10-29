@@ -210,7 +210,7 @@ Do not override the inline `position`, `top`, `inset-inline-start`, `width`, `as
 
 ## Resumability
 
-- Exact and justified layouts: the server renders the final positions; a resumed page runs no masonry code and changes no node until the first key, click or focus. The root carries `preload="visible"`. A live span changed by that first click re-places on the resumed page (no hydration).
+- Exact and justified layouts: the server renders the final positions; a resumed page runs no masonry code and changes no node until the first key, click or focus. Its code is fetched when the browser is idle after the load, or on intent ([preloading](site:docs/guides/performance/preloading/)). A live span changed by that first click re-places on the resumed page (no hydration).
 - Measured layout boots one client effect (the measuring observer); avoid it on pages that must stay idle by giving the items their sizes. Justified rows with items of unknown ratio boot one too (the ratio observer).
 - On a resumed page, the first change of `items` re-creates the item rows (resume adoption keeps only rows whose render read no signals); later changes keep them. A test pins this gap.
 - Rows are keyed (`getKey`, default `item.id`, then `item.key`, then the index): a reorder or a removal moves the same nodes. An immutable refetch that clones every item re-renders every row (a new object = a changed item); with the default index key (items without `id` / `key`), a reorder looks like changed items, so give items stable keys.

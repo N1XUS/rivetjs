@@ -44,6 +44,17 @@ import { separatorProps } from "@rivetjs/cdk/separator/behaviour";
 <Separator render={(props) => <hr {...(props as {})} />}>…</Separator>
 ```
 
+## Accessibility
+
+- A horizontal separator is a native `<hr>` (role `separator` built in); a vertical one is a `div` with `role="separator"` and `aria-orientation="vertical"`.
+- A separator is not focusable and is read as a boundary; for a purely decorative line between items that screen readers should skip, use a styled border instead.
+- Label a separator (`aria-label` / `aria-labelledby`) only when it divides named regions, such as two groups of a toolbar.
+
+## Common mistakes
+
+- **Separators as spacing.** Use margins or `gap` for space; a separator adds a node to the accessibility tree.
+- **A separator before the first item of a filtered list.** Inside a menu or list box this is handled (a separator stays only after an item); elsewhere hide it yourself.
+
 ## Upstream
 
 - React Aria Components `Separator`; React Aria `useSeparator` → `separatorProps`.

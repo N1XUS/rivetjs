@@ -187,6 +187,7 @@ The **Errors** panel collects uncaught errors and promise rejections, Vite error
 - The panel itself runs in its own frame, separate from your app.
 - Value previews only read plain properties. Getters are listed, not called.
 - The router, forms and i18n panels use development-only entry points of those packages. Production builds use the normal entry points.
+- The panels read the reactive graph through `@rivetjs/reactivity/debug`, which you can use for your own tools: `_debug(value)` returns a read-only view of a signal, computed, effect or owner (`kind`, `value`, `state`, and `parent()`, `children()`, `sources()`, `observers()`), or `null` for anything else. Views never run, track or change anything. `devtoolsHook()` returns the hook a devtools host installed on `globalThis[Symbol.for("rivet.devtools")]` before the app's code, or `undefined`. The module is separate from `@rivetjs/reactivity`, so production bundles that do not import it are unchanged.
 
 ## Limits
 

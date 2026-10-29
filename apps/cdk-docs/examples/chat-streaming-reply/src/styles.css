@@ -1,0 +1,48 @@
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+:root[data-theme="dark"] body {
+  color: #e2e8f0;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  margin: 16px;
+  max-width: 420px;
+}
+.log {
+  display: grid;
+  gap: 4px;
+  min-height: 3em;
+}
+.composer {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+}
+.composer textarea {
+  flex: 1;
+  field-sizing: content;
+  max-height: 8em;
+  padding: 6px 8px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.composer button {
+  padding: 6px 12px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.composer button[data-pending] {
+  opacity: 0.6;
+}

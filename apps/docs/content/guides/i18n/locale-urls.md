@@ -82,6 +82,23 @@ Without a language in the URL, the guard tries these sources in order and takes 
 
 Change the order with `strategy`, for example `strategy: ["url", "preferredLanguage", "baseLocale"]`. You can also add your own strategy object `{ name, server(request, source) }` that returns a locale or `undefined`.
 
+### Resolve the language outside the guard
+
+`@rivetjs/i18n/resolve` exports the same steps, for code that needs the language without the guard (an API route, a worker, a client-only page):
+
+- `resolveServer(request, config, order?)` returns the language of a `Request`; `resolveClient(config, order?)` reads `location`, `document.cookie` and `navigator.languages`. Both use `DEFAULT_ORDER` (`["url", "cookie", "preferredLanguage", "baseLocale"]`) unless you pass `order`, and fall back to `defaultLocale`.
+- `match(wanted, locales)` is the `preferredLanguage` matching on its own; `localeFromPath(path, config)` reads the URL prefix.
+- `localeCookieOptions(config, secure)` and `localeCookie(locale, config, secure)` give the cookie attributes the guard uses (as an options object, or as a `document.cookie` string), so a cookie you set yourself matches it.
+
+```ts title="src/routes/api/greeting.ts"
+import type { RequestEvent } from "@rivetjs/router";
+import { onGet } from "@rivetjs/router";
+import { resolveServer } from "@rivetjs/i18n/resolve";
+import { config } from "../../../i18n.config.ts";
+
+export const GET = onGet(async ({ request }: RequestEvent) => Response.json({ locale: await resolveServer(request, config) }));
+```
+
 ### Remember the visitor's choice
 
 The guard sets the locale cookie when a visitor picks a language: they follow a link on your site to a URL in another language than the one the cookie or the browser would pick. With `"as-needed"`, a link to a URL without a prefix picks the default language. On the next visit, the cookie decides, even when the browser prefers another language.

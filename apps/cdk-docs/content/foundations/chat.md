@@ -35,6 +35,10 @@ export function StreamingReply() {
 }
 ```
 
+The live example adds a composer: `isSubmitKey` decides when Enter sends, and the reply streams into a signal.
+
+::example{id=chat-streaming-reply}
+
 `simulateStream` uses a local timer. For real responses, pass an async iterable or a `ReadableStream` of strings or UTF-8 byte chunks to `streamText`. It appends to the existing signal value; clear the signal yourself when starting a new response.
 
 ## API
