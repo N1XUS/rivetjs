@@ -10,7 +10,7 @@ import { withNodeEnv } from "./vite-env.ts";
 
 const repo = fileURLToPath(new URL("../../../", import.meta.url));
 
-test("browser build: `.ts` endpoint handlers imported through a page are split out", async () => {
+test.each([false, true])("browser build: endpoint handlers stay out of client code and source maps (sourcemap=%s)", async (sourcemap) => {
   mkdirSync(join(repo, ".artifacts"), { recursive: true });
   const root = mkdtempSync(join(repo, ".artifacts", "router-endpoint-split-"));
   const files: Record<string, string> = {
@@ -27,10 +27,16 @@ test("browser build: `.ts` endpoint handlers imported through a page are split o
     writeFileSync(join(root, path), text);
   }
   try {
-    await withNodeEnv("production", () => build({ root, configFile: join(root, "vite.config.ts"), logLevel: "silent" }));
+    await withNodeEnv("production", () => build({ root, configFile: join(root, "vite.config.ts"), logLevel: "silent", build: { sourcemap } }));
     const out = join(root, "dist/client");
-    const client = readdirSync(out, { recursive: true, withFileTypes: true })
-      .filter((e) => e.isFile() && e.name.endsWith(".js"))
+    const files = readdirSync(out, { recursive: true, withFileTypes: true });
+    if (sourcemap)
+      assert.ok(
+        files.some((e) => e.isFile() && e.name.endsWith(".js.map")),
+        "the source-map canary must exercise emitted maps",
+      );
+    const client = files
+      .filter((e) => e.isFile() && (e.name.endsWith(".js") || e.name.endsWith(".js.map")))
       .map((e) => readFileSync(join(e.parentPath, e.name), "utf8"))
       .join("\n");
     assert.match(client, /4242/, "the shared constant stays");

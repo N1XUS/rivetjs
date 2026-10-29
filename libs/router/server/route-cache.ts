@@ -762,28 +762,41 @@ export function withRouteRules(
       if (!VISITOR.test(name) || cache.varies.includes(name)) sent.set(name, value);
     });
     const detached = new Request(request.url, { headers: sent });
+    let platformRead = false;
     let response: Response;
     try {
       const { address: _address, ...neutral } = context ?? {};
+      if (neutral.platform) {
+        // Adapter context can carry the original request (Node req/res, Netlify ctx, custom facts). Removing the
+        // Web Request's cookies cannot make those anonymous. Bindings in `env` are deployment-wide; other facts
+        // invalidate sharing, including reflection and reads made while the response body streams.
+        const note = (key: PropertyKey) => {
+          if (key !== "env") platformRead = true;
+        };
+        neutral.platform = new Proxy(neutral.platform, {
+          get: (target, key) => (note(key), Reflect.get(target, key, target)),
+          has: (target, key) => (note(key), Reflect.has(target, key)),
+          getOwnPropertyDescriptor: (target, key) => (note(key), Reflect.getOwnPropertyDescriptor(target, key)),
+          ownKeys: (target) => ((platformRead = true), Reflect.ownKeys(target)),
+          getPrototypeOf: (target) => ((platformRead = true), Reflect.getPrototypeOf(target)),
+        });
+      }
       response = await handler(detached, neutral);
     } catch (error) {
       store.filling.delete(filling);
       throw error;
     }
-    const type = response.headers.get("content-type") ?? "";
-    const control = response.headers.get("cache-control") ?? "";
-    const vary = varyNames(response.headers.get("vary"));
-    if (
-      response.status !== 200 ||
-      !response.body ||
-      !/^text\/html\b/i.test(type) ||
-      response.headers.has("set-cookie") ||
-      /\b(?:private|no-store)\b/i.test(control) ||
-      vary.includes("*") ||
-      // Chosen by credentials (the i18n guard's `Vary: cookie`): stored only when the rule keys the other inputs, and
-      // never when cookie requests share the store (`cookies: true`: their cookie may choose another page).
-      (vary.some((name) => CREDENTIALS.has(name)) && (!cache.varies.length || cache.cookies))
-    ) {
+    let vary = varyNames(response.headers.get("vary"));
+    const shareable = () =>
+      response.status === 200 &&
+      response.body !== null &&
+      /^text\/html\b/i.test(response.headers.get("content-type") ?? "") &&
+      !response.headers.has("set-cookie") &&
+      !/\b(?:private|no-store)\b/i.test(response.headers.get("cache-control") ?? "") &&
+      !vary.includes("*") &&
+      // A credential-selected response needs keyed inputs, and must never share cookie visitors' fills.
+      !(vary.some((name) => CREDENTIALS.has(name)) && (!cache.varies.length || cache.cookies));
+    if (!shareable()) {
       store.filling.delete(filling);
       if (vary.some((name) => CREDENTIALS.has(name))) {
         if (personal.size >= 10_000) personal.clear();
@@ -803,6 +816,25 @@ export function withRouteRules(
       rendered = await bodyOf(response);
     } finally {
       store.filling.delete(filling);
+    }
+    // A custom streamed Response may finish its headers while its body is being consumed. Admission and keys
+    // must use that final policy; the original snapshot could otherwise publish private bytes or Set-Cookie.
+    vary = varyNames(response.headers.get("vary"));
+    if (!shareable()) {
+      if (vary.some((name) => CREDENTIALS.has(name))) {
+        if (personal.size >= 10_000) personal.clear();
+        personal.set(key, Date.now() + PERSONAL_MS);
+      }
+      const own = request.headers.has("cookie") || request.headers.has("authorization");
+      return {
+        page: null,
+        response: withHeaders(
+          own
+            ? await handler(request, context)
+            : bytesResponse(request.method === "HEAD" ? null : rendered, { status: response.status, headers: response.headers }),
+          resolved.headers,
+        ),
+      };
     }
     const nonce = context?.nonce?.replace(/[^\w+/=-]/g, "");
     const own = response.headers.get("content-security-policy");
@@ -838,7 +870,8 @@ export function withRouteRules(
         body = null;
       }
     }
-    const stored = body !== null && (detached as unknown as Record<symbol, unknown>)[RENDER_FAILED] !== true && !filling.void;
+    if (platformRead) warn(path, "it reads request-specific platform facts");
+    const stored = body !== null && !platformRead && (detached as unknown as Record<symbol, unknown>)[RENDER_FAILED] !== true && !filling.void;
     const now = Date.now();
     const modifiedAt = Math.floor(now / 1000) * 1000;
     const headers: [string, string][] = [];
@@ -967,7 +1000,9 @@ export function withRouteRules(
     let admit = false;
     if (flight) {
       const filled = await flight;
-      if (filled) return serve(filled, request, "HIT");
+      // The response may have taught this rule new Vary names while we waited. Only the matching representation
+      // can be shared; another variant renders for its own request and is admitted under the expanded key later.
+      if (filled && filled.key === keyOf(cache, origin, path, search, header)) return serve(filled, request, "HIT");
     } else if (request.method === "GET" && (!(admit = secondMiss(cache, search, header)) || doorkeeper.has(key))) {
       return (await start(key, origin, path, search, cache, resolved, request, context)).response;
     } else if (admit) {

@@ -39,6 +39,8 @@ Latest night measurement: `benchmarks/2026-10-28-night.md` + `.json` (CX-BENCH, 
 
 - `plans/2026-10-29-stabilization.md` — CI failure inventory and regression-first stabilization checklist; separates verified fixes from remaining cold, fuzz and integration failures.
 - `research/2026-10-29-security-verification.md` — fresh isolated 71-case application security run, 55 framework checks and tested `onRequest` authentication boundary; distinguishes framework defenses, application policy and untested areas.
+- `research/2026-10-29-deep-security-audit.md` — four confirmed cache-isolation defects, fixes and RED/GREEN evidence; reviewed SSR/HTTP/decoder paths and explicit limits.
+- `plans/2026-10-29-deep-security-audit.md` — source-driven follow-up: cache identity isolation, SSR/streaming, HTTP normalization and decoder trust; new reproducers precede confirmed fixes.
 
 - `specs/` — one per feature; the newest cdk ones (`2026-10-05-cdk-*`, `collections-parity`, `tabs-parity`) are parity trackers for the 1:1 ports.
 - `specs/2026-10-06-dom-v2-only-design.md` — phases a–e landed (i18n `040312bf`, resume `9e2651e9`, v1 deleted `4c16e74b`): DOM v2 is the only DOM target (v1 inventory with file:line, resume/dev/i18n/testing on v2, phases a–f, lane split, open questions).

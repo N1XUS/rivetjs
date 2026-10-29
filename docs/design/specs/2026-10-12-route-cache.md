@@ -18,11 +18,13 @@
 - D2 **What is cached.** GET / HEAD page documents only. Data requests (`?_rivet=data`), actions, endpoints and other methods pass through.
   - Bypassed:
     - requests with `Cookie` / `Authorization` (unless `cookies: true`: cookies are ignored in the key, and the fill / refresh render gets a detached request WITHOUT `cookie` / `authorization` — stored pages are anonymous). Fills also drop the client `address` and per-visitor proxy headers (`forwarded`, `x-forwarded-*`, `x-real-ip`, `true-client-ip`, `x-client-ip`, `cf-*`, `fastly-client-ip`) unless `varies` names them (O5);
+    - fills that read request-specific `platform` facts, including the original Node `req` / `res`, platform `ctx`, custom fields, reflection and reads during streamed output. `platform.env` is deployment-wide and remains cacheable; a full body is consumed before deciding admission (2026-10-29 security audit);
     - responses that set cookies, that are not `200 text/html`, or whose route set `cache-control` to `private` / `no-store`;
     - responses with `Vary: *`, or a `Vary` naming `cookie` / `authorization` when the rule has no `varies` or has `cookies: true` (i18n guard with a locale cookie; O2) — a credentialed visitor then gets a render of their own request;
     - renders that reported a failure (`onError` → the app sets `Symbol.for("rivet.renderFailed")` on the request; error-boundary fallback in a 200 page);
     - renders started before a matching `revalidate()` (each fill registers `{ path, tags }` in `store.filling`; `revalidate` voids the ones its path / tag predicate matches — O6, was a store-wide generation);
     - non-canonical path encodings (served, never stored).
+  - Admission is checked before buffering and again after the body completes. Mutable streamed Response headers can introduce `Set-Cookie`, private/no-store, a different content type or new `Vary`; the final policy controls admission and key learning. Rejected buffered answers preserve those final headers.
   - A cached route is public: request handlers and guards do not run on a hit (the same contract as a CDN or Nitro).
 - D3 **Key** = request origin + decoded pathname (`normalPath`: segments percent-decoded, decoded `/` kept as `%2F`; rules match the same path) + (search per `query`) + values of `varies` headers + values of headers responses named in `Vary` (learned per rule, then part of every key).
   - Only the canonical encoding of a path (WHATWG path percent-encode set, upper-case hex) is stored: `/%61dmin` matches `/admin/**` rules but is never stored.
@@ -33,7 +35,7 @@
   - Process-local and bounded: `maxBytes` 32 MiB (body + key + headers + adapter zstd / br / gzip copies via `CachedPage.charge`), `maxEntries` 5,000.
   - CLOCK eviction, the same scheme as `@rivetjs/runtime/server-cache` (a hit writes one flag).
   - Entry = body bytes, headers, weak ETag (`W/"<sha-1 base64url>"`, WebCrypto), `Last-Modified`, created / stale / expires times, tags.
-  - Concurrent misses for one key share one render (single flight). A stale hit inside `swr` is served at once and starts one background refresh.
+  - Concurrent misses for one key share one render (single flight). A waiter compares its key again after completion, using any newly learned `Vary` fields; a different representation renders its own request. A stale hit inside `swr` is served at once and starts one background refresh.
   - Refresh failures: 404 / 410, a 3xx or a `Set-Cookie` answer (moved / now personal; O4) drop the entry; any other non-storable result or a throw keeps the stale page and backs off (1 s doubling to 5 min, `CachedPage.retry`), so a failing page is not re-rendered per request.
   - Misses are buffered from the renderer's slabs (`DIRECT_BODY` sink, one copy), the miss answer carries `DIRECT_BODY` too (node writes it without a stream). A render failure after the head (stream error) → the miss answers 500.
   - `revalidate({ path } | { tag })` (`@rivetjs/router/route-cache`, process-wide registry) drops entries, for actions that publish.

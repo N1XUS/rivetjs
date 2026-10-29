@@ -618,6 +618,11 @@ class Run implements ShellRequest {
               get: (object, name) => (typeof name === "string" && !PARTITION.has(name) && note("locals." + name), Reflect.get(object, name)),
               has: (object, name) => (typeof name === "string" && !PARTITION.has(name) && note("locals." + name), Reflect.has(object, name)),
               ownKeys: (object) => (note("locals"), Reflect.ownKeys(object)),
+              getOwnPropertyDescriptor: (object, name) => (
+                !PARTITION.has(String(name)) && note("locals." + String(name)),
+                Reflect.getOwnPropertyDescriptor(object, name)
+              ),
+              getPrototypeOf: (object) => (note("locals prototype"), Reflect.getPrototypeOf(object)),
             }));
           case "request": {
             const raw = Reflect.get(target, key, target) as Request;

@@ -602,7 +602,8 @@ export function createHandler(options: AppOptions): AppHandler {
       },
       route: { id: route?.id ?? null },
       isDataRequest: data,
-      platform: context.platform || context.address ? { ...(context.address ? { clientAddress: context.address } : {}), ...context.platform } : NO_PLATFORM,
+      // Without an address overlay keep adapter facts lazy (the route cache observes reads of a fill's platform).
+      platform: context.address ? { clientAddress: context.address, ...context.platform } : (context.platform ?? NO_PLATFORM),
       depends: noDeps,
     };
     // Each loader gets its own view of the event: `depends()` records its keys (route data index);

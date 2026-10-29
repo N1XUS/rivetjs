@@ -208,3 +208,13 @@ test("nonce presence must match the stored shell; HEAD and non-HTML answers bypa
   const head = await handler(new Request("http://x/post", { method: "HEAD" }), { nonce: "Z" });
   assert.equal(head.headers.get("x-rivet-cache"), null);
 });
+
+test("tracker: reflecting a keyed locale descriptor preserves public shell caching", async () => {
+  const { counts, rules } = app({ locale: true, read: (event) => Object.getOwnPropertyDescriptor(event.locals, "locale")?.value });
+  const handler = rules({ "/post": { shell: true } });
+  await (await get(handler, "/post", { "x-locale": "en" })).text();
+  const hit = await get(handler, "/post", { "x-locale": "en" });
+  assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
+  assert.match(await hit.text(), /<h1>T en<\/h1>/);
+  assert.equal(counts.load, 1);
+});

@@ -47,3 +47,7 @@ npx vitest run --project router --project runtime libs/router/tests/auth-boundar
 Use the isolated local runner above to repeat the 71 application checks without overwriting the original audit results. The fixture test source SHA-256 and actual build/test exits are stored in its result JSON.
 
 Not assessed here: production configuration, complete dependency review, exhaustive SSRF/DOM-XSS analysis, or sustained denial-of-service capacity. No framework-wide safety claim follows from the passing counts.
+
+## Subsequent deeper audit
+
+The [source-driven deep audit](2026-10-29-deep-security-audit.md) subsequently reproduced and repaired four cache-isolation defects outside this earlier pass: raw platform context, first-fill Vary waiters, shell locals reflection and late streamed Response policy. The earlier no-new-defect statement applies only to the scope above.

@@ -114,3 +114,9 @@ CLI output tests remove inherited `FORCE_COLOR` before setting `NO_COLOR`, so No
 - Live-page SSR: every non-CSR `live = true` page receives the `LivePageProps` data accessor, including native-link apps without navigate/forms usage. Production HTTP and native-link browser A/B coverage: `tests/live-native-ssr.test.ts` (callable data, retained draft and DOM identity); generated strict types cover both navigation settings.
 
 - Shared authentication boundary: layout `onRequest` can reject access before raw page handlers as well as endpoint handlers and loaders. `tests/auth-boundary.test.ts` covers missing/forged synthetic sessions, GET/POST, data requests with `_rivet_keep`, and authenticated locals; a layout guard alone retains the documented later execution order.
+
+- Cache isolation (deep security audit): raw adapter platform reads invalidate full-page storage (static `env` bindings remain cacheable), and waiters recheck keys after learning response Vary fields. Real Node, streaming, reflection, parallel variant and ordinary-cache controls live in `route-cache-platform.test.ts` / `route-cache-vary-race.test.ts`.
+
+- Deep security source-map canary: `tests/endpoint-split.test.ts` builds with `sourcemap: false` and `true`, scanning browser JS and `.js.map` sources for stripped endpoint handler/private-module markers while retaining a shared constant.
+
+- Cache policy is checked again after a custom stream completes (`route-cache-stream-policy.test.ts`); final private/Set-Cookie/content-type/Vary headers cannot be admitted under an earlier policy. Shell `locals` descriptors/prototype reads are tracked (`shell-cache-reflection.test.ts`), with a keyed locale descriptor control in `shell-cache.test.ts`.

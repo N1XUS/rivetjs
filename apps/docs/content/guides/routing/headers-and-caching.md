@@ -132,14 +132,14 @@ Patterns match the URL path below the [base path](../../reference/config.md): `/
 What the cache stores and serves:
 
 - **Pages only.** `GET` and `HEAD` requests for HTML pages that answer `200`. Route data for client navigation, actions, endpoints and other methods are never stored.
-- **Not personal pages.** Requests with a `Cookie` or `Authorization` header skip the cache (unless `cookies: true`). Responses that set a cookie, or whose `cache-control` says `private` or `no-store`, are not stored.
+- **Not personal pages.** Requests with a `Cookie` or `Authorization` header skip the cache (unless `cookies: true`). Responses that set a cookie, or whose `cache-control` says `private` or `no-store`, are not stored. Admission checks use the final response headers after the body is consumed, including headers a custom streamed `Response` changes while producing its body.
 - **No server code on a hit.** A stored page is sent without running guards, loaders or `headers(…)`. Cache only pages that are the same for everyone.
 - **Error pages are not stored.** A page that answers anything but `200`, or that rendered an error fallback (a part of it failed and `onError` was called), is sent to that visitor only.
 - **Headers.** Responses get `ETag`, `Last-Modified`, `Age` and `x-rivet-cache: HIT`, `MISS` or `STALE`. `Cache-Control` becomes `public, max-age=0, s-maxage=<maxAge>, stale-while-revalidate=<swr>`: browsers check back and get a `304` when the page did not change, and CDNs (Vercel, Netlify, Cloudflare) cache it as the rule says. `isr` rules tell CDNs `s-maxage=0, must-revalidate` unless the rule has `cdn`.
 - **Vary.** A response whose `Vary` names other request headers (the i18n guard sends `Vary: cookie, accept-language`) is stored once per value of those headers, and the stored page answers with the same `Vary`. A page that varies by `cookie` or `authorization` is stored only when the rule lists `varies` (for example `["accept-language"]`); without it every visitor gets a fresh render.
 - **A miss is buffered.** The render that fills the cache is read to the end before the first byte is sent: that visitor gets no streamed head start. If the render fails part-way, the miss answers `500`.
 - **Visitor-chosen keys** are stored on their second request: a new query string, a new value of a header the page varies by (`Accept-Language`, …), and, without a fixed origin (`routeCache: { origin }` / `start({ origin })`), any `Host`. Random query strings, header values or forged hosts cannot push real pages out.
-- **One render per page.** Requests that arrive while a page renders wait for that render.
+- **One render per matching representation.** Requests that arrive while a page renders wait for that render. If its response introduces a new `Vary` header, a waiting request with different header values gets its own render.
 - **Memory.** The store holds at most 32 MiB of pages (with their compressed copies) and 5000 entries per server process, and drops the least recently used. Change it with the server's `routeCache: { maxBytes, maxEntries }` option.
 - **Encoded paths.** Rules match the decoded path, as routes do (`/%61dmin` is `/admin`). A path spelled with needless escapes is rendered every time and never stored.
 - **Dev** applies `headers` only, so your edits show up.
@@ -171,12 +171,14 @@ If a background refresh answers `404` or `410`, a redirect (`3xx`), or sets a co
 ### Cookies, sessions and `cookies: true`
 
 :::warning
-A stored page is sent to everyone. With `cookies: true`, requests that carry cookies get the stored page, and the page renders **without** the request's `Cookie` and `Authorization` headers, so a loader that reads the session sees no session. Never use `cookies: true` on pages that show anything about the signed-in visitor (their name, cart, account links): those parts would be missing, or, if you read the session some other way, one visitor's page would be stored for everyone.
+A stored page is sent to everyone. With `cookies: true`, requests that carry cookies get the stored page, and the page renders **without** the request's `Cookie` and `Authorization` headers, so a loader that reads the session sees no session. Never use `cookies: true` on pages that show anything about the signed-in visitor (their name, cart, account links): those parts would be missing, or, if you read the session through untracked application state, one visitor's page could be stored for everyone.
 :::
 
 Use it for pages where cookies are only consent or analytics cookies. Pages that depend on the session belong under `cache: false`. A page that answers `Vary: cookie` (the i18n guard does when a locale cookie can choose the language) is never stored under `cookies: true`, even with `varies`; visitors with cookies then get a render of their own request.
 
 The render that fills the cache also leaves out what identifies the visitor behind a proxy or CDN: the client address and the `Forwarded`, `X-Forwarded-*`, `X-Real-IP`, `True-Client-IP`, `CF-*` and `Fastly-Client-IP` headers (unless the rule lists one in `varies`, like `["cf-ipcountry"]`). A loader on a cached page sees none of them.
+
+Reading request-specific `event.platform` facts also prevents the page from being stored: for example the raw Node `req` / `res`, a platform request context, or a custom per-request field. This includes reads made while the response body streams. Deployment-wide `event.platform.env` bindings remain available without disabling the cache. Keep personal pages under `cache: false` and send `private, no-store` for their responses.
 
 ### Host and origin
 
@@ -332,7 +334,7 @@ To see which path a route takes, read `x-rivet-cache` on a request after its she
 
 What may be in a shell:
 
-- **Inputs:** the path and its params, the query string (or the listed parameters), the `varies` headers, the locale and direction a guard put in `locals`. Anything else read by a normal loader (a cookie, another header, other `locals`, the client address, the raw `request`, a `RequestEvent` member Rivet does not know) means the shell is not stored. So does a render read of another query parameter (`useSearchParams()`), a loader that sets a cookie, and an answer other than `200`. After three such renders in a row the route stops trying until `revalidate()` or a restart.
+- **Inputs:** the path and its params, the query string (or the listed parameters), the `varies` headers, the locale and direction a guard put in `locals`. Anything else read by a normal loader (a cookie, another header, other `locals`, the client address, the raw `request`, a `RequestEvent` member Rivet does not know) means the shell is not stored. Reflection over personal `locals` (a property descriptor or their prototype) counts as a read too. So does a render read of another query parameter (`useSearchParams()`), a loader that sets a cookie, and an answer other than `200`. After three such renders in a row the route stops trying until `revalidate()` or a restart.
 - **Holes stream:** a hole must sit inside an `<Async fallback>`. Deferred data read where the page waits for it (an `Async` without a fallback, `Suspense` + `resource`) ends the shell too early: in development that read throws, in production the shell is not stored.
 - **Headers:** headers a normal loader set are stored with the shell; guards and `headers(…)` set theirs on every request. The response says `Cache-Control: private, no-cache` (the whole document is personal) and `x-rivet-cache: SHELL-HIT` / `SHELL-HIT-REPLAY`, `SHELL-STALE` / `SHELL-STALE-REPLAY` or `SHELL-MISS`.
 - **Holes come late:** the status line and `<head>` are out before a hole renders. A hole's deferred loader cannot set headers or cookies (`setHeader`, `cookies.set` throw), and an error in it shows the boundary's `error` view instead of changing the status. A `redirect()` from a deferred loader moves the browser with a script at the end of the document. Head components inside a hole behave as in any streamed part: `<HeadLink>`, `<Script>` and styles render in place with the request's nonce, `<Title>` and `<Meta>` are ignored with a warning. Put titles and meta tags in the shell (a normal loader, a `head` export).
