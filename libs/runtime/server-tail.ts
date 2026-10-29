@@ -169,6 +169,7 @@ export function tailOf(t: FlushTail, base?: string): BoundaryTail {
     if (u) out.u = u;
   }
   if (t.F) out.F = t.F;
+  if (t.p) out.p = t.p;
   return out;
 }
 

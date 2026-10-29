@@ -503,7 +503,21 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     appModules: options.resume?.appModules ?? true,
     // `.rivet/app.tsx`'s default export (`Root`) is an independent root boundary (its props = the route payload as data),
     // like a route module's default export (M2 R5).
-    ...(mode !== "csr" ? { roots: [...(options.resume?.roots ?? []), posix(join(outDir, "app.tsx"))] } : {}),
+    ...(mode !== "csr"
+      ? {
+          roots: [...(options.resume?.roots ?? []), posix(join(outDir, "app.tsx"))],
+          // ROUTER-PRIME: `Root.ready` loads the shown route's page module (layouts are static imports of `app.tsx`): the
+          // resume manifest's `ready` lists each route's page chunk + closure, the server adds them to the fetch-ahead list.
+          ready: () => {
+            const routes: Record<string, string[]> = {};
+            for (const route of table.routes) {
+              const page = route.page && resolve(root, routesDir, route.page);
+              if (page && /\.[jt]sx$/.test(page) && !documentPages.has(page)) routes[route.id] = [page];
+            }
+            return { root: posix(relative(root, resolve(root, outDir, "app.tsx"))) + "#default", routes };
+          },
+        }
+      : {}),
   };
   let root = process.cwd();
   let table: RouteTable = { routes: [] };

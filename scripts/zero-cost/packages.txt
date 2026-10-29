@@ -1,5 +1,5 @@
 @rivetjs/router 965ee4bafd7e 3340
-@rivetjs/router/server 75ecbf8da59d 31120
+@rivetjs/router/server faaaaa08769d 31202
 @rivetjs/router/route-cache 783a9a89cc9f 18452
 @rivetjs/router/server-only 56e1b0c10087 9
 @rivetjs/router/client [dom] 21dc1faef41c 24498

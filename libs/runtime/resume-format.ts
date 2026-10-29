@@ -737,6 +737,11 @@ export interface BoundaryTail {
   /** RT-DIET2 mixed lite: the full runtime's URL first, then its fetch-ahead list (space separated; the lite runtime
    * preloads it and imports the first on a link intent or a fallback). */
   F?: string;
+  /**
+   * ROUTER-PRIME: the root record whose `ready` hook loads only modules on the page's fetch-ahead list (server: manifest
+   * `ready`, the router's `Root` and the route's page chunk): the loader's prime runs that hook too, not only its chunk.
+   */
+  p?: number;
 }
 /**
  * One `BoundaryTail.d` entry: the record whose props hold the array, the list anchor number, the array's key path in the

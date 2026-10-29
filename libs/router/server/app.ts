@@ -408,6 +408,7 @@ export function createApp(config: AppConfig): AppHandler {
     // Root layout component entries stay in the browser (that layout never re-renders there).
     const persistent = new Set<object>();
     const leanOption = config.preload?.lean;
+    const prime = routeId !== undefined && pageManifest?.ready?.routes[routeId] !== undefined;
     const lean = typeof leanOption === "function" ? leanOption(page.url) : leanOption;
     const run = () =>
       renderDocument(
@@ -445,7 +446,10 @@ export function createApp(config: AppConfig): AppHandler {
           // Deferred loaders: their boundaries stream out of order (shell first) even when the app set no `stream`.
           // Shell routes (`routeRules` `shell`) always stream: the stored shell ends where the first boundary would stream.
           ...(config.stream ? { stream: config.stream } : page.deferred || page.shell ? { stream: {} } : {}),
-          ...(lean ? { preload: { lean } } : config.preload?.ahead ? { preload: { ahead: config.preload.ahead } } : {}),
+          // ROUTER-PRIME: a route the manifest lists (`ready`): its page chunk joins the fetch-ahead list, the prime runs `Root.ready`.
+          ...(lean || config.preload?.ahead || prime
+            ? { preload: { ...(lean ? { lean } : config.preload?.ahead ? { ahead: config.preload.ahead } : {}), ...(prime ? { route: routeId } : {}) } }
+            : {}),
           signal,
           ...(nonce !== undefined ? { nonce } : {}),
           onError: (error: unknown) => {

@@ -6,7 +6,8 @@
 // adopts before the press); on `intent` pages they never boot by themselves: a pointer passing over a listening boundary
 // loads nothing, and the hover it left is dropped (no stale enter after a later adopt).
 // Prime (LITE-BOOT): in the background modes the loader also starts the runtime with the list and loads the listening
-// chunks (`rt.w(document)`), so a first input after idle adopts and runs inside its own task.
+// chunks (`rt.w(document)`), so a first input after idle adopts and runs inside its own task. ROUTER-PRIME: a root whose
+// `ready` modules the server listed (manifest `ready`, tail `p`) also gets its `ready` run by the prime.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
@@ -133,6 +134,96 @@ compiled("LITE-BOOT prime: after the idle fetch-ahead the runtime starts and loa
     assert.deepEqual(await page.evaluate(() => (window as unknown as { live?: unknown }).live), [true, "1"]);
     await page.waitForFunction(() => document.querySelector("#inner")!.textContent === "2");
   });
+});
+
+// ROUTER-PRIME: a root with a `ready` hook (the router's `Root`: the shown URL's page module) and a dependent listener.
+const READY_SOURCE = `import { signal } from "@rivetjs/reactivity";
+export function Shell() {
+  return (
+    <main>
+      <Counter />
+    </main>
+  );
+}
+Shell.ready = () => {
+  globalThis.__ready = (globalThis.__ready || 0) + 1;
+  return import("/page.js");
+};
+export function Counter() {
+  const n = signal(0);
+  return <button id="count" onClick={() => n.set(n() + 1)}>{n()}</button>;
+}
+`;
+const readyResume = { module: "src/shell.tsx", boundaries: ["Shell", "Counter"], independent: ["Shell"] };
+const readyManifest = {
+  hash: "r",
+  runtime: "/rt.js",
+  symbols: { "src/shell.tsx#Shell": "/shell.js", "src/shell.tsx#Counter": "/shell.js" },
+  ready: { root: "src/shell.tsx#Shell", routes: { home: ["/page.js"] } },
+};
+async function readySite(preload?: object): Promise<[string, Record<string, string>]> {
+  const server = compile(READY_SOURCE, { target: "server", filename: "shell.tsx", resume: readyResume } as never);
+  assert.deepEqual(server.diagnostics, []);
+  const { Shell } = await importServer<{ Shell: () => ServerValue }>(server.code);
+  const html = (await derivedToString(() => Shell(), { manifest: readyManifest, ...(preload ? { preload } : {}) } as never)) as string;
+  const dom = compile(READY_SOURCE, { target: "dom", filename: "shell.tsx", resume: readyResume } as never);
+  assert.deepEqual(dom.diagnostics, []);
+  return [
+    html,
+    {
+      ...DERIVED_BUILD,
+      "/": "<!doctype html><html><body>" + html + "</body></html>",
+      "/rt.js": 'export { default } from "/dom-derived.ts";',
+      "/shell.js": rewrite(dom.code),
+      "/page.js": "export default 1;",
+    },
+  ];
+}
+
+compiled(
+  "ROUTER-PRIME: a route the manifest's `ready` lists: its modules join the list, the prime runs the root's `ready`, the first click adopts in its own task",
+  async () => {
+    const [html, files] = await readySite({ route: "home" });
+    assert.deepEqual(fo(html), ["/rt.js", "/shell.js", "/page.js"]);
+    assert.match(html, /"p":1[,}]/, "tail p names the root record");
+    await withPage(files, async (page, requests) => {
+      await page.goto("http://rivet.test/");
+      await page.waitForFunction(() => (window as unknown as { __ready?: number }).__ready === 1, null, { timeout: 5000 });
+      await page.waitForTimeout(200);
+      assert.equal(requests.filter((url) => url === "/page.js").length, 1, "the page module: one request, the modulepreload");
+      assert.equal(await page.evaluate(() => "$$click" in document.querySelector("#count")!), false, "primed, nothing adopted");
+      await page.evaluate(() =>
+        addEventListener("click", () => {
+          const w = window as unknown as { live: boolean };
+          w.live = "$$click" in document.querySelector("#count")!;
+        }),
+      );
+      const before = requests.length;
+      await page.click("#count");
+      assert.equal(await page.evaluate(() => (window as unknown as { live?: boolean }).live), true, "adopted in the click task (no ready hop)");
+      await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+      assert.deepEqual(requests.slice(before), [], "the click fetches nothing");
+      assert.equal(await page.evaluate(() => (window as unknown as { __ready?: number }).__ready), 1, "ready ran once");
+    });
+  },
+);
+
+compiled("ROUTER-PRIME: without a listed route the list and the tail stay as they were and the prime leaves `ready` to the first event", async () => {
+  for (const preload of [undefined, { route: "other" }]) {
+    const [html, files] = await readySite(preload);
+    assert.deepEqual(fo(html), ["/rt.js", "/shell.js"]);
+    assert.doesNotMatch(html, /"p":/);
+    await withPage(files, async (page, requests) => {
+      await page.goto("http://rivet.test/");
+      await page.waitForFunction(() => "$rdp" in document, null, { timeout: 5000 });
+      await page.waitForTimeout(300);
+      assert.equal(await page.evaluate(() => (window as unknown as { __ready?: number }).__ready), undefined, "ready not run by the prime");
+      assert.ok(!requests.includes("/page.js"), requests.join(" "));
+      await page.click("#count");
+      await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+      assert.equal(await page.evaluate(() => (window as unknown as { __ready?: number }).__ready), 1);
+    });
+  }
 });
 
 compiled("fetch-ahead: intent loads nothing before the first intent, then the whole list at once (high) and the press replays", async () => {

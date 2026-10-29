@@ -126,6 +126,15 @@ export interface RivetResumeOptions {
    * (`heuristic` | `measured` | `off` | a table JSON path) overrides; `RIVET_PLACEMENT_EXPLAIN=<file>` writes the report.
    */
   placement?: PlacementOption;
+  /**
+   * ROUTER-PRIME: what a derived root's `ready(props)` hook loads (`rivetRouter()` sets it: its generated `Root` loads the
+   * page module of the shown URL), read when the client bundle is written. `root` = the boundary name of that root
+   * (`<root-relative module>#<Export>`), `routes` = per key (route id) the source modules (absolute ids) it loads. The
+   * resume manifest's `ready` holds per key those modules' chunks + their static import closures (URLs); the server lists
+   * them in the page's fetch-ahead list, so the loader's prime runs `ready` without a request of its own. A key whose
+   * module has no chunk is left out (its `ready` keeps waiting for the first event).
+   */
+  ready?: () => { root: string; routes: Record<string, readonly string[]> } | undefined;
 }
 
 /** Scoped styles: css`` blocks and `*.module.<ext>` stylesheets. */
@@ -1867,7 +1876,8 @@ function rivetPlugin(
    * name → the chunk of its module), `sizes` (those chunks' bytes), `deps` (static import closure of the runtime and of
    * every boundary chunk: the server's fetch-ahead list `data-fo`, DERIVED-C), `builtins` (the built-in decoders' chunk: the
    * server names it in a route payload that needs it, `_rData`), `lazy` (IDLE-PREFETCH: chunk → the chunks of the lazy
-   * parts its modules import; absent without lazy parts). */
+   * parts its modules import; absent without lazy parts), `ready` (ROUTER-PRIME, `resume.ready`: the root's name + per
+   * route id the chunks its `ready` hook loads, with their static closures). */
   function derivedManifest(this: Rollup.PluginContext, bundle: Rollup.OutputBundle): void {
     const symbols: Record<string, string> = {},
       sizes: Record<string, number> = {},
@@ -1970,6 +1980,34 @@ function rivetPlugin(
       }
       if (seen.size) deps[base + file] = [...seen].sort().map((name) => base + name);
     }
+    // ROUTER-PRIME (`resume.ready`): per key, the chunks of the modules the root's `ready` loads + their static closures.
+    const readySpec = resume?.ready?.();
+    let ready: { root: string; routes: Record<string, string[]> } | undefined;
+    if (readySpec) {
+      const owner = new Map<string, Rollup.OutputChunk>();
+      // A module's own chunk: the one it is the facade of, else the chunk holding it (never a `?rivet-lite` copy's).
+      for (const chunk of chunks.values()) if (chunk.facadeModuleId && !LITE_QUERY.test(chunk.facadeModuleId)) owner.set(chunk.facadeModuleId, chunk);
+      for (const chunk of chunks.values()) for (const id of chunk.moduleIds) if (!owner.has(id)) owner.set(id, chunk);
+      const routes: Record<string, string[]> = {};
+      for (const key of Object.keys(readySpec.routes).sort()) {
+        const files = new Set<string>(),
+          stack: string[] = [];
+        let all = true;
+        for (const id of readySpec.routes[key]!) {
+          const chunk = owner.get(id);
+          if (chunk) stack.push(chunk.fileName);
+          else all = false;
+        }
+        if (!all) continue;
+        for (let file; (file = stack.pop()) !== undefined;) {
+          if (files.has(file)) continue;
+          files.add(file);
+          stack.push(...(chunks.get(file)?.imports ?? []));
+        }
+        routes[key] = [...files].sort().map((file) => base + file);
+      }
+      ready = { root: readySpec.root, routes };
+    }
     // `resume.domData` (DERIVED-C5): the derived client reads list data from the page (`DOM_DATA` loaded); servers write `d` then.
     const body = {
       runtime,
@@ -1980,6 +2018,7 @@ function rivetPlugin(
       ...(builtins ? { builtins } : {}),
       ...(domDataIn && domReader ? { domData: domReader } : {}),
       ...(Object.keys(lazy).length ? { lazy } : {}),
+      ...(ready && Object.keys(ready.routes).length ? { ready } : {}),
       // Pages whose every record is in `lite.symbols` load `lite.runtime` + those entries instead (server `flush`).
       ...(liteRuntime && Object.keys(lite).length
         ? { lite: { runtime: liteRuntime, symbols: lite, ...(liteProps.length ? { props: liteProps.sort() } : {}) } }

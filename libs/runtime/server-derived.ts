@@ -408,6 +408,14 @@ export interface ResumeManifest {
    * fetch-ahead list, at idle, so a first interaction that opens one evaluates a module already fetched.
    */
   lazy?: Record<string, string[]>;
+  /**
+   * ROUTER-PRIME (`rivet({ resume: { ready } })`, set by `rivetRouter()`): `root` = the boundary name of the derived root
+   * whose `ready(props)` hook loads modules before its adopt run (the router's `Root`: the shown URL's page module), and
+   * per route id (`PreloadOptions.route`) the chunks it loads with their static closures. A page rendered with a `route`
+   * listed here adds them to its fetch-ahead list and names the root's record in tail `p`: the loader's prime then runs
+   * `ready` too (every module it needs is on the list), so the first event adopts the root in its own task.
+   */
+  ready?: { root: string; routes: Record<string, string[]> };
 }
 /**
  * When the browser fetches the page's handler code (tail `data-fo`: the runtime + the chunks of the boundaries that can
@@ -427,6 +435,8 @@ export interface PreloadOptions {
   ahead?: "idle" | "load" | "intent";
   /** Same as `ahead: "intent"`. */
   lean?: boolean;
+  /** ROUTER-PRIME: the page's route id (the router sets it): its manifest `ready.routes` entry joins the fetch-ahead list. */
+  route?: string;
 }
 /** Options of resumable server rendering: manifest, CSP nonce, locale variant. */
 export interface ResumableOptions {
@@ -2267,11 +2277,15 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
     nonce = options.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "",
     // RT-DIET2 mixed lite: ahead = the lite runtime + the live records' lite entries; the full runtime's list rides in the
     // tail (`F`, fetched on a link intent / fallback only).
-    ahead = tail.l ? liteAhead(manifest, tail.l, runtime) : fetchAhead(manifest, tail, runtime),
+    // ROUTER-PRIME: the modules the root's `ready` loads (manifest `ready`), when its record ships (not on lite pages).
+    prime = tail.l ? null : readyOf(ctx, manifest, tail),
+    ahead = tail.l ? liteAhead(manifest, tail.l, runtime) : fetchAhead(manifest, tail, runtime, prime),
     // RT-DIET2: a page whose only live records are document click listeners (the router's links, nothing else listening,
     // no trigger) fetches nothing in the background: its full runtime + router chunks load on the first link intent.
     when = options.preload?.lean || (!options.preload?.ahead && linksOnly(tail)) ? "intent" : (options.preload?.ahead ?? "idle");
   if (tail.l) tail.F = fetchAhead(manifest, tail, manifest.runtime!) || manifest.runtime!;
+  // The prime may run that record's `ready`: what it loads is on the list (fetched ahead, so no request of its own).
+  else if (prime && ahead) tail.p = prime[0];
   // IDLE-PREFETCH: the lazy parts the fetch-ahead list reaches (`data-fl`), fetched after it (not on lite pages).
   const later = ahead && manifest.lazy && !tail.l ? fetchLater(manifest, ahead) : "";
   // (Encoded after the fetch-ahead list: encoding rewrites the records' names in place.)
@@ -2301,11 +2315,14 @@ const jsonRecord = (pieces: string[]): ServerValue =>
  * chunks of the islands an adopt run hydrates (M6-PARITY), the DOM data reader of a tail with `d` entries, and their static
  * import closures (manifest `deps`). Nothing live and
  * no island: empty (no fetch-ahead, the runtime never boots). */
-function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime: string): string {
+function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime: string, prime?: readonly [number, readonly string[]] | null): string {
   const islands = (manifest as { islands?: Record<string, string> }).islands,
     list = islandUrls.map((key) => islands?.[key]!).filter(Boolean),
     names = foNames(tail);
   if (!names.size && !list.length) return "";
+  // ROUTER-PRIME: the root's `ready` modules, when the root itself is fetched ahead (the prime warms it).
+  if (prime && names.has(manifest.ready!.root)) list.push(...prime[1]);
+  else if (prime) prime = null;
   // DOM data: the browser's reader chunk, which the runtime imports for this tail's `d` entries.
   if (DOM_DATA_SERVER && tail.d) list.push(manifest.domData!);
   // A pure function of (manifest, names, islands): memoised per manifest (ZERO REGRESS: the closure over chunk deps cost a
@@ -2323,6 +2340,18 @@ function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime:
   return ahead;
 }
 const aheads = new WeakMap<object, Map<string, string>>();
+/** ROUTER-PRIME: [the root record's id, the modules its `ready` loads] for this page's route (manifest `ready`), else null.
+ * A payload whose table needs the built-in decoders (`EncodedData.x`: `ready` loads that chunk too) adds it. */
+function readyOf(ctx: DerivedRender, manifest: Partial<ResumeManifest>, tail: FlushTail): readonly [number, readonly string[]] | null {
+  const route = ctx.options?.preload?.route,
+    ready = manifest.ready,
+    urls = route === undefined ? undefined : ready?.routes[route];
+  if (!urls) return null;
+  const root = tail.b.find((r) => r[3] === ready!.root);
+  if (!root) return null;
+  const v = ctx.verified?.[0] as Partial<EncodedData> | undefined;
+  return [root[0], v && typeof v === "object" && "t" in v && typeof v.x === "string" ? [...urls, v.x] : urls];
+}
 /** The later fetch list (`data-fl`, IDLE-PREFETCH `laterUrls`) of a fetch-ahead list, memoised per manifest like `aheads`. */
 function fetchLater(manifest: Partial<ResumeManifest>, ahead: string): string {
   let memo = laters.get(manifest);

@@ -11,7 +11,7 @@ A Rivet page arrives as finished HTML. The JavaScript of a button is not needed 
 ## What happens by default
 
 1. The page loads. The inline loader starts; no component code runs.
-2. When the browser is idle after the load, the loader asks it to fetch the runtime and the chunks of the page's interactive components (with their static imports) at low priority. As they arrive, the runtime starts and loads those modules (their top-level code runs), so the first event needs no further loading step. No component runs yet.
+2. When the browser is idle after the load, the loader asks it to fetch the runtime and the chunks of the page's interactive components (with their static imports) at low priority. As they arrive, the runtime starts and loads those modules (their top-level code runs), so the first event needs no further loading step. With file routes, the list also holds the page module of the shown route, which the router's root needs before it can run, so that step is done at idle too. No component runs yet.
 3. When the pointer moves onto a component that reacts to hover, rests on an element (80 ms), it gets focus, a key is pressed, or a finger or the pointer goes down, the loader fetches every file of that list that has not arrived, at high priority and all at once.
 4. On the event, in the same task, the runtime runs the component and the components around it that have not run yet (with file routes: up to the router's root, unless the build proved the component reads nothing they provide), then the handler. An event that comes before its code is held and replayed.
 

@@ -6,7 +6,7 @@
 import { test } from "vitest";
 import { steps } from "@rivetjs/testing/steps";
 import assert from "node:assert/strict";
-import { rm } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import { build } from "vite";
 import { chromium } from "playwright";
 import { start } from "../adapters/node.ts";
@@ -187,6 +187,19 @@ test(
           prefetched.filter((url) => /(dom-derived|\/app)-/.test(url)).sort(),
           "runtime / App chunk only fetched (modulepreload) before the click",
         );
+        // ROUTER-PRIME: the route's page chunk (+ closure) that `Root.ready` loads is on the list too (manifest `ready`), and the
+        // tail names the root record (`p`): the prime runs `ready`, so the first press adopts the Root in its own task.
+        const manifest = JSON.parse(await readFile(root + "dist/client/.vite/rivet-resume.json", "utf8")) as {
+          ready?: { root: string; routes: Record<string, string[]> };
+        };
+        assert.equal(manifest.ready?.root, ".rivet/app.tsx#default");
+        const pageChunks = manifest.ready!.routes["shop/a"]!;
+        assert.ok(
+          pageChunks.some((url) => /\/a-[\w-]+\.js$/.test(url)),
+          pageChunks.join(),
+        );
+        for (const url of pageChunks) assert.ok(prefetched.includes(url), url + " prefetched: " + prefetched.join());
+        assert.match(await fresh.evaluate(() => document.querySelector('script[type="rivet/boundaries"]')!.textContent!), /"p":1[,}]/);
         const before = scripts.length;
         await fresh.evaluate(() => ((document.querySelector("#shell") as HTMLElement & { __mark?: number }).__mark = 1));
         await fresh.evaluate(() => document.querySelector<HTMLElement>('nav a[href="/u/1/x"]')!.click());

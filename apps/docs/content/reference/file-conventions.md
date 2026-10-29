@@ -100,7 +100,7 @@ Files named `*.server.*`, modules that `import "@rivetjs/router/server-only"`, a
 | --- | --- |
 | `dist/client/assets/` | Hashed JS and CSS. The Node adapter serves them with `Cache-Control: immutable`. |
 | `dist/client/.vite/manifest.json` | Vite manifest. |
-| `dist/client/.vite/rivet-resume.json` | Resume manifest: boundary modules, their chunks and dependencies, plus eligible lite chunks. |
+| `dist/client/.vite/rivet-resume.json` | Resume manifest: boundary modules, their chunks and dependencies, plus eligible lite chunks and (file routes) each route's page chunks. |
 | `dist/client/<path>/index.html` | Static mode: one prerendered page per URL. |
 | `dist/client/<path>/_data.json` | Static mode: route data for client navigation. Not written when no page resumes. |
 | `dist/client/404.html` | Static mode: the not-found page. |

@@ -1758,6 +1758,15 @@ function prepare(r: Rec, module: Record<string, unknown>): true | Promise<void> 
   }
   return r.ready;
 }
+/** The prime's `ready` (ROUTER-PRIME), quietly: a failure leaves it to the first event's adopt (which runs it again). */
+function primed(r: Rec): void {
+  try {
+    const p = prepare(r, modules.get(r.name)!);
+    if (p !== true) p.catch(() => r.ready === p && (r.ready = null));
+  } catch {
+    r.ready = null;
+  }
+}
 function demotedRoot(r: Rec, module: Record<string, unknown>): void {
   r.done = true;
   const range = rangeOf(r),
@@ -2598,8 +2607,10 @@ const runtime: DerivedRuntime = {
     // before adopting (`ready`), nothing runs.
     const warm = (r: Rec | undefined, quiet?: 1): void => {
       while (r && !r.done && !r.hole && r.parent && !(r.flags & INDEPENDENT) && !r.parent.done) r = r.parent;
-      // The prime loads the chunk only: `ready` (the router's page modules) may fetch what the list does not hold.
-      if (r && !r.done && !r.hole) load(r.name).then(() => void (quiet || prepare(r!, modules.get(r!.name)!)), quiet ? () => {} : report);
+      // The prime loads the chunk only, and runs `ready` only for the record tail `p` names (ROUTER-PRIME: the server put
+      // what that hook loads on the fetch-ahead list; another record's `ready` may fetch what the list does not hold).
+      if (r && !r.done && !r.hole)
+        load(r.name).then(() => void (quiet ? r!.id === tail!.p && primed(r!) : prepare(r!, modules.get(r!.name)!)), quiet ? () => {} : report);
     };
     // The loader's prime (LITE-BOOT, target = the document): every listening record's chunk, quietly (a failure surfaces
     // when an event needs that record), so the first event adopts inside its own task.
