@@ -11,7 +11,7 @@ related: [components/surface, components/avatar, components/button, components/l
 Notes:
 
 - `class`, not `className`.
-- The context carries the variant, not tv slot functions; same classes.
+- The context carries the variant, not the tv slot functions: each part looks up the slots for that variant; same classes.
 
 ## Usage
 

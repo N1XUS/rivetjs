@@ -73,7 +73,7 @@ As [Masonry](./masonry.md#keyboard-and-selection): one tab stop, arrow keys by v
 
 ## Resumability
 
-The packing and the positions come from the server; a resumed page runs no bento code before the first interaction (root `preload="visible"`).
+The packing and the positions come from the server; a resumed page runs no bento code before the first interaction; its code is fetched when the browser is idle after the load, or on intent ([preloading](site:docs/guides/performance/preloading/)).
 
 ## Upstream
 

@@ -64,6 +64,28 @@ The page gets a hash-based security policy instead of a nonce, as on [static hos
 
 Read secrets the way your platform provides them: `process.env` on Node.js, Vercel, Netlify Functions and Bun, `Deno.env.get()` on Deno and `Netlify.env.get()` on Netlify Edge Functions. On Cloudflare, bindings arrive in `event.platform.env`. Where the platform passes a context object (Netlify, Vercel Edge, Cloudflare `ctx`), it is `event.platform.ctx`. The visitor's address is always `event.platform.clientAddress`.
 
+## Cache builds in CI
+
+Builds keep their results in one cache folder outside the project: compiled modules (`compile/`), build-time evaluated calls (`comptime/`), optimized `?image` / `?svg` files (`images/`) and the stylesheet sizes the router measures. The folder is `RIVET_CACHE_DIR` when it is set, else `rivet-cache` in the OS temp directory. Every entry is keyed by everything it depends on (source, options, compiler version), so a restored cache never gives a stale result, and several projects can share one folder. It stays outside the project on purpose: Tailwind's source detection scans the app folder and would read cached text as class names.
+
+A CI runner starts with an empty temp directory, so point the variable at a path your CI caches and restore it between runs:
+
+```yaml title=".github/workflows/build.yml"
+env:
+  RIVET_CACHE_DIR: ${{ runner.temp }}/rivet-cache
+steps:
+  - uses: actions/checkout@v4
+  - uses: actions/cache@v4
+    with:
+      path: ${{ runner.temp }}/rivet-cache
+      key: rivet-${{ runner.os }}-${{ github.sha }}
+      restore-keys: rivet-${{ runner.os }}-
+  - run: npm ci
+  - run: npm run build
+```
+
+Build scripts can read the same path with `rivetCacheDir()` from `@rivetjs/compiler`. `compileCache: false` in the Vite config, or `RIVET_COMPILE_CACHE=0`, turns the compiler cache off; it is limited to 512 MB, least recently used entries first (`RIVET_COMPILE_CACHE_MB`). Downloaded Google fonts are the one cache inside the project (`node_modules/.rivet/fonts`, see [Kit](../../ui/kit.md)): keep that folder too when the build must run without network. All variables are listed in the [command line reference](../../reference/cli.md#environment-variables).
+
 ## Common mistakes
 
 - **Testing only with the dev server.** Resuming, chunks and the security policy behave differently there. Run the production build locally (`npm run build`, then `npm start` or `npm run preview`) before you deploy. See [dev and production differ](../../gotchas/dev-and-production-differ.md).

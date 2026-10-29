@@ -118,7 +118,7 @@ import { Stepper } from "@rivetjs/ui/stepper";
 
 ### Resumability
 
-Server-rendered; nothing runs at load. A display-only stepper ships no JavaScript; an interactive one fetches its handlers when it scrolls into view.
+Server-rendered; nothing runs at load. A display-only stepper ships no JavaScript; an interactive one fetches its code when the browser is idle after the load, or on intent, and runs it on the first click ([preloading](site:docs/guides/performance/preloading/)).
 
 ## Styling Reference
 

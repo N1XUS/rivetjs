@@ -32,7 +32,7 @@ export function BookingCalendar() {
           <RangeCalendar.GridHeader>{(day) => <RangeCalendar.HeaderCell>{day}</RangeCalendar.HeaderCell>}</RangeCalendar.GridHeader>
           <RangeCalendar.GridBody>
             {(date) => {
-              // Rivet: plain values for the reactive child below (it is captured for resume; date instances are not serializable).
+              // Computed once per cell; the reactive child below reads it.
               const isBlocked = !isWeekend(date, locale) && blockedDates.includes(date.day);
 
               return (

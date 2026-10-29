@@ -20,7 +20,7 @@ import { Compare } from "@rivetjs/ui/compare";
 - The value is the share of the before layer in percent, from the start edge (left, right in RTL, top when vertical). `defaultValue` (50) sets where the divider starts.
 - A press on the handle grabs it where it was hit and follows the pointer 1:1. Keys and frame presses settle through the house motion (`@rivetjs/cdk/motion`); `animation={false}` and reduced motion jump.
 - `Compare.Label` puts a badge in a corner of its layer: `placement="start"` in the before layer, `"end"` in the after layer, so each is clipped with its own layer.
-- Resumable: nothing runs before the first pointer or key event. The root preloads its chunks once it is visible, so the first drag is not a network round trip.
+- Resumable: nothing runs before the first pointer or key event. Its code is fetched when the browser is idle after the load (or on intent), so the first drag is not a network round trip; see [preloading](site:docs/guides/performance/preloading/).
 
 ## Anatomy
 

@@ -3,7 +3,7 @@ title: Resuming
 description: How a Rivet page keeps working in the browser without running your components on load, and what that means for state, props and render code.
 template: concept
 status: experimental
-related: [learn/server-first, learn/loading-code, learn/signals, gotchas/component-did-not-run-again]
+related: [learn/server-first, learn/loading-code, learn/signals, guides/performance/zero-js, gotchas/component-did-not-run-again]
 ---
 
 Resuming means the browser picks up where the server left off. The server renders the page and writes down the little the browser will need later. Without startup triggers, component execution waits until an event or state change needs it; the browser then runs that part's code over the HTML that is already there. The glossary calls this :term[resumability]{id=resumability}.
@@ -55,7 +55,7 @@ A component whose subtree has nothing interactive gets no record and never runs 
 
 **Props decide who runs together.** Plain JSON props can be recorded for an independent component. Passing a reactive value keeps the prop live; it does not turn the signal function into JSON. Route payloads have a separate encoder for richer values (below). A component that gets a function, a JSX child with handlers or a value that is not data runs together with its parent, which passes it the real values. Passing plain data is what keeps the browser's work small.
 
-**Native controls need no resume code when the build proves their state is local.** Eligible switch, checkbox, accordion and button-family uses compile to native inputs, `<details>` or buttons with CSS state. Their native interaction works without loading Rivet. A live prop, callback or unsupported use keeps the component path.
+**Native controls need no resume code when the build proves their state is local.** Eligible switch, checkbox, accordion and button-family uses compile to native inputs, `<details>` or buttons with CSS state. Their native interaction works without loading Rivet. A live prop, callback or unsupported use keeps the component path. See [what ships no JavaScript](../guides/performance/zero-js.md).
 
 **Nodes stay where they are.** The browser walks the server's nodes instead of creating new ones, so focus, typed text, selection and scroll position survive. While a component first runs over them it writes nothing a node already holds: an `<iframe>` keeps its `src` (no reload), a `<details>` the visitor opened stays open, a picked radio stays picked. A press on an element whose code is still loading is held and replayed once it runs, with the focus a loaded page would have seen.
 
@@ -132,7 +132,7 @@ export default defineConfig({
 
 - **A load still pending when the page was sent.** A load still pending when the page was sent, or (without `rivetRouter`) a `resource` or `Async` value JSON cannot hold, loads in the browser; if that load suspends a `Suspense`, the component holding it renders again in the browser the first time it is used (development prints a warning naming it).
 - **Hover state on a replayed press.** The hover state of the pressed element (`data-hovered`) can differ from a loaded page until the pointer moves, and some collection components (tag group, grid list, tree) still render again in the browser on their first interaction.
-- **`when: "interaction"` / `"media:(query)"`** of a `clientEffect` or `clientEvent` start it when its component is first used, not at the first press anywhere on the page or when the query matches (plan M6).
+- **`when: "interaction"` / `"media:(query)"`** of a `clientEffect` or `clientEvent` start it when its component is first used, not at the first press anywhere on the page or when the query matches ([roadmap](../about/roadmap.md#in-progress)).
 - **Dev edits reload the page.** The dev server serves pages resumable like production; an edit of a component reloads the page.
 
 ## What it means for your code

@@ -187,7 +187,7 @@ Import these by name from `@rivetjs/runtime/dom` (the server build rewrites the 
 | `lazyComponent` | Component whose code loads on demand. |
 | `clientOnly` | Component that renders only in the browser, with an optional `fallback`. |
 
-`ChunkGroup` renders its children; its grouping and `preload` have no effect: not yet on the derived model; tracked in plan M6.
+`ChunkGroup` renders its children; its grouping and `preload` have no effect ([roadmap](../about/roadmap.md#in-progress)).
 
 ## Compiler messages
 

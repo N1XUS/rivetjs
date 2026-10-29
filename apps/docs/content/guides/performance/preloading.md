@@ -3,7 +3,7 @@ title: Preloading
 description: Learn when Rivet downloads the code of your interactive components, and how to move or turn off the downloads before the first interaction.
 template: guide
 status: experimental
-related: [guides/performance/chunks, learn/loading-code, guides/performance/measuring]
+related: [guides/performance/chunks, guides/performance/zero-js, learn/loading-code, guides/performance/measuring]
 ---
 
 A Rivet page arrives as finished HTML. The JavaScript of a button is not needed until someone uses the button, but waiting for the network on the first click would make it slow. Rivet downloads that code ahead of time and gets it ready, without running any component. This is called :term[preloading]{id=preload}.

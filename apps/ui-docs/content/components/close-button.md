@@ -88,6 +88,10 @@ The component supports both CSS pseudo-classes and data attributes for flexibili
 - **Focus**: `:focus-visible` or `[data-focus-visible="true"]`
 - **Disabled**: `:disabled` or `[aria-disabled="true"]`
 
+### Zero-JS native path
+
+In production builds, a CloseButton with only declared data props (`variant`, `isDisabled`, `id`, `class`, children with no render prop) and no `onPress`, outside every trigger, tooltip, dialog slot and group, renders a plain `<button>` with the same markup and ships no JavaScript, before or after a press. Press, hover and focus states then come from `:active`, `:hover` and `:focus-visible` only; there is no `data-pressed` / `data-hovered` / `data-focus-visible`. A CloseButton inside an Alert, Modal or Chip that closes it, or one with `onPress`, keeps the interactive path. See [What ships no JavaScript](site:docs/guides/performance/zero-js/).
+
 ## API Reference
 
 See the [full module API](/api/rivetjs/ui/close-button/) for every named export and part prop type.
@@ -126,7 +130,7 @@ When using the render prop pattern, these values are provided:
 
 ## Accessibility
 
-A real `<button>` named "Close" unless you pass another `aria-label`. Keyboard: Enter and Space. A CloseButton without `onPress`, outside triggers, ships no JavaScript (plain `<button>`, CSS states).
+A real `<button>` named "Close" unless you pass another `aria-label`. Keyboard: Enter and Space. A CloseButton without `onPress`, outside triggers, can ship no JavaScript ([Zero-JS native path](#zero-js-native-path)).
 
 ## Related Components
 

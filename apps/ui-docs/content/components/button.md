@@ -158,6 +158,15 @@ The button supports both CSS pseudo-classes and data attributes for flexibility:
 - **Disabled**: `:disabled` or `[aria-disabled="true"]` (reduced opacity, no pointer events)
 - **Pending**: `[data-pending]` (no pointer events during loading)
 
+### Zero-JS native path
+
+Production builds give two kinds of Button call sites a native `<button>` without the cdk press code:
+
+- **No behaviour.** A Button with only declared data props (`variant`, `size`, `fullWidth`, `isIconOnly`, `isDisabled`, `type`, `id`, `radius`, `class`, children with no render prop) and no handler, outside every trigger, tooltip, group and form, renders the same markup as the interactive one and ships no JavaScript, before or after a press. `type="submit"` / `"reset"` keep the interactive path (the form handles the press).
+- **A handler that ignores its event.** A Button whose `onPress` never reads its event (`onPress={() => save()}`), with constant style props, no `class`, spread or render-prop children, `type` absent or `"button"` and nothing above it that reads into a button, becomes `<button type="button" onClick>`: the page keeps your handler but loads no press, hover or focus code. This applies only where no other Button on the same page still needs that code. `isDisabled` may be live.
+
+At both kinds of sites Enter and Space follow native button rules (Enter on keydown, Space on keyup), and there is no `data-pressed`, `data-hovered` or `data-focus-visible`: style states with the pseudo-classes above (`:active`, `:hover`, `:focus-visible`, `:disabled`), which the Button stylesheet already pairs with each attribute. On a handler site the handler receives the native `MouseEvent`; Safari and Firefox on macOS do not focus a native button on mouse click. Every other call site keeps the interactive path. Builds read `RIVET_NATIVE_LITE=0` (no handler rewrite) and `=all` from the environment; see [What ships no JavaScript](site:docs/guides/performance/zero-js/).
+
 ## API Reference
 
 See the [full module API](/api/rivetjs/ui/button/) for every named export and part prop type.
@@ -194,7 +203,7 @@ When using the render prop pattern, these values are provided:
 
 ## Accessibility
 
-A native `<button>` with the cdk Button behaviour: Enter and Space press it, a disabled button is `disabled`, a pending one is announced and keeps focus. Focus rings follow `data-focus-visible` (keyboard only); a Button without behaviour is a plain `<button>` whose ring follows `:focus-visible`. In production builds, a Button whose `onPress` never reads its event (constant `variant` / `size`, no `class`, no render-prop children, not inside a group, form, trigger or tooltip) is also a plain `<button>` with a click listener: Enter / Space follow native button rules, there is no `data-pressed` / `data-hovered` while held (`:active` / `:hover` style it), and the page loads no press code.
+A native `<button>` with the cdk Button behaviour: Enter and Space press it, a disabled button is `disabled`, a pending one is announced and keeps focus. Focus rings follow `data-focus-visible` (keyboard only); a Button without behaviour is a plain `<button>` whose ring follows `:focus-visible`. In production builds some call sites render a native `<button>` instead ([Zero-JS native path](#zero-js-native-path)).
 
 ## Related Components
 

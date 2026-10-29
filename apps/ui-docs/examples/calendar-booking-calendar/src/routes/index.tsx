@@ -33,7 +33,7 @@ export function BookingCalendar() {
           <Calendar.GridHeader>{(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}</Calendar.GridHeader>
           <Calendar.GridBody>
             {(date) => {
-              // Rivet: plain values for the reactive child below (it is captured for resume; date instances are not serializable).
+              // Computed once per cell; the reactive child below reads it.
               const isBooked = !isWeekend(date, locale) && bookedDates.includes(date.day);
 
               return (

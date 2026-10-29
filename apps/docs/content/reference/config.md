@@ -99,7 +99,7 @@ Since: the first release with the option (and the default it had there when that
 | `roots` | `string[]` | none | next | Files, relative to the root, whose default export is the page's root component: its props are sent as data and it starts on its own, like a route page. `rivetRouter` adds its generated app. |
 | `placement` | `"heuristic"` \| `"measured"` \| `"off"` \| table \| `{ table?, explain?, weights? }` | `"heuristic"` | next | Experimental. Chooses, per call site, whether a component that is independent only there ships its props and starts on its own (`"heuristic"`: wherever the build proves it may, as without the option) or starts with its parent, by a cost model: `"measured"` uses the cost table calibrated by `scripts/place/calibrate.ts`; a table object or JSON path uses yours. `explain: "<file>"` (or env `RIVET_PLACEMENT_EXPLAIN`) writes each decision with its legal choices and the estimated cost of the other one; env `RIVET_PLACEMENT` overrides the option. Behaviour is the same for every choice; only bytes and first-click work change. |
 
-Removed with the single resume model (plan M6): `entry`, `chunks`, `merge`, `cap`, `lazy`, `lazyOwned`, `lazyRows`, `model` and `preload.rules`. Per-component preload strategies (`export const preload`, element `preload="…"`, `<ChunkGroup preload>`) have no effect: not yet on the derived model; tracked in plan M6.
+Removed with the single resume model: `entry`, `chunks`, `merge`, `cap`, `lazy`, `lazyOwned`, `lazyRows`, `model` and `preload.rules`. Per-component preload strategies (`export const preload`, element `preload="…"`, `<ChunkGroup preload>`) have no effect ([roadmap](../about/roadmap.md#in-progress)).
 
 ### RivetCSSOptions
 

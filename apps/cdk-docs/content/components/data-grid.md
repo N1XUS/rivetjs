@@ -18,7 +18,7 @@ related: [components/table, foundations/selection, foundations/virtualizer, foun
 - Column resizing (pointer + keyboard), pinned columns (`pinned: "start" | "end"`, sticky offsets as CSS variables), tree rows (`getChildren`, expand / collapse), row reordering (`onReorder`: pointer drag and keyboard drag with announcements).
 - Client-side `filter`, `page` / `pageSize`; `onLoadMore` sentinel row; empty state; footer.
 - Fine-grained: rows are keyed by row key, so sorting moves rows, selecting updates attributes, scrolling a virtualized grid creates and drops only the rows entering and leaving the window.
-- Resumable: the server renders every row (or the first window when `virtualized`); no grid code runs before an interaction, the handler chunks preload when the grid becomes visible.
+- Resumable: the server renders every row (or the first window when `virtualized`); no grid code runs before an interaction, its code is fetched when the browser is idle after the load, or on intent ([preloading](site:docs/guides/performance/preloading/)).
 
 ## Anatomy
 

@@ -6,7 +6,7 @@ status: experimental
 related: [components/text-field, components/text-area, components/label]
 ---
 
-`Input` is a single-line text input: the [cdk Input](site:cdk/components/input/) (hover / focus / focus-visible / invalid state attributes) with the Rivet UI classes. Inside a [TextField](/components/text-field/) it takes the field's label, description and validation.
+`Input` is a single-line text input: the [cdk Input](site:cdk/components/text-field/) (hover / focus / focus-visible / invalid state attributes) with the Rivet UI classes. Inside a [TextField](/components/text-field/) it takes the field's label, description and validation.
 
 Notes:
 

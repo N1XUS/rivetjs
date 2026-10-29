@@ -11,7 +11,6 @@ export const head = { title: "DateRangePicker: Disabled" };
 import { getLocalTimeZone, today } from "@rivetjs/cdk/date";
 
 export function Disabled() {
-  // Rivet: resumable code captures plain data — the dates in their string form (date instances are not serializable).
   const start = today(getLocalTimeZone()).toString();
   const end = today(getLocalTimeZone()).add({ days: 4 }).toString();
 

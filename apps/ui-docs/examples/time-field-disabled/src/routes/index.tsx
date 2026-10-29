@@ -10,7 +10,6 @@ import { Time, getLocalTimeZone, now } from "@rivetjs/cdk/date";
 
 export function Disabled() {
   const currentTime = now(getLocalTimeZone());
-  // Rivet: resumable code captures plain data — the time in its string form (a `Time` instance is not serializable).
   const timeValue = new Time(currentTime.hour, currentTime.minute, currentTime.second).toString();
 
   return (

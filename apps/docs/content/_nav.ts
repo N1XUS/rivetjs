@@ -119,7 +119,13 @@ export const nav: NavSection[] = [
       { title: "Languages", pages: ["guides/i18n/translating-text", "guides/i18n/plurals-and-formatting", "guides/i18n/locale-urls"] },
       {
         title: "Performance",
-        pages: ["guides/performance/preloading", "guides/performance/chunks", "guides/performance/streaming", "guides/performance/measuring"],
+        pages: [
+          "guides/performance/preloading",
+          "guides/performance/chunks",
+          { path: "guides/performance/zero-js", tag: "new" },
+          "guides/performance/streaming",
+          "guides/performance/measuring",
+        ],
       },
       { title: "Security", pages: ["guides/security/csp", "guides/security/trusted-types", "guides/security/server-only-code"] },
       {
@@ -202,6 +208,7 @@ export const nav: NavSection[] = [
           "reference/file-conventions",
           "reference/jsx",
           "reference/config",
+          { path: "reference/cli", tag: "new" },
           "reference/utilities",
           { path: "reference/motion", tag: "new" },
           "reference/glossary",

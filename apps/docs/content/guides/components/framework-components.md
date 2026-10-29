@@ -117,7 +117,7 @@ React renders the chart on the server (`renderToString`, or its streaming API wh
 | `"media:(max-width: 600px)"` | when the media query matches |
 | `"only"` | not rendered on the server: the `fallback` shows until the component mounts in the browser |
 
-Options use an object: `client={{ on: "visible", rootMargin: "200px" }}` (download and hydrate once the island is within 200px of the viewport) or `client={{ on: "idle", timeout: 500 }}`. `preload` has no effect: Rivet downloads island code ahead of its trigger on its own: after the page has painted for `load`, `idle` and `only`, near the viewport for `visible`. A per-island `preload` is not yet on the derived resume model; it is tracked in plan M6.
+Options use an object: `client={{ on: "visible", rootMargin: "200px" }}` (download and hydrate once the island is within 200px of the viewport) or `client={{ on: "idle", timeout: 500 }}`. `preload` has no effect: Rivet downloads island code ahead of its trigger on its own: after the page has painted for `load`, `idle` and `only`, near the viewport for `visible`. A per-island `preload` setting is not available yet ([roadmap](../../about/roadmap.md#in-progress)).
 
 If you know Astro: `client="visible"` is `client:visible`, written as a normal prop so it is typed and can take options.
 

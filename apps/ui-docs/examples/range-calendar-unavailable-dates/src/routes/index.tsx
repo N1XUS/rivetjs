@@ -12,7 +12,6 @@ import { getLocalTimeZone, parseDate, today } from "@rivetjs/cdk/date";
 export function UnavailableDates() {
   const now = today(getLocalTimeZone());
   const blockedRanges = [
-    // Rivet: date strings — the closure is captured for resume and date instances are not serializable.
     [now.add({ days: 2 }).toString(), now.add({ days: 5 }).toString()],
     [now.add({ days: 12 }).toString(), now.add({ days: 13 }).toString()],
   ] as const;

@@ -47,7 +47,7 @@ The loader fetches ahead only when the browser reports neither Save-Data nor a 2
 
 ## Change the timing
 
-Per-component preload settings (`export const preload`, the element `preload="…"` attribute, `ChunkGroup`) have no effect: not yet on the derived model; tracked in plan M6. See [preloading](../guides/performance/preloading.md).
+Per-component preload settings (`export const preload`, the element `preload="…"` attribute, `ChunkGroup`) have no effect: the browser fetches a page's code at idle or on intent, whatever they say ([roadmap](../about/roadmap.md#in-progress)). See [preloading](../guides/performance/preloading.md).
 
 ## What it means for your code
 

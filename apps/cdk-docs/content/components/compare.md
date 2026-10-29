@@ -144,7 +144,7 @@ Vertical: :kbd[ArrowDown] / :kbd[ArrowRight] / :kbd[PageDown] increase (move the
 
 ## Resumability
 
-- The server renders the layers, the clip and the handle at the start value, so nothing shifts on load. A resumed page runs no compare code before the first pointer or key event. The root carries `preload="visible"`, so its chunks are fetched once it scrolls into view and the first drag does not wait for the network.
+- The server renders the layers, the clip and the handle at the start value, so nothing shifts on load. A resumed page runs no compare code before the first pointer or key event. Its code is fetched at low priority when the browser is idle after the load (or on intent: pointer rest, focus, pointer down), so the first drag does not wait for the network; see [preloading](site:docs/guides/performance/preloading/).
 - State is plain signals. The drag listeners and the motion live in a module map created by the first interaction. No unmount hook is registered (an effect would boot the page at load). A drag whose root left the document ends on its next move, and `compareDispose(state)` stops a running drag or settle by hand.
 
 ## Upstream
