@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/reactivity",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Fine-grained signals for Rivet: signal, computed, effect, owners and disposal, stores, resume hooks.",
   "license": "MIT",
   "private": true,

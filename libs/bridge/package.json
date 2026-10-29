@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/bridge",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Framework bridges for Rivet: components of other frameworks (React, Preact adapters) as islands inside a resumable Rivet page.",
   "license": "MIT",
   "private": true,
@@ -47,9 +47,9 @@
     }
   },
   "peerDependencies": {
-    "@rivetjs/compiler": "0.1.0-alpha.1",
-    "@rivetjs/reactivity": "0.1.0-alpha.1",
-    "@rivetjs/runtime": "0.1.0-alpha.1",
+    "@rivetjs/compiler": "0.1.0-alpha.2",
+    "@rivetjs/reactivity": "0.1.0-alpha.2",
+    "@rivetjs/runtime": "0.1.0-alpha.2",
     "vite": "^8.3.2"
   },
   "peerDependenciesMeta": {

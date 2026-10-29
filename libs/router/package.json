@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/router",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "File routing for Rivet: loaders, actions, guards, a web-standard request handler, Node / static / edge adapters.",
   "license": "MIT",
   "private": true,
@@ -115,9 +115,9 @@
     }
   },
   "dependencies": {
-    "@rivetjs/runtime": "0.1.0-alpha.1",
-    "@rivetjs/reactivity": "0.1.0-alpha.1",
-    "@rivetjs/compiler": "0.1.0-alpha.1"
+    "@rivetjs/runtime": "0.1.0-alpha.2",
+    "@rivetjs/reactivity": "0.1.0-alpha.2",
+    "@rivetjs/compiler": "0.1.0-alpha.2"
   },
   "engines": {
     "node": ">=24"

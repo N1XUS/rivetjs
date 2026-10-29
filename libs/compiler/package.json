@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/compiler",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Rivet compiler (Rust/oxc → WebAssembly) and Vite plugin: JSX to streaming server output and DOM templates, ?image / ?svg / ?jsx imports.",
   "license": "MIT",
   "private": true,
@@ -51,9 +51,9 @@
     "svgo": "4.1.0"
   },
   "peerDependencies": {
-    "@rivetjs/bridge": "0.1.0-alpha.1",
-    "@rivetjs/devtools": "0.1.0-alpha.1",
-    "@rivetjs/runtime": "0.1.0-alpha.1",
+    "@rivetjs/bridge": "0.1.0-alpha.2",
+    "@rivetjs/devtools": "0.1.0-alpha.2",
+    "@rivetjs/runtime": "0.1.0-alpha.2",
     "sharp": "^0.35.5",
     "vite": "^8.3.2"
   },

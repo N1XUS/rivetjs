@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/cdk",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Headless, accessible components and utilities for Rivet: overlays, collections, focus, interactions, dates, drag and drop.",
   "license": "MIT",
   "private": true,
@@ -619,15 +619,15 @@
     }
   },
   "dependencies": {
-    "@rivetjs/kit": "0.1.0-alpha.1",
-    "@rivetjs/reactivity": "0.1.0-alpha.1",
-    "@rivetjs/runtime": "0.1.0-alpha.1"
+    "@rivetjs/kit": "0.1.0-alpha.2",
+    "@rivetjs/reactivity": "0.1.0-alpha.2",
+    "@rivetjs/runtime": "0.1.0-alpha.2"
   },
   "engines": {
     "node": ">=24"
   },
   "devDependencies": {
-    "@rivetjs/testing": "0.1.0-alpha.1"
+    "@rivetjs/testing": "0.1.0-alpha.2"
   },
   "publishConfig": {
     "access": "public",
