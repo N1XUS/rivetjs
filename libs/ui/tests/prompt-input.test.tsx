@@ -42,6 +42,85 @@ test("prompt-input: exports", () => {
   assert.equal(typeof PromptInput.Queue.List, "function");
 });
 
+test("prompt-input: PromptInputQueueReorder drag list; Alt+Arrow keys reorder, focus stays (PRO-LAST)", async () => {
+  const { For } = await import("@rivetjs/runtime/dom");
+  const { PromptInputQueueReorder } = await import("../src/components/prompt-input-queue-reorder/index.ts");
+  const queue = signal([
+    { id: 1, text: "one" },
+    { id: 2, text: "two" },
+    { id: 3, text: "three" },
+  ]);
+  const seen: number[][] = [];
+  const { container, unmount } = render(() => (
+    <PromptInput>
+      <PromptInput.Queue>
+        <PromptInputQueueReorder.List
+          values={queue()}
+          onReorder={(next) => {
+            seen.push(next.map((q) => q.id));
+            queue.set(next);
+          }}
+        >
+          <For each={queue} by={(q: { id: number; text: string }) => q.id}>
+            {(item: () => { id: number; text: string }) => (
+              <PromptInputQueueReorder.Item value={item()}>
+                <PromptInput.Queue.Item.Content>{item().text}</PromptInput.Queue.Item.Content>
+              </PromptInputQueueReorder.Item>
+            )}
+          </For>
+        </PromptInputQueueReorder.List>
+      </PromptInput.Queue>
+    </PromptInput>
+  ));
+  await flush();
+  const list = container.querySelector('[data-slot="prompt-input-queue-list"]')!;
+  assert.equal(list.getAttribute("data-reorderable"), "true");
+  assert.match(list.className, /cdk-drop-list/);
+  const texts = () => [...container.querySelectorAll('[data-slot="prompt-input-queue-item"]')].map((el) => el.textContent);
+  assert.deepEqual(texts(), ["one", "two", "three"]);
+  const first = container.querySelector<HTMLElement>('[data-slot="prompt-input-queue-item"]')!;
+  assert.match(first.className, /cdk-drag/);
+  assert.equal(first.getAttribute("tabindex"), "0");
+  first.focus();
+  const key = (el: Element, k: string, altKey = true) => el.dispatchEvent(new W.KeyboardEvent("keydown", { key: k, altKey, bubbles: true, cancelable: true }));
+  key(first, "ArrowDown", false);
+  await flush();
+  assert.deepEqual(seen, []);
+  key(first, "ArrowDown");
+  await flush();
+  assert.deepEqual(seen, [[2, 1, 3]]);
+  assert.deepEqual(texts(), ["two", "one", "three"]);
+  assert.equal(document.activeElement, first);
+  key(first, "ArrowUp");
+  await flush();
+  key(container.querySelector('[data-slot="prompt-input-queue-item"]')!, "ArrowUp");
+  await flush();
+  assert.deepEqual(seen, [
+    [2, 1, 3],
+    [1, 2, 3],
+  ]);
+  assert.deepEqual(texts(), ["one", "two", "three"]);
+  unmount();
+});
+
+test("prompt-input: plain Queue.List has no drag markup", async () => {
+  const { container, unmount } = render(() => (
+    <PromptInput.Queue>
+      <PromptInput.Queue.List>
+        <PromptInput.Queue.Item>
+          <PromptInput.Queue.Item.Content>one</PromptInput.Queue.Item.Content>
+        </PromptInput.Queue.Item>
+      </PromptInput.Queue.List>
+    </PromptInput.Queue>
+  ));
+  await flush();
+  const list = container.querySelector('[data-slot="prompt-input-queue-list"]')!;
+  assert.equal(list.getAttribute("class"), "prompt-input__queue-list");
+  assert.equal(list.hasAttribute("data-reorderable"), false);
+  assert.equal(container.querySelector('[data-slot="prompt-input-queue-item"]')!.hasAttribute("tabindex"), false);
+  unmount();
+});
+
 test("prompt-input: type, Enter submits, clears", async () => {
   const values: string[] = [];
   const submitted: string[] = [];

@@ -97,3 +97,31 @@ test("file tree SSR: drag handles with useFileTreeDrag, none without hooks", asy
   ));
   assert.doesNotMatch(plain, /slot="drag"/);
 });
+
+test("file tree SSR: sections render row groups labelled by their header (PRO-LAST)", async () => {
+  const html = await renderToString(() => (
+    <FileTree aria-label="Files" defaultExpandedKeys={["src"]}>
+      <FileTree.Section id="project">
+        <FileTree.Header>Project</FileTree.Header>
+        <FileTree.Item id="src" title="src">
+          <FileTree.Item id="index" title="index.ts" />
+        </FileTree.Item>
+      </FileTree.Section>
+      <FileTree.Section id="config" aria-label="Config">
+        <FileTree.Item id="pkg" title="package.json" />
+      </FileTree.Section>
+    </FileTree>
+  ));
+  const groups = html.match(/<div[^>]*role="rowgroup"[^>]*>/g) ?? [];
+  assert.equal(groups.length, 2);
+  assert.match(groups[0]!, /class="file-tree__section"/);
+  assert.match(groups[0]!, /data-slot="file-tree-section"/);
+  const labelledBy = /aria-labelledby="([^"]+)"/.exec(groups[0]!)?.[1];
+  assert.ok(labelledBy);
+  assert.match(html, new RegExp(`id="${labelledBy}"[^>]*>Project<`));
+  assert.match(html, /class="file-tree__section-header"/);
+  assert.match(groups[1]!, /aria-label="Config"/);
+  assert.equal((html.match(/role="row"/g) ?? []).length, 4); // header row + src + index + pkg
+  assert.match(html, /file-tree__title[^>]*>index\.ts</);
+  assert.match(html, /aria-level="2"/);
+});

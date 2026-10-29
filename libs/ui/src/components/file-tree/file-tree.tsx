@@ -1,5 +1,4 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no file tree). Feature set inspired by HeroUI Pro's public File Tree
-// docs (a hierarchical file / folder tree on Tree: sizes sm / md / lg, guide lines always / on hover / off, item icons,
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no file tree). Feature set scoped from public docs of commercial UI kits (a hierarchical file / folder tree on Tree: sizes sm / md / lg, guide lines always / on hover / off, item icons,
 // custom expand indicator, single / multiple selection with checkboxes, dynamic collections; classes `.file-tree*`);
 // independent implementation, Rivet-authored styles.
 // - Root = cdk `Tree`; `size` → `.file-tree--{sm,md,lg}`, `showGuideLines` (true | false | "hover") → `data-guide-lines`
@@ -14,10 +13,25 @@
 //   `createTreeData` manager). Draggable rows get a leading drag handle (`Button slot="drag"`, lucide `GripVertical` or
 //   `dragIcon`; shown on row hover / focus via CSS; `dragIcon={false}` keeps it visually hidden for keyboard drags);
 //   `[data-dragging]` / `[data-drop-target]` styles in CSS.
-// - Not yet: sections (cdk `TreeSection` server render pending).
+// - Sections (PRO-LAST 2026-10-29): `Section` = cdk `TreeSection` (`.file-tree__section`, a `role="rowgroup"`; its
+//   `FileTree.Item`s are top-level rows of their group), `Header` = cdk `TreeHeader` (`.file-tree__section-header`, the
+//   group's `aria-labelledby`); a section without a header needs `aria-label`.
 import { Button as ButtonPrimitive } from "@rivetjs/cdk/button";
-import { Tree as TreePrimitive, TreeItem as TreeItemPrimitive, TreeItemContent } from "@rivetjs/cdk/tree";
-import type { TreeItemContentRenderProps, TreeItemProps as TreeItemPrimitiveProps, TreeProps as TreePrimitiveProps, TreeRenderProps } from "@rivetjs/cdk/tree";
+import {
+  Tree as TreePrimitive,
+  TreeHeader as TreeHeaderPrimitive,
+  TreeItem as TreeItemPrimitive,
+  TreeItemContent,
+  TreeSection as TreeSectionPrimitive,
+} from "@rivetjs/cdk/tree";
+import type {
+  TreeHeaderProps as TreeHeaderPrimitiveProps,
+  TreeItemContentRenderProps,
+  TreeItemProps as TreeItemPrimitiveProps,
+  TreeProps as TreePrimitiveProps,
+  TreeRenderProps,
+  TreeSectionProps as TreeSectionPrimitiveProps,
+} from "@rivetjs/cdk/tree";
 import { Icon } from "@rivetjs/kit/icon";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { ChevronRight, GripVertical } from "lucide";
@@ -129,5 +143,26 @@ function FileTreeItem<T extends object>(props: FileTreeItemProps<T>): JSX.Elemen
   );
 }
 
-export { FileTreeRoot, FileTreeItem };
-export type { FileTreeRootProps, FileTreeItemProps };
+/* -------------------------------------------------------------------------------------------------
+ * FileTree Section / Header
+ * -----------------------------------------------------------------------------------------------*/
+type FileTreeSectionProps<T extends object = object> = TreeSectionPrimitiveProps<T> & { class?: string };
+
+/** Groups rows under an optional `FileTree.Header` (cdk `TreeSection`, `role="rowgroup"`). */
+function FileTreeSection<T extends object>(props: FileTreeSectionProps<T>): JSX.Element {
+  const [local, rest] = splitLive(props, ["class"]);
+  return <TreeSectionPrimitive data-slot="file-tree-section" {...(rest as object)} class={SLOTS.section({ class: local.class })} />;
+}
+
+type FileTreeHeaderProps = TreeHeaderPrimitiveProps & { class?: string };
+
+/** Section heading (cdk `TreeHeader`): labels its section's row group. */
+function FileTreeHeader(props: FileTreeHeaderProps): JSX.Element {
+  const [local, rest] = splitLive(props, ["class"]);
+  return (
+    <TreeHeaderPrimitive data-slot="file-tree-section-header" {...(rest as object)} class={SLOTS.sectionHeader({ class: local.class })} />
+  ) as JSX.Element;
+}
+
+export { FileTreeRoot, FileTreeItem, FileTreeSection, FileTreeHeader };
+export type { FileTreeRootProps, FileTreeItemProps, FileTreeSectionProps, FileTreeHeaderProps };

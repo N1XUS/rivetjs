@@ -155,9 +155,7 @@ Each `NavigationTreeItem` takes an `href`. Pass the current path as `selectedRou
 </NavigationTree>
 ```
 
-:::warning
-Sections do not render on the server yet (see [Tree sections](tree.md#sections)), so there is no live example here.
-:::
+Sections render on the server, as [Tree sections](tree.md#sections) do.
 
 ## DOM events and attributes
 
@@ -215,4 +213,4 @@ Deviations:
 ## Not yet supported
 
 - `renderLink` / `NavigationTreeItemLink` of newer RAC releases: use `Link` inside `NavigationTreeItemContent`, routed by a `RouterProvider`.
-- Sections in server-rendered pages; drag and drop (Tree has it: [Tree: drag and drop](tree.md#drag-and-drop)); virtualization.
+- Drag and drop (Tree has it: [Tree: drag and drop](tree.md#drag-and-drop)); virtualization.

@@ -1,5 +1,5 @@
-// Rivet addition (no HeroUI v3.2.6 counterpart): AI message composer; feature set inspired by HeroUI Pro's public
-// PromptInput docs, independent implementation (see `prompt-input.tsx`).
+// Rivet addition (no HeroUI v3.2.6 counterpart): AI message composer; feature set scoped from public docs of
+// commercial UI kits, independent implementation (see `prompt-input.tsx`).
 import {
   PromptInputAction,
   PromptInputAttachments,

@@ -1,7 +1,7 @@
 // Type-level suite (`tsc -p libs/ui` only) for the AI chat components (Rivet-authored; feature sets inspired by HeroUI
 // Pro's public AI docs): TextShimmer, ChatLoader, ChatMessage, ChatMessageActions, PromptSuggestion, ChatListView,
 // CodeBlock, Markdown, ChainOfThought, ChatSource / ChatSources, ChatTool / ChatToolGroup, ChatConversation,
-// ChatAttachment / ChatAttachmentGroup / ChatAttachmentInput, PromptInput; value / accessor props, `X["…Props"]`, errors.
+// ChatAttachment / ChatAttachmentGroup / ChatAttachmentInput, PromptInput, PromptInputQueueReorder (+ FileTree sections, PRO-LAST); value / accessor props, `X["…Props"]`, errors.
 import { signal } from "@rivetjs/reactivity";
 
 import { ChainOfThought } from "../src/components/chain-of-thought/index.ts";
@@ -17,7 +17,9 @@ import { CodeBlock } from "../src/components/code-block/index.ts";
 import { Markdown } from "../src/components/markdown/index.ts";
 import { PromptInput } from "../src/components/prompt-input/index.ts";
 import type { PromptInputStatus } from "../src/components/prompt-input/index.ts";
+import { PromptInputQueueReorder } from "../src/components/prompt-input-queue-reorder/index.ts";
 import { PromptSuggestion } from "../src/components/prompt-suggestion/index.ts";
+import { FileTree } from "../src/components/file-tree/index.ts";
 import { TextShimmer } from "../src/components/text-shimmer/index.ts";
 
 export const ok = () => {
@@ -153,3 +155,26 @@ export const badVariant = () => <PromptSuggestion variant="grid" />;
 
 // @ts-expect-error hiddenCount is required
 export const missingCount = () => <PromptInput.Queue.Item.AttachmentsOverflow />;
+
+// Queue reorder (PRO-LAST): `onReorder` gets the `values` element type.
+export const reorderQueue = () => (
+  <PromptInputQueueReorder.List values={[{ id: 1 }]} onReorder={(next) => next.map((q) => q.id.toFixed())} axis="x">
+    <PromptInputQueueReorder.Item value={{ id: 1 }} />
+  </PromptInputQueueReorder.List>
+);
+
+// @ts-expect-error onReorder is required
+export const missingReorder = () => <PromptInputQueueReorder.List values={[1]} />;
+
+// @ts-expect-error unknown axis
+export const badAxis = () => <PromptInputQueueReorder.List values={[1]} onReorder={() => {}} axis="z" />;
+
+// FileTree sections (PRO-LAST).
+export const fileTreeSections = () => (
+  <FileTree aria-label="Files">
+    <FileTree.Section id="s" aria-label="Section">
+      <FileTree.Header class="x">Header</FileTree.Header>
+      <FileTree.Item id="a" title="a" />
+    </FileTree.Section>
+  </FileTree>
+);

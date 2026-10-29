@@ -1,5 +1,5 @@
-// Rivet addition: drag and drop for `FileTree` over a cdk `createTreeData` manager (API shape inspired by HeroUI Pro's
-// public File Tree docs, `useFileTreeDrag`; independent implementation on `@rivetjs/cdk/dnd` `useDragAndDrop`).
+// Rivet addition: drag and drop for `FileTree` over a cdk `createTreeData` manager (API shape scoped from
+// public docs of commercial UI kits, `useFileTreeDrag`; independent implementation on `@rivetjs/cdk/dnd` `useDragAndDrop`).
 // - Rows reorder within a level ("before" / "after") and move into folders ("on"); a folder = a node whose `children`
 //   is an array (`isFolder`). A row never moves into itself / its own subtree.
 // - Drop indicators render as `.file-tree__drop-indicator` (a line at the target's indent while it is the target).

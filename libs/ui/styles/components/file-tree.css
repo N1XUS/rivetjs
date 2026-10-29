@@ -1,8 +1,8 @@
-/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no file tree). Feature set inspired by HeroUI Pro's public File Tree docs; independent implementation on HeroUI tokens (--default, --accent-soft, --border, --muted, focus / disabled status utilities). Behaviour = @rivetjs/cdk/tree. */
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no file tree). Feature set scoped from public docs of commercial UI kits; independent implementation on HeroUI tokens (--default, --accent-soft, --border, --muted, focus / disabled status utilities). Behaviour = @rivetjs/cdk/tree. */
 /* -------------------------------------------------------------------------------------------------
  * FileTree Component Styles
  * Block: file-tree (modifiers: sm / md / lg; [data-guide-lines="always | hover | none"]; [data-reduce-motion]; parts: item / content / indent /
- *   drag-handle / indicator / indicator-icon / selection-cell / icon / title / drop-indicator)
+ *   drag-handle / indicator / indicator-icon / selection-cell / icon / title / drop-indicator / section / section-header)
  * States: item [data-hovered] [data-selected] [data-focus-visible] [data-disabled] [data-expanded] [data-dragging]
  *   [data-drop-target]; tree [data-drop-target]; drop-indicator [data-drop-target]
  * -----------------------------------------------------------------------------------------------*/
@@ -216,4 +216,19 @@
 
 .file-tree__title {
   @apply min-w-0 truncate;
+}
+
+/**
+ * Element: section - a group of rows (TreeSection, role="rowgroup") / section-header - its label (TreeHeader)
+ */
+.file-tree__section {
+  @apply flex min-w-0 flex-col gap-px;
+
+  & + & {
+    @apply pt-2;
+  }
+}
+
+.file-tree__section-header {
+  @apply px-2 pt-1 pb-1 text-xs font-medium tracking-wide text-muted uppercase select-none;
 }

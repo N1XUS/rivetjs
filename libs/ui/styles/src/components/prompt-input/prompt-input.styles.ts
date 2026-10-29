@@ -1,5 +1,5 @@
 // Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no message composer). Feature set inspired by
-// HeroUI Pro's public PromptInput docs (class names follow the documented `.prompt-input*` list); independent styles.
+// public docs of commercial UI kits; independent styles.
 import "../../../out/prompt-input.css";
 import type {VariantProps} from "tailwind-variants";
 

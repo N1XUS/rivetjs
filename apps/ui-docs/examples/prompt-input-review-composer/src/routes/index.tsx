@@ -1,4 +1,4 @@
-// Rivet-authored PromptInput demo (Rivet addition; "Review Composer" section of HeroUI Pro's public docs, own content).
+// Rivet-authored PromptInput demo (Rivet addition; feature scope from public docs of commercial UI kits, own content).
 import { Icon } from "@rivetjs/kit/icon";
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";

@@ -1,4 +1,4 @@
-// Rivet-authored PromptInput demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored PromptInput demo (Rivet addition; feature set scoped from public docs of commercial UI kits, own demo content).
 import { signal } from "@rivetjs/reactivity";
 import { For } from "@rivetjs/runtime/dom";
 import { PromptInput } from "@rivetjs/ui/prompt-input";

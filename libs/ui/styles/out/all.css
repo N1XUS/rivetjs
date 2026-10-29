@@ -22862,6 +22862,33 @@
     min-width: 0;
     overflow: hidden;
   }
+
+  .file-tree__section {
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    display: flex;
+  }
+
+  .file-tree__section + .file-tree__section {
+    padding-top: calc(var(--spacing, .25rem) * 2);
+  }
+
+  .file-tree__section-header {
+    padding-inline: calc(var(--spacing, .25rem) * 2);
+    padding-top: var(--spacing, .25rem);
+    padding-bottom: var(--spacing, .25rem);
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    --tw-font-weight: var(--font-weight-medium, 500);
+    font-weight: var(--font-weight-medium, 500);
+    --tw-tracking: var(--tracking-wide, .025em);
+    letter-spacing: var(--tracking-wide, .025em);
+    color: var(--muted);
+    text-transform: uppercase;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 @layer components {
   .list-view {
@@ -28070,6 +28097,47 @@
     height: calc(var(--spacing, .25rem) * 7);
     min-width: 0;
     color: var(--muted);
+  }
+
+  .prompt-input__queue-list[data-axis="x"] {
+    flex-direction: row;
+    overflow: auto hidden;
+  }
+
+  .prompt-input__queue-list[data-reorderable="true"] .prompt-input__queue-item {
+    cursor: grab;
+    --tw-outline-style: none;
+    outline-style: none;
+  }
+
+  .prompt-input__queue-list[data-reorderable="true"] .prompt-input__queue-item:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--focus);
+  }
+
+  .prompt-input__queue-list[data-reorderable="true"] .prompt-input__queue-item.cdk-drag-placeholder {
+    opacity: .4;
+  }
+
+  .prompt-input__queue-list[data-reorderable="true"] .prompt-input__queue-item.cdk-drag-animating, .prompt-input__queue-list.cdk-drop-list-dragging .prompt-input__queue-item:not(.cdk-drag-placeholder) {
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
+  }
+
+  .prompt-input__queue-item.cdk-drag-preview {
+    cursor: grabbing;
+    background-color: var(--surface);
+    --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, #0000001a), 0 2px 4px -2px var(--tw-shadow-color, #0000001a);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    box-sizing: border-box;
+  }
+
+  .prompt-input__queue-item.cdk-drag-preview .prompt-input__queue-item-actions {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .prompt-input__queue-list .prompt-input__queue-item {
+      transition: none;
+    }
   }
 
   @keyframes prompt-input-spin {

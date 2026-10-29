@@ -44,6 +44,36 @@ test("file tree: chevron expands and collapses", async () => {
   unmount();
 });
 
+test("file tree: sections group rows; a section's folder expands (PRO-LAST)", async () => {
+  const { container, unmount } = render(() => (
+    <FileTree aria-label="Files">
+      <FileTree.Section id="project">
+        <FileTree.Header>Project</FileTree.Header>
+        <FileTree.Item id="src" title="src">
+          <FileTree.Item id="index" title="index.ts" />
+        </FileTree.Item>
+      </FileTree.Section>
+      <FileTree.Section id="config" aria-label="Config">
+        <FileTree.Item id="pkg" title="package.json" />
+      </FileTree.Section>
+    </FileTree>
+  ));
+  await flush();
+  const groups = container.querySelectorAll('[role="rowgroup"]');
+  assert.equal(groups.length, 2);
+  assert.equal(groups[0]!.getAttribute("class"), "file-tree__section");
+  const header = groups[0]!.querySelector(".file-tree__section-header")!;
+  assert.equal(header.textContent, "Project");
+  assert.equal(groups[0]!.getAttribute("aria-labelledby"), header.querySelector("[id]")?.id ?? header.id);
+  assert.equal(groups[1]!.getAttribute("aria-label"), "Config");
+  assert.equal(groups[0]!.querySelectorAll('[data-slot="file-tree-item"]').length, 1);
+  press(groups[0]!.querySelector('[slot="chevron"]')!);
+  await flush();
+  assert.equal(groups[0]!.querySelectorAll('[data-slot="file-tree-item"]').length, 2);
+  assert.equal(groups[1]!.querySelectorAll('[data-slot="file-tree-item"]').length, 1);
+  unmount();
+});
+
 test("file tree: multiple selection", async () => {
   let selected: string[] = [];
   const { container, unmount } = render(() => (

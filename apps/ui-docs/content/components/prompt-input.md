@@ -1,6 +1,6 @@
 ---
 title: PromptInput
-description: "The chat composer: autosizing textarea, toolbar, Send / Stop, run states, attachments, a prompt queue and a token input for @mentions and /commands."
+description: "The chat composer: autosizing textarea, toolbar, Send / Stop, run states, attachments, a reorderable prompt queue and a token input for @mentions and /commands."
 template: reference
 status: experimental
 related: [components/chat-attachment, components/prompt-suggestion, components/text-area]
@@ -110,9 +110,32 @@ Compose the toolbar with workflow controls for compact agent surfaces: a review 
 
 ### Queue
 
-`PromptInput.Queue` lists prompts sent while a response runs; rows compose `Icon`, `Body`, `Content`, `Description`, `Attachments`, `AttachmentsOverflow`, `Actions`, `Remove`, `More`. Drag reordering is not implemented yet: `Handle` is visual only.
+`PromptInput.Queue` lists prompts sent while a response runs; rows compose `Icon`, `Body`, `Content`, `Description`, `Attachments`, `AttachmentsOverflow`, `Actions`, `Remove`, `More`. `Handle` is visual only.
 
 ::example{id=prompt-input-queue}
+
+### Reorder Queue
+
+`PromptInputQueueReorder.List` replaces `PromptInput.Queue.List` and `PromptInputQueueReorder.Item` replaces `PromptInput.Queue.Item` when users may reorder the queue; the row parts stay the same. Pass the queued entries as `values` and store the reordered copy that `onReorder(values)` hands you; give each row its entry as `value`. The whole row drags (cdk drag and drop); `axis="x"` reorders a horizontal list. Rows are focusable: Alt+ArrowUp / Alt+ArrowDown (Alt+ArrowLeft / Alt+ArrowRight on `axis="x"`) move the focused row by one. The parts live in their own subpath, so a queue that does not reorder ships none of the drag and drop code:
+
+```tsx
+import { PromptInputQueueReorder } from "@rivetjs/ui/prompt-input-queue-reorder";
+
+<PromptInput.Queue>
+  <PromptInputQueueReorder.List values={queue()} onReorder={(next) => queue.set(next)}>
+    <For each={queue} by={(q) => q.id}>
+      {(item) => (
+        <PromptInputQueueReorder.Item value={item()}>
+          <PromptInput.Queue.Item.Handle />
+          <PromptInput.Queue.Item.Content>{item().text}</PromptInput.Queue.Item.Content>
+        </PromptInputQueueReorder.Item>
+      )}
+    </For>
+  </PromptInputQueueReorder.List>
+</PromptInput.Queue>;
+```
+
+::example{id=prompt-input-queue-reorder}
 
 ### With Attachments
 
@@ -140,7 +163,7 @@ The segments are data: pass a Signal as `value` for two-way binding (or `default
 
 ### Resumability
 
-Server-rendered; typing, Enter and Send resume on first input. Autosizing is CSS where `field-sizing` is supported, so nothing measures at load. A token input renders its tokens on the server too (segments are plain data); its handlers resume on the first keystroke, focus or click, and the caret is measured only while the suggestions are open.
+Server-rendered; typing, Enter and Send resume on first input. A reorderable queue renders its drag markup on the server; the first press or Alt+Arrow key on a row resumes it and moves the row. Autosizing is CSS where `field-sizing` is supported, so nothing measures at load. A token input renders its tokens on the server too (segments are plain data); its handlers resume on the first keystroke, focus or click, and the caret is measured only while the suggestions are open.
 
 ## Styling Reference
 
@@ -148,20 +171,20 @@ The component’s parts emit these additional `data-slot` values: `prompt-input-
 
 ### CSS Classes
 
-| Class                                                                                                                                                                               | Applied                                                                                                       |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `prompt-input`                                                                                                                                                                      | root; `data-layout`, `data-size`, `data-variant`, `data-status`, `data-disabled`, `data-expanded`             |
-| `prompt-input__shell`                                                                                                                                                               | `Shell` (drop target with ChatAttachmentInput; `data-drop-target`)                                            |
-| `prompt-input__content` / `__textarea`                                                                                                                                              | text area                                                                                                     |
-| `prompt-input__attachments`                                                                                                                                                         | `Attachments`                                                                                                 |
-| `prompt-input__toolbar` / `-start` / `-end`                                                                                                                                         | toolbar                                                                                                       |
-| `prompt-input__action`                                                                                                                                                              | `Action`                                                                                                      |
-| `prompt-input__send` / `__send-icon`                                                                                                                                                | `Send`; icon per `data-status`                                                                                |
-| `prompt-input__footer`                                                                                                                                                              | `Footer`                                                                                                      |
-| `prompt-input__token-field` / `__token-mirror` / `__token-input`                                                                                                                    | `PromptInputTokenInput`: wrapper, the layer drawing text + pills, the textarea                                |
-| `prompt-input__token`                                                                                                                                                               | token pill (`PromptInputToken`); `data-token` (trigger), `data-value`, `data-selected`, `data-disabled`       |
-| `prompt-input__token-suggestions` / `__token-suggestion`                                                                                                                            | `PromptInputTokenSuggestions` (`data-open`, `data-placement`) / `PromptInputTokenSuggestion` (`data-focused`) |
-| `prompt-input__queue` / `__queue-list` / `__queue-item` (+ `-handle`, `-icon`, `-body`, `-content`, `-description`, `-attachments`, `-attachments-overflow`, `-actions`, `-action`) | queue                                                                                                         |
+| Class                                                                                                                                                                               | Applied                                                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prompt-input`                                                                                                                                                                      | root; `data-layout`, `data-size`, `data-variant`, `data-status`, `data-disabled`, `data-expanded`                                                              |
+| `prompt-input__shell`                                                                                                                                                               | `Shell` (drop target with ChatAttachmentInput; `data-drop-target`)                                                                                             |
+| `prompt-input__content` / `__textarea`                                                                                                                                              | text area                                                                                                                                                      |
+| `prompt-input__attachments`                                                                                                                                                         | `Attachments`                                                                                                                                                  |
+| `prompt-input__toolbar` / `-start` / `-end`                                                                                                                                         | toolbar                                                                                                                                                        |
+| `prompt-input__action`                                                                                                                                                              | `Action`                                                                                                                                                       |
+| `prompt-input__send` / `__send-icon`                                                                                                                                                | `Send`; icon per `data-status`                                                                                                                                 |
+| `prompt-input__footer`                                                                                                                                                              | `Footer`                                                                                                                                                       |
+| `prompt-input__token-field` / `__token-mirror` / `__token-input`                                                                                                                    | `PromptInputTokenInput`: wrapper, the layer drawing text + pills, the textarea                                                                                 |
+| `prompt-input__token`                                                                                                                                                               | token pill (`PromptInputToken`); `data-token` (trigger), `data-value`, `data-selected`, `data-disabled`                                                        |
+| `prompt-input__token-suggestions` / `__token-suggestion`                                                                                                                            | `PromptInputTokenSuggestions` (`data-open`, `data-placement`) / `PromptInputTokenSuggestion` (`data-focused`)                                                  |
+| `prompt-input__queue` / `__queue-list` / `__queue-item` (+ `-handle`, `-icon`, `-body`, `-content`, `-description`, `-attachments`, `-attachments-overflow`, `-actions`, `-action`) | queue; a reorderable list adds `data-reorderable`, `data-axis`, cdk `cdk-drop-list` / `cdk-drag` (+ `cdk-drag-preview`, `cdk-drag-placeholder` while dragging) |
 
 | CSS variable                                  | Default        | What                                          |
 | --------------------------------------------- | -------------- | --------------------------------------------- |
@@ -194,6 +217,15 @@ See the [full module API](/api/rivetjs/ui/prompt-input/) for every named export 
 | `actionsVisibility` (`Queue`)                             | `"always" \| "hover"`                                         | `"hover"`                   |
 | `hiddenCount` / `noun` (`Queue.Item.AttachmentsOverflow`) | `number` / `string`                                           | — / "files"                 |
 
+Queue reordering (`@rivetjs/ui/prompt-input-queue-reorder`):
+
+| Prop                                         | Type                        | Default |
+| -------------------------------------------- | --------------------------- | ------- |
+| `values` (`PromptInputQueueReorder.List`)    | `T[]`                       | —       |
+| `onReorder` (`PromptInputQueueReorder.List`) | `(values: T[]) => void`     | —       |
+| `axis` (`PromptInputQueueReorder.List`)      | `"x" \| "y"`                | `"y"`   |
+| `value` (`PromptInputQueueReorder.Item`)     | `T` (its entry of `values`) | —       |
+
 Token input:
 
 | API                                                                                      | Type                                                                                                                                                                   | Default                                                                        |
@@ -212,7 +244,7 @@ Token input:
 
 ## Accessibility
 
-the textarea is named by its placeholder unless you pass `aria-label`; Send is "Send message" and "Stop generating" while running, disabled while there is no text; toolbar `Action`s are icon buttons with optional tooltips. The token input is a list autocomplete: the textarea keeps focus and points at the `role="listbox"` panel (`aria-controls`, `aria-autocomplete="list"`, `aria-activedescendant` = the highlighted `role="option"`); ↑ / ↓ move the highlight, Enter picks it, Escape closes the panel; tokens are plain text in the textarea, so screen readers read them as typed (`@ana`), and the pill layer is `aria-hidden`.
+the textarea is named by its placeholder unless you pass `aria-label`; Send is "Send message" and "Stop generating" while running, disabled while there is no text; toolbar `Action`s are icon buttons with optional tooltips. Reorderable queue rows are focusable list items with `aria-keyshortcuts` for their Alt+Arrow moves. The token input is a list autocomplete: the textarea keeps focus and points at the `role="listbox"` panel (`aria-controls`, `aria-autocomplete="list"`, `aria-activedescendant` = the highlighted `role="option"`); ↑ / ↓ move the highlight, Enter picks it, Escape closes the panel; tokens are plain text in the textarea, so screen readers read them as typed (`@ana`), and the pill layer is `aria-hidden`.
 
 ## Related Components
 

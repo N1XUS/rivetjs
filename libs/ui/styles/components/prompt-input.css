@@ -1,4 +1,4 @@
-/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no message composer). Feature set inspired by HeroUI Pro's public PromptInput docs; independent implementation on HeroUI tokens. */
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no message composer). Feature set scoped from public docs of commercial UI kits; independent implementation on HeroUI tokens. */
 /* -------------------------------------------------------------------------------------------------
  * PromptInput Component Styles
  * Block: prompt-input (parts: shell / content / attachments / textarea / toolbar / toolbar-start / toolbar-end / action
@@ -7,7 +7,8 @@
  *        / token-suggestions / token-suggestion)
  * States: [data-layout="stacked|compact|inline"], [data-size="sm|md|lg"], [data-variant="primary|secondary"],
  *         [data-status="ready|submitted|streaming|error"], [data-disabled="true"], [data-expanded="true"] (compact),
- *         shell [data-drop-target="true"]
+ *         shell [data-drop-target="true"]; queue-list [data-reorderable="true"] [data-axis="x|y"] (+ cdk-drop-list-dragging),
+ *         queue-item cdk-drag-placeholder / cdk-drag-preview / cdk-drag-animating
  * Token states: token [data-token] [data-selected="true"] [data-disabled="true"], token-suggestions [data-open="true"]
  *         [data-placement="bottom start|bottom end|top start|top end"], token-suggestion [data-focused="true"]
  *         [data-disabled="true"]
@@ -364,6 +365,47 @@
 
 .prompt-input__queue-item-action {
   @apply size-7 min-w-0 text-muted;
+}
+
+/* Reorderable list (`Queue.List onReorder`, cdk drag-drop): rows drag, keyboard focus ring, sort shifts on the move role. */
+.prompt-input__queue-list[data-axis="x"] {
+  @apply flex-row overflow-x-auto overflow-y-hidden;
+}
+
+.prompt-input__queue-list[data-reorderable="true"] .prompt-input__queue-item {
+  @apply cursor-grab outline-none;
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--focus);
+  }
+
+  &.cdk-drag-placeholder {
+    @apply opacity-40;
+  }
+
+  &.cdk-drag-animating {
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
+  }
+}
+
+.prompt-input__queue-list.cdk-drop-list-dragging .prompt-input__queue-item:not(.cdk-drag-placeholder) {
+  transition: transform var(--motion-move-duration) var(--motion-move-ease);
+}
+
+.prompt-input__queue-item.cdk-drag-preview {
+  @apply cursor-grabbing bg-surface shadow-md;
+
+  box-sizing: border-box;
+
+  .prompt-input__queue-item-actions {
+    @apply opacity-0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prompt-input__queue-list .prompt-input__queue-item {
+    transition: none;
+  }
 }
 
 @keyframes prompt-input-spin {

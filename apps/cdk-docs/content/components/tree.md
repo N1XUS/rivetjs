@@ -203,9 +203,7 @@ A `TreeItem` with `href` stays a `role="row"` (HTML does not allow a link row); 
 </Tree>
 ```
 
-:::warning
-`TreeSection` does not render on the server yet (its section node is captured by a resumable closure), so there is no live example here. It works in client-only renders.
-:::
+Sections render on the server and resume like the rest of the tree: arrow keys cross from one section's rows into the next one's.
 
 ## Selection and expansion
 
@@ -368,7 +366,6 @@ Deviations:
 
 - Drop indicators in virtualized trees (the virtualizer renderer does not render them yet). Virtualized trees: `<CollectionVirtualizer layout={ListLayout}>` (see [Virtualizer](../foundations/virtualizer.md#collection-components)); `TreeLoadMoreItem` and `TreeSection` inside it are not covered yet.
 - `dependencies` is accepted and ignored.
-- `TreeSection` / `TreeHeader` in server-rendered pages (see [Sections](#sections)).
 - Press events on items (`onPress*`); a row click does not stop propagation yet.
 
 ## Common mistakes

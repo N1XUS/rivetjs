@@ -933,6 +933,13 @@ export const entries: ApiEntryConfig[] = [
       "PromptInput token input (Rivet addition): usePromptInputTokens (triggers @ /, allowsSpaces, value), Tokens, TokenInput (textarea + mirror, atomic tokens), TokenSuggestions / TokenSuggestion (list autocomplete), Token.",
   },
   {
+    entry: "@rivetjs/ui/prompt-input-queue-reorder",
+    file: "ui/src/components/prompt-input-queue-reorder/index.ts",
+    runsOn: "both",
+    summary:
+      "PromptInput queue reordering (Rivet addition): PromptInputQueueReorder.List (values, onReorder, axis; cdk DropList) and .Item (value; cdk Drag), drag or Alt+Arrow keys.",
+  },
+  {
     entry: "@rivetjs/ui/chat-conversation",
     file: "ui/src/components/chat-conversation/index.ts",
     runsOn: "both",

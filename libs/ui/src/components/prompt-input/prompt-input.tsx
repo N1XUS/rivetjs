@@ -1,5 +1,5 @@
-// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no message composer). Feature set inspired by HeroUI Pro's public
-// PromptInput docs (composer: `value` / `onValueChange`, `onSubmit`, `onStop`, `status` ready / submitted / streaming /
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no message composer). Feature set scoped from public docs of
+// commercial UI kits (composer: `value` / `onValueChange`, `onSubmit`, `onStop`, `status` ready / submitted / streaming /
 // error, `isDisabled`, `lockInputOnRun` (true), `maxHeight` (240, `--prompt-input-max-height`), `size` sm / md / lg,
 // `variant` primary / secondary, `layout` stacked / compact / inline; parts `Shell` / `Content` / `Attachments` /
 // `TextArea` (`disableAutosize`) / `Toolbar` / `ToolbarStart` / `ToolbarEnd` / `Action` (`tooltip`) / `Send` / `Footer` /
@@ -16,7 +16,8 @@
 //   attachments show (`data-expanded`, written on input).
 // - Token input (TokenInput / Tokens / TokenSuggestions / Token / usePromptInputTokens): subpath `prompt-input-tokens/`, on a
 //   native textarea instead of Pro's contenteditable RAC TokenField; it hands this root its text + reset via the context.
-// - Gap (see libs/ui/CLAUDE.md Known diffs): Queue.List drag reordering (`onReorder` / `axis`) is not ported.
+// - Queue drag reordering (Pro `Queue.List values` / `onReorder` / `axis`): subpath `prompt-input-queue-reorder/`
+//   (`PromptInputQueueReorder.List` / `.Item`, cdk drag-drop), not on this compound: a queue that does not reorder ships none of it.
 import { autosizeTextArea, isSubmitKey } from "@rivetjs/cdk/chat";
 import { controllable, setControlledValue } from "@rivetjs/cdk/interactions";
 import type { ControlledState } from "@rivetjs/cdk/interactions";
@@ -385,7 +386,7 @@ const PromptInputQueueItemDescription = queuePart("queueItemDescription", "promp
 const PromptInputQueueItemAttachments = queuePart("queueItemAttachments", "prompt-input-queue-item-attachments");
 const PromptInputQueueItemActions = queuePart("queueItemActions", "prompt-input-queue-item-actions");
 
-/** Presentational drag handle (reordering is not ported). */
+/** Presentational drag handle (a `PromptInputQueueReorder.Item` drags the whole row). */
 const PromptInputQueueItemHandle = (props: { class?: string }): JSX.Element => (
   <span class={composeSlotClassName(SLOTS.queueItemHandle, props.class)} aria-hidden="true" data-slot="prompt-input-queue-item-handle">
     <Icon icon={GripVertical} size={14} />

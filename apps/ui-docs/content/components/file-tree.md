@@ -1,6 +1,6 @@
 ---
 title: FileTree
-description: "A file and folder tree with icons, guide lines, sizes, a custom expand indicator, selection and drag and drop."
+description: "A file and folder tree with icons, guide lines, sizes, sections, a custom expand indicator, selection and drag and drop."
 template: reference
 status: experimental
 related: [components/list-view, components/sidebar]
@@ -24,9 +24,12 @@ import { FileTree } from "@rivetjs/ui/file-tree";
 export default function Anatomy() {
   return (
     <FileTree aria-label="Project">
-      <FileTree.Item id="src" title="src">
-        <FileTree.Item id="index" title="index.ts" />
-      </FileTree.Item>
+      <FileTree.Section id="source">
+        <FileTree.Header>Source</FileTree.Header>
+        <FileTree.Item id="src" title="src">
+          <FileTree.Item id="index" title="index.ts" />
+        </FileTree.Item>
+      </FileTree.Section>
     </FileTree>
   );
 }
@@ -47,6 +50,12 @@ The tree has no expand animation; its transitions are the chevron turn and the r
 ::example{id=file-tree-with-icons}
 
 `icon` takes an element or a function of the row's render props (`isExpanded()`, `hasChildItems()`, …), here an open folder while expanded.
+
+### Sections
+
+::example{id=file-tree-sections}
+
+`FileTree.Section` groups rows (a `role="rowgroup"`); a `FileTree.Header` inside it labels the group, otherwise give the section an `aria-label`. Arrow keys move across sections, and each section's folders expand as usual. Sections render on the server and resume with the rest of the tree.
 
 ### Sizes
 
@@ -82,13 +91,9 @@ A code review file list built from ui parts: `title` takes any content, here the
 
 ::example{id=file-tree-dynamic}
 
-### Not Yet Supported
-
-- Sections (`TreeSection` headers): waits for server rendering of cdk tree sections.
-
 ## Styling Reference
 
-The component’s parts emit these additional `data-slot` values: `file-tree-item`, `file-tree-item-content`, `file-tree-drag-handle`, `file-tree-indicator`, `file-tree-indicator-spacer`, `file-tree-selection-cell`, `file-tree-icon`, `file-tree-title`.
+The component’s parts emit these additional `data-slot` values: `file-tree-item`, `file-tree-item-content`, `file-tree-section`, `file-tree-section-header`, `file-tree-drag-handle`, `file-tree-indicator`, `file-tree-indicator-spacer`, `file-tree-selection-cell`, `file-tree-icon`, `file-tree-title`.
 
 ### CSS Classes
 
@@ -103,6 +108,8 @@ The component’s parts emit these additional `data-slot` values: `file-tree-ite
 - `.file-tree__selection-cell` - The selection checkbox cell.
 - `.file-tree__icon` - Leading icon.
 - `.file-tree__title` - Row label.
+- `.file-tree__section` - A section's row group.
+- `.file-tree__section-header` - Section heading (muted, uppercase).
 
 ### CSS Variables
 
@@ -154,6 +161,10 @@ The cdk `TreeItem` with its content row.
 | `dragIcon`   | `Content \| false`               | grip           | Drag handle content; `false` hides it visually |
 | `isDisabled` | `boolean`                        | -              | Disable this row                               |
 | `children`   | `Content`                        | -              | Nested `FileTree.Item`s or a `Collection`      |
+
+### FileTree.Section / FileTree.Header
+
+`FileTree.Section` is the cdk `TreeSection`: `id`, `aria-label` (when there is no header), `class`, `items` with a render function for a dynamic section, and nested `FileTree.Item`s plus one `FileTree.Header` as `children`. `FileTree.Header` is the cdk `TreeHeader`: `class` and the heading content as `children`.
 
 ### useFileTreeDrag
 

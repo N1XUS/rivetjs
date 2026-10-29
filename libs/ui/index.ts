@@ -257,6 +257,7 @@ export * from "./src/components/chat-conversation/index.ts";
 export * from "./src/components/chat-attachment/index.ts";
 export * from "./src/components/prompt-input/index.ts";
 export * from "./src/components/prompt-input-tokens/index.ts";
+export * from "./src/components/prompt-input-queue-reorder/index.ts";
 
 //  ===================================
 //  Utils
