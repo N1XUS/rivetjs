@@ -44,7 +44,7 @@ export default function ScrollShadowBrowserStories() {
         <div style={{ height: "1200px" }}>Tall content</div>
       </ScrollShadow>
       <ScrollShadow id="sb-both" size={SIZE} visibility="both">
-        <div style={{ height: "20px" }}>Short content</div>
+        <div>Short content</div>
       </ScrollShadow>
     </main>
   );

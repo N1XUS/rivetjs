@@ -182,7 +182,7 @@ function merge(previous: unknown, next: unknown): unknown {
   const prototype = Object.getPrototypeOf(next);
   if (!array && prototype !== Object.prototype && prototype !== null) return next;
   const keys = Object.keys(next);
-  let same = keys.length === Object.keys(previous).length;
+  let same = keys.length === Object.keys(previous).length && (!array || (next as unknown[]).length === (previous as unknown[]).length);
   for (const key of keys) {
     const merged = merge(childOf(previous, key), (next as Record<string, unknown>)[key]);
     if (!Object.is(merged, childOf(previous, key)) || !Object.hasOwn(previous, key)) same = false;
@@ -232,10 +232,10 @@ function draftOf(base: Container, parent: Draft | null, revokes: (() => void)[])
   // The target only carries the array-ness (`Array.isArray(draft)`); every trap reads the draft state.
   const { proxy, revoke } = Proxy.revocable(Array.isArray(base) ? [] : {}, {
     get(_, key) {
-      const own = draft.children?.get(key);
-      if (own !== undefined) return own;
       const source = draft.copy ?? draft.base;
       if (!Object.hasOwn(source, key)) return Reflect.get(source, key, proxy);
+      const own = draft.children?.get(key);
+      if (own !== undefined) return own;
       const value = (source as Record<PropertyKey, unknown>)[key];
       let child: unknown;
       if (plain(value) && !drafts.has(value)) child = draftOf(value, draft, revokes);
@@ -247,8 +247,8 @@ function draftOf(base: Container, parent: Draft | null, revokes: (() => void)[])
     set(_, key, value) {
       const source = draft.copy ?? draft.base;
       if (
-        draft.children?.get(key) === value ||
-        (Object.hasOwn(source, key) && Object.is((source as Record<PropertyKey, unknown>)[key], value) && !draft.children?.has(key))
+        Object.hasOwn(source, key) &&
+        (draft.children?.get(key) === value || (Object.is((source as Record<PropertyKey, unknown>)[key], value) && !draft.children?.has(key)))
       )
         return true;
       (touch(draft, key) as Record<PropertyKey, unknown>)[key] = value;
@@ -297,9 +297,12 @@ function finalize(value: unknown): unknown {
   if (copy === null) return (draft.result = base);
   const into = copy as Record<PropertyKey, unknown>,
     from = base as Record<PropertyKey, unknown>;
-  let changed = false;
+  // Assigning array length removes keys without invoking this proxy's delete trap. A later regrowth must keep those
+  // holes even when the final length equals the base's, and cached drafts of the removed elements must stay detached.
+  let changed = Array.isArray(copy) && Object.keys(copy).length !== Object.keys(base).length;
   if (draft.children !== null)
     for (const [key, child] of draft.children) {
+      if (!Object.hasOwn(copy, key)) continue;
       const next = finalize(child);
       into[key] = next;
       if (!Object.is(next, from[key])) changed = true;

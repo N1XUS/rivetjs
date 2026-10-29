@@ -6,7 +6,7 @@
 // - `treeDnd` (Tree body) / `treeItemDnd` (TreeItem body) run the collection / item hooks once and return accessors,
 //   DOM handlers and the parts to render; `tree/index.tsx` wires them into both of its render branches.
 // - The visually hidden "drop on" row before a TreeItem and the drop indicators between rows render only during a drag
-//   (`isHidden` / `useRenderDropIndicator`): server markup only gains the drag button's attributes and `draggable`.
+//   (`isHidden` / `useRenderDropIndicator`): server markup includes drag affordances and their hidden instructions.
 // - The droppable collection id is the treegrid's id (react-aria overrides it with `useId()`: the row ids keep their
 //   prefix here).
 // - Expanding a folder on drop activation / the expand keys while targeting a row: `toggleTreeKey` (react-stately
@@ -185,6 +185,8 @@ export interface TreeItemDnd {
   dragProps: DraggableItemDragProps | undefined;
   /** The `drag` slot of the row's ButtonContext. */
   dragButton: DragButtonProps & { style: { pointerEvents: "none" } };
+  /** Hidden drag instructions rendered inside the row's gridcell on the server and in the browser. */
+  description: unknown;
   /** The visually hidden "drop on" row rendered before the row (drop hooks only). */
   indicatorRow: unknown;
 }
@@ -202,6 +204,9 @@ export function treeItemDnd(o: TreeItemDndOptions): TreeItemDnd {
   const { key } = o;
   const isDraggable = () => !!dragState && !(dragState.isDisabled || dragState.selectionManager.isDisabled(key));
   const draggableItem = dragState && dragAndDropHooks ? dragAndDropHooks.useDraggableItem!({ key, hasDragButton: true }, dragState) : null;
+  const metadata = draggableItem?._description;
+  const description = metadata && metadata.describedBy === draggableItem?.dragButtonProps["aria-describedby"] ? metadata.text : undefined;
+  const descriptionId = description ? `${untrack(() => o.rowAttr("id")) as string}-drag-description` : undefined;
   let indicatorRow: unknown = null;
   let isDropTarget = (): boolean => false;
   if (dropState && dragAndDropHooks?.useDropIndicator) {
@@ -273,7 +278,16 @@ export function treeItemDnd(o: TreeItemDndOptions): TreeItemDnd {
     isDragging: () => !!dragState?.isDragging(key),
     isDropTarget,
     dragProps: draggableItem?.dragProps,
-    dragButton: { ...draggableItem?.dragButtonProps, style: { pointerEvents: "none" } },
+    dragButton: {
+      ...draggableItem?.dragButtonProps,
+      ...(description ? { "aria-describedby": () => (description() ? descriptionId : undefined) } : {}),
+      style: { pointerEvents: "none" },
+    },
+    description: description ? (
+      <div id={descriptionId} hidden>
+        {description()}
+      </div>
+    ) : null,
     indicatorRow,
   };
 }

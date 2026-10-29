@@ -31,36 +31,38 @@ import { DERIVED_LOADER, DERIVED_LOADER_LATER, DERIVED_LOADER_VISIBLE, DERIVED_L
 // repeat keydowns release once, unrelated targets/releases never boot. Scroll uses the existing capture path (+0 loader B).
 // LITE-BOOT (2026-10-29): +84 raw / +26 B br (1,764): the prime — with the background fetch-ahead the runtime starts and
 // loads the page's boundary modules (`rt.w(document)`), so the first input dispatches inside its own task.
-test("shipped derived loader is current, inline-safe and fits 1,764 B brotli", async () => {
+// Stabilization (2026-10-29): marked cold gesture surfaces capture the pointer before code arrives, retaining moves
+// and release outside the handle. +51 B br plain, +36 visible, +49 lazy variants; no adoption before input.
+test("shipped derived loader is current, inline-safe and fits 1,815 B brotli", async () => {
   assert.equal(DERIVED_LOADER, await minifiedDerived(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER));
   const size = brotliCompressSync(DERIVED_LOADER).length;
-  assert.ok(size <= 1764, `minified ${size} B`);
+  assert.ok(size <= 1815, `minified ${size} B`);
   console.log(`derived loader brotli: ${size} B`);
 });
 
 // ZERO ABI-SPLIT visible-only boot: the loader of a `data-boot="<ids>"` page = the loader above with `derivedVisibleBoot`
 // spliced in at its `data-boot` start (the other pages' loader is unchanged): 1,768 B brotli at landing (+184 B); 1,823 B
 // with SLIDER-KEY's `data-rk` hold; 1,953 B with the LITE-BOOT prime (it skips `data-boot` pages, the code ships anyway).
-test("shipped visible-boot loader is current, inline-safe and fits 1,953 B brotli", async () => {
+test("shipped visible-boot loader is current, inline-safe and fits 1,989 B brotli", async () => {
   assert.equal(DERIVED_LOADER_VISIBLE, await minifiedDerivedVisible(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER_VISIBLE));
   assert.ok(DERIVED_LOADER_VISIBLE.includes(".dataset.boot?(function("));
   new Function(DERIVED_LOADER_VISIBLE);
   const size = brotliCompressSync(DERIVED_LOADER_VISIBLE).length;
-  assert.ok(size <= 1953, `minified ${size} B`);
+  assert.ok(size <= 1989, `minified ${size} B`);
   console.log(`derived visible-boot loader brotli: ${size} B`);
 });
 
 // IDLE-PREFETCH lazy-part loaders: the loader of a page with `data-fl` = the loader above with `derivedFetchLater` spliced
 // in place of its fetch-ahead link loop (pages without lazy parts keep the plain loader): 1,719 B brotli at landing
 // (+83 B over the 1,636 B loader), 1,894 B with the visible boot too. LITE-BOOT prime: 1,840 / 2,022 B.
-test("shipped lazy-part loaders are current, inline-safe and fit 1,840 / 2,022 B brotli", async () => {
+test("shipped lazy-part loaders are current, inline-safe and fit 1,889 / 2,071 B brotli", async () => {
   assert.equal(DERIVED_LOADER_LATER, await minifiedDerivedLater(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.equal(DERIVED_LOADER_VISIBLE_LATER, await minifiedDerivedLater(true), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   for (const [loader, budget] of [
-    [DERIVED_LOADER_LATER, 1840],
-    [DERIVED_LOADER_VISIBLE_LATER, 2022],
+    [DERIVED_LOADER_LATER, 1889],
+    [DERIVED_LOADER_VISIBLE_LATER, 2071],
   ] as const) {
     assert.ok(!/<\/script|<!--/i.test(loader));
     assert.ok(loader.includes(".dataset.fl.split("), "the lazy-part fetch is spliced in");

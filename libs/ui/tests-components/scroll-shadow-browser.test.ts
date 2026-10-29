@@ -201,6 +201,9 @@ describe("ScrollShadow (browser)", () => {
     test("keeps using the attribute-driven mask", () =>
       onPage(async (page) => {
         assert.equal(await page.getAttribute("#sb-both", "data-scroll-shadow-mode"), "manual");
+        const fitting = await page.$eval("#sb-both", (el) => ({ height: el.clientHeight, contentHeight: el.scrollHeight }));
+        assert.equal(fitting.contentHeight, fitting.height, "the controlled fixture fits its text without an inaccessible overflow");
+        assert.equal(await page.getAttribute("#sb-both", "tabindex"), null, "fitting content needs no extra tab stop");
         // The controlled attribute is written by a client effect on the resumed page (upstream: synchronously in a layout effect).
         await page.waitForFunction(() => document.querySelector("#sb-both")?.getAttribute("data-top-bottom-scroll") === "true");
         // The fallback gradient opens with black; the scroll-driven one opens transparent.

@@ -70,6 +70,8 @@ export const GET = onGet(async (event: RequestEvent) =>
 Request handlers run **before** guards, including the guards of enclosing layouts. A `guard(…)` in `(private)/_layout.tsx` does not protect a page's `onGet(…)`. Check access inside the handler, or keep protected data out of it.
 :::
 
+For a shared authentication check that also covers page handlers, use `onRequest(…)` in the enclosing layout. Validate the session there and throw `deny(401)` when it is missing or invalid; assign the validated identity to `event.locals` before continuing. Resource-specific permission checks still belong to the operation that reads or changes that resource.
+
 ## Endpoints in plain `.ts` files
 
 A `.ts` file (not `.tsx`) in `src/routes` that exports request handler calls is an [endpoint](./endpoints.md):

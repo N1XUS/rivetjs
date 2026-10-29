@@ -26,7 +26,7 @@ import { drags } from "./directives/registry.ts";
  */
 const OWNED = ["onMouseDown", "onTouchStart", "style"] as const;
 
-/** Preload the drag-drop handlers when a draggable scrolls into view (first press runs synchronously). */
+/** Legacy preload declaration; derived resume loads handlers on interaction and ignores this export. */
 export const preload = "visible";
 
 export interface DragProps<T = any> extends DragInputs<T>, GlobalDOMAttributes<HTMLElement>, HostDOMAttributes<HTMLElement> {

@@ -40,6 +40,8 @@ export interface DraggableItemResult {
   dragProps: DraggableItemDragProps;
   /** Props for the explicit drag button affordance, if any (cdk `Button` props). */
   dragButtonProps: DragButtonProps;
+  /** @internal Instruction text and the original ID accessor; custom hook overrides retain ownership. */
+  _description?: { text: () => string | undefined; describedBy: DragButtonProps["aria-describedby"] } | undefined;
 }
 
 const MESSAGES = {
@@ -54,7 +56,11 @@ export function useDraggableItem(props: DraggableItemProps, state: DraggableColl
   const { key, hasDragButton } = props;
   const hasAction = () => (typeof props.hasAction === "function" ? props.hasAction() : !!props.hasAction);
   const isDisabled = () => !!state.isDisabled || state.selectionManager.isDisabled(key);
-  const { dragProps: drag, dragButtonProps } = useDrag({
+  const {
+    dragProps: drag,
+    dragButtonProps,
+    _description: dragDescription,
+  } = useDrag({
     getItems() {
       return state.getItems(key);
     },
@@ -136,5 +142,9 @@ export function useDraggableItem(props: DraggableItemProps, state: DraggableColl
   return {
     dragProps,
     dragButtonProps: { ...dragButtonProps, isDisabled, "aria-label": dragButtonLabel },
+    _description: {
+      text: () => (isDisabled() ? undefined : (description() ?? dragDescription?.())),
+      describedBy: dragButtonProps["aria-describedby"],
+    },
   };
 }

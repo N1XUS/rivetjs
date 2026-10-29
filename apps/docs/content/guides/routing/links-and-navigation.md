@@ -42,7 +42,7 @@ import { rivetRouter } from "@rivetjs/router/vite";
 rivetRouter({ clientRouter: true });
 ```
 
-An app with a single page route has no client router at all. A CSR app (`mode: "csr"`) always routes in the browser.
+Server/static apps omit client routing when they have one fixed page path and no live page, programmatic navigation or enhanced forms, reactive search params, active-link tracking, or nested layout levels. A CSR app (`mode: "csr"`) always routes in the browser.
 
 Links the router never handles do not load it either: a click on a `#fragment` link, a URL with a scheme (`https://…`, `mailto:`), a `download`, `target="_blank"`, `rel="external"` or `data-rivet-reload` link acts natively before the page's JavaScript has started. A site whose links all load documents (every link `data-rivet-reload`) and that has nothing else to resume ships no JavaScript on any page.
 

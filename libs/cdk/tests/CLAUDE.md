@@ -12,6 +12,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 - Component story tests live in `../tests-components` (project `cdk-components`).
 
 ## Harnesses
+- `server.ts` resolves `@rivetjs/runtime/derived-eager` for Resizable's imperative ref registration: supplied refs adopt with their parent before an outside first-input handler uses them.
 - `harness.ts` `libraryImports(page)`: library resource entries no `<link rel="modulepreload">` names (Chromium reports fetch-ahead `data-fo` preloads with initiator `script`) + `(derived runtime started)` when `document.$rdp` exists (M6-CUT).
 - `harness.ts` — story app `tests/app`: production build (client + server via `app/serve.ts` `buildApp`) into `app/dist`, node adapter (`@rivetjs/router/node` `start`, port 0), one headless Chromium per file. Cross-process lock dir `app/.stories-lock` (pid file, stale-pid cleanup) held until `close()` — files share `dist/`. Every story-app suite (`smoke`, `interactions-browser`, `scrolling-browser`, `virtualizer-browser`, `resume`, `transition-resume`) MUST use it: `buildApp()` deletes and rebuilds `dist/`, so an unlocked build under a running suite makes its pages time out. Helpers: `stories()`, `watch(page)` (script requests + page errors), `componentRan(page)` (resumability: no component ran), `libraryScripts(seen, extra?)` (scrolling/virtualizer/drag-drop/dnd/behaviour chunks), `focused`, `errors`, `text`, `activeId`.
 - `browser.ts` — plain `node:http` server rooted at the repo root, strips TS types (`stripTypeScriptTypes`), import map `@rivetjs/reactivity`, `@rivetjs/runtime/dom`, `@rivetjs/runtime/slot`, `@rivetjs/cdk/` -> `/libs/cdk/` + `scopes` generated from every `libs/*/package.json` `imports` field (`packageImportScopes()`: `#dev` -> `/libs/runtime/dev/off.ts` under `/libs/runtime/`; conditions `browser` > `default`, never `development`; `#x/*` -> `#x/` prefix) so package-private specifiers cannot drift (extension-less `/libs/cdk/<subpath>` resolved through `resolve-subpath.ts`; `.ts` only, `.tsx` targets are not served); `harness().page(body?, {css, viewport})`. Pages import by repo path: `import("/libs/cdk/overlay/position.ts")`. Used by `angular-overlay.test.ts`.
@@ -28,6 +29,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 - Serve manually: `node libs/cdk/tests/app/serve.ts` (prod build + node adapter) or `--dev` (Vite); `PORT` default 4323.
 
 ## Fixtures
+- `tree-dnd-ssr.test.ts` checks valid server instruction IDREF targets in both TreeItem render branches, generated-ID multi-tree uniqueness, disabled rows, custom hook compatibility and no load trigger. `dnd-descriptions.test.ts` checks standalone hook targets, modality wording, selection instructions and disabled results.
 - `fixtures/modal-fixture.tsx` — React Aria useModal / DismissButton test components (`renderSlot` children for nested providers).
 - `fixtures/scrolling-mount.ts` — plain-DOM virtual scroll viewport mount (Angular spec setup), bundled via `bundle.ts`.
 - `fixtures/selection-list.ts` — react-aria selection `List` story on Rivet ports, esbuild-bundled.

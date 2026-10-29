@@ -1,5 +1,5 @@
 // Story: Angular CDK drag-drop components on a resumed page (drag-drop-resume.test.ts). Everything sits
-// below a tall spacer so nothing drag-drop related loads before it scrolls into view (`preload = "visible"`).
+// below a tall spacer to check that scrolling alone does not boot or fetch its code on a lean derived page.
 import { signal } from "@rivetjs/reactivity";
 import { For } from "@rivetjs/runtime/dom";
 import { Drag, DragHandle, DragPlaceholder, DragPreview, DropList, moveItemInArray } from "@rivetjs/cdk/drag-drop";

@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 38d116b8265b 562555 css 97f49e3cc126 1216528
-@rivetjs/ui [server] 5224ad4b63e7 500336 css 97f49e3cc126 1216528
+@rivetjs/ui [dom] ac893e756561 562563 css 97f49e3cc126 1216528
+@rivetjs/ui [server] a7429ca490a5 500344 css 97f49e3cc126 1216528
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -335,8 +335,8 @@
 @rivetjs/ui/radial-chart [server] 7a197ff47568 13263 css d5b8ed5ebb8e 18464
 @rivetjs/ui/composed-chart [dom] 34779b2bd689 14167 css 8b779158df7b 18342
 @rivetjs/ui/composed-chart [server] 3ac150a603f0 17928 css 8b779158df7b 18342
-@rivetjs/ui/kanban [dom] c907fb771044 25747 css e8779bde6e92 1206226
-@rivetjs/ui/kanban [server] a265d6551c41 23519 css e8779bde6e92 1206226
+@rivetjs/ui/kanban [dom] 74b9aaec4e8d 25755 css e8779bde6e92 1206226
+@rivetjs/ui/kanban [server] b7bf9920b08f 23527 css e8779bde6e92 1206226
 @rivetjs/ui/text-shimmer [dom] d93e9446d0b1 3789 css 91b77d4ecd3a 1993
 @rivetjs/ui/text-shimmer [server] 22ba6e5dd0c2 3757 css 91b77d4ecd3a 1993
 @rivetjs/ui/chat-loader [dom] d5c8bc861e63 7725 css e8779bde6e92 1206226

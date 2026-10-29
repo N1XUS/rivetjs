@@ -4,7 +4,8 @@ import { join, resolve } from "node:path";
 import { rmSync } from "node:fs";
 import { tempApp } from "./helpers.ts";
 const cli = resolve("libs/language-core/cli.ts");
-const run = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env: { ...process.env, NO_COLOR: "1" } });
+const run = (...args: string[]) =>
+  spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env: { ...process.env, FORCE_COLOR: undefined, NO_COLOR: "1" } });
 test("missing option values and misspelled flags return JSON usage failures", () => {
   for (const args of [["-p"], ["--project", "--no-types"], ["--formt", "json"]]) {
     const result = run(...args, "--json");

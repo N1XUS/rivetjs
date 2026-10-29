@@ -46,7 +46,7 @@ test("scan: `export const live = true` marks the page live (not a server export)
   }
 });
 
-test("codegen: live wiring only with a live page and navigate()/forms in use; other apps byte-identical", () => {
+test("codegen: live page accessors are independent of navigate()/forms; other apps byte-identical", () => {
   const files = ["_layout.tsx", "index.tsx", "other.tsx"];
   const plain = routeTable(files, new Map([["_layout.tsx", ["load"]]]));
   const live = routeTable(
@@ -57,8 +57,10 @@ test("codegen: live wiring only with a live page and navigate()/forms in use; ot
     ]),
   );
   const app = (table: ReturnType<typeof routeTable>, navigate: boolean) => generate(table, { routesDir: "src/routes", navigate }).files["app.tsx"]!;
-  // Not navigating in place: the flag changes nothing.
-  assert.equal(app(live, false), app(plain, false));
+  // Native-link apps still pass the LivePageProps accessor; programmatic navigation remains unused.
+  assert.match(app(live, false), /_live, _livePage, /);
+  assert.doesNotMatch(app(live, false), /_serveLive/);
+  assert.doesNotMatch(app(plain, false), /_live|LIVE/);
   const out = app(live, true);
   assert.doesNotMatch(app(plain, true), /_live|LIVE/);
   assert.match(out, /_serveLive, _live, _livePage, /);

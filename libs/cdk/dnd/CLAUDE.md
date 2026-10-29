@@ -26,10 +26,11 @@ Drag and drop for collections: react-aria dnd hooks + react-stately dnd states +
 - `.tsx` for every module importing `@rivetjs/runtime/dom` (server rewrite: `.ts` modules are not rewritten); the drag preview uses `mount` (server form links, throws if called).
 - A dropped item receives DOM focus after the collection update (`updateFocusAfterDrop` + microtask `focusSafely`; react-aria: the item's `useSelectableItem` effect).
 - A droppable item focuses itself one microtask after it becomes the session target (react-aria: passive effect after the DragManager focused the collection).
+- `useDrag` / `useDraggableItem` expose optional internal `_description` metadata for composed renderers. Item metadata pairs instruction text with its original `aria-describedby` accessor. Tree renders these instructions beside the drag button on the server and in the browser only while that accessor is unchanged, with an ID derived from the row ID; standalone hooks retain their browser-created description targets. Custom item hooks may omit the metadata or override their accessor (including explicit `undefined`) and keep ownership of their descriptions.
 
 ## Gotchas / deviations
 - `DropZone` keeps its own drop half (`../drop-zone/dnd.ts`, earlier port); not merged into `use-drop.tsx` yet.
-- Drag descriptions (`aria-describedby` nodes) are created per hook call, not ref-counted / shared (react-aria `useDescription`).
+- Browser-created drag / drop descriptions (`descriptionId`) share a hidden node per distinct text, without reference counting. Tree's drag instructions are owned by their row gridcells instead, so SSR includes both the IDREF and its target; disabled rows have no instruction link. Drop-session descriptions remain browser-created.
 - Drag preview renders into a body-level container: it inherits the body's text styles (react-aria: where `<DragPreview>` sits).
 - Virtualized collections: no `persistedKeys` for the drop target / dragged keys, and the virtualizer renderer ignores `renderRow` (no drop indicators in a virtualized Tree).
 - Chromium: a constructed `DataTransfer` ignores `effectAllowed` / `dropEffect` writes outside a real drag — tests shadow them (`writableEffects`), real drags are unaffected.

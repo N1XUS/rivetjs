@@ -28,34 +28,6 @@
       "reason": "first response not yet recorded when asserted under host load (load ~18); passed on rerun 2026-10-27",
       "owner": "router",
       "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/drag-drop-resume.test.ts > nothing drag-drop related loads before the lists are visible; scrolling them in preloads it",
-      "reason": "derived resume: the story's `export const preload = \"visible\"` is ignored under derived (compiler CLAUDE.md) and there is no derived visible prefetch for boundaries, so nothing loads on scroll-in on the lean story page. Needs a ruling: port visible prefetch to derived, or drop the contract + these tests (triaged REDS-CDK 2026-10-28)",
-      "owner": "runtime / cdk (ruling needed)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/drag-drop-resume.test.ts > first drag after the visible preload starts synchronously; the drop reports the new index",
-      "reason": "derived resume: no visible prefetch under derived (see the sibling entry), so the first drag replays asynchronously after the chunk loads instead of starting synchronously. Same ruling needed (triaged REDS-CDK 2026-10-28)",
-      "owner": "runtime / cdk (ruling needed)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/resizable.test.ts > cold: the imperative panel ref collapses; a drag persists the layout to the cookie, server-rendered on reload",
-      "reason": "derived resume (RED-COMP / compiler facts): the story's button click does not adopt the Group (record flags 262, DEFER) / Panel, so `leftRef.current` is null on the first click; `usePanelRef` returns a plain-data object, so the dependency facts cannot see the mutable ref the handler reads. Needs a compiler / server-facts change (triaged REDS-CDK 2026-10-28)",
-      "owner": "runtime (RED-COMP lane)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/select.test.ts > focus events fire once per focus, not when the listbox takes focus; data-focused stays while open",
-      "reason": "derived resume (RED-COMP): a cold programmatic / fast-Tab focus on the Select trigger is not held by the loader (`focus` not in the trigger's `data-events`; `_rListens` deliberately does not widen to focus/blur, protects Select typeahead), so onFocus is lost before the unit adopts. Triaged REDS-CDK 2026-10-28; a Tab-focus test variant fails the same way",
-      "owner": "runtime (RED-COMP lane)",
-      "since": "2026-10-27"
     }
   ]
 }

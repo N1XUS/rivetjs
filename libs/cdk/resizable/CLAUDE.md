@@ -23,6 +23,7 @@
 - v4 names kept (`Group` / `Panel` / `Separator`, `orientation`, `defaultLayout`, `onLayoutChange(d)`), incl. `use*` hook names (cdk "no `use*`" rule waived: they are the upstream public API).
 - SSR: `defaultLayout` → `flex-grow`, else `defaultSize` → `flex-basis` (unitless → `%`; upstream emits invalid unitless flex-basis), else `flex-grow: 1` — no layout shift.
 - Resumed page: nothing boots at load (no `fx`; `preload="visible"` on group + separators). Boot: separator `pointerover` / `focus` → mount; `keydown` → mount + replay; group `pointerdown` → mount when on its own separator / non-mouse / group without separators, replayed once per event in a microtask (nested groups). Imperative handle calls mount on demand.
+- Imperative registration writes outside the Group / Panel subtree: `assignRef` calls `_rEager()` only when a ref is supplied, so that subtree adopts with its parent on the first input before an external handler uses the handle. This applies to helper refs, plain `{ current }` objects and callback refs; it adds no load trigger. Without an imperative ref, dependency-proven groups can still defer.
 - `useDefaultLayout` with browser-only storage restores the stored layout in an idle `clientEffect` (sets `data-boot`); `cookieStorage` skips it.
 - Marker attributes `data-group` / `data-panel` render `"true"`; default classes `rv-ResizableGroup` / `rv-ResizablePanel` (inner element) / `rv-ResizableSeparator`.
 - Separator `tabindex` is a lowercase spread key (resumed spread diff rule).
@@ -32,7 +33,7 @@
 
 - `tests/resizable/**` (project `cdk-browser`, Chromium): upstream engine suite mirrored from `lib/**/*.test.ts` + `lib/{global,utils}/test/*` helpers + `setup.ts` (upstream `vitest.setup.ts`, imported by each file). 408 tests. `utils/test/events.ts` = browser EventEmitter stand-in; `isViableHitTarget` `:modal` fallback mocks the throw (Chromium supports `:modal`).
 - `tests/resizable.browser.test.tsx` (client render: mount + keyboard), `tests/resizable-ssr.test.ts` (markup, sizes, cookie layout, serialization).
-- `tests-components/resizable.test.ts` + story `/resizable` (+ `resizable.server.ts` cookie loader): cold page boots nothing, cold focus + arrow keys, cold hover + CDP mouse drag, nested vertical group, imperative collapse, cookie round trip.
+- `tests-components/resizable.test.ts` + story `/resizable` (+ `resizable.server.ts` cookie loader): cold page boots nothing and loads no library code, a nested no-ref group retains `DEFER`, cold focus + arrow keys, cold hover + CDP mouse drag, nested vertical group, first-click imperative panel collapse / group layout / plain-object panel resize / arbitrary callback ref, cookie round trip. The `ref` query selects one imperative ref per page so another ref cannot mask a deferred registration.
 
 ## Gaps
 

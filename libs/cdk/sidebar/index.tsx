@@ -419,6 +419,7 @@ function SidebarResizeHandle(props: SidebarResizeHandleProps) {
       aria-valuemax={sidebarBoundPx(rs.max)}
       data-sidebar="resize-handle"
       data-slot="sidebar-resize-handle"
+      data-rv-capture=""
       class={cls ?? "rv-SidebarResizeHandle"}
       style={RESIZE_HANDLE_STYLE}
       onPointerDown={(event: PointerEvent) => sidebarResizePointerDown(event, state, rs)}

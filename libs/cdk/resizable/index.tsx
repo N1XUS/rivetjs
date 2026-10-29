@@ -29,6 +29,7 @@
 // - Separator `tabindex` is a lowercase spread key (a resumed spread diffs server attribute names against the keys).
 import { createContext, signal, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider, clientEffect } from "@rivetjs/runtime/dom";
+import { _rEager } from "@rivetjs/runtime/derived-eager";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { splitProps } from "@rivetjs/runtime/props";
 import { resumedId } from "../utils/id.ts";
@@ -88,6 +89,8 @@ const isClient = (): boolean => (globalThis as { document?: unknown }).document 
 
 function assignRef<T>(ref: ImperativeRef<T> | undefined, handle: T): void {
   if (!ref) return;
+  // The caller can use this handle outside our subtree on its first input. Register it with the parent's adopt run.
+  _rEager();
   if (typeof ref === "function") ref(handle);
   else ref.current = handle;
 }

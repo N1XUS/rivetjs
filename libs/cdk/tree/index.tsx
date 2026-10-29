@@ -898,6 +898,7 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
       },
       children: () => (
         <div {...aria().gridCellProps} style={{ display: "contents" }}>
+          {itemDnd.description as never}
           <Provider
             values={[
               [CheckboxContext, { slots: { [DEFAULT_SLOT]: {}, selection: checkboxProps } }],
@@ -1057,6 +1058,7 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
       onDragEnd={dragProps?.onDragEnd}
     >
       <div {...aria().gridCellProps} style={{ display: "contents" }}>
+        {itemDnd.description as never}
         <Provider
           values={[
             [CheckboxContext, { slots: { [DEFAULT_SLOT]: {}, selection: checkboxProps } }],

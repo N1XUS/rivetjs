@@ -1,9 +1,9 @@
 // Resumability of the Angular CDK drag-drop components (story `/drag-drop`, spec drag-drop.md §5):
-// server markup, nothing loaded before the lists scroll into view (`preload = "visible"`), the first
-// drag after the visible preload runs synchronously, a cold press is replayed after its chunks load
+// server markup, no automatic boot or viewport prefetch on a lean derived page (legacy `preload` exports are ignored),
+// the first cold drag continues through real moves while pressed after its chunks load, a cold press is replayed
 // (and dropped when it was released meanwhile), handles never scroll on a cold touch; a drop reorders
-// the `For` rows by adoption (known gap, `test.fails`). These tests time the viewport trigger and cold presses.
-import { test, afterAll, beforeAll } from "vitest";
+// the `For` rows by adoption. These tests exercise the current fetch-on-input contract and cold presses.
+import { test, afterAll, beforeAll, expect } from "vitest";
 import assert from "node:assert/strict";
 import type { Page, Route } from "playwright";
 import { among, chunksOf, codeOf, stories, watch, type Stories, type Watch } from "./harness.ts";
@@ -31,6 +31,21 @@ const center = (page: Page, id: string) =>
     const rect = document.getElementById(id)!.getBoundingClientRect();
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }, id);
+
+/** Continue one held press with trusted moves while its cold handler is loading; observe the actual drag start. */
+const moveUntilPreview = async (page: Page, from: { x: number; y: number }) => {
+  let move = 0;
+  await expect
+    .poll(
+      async () => {
+        await page.mouse.move(from.x, from.y + 20 + (move++ % 2));
+        return page.locator(".cdk-drag-preview").count();
+      },
+      { timeout: 5000 },
+    )
+    .toBe(1);
+  assert.equal(await page.locator(".cdk-drag-placeholder").count(), 1);
+};
 
 /** Holds every script request until `release()` (a slow network for the drag-drop code). */
 async function holdScripts(page: Page) {
@@ -71,48 +86,43 @@ test("server markup: structure attributes, handle native-interaction styles, fre
   assert.match(html, /<template data-rv-drag-placeholder=""><div id="free-placeholder">placeholder<\/div><\/template>/);
 });
 
-test("nothing drag-drop related loads before the lists are visible; scrolling them in preloads it", async () => {
+test("lean derived page: scrolling the lists into view neither boots nor prefetches drag-drop code", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
   await page.goto(s.origin + "/drag-drop");
-  await page.waitForTimeout(800);
+  await page.waitForLoadState("networkidle");
   assert.deepEqual(dragScripts(seen), []);
-  await page.evaluate(() => document.getElementById("list")!.scrollIntoView());
-  await dragLoaded(page, { timeout: 5000 });
-  assert.ok(among(seen.scripts, chunksOf(/#Drag$/)).length > 0);
+  assert.equal(await page.locator("script[data-boot]").count(), 0);
+  await page.evaluate(async () => {
+    document.getElementById("list")!.scrollIntoView();
+    // Give viewport observers a rendering opportunity; legacy visible-preload exports have no derived effect.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
+  await page.waitForLoadState("networkidle");
+  assert.deepEqual(dragScripts(seen), []);
+  assert.equal(await page.locator("script[data-boot]").count(), 0);
+  assert.equal(await page.locator(".cdk-drag-preview, .cdk-drag-placeholder").count(), 0);
   assert.deepEqual(seen.errors, []);
   await page.close();
 });
 
-test("first drag after the visible preload starts synchronously; the drop reports the new index", async () => {
+test("first cold drag loads asynchronously and continues while pressed; the drop reports the new index", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
   await page.goto(s.origin + "/drag-drop");
   await page.evaluate(() => document.getElementById("list")!.scrollIntoView());
   await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(500); // prefetched modules evaluate in an idle slice
-  const started = await page.evaluate(() => {
-    for (const el of document.querySelectorAll<HTMLElement>("#list > .cdk-drag")) (el as unknown as { tag: string }).tag = el.textContent!;
-    const item = document.getElementById("item-Zero")!;
-    const rect = item.getBoundingClientRect();
-    const at = { clientX: rect.left + 5, clientY: rect.top + 5, bubbles: true, cancelable: true, button: 0, buttons: 1, detail: 1 };
-    item.dispatchEvent(new MouseEvent("mousedown", at));
-    document.dispatchEvent(new MouseEvent("mousemove", { ...at, clientY: at.clientY + 20 }));
-    const result = { preview: !!document.querySelector(".cdk-drag-preview"), placeholder: !!document.querySelector(".cdk-drag-placeholder") };
-    // (Synthetic events report `pageY` without the page scroll, so the sorting part uses the real mouse below.)
-    document.dispatchEvent(new MouseEvent("mouseup", { ...at, clientY: at.clientY + 20, buttons: 0 }));
-    return result;
-  });
-  assert.deepEqual(started, { preview: true, placeholder: true });
-  await page.waitForFunction(() => document.getElementById("drops")?.textContent === "1", null, { timeout: 2000 });
+  assert.deepEqual(dragScripts(seen), []);
   const from = await center(page, "item-Zero");
   const to = await center(page, "item-Two");
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
-  await page.mouse.move(from.x, from.y + 20, { steps: 4 });
+  await dragLoaded(page);
+  await moveUntilPreview(page, from);
   await page.mouse.move(to.x, to.y + 5, { steps: 6 });
   await page.mouse.up();
-  await page.waitForFunction(() => document.getElementById("drops")?.textContent === "2", null, { timeout: 2000 });
+  await page.waitForFunction(() => document.getElementById("drops")?.textContent === "1", null, { timeout: 2000 });
+  assert.equal(await text(page, "last"), "0>2");
   assert.equal(await text(page, "order"), "One,Two,Zero,Three");
   // Control: a `For` that is no component child re-renders.
   await page.waitForFunction(() => document.getElementById("plain")?.textContent === "OneTwoZeroThree", null, { timeout: 2000 });
@@ -120,15 +130,12 @@ test("first drag after the visible preload starts synchronously; the drop report
   await page.close();
 });
 
-// Known gap (runtime / compiler, not drag-drop): a `For` passed as a component's children (`<DropList>`)
-// renders without region markers on the server, so on a resumed page it never re-renders: the rows keep
-// their server order after `items.set(...)`. Flips to passing once component children resume as regions.
+// A component's lazy children must keep the adopted keyed rows when the drop updates their order.
 test("a drop reorders the For rows inside <DropList> by adoption (same elements)", async () => {
   const page = await s.browser.newPage();
   await page.goto(s.origin + "/drag-drop");
   await page.evaluate(() => document.getElementById("list")!.scrollIntoView());
   await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(500);
   await page.evaluate(() => {
     for (const el of document.querySelectorAll<HTMLElement>("#list > .cdk-drag")) (el as unknown as { tag: string }).tag = el.textContent!;
   });
@@ -136,11 +143,12 @@ test("a drop reorders the For rows inside <DropList> by adoption (same elements)
   const to = await center(page, "item-Two");
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
-  await page.mouse.move(from.x, from.y + 20, { steps: 4 });
+  await dragLoaded(page);
+  await moveUntilPreview(page, from);
   await page.mouse.move(to.x, to.y + 5, { steps: 6 });
   await page.mouse.up();
   await page.waitForFunction(() => document.getElementById("drops")?.textContent === "1", null, { timeout: 2000 });
-  await page.waitForFunction(() => document.querySelector("#list > .cdk-drag")?.textContent !== "Zero", null, { timeout: 2000 }).catch(() => {});
+  await page.waitForFunction(() => document.querySelector("#list > .cdk-drag")?.textContent !== "Zero", null, { timeout: 2000 });
   const rows = await order(page);
   const tags = await page.evaluate(() => [...document.querySelectorAll("#list > .cdk-drag")].map((el) => (el as unknown as { tag?: string }).tag));
   await page.close();

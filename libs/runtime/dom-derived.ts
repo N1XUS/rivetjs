@@ -1923,6 +1923,9 @@ const load = (name: string): Promise<void> => {
 const needing = new Set<Rec>();
 /** Materialise `r` and what it needs first: true when done now, a promise while a chunk loads. */
 function need(r: Rec): true | Promise<void> {
+  // DevTools may switch to client rendering while a chunk or ready hook is pending. Its continuation must not
+  // recreate adopted owners after dispose() already tore down the resume runtime.
+  if (DEV && disposed) return true;
   if (r.done) return true;
   // DOM data: no unit runs before the reader rebuilt the tail's items (its props hold `0` there until then).
   if (DOM_DATA && domWait) return domWait.then(() => void need(r));

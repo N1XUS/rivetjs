@@ -26,7 +26,8 @@ const initial = (): State => ({
 
 /** Run `fn` in an effect; returns the number of runs so far and the last value. */
 function watch<T>(fn: () => T): { runs: () => number; last: () => T } {
-  let runs = 0, last!: T;
+  let runs = 0,
+    last!: T;
   createRoot(() => effect(() => void ((last = fn()), runs++)));
   return { runs: () => runs, last: () => last };
 }
@@ -140,7 +141,14 @@ test("produce mutates a copy; reconcile keeps identity of equal subtrees", () =>
   assert.equal(read(store, "user"), data.user);
   assert.equal(read(store, "todos.1"), data.todos[1]);
   assert.deepEqual([user.runs(), second.runs()], [1, 1]);
-  write(store, "todos", reconcile([{ id: 1, title: "a", done: true }, { id: 2, title: "b", done: true }]));
+  write(
+    store,
+    "todos",
+    reconcile([
+      { id: 1, title: "a", done: true },
+      { id: 2, title: "b", done: true },
+    ]),
+  );
   assert.equal(read(store, "todos.1"), data.todos[1]);
   assert.equal(second.runs(), 1);
   // An equal reconcile is a no-op.
@@ -195,7 +203,10 @@ test("_debugStore lists read paths with values and observer counts", () => {
   read(store, "filter");
   const tree = _debugStore(store as never);
   assert.equal(tree.path, "");
-  assert.deepEqual(tree.children.map((child) => child.path), ["user", "filter"]);
+  assert.deepEqual(
+    tree.children.map((child) => child.path),
+    ["user", "filter"],
+  );
   const name = tree.children[0]!.children[0]!;
   assert.deepEqual([name.path, name.value, name.observers], ["user.name", "Ada", 1]);
 });
@@ -227,7 +238,10 @@ test("development façade reports store.create with a lazy tree", async () => {
     const [type, data] = events.find(([t]) => t === "store.create")!;
     assert.equal(type, "store.create");
     assert.equal(data.store, store);
-    assert.deepEqual((data.tree as () => { children: { path: string }[] })().children.map((c) => c.path), ["a"]);
+    assert.deepEqual(
+      (data.tree as () => { children: { path: string }[] })().children.map((c) => c.path),
+      ["a"],
+    );
   } finally {
     holder[HOOK] = previous;
   }
@@ -240,7 +254,9 @@ test("produce copies only the touched path: untouched subtrees, class instances 
       this.x = x;
     }
   }
-  const when = new Date(0), point = new Point(1), format = (n: number) => String(n);
+  const when = new Date(0),
+    point = new Point(1),
+    format = (n: number) => String(n);
   const data = { a: { deep: { n: 1 } }, b: { m: 2 }, when, point, format, list: [{ v: 1 }, { v: 2 }, { v: 3 }] };
   const store = createStore(data);
   const b = watch(() => read(store, "b"));
@@ -304,8 +320,95 @@ test("produce copies only the touched path: untouched subtrees, class instances 
   assert.equal("when" in last, false);
 });
 
+test("produce: shortening an array discards previously read or edited child drafts", () => {
+  type State = { items: { n: number }[]; stable: { value: number } };
+  const recipes: Record<string, (draft: State) => void> = {
+    read: (draft) => {
+      void draft.items[1]!.n;
+      draft.items.length = 0;
+    },
+    edit: (draft) => {
+      draft.items[1]!.n = 7;
+      draft.items.length = 0;
+    },
+    detached: (draft) => {
+      const removed = draft.items[1]!;
+      draft.items.length = 0;
+      removed.n = 7;
+    },
+    descriptor: (draft) => {
+      void draft.items[1]!.n;
+      Object.defineProperty(draft.items, "length", { value: 0 });
+    },
+  };
+  for (const [name, mutate] of Object.entries(recipes)) {
+    const initial: State = { items: [{ n: 1 }, { n: 2 }], stable: { value: 3 } };
+    const store = createStore(initial);
+    const length = watch(() => read(store, "items").length);
+    write(store, produce(mutate));
+    assert.deepEqual(read(store, "items"), [], name);
+    assert.equal(length.last(), 0, name);
+    assert.equal(length.runs(), 2, name);
+    assert.deepEqual(initial.items, [{ n: 1 }, { n: 2 }], name + ": original state stays immutable");
+    assert.equal(read(store, "stable"), initial.stable, name + ": untouched subtree keeps identity");
+  }
+});
+
+test("produce: reads after truncation see deleted keys, and regrowing length preserves holes", () => {
+  const store = createStore({ items: [{ n: 1 }, { n: 2 }] });
+  write(
+    store,
+    produce((draft) => {
+      void draft.items[0]!.n;
+      void draft.items[1]!.n;
+      draft.items.length = 0;
+      assert.equal(draft.items[0], undefined);
+      assert.equal(draft.items[1], undefined);
+      draft.items.length = 2;
+    }),
+  );
+  const items = read(store, "items");
+  assert.equal(items.length, 2);
+  assert.deepEqual(Object.keys(items), [], "regrowth creates holes instead of resurrecting the deleted objects");
+});
+
+test("produce: explicit reinsertion of a removed child draft is kept", () => {
+  for (const edited of [false, true]) {
+    const initial = { items: [{ n: 1 }], stable: { value: 3 } };
+    const store = createStore(initial);
+    write(
+      store,
+      produce((draft) => {
+        const removed = draft.items[0]!;
+        draft.items.length = 0;
+        if (edited) removed.n = 7;
+        draft.items[0] = removed;
+        assert.equal(draft.items.length, 1, "an explicit assignment restores the array element");
+      }),
+    );
+    assert.deepEqual(read(store, "items"), [{ n: edited ? 7 : 1 }]);
+    assert.deepEqual(initial.items, [{ n: 1 }]);
+    assert.equal(read(store, "stable"), initial.stable);
+    if (!edited) assert.equal(read(store), initial, "restoring the same value is a semantic no-op");
+  }
+});
+
+test("produce: a sparse array length change survives parent structural sharing", () => {
+  const store = createStore({ items: new Array<{ n: number }>(3) });
+  write(
+    store,
+    produce((draft) => {
+      draft.items = draft.items.slice(0, 1);
+    }),
+  );
+  assert.equal(read(store, "items").length, 1);
+  assert.deepEqual(Object.keys(read(store, "items")), []);
+});
+
 test("produce: Map / Set / Date reached through the draft are copies; the draft is revoked afterwards", () => {
-  const tags = new Map([["a", 1]]), seen = new Set([1]), other = new Map([["z", 0]]);
+  const tags = new Map([["a", 1]]),
+    seen = new Set([1]),
+    other = new Map([["z", 0]]);
   const store = createStore({ tags, seen, other });
   let leaked: { tags: Map<string, number> } | null = null;
   write(
@@ -316,7 +419,13 @@ test("produce: Map / Set / Date reached through the draft are copies; the draft 
       leaked = draft;
     }),
   );
-  assert.deepEqual([...read(store, "tags")], [["a", 1], ["b", 2]]);
+  assert.deepEqual(
+    [...read(store, "tags")],
+    [
+      ["a", 1],
+      ["b", 2],
+    ],
+  );
   assert.deepEqual([...read(store, "seen")], [1, 2]);
   assert.deepEqual([...tags], [["a", 1]]);
   assert.deepEqual([...seen], [1]);

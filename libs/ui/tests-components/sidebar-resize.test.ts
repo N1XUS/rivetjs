@@ -84,6 +84,57 @@ test("sidebar-resize: cold mouse drag resizes; live + committed callbacks; mid-d
     assert.equal(await page.locator('[data-slot="sidebar"]').getAttribute("data-resizing"), null);
   }));
 
+for (const input of ["mouse", "touch"] as const)
+  test(`sidebar-resize: a complete cold ${input} drag survives code arriving after release`, async () => {
+    const context = await s.browser.newContext({ viewport: { width: 1280, height: 720 }, hasTouch: input === "touch" });
+    const page = await context.newPage();
+    const seen = watch(page);
+    let release!: () => void;
+    const code = new Promise<void>((resolve) => (release = resolve));
+    await page.route(/\.m?js(\?|$)/, async (route) => {
+      await code;
+      await route.continue();
+    });
+    try {
+      await page.goto(s.origin + "/sidebar-resize", { waitUntil: "domcontentloaded" });
+      if (input === "mouse") await drag(page, 330);
+      else {
+        const h = (await page.locator(HANDLE).boundingBox())!;
+        const x = h.x + h.width / 2;
+        const y = h.y + 200;
+        const cdp = await context.newCDPSession(page);
+        try {
+          await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+          for (let step = 1; step <= 6; step++)
+            await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + ((330 - x) * step) / 6, y }] });
+          await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+        } finally {
+          await cdp.detach();
+        }
+      }
+      assert.equal(await text(page, "#sr-width"), "", "the entire physical gesture finished before the handlers loaded");
+      assert.equal(await text(page, "#sr-end"), "");
+      release();
+      await page.waitForFunction(() => Boolean(document.querySelector("#sr-end")?.textContent), undefined, { timeout: 5000 });
+      const committed = await text(page, "#sr-end");
+      assert.ok(Math.abs(Number(committed) - 330) <= 3, `${input} committed drag to 330: ${committed}`);
+      assert.equal(await text(page, "#sr-width"), committed);
+      // All queued moves and release can replay in one task: removing data-resizing then starts the gap's CSS transition.
+      await page.waitForFunction(
+        (value) => Math.round(document.querySelector('[data-slot="sidebar-gap"]')!.getBoundingClientRect().width) === value,
+        Number(committed),
+      );
+      const width = await gapWidth(page);
+      assert.equal(String(width), committed);
+      assert.equal(await page.locator(HANDLE).getAttribute("data-dragging"), null);
+      assert.equal(await page.locator('[data-slot="sidebar"]').getAttribute("data-resizing"), null);
+      assert.deepEqual(seen.errors, []);
+    } finally {
+      release();
+      await context.close();
+    }
+  });
+
 test("sidebar-resize: min / max clamp", () =>
   onPage(async (page) => {
     await drag(page, 900);

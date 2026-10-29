@@ -57,3 +57,5 @@ User decision 2026-10-08: keep the shadcn API + names, add features. Defaults of
 - vitest browser iframe < 768px → tests stub `innerWidth` (`setWidth(1024)`).
 
 - ID-RESUME (2026-10-27): Generated mobile-dialog title and description ids use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.
+
+- COLD-CAPTURE (2026-10-29): `SidebarResizeHandle` carries internal `data-rv-capture=""`, so the inline resume loader captures a held primary pointerdown before handler code arrives. The complete cold gesture stays on the handle through physical release; adopted handlers replay the moves and clear drag state. Production UI regressions hold every script request through a full mouse / touch drag and require the rendered width and both callbacks to agree.

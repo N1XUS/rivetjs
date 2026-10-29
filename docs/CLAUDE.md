@@ -37,6 +37,9 @@ Latest night measurement: `benchmarks/2026-10-28-night.md` + `.json` (CX-BENCH, 
 
 ## design/
 
+- `plans/2026-10-29-stabilization.md` — CI failure inventory and regression-first stabilization checklist; separates verified fixes from remaining cold, fuzz and integration failures.
+- `research/2026-10-29-security-verification.md` — fresh isolated 71-case application security run, 55 framework checks and tested `onRequest` authentication boundary; distinguishes framework defenses, application policy and untested areas.
+
 - `specs/` — one per feature; the newest cdk ones (`2026-10-05-cdk-*`, `collections-parity`, `tabs-parity`) are parity trackers for the 1:1 ports.
 - `specs/2026-10-06-dom-v2-only-design.md` — phases a–e landed (i18n `040312bf`, resume `9e2651e9`, v1 deleted `4c16e74b`): DOM v2 is the only DOM target (v1 inventory with file:line, resume/dev/i18n/testing on v2, phases a–f, lane split, open questions).
 - `specs/2026-10-07-heroui-port-design.md` — `@rivetjs/ui` = 1:1 HeroUI v3.2.6 port on cdk: decisions, layout, React→Rivet translation rules, spike + cdk RAC gaps, React-vs-Rivet parity harness, `apps/ui-docs`, lanes, done criteria, open questions.
@@ -162,3 +165,5 @@ Scheduler final report records real LTR/RTL month/all-day resize preview, commit
 - `guides/resumability.md` documents PRESS-LITE's native handler twin and CX-PRESS2's graph-preserving VCLS / co-load integration, including the escape hatch and measured mixed-frame deltas.
 
 - CX-SOCIAL: the homepage design spec keeps GitHub as a text link by design; brand logos are supported in the ui-docs social-button demo through its local build helper (see `apps/ui-docs/CLAUDE.md`).
+
+- Live-page accessor contract (2026-10-29): the partial-render spec records that server/static live pages receive callable loader data independently of navigate/forms imports; native-link production GETs cover both navigation settings.

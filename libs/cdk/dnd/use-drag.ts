@@ -6,7 +6,7 @@
 //   accessor; `dragProps` handlers take the DOM event; `dragButtonProps` are cdk `Button` props (`onPress`, accessor
 //   `aria-describedby`).
 // - `useDescription` → `aria-describedby` accessor over `descriptionId` (browser only: the server renders none, as
-//   react-aria's SSR output).
+//   react-aria's SSR output); composed renderers can render the optional internal instruction-text accessor instead.
 // - `useGlobalListeners` → a local listener list; the unmount check (a dragged element removed by its own drop) runs
 //   from the owner's cleanup.
 import { getOwner, onCleanup, signal } from "@rivetjs/reactivity";
@@ -72,6 +72,8 @@ export interface DragResult {
   dragButtonProps: DragButtonProps;
   /** Whether the element is currently being dragged. */
   isDragging: () => boolean;
+  /** @internal Instruction text for a composed renderer that owns a server-rendered description target. */
+  _description?: (() => string | undefined) | undefined;
 }
 
 const MESSAGES = {
@@ -251,7 +253,8 @@ export function useDrag(options: DragOptions): DragResult {
   };
 
   const modality = useDragModality();
-  const describedBy = () => descriptionId(stringFormatter(!isDragging() ? MESSAGES[modality()].start : MESSAGES[modality()].end));
+  const description = () => stringFormatter(!isDragging() ? MESSAGES[modality()].start : MESSAGES[modality()].end);
+  const describedBy = () => descriptionId(description());
 
   let interactions: DragProps = {};
   if (!hasDragButton) {
@@ -308,5 +311,6 @@ export function useDrag(options: DragOptions): DragResult {
     dragProps: { ...interactions, draggable: "true", onDragStart, onDrag, onDragEnd },
     dragButtonProps: { "aria-describedby": describedBy, onPress },
     isDragging: () => isDragging(),
+    _description: description,
   };
 }

@@ -1,5 +1,7 @@
 # scripts/ — repo gates and generators
 
+- Stabilization (2026-10-29): removed the Resizable imperative-ref, legacy visible drag-preload and Select focus entries from `gates/known-reds.json` after cold ref forms passed8/8, derived drag/drop contract tests passed7/7 and the unchanged Select suite passed33/33. The registry retains the four existing runtime/router timing flakes.
+
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
 Plain Node scripts run from the repo root (`export PATH=/Users/denisseverin/.nvm/versions/node/v26.5.1/bin:$PATH`). No build step; `.mjs` = plain JS, `.ts` = run via Node type stripping.

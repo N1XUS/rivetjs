@@ -125,6 +125,12 @@ export function derivedLoader(): void {
     // keys behind the pending adopt too: its window shortcut listener does not exist until the chunk runs. With no
     // pending work rt.on lets them through; a body key alone still never boots the page. Key defaults stay native.
     if (!(at.length || (booting && type == "keydown")) || rt?.on(event)) return;
+    // Gesture surfaces opt into capture while their pointerdown waits for code. Without it, a mouse can leave the
+    // surface and release before replay installs its handlers, losing both the movement and the end of the gesture.
+    if (type == "pointerdown" && (event as PointerEvent).button == 0)
+      try {
+        target.closest("[data-rv-capture]")?.setPointerCapture((event as PointerEvent).pointerId);
+      } catch {}
     let replay: (() => void) | undefined;
     if (
       type == "click" &&

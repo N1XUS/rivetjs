@@ -69,3 +69,5 @@ Editor-agnostic Rivet language features over source text + `.rivet/editor.json`:
 ## CLI output (CLI-UX)
 
 CLI output: `--json` aliases `--format json`; `--quiet` hides warnings/status but retains totals in JSON; `--verbose` / DEBUG=rivet enables exception stacks. Missing option values fail with exit 2 and unknown flags suggest corrections. Warnings group by code + filename, with count and JSON occurrences; errors keep each location. Setup and unexpected failures exit 1; only invalid arguments exit 2. Tests: `tests/cli-output.test.ts`.
+
+CLI output tests remove inherited `FORCE_COLOR` before setting `NO_COLOR`, so Node's conflicting-color environment warning cannot pollute the stderr assertions on CI.

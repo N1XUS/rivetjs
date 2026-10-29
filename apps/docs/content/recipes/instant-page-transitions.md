@@ -46,8 +46,8 @@ A link opts out with `prefetch="none"`.
 
 Only links whose click loads a document:
 
-- In an app with more than one page, the client router handles links to its pages itself: it loads the next page's data and code on hover and swaps the page without a document load. Those links keep doing that, and the browser does not fetch their documents too. Links whose path matches no page route, and links with `reload` (`data-rivet-reload`) or `rel="external"`, load documents, so they take part. The page carries a pattern of your route paths for this, in the rules and in the fallback.
-- In an app with a single page, there is no client router: every marked link takes part.
+- Where the client router is active, it handles links to its pages itself: it loads the next page's data and code on hover and swaps the page without a document load. Those links keep doing that, and the browser does not fetch their documents too. Links whose path matches no page route, and links with `reload` (`data-rivet-reload`) or `rel="external"`, load documents, so they take part. The page carries a pattern of your route paths for this, in the rules and in the fallback.
+- Where client routing is omitted, every marked link takes part. A single fixed page path qualifies only without live pages, programmatic navigation or enhanced forms, reactive search params, active-link tracking, or nested layout levels; see [when the router is active](../guides/routing/links-and-navigation.md#when-the-router-is-active).
 
 Skipped: links to other origins, the current page, `download` links, links with a `target` other than `_self`. Links to your endpoints load a document on click but are not prefetched (the route pattern includes them, so a download or a request with side effects never starts on hover); mark one `reload` to prefetch it.
 

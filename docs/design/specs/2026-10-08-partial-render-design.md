@@ -60,7 +60,7 @@ export default function Customers({ data }: LivePageProps<typeof serverLoad>) {
 - **Concurrency / abort:** forms abort an older submit (`state.submit`); `_serveLive` generation counter `n` drops older answers; a navigation started meanwhile (`_current()`) or a URL change wins; a refresh is never applied to another page (`slot.u` vs `location`).
 - **History:** none (same entry). Search-only navigations (`?new` links with JS, back / forward between them) keep a live page (open issue 4: single-level and nested layout levels); apps may still open overlays from signals with JS and use the URL for no-JS only (`data-rivet-prefetch="none"` on the link).
 - **No-JS fallback:** (b) — `?new` renders the overlay open on the server (cdk overlays server-render their portal content); a failed POST re-renders with the overlay open (`actionResult(name)?.status >= 400`) and echoed values; success renders it closed (the action URL drops the search: `url.search = ""` before loaders).
-- **Zero-cost:** `client/live.ts` reached only from the generated App when some page is live and navigate/forms are used; `index.ts` gains export aliases only (`_perform`, `_dropPrefetch`, re-exports). Codegen of apps without a live page byte-identical (checked against HEAD codegen for ssr-bench, forms app, router fixtures, playground, docs). ssr-bench lane bundles contain no live code.
+- **Zero-cost:** `client/live.ts` reached only from the generated App when some page is live (server/static modes), independently of navigate/forms usage; `index.ts` gains export aliases only (`_perform`, `_dropPrefetch`, re-exports). Codegen of apps without a live page byte-identical (checked against HEAD codegen for ssr-bench, forms app, router fixtures, playground, docs). ssr-bench lane bundles contain no live code.
 
 ## Measurements (Chromium, localhost, production build, `libs/forms/tests/drawer-app/measure.ts`)
 
@@ -102,7 +102,8 @@ Cheaper follow-ups instead: ~~preload the data-reading binding chunks on form in
 
 ## Tests
 
-- `libs/router/tests/live.test.ts`: scan flag (`live` alone ≠ inline; `false` ignored; layouts ignored), codegen wiring + byte-identity without navigate, in-place refresh from fresh data (no navigation), other URL → regular path, concurrent refreshes (newest wins).
+- `libs/router/tests/live.test.ts`: scan flag (`live` alone ≠ inline; `false` ignored; layouts ignored), codegen wiring with/without navigate + byte-identity for apps without live pages, in-place refresh from fresh data (no navigation), other URL → regular path, concurrent refreshes (newest wins).
+- `libs/router/tests/live-native-ssr.test.ts`: isolated production builds with native links, no navigate/forms imports, and explicit navigate false/true; HTTP GETs return 200 and correct accessor-backed loader data; real native-link clicks update the page while retaining its draft and DOM identity.
 - `libs/forms/tests/drawer.test.ts` (Chromium): JS submit no reload; issue keeps drawer open + focus; success → list + layout total update, drawer closed, counter kept, nothing `inert`; warm second add; answer vs document bytes; no-JS `?new` + 400 re-render + success.
 - Docs: `apps/docs/content/guides/forms/forms-in-overlays.md` + example `apps/docs/examples/drawer-form` (server mode: the docs build does not run its steps in Chromium; the forms e2e covers the same flow).
 

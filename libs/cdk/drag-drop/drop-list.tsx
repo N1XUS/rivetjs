@@ -28,7 +28,7 @@ function dropListHostEvent<T>(event: Event, setup: DropListSetup<T>): void {
 /** Global DOM events DropList handles itself; the user's handlers run after its own. */
 const OWNED = ["onMouseDown", "onTouchStart"] as const;
 
-/** Preload the drag-drop handlers when a list scrolls into view (first press runs synchronously). */
+/** Legacy preload declaration; derived resume loads handlers on interaction and ignores this export. */
 export const preload = "visible";
 
 export interface DropListProps<T = any> extends DropListInputs<T>, GlobalDOMAttributes<HTMLElement>, HostDOMAttributes<HTMLElement> {

@@ -1,5 +1,5 @@
-// Tree drag and drop on a resumed page (story `/tree-dnd`): server markup carries the drag affordances only (drag
-// buttons, `draggable` rows, no drop indicators), no library code before interaction, and the first input on the cold
+// Tree drag and drop on a resumed page (story `/tree-dnd`): server markup carries drag buttons with valid instruction
+// targets, `draggable` rows and no drop indicators, no library code before interaction, and the first input on the cold
 // page drags: a keyboard drag from the drag button (Enter → Tab to a drop target → Enter) and a native mouse drag.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
@@ -26,6 +26,18 @@ test("Tree drag and drop SSR: drag affordances only, no library code before inte
   assert.deepEqual(await rowNames(page), ["Documents", "Report", "Photos", "Music"]);
   assert.deepEqual(await page.$$eval("#tree-dnd .rv-TreeItem", (els) => els.map((el) => el.getAttribute("draggable"))), ["true", "true", "true", "true"]);
   assert.equal(await page.getAttribute('#tree-dnd [data-key="photos"] [slot="drag"]', "aria-label"), "Drag Photos");
+  const descriptions = await page.$$eval('#tree-dnd [slot="drag"]', (buttons) =>
+    buttons.map((button) => {
+      const id = button.getAttribute("aria-describedby");
+      const target = id && document.getElementById(id);
+      return { id, text: target ? target.textContent : null, inCell: !!target && target.closest('[role="gridcell"]') === button.closest('[role="gridcell"]') };
+    }),
+  );
+  assert.equal(new Set(descriptions.map(({ id }) => id)).size, 4);
+  assert.ok(
+    descriptions.every(({ id, text, inCell }) => id && text === "Click to start dragging." && inCell),
+    "server drag instructions resolve within each row",
+  );
   assert.equal(await page.$$eval("#tree-dnd .rv-DropIndicator", (els) => els.length), 0);
   await page.waitForLoadState("networkidle");
   assert.equal(await page.$('script[type="rivet/boundaries"][data-boot]'), null, "nothing boots by itself");
@@ -43,9 +55,14 @@ test("Tree drag and drop: cold keyboard drag from the drag button reorders", asy
   await page.focus('#tree-dnd [data-key="music"]');
   await page.keyboard.press("ArrowRight");
   await page.waitForFunction(() => document.activeElement?.getAttribute("aria-label") === "Drag Music");
+  await page.waitForFunction(() => document.querySelector("#tree-dnd-music-drag-description")?.textContent === "Press Enter to start dragging.");
   await page.keyboard.press("Enter");
   // The session focuses the drop target nearest to the dragged row; arrows walk the targets, Home goes to the first.
   await page.waitForFunction(() => document.activeElement?.getAttribute("aria-label") === "Insert after Music");
+  // Native Enter activation can report virtual modality (see dnd/CLAUDE.md); the row still exposes current cancel instructions.
+  await page.waitForFunction(() =>
+    /^Dragging\. (?:Press Enter|Double tap|Click) to cancel drag\.$/.test(document.querySelector("#tree-dnd-music-drag-description")?.textContent ?? ""),
+  );
   await page.keyboard.press("ArrowUp");
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("aria-label")), "Insert between Photos and Music");
   await page.keyboard.press("ArrowUp");

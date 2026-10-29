@@ -4,6 +4,8 @@
 Main Rivet docs site (framework: reactivity, runtime, router, compiler, i18n, tooling), built on `@rivetjs/docs-kit`. Engine internals: [libs/docs-kit/CLAUDE.md](../../libs/docs-kit/CLAUDE.md). The cdk site `apps/cdk-docs` has the same structure.
 
 ## Layout
+- Stabilization (2026-10-29): `_home-perf.json` is regenerated from the production build after cold pointer capture changed the inline loader (3,967 raw / 1,815 Brotli bytes). Existing dated Lighthouse measurements are preserved; this update measures bytes and source test counts, not a new Lighthouse run.
+- Routing authentication guidance: `guides/routing/server-code-in-routes.md` documents layout `onRequest` session validation before page handlers, followed by operation-specific permissions; layout guard ordering is unchanged. Router `auth-boundary.test.ts` covers data requests with actual kept layout data and validated locals.
 - npm release: all site versions and StackBlitz dependency specs use `0.1.0-alpha.1`; setup/tooling guides describe public npm installs. Home command badges show the published alpha version. Main navbar UI goes to `site.sites.ui`; Guide keeps only UI package overview and Kit. The obsolete component pages and port preview are removed; `public/_redirects` sends their URLs to the dedicated UI docs.
 - Homepage (HOME-DOCS 2026-10-27; replaces the 2026-10-24 Runtime Studio): plain Vercel / angular.dev-style landing built from `@rivetjs/ui` parts, 0 scripts before input (the embedded counter frame included); HOME-DOCS-2 (2026-10-27): the product shot's live counter is the `ui-counter` example page in an iframe with a JS meter (below), not a component of the home; the Runtime Studio code (headline, aurora, workbench, architecture diagram, `home-studio.css`) and every legacy helper (RotatingWords, CountUp, BarList, ResumeDemo, Showcase*, PerfLine, `visit.ts`, `scripts/showcase-preview.ts`) are deleted.
 - Browser style parity waits for `document.fonts.ready` (first-visit font swapping); the reduced-motion assertion waits for the deferred sheets' 0.01ms transitions to finish before requiring zero animations.
@@ -56,6 +58,7 @@ Main Rivet docs site (framework: reactivity, runtime, router, compiler, i18n, to
 
 ## Gotchas
 
+- The navigation guide and document-prefetch recipe describe the single-fixed-page fast path with its exclusions: live pages, navigate/forms, search params, active links and nested layout levels. Live pages always receive callable loader data, even without programmatic navigation imports.
 - `content/reference/utilities.md` covers application-facing id/owner/selector/lazy-function/form-decoding helpers. Its self-contained examples use `check` fences so the snippet gate checks their complete types. Signal records use plain JSON data (`server-derived.ts` `isData`); route data uses the richer resume-format encoder.
 
 - `content/guides/tooling/ai.md` documents portable `rivet-ui-design` installation for Codex/Claude Code/Cursor, local-clone and post-push remote commands, complete-bundle copying, automatic/explicit invocation, and optional MCP. The public bundles and starter copies are generated from `libs/mcp/ai`; keep this guide aligned with that source.

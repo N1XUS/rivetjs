@@ -32,6 +32,20 @@ async function drag(page: import("playwright").Page, from: string, to: string, d
   await page.waitForSelector(".cdk-drag-preview", { state: "detached", timeout: 5000 });
 }
 
+test("kanban: empty states retain their server nodes after the first card selection", async () => {
+  const page = await s.browser.newPage({ viewport: { width: 1100, height: 900 } });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto(s.origin + "/kanban");
+  const empty = await page.locator("[data-slot=kanban-empty]").elementHandles();
+  assert.equal(empty.length, 5, "every column has its server-rendered empty state");
+  await page.click("#kbs-card-s1");
+  await page.waitForFunction(() => document.querySelector("#kbs-selected")?.textContent === "s1 s2");
+  for (const node of empty) assert.equal(await node.evaluate((el) => el.isConnected), true, "adoption must keep the empty state's server node");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("kanban: cold drag across columns and within a column", async () => {
   const page = await s.browser.newPage({ viewport: { width: 1100, height: 800 } });
   await page.goto(s.origin + "/kanban");

@@ -25,8 +25,18 @@ test("compiler diagnostics appear with code, range and category", () => {
   assert.ok(typeErrors.some((d) => /"idel"/.test(ts.flattenDiagnosticMessageText(d.messageText, "\n"))));
 });
 
-test("resume mode follows the manifest: browser globals only in resume modules", () => {
-  assert.deepEqual(rivet(fx.file("src/plain.tsx")), []);
+test("a resume app checks every JSX module for server browser reads, but permits handler reads", () => {
+  const plain = fx.file("src/plain.tsx");
+  assert.deepEqual(
+    rivet(plain).map((d) => [d.code, d.category, text(d)]),
+    [[72001, ts.DiagnosticCategory.Error, "window"]],
+  );
+  try {
+    fx.edit("src/plain.tsx", "export function Plain() { return <button onClick={() => window.innerWidth}>Width</button>; }\n");
+    assert.deepEqual(rivet(plain), []);
+  } finally {
+    fx.edit("src/plain.tsx", sources["src/plain.tsx"]);
+  }
   const counter = rivet(fx.file("src/counter.tsx"));
   // Captured values are not serialized (derived model): no type-aware capture warning for `store`.
   assert.deepEqual(

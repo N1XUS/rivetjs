@@ -6,7 +6,8 @@ import { terminalError } from "../build/dev-errors.ts";
 import { prerender } from "../adapters/static.ts";
 
 const cli = resolve("libs/router/cli/rivet.ts");
-const run = (...args: string[]) => spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env: { ...process.env, NO_COLOR: "1", DEBUG: "" } });
+const run = (...args: string[]) =>
+  spawnSync(process.execPath, [cli, ...args], { encoding: "utf8", env: { ...process.env, FORCE_COLOR: undefined, NO_COLOR: "1", DEBUG: "" } });
 test("rivet usage errors suggest a correction and keep JSON parseable", () => {
   const unknown = run("syn");
   expect(unknown.status).toBe(2);

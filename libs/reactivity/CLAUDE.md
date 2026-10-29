@@ -1,5 +1,7 @@
 # @rivetjs/reactivity
 
+- Stabilization (2026-10-29): `produce` reads check the current copy before returning a cached child draft, and finalization ignores children removed by array-length writes. Array key removal and sparse lengths participate in structural sharing, so truncation/regrowth cannot restore deleted elements. `tests/store.test.ts` covers read/edited/detached drafts, descriptor truncation, in-recipe reads, sparse lengths, immutability, reactive notification and untouched subtree identity. Typed `StorePath` still does not expose array `length` as a read/write path.
+
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
 Push-pull signal graph: signals, lazy computeds, effects, owners/disposal, context, batch, untrack, error routing; plus resume/runtime ABI (`_*` exports) the compiler output and `@rivetjs/runtime` rely on. Zero deps.
@@ -80,7 +82,7 @@ Flat by design: one file per public subpath, dev façade beside it. Not converte
 
 ## Commands
 
-- Tests (prod + dev conditions, 334 tests; `tests/selector.test.ts` = keyed selector; `tests/dispatch-defer.test.ts` = deferred first-click flush (predicate, ordering, errors, disposal); `tests/context-frames.test.ts` = frames / memo / catchError through frames / deep owner-first flush; `tests/fuzz.test.ts` = 8 seeds × 300 random graphs × 30 batches vs naive recompute, `tests/errors-depth.test.ts` = C9/C17 regressions, `tests/store-write-guards.test.ts` = C10): `NX_DAEMON=false npx nx run reactivity:test --output-style=static --skip-nx-cache` (= `vitest run --project reactivity --project reactivity-dev`)
+- Tests (prod + dev conditions, 360 tests; `tests/selector.test.ts` = keyed selector; `tests/dispatch-defer.test.ts` = deferred first-click flush (predicate, ordering, errors, disposal); `tests/context-frames.test.ts` = frames / memo / catchError through frames / deep owner-first flush; `tests/fuzz.test.ts` = 8 seeds × 300 random graphs × 30 batches vs naive recompute, `tests/errors-depth.test.ts` = C9/C17 regressions, `tests/store-write-guards.test.ts` = C10): `NX_DAEMON=false npx nx run reactivity:test --output-style=static --skip-nx-cache` (= `vitest run --project reactivity --project reactivity-dev`)
 - Typecheck: `NX_DAEMON=false npx nx run reactivity:typecheck --output-style=static --skip-nx-cache` (= `node scripts/tsc.ts -p libs/reactivity`, tsgo)
 - Zero-cost gate: `sh scripts/zero-cost/check.sh` (`--update` only for intended deltas)
 - Store bench: `node --expose-gc libs/reactivity/bench/store.ts [--samples N] [--json]`

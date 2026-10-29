@@ -338,9 +338,9 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const rootLayoutServer = rootLayout ? Boolean(pageRoutes[0]!.layouts[0]!.server || pageRoutes[0]!.layouts[0]!.inline) : false;
   // The page (layouts are levels around it, see `levelView`).
   // Data-driven: `Page` / `depth` are the matched table row's (see `routeTable`).
-  // Live pages (`export const live = true`) with navigate()/forms in use: `data` is an accessor the
+  // Live pages (`export const live = true`): `data` is an accessor the
   // App refreshes in place on same-URL revalidation (`_serveLive`); hoisted, so the prop stays static.
-  const live = go && mode !== "csr" ? pageRoutes.filter((route) => route.live) : [];
+  const live = mode !== "csr" ? pageRoutes.filter((route) => route.live) : [];
   const pageData = live.length ? "data" : "result.data[depth]";
   const pageView = (): string => {
     const jsx = kit
@@ -520,7 +520,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       shadowed.push([table.routes.slice(0, i).filter((before) => before.page).length + shadowed.length, at(route.pattern)]);
   });
   // Single static page route, server/static mode, nothing navigating in place (Z1): no client router events.
-  const single = mode !== "csr" && pageRoutes.length === 1 && !/[:*]/.test(pageRoutes[0]!.pattern) && !go && !search && !active && !nested;
+  const single = mode !== "csr" && pageRoutes.length === 1 && !/[:*]/.test(pageRoutes[0]!.pattern) && !go && !search && !active && !nested && !live.length;
   // Live pages in a single-level app: the top Router keys on the live slot (search-only navigations of the shown
   // live page refresh it in place); the first navigation entry point starts the key's location sync (`_armLive`).
   const liveTop = live.length > 0 && !nested;
@@ -530,6 +530,11 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const brand = forms ? "_brand(_go)" : "";
   const armed = (call: string): string =>
     nested || active || liveTop || forms ? `(${[brand, nested || active ? "arm()" : "", liveArm].filter(Boolean).join(", ")}, ${call})` : call;
+  const liveImports = live.length
+    ? (go ? "_serveLive, " : "") + "_live, _livePage, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "")
+    : go
+      ? "_serve, "
+      : "";
   const app = [
     HEADER,
     `/// <reference types="vite/client" />`,
@@ -553,7 +558,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
         ]
       : [`import type { BrowserRouter } from "@rivetjs/runtime/router/dom";`]),
-    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${single || mode === "csr" ? "" : "_onStopped, "}${go ? (live.length ? "_serveLive, _live, _livePage, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""} } from "@rivetjs/router/client";`,
+    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${single || mode === "csr" ? "" : "_onStopped, "}${liveImports}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""} } from "@rivetjs/router/client";`,
     `import { ${derived ? "HttpError, " : ""}isHttpError } from "@rivetjs/router";`,
     "",
     "// Route modules as this file renders them (strict-safe whatever props they declare): data comes",

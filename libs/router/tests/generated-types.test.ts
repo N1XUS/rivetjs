@@ -66,6 +66,8 @@ const cases: [string, string, Omit<CodegenOptions, "routesDir" | "outDir">][] = 
   ["in-file server code", "fixture-inline", {}],
   ["nested layouts (levels, kept loaders)", "fixture-nested", {}],
   ["nested layouts with component head and transitions", "fixture-nested", { head: "components", transitions: true }],
+  ["live pages with native links", "fixture-live-nested", { navigate: false }],
+  ["live pages with programmatic navigation", "fixture-live-nested", { navigate: true }],
 ];
 for (const [name, fixture, options] of cases)
   test(`generated code type-checks under strict: ${name}`, async () => {

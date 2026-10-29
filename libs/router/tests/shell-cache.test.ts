@@ -50,7 +50,14 @@ test("shellCut: after the root boundaries tail (boundaries script + the derived 
 
 // A synthetic app: the page streams `shell` + root state tail + one hole (a deferred value) + document end.
 const DEFER = Symbol.for("rivet.defer");
-function app(options: { read?: (event: Parameters<NonNullable<ServerModule["load"]>>[0]) => unknown; locale?: boolean } = {}) {
+function app(
+  options: {
+    read?: (event: Parameters<NonNullable<ServerModule["load"]>>[0]) => unknown;
+    locale?: boolean;
+    beforeRender?: () => Promise<void>;
+    inOrder?: boolean;
+  } = {},
+) {
   const counts = { load: 0, render: 0 };
   const load = (event: Parameters<NonNullable<ServerModule["load"]>>[0]) => (counts.load++, { title: "T", extra: options.read?.(event) });
   const hole = Object.assign(async ({ cookies }: { cookies: { get(name: string): string | undefined } }) => cookies.get("user") ?? "guest", { [DEFER]: true });
@@ -66,6 +73,7 @@ function app(options: { read?: (event: Parameters<NonNullable<ServerModule["load
   const route: AppRoute = { id: "post", pattern: "/post", layouts: [async () => layout], server: async () => page, page: true, keys: ["/"] };
   const render = async (input: RenderInput): Promise<Response> => {
     counts.render++;
+    if (options.beforeRender) await options.beforeRender();
     const nonce = input.nonce ? ` nonce="${input.nonce}"` : "";
     const data = input.data[1] as { title: string };
     const locale = String(input.locals.locale ?? "");
@@ -73,11 +81,12 @@ function app(options: { read?: (event: Parameters<NonNullable<ServerModule["load
       `<!doctype html><html><head><script${nonce} src="/a.js"></script></head><body><h1>${data.title} ${locale}</h1>` +
       `${TAIL}>{}</script><script${nonce}>L</script>`;
     const handle = input.data[0] as PromiseLike<string>;
+    const inOrder = options.inOrder ? await handle : undefined;
     const encoder = new TextEncoder();
     const body = new ReadableStream<Uint8Array>({
       async start(controller) {
         controller.enqueue(encoder.encode(shell));
-        const user = await handle;
+        const user = inOrder ?? (await handle);
         controller.enqueue(encoder.encode(`<template data-a="4">Hello ${user}</template></body></html>`));
         controller.close();
       },
@@ -96,6 +105,18 @@ const get = (
   headers: Record<string, string> = {},
   nonce = "N" + Math.random().toString(36).slice(2, 8),
 ) => handler(new Request("http://x" + path, { headers }), { nonce });
+
+test("a settled deferred loader is safe while the page module loads; consuming it in order still bypasses", async () => {
+  for (const inOrder of [false, true]) {
+    const { rules } = app({ beforeRender: () => new Promise((done) => setTimeout(done, 20)), inOrder });
+    const handler = rules({ "/post": { shell: true } });
+    const response = await get(handler, "/post", { cookie: "user=ann" });
+    assert.equal(response.headers.get("x-rivet-cache"), inOrder ? null : "SHELL-MISS");
+    const html = await response.text();
+    assert.match(html, /Hello ann/);
+    assert.equal(html.includes("self.$rvh="), !inOrder);
+  }
+});
 
 test("store: miss stores, hits skip shell loaders and re-fill nonce slots; holes stay per visitor", async () => {
   const { counts, rules } = app();

@@ -19,6 +19,7 @@ import { resolveCdkSubpath } from "./resolve-subpath.ts";
 
 const cdk = new URL("../", import.meta.url);
 const runtime = [
+  "@rivetjs/runtime/derived-eager",
   "@rivetjs/runtime/server-derived",
   "@rivetjs/runtime/server-resume",
   "@rivetjs/runtime/server",

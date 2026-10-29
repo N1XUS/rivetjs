@@ -332,7 +332,7 @@ Indent rows with `--tree-item-level`, rotate the chevron icon from `isExpanded()
 - Pass `items` as a `computed` or signal.
 - Interactive row content (text fields, inputs) belongs in a function child of `TreeItemContent`: plain JSX passed as item props is evaluated in the collection build pass.
 - `on…Capture` handlers work on resumed pages too, the first event included.
-- Drag and drop: the server renders `draggable` rows and the drag buttons only (no drop indicators); the first key or pointer press on a resumed page renders the tree in the browser and starts the drag in the same input (keyboard and mouse).
+- Drag and drop: the server renders `draggable` rows, drag buttons and their hidden instruction targets (no drop indicators). Each enabled drag button's `aria-describedby` resolves inside its row, and the wording follows the input modality and drag state. The first key or pointer press on a resumed page renders the tree in the browser and starts the drag in the same input (keyboard and mouse).
 
 Known issues: a conditionally rendered row (`{cond() && <TreeItem/>}`) is not added after resume (derive `items` instead); `TreeItem` `onAction` on :kbd[Enter] may not fire (use the Tree `onAction`); signals read inside nested row components during the collection build pass may not update; removing rows logs an error from the removed `TreeItem`; a row does not re-render when only its item's value changes.
 

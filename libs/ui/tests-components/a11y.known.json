@@ -115,12 +115,6 @@
   "/scroll-area light": [
     "scrollable-region-focusable"
   ],
-  "/scroll-shadow-browser dark": [
-    "scrollable-region-focusable"
-  ],
-  "/scroll-shadow-browser light": [
-    "scrollable-region-focusable"
-  ],
   "/select-cold dark": [
     "color-contrast"
   ],

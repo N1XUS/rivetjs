@@ -107,4 +107,10 @@ npm run zero-cost                                       # repo gate: runtime + s
 
 CLI output: sync/migrate accept `--quiet`, `--json`, `--verbose`; help includes commands/options/examples. Exit 0 success, 1 operational failure (missing config/plugin/MCP included), 2 invalid usage. Unknown arguments suggest corrections; exceptions show stacks only with --verbose or DEBUG=rivet. MCP stdio stays protocol-only. Build-only progress comes through compiler `/format`; no runtime/client imports. Tests: `tests/cli-output.test.ts`.
 
+CLI output tests remove inherited `FORCE_COLOR` before setting `NO_COLOR`, so Node's conflicting-color environment warning cannot pollute the stderr assertions on CI.
+
 - CX-PRESS2: co-load chunk recording accepts the explicit `meta.rivetCoload` opt-in for manifest-managed entries, while ordinary and dynamic entries remain fixed; the existing identical-page-set and cycle checks still govern every merge. Coverage: `tests/coload.test.ts`; implementation contract: `build/CLAUDE.md`.
+
+- Live-page SSR: every non-CSR `live = true` page receives the `LivePageProps` data accessor, including native-link apps without navigate/forms usage. Production HTTP and native-link browser A/B coverage: `tests/live-native-ssr.test.ts` (callable data, retained draft and DOM identity); generated strict types cover both navigation settings.
+
+- Shared authentication boundary: layout `onRequest` can reject access before raw page handlers as well as endpoint handlers and loaders. `tests/auth-boundary.test.ts` covers missing/forged synthetic sessions, GET/POST, data requests with `_rivet_keep`, and authenticated locals; a layout guard alone retains the documented later execution order.

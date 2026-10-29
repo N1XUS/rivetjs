@@ -5,18 +5,19 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { expandTail } from "@rivetjs/runtime/resume-format";
+import { libraryScripts, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
 afterAll(async () => s?.close());
 
-const open = async (cookie?: string) => {
+const open = async (cookie?: string, refKind = "panel") => {
   const context = await s.browser.newContext({ viewport: { width: 1000, height: 900 } });
   if (cookie) await context.addCookies([{ name: encodeURIComponent("react-resizable-panels:story"), value: encodeURIComponent(cookie), url: s.origin }]);
   const page = await context.newPage();
   const seen = watch(page);
-  await page.goto(s.origin + "/resizable");
+  await page.goto(s.origin + "/resizable?ref=" + refKind);
   await page.waitForLoadState("networkidle");
   await page.waitForTimeout(500);
   return { page, seen, close: () => context.close() };
@@ -60,8 +61,41 @@ test("server markup: panel sizes from the first byte; separators focusable, no a
 test("cold: nothing boots at load; the panels lay out from the server styles", async () => {
   const { page, seen, close } = await open();
   assert.equal(await page.locator("script[data-boot]").count(), 0, "nothing boots at load");
+  assert.deepEqual(libraryScripts(seen), [], "no library code before the first input");
   assert.equal(await page.locator("#sep-h").getAttribute("aria-valuenow"), null, "no resizable code ran");
+  const tail = expandTail(JSON.parse((await page.locator('script[type="rivet/boundaries"]').textContent())!));
+  const deferredId = Number(await page.locator("#deferred").getAttribute("data-b"));
+  assert.ok(tail.b.find((record) => record[0] === deferredId)![2] & 256, "a group without imperative refs can still defer");
   assert.ok(Math.abs((await width(page, "left")) - 0.3 * ((await width(page, "left")) + (await width(page, "right")) + 8)) < 4);
+  assert.deepEqual(seen.errors, []);
+  await close();
+});
+
+test("cold: the imperative group ref sets the layout on the first click", async () => {
+  const { page, seen, close } = await open(undefined, "group");
+  assert.equal(await page.locator("script[data-boot]").count(), 0);
+  await page.click("#resize-group");
+  await page.waitForFunction(() => Number(document.getElementById("left")!.style.flexGrow) === 20);
+  assert.equal(await grow(page, "right"), 80);
+  assert.deepEqual(seen.errors, []);
+  await close();
+});
+
+test("cold: a plain object panel ref resizes on the first click", async () => {
+  const { page, seen, close } = await open(undefined, "manual");
+  assert.equal(await page.locator("script[data-boot]").count(), 0);
+  await page.click("#resize-manual-ref");
+  await page.waitForFunction(() => Number(document.getElementById("top")!.style.flexGrow) === 20);
+  assert.equal(await grow(page, "bottom"), 80);
+  assert.deepEqual(seen.errors, []);
+  await close();
+});
+
+test("cold: an arbitrary callback panel ref collapses on the first click", async () => {
+  const { page, seen, close } = await open(undefined, "callback");
+  assert.equal(await page.locator("script[data-boot]").count(), 0);
+  await page.click("#collapse");
+  await page.waitForFunction(() => Number(document.getElementById("left")!.style.flexGrow) === 5);
   assert.deepEqual(seen.errors, []);
   await close();
 });

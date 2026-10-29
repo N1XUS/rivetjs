@@ -1,5 +1,7 @@
 # libs/ui/src/components
 
+- Stabilization (2026-10-29): KanbanCardList constructs its persistent empty-state element inside the DropList children slot, preserving server-node identity when the child boundary adopts. Visibility continues to follow the existing CSS `:has()` rule; no list-state watcher is added.
+
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
 AppLayout `contained` forwards to the root SidebarProvider (read once, default false). Consumers supply the frame height and may use content scrolling; it does not add a nested provider or change mobile drawers.

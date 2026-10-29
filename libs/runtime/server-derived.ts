@@ -936,11 +936,12 @@ _trigger.ev = (key) => {
 export function _rListens(type: string): null {
   const ctx = useContext(DERIVED);
   const b = ctx && !ctx.off && current(ctx);
-  // Scroll may be the first interaction and does not bubble: the loader's capture listener must exist before adopt.
+  // Scroll may be the first interaction and does not bubble. Pointer moves must join a held resize gesture too:
+  // capture alone keeps their target stable but cannot queue events the loader does not listen to.
   // Other helper types keep the default-event wake rule (keyup is paired with its cold keydown in the loader).
   if (b) {
     listen(b, type);
-    if (type === "scroll") ctx!.events.add(type);
+    if (type === "scroll" || type === "pointermove") ctx!.events.add(type);
   }
   return null;
 }

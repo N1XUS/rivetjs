@@ -658,8 +658,15 @@ class Run implements ShellRequest {
           : undefined;
         this.release(error);
       }, 0);
-    promise.then(settled, settled);
-    const follows: PromiseLike<unknown> = { then: (ok, fail) => (shellSlots()?.[index] ?? slot.p).then(ok, fail) };
+    let consumed = false;
+    const follows: PromiseLike<unknown> = {
+      then: (ok, fail) => {
+        // A loader can settle while the route module is still loading. Only a render consuming its handle can
+        // wait for deferred data in order; a fulfilled promise alone says nothing about the shell's progress.
+        if (!consumed) ((consumed = true), promise.then(settled, settled));
+        return (shellSlots()?.[index] ?? slot.p).then(ok, fail);
+      },
+    };
     return deferredHandle(follows as Promise<unknown>, dev);
   }
   /** The fill's holes ended: H-holes on when none wrote a signal the retained frames share; else hits replay (named in dev). */

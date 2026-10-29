@@ -57,6 +57,33 @@ const tagged = (page: Page, selectors: string[]): Promise<boolean[]> =>
 const handled = (page: Page, selector: string): Promise<boolean> =>
   page.evaluate((s) => (document.querySelector(s) as unknown as Record<string, unknown>).$$click !== undefined, selector);
 
+test("dev dispose cancels an adoption waiting for its page ready hook", async () => {
+  const served = await files(1, { dev: true });
+  served["/page.js"] += `
+const originalApp = App;
+App = (props) => {
+  globalThis.disposeRuns = (globalThis.disposeRuns ?? 0) + 1;
+  return originalApp(props);
+};
+App.ready = () => new Promise((resolve) => { globalThis.disposeRelease = resolve; });
+`;
+  await withPage(served, async (page) => {
+    await page.goto("http://rivet.test/");
+    await page.dispatchEvent("#inc", "pointerdown");
+    await page.waitForFunction(() => typeof (globalThis as { disposeRelease?: unknown }).disposeRelease === "function");
+    const runs = await page.evaluate(async () => {
+      const runtime = (await import("/rt.js" as string)).default as { m(id: number): Promise<void>; dispose(): void };
+      const pending = runtime.m(1);
+      runtime.dispose();
+      (globalThis as unknown as { disposeRelease(): void }).disposeRelease();
+      await pending;
+      return (globalThis as { disposeRuns?: number }).disposeRuns ?? 0;
+    });
+    assert.equal(runs, 0, "a disposed runtime must not create new component owners after ready settles");
+    assert.equal(await handled(page, "#inc"), false);
+  });
+});
+
 test("server: tail with chunk names, held keys, runtime URL and the derived loader", async () => {
   const html = await serverHtml(3);
   const match = /<script type="rivet\/boundaries" data-rt="\/rt.js" data-fo="\/rt.js \/page.js">(.*?)<\/script><script>\(function\(\)\{/s.exec(html);

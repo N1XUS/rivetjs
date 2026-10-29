@@ -27,6 +27,7 @@ TypeScript language service plugin: Rivet compiler diagnostics, quick fixes, res
 - Every override is wrapped in `guard(prior, …)`: plugin errors are logged (`rivet: internal error`) and TS's own result returned. Never let a plugin bug break the editor.
 - Only active when the project's `jsxImportSource === "@rivetjs/runtime"` and file is a Rivet file (`core.isRivetFile`).
 - Diagnostic codes: `RVn` → tsserver number `70000 + n`, source `rivet` (TS doesn't use that range). Fixes keyed by `FIXABLE_CODES` from language-core.
+- A manifest with `resumeModules` marks the whole app's JSX modules as resumable, including modules absent from those seeds (D2). `tests/plugin.test.ts` verifies RV2001's exact code, error severity and browser-global range in an unlisted module, plus no diagnostic for the same read in a handler.
 - Compiler + core cached per process keyed by wasm path + mtime (`cores`): projects with different `@rivetjs/compiler` installs get their own; a rebuilt wasm reloads. Candidates memoised per project (cleared on config change). Compiler lookup order: `config.compilerWasm` → workspace `@rivetjs/compiler` → bundled `dist/rivet_compiler.wasm`.
 - Use the `ts` passed to `init` (host TypeScript); `typescript` stays external in the bundle.
 - Bundle must run on editors' bundled Node (node18 target, CJS) — no Node ≥ 24-only APIs in `index.ts` or language-core code it bundles.

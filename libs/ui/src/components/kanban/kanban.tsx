@@ -315,16 +315,19 @@ const KanbanCardList = <T,>(props: KanbanCardListProps<T>): JSX.Element => {
   } = props;
   const data = rest.data as unknown;
   const column = typeof data === "function" ? () => String((data as () => unknown)()) : data === undefined ? undefined : String(data);
-  const empty = renderEmptyState ? (
-    <div class={S.empty()} data-slot="kanban-empty">
-      {renderEmptyState()}
-    </div>
-  ) : null;
+  // Construct in the DropList's children slot: an eager node captured from this boundary cannot be adopted by the
+  // child's later run. The empty state still stays mounted; CSS controls its visibility as cards enter and leave.
+  const empty = () =>
+    renderEmptyState ? (
+      <div class={S.empty()} data-slot="kanban-empty">
+        {renderEmptyState()}
+      </div>
+    ) : null;
   if (!selectionMode || selectionMode === "none")
     return (
       <DropList {...(rest as DropListProps<T>)} class={composeSlotClassName(S.cardList, cls)} data-slot="kanban-card-list" data-kanban-column={column as never}>
         {children}
-        {empty}
+        {empty()}
       </DropList>
     );
   const board = useContext(KanbanContext);
@@ -392,7 +395,7 @@ const KanbanCardList = <T,>(props: KanbanCardListProps<T>): JSX.Element => {
       <Provider token={KanbanListContext} value={context}>
         {children as never}
       </Provider>
-      {empty}
+      {empty()}
     </DropList>
   );
 };

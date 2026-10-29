@@ -25,10 +25,17 @@ for (const scheme of ["light", "dark"] as const)
       });
     }, scheme);
     await page.goto(`${s.origin}/visual/theme-swap`, { waitUntil: "networkidle" });
-    // Baseline after the first press: the slider writes its resumed `style` once its code runs (not a swap effect).
+    // The first press defers descendant adoption to idle callbacks. A network-idle event (or a fixed delay) does not
+    // acknowledge it: the Slider can still normalize its server styles after the baseline. Exercise its real binding,
+    // restore the original value, then leave the cards unfocused before comparing swaps.
     await page.click("[data-testid=ts-preset-rivet]");
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(300);
+    await page.locator("#ts-cards input[type=range]").focus();
+    await page.keyboard.press("ArrowRight");
+    await page.waitForFunction(() => document.querySelector("#ts-cards .slider")?.previousElementSibling?.textContent === "1:24");
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForFunction(() => document.querySelector("#ts-cards .slider")?.previousElementSibling?.textContent === "1:23");
+    await page.click("[data-testid=ts-preset-rivet]");
+    await page.waitForFunction(() => !document.querySelector("#ts-cards .slider__thumb")?.hasAttribute("data-focused"));
     const cards = () => page.$eval("#ts-cards", (e) => e.outerHTML);
     const baseline = await cards();
     const look: Record<string, { radius: string; backdrop: string; fieldBorder: string; shadow: string; background: string }> = {};
