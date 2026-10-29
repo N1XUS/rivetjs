@@ -76,10 +76,18 @@ export type ForRowHook = (
   render: (get: () => unknown, at: () => number) => ServerValue,
 ) => ServerValue;
 let rowHook: ForRowHook | null = null;
+const EMPTY = /* @__PURE__ */ Object.freeze({});
 /** Resume ABI: wrap each For row during resumable renders (row regions for browser adoption).
  * The hook renders the row through `render(itemGetter, indexGetter)`. */
 export function _onForRow(fn: ForRowHook): void {
   rowHook = fn;
+}
+/** Resume list hook (ROW-KEYS): called once per For of a resumable render, first (before `each`, empty lists too); its
+ * object is the `list` the row hook gets for each of the For's rows. */
+let listHook: (() => object) | null = null;
+/** @internal `server-derived` installs its list hook. */
+export function _onForList(fn: () => object): void {
+  listHook = fn;
 }
 
 /** Incremental list hook (`@rivetjs/runtime/server-incr`, lane INCR2): the list's rows (`undefined`: render them as usual).
@@ -169,6 +177,8 @@ function forRows<T, K>(
   $list: readonly [ListPlan, (tape: unknown[], base: number, item: T, index: number) => void] | undefined,
   $incr?: unknown,
 ): unknown {
+  // The list's place among its unit's lists (ROW-KEYS), first: as the browser counts its `_for` calls.
+  const instance = rowHook !== null && listHook !== null ? listHook() : null;
   // A value (live-props getter, `each={xs()}`) or an accessor (`each={xs}`).
   const items = typeof each === "function" ? each() : each;
   if (!Array.isArray(items)) throw new TypeError("For each must return an array (or be one)");
@@ -216,11 +226,10 @@ function forRows<T, K>(
     if (keys.has(key)) throw new Error("Duplicate For key");
     keys.add(key);
   }
-  const instance = {},
-    list = [...keys],
+  const list = [...keys],
     render = (get: () => unknown, at: () => number) => children(get as () => T, at);
   const rows: unknown[] = new Array(items.length);
-  for (let index = 0; index < items.length; index++) rows[index] = hook(instance, items[index], list[index], index, render);
+  for (let index = 0; index < items.length; index++) rows[index] = hook(instance ?? EMPTY, items[index], list[index], index, render);
   return rows;
 }
 

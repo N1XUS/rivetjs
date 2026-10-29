@@ -46,7 +46,7 @@ import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { ATTRIBUTE, COMPILED, compiledTemplate, template, MARK_CHAIN, _attributeRecord, _markFragments } from "./template.ts";
 import type { AttributeRecord, TemplateRecord } from "./template.ts";
-import { CONSTANT, For, _forIncr, _forKeys, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
+import { CONSTANT, For, _forIncr, _forKeys, _onBranch, _onForList, _onForRow, _scopedRecord } from "./server-structural.ts";
 import type { ConstantGetter } from "./server-structural.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
 import { _onSlot } from "./slot.ts";
@@ -141,7 +141,7 @@ export interface Boundary {
    * order (`NO_SIGNALS`, shared and frozen, until the first). */
   signals: [key: string, value: () => unknown, init?: unknown, json?: string][];
   /** Occurrences per key once the unit registered many (a site registering twice in one boundary gets `key#2`, `key#3`, …;
-   * `register`), else null. */
+   * `register`; keyed state of its lists' rows counts per row, ROW-KEYS), else null. */
   keys: Map<string, number> | null;
   /** `_rBAttr` ran: the element root carries `data-b`, `_rBOut` writes no comment pair. */
   attr: boolean;
@@ -160,6 +160,8 @@ export interface Boundary {
   made: number;
   weight: number;
   mark: number;
+  /** ROW-KEYS: `<For>`s started in its unit outside every row of it (their place names their rows' keyed state). */
+  lists: number;
   /** `COND` boundaries: a read in its unit of a source that can change from outside its subtree (`note`). */
   hot?: boolean;
   /** A boundary below it keeps its record (flush). */
@@ -252,6 +254,11 @@ export interface DerivedRender {
   verified: unknown[] | null;
   /** `_rData`'s payload until `settle` checks it (the first flush that writes records). */
   pending: object | null;
+  /** ROW-KEYS: the row being rendered (synchronously, or a slot made in it): its list (null: none), place, state once
+   * something asked for it (`liveRow`). */
+  rl: RowList | null;
+  rk: number;
+  rs: Row | null;
 }
 
 /** H-holes (DERIVED-C3): what a fill's derived recorder retains for hits (`ShellHoles.derived`). */
@@ -369,6 +376,9 @@ export function createDerived(): DerivedRender {
     held: null,
     verified: null,
     pending: null,
+    rl: null,
+    rk: 0,
+    rs: null,
   };
 }
 
@@ -534,13 +544,29 @@ _onBranch((pick, _keyed, render) => {
   const recorder = store.getStore();
   return recorder && !recorder.held ? compiledTemplate(REGION, [recorder.next++, render(key, get)]) : render(key, get);
 });
-_onForRow((_list, item, _key, index, render) => {
+_onForRow((list, item, _key, index, render) => {
   const get: ConstantGetter<unknown> = () => item;
   get[CONSTANT] = item;
   const at: ConstantGetter<number> = () => index;
   at[CONSTANT] = index;
   const recorder = store.getStore();
-  return recorder ? compiledTemplate(REGION, [recorder.next++, render(get, at)]) : render(get, at);
+  if (!recorder) return render(get, at);
+  const id = recorder.next++,
+    ctx = (list as RowList).x;
+  if (ctx === undefined) return compiledTemplate(REGION, [id, render(get, at)]);
+  const rl = ctx.rl,
+    rk = ctx.rk,
+    rs = ctx.rs;
+  ctx.rl = list as RowList;
+  ctx.rk = index;
+  ctx.rs = null;
+  try {
+    return compiledTemplate(REGION, [id, render(get, at)]);
+  } finally {
+    ctx.rl = rl;
+    ctx.rk = rk;
+    ctx.rs = rs;
+  }
 });
 // Content held in place (an `ErrorBoundary`'s content, and the slots / awaited `Async` content made while it evaluates):
 // its branches render plainly.
@@ -557,7 +583,11 @@ const held =
   };
 _onSlot((fn) => {
   const recorder = store.getStore();
-  return recorder?.held ? held(recorder, fn) : fn;
+  if (recorder === undefined) return fn;
+  // Made in a row (ROW-KEYS): rendered later, as part of that row.
+  const row = recorder.derived.rl === null ? null : liveRow(recorder.derived);
+  if (row !== null) fn = inRow(recorder.derived, row, fn);
+  return recorder.held ? held(recorder, fn) : fn;
 });
 _onAsyncContent(() => {
   const recorder = store.getStore();
@@ -759,6 +789,7 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
     made: 0,
     weight: 0,
     mark: 0,
+    lists: 0,
   };
   if (events) {
     const parsed = eventsOf(events);
@@ -1022,13 +1053,21 @@ export function _rBAttr(token: Boundary | null): ServerValue {
 }
 
 // Its wire key (`key`, a repeat in the same unit `key#2`, `key#3`, …). A unit registers a handful of keys: counted by a scan
-// of its list (no Map per boundary); a unit holding many (rows of a component that is not a boundary) counts by a Map.
+// of its list (no Map per boundary); a unit holding many counts by a Map. Made in a row of one of the unit's lists
+// (ROW-KEYS, `rowOf`): `key@<row path>`, repeats counted in that row — the browser adopts a lazy row in a run of its own,
+// which counts from 1 (before, the server counted across the rows: the second row took the first row's value).
 function register(owner: Boundary, key: string, value: () => unknown, flags?: number, init?: unknown): string {
   let list = owner.signals;
   if (list === NO_SIGNALS) owner.signals = list = [];
   let n = 1;
-  const keys = owner.keys;
-  if (keys !== null) keys.set(key, (n = (keys.get(key) ?? 0) + 1));
+  const row = owner.x.rl === null ? null : rowOf(owner),
+    keys = owner.keys;
+  if (row !== null) {
+    const counts = row.keys;
+    if (counts === null) row.keys = key;
+    else if (typeof counts === "string") (row.keys = new Map([[counts, 1]])).set(key, (n = counts === key ? 2 : 1));
+    else counts.set(key, (n = (counts.get(key) ?? 0) + 1));
+  } else if (keys !== null) keys.set(key, (n = (keys.get(key) ?? 0) + 1));
   else {
     for (let i = 0; i < list.length; i++) {
       const e = list[i]![0];
@@ -1045,7 +1084,8 @@ function register(owner: Boundary, key: string, value: () => unknown, flags?: nu
       counts.set(key, n);
     }
   }
-  const k = n > 1 ? key + "#" + n : key;
+  const base = row === null ? key : key + "@" + rowPath(row),
+    k = n > 1 ? base + "#" + n : base;
   // `LIT` / `DOMREAD`: the init rides along (identity-compared at the flush); DEV snapshots a `LIT` object init to catch
   // in-place mutation.
   list.push(
@@ -1057,6 +1097,62 @@ function register(owner: Boundary, key: string, value: () => unknown, flags?: nu
   );
   return k;
 }
+
+// ---- Row keys (ROW-KEYS, 2026-10-29) ----
+// The browser adopts a list's rows lazily, each in a run of its own (`dom-derived.ts` `materialiseRow`), and its boundary's
+// run skips them: keyed state made in a row is named by the row's place — `<list>_<row>` per level (`<row>` alone for a
+// unit's first list), `.` between nested rows' levels — and counted per row; the unit's own keys never count a row's. A
+// list's place: the `<For>`s started before it in the same unit, in that row (else outside every row of it), counted at
+// the For's start as the browser counts its `_for` calls. The row being rendered is render state (`ctx.rl` / `rk`, set
+// around each row's synchronous render: no allocation per row); a slot made in a row renders later, after the row
+// returned, re-entering it (`_onSlot`). Its state (`Row`) is made once something in it asks (`liveRow`).
+/** A list started in a boundary's unit (`_onForList`): its rows' path before the row's place (the enclosing row's path +
+ * ".", then `<j>_` for the unit's list `j` > 0). */
+interface RowList {
+  b: Boundary;
+  at: string;
+  x: DerivedRender;
+}
+/** A row's state: its lists so far and its keys (none, its first — most rows register one —, then counts by key). */
+interface Row {
+  l: RowList;
+  k: number;
+  lists: number;
+  keys: string | Map<string, number> | null;
+}
+const NOT_LISTED = /* @__PURE__ */ Object.freeze({});
+const liveRow = (ctx: DerivedRender): Row => (ctx.rs ??= { l: ctx.rl!, k: ctx.rk, lists: 0, keys: null });
+/** The row (of one of `owner`'s lists) being rendered, else null: a row of an outer boundary's list is not this unit's. */
+const rowOf = (owner: Boundary): Row | null => (owner.x.rl !== null && owner.x.rl.b === owner ? liveRow(owner.x) : null);
+const rowPath = (row: Row): string => row.l.at + row.k;
+/** A For of a derived render starts (`_onForList`, `_rFor`): its place in the current boundary's unit, else not listed. */
+function listStart(): object {
+  const ctx = useContext(DERIVED),
+    b = ctx && current(ctx);
+  if (!ctx || !b || b.id < ctx.base || ctx.off) return NOT_LISTED;
+  const parent = rowOf(b),
+    j = parent === null ? b.lists++ : parent.lists++;
+  return { b, at: (parent === null ? "" : rowPath(parent) + ".") + (j ? j + "_" : ""), x: ctx };
+}
+_onForList(listStart);
+/** `fn` (a slot made in `row`) runs in that row. */
+const inRow =
+  <T>(ctx: DerivedRender, row: Row, fn: () => T) =>
+  (): T => {
+    const rl = ctx.rl,
+      rk = ctx.rk,
+      rs = ctx.rs;
+    ctx.rl = row.l;
+    ctx.rk = row.k;
+    ctx.rs = row;
+    try {
+      return fn();
+    } finally {
+      ctx.rl = rl;
+      ctx.rk = rk;
+      ctx.rs = rs;
+    }
+  };
 
 function wake(ctx: DerivedRender, id: string, reader: number): void {
   let set = ctx.wake.get(id);
@@ -1899,6 +1995,8 @@ export function _rFor(props: ForProps): ServerValue {
 }
 function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx: DerivedRender): unknown {
   const { each, by, children } = props;
+  // Its place among the unit's lists (ROW-KEYS), first: as `For` counts it.
+  const listed = listStart();
   const items = typeof each === "function" ? (each as () => readonly unknown[])() : each;
   if (!Array.isArray(items)) throw new TypeError("For each must return an array (or be one)");
   const incr = props.$incr !== undefined ? _forIncr() : null;
@@ -1914,25 +2012,51 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
   }
   const plain = Object.getPrototypeOf(items) === Array.prototype,
     dense = _forKeys(items, by as (item: unknown, index: number) => unknown, true) && plain;
-  // A plain dense array: one list over the marked plan (`_list` keeps `.map`'s observable reads: Get map / length /
-  // constructor, then each index).
-  if (dense) {
-    const marked = rowPlan($list[0]),
-      list = _list(items, noRow, marked, $list[1] as (tape: unknown[], base: number, item: unknown, index: number) => void);
-    return ctx.dom !== null && items.length ? derivedDom.api!.list(ctx.dom, items, $list[0], marked, list) : list;
+  // Each row renders as row `index` of this list (ROW-KEYS; none for a list outside every unit): the list is render state
+  // for the whole loop (a nested list puts back what it found), each row resets the row's state.
+  const rl = ctx.rl,
+    rk = ctx.rk,
+    rs = ctx.rs;
+  ctx.rl = listed === NOT_LISTED ? null : (listed as RowList);
+  try {
+    // A plain dense array: one list over the marked plan (`_list` keeps `.map`'s observable reads: Get map / length /
+    // constructor, then each index).
+    if (dense) {
+      const fill = $list[1] as (tape: unknown[], base: number, item: unknown, index: number) => void,
+        marked = rowPlan($list[0]),
+        list = _list(
+          items,
+          noRow,
+          marked,
+          listed === NOT_LISTED
+            ? fill
+            : (tape, base, item, index) => {
+                ctx.rk = index;
+                ctx.rs = null;
+                fill(tape, base, item, index);
+              },
+        );
+      return ctx.dom !== null && items.length ? derivedDom.api!.list(ctx.dom, items, $list[0], marked, list) : list;
+    }
+    // Holes / subclasses: row by row, each between its row region markers (as the resume row hook writes them).
+    const rows: ServerValue[] = new Array(items.length);
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      ctx.rk = index;
+      ctx.rs = null;
+      rows[index] = compiledTemplate(ROW, [
+        (children as (get: () => unknown, at: () => number) => ServerValue)(
+          () => item,
+          () => index,
+        ),
+      ]) as unknown as ServerValue;
+    }
+    return rows;
+  } finally {
+    ctx.rl = rl;
+    ctx.rk = rk;
+    ctx.rs = rs;
   }
-  // Holes / subclasses: row by row, each between its row region markers (as the resume row hook writes them).
-  const rows: ServerValue[] = new Array(items.length);
-  for (let index = 0; index < items.length; index++) {
-    const item = items[index];
-    rows[index] = compiledTemplate(ROW, [
-      (children as (get: () => unknown, at: () => number) => ServerValue)(
-        () => item,
-        () => index,
-      ),
-    ]) as unknown as ServerValue;
-  }
-  return rows;
 }
 
 // ---- Incremental lists (lane INCR2, `@rivetjs/runtime/server-incr`) ----

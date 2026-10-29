@@ -147,26 +147,6 @@ export const pins: FuzzPin[] = [
     "cdk",
     "GridList rows: the server writes aria-labelledby = row id + description slot id (`grid-list/row.ts` slotRef: the slot id on the server), a client render none when no Text slot=description renders",
   ),
-  // FUZZ-UI 2026-10-29 (3/3 runs): keyed signals (`resumedId`, cdk utils/resumed-id.tsx) inside lazy `For` rows of a
-  // component without its own boundary (RadioButtonGroup `items` rows, story `#sh-rbg`) count from 1 in each row's adopt
-  // run, while the server numbers them across the boundary's rows (K, K#2): the second row adopts the first row's id.
-  {
-    ...pin(
-      "/pro-forms",
-      "mismatch",
-      'resumed only [aria-describedby="#15"] / csr only [aria-describedby="#16"]',
-      "runtime",
-      "first click: a lazy row's keyed id signals restart their count per row on the client (server numbers them across the boundary), ids shift by one (#15 vs #16)",
-    ),
-    step: 1,
-  },
-  pin(
-    "/pro-forms",
-    "mismatch",
-    'resumed only [data-rv-focus-scope="#21"] / csr only [data-rv-focus-scope="#22"]',
-    "runtime",
-    "follows the shifted row ids (above): the Website menu's focus scope id (steps 27 / 29 / 36 / 39)",
-  ),
   { ...pin("/file-tree", "recreated", "svg, path", "cdk", "Tree rows (lucide icons in TreeItemContent) " + NO_REGION), step: 1 },
   {
     route: "/lightbox",

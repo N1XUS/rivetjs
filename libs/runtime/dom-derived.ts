@@ -175,6 +175,9 @@ interface Unit {
   sus: boolean;
   /** Plain signals made so far (DERIVED-C4: numbered as the server did, `_dsignal`). */
   made: number;
+  /** ROW-KEYS: the row this run renders (`"<list>_<row>"` per level, `server-derived.ts` "Row keys"; "" outside every row):
+   * its keyed state is `key@<path>`, counted per row (`counts` by that name; `"[<path>"`: the row's `_for` calls). */
+  path: string;
 }
 /**
  * A list adopted lazily (DERIVED-C: O(1) at adopt): no row object, no client `_for` until needed — its slot keeps the
@@ -207,10 +210,14 @@ interface Lazy {
    * holds) after a row's adopt run met no hole (child boundary, list) and no keyed state; null until a row ran.
    */
   plain: RowPlanCache | null | false;
+  /** ROW-KEYS: its rows' path before the row's place (`rowsAt`). */
+  at: string;
 }
 interface LRow extends ForRow {
   lz: Lazy;
   done: boolean;
+  /** Its server row (place among the server's rows: names its keyed state). */
+  at: number;
   /** Keyed row writers: the row's elements each writer's element captures resolve to (null: not resolved yet). */
   els: (Element | null)[] | null;
   /** Its item getter for the writers (the list's `read` bound to the row). */
@@ -344,7 +351,24 @@ const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []):
   all: false,
   sus: false,
   made: 0,
+  path: "",
 });
+// A unit's wire key for its next keyed value under `key` (the server's `register`): `key`, repeats `key#2`, …; in a row
+// `key@<path>` (ROW-KEYS).
+function keyOf(u: Unit, key: string): string {
+  const base = u.path ? key + "@" + u.path : key,
+    n = (u.counts.get(base) ?? 0) + 1;
+  u.counts.set(base, n);
+  return n > 1 ? base + "#" + n : base;
+}
+// A list's rows' path before their place: the enclosing row's path + ".", then its own place among the unit's lists
+// (`<j>_`, none for the first) — counted in every run of the unit, as the server counts its Fors.
+function rowsAt(u: Unit): string {
+  const at = "[" + u.path,
+    j = u.counts.get(at) ?? 0;
+  u.counts.set(at, j + 1);
+  return (u.path && u.path + ".") + (j ? j + "_" : "");
+}
 const report = (error: unknown): void => (api ? api.f(error) : console.error(error));
 
 /**
@@ -394,9 +418,7 @@ function sig<T>(key: string, init?: T, options?: EqualsOptions<T>): Signal<T> {
     rec = u?.rec,
     make = (DEV && _adoption.signal) || signal;
   if (!u || !rec) return make(init as T, options);
-  const n = (u.counts.get(key) ?? 0) + 1;
-  u.counts.set(key, n);
-  const k = n > 1 ? key + "#" + n : key;
+  const k = keyOf(u, key);
   const s = make((rec.values.has(k) ? rec.values.get(k) : init) as T, options);
   const e: Keyed = { fors: null, wake: tail?.w?.[rec.id + "." + k], rows: null };
   const get = function () {
@@ -427,9 +449,7 @@ function sigStore<T extends object>(key: string, init: T): Store<T> {
   const u = cur,
     rec = u?.rec;
   if (!u || !rec) return createStore(init);
-  const n = (u.counts.get(key) ?? 0) + 1;
-  u.counts.set(key, n);
-  const k = n > 1 ? key + "#" + n : key;
+  const k = keyOf(u, key);
   return createStore((rec.values.has(k) ? rec.values.get(k) : init) as T);
 }
 
@@ -512,7 +532,9 @@ function before(e: Keyed): void {
 // lazy weeks on the old tab stop).
 function forHook(props: { each: unknown; by: unknown; children: (item: () => never, index: () => number) => unknown }): (() => Node[]) | undefined {
   const u = cur;
-  if (u === null || u.mode === CLIENT || inner || u.all) return undefined;
+  if (u === null || inner) return undefined;
+  const at = rowsAt(u);
+  if (u.mode === CLIENT || u.all) return void (u.rec && rowScoped(u, props, at));
   const items = untrack(() => {
     const each = props.each;
     return ((typeof each === "function" ? (each as () => unknown)() : each) ?? []) as unknown[];
@@ -541,6 +563,7 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
     rec: u.rec,
     woken: false,
     plain: null,
+    at,
   };
   _adoption.keep!.add(lazy.token);
   if (hole.sole) listsIn.set(hole.sole, lazy);
@@ -563,6 +586,24 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
     lazy.real ??= realFor(lazy);
     return lazy.real();
   };
+}
+// A list whose rows render in the run (a unit rendered in the browser, a row sample run's nested list): each row the run
+// renders (`cur` still the unit) counts its keyed state as a row of its own, as the server named it (ROW-KEYS). Rows are
+// built in item order by the list's first pass; rows built later run outside the unit (plain signals).
+function rowScoped(u: Unit, props: { children: (item: () => never, index: () => number) => unknown }, at: string): void {
+  const children = props.children;
+  let next = 0;
+  const row = (item: () => never, index?: () => number): unknown => {
+    if (cur !== u) return children(item, index!);
+    const path = u.path;
+    u.path = at + next++;
+    try {
+      return children(item, index!);
+    } finally {
+      u.path = path;
+    }
+  };
+  props.children = children.length > 1 ? row : (item: () => never) => row(item);
 }
 // `Async` in a unit's runs (`_adoption.async`, DERIVED-C2): one the server streamed or awaited (tail `a`, by the unit's key
 // and the place among its `Async`s with a fallback — or any app `<Async>`, M6-PARITY task 4 — as the server counted them)
@@ -720,6 +761,7 @@ function rowsOf(lazy: Lazy): LRow[] {
 function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unknown, index: number) => unknown) | undefined, indexed: boolean): LRow {
   const item = lazy.items[k];
   const row: LRow = {
+    at: k,
     value: item,
     key: by ? by(item, k) : item,
     sig: null,
@@ -1146,7 +1188,7 @@ function controlsOf(map: Map<Node, Node>): Element[] {
  * Adopt one unit (a boundary's body, a standalone component run, a lazy row): `run` over the live nodes strictly between
  * `start` and `end`, under a new root of `parent`; `rec` keys its `_sig` calls. Returns the unit's root.
  */
-function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: Node, rec: Rec | null, self: boolean, label: string): Owner | null {
+function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: Node, rec: Rec | null, self: boolean, label: string, path = ""): Owner | null {
   shape = -1;
   adopted = true;
   // UNKEYED (a keyed value was not data, left out of the record): adopted anyway — that signal starts from the browser's
@@ -1165,6 +1207,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
     inline: Set<number> | null = null;
   for (;;) {
     pu = unit(PROBE, rec, self);
+    pu.path = path;
     pu.inline = inline;
     pu.row = label === "row";
     cur = pu;
@@ -1185,7 +1228,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
     if (DEV)
       DEV.adopt(label + (rec ? " (b" + rec.id + ")" : ""), "a load suspended a <Suspense> (Suspense content renders in the browser on the derived model)");
     _dispose(probe.owner);
-    return client(parent, run, start, end, rec, self);
+    return client(parent, run, start, end, rec, self, path);
   }
   const fresh = kids(probe.frag);
   fresh.pop(); // the anchor
@@ -1216,7 +1259,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   if (a.fail || (DEV && a.first !== null)) {
     if (DEV) DEV.adopt(label + (rec ? " (b" + rec.id + ")" : ""), a.first ?? "markup");
     _dispose(probe.owner);
-    return client(parent, run, start, end, rec, self);
+    return client(parent, run, start, end, rec, self, path);
   }
   // 3. Answers: per creation its live node, per slot what it holds (holes: the server nodes they stand for).
   const one = (n: Node): Node[] => a.span.get(n) ?? [map.get(n) ?? n];
@@ -1258,6 +1301,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   const dirty = dirtyOf(controlsOf(map));
   // 4. Adopt: the run again, every creation returns its live node; holes take their server nodes.
   const au = unit(ADOPT, rec, self, pu.holes);
+  au.path = path;
   au.row = pu.row;
   au.inline = inline;
   let owner: Owner | null;
@@ -1283,7 +1327,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
 
 // Render the unit in the browser in place of its server nodes (mismatch, a value that did not ship). Its own keyed
 // state keeps the record's values; child boundaries render as plain client components.
-function client(parent: Owner | null, run: () => unknown, start: Node, end: Node, rec: Rec | null, self: boolean): Owner | null {
+function client(parent: Owner | null, run: () => unknown, start: Node, end: Node, rec: Rec | null, self: boolean, path = ""): Owner | null {
   if (DOM_DATA && domReader) domReader.sweep();
   const old = between(start, end),
     held = addresses(old);
@@ -1294,6 +1338,7 @@ function client(parent: Owner | null, run: () => unknown, start: Node, end: Node
   const previous = cur,
     holder = { owner: null as Owner | null },
     u = (cur = unit(CLIENT, rec, self));
+  u.path = path;
   try {
     untrack(() => _rootIn(parent, () => _insert(null, run(), end), holder));
   } finally {
@@ -1409,6 +1454,7 @@ function sampleRow(lazy: Lazy, k: number): Sampled | null {
   frag.append(anchor);
   cur = unit(PROBE, lazy.rec, false);
   cur.row = true;
+  cur.path = lazy.at + k;
   // Child boundaries in the row run inline (a probe makes them holes): their bindings' reads are the row's too.
   cur.all = true;
   collector = out.outside;
@@ -1690,7 +1736,7 @@ function materialiseRow(row: LRow): void {
   try {
     if (lazy.plain) row.owner = _adoptRow(lazy.owner, (fn) => fn(), run, row.start!, row.end!, null, lazy.plain);
     else {
-      row.owner = adoptUnit(lazy.owner, run, row.start!, row.end!, lazy.rec, false, "row");
+      row.owner = adoptUnit(lazy.owner, run, row.start!, row.end!, lazy.rec, false, "row", lazy.at + row.at);
       if (lazy.plain === null) lazy.plain = shape === 0 ? {} : false;
     }
   } catch (error) {
@@ -2506,9 +2552,7 @@ const runtime: DerivedRuntime = {
       const u = cur,
         rec = u?.rec;
       if (!u || !rec) return undefined;
-      const n = (u.counts.get("$r") ?? 0) + 1;
-      u.counts.set("$r", n);
-      const seed = rec.values.get(n > 1 ? "$r#" + n : "$r") as { j?: { t: unknown[]; r: number } } | undefined,
+      const seed = rec.values.get(keyOf(u, "$r")) as { j?: { t: unknown[]; r: number } } | undefined,
         j = seed?.j;
       // A seed that is not JSON data ships as its resume table (DERIVED-GAPS 03): decoded with the router `Root`'s decoder.
       return j ? (_tableDecoder ? _tableDecoder(j.t).get(j.r) : { x: 1 }) : seed;
