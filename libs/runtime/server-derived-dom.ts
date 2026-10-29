@@ -49,17 +49,24 @@ export function _domSlots(plan: Pick<ListPlan, "fragments" | "attributes">): [sl
   }
   return out.length ? out : null;
 }
-type TapeList = { plan: ListPlan; tape: unknown[]; rows: number; constructor: new (plan: ListPlan, tape: unknown[], rows: number) => unknown };
+type TapeList = {
+  plan: ListPlan;
+  tape: unknown[];
+  rows: number;
+  start: number;
+  constructor: new (plan: ListPlan, tape: unknown[], rows: number, start?: number) => unknown;
+};
 function domList(dom: DomList[], items: readonly unknown[], plan: ListPlan, marked: ListPlan, value: unknown): unknown {
   const list = value as TapeList,
     slots = domSlots(plan);
-  if (slots === null || list === null || typeof list !== "object" || list.plan !== marked || list.rows !== items.length) return value;
+  if (slots === null || list === null || typeof list !== "object" || list.plan !== marked || list.start !== 0 || list.rows !== items.length) return value;
   const n = dom.length,
     width = marked.attributes.length;
   dom.push({ items, tape: list.tape, width, slots, n, done: false });
-  const List = list.constructor,
-    rows = [new List(firstPlan(marked, n), list.tape.slice(0, width), 1), new List(marked, list.tape.slice(width), list.rows - 1)];
-  return rows;
+  // Both halves share the tape (row 0 / rows 1..): no copy of the rows' captures (SSR-MEM: the slice was ~10 KB per
+  // 100-row page, a tenth of the resumable bench page's allocation).
+  const List = list.constructor;
+  return [new List(firstPlan(marked, n), list.tape, 1), new List(marked, list.tape, list.rows, 1)];
 }
 // Row 0's plan per (marked plan, anchor number): one object per process, so the byte writers' per-plan caches (encoded
 // fragments, the row emitter's table) hold across requests instead of re-encoding the row template per render.

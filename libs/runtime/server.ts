@@ -130,7 +130,9 @@ export interface ListRecord {
   readonly [LIST]: true;
   readonly plan: ListPlan;
   readonly tape: unknown[];
+  /** Rows `start..rows` of the tape are this list's (a split list shares one tape: server-derived-dom.ts). */
   readonly rows: number;
+  readonly start: number;
 }
 /** Structural view of a formed value, read through its private brands. */
 type Branded = {
@@ -426,11 +428,13 @@ class List {
   declare plan: ListPlan;
   declare tape: unknown[];
   declare rows: number;
-  constructor(plan: ListPlan, tape: unknown[], rows: number) {
+  declare start: number;
+  constructor(plan: ListPlan, tape: unknown[], rows: number, start = 0) {
     this[LIST] = true;
     this.plan = plan;
     this.tape = tape;
     this.rows = rows;
+    this.start = start;
   }
 }
 _forListMount(_list as Parameters<typeof _forListMount>[0]);
@@ -628,8 +632,11 @@ function renderCore(value: unknown, writer: Sink, signal: AbortSignal | undefine
       // so repeated parent/child visits do not rescan every row's captures.
       if (admitted.has(value)) return;
       admitted.add(value);
-      const tape = (value as ListRecord).tape;
-      for (let i = 0; i < tape.length; i++) {
+      const list = value as ListRecord,
+        tape = list.tape,
+        width = list.plan.attributes.length,
+        end = Math.min(tape.length, list.rows * width);
+      for (let i = list.start * width; i < end; i++) {
         const slot = tape[i];
         if (slot !== null && (typeof slot === "object" || typeof slot === "function")) admit(slot);
       }
@@ -1443,7 +1450,7 @@ function renderCore(value: unknown, writer: Sink, signal: AbortSignal | undefine
       if (translated && (value as Branded)[VARIANTS] !== undefined) value = variantRecord(value as TemplateRecord, variant);
       return recordSequence(value as TemplateRecord, null, 0, owner, (value as TemplateRecord).slots.length * 2 + 1);
     }
-    if ((value as Branded)[LIST]) return listSequence(value as ListRecord, owner, 0);
+    if ((value as Branded)[LIST]) return listSequence(value as ListRecord, owner, (value as ListRecord).start);
     if ((value as Branded)[ATTRIBUTE]) {
       const attributeValue = (value as AttributeRecord).value;
       if (writeInteger && typeof attributeValue === "number" && safeInteger(attributeValue)) {
