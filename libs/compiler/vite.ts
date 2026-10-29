@@ -2411,7 +2411,7 @@ function rivetPlugin(
       sourceMap = serve || Boolean(config.build?.sourcemap);
       root = config.root ?? root;
       base = config.base ?? "/";
-      comptimeCache = config.cacheDir;
+      comptimeCache = rivetCacheDir(); // `<root>/comptime/`; never the Vite cacheDir (Tailwind scans the app dir)
       routeSet = null;
       // Outside the project (`rivetCacheDir`): Tailwind scans the app dir, cache files there became utilities.
       setCallCache(compileCache ? join(rivetCacheDir(), "compile") : null);

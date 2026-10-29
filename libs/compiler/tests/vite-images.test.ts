@@ -1,6 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import sharp from "sharp";
@@ -10,9 +11,15 @@ import { rivet } from "../vite.ts";
 async function project() {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-images-"));
-  await sharp({ create: { width: 1600, height: 900, channels: 3, background: { r: 30, g: 120, b: 200 } } }).jpeg().toFile(resolve(root, "photo.jpg"));
-  await sharp({ create: { width: 200, height: 100, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0.3 } } }).png().toFile(resolve(root, "logo.png"));
-  await sharp({ create: { width: 800, height: 400, channels: 3, background: "#123456" } }).jpeg().toFile(resolve(root, "server-only.jpg"));
+  await sharp({ create: { width: 1600, height: 900, channels: 3, background: { r: 30, g: 120, b: 200 } } })
+    .jpeg()
+    .toFile(resolve(root, "photo.jpg"));
+  await sharp({ create: { width: 200, height: 100, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0.3 } } })
+    .png()
+    .toFile(resolve(root, "logo.png"));
+  await sharp({ create: { width: 800, height: 400, channels: 3, background: "#123456" } })
+    .jpeg()
+    .toFile(resolve(root, "server-only.jpg"));
   await writeFile(resolve(root, "icon.svg"), '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"/>');
   await writeFile(
     resolve(root, "view.tsx"),
@@ -22,7 +29,10 @@ import logo from "./logo.png?layout=fixed&width=100&image";
 import Icon from "./icon.svg?jsx";
 export default () => <main><ImagePreload image={photo}/><Picture image={photo} alt="photo" priority/><Picture image={logo} alt=""/><Icon alt="icon"/></main>;`,
   );
-  await writeFile(resolve(root, "client.tsx"), 'import { mount } from "@rivetjs/runtime/dom"; import App from "./view.tsx"; mount(App, document.querySelector("#app")!);');
+  await writeFile(
+    resolve(root, "client.tsx"),
+    'import { mount } from "@rivetjs/runtime/dom"; import App from "./view.tsx"; mount(App, document.querySelector("#app")!);',
+  );
   await writeFile(
     resolve(root, "server.tsx"),
     `import { renderToString } from "@rivetjs/runtime/server";
@@ -34,7 +44,8 @@ export const render = () => renderToString(() => [App(), Picture({ image: only, 
   await writeFile(resolve(root, "index.html"), '<!doctype html><div id="app"></div><script type="module" src="/client.tsx"></script>');
   return root;
 }
-const urls = (html: string) => [...html.matchAll(/(?:src|srcset|imagesrcset)="([^"]+)"/g)].flatMap((m) => m[1]!.split(/,\s+/).map((part) => part.split(/\s+/)[0]!));
+const urls = (html: string) =>
+  [...html.matchAll(/(?:src|srcset|imagesrcset)="([^"]+)"/g)].flatMap((m) => m[1]!.split(/,\s+/).map((part) => part.split(/\s+/)[0]!));
 const appConfig = (root: string, extra: Partial<InlineConfig> = {}): InlineConfig => ({
   root,
   configFile: false,
@@ -63,7 +74,10 @@ test("app build: every URL in SSR HTML exists in client output, incl. server-onl
     const referenced = urls(html);
     assert.ok(referenced.length > 20);
     for (const url of referenced) assert.ok(assets.has(url), `missing ${url}`);
-    assert.ok([...assets].some((a) => /server-only-800-.*\.avif$/.test(a)), "server-only image emitted by client build");
+    assert.ok(
+      [...assets].some((a) => /server-only-800-.*\.avif$/.test(a)),
+      "server-only image emitted by client build",
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -79,7 +93,13 @@ test("rebuild hits the encode cache; separate builds warn about server-only imag
     const warnings: string[] = [];
     const logger = createLogger("warn");
     logger.warn = (msg) => void warnings.push(msg);
-    await build({ root, configFile: false, customLogger: logger, plugins: [rivet({ images: { cacheDir: ".image-cache" } })], build: { ssr: resolve(root, "server.tsx"), outDir: "server-only-dist" } });
+    await build({
+      root,
+      configFile: false,
+      customLogger: logger,
+      plugins: [rivet({ images: { cacheDir: ".image-cache" } })],
+      build: { ssr: resolve(root, "server.tsx"), outDir: "server-only-dist" },
+    });
     assert.ok(warnings.some((w) => /image variants referenced from server code may be missing from the client build/.test(w)));
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -140,7 +160,13 @@ test("bad directive fails the build with the module id", async () => {
 
 test("dev: descriptor points at middleware; planned keys served with ETag, others 404; browser gets DOM entry", async () => {
   const root = await project();
-  const server = await createServer({ root, configFile: false, logLevel: "silent", plugins: [rivet({ images: { cacheDir: ".image-cache" } })], server: { port: 0, host: "127.0.0.1" } });
+  const server = await createServer({
+    root,
+    configFile: false,
+    logLevel: "silent",
+    plugins: [rivet({ images: { cacheDir: ".image-cache" } })],
+    server: { port: 0, host: "127.0.0.1" },
+  });
   try {
     await server.listen();
     const port = (server.httpServer!.address() as { port: number }).port;
@@ -175,7 +201,10 @@ test("rivet() without images still returns one plugin", () => {
   assert.equal(Array.isArray(rivet()), false);
   const plugins = rivet({ images: true });
   assert.ok(Array.isArray(plugins));
-  assert.deepEqual(plugins.map((p) => p.name), ["vite-plugin-rivet", "vite-plugin-rivet-images"]);
+  assert.deepEqual(
+    plugins.map((p) => p.name),
+    ["vite-plugin-rivet", "vite-plugin-rivet-images"],
+  );
 });
 
 test("ambient image types check in strict TSX", async () => {
@@ -196,12 +225,40 @@ export const A = () => <div><Picture image={hero} alt="" /><Logo alt="x" sizes={
 export const B = () => <Logo />;`,
     );
     const program = ts.createProgram([file], {
-      strict: true, noEmit: true, jsx: ts.JsxEmit.Preserve, jsxImportSource: "@rivetjs/runtime",
-      module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, target: ts.ScriptTarget.ES2022,
-      allowImportingTsExtensions: true, types: [],
+      strict: true,
+      noEmit: true,
+      jsx: ts.JsxEmit.Preserve,
+      jsxImportSource: "@rivetjs/runtime",
+      module: ts.ModuleKind.NodeNext,
+      moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      target: ts.ScriptTarget.ES2022,
+      allowImportingTsExtensions: true,
+      types: [],
     });
-    assert.deepEqual(ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n")), []);
+    assert.deepEqual(
+      ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n")),
+      [],
+    );
   } finally {
     await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("default image cache lives in rivetCacheDir()/images, nothing under the project (Tailwind scans the app dir)", async () => {
+  const root = await project();
+  const saved = process.env.RIVET_CACHE_DIR;
+  const cacheRoot = await mkdtemp(resolve(tmpdir(), "rivet-images-cache-"));
+  process.env.RIVET_CACHE_DIR = cacheRoot;
+  try {
+    const before = new Set(await readdir(root));
+    await (await createBuilder(appConfig(root, { plugins: rivet({ images: true }) }))).buildApp();
+    const added = (await readdir(root)).filter((name) => !before.has(name)).sort();
+    assert.deepEqual(added, ["client-dist", "server-dist"]);
+    assert.ok((await readdir(resolve(cacheRoot, "images"))).length > 0);
+  } finally {
+    if (saved === undefined) delete process.env.RIVET_CACHE_DIR;
+    else process.env.RIVET_CACHE_DIR = saved;
+    await rm(cacheRoot, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true });
   }
 });

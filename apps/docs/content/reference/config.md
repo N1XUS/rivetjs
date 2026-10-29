@@ -125,7 +125,7 @@ See [scoped styles](../guides/styling/scoped-styles.md).
 | `placeholder` | `"blur"` \| `"dominant-color"` \| `"none"` | `"blur"` |
 | `presets` | `Record<string, Directives>` | none; use with `?preset=name&image` |
 | `processor` | `ImageProcessor` | sharp |
-| `cacheDir` | `string` | `"node_modules/.rivet/images"` |
+| `cacheDir` | `string` | `images/` under the Rivet cache root (`RIVET_CACHE_DIR`, else `rivet-cache` in the OS temp directory) |
 
 Per-import directives (`?width=320&layout=fixed&image`): `layout`, `width`, `height`, `formats` (`;`-separated), `quality`, `densities`, `placeholder`, `fit` (`cover` default, `contain`, `inside`), `position` (`center` default), `preset`. See [images](../guides/assets/images.md).
 

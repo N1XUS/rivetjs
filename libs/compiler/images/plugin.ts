@@ -1,7 +1,8 @@
 import { access, mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import type { Plugin, ResolvedConfig } from "vite";
 import { parseImageId, validateConfig, type ImagesConfig } from "./options.ts";
+import { rivetCacheDir } from "../cache-dir.ts";
 import { sharpProcessor } from "./processor.ts";
 import { createPipeline, MIME_BY_EXT, type PlannedAsset } from "./pipeline.ts";
 import { compile } from "../index.ts";
@@ -60,7 +61,7 @@ export function imagesPlugin(input: ImagesConfig | true): Plugin {
         base,
         assetsDir: config_.build.assetsDir,
         dev: config_.command === "serve",
-        cacheDir: resolve(config_.root, config.cacheDir ?? "node_modules/.rivet/images"),
+        cacheDir: config.cacheDir ? resolve(config_.root, config.cacheDir) : join(rivetCacheDir(), "images"),
       });
     },
     // Server-only images register during the ssr build, so it must run before the client emits.

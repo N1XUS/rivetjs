@@ -4,6 +4,7 @@ import type { ImageDescriptor } from "@rivetjs/runtime/image-plan";
 import { checkDirectives, validateConfig, type Directives, type ImagesConfig } from "./options.ts";
 import { sharpProcessor } from "./processor.ts";
 import { createPipeline } from "./pipeline.ts";
+import { rivetCacheDir } from "../cache-dir.ts";
 export { sharpProcessor, type ImageProcessor, type ImageMetadata, type EncodeOptions } from "./processor.ts";
 export type { ImagesConfig, Directives } from "./options.ts";
 export { svgoPlugins, type SvgoOptions, type SvgDirectives } from "./svg.ts";
@@ -28,7 +29,7 @@ export async function getImage(file: string, options: GetImageOptions): Promise<
     base: options.base ?? "/",
     assetsDir: options.assetsDir ?? "assets",
     dev: false,
-    cacheDir: resolve(config.cacheDir ?? "node_modules/.rivet/images"),
+    cacheDir: config.cacheDir ? resolve(config.cacheDir) : join(rivetCacheDir(), "images"),
   });
   const { descriptor, assets } = await pipeline.describe(resolve(file), directives);
   await Promise.all(

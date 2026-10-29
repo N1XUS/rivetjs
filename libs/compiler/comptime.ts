@@ -737,7 +737,7 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
       if (paths) for (const file of [paths.helper, paths.tailwindVariants]) add(file, 0);
       // The evaluator's own code (its proofs and encodings) is part of the key.
       hash.update(EVALUATOR_SOURCE);
-      return join(cacheDir, "rivet-comptime", hash.digest("hex").slice(0, 32) + ".json");
+      return join(cacheDir, "comptime", hash.digest("hex").slice(0, 32) + ".json");
     } catch {
       return null;
     }

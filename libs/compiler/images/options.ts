@@ -27,7 +27,10 @@ export interface ImagesConfig {
   placeholder?: PlaceholderKind;
   presets?: Record<string, Directives>;
   processor?: ImageProcessor;
-  /** Root-relative; default `node_modules/.rivet/images`. */
+  /**
+   * Root-relative; default `<rivetCacheDir()>/images` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`). Keep it out of
+   * the app dir: Tailwind source detection reads the cached `?svg` sources.
+   */
   cacheDir?: string;
   /** SVG optimisation (svgo) for `?image` / `?jsx` assets and inline `?svg` components; `false` = sanitise only. */
   svgo?: false | SvgoOptions;

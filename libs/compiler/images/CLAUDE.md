@@ -22,7 +22,7 @@ Build-time image optimisation: `?image` / `?jsx` / `?svg` imports (Vite plugin) 
 
 ## Rules / invariants
 
-- Cache keys include the processor id: swapping encoders or sharp versions invalidates entries. Default cache dir `node_modules/.rivet/images` (root-relative, `cacheDir` overrides).
+- Cache keys include the processor id: swapping encoders or sharp versions invalidates entries. Default cache dir `<rivetCacheDir()>/images` (`../cache-dir.ts`: env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`; INCR-BUILD-03: was `node_modules/.rivet/images`, inside the app, where Tailwind source detection reads cached `.svg` / `.svg.tsx` text); `cacheDir` overrides (root-relative). Dev serves assets through the plugin middleware, so a cache outside the root needs no `server.fs.allow`.
 - Asset file names: `<assetsDir>/<stem>-<width>-<key8>.<ext>`; URLs `base + fileName` in builds, `<base>@rivet/image/<key>.<ext>` in dev.
 - i18n per-locale client builds (C1; detected via the `i18n()` plugin's `api.locale`): base without the `<locale>/` suffix, files written once (fs, skip when present) into the parent of the locale outDir (`dist/client/assets/`) instead of `emitFile`. Test `libs/i18n/tests/vite.test.ts` (images).
 - Descriptors are emitted deep-frozen (`Object.freeze` nested) with `[brand]: true` on top (`const brand = Symbol.for("rivet.image")`; every call `/* @__PURE__ */`, so an unused import tree-shakes to 0 B — `tests/vite-images.test.ts` zero-cost case) (`plugin.ts` `frozen`), so `pictureHtml` may cache their markup (`tests/vite-images.test.ts` asserts); otherwise plain data; the runtime (`@rivetjs/runtime/image`) renders them — no image code in resume chunks when props are constant (docs/guides/vite-integration.md).

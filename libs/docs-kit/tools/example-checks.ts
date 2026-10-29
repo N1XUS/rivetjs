@@ -13,6 +13,7 @@ import type { Step } from "../define.ts";
 import type { ExampleData, ExampleMeasure } from "../components/types.ts";
 import { framePath } from "../frame-theme.ts";
 import { writeAtomic } from "./lock.ts";
+import { buildCacheRoot } from "./build-cache.ts";
 
 /** Chromium launch flags (no keychain prompts on macOS). */
 export const CHROMIUM_ARGS = ["--use-mock-keychain", "--password-store=basic"];
@@ -54,7 +55,8 @@ const QUIET_MAX_MS = 5000;
  * loaded" stays empty); a quarantined example that passes is reported so its entry gets removed.
  */
 export const QUARANTINE = "examples/_quarantine.json";
-export const CHECK_CACHE = ".artifacts/example-checks.json";
+/** Check cache file name under `buildCacheRoot(root)` (outside the app, INCR-BUILD-03). */
+export const CHECK_CACHE = "example-checks.json";
 const FORMAT = CHECK_STRICT ? "2-strict" : "2";
 
 interface CacheEntry {
@@ -413,7 +415,7 @@ export interface CheckExamplesOptions {
 
 /**
  * Check every live example of `examples` against the built client dir `client`; returns the measures by id. The first
- * failing check stops the rest and throws. The cache (`CHECK_CACHE` under `root`) is rewritten with this run's checks.
+ * failing check stops the rest and throws. The cache (`CHECK_CACHE` under `buildCacheRoot(root)`) is rewritten with this run's checks.
  */
 export async function checkExamples(
   root: string,
@@ -423,7 +425,7 @@ export async function checkExamples(
 ): Promise<Record<string, ExampleMeasure>> {
   const log = options.log ?? ((message: string) => console.log(message));
   client = resolve(client);
-  const cacheFile = resolve(root, CHECK_CACHE);
+  const cacheFile = join(buildCacheRoot(root), CHECK_CACHE);
   const previous: Record<string, CacheEntry> =
     options.cache === false
       ? {}

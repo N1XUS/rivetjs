@@ -4,6 +4,7 @@
 import { afterAll, beforeAll, test } from "vitest";
 import assert from "node:assert/strict";
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build, type Rollup } from "vite";
@@ -14,10 +15,15 @@ import { rivet } from "../vite.ts";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 let root = "";
+let cacheRoot = "";
+const savedCacheRoot = process.env.RIVET_CACHE_DIR;
 
 beforeAll(async () => {
   // Inside the workspace: the fixture resolves tailwind-variants and @rivetjs/runtime like an app.
   root = await mkdtemp(join(here, ".comptime-"));
+  // Results go to `rivetCacheDir()/comptime`, never the project (Tailwind source detection scans the app dir).
+  cacheRoot = await mkdtemp(join(tmpdir(), "rivet-comptime-test-"));
+  process.env.RIVET_CACHE_DIR = cacheRoot;
   await writeFile(
     join(root, "styles.ts"),
     `import { tv, type VariantProps } from "tailwind-variants";
@@ -122,6 +128,9 @@ export const p = (cls: string) => slots.root({ class: cls });
   await writeFile(join(root, "clock.ts"), `import { stamp } from "./helpers.ts";\nexport const at = stamp();\n`);
 });
 afterAll(async () => {
+  if (savedCacheRoot === undefined) delete process.env.RIVET_CACHE_DIR;
+  else process.env.RIVET_CACHE_DIR = savedCacheRoot;
+  if (cacheRoot) await rm(cacheRoot, { recursive: true, force: true });
   if (root && !process.env.RIVET_KEEP_FIXTURE) await rm(root, { recursive: true, force: true });
 });
 
@@ -258,8 +267,10 @@ test("a non-deterministic function is refused with RV2108 and stays a runtime ca
 test("comptime: false keeps every call; the disk cache holds the evaluated results", async () => {
   const off = await bundle("core.ts", "off");
   assert.match(off, /getTailwindVariants|twMerge/);
-  const cached = await readdir(join(root, ".vite-cache", "rivet-comptime"));
+  const cached = await readdir(join(cacheRoot, "comptime"));
   assert.ok(cached.length >= 3, cached.join());
+  // Nothing of it under the project or Vite's cacheDir.
+  assert.deepEqual(await readdir(join(root, ".vite-cache")).catch(() => []), []);
   // A second build reads the cache (same output).
   assert.equal(await bundle("core.ts"), await bundle("core.ts"));
 });

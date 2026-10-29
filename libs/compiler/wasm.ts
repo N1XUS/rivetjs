@@ -1,7 +1,6 @@
 // Synchronous loader for the Rust/oxc compiler module: JSON request in, JSON response out.
 import { createHash } from "node:crypto";
 import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 interface Exports {
@@ -89,16 +88,8 @@ function send<T>(wasm: Exports, request: Record<string, unknown>, json = JSON.st
 // so a change anywhere that alters a module's output alters its key: never stale, no invalidation to get wrong.
 let cacheDir: string | null = null;
 
-/**
- * Root of Rivet's persistent build caches (compiler answers `compile/`, router brotli sizes, docs-kit page passes):
- * env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`. Deliberately OUTSIDE the project: Tailwind's automatic source
- * detection scans the app directory (its `node_modules/.vite` included), so cache files there turned compiled code /
- * class strings into extra utilities (INCR-BUILD-01 regression: starter-ui `.ring`, `[rivet:cdk]`). Entries are keyed by
- * everything they depend on, so projects sharing the root never see each other's results.
- */
-export function rivetCacheDir(): string {
-  return process.env.RIVET_CACHE_DIR || join(tmpdir(), "rivet-cache");
-}
+export { rivetCacheDir } from "./cache-dir.ts";
+
 let wasmDigest: string | undefined;
 let tablesDigest: string | undefined;
 /** Hits / misses / writes of this process (tests, build logs). */
