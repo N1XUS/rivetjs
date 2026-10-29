@@ -2,7 +2,7 @@
 // state). Parsing and lowering run in the Rust/oxc WebAssembly module (./wasm.ts).
 import { call, CompilerPanic } from "./wasm.ts";
 
-export { CompilerPanic, hasDerivedModel } from "./wasm.ts";
+export { CompilerPanic, hasDerivedModel, rivetCacheDir } from "./wasm.ts";
 export { RUNTIME_ABI } from "./abi.ts";
 export { CODES, RESERVED, codeInfo, docsUrl, type CodeInfo, type ReservedRange, type Severity } from "./codes.ts";
 

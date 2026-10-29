@@ -4,7 +4,10 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import type { Rollup } from "vite";
-import { bundleRouteCSS, dedupeTopLevel, inlineCSS, mergeRouteCSS } from "../build/route-css.ts";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { BROTLI_SIZES, brotliLength, brotliSizes, bundleRouteCSS, dedupeTopLevel, inlineCSS, mergeRouteCSS } from "../build/route-css.ts";
 import { assemble } from "../adapters/assemble.ts";
 import type { GeneratedEntry } from "../server/app.ts";
 import { headTags } from "../shared/head.ts";
@@ -177,4 +180,38 @@ test("inline stylesheets: rivetRouter validates the option", async () => {
   assert.throws(() => rivetRouter({ inlineStylesheets: { max: 1 } as never }), /inlineStylesheets must be/);
   assert.ok(rivetRouter({ inlineStylesheets: { maxTotalBrotli: 8192 } }).length > 0);
   assert.ok(rivetRouter({ inlineStylesheets: "never" }).length > 0);
+});
+
+test("brotliSizes (INCR-BUILD): memoized sizes = fresh ones, persisted per brotli version, torn / foreign files ignored", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rivet-brotli-"));
+  try {
+    const sheets = [".a{color:red}".repeat(40), ".b{margin:0}@media (width>=40rem){.b{margin:1px}}", ""];
+    const first = brotliSizes(dir);
+    assert.deepEqual(sheets.map(first.size), sheets.map(brotliLength));
+    assert.deepEqual([first.hits, first.misses], [0, 3]);
+    first.save();
+    const second = brotliSizes(dir);
+    assert.deepEqual(sheets.map(second.size), sheets.map(brotliLength));
+    assert.deepEqual([second.hits, second.misses], [3, 0]);
+    // Another brotli build: the file is not trusted.
+    const file = join(dir, BROTLI_SIZES);
+    const data = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify({ ...data, version: "other" }));
+    assert.equal(brotliSizes(dir).size(sheets[0]!), brotliLength(sheets[0]!));
+    writeFileSync(file, "{");
+    const torn = brotliSizes(dir);
+    torn.size(sheets[1]!);
+    assert.equal(torn.misses, 1);
+    // The manifest built through the memo equals the default one.
+    const bundle = { "assets/a.css": { type: "asset", fileName: "assets/a.css", source: sheets[0] } } as unknown as Rollup.OutputBundle;
+    assert.deepEqual(inlineCSS(bundle, [], "/", "auto", 4096, brotliSizes(dir).size), inlineCSS(bundle, [], "/", "auto", 4096));
+    // No dir: in-memory only, save is a no-op.
+    const memory = brotliSizes(undefined);
+    memory.size(sheets[0]!);
+    memory.size(sheets[0]!);
+    memory.save();
+    assert.deepEqual([memory.hits, memory.misses], [1, 1]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
