@@ -210,7 +210,7 @@ The listbox handles `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onClick`
 
 ::example{id=listbox-dom-events}
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Item morph
 
@@ -334,7 +334,7 @@ The state is `createListState(props)` from `@rivetjs/cdk/collections/list-state`
 - The collection is built from the children or `items` (as React Aria builds it): the options render from it, and no item model is serialized: the browser rebuilds it from the same children on the first interaction.
 - Option callbacks (`onAction`, press, hover, key events) are attached only when given.
 - For derived `items`, pass a `computed` (or a signal).
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

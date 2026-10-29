@@ -230,7 +230,7 @@ The combobox owns the input's `onKeyDown`, `onFocus`, `onBlur`, `onInput`, `onTo
 
 ::example{id=combobox-dom-events}
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

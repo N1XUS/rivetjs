@@ -21,7 +21,7 @@ RAC Toolbar: arrow keys move focus across controls (also across `Group`s, separa
 - render prop `orientation` is an accessor; no `role` prop
 
 ## Gotchas
-- Deviation: bubbling keydown / focusin / focusout (capture handlers not resumable) → a descendant stopping an arrow key keeps it
+- Deviation: bubbling keydown / focusin / focusout (chosen when capture handlers did not resume; they do since the derived model) → a descendant stopping an arrow key keeps it
 - `render` prop (RAC DOMRenderProps; `(attrs, renderProps)` → spread attrs; early return before the compiled element; `tests/render-collections.browser.test.tsx`) (renderProps `orientation`)
 
 ## See also

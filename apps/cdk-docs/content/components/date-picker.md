@@ -253,7 +253,7 @@ The picker handles a key first, then calls `onKeyDown`; focus and key events sto
 | props of `Dialog` | the `section[role=dialog]` |
 | props of `Calendar` and its parts | see [Calendar](calendar.md#dom-events-and-attributes) |
 
-The group owns `onPointerDown` / `onPointerUp` (a press focuses a segment) and the button its press (opens the popover): their behaviour runs first, then your handler. Keys and focus of the field go through `onKeyDown` / `onKeyUp` / `onFocus` / `onBlur` / `onFocusChange` on `DatePicker`. `on…Capture` handlers do not resume yet.
+The group owns `onPointerDown` / `onPointerUp` (a press focuses a segment) and the button its press (opens the popover): their behaviour runs first, then your handler. Keys and focus of the field go through `onKeyDown` / `onKeyUp` / `onFocus` / `onBlur` / `onFocusChange` on `DatePicker`. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ::example{id=date-picker-dom-events}
 
@@ -317,7 +317,7 @@ The group owns `onPointerDown` / `onPointerUp` (a press focuses a segment) and t
 - Server HTML: the label, the segments (with `data-rk`: Rivet holds those keys while the code loads), the button, the hidden inputs. A closed picker ships no popover and no calendar markup.
 - The picker state (value, open state, focus flags) is signals: the first open creates only the popover and its calendar.
 - Popover content as plain JSX works (as in the examples); content holding your own stateful components is safest as a render function (`{() => …}`).
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

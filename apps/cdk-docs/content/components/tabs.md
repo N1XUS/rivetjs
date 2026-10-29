@@ -207,7 +207,7 @@ Every part takes the global DOM events and attributes (`GlobalDOMAttributes` fro
 
 ::example{id=tabs-dom-events}
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 
@@ -271,7 +271,7 @@ There is no typeahead (React Aria's `TabsKeyboardDelegate` has none). Pointer: a
 - The server renders the tablist, the tab stop and the selected panel. Before the first interaction the page runs no tabs code; the tablist's `data-rk` keys are held while the handler chunk loads.
 - State is signals plus JSON (`createTabListState`), so a `selectedKey` signal, number keys and the focused key resume as they were.
 - A `TabPanel` whose tab is not selected on the server is created later, in the browser: give it render-function children (`<TabPanel id="b">{() => <p>…</p>}</TabPanel>`), plain JSX children do not resume there. `Tab` children and the selected panel may be plain JSX.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

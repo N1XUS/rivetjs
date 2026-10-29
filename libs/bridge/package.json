@@ -44,10 +44,6 @@
     "./adapter": {
       "types": "./adapter.ts",
       "default": "./adapter.ts"
-    },
-    "./persist": {
-      "types": "./persist.ts",
-      "default": "./persist.ts"
     }
   },
   "peerDependencies": {

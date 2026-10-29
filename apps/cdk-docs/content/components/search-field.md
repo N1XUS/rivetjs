@@ -119,7 +119,7 @@ On a resumed page the `FieldError` inside a SearchField does not render yet: the
 
 ## DOM events and attributes
 
-Every part takes the global DOM events and attributes (`GlobalDOMAttributes`: mouse, pointer, touch, wheel, scroll, drag, animation and transition events, `dir`, `lang`, `hidden`, `inert`, `data-*`): `SearchField` props land on the root `div`, `Input` props on the `<input>`, `Button` props on the clear button. The field owns the input's `onKeyDown` (:kbd[Enter] / :kbd[Escape] shortcuts, then your `onKeyDown`) and the clear button's press. `on…Capture` handlers do not resume yet.
+Every part takes the global DOM events and attributes (`GlobalDOMAttributes`: mouse, pointer, touch, wheel, scroll, drag, animation and transition events, `dir`, `lang`, `hidden`, `inert`, `data-*`): `SearchField` props land on the root `div`, `Input` props on the `<input>`, `Button` props on the clear button. The field owns the input's `onKeyDown` (:kbd[Enter] / :kbd[Escape] shortcuts, then your `onKeyDown`) and the clear button's press. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

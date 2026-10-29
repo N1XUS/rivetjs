@@ -105,7 +105,7 @@ Global DOM events and attributes set on the `TextField` land on its root `<div>`
 
 ::example{id=text-area-dom-events}
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

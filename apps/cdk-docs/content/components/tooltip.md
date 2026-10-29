@@ -184,7 +184,7 @@ The tooltip uses the same positioning engine as [Popover](popover.md): `placemen
 | `OverlayArrow` global DOM props, `data-*` | the arrow | none |
 | your trigger's props | your trigger | `onPointerEnter`, `onPointerLeave`, `onFocus`, `onBlur` come from `TooltipTrigger` through `FocusableProvider`, merged with the trigger's own |
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

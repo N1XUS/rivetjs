@@ -161,7 +161,7 @@ Sections do not render on the server yet (see [Tree sections](tree.md#sections))
 
 ## DOM events and attributes
 
-`NavigationTree` props land on the treegrid, `NavigationTreeItem` props on the row, as for the [Tree](tree.md#dom-events-and-attributes). Link props (`href`, `target`, …) land on the `<a>`. `on…Capture` handlers do not resume yet.
+`NavigationTree` props land on the treegrid, `NavigationTreeItem` props on the row, as for the [Tree](tree.md#dom-events-and-attributes). Link props (`href`, `target`, …) land on the `<a>`. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

@@ -166,7 +166,7 @@
     {
       "code": "RV1103",
       "messages": [null],
-      "fix": "Retired (M6): clientEvent targets are no longer resume sites; the derived model re-runs the component in the browser."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: `clientEvent` targets are no longer resume sites."
     },
     {
       "code": "RV2001",
@@ -180,88 +180,87 @@
     {
       "code": "RV2002",
       "messages": [null],
-      "fix": "Retired (M6): ref callbacks re-run in the browser with the component (derived model), any ref callback works."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: ref callbacks run again in the browser with the component, so any ref callback works."
     },
     {
       "code": "RV2003",
       "messages": [null],
-      "fix": "Retired (M6): captured values are not serialized (derived model: the browser re-runs the component)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: captured values are not serialized, so class instances in closures work."
     },
     {
       "code": "RV2004",
       "messages": [null],
-      "fix": "Retired: onXCapture handlers resume.",
-      "note": "docs/guides/editor.md:26 still lists a 'capture-phase handler → bubbling' quick fix that no longer exists (not in FIXABLE_CODES)."
+      "fix": "Retired: `onXCapture` handlers resume like other handlers, the first event on a resumed page included."
     },
     {
       "code": "RV2005",
       "messages": [null],
-      "fix": "Retired (M6): ref-bound locals are re-created in the browser with the component (derived model)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: ref-bound locals are created again in the browser with the component."
     },
     {
       "code": "RV2006",
       "messages": [null],
-      "fix": "Retired (M6): handlers, effects and computeds are re-created in the browser (derived model); JSX inside them is ordinary code."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: handlers, effects and computeds are created again in the browser; JSX inside them is ordinary code."
     },
     {
       "code": "RV2007",
       "messages": [null],
-      "fix": "Retired (M6): handlers are re-created in the browser (derived model), `this` is not captured."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: handlers are created again in the browser, so `this` is never captured."
     },
     {
       "code": "RV2008",
       "messages": [null],
-      "fix": "Retired (M6): module references are not serialized (derived model: no symbol ids for module values)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: module references are not serialized (no ids for module values)."
     },
     {
       "code": "RV2009",
       "messages": [null],
-      "fix": "Retired (M6): no symbol ids for module values (derived model)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: module values get no browser ids, so two references cannot collide."
     },
     {
       "code": "RV2010",
       "messages": [null],
-      "fix": "Retired (M6): module references are not serialized (derived model), two installed copies no longer split resume state."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: module references are not serialized, so two installed copies no longer split resume state."
     },
     {
       "code": "RV2011",
       "messages": [null],
-      "fix": "Retired (M6): no per-closure symbols (derived model: boundaries re-run whole components)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: closures get no ids of their own, so function order does not matter."
     },
     {
       "code": "RV2012",
       "messages": [null],
-      "fix": "Retired (M6): `.bind` results are not serialized (derived model)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: `.bind` results are not serialized."
     },
     {
       "code": "RV2013",
       "messages": [null],
-      "fix": "Retired (M6): `.bind` results are not serialized (derived model)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: `.bind` results are not serialized."
     },
     {
       "code": "RV2014",
       "messages": [null],
-      "fix": "Retired (M6): `.bind` results are not serialized (derived model)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: `.bind` results are not serialized."
     },
     {
       "code": "RV2015",
       "messages": [null],
-      "fix": "Retired (M6): returned accessors are re-created in the browser (derived model)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: returned accessors are created again in the browser."
     },
     {
       "code": "RV2016",
       "messages": [null],
-      "fix": "Retired (M6): resources are re-created in the browser with the component (derived model)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: resources are created again in the browser with the component."
     },
     {
       "code": "RV2101",
       "messages": [null],
-      "fix": "Retired (M6): captured values are not serialized (derived model), the type-aware capture check was removed."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: captured values are not serialized, so the type-aware capture check was removed."
     },
     {
       "code": "RV2102",
       "messages": [null],
-      "fix": "Retired (M6): class instances are not serialized (derived model)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: class instances in closures are not serialized. Signal values and route data still must be resume-format data (RV2107; register classes with `registerClass`)."
     },
     {
       "code": "RV2103",
@@ -287,12 +286,12 @@
     {
       "code": "RV2105",
       "messages": [null],
-      "fix": "Retired (M6): keyed `For` rows are re-rendered in the browser by the derived model (no recorded / lazy rows)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: a resumed `For` adopts the server's rows with its ordinary compiled code; there are no recorded rows any more. A non-deterministic read while rendering is RV2103."
     },
     {
       "code": "RV2106",
       "messages": [null],
-      "fix": "Retired (M6): keyed `For` rows are re-rendered in the browser by the derived model (no recorded / lazy rows)."
+      "fix": "Retired with the derived resume model (2026-10-22), which re-runs a component's compiled code in the browser over the server markup: a resumed `For` adopts the server's rows with its ordinary compiled code; there are no recorded rows any more."
     },
     {
       "code": "RV2107",

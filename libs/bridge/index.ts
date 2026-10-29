@@ -14,9 +14,12 @@ export type RivetContent = JSX.Element | string | number | bigint | boolean | nu
 export interface IslandOptions {
   /** Hydration policy; absent = static HTML (hydrates on the first live prop change when a prop is live). */
   client?: ClientPolicy;
-  /** Chunk preload strategy. No effect on the derived resume model (island chunks are fetched ahead of their trigger); tracked in plan M6. */
+  /** Chunk preload strategy. No effect on the derived resume model: island chunks are fetched ahead of their trigger. */
   preload?: PreloadStrategy;
-  /** Parking key across client navigations (T12). */
+  /**
+   * Reserved: keeps the island alive across client navigations once implemented (roadmap). No effect yet; the island
+   * reads it and never passes it to the framework component.
+   */
   persist?: string;
   /** Rivet content shown when the island fails to render, and in place of a `client="only"` island until it mounts. */
   fallback?: RivetContent;

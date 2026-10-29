@@ -175,7 +175,7 @@ A `Tag` with `href` is a link: the row stays a `div[role="row"]` (a grid row can
 
 Every part takes the global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-props`): `TagGroup` props land on the wrapper `div`, `TagList` props on the grid, `Tag` props on the row.
 
-The grid handles `onKeyDown`, `onFocusIn`, `onFocusOut` and `onMouseDown` itself (your `onMouseDown` runs after its own). A tag row handles `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onClick`, `onDblClick`, `onPointerEnter`, `onPointerLeave`, `onKeyDown`, `onKeyUp` and `onDragStart`; your pointer and double-click handlers run after its own, `onClick` is reserved for the row's press. `on…Capture` handlers do not resume yet.
+The grid handles `onKeyDown`, `onFocusIn`, `onFocusOut` and `onMouseDown` itself (your `onMouseDown` runs after its own). A tag row handles `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onClick`, `onDblClick`, `onPointerEnter`, `onPointerLeave`, `onKeyDown`, `onKeyUp` and `onDragStart`; your pointer and double-click handlers run after its own, `onClick` is reserved for the row's press. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 
@@ -250,7 +250,7 @@ The grid handles `onKeyDown`, `onFocusIn`, `onFocusOut` and `onMouseDown` itself
 - The server renders every tag with its final `aria-selected`, `aria-disabled`, `tabindex` and the remove button labels. No TagGroup code runs before the first interaction.
 - Live collection: the handlers read the tags (`data-key`, `data-text-value`, `aria-disabled`, `data-href`) back from the grid's DOM, so no item model is serialized.
 - A `createListData` list resumes with its items; its actions work in handlers on the resumed page.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

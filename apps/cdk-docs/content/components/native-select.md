@@ -125,7 +125,7 @@ As TextField: `isRequired` sets the native `required`, so an empty option value 
 
 Global DOM events and attributes set on the `TextField` land on its root `<div>`; the field's `input` / `change` / `invalid` / focus handlers land on the `<select>` (the field owns them and calls yours after its own). Select attributes go on `NativeSelect`.
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

@@ -257,7 +257,7 @@ Every part takes the global DOM events and attributes (`GlobalDOMAttributes` fro
 - The tree handles `onMouseDown` itself (your handler runs right after its own) plus the key, focus and blur events of the treegrid.
 - A row handles `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onPointerEnter`, `onPointerLeave` and `onDblClick` (yours chained after its own), `onDragStart` / `onDrag` / `onDragEnd` (drag and drop first, then yours), and drops `onClick` (as RAC).
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 
@@ -333,7 +333,7 @@ Indent rows with `--tree-item-level`, rotate the chevron icon from `isExpanded()
 - The collection is built from the content in a resumable `computed` (flattened by the expanded keys): expanding adds rows in place, resumed rows are adopted.
 - Pass `items` as a `computed` or signal.
 - Interactive row content (text fields, inputs) belongs in a function child of `TreeItemContent`: plain JSX passed as item props is evaluated in the collection build pass.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 - Drag and drop: the server renders `draggable` rows and the drag buttons only (no drop indicators); the first key or pointer press on a resumed page renders the tree in the browser and starts the drag in the same input (keyboard and mouse).
 
 Known issues: a conditionally rendered row (`{cond() && <TreeItem/>}`) is not added after resume (derive `items` instead); `TreeItem` `onAction` on :kbd[Enter] may not fire (use the Tree `onAction`); signals read inside nested row components during the collection build pass may not update; removing rows logs an error from the removed `TreeItem`; a row does not re-render when only its item's value changes.

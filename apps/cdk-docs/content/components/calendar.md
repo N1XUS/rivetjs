@@ -297,7 +297,7 @@ Every part takes the global DOM events and attributes (`GlobalDOMAttributes` fro
 
 ::example{id=calendar-dom-events}
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 
@@ -371,7 +371,7 @@ Pointer: a press selects on release over the pressed cell; cells do not steal fo
 - The server renders the full markup: heading, labels, every cell with its state attributes. No calendar code loads before the first interaction; the grid's `data-rk` keys are held while the handler chunk loads, so the first arrow key is not lost.
 - Cells carry no handlers: one set of handlers per grid finds the cell from `data-date`. Paging re-renders only the body rows; focus and selection changes patch attributes in place. The first change re-creates the body rows once.
 - State is signals plus JSON, so `value` / `focusedValue` signals resume as they were, and so does a state read from `CalendarStateContext`.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

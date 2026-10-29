@@ -1,12 +1,12 @@
 // Ported from HeroUI v3.2.6 packages/react/src/components/card/card.tsx (Apache-2.0, © 2025 NextUI Inc.; modified).
 // Rivet:
 // - `"use client"` dropped (resume, no hydration pass); `className` → `class`; React types → Rivet JSX types.
-// - `CardContext` carries plain data `{ variant }` instead of the tv `slots` object (functions do not serialize on
-//   resume; spec §2): a context token (same `{}` default) + `Provider`. Each
+// - `CardContext` carries plain data `{ variant }` instead of the tv `slots` object (a choice from the serialized
+//   resume model, kept: same classes, one memoized slots object per variant): a context token (same `{}` default) + `Provider`. Each
 //   part looks up the slots for the context variant (`slotsFor` memo, never from context); outside a `Card` the
 //   context is `{}` → slots `undefined` → the part gets only the caller's `class` (= upstream). `React.useMemo` →
 //   context values whose `variant` is a getter over the live prop (props are live getters, spec
-//   docs/design/specs/2026-10-07-live-props-design.md): readers see plain data (resume encodes the value read), the
+//   docs/design/specs/2026-10-07-live-props-design.md): readers see plain data, the
 //   body never re-runs, and only the class bindings reading `variant` update. `React.useMemo` → that getter object.
 //   The root's `content` element is a function called inside the providers (Rivet JSX creates nodes eagerly).
 // - `SurfaceContext` is always provided: for `transparent` its `variant` reads the outer surface (upstream skips the
@@ -41,7 +41,7 @@ type CardSlots = ReturnType<typeof cardVariants>;
 type CardVariant = NonNullable<CardVariants["variant"]>;
 
 /** Module-level memo per variant (upstream `useMemo` per root): tv slot functions are pure (same props → same string), so one
- *  slots object per variant is shared by every Card; the context keeps carrying `{ variant }` (resumable data). */
+ *  slots object per variant is shared by every Card; the context keeps carrying `{ variant }` (plain data). */
 const SLOTS: Partial<Record<CardVariant, CardSlots>> = {};
 const slotsFor = (variant: CardVariant): CardSlots => (SLOTS[variant] ??= cardVariants({ variant }));
 

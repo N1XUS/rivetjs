@@ -202,7 +202,7 @@ For fully custom markup, `@rivetjs/cdk/range-calendar/behaviour` exports the rea
 
 ## DOM events and attributes
 
-Every part takes the global DOM events and attributes: `RangeCalendar` on the root (it handles `focusout` itself, for `commitBehavior`, and runs yours after), `Heading` on the `h2`, `CalendarGrid` on the `table` (after the grid's own `onKeyDown`, `onFocusIn`, `onFocusOut`, `onMouseDown`, `onPointerDown`, `onPointerUp`, `onPointerOver`, `onPointerOut`, `onClick` and `onContextMenu`), `CalendarCell` on the cell `div`. `on…Capture` handlers do not resume yet.
+Every part takes the global DOM events and attributes: `RangeCalendar` on the root (it handles `focusout` itself, for `commitBehavior`, and runs yours after), `Heading` on the `h2`, `CalendarGrid` on the `table` (after the grid's own `onKeyDown`, `onFocusIn`, `onFocusOut`, `onMouseDown`, `onPointerDown`, `onPointerUp`, `onPointerOver`, `onPointerOut`, `onClick` and `onContextMenu`), `CalendarCell` on the cell `div`. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ::example{id=range-calendar-dom-events}
 
@@ -264,7 +264,7 @@ Pointer: mouse press anchors, hover previews, a second press (or the release of 
 - The server renders every grid, cell state and label; no calendar code ships before the first interaction. Grid handlers are delegated (one per `table`, `data-rk` keys).
 - State is signals plus JSON (dates as strings). `isDateUnavailable` takes two arguments.
 - Render functions (`CalendarGrid` children, picker children) must not capture date objects or other class instances in bindings: read plain fields into locals.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

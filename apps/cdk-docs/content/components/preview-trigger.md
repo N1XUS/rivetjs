@@ -112,7 +112,7 @@ A `<Focusable>` child needs an interactive ARIA role (`role="link"`, `role="butt
 | `Popover` global DOM props, `data-*` | the popover element | focus within / blur within (keep it open while focus is inside) |
 | your trigger's props | your trigger | `onPointerEnter`, `onPointerLeave`, `onFocus`, `onBlur`, `onKeyDown` (:kbd[Tab] into the preview) come from `PreviewTrigger` through `FocusableProvider`, merged with the trigger's own; `aria-haspopup`, `aria-expanded`, `aria-controls`, `aria-describedby` too |
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

@@ -19,7 +19,7 @@ import type { ClientOn, ClientPolicy, IslandContext, IslandDef, IslandModule, Is
 
 export type { IslandDef } from "./adapter.ts";
 
-// Island-level props: read once by the core, never passed to the framework (`client`, `persist`: not live, documented).
+// Island-level props: read once by the core, never passed to the framework (`client`, `persist` (reserved, no effect yet): not live, documented).
 const OWN = ["client", "preload", "persist", "fallback"] as const;
 const TEMPLATE = Symbol.for("rivet.template"),
   COMPILED = Symbol.for("rivet.compiled");

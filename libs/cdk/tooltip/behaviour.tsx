@@ -153,7 +153,7 @@ function triggerBlur(options: TooltipTriggerOptions, state: TooltipTriggerState)
 const inside = (wrapper: Element, node: EventTarget | null): boolean => node instanceof Node && nodeContains(wrapper, node);
 
 // The trigger's onPointerDown / onKeyDown: a document capture listener (a pressable child such as
-// Button stops pointerdown propagation; capture-phase JSX handlers are not resumable), installed while
+// Button stops pointerdown propagation; a document listener also sees presses outside the trigger), installed while
 // the trigger is hovered or holds focus — the only times a press can close or cancel a tooltip.
 function engage(state: TooltipTriggerState, wrapper: Element, options: TooltipTriggerOptions): void {
   const r = refs(state);

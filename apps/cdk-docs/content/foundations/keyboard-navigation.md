@@ -263,7 +263,7 @@ React Aria's `ListKeyboardDelegate` answers "which key is below / above / left /
 Deviations:
 
 - Key managers: RxJS `Subject`s are a minimal emitter with the same `subscribe` / `next` / `complete`; a `QueryList` or `Signal<T[]>` is an array or an accessor; there is no injector.
-- `Toolbar` uses bubbling `keydown` / `focusin` / `focusout` listeners (upstream: capture phase, which does not resume yet), so a control that stops an arrow key's propagation keeps it.
+- `Toolbar` uses bubbling `keydown` / `focusin` / `focusout` listeners (upstream: capture phase), so a control that stops an arrow key's propagation keeps it.
 - `useTypeSelect` keeps its buffer per owner object in a `WeakMap`, not in component state.
 
 ### Not yet supported

@@ -226,7 +226,7 @@ Give `onLoadMore` (and usually `isLoading`) to append a loader node (key `LOADER
 - `onScroll` runs after the virtualizer's own handler (the engine has already updated).
 - `dir` is a regular prop of the component (view positions), not forwarded as-is.
 - The virtualizer listens to `scroll` and `focusin` itself. View wrappers take no props; put handlers on your row content.
-- `on*Capture` handlers do not resume yet.
+- `on*Capture` handlers work on resumed pages too, the first event included.
 
 ::example{id=virtualizer-dom-events}
 

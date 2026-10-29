@@ -342,7 +342,7 @@ With `keyboardNavigationBehavior="arrow"` (default), arrow keys move between cel
 
 Every part takes the global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-props`): `Table` props land on the `table`, `TableHeader` on the `thead`, `Column` on the `th`, `ColumnResizer` on its `div`, `TableBody` / `TableFooter` on the `tbody` / `tfoot`, `Row` on the `tr`, `Cell` on the `td`, `ResizableTableContainer` on its `div`, `TableLoadMoreItem` on the loading row.
 
-Owned events (the part's behaviour runs first, yours after): the table handles `onKeyDown`, `onFocusIn`, `onFocusOut`, `onMouseDown` and `onScroll`; `TableHeader` `onPointerEnter` / `onPointerLeave`; `Column`, `Cell` and `ColumnResizer` `onPointerDown`, `onPointerUp`, `onPointerEnter`, `onPointerLeave`, `onClick` (and `onMouseDown`, `onDragStart`); a row `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onPointerEnter`, `onPointerLeave`, `onDblClick`, `onKeyDown`, `onKeyUp`, `onDragStart`, and `onClick` is reserved for the row's press (not forwarded, as in RAC). `on…Capture` handlers do not resume yet.
+Owned events (the part's behaviour runs first, yours after): the table handles `onKeyDown`, `onFocusIn`, `onFocusOut`, `onMouseDown` and `onScroll`; `TableHeader` `onPointerEnter` / `onPointerLeave`; `Column`, `Cell` and `ColumnResizer` `onPointerDown`, `onPointerUp`, `onPointerEnter`, `onPointerLeave`, `onClick` (and `onMouseDown`, `onDragStart`); a row `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onPointerEnter`, `onPointerLeave`, `onDblClick`, `onKeyDown`, `onKeyUp`, `onDragStart`, and `onClick` is reserved for the row's press (not forwarded, as in RAC). `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 
@@ -416,7 +416,7 @@ Owned events (the part's behaviour runs first, yours after): the table handles `
 - The server renders every row with its final `aria-selected`, `aria-sort`, `aria-expanded` and `tabindex`, and the selection checkboxes checked. No Table code runs before the first interaction.
 - Built collection: the table's code loads on the first interaction and rebuilds the collection from the parts; unchanged rows keep their DOM.
 - For derived `items` / `columns`, pass a `computed` (or a signal).
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

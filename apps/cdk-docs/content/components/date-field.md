@@ -207,7 +207,7 @@ The field handles a key first (spin, type, move), then calls `onKeyDown`. Focus 
 | props of `DateInput` | the group `div[role=group]` |
 | props of `DateSegment` | that segment `span` (literals included) |
 
-The group owns `onPointerDown` / `onPointerUp` (a press on the group focuses a segment) and runs your handlers of the same name after its own; `DateSegment` owns `onPointerEnter` / `onPointerLeave` (hover state) the same way. Keyboard, input and focus events of the segments are the field's: use `onKeyDown` / `onKeyUp` / `onFocus` / `onBlur` / `onFocusChange` on `DateField`. `on…Capture` handlers do not resume yet.
+The group owns `onPointerDown` / `onPointerUp` (a press on the group focuses a segment) and runs your handlers of the same name after its own; `DateSegment` owns `onPointerEnter` / `onPointerLeave` (hover state) the same way. Keyboard, input and focus events of the segments are the field's: use `onKeyDown` / `onKeyUp` / `onFocus` / `onBlur` / `onFocusChange` on `DateField`. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ::example{id=date-field-dom-events}
 
@@ -271,7 +271,7 @@ The group owns `onPointerDown` / `onPointerUp` (a press on the group focuses a s
 - Server HTML: every segment with its text, ARIA and `data-rk` (the spin, navigation and digit keys, plus the day period letters). Rivet holds those keys while the field's code loads, so the first key typed into a cold field is not lost or inserted as text.
 - The state is plain signals plus strings; the value, the partial input and the validation resume without re-rendering. Segments are rows keyed by type + occurrence, so the nodes (and focus) stay while values change.
 - The `DateInput` children function is a slot: write it inline.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

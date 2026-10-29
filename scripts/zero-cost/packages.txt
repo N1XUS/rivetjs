@@ -390,7 +390,6 @@
 @rivetjs/bridge/client 6682c605112b 2405
 @rivetjs/bridge/intent 8481580cf53b 1022
 @rivetjs/bridge/adapter ca26e8eea25e 184
-@rivetjs/bridge/persist 56e1b0c10087 9
 @rivetjs/bridge-react 56e1b0c10087 9
 @rivetjs/bridge-react/server bb99edb31942 2228
 @rivetjs/bridge-react/client dd55fd4a4360 1341

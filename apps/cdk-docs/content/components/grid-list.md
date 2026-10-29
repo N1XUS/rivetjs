@@ -214,7 +214,7 @@ With `keyboardNavigationBehavior="arrow"` (default for stacks), :kbd[ArrowRight]
 
 Every part takes the global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-props`): `GridList` props land on the grid, `GridListItem` props on the row, `GridListSection` props on the rowgroup, `GridListHeader` props on the header row.
 
-The grid handles `onKeyDown`, `onFocusIn`, `onFocusOut`, `onMouseDown` and `onScroll` itself (your `onMouseDown` / `onScroll` run after its own). A row handles `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onClick`, `onDblClick`, `onPointerEnter`, `onPointerLeave`, `onKeyDown`, `onKeyUp` and `onDragStart`; your pointer and double-click handlers run after its own, `onClick` is reserved for the row's press. `on…Capture` handlers do not resume yet.
+The grid handles `onKeyDown`, `onFocusIn`, `onFocusOut`, `onMouseDown` and `onScroll` itself (your `onMouseDown` / `onScroll` run after its own). A row handles `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onClick`, `onDblClick`, `onPointerEnter`, `onPointerLeave`, `onKeyDown`, `onKeyUp` and `onDragStart`; your pointer and double-click handlers run after its own, `onClick` is reserved for the row's press. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 
@@ -299,7 +299,7 @@ Rows must carry `data-key` and `data-collection` (the grid id): the handlers rea
 - The collection is built from the children or `items` (as React Aria builds it): the rows render from it, and no item model is serialized: the browser rebuilds it from the same children on the first interaction.
 - For derived `items`, pass a `computed` (or a signal).
 - `GridListLoadMoreItem` observes its sentinel once the GridList code has loaded.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

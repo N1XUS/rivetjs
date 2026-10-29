@@ -134,7 +134,7 @@ The locale decides the hour cycle, the separators and the segment names. `granul
 
 ## DOM events and attributes
 
-As in [DateField](date-field.md#dom-events-and-attributes): props of `TimeField` land on the root, props of `DateInput` on the group, props of `DateSegment` on each segment; the field owns the keyboard and focus events of the segments. `on…Capture` handlers do not resume yet.
+As in [DateField](date-field.md#dom-events-and-attributes): props of `TimeField` land on the root, props of `DateInput` on the group, props of `DateSegment` on each segment; the field owns the keyboard and focus events of the segments. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

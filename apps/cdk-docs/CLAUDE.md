@@ -38,7 +38,7 @@ Docs site of `@rivetjs/cdk` (headless components + foundations), second site on 
   1. Intro + hero example. 2. Anatomy (rendered HTML block, parts table: element, default `rv-*` class, data attributes, ids). 3. Import snippet.
   4. Props table (EVERY prop from the source types in `libs/cdk/<module>`: type, default, notes) + Events table.
   5. Feature sections, each ≥1 live example: content/slots, value & selection (controlled/uncontrolled), disabled, validation, component options, events.
-  6. "DOM events and attributes": which element each `*Props` part object lands on, which events the component owns (its behaviour runs first). `on*Capture` handlers do not resume yet.
+  6. "DOM events and attributes": which element each `*Props` part object lands on, which events the component owns (its behaviour runs first). `on*Capture` handlers work on resumed pages, the first event included (runtime `tests/derived-capture-browser.test.ts`).
   7. Styling: class/data-attribute table, Tailwind example, plain-CSS example, `@rivetjs/cdk/theme.css` note, transitions (overlays).
   8. Accessibility: roles/ARIA, keyboard table (`:kbd[…]`). 9. Resumability: what ships before interaction, slot/callback rules, limitations.
   10. Testing (`@rivetjs/testing` helpers, if any). 11. Upstream: ported APIs, deviations, "Not yet supported".

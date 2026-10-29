@@ -209,7 +209,7 @@ The scrolling stays the browser's. Keyboard scrolling (arrows, :kbd[PageDown], :
   - The CSS variables are renamed: `--radix-scroll-area-thumb-width` / `-height` / `-corner-width` / `-corner-height` → `--rv-scroll-area-*`. The viewport attribute `data-radix-scroll-area-viewport` → `data-rv-scroll-area-viewport`.
   - The native-scrollbar hiding is inline on the viewport, plus one nonce'd `::-webkit-scrollbar` stylesheet per document, inserted on the client. Radix renders a `<style>` next to every viewport; Rivet JSX has no `<style>` content.
   - `asChild` → `render`. The `asChild` single-child warning has no equivalent.
-  - The thumb records where the pointer grabbed it in a bubbling `pointerdown`, not `onPointerDownCapture`. Capture handlers do not resume yet. It still runs before the scrollbar's handler.
+  - The thumb records where the pointer grabbed it in a bubbling `pointerdown`, not `onPointerDownCapture`. It still runs before the scrollbar's handler.
   - The thumb's scroll-tracking animation-frame loop stops when the thumb unmounts. Radix leaves it running.
   - With `type="scroll"`, the scroll-end timer is not cleared on unmount, so a part that resume re-creates keeps its timer.
   - `type`, `dir`, `scrollHideDelay`, `orientation`, `forceMount` and `nonce` are read when the part is created.

@@ -16,16 +16,16 @@ export default function ApiIndex() {
         <p class="doc-eyebrow">Reference</p>
         <h1>API reference</h1>
         <p class="doc-lead">
-          Every public export, grouped by the path you import it from. It is generated from the source code and its comments, so it always
-          matches the code in this version.
+          Every public export, grouped by the path you import it from. It is generated from the source code and its comments, so it always matches the code in
+          this version.
         </p>
       </header>
       <div data-pagefind-body="" data-pagefind-filter="section:API">
         {PACKAGES.map((pkg) => {
           const entries = api.entries.filter((e) => packageOf(e.entry) === pkg.name);
           return (
-            <section class="api-package" aria-labelledby={"pkg-" + pkg.title.toLowerCase()}>
-              <h2 id={"pkg-" + pkg.title.toLowerCase()}>
+            <section class="api-package" aria-labelledby={"pkg-" + pkg.title.toLowerCase().replace(/\s+/g, "-")}>
+              <h2 id={"pkg-" + pkg.title.toLowerCase().replace(/\s+/g, "-")}>
                 {pkg.title} <code class="api-package-name">{pkg.name}</code>
               </h2>
               <p class="api-package-summary">{pkg.summary}</p>

@@ -235,7 +235,7 @@ The picker handles a key first (spin, type, move across both fields and the butt
 | props of `Button` | the calendar `button` |
 | props of `Popover`, `Dialog` | the popover `div`, the `section[role=dialog]` |
 
-The root owns `onFocusIn` / `onFocusOut`; the group owns `onKeyDown`, `onPointerDown` and `onPointerUp` and runs yours after its own; the button's press opens the popover, and a `Button` `onClick` runs as well. Keyboard and focus events of the segments are the picker's: use `onKeyDown` / `onKeyUp` / `onFocus` / `onBlur` / `onFocusChange` on `DateRangePicker`. `on…Capture` handlers do not resume yet.
+The root owns `onFocusIn` / `onFocusOut`; the group owns `onKeyDown`, `onPointerDown` and `onPointerUp` and runs yours after its own; the button's press opens the popover, and a `Button` `onClick` runs as well. Keyboard and focus events of the segments are the picker's: use `onKeyDown` / `onKeyUp` / `onFocus` / `onBlur` / `onFocusChange` on `DateRangePicker`. `on…Capture` handlers work on resumed pages too, the first event included.
 
 ::example{id=date-range-picker-dom-events}
 
@@ -298,7 +298,7 @@ The root owns `onFocusIn` / `onFocusOut`; the group owns `onKeyDown`, `onPointer
 - Server HTML: the group, both fields with every segment, the two form inputs, the button and the value description. The popover and its calendar render on the first open (nothing calendar-related ships before it).
 - The state is plain signals plus strings: the value, the partial input, the open state and the validation resume without re-rendering.
 - Parts may come from your own components (`<RangeFields />`, `<RangePopover />` in the examples): they read the picker's contexts.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

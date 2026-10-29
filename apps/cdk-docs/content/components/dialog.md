@@ -142,7 +142,7 @@ Put the `Dialog` in a `Popover` inside the `DialogTrigger`; `close` closes the p
 Each part takes its own global DOM props: the `Button`, the `ModalOverlay` (its `onPointerDown` runs after the component's own) and the `Modal`.
 
 - Global events: mouse, pointer, touch, scroll, wheel, animation and transition events (`libs/cdk/utils/dom-props.ts`).
-- `on…Capture` handlers do not resume yet: they work on dialogs rendered in the browser only.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

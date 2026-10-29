@@ -103,7 +103,7 @@ Call the filters once in the component body, not inside JSX: a spread over `prop
 
 - Forwarded handlers can be any function, handlers on item objects too.
 - Handlers of an element resume on its first event, owned ones chained inside the component's own handler.
-- Known limitation: `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Upstream
 

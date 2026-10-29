@@ -83,7 +83,7 @@ A disabled toggle keeps its state and is skipped by Tab. `excludeFromTabOrder` k
 
 ::example{id=toggle-button-dom-events}
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

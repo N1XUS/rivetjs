@@ -9,7 +9,7 @@ const manifest = (pkg: string) => JSON.parse(readFileSync(new URL(`../../${pkg}/
 
 test("@rivetjs/bridge subpaths resolve and import", async () => {
   const core = manifest("bridge");
-  assert.deepEqual(Object.keys(core.exports), [".", "./server", "./dom", "./client", "./intent", "./vite", "./adapter", "./persist"]);
+  assert.deepEqual(Object.keys(core.exports), [".", "./server", "./dom", "./client", "./intent", "./vite", "./adapter"]);
   assert.equal(core.sideEffects, false);
   assert.deepEqual(core.rivet, { source: true });
   assert.deepEqual(Object.keys(core.peerDependencies).sort(), ["@rivetjs/compiler", "@rivetjs/reactivity", "@rivetjs/runtime", "vite"]);

@@ -2199,7 +2199,8 @@ const isPress = (event: Event): [HTMLElement | null] | false | undefined =>
   (event.type === "mousedown" || (event.type === "pointerdown" && (event as PointerEvent).pointerType !== "touch")) && pressTarget(event);
 // Listeners a replayed handler attaches (RA usePress's document `pointerup` on press start, a tooltip's close-on-press
 // capture `pointerdown`): while cold events are queued `EventTarget.prototype` add / remove record them; each later
-// replayed event dispatched before one was added runs it after its delegated handlers, in path order (`late`). A removed
+// replayed event dispatched before one was added runs it in the browser's order: capture listeners before its delegated
+// handlers, bubbling ones after them, each in path order (`late`). A removed
 // record stays in `added` marked `gone` (O(1) removal and replay membership); past 32 records `byFn` indexes the live ones
 // by listener for the native duplicate check and removal (PERF-REST P1: N recorded adds / removes were N² tuple scans).
 type Added = [
@@ -2263,13 +2264,12 @@ const record = (on: unknown): void => {
   else if (proto.addEventListener === addRecorded)
     ((proto.addEventListener = nativeAdd), (proto.removeEventListener = nativeRemove), (added = []), (byFn = null));
 };
-function late(event: Event, path: EventTarget[]): Added[] {
-  const list = added.filter((r) => !r[7] && r[1] === event.type && r[5] !== event && event.timeStamp < r[4]),
-    stopped = event.cancelBubble,
-    ran: Added[] = [];
+// `phase` 1: the capture listeners (outermost first), run before the delegated handlers; 2: the bubbling ones, after.
+function late(event: Event, path: EventTarget[], phase: 1 | 2, stopped: boolean, ran: Added[]): Added[] {
+  const list = added.filter((r) => !r[7] && r[1] === event.type && r[5] !== event && event.timeStamp < r[4] && r[3] === (phase === 1));
   if (!list.length) return ran;
-  const order: [EventTarget, boolean][] = [...path].reverse().map((t) => [t, true]);
-  for (const t of path.slice(0, event.bubbles ? path.length : 1)) order.push([t, false]);
+  const order: [EventTarget, boolean][] =
+    phase === 1 ? [...path].reverse().map((t) => [t, true]) : path.slice(0, event.bubbles ? path.length : 1).map((t) => [t, false]);
   for (const [t, capture] of order) {
     if (event.cancelBubble && (!stopped || !capture || ((t as Node).nodeType > 0 && (t as Node).nodeType != 9))) break;
     for (const r of list)
@@ -2446,9 +2446,15 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
   if (wrote) ((target.value = state[0] as string), (target.checked = state[1] as boolean));
   replaying = true;
   replayed = event;
-  let ran: Added[] = [];
+  const ran: Added[] = [];
   try {
-    if (!moved.has(event)) (_delegateBelow(event, doc!), (ran = late(event, path)));
+    if (!moved.has(event)) {
+      // The browser's order: capture listeners the adopt added, then the delegated (bubbling) handlers, then bubbling listeners.
+      const stopped = event.cancelBubble;
+      late(event, path, 1, stopped, ran);
+      if (!event.cancelBubble || stopped) _delegateBelow(event, doc!);
+      late(event, path, 2, stopped, ran);
+    }
   } finally {
     replaying = false;
     delete (event as { composedPath?: unknown }).composedPath;

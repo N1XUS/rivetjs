@@ -265,7 +265,7 @@ The trigger handles `onPointerDown`, `onMouseDown` and `onClick` itself; the lis
 
 ::example{id=select-dom-events}
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 
@@ -329,7 +329,7 @@ Pointer: a mouse press opens on pointer down and an option selects on release. T
 - State is signals plus JSON (`createSelectState`), so `value` / `isOpen` signals and number keys resume as they were.
 - `children`, `renderValue` and a function `indicator` are slots. Pass element content for `indicator` as a function (`indicator={() => <Icon />}`). `renderEmptyState` takes text.
 - A `children` slot that returns elements needs a starting value (`defaultValue` or `value`): when the server rendered the placeholder text, the resumed trigger cannot switch that text to elements. Use `renderValue` returning text, or start with a value.
-- `on…Capture` handlers do not resume yet.
+- `on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Testing
 

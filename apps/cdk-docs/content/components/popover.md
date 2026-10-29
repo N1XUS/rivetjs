@@ -208,7 +208,7 @@ Put an `OverlayArrow` inside the `Popover`. The engine places it along the edge 
 | popover element | the `Popover`'s global DOM props | none (`style` is the render-prop style) |
 | arrow | the `OverlayArrow`'s global DOM props | none |
 
-`on…Capture` handlers do not resume yet: they work on popovers rendered in the browser only.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

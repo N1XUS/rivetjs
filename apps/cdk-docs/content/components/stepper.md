@@ -179,7 +179,7 @@ Without panels (a progress indicator, a timeline) a tablist is the wrong pattern
 
 - `Stepper`, `StepList`, `Step`, `StepPanel`: global attributes and events land on their element.
 - `StepHeader`: owns `onClick` (selects), `onKeyDown` (arrows, tabs semantics), `onPointerEnter` / `onPointerLeave` (`data-hovered`), focus (`data-focus-visible`); your handlers run after.
-- `on*Capture` handlers do not resume yet.
+- `on*Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

@@ -110,7 +110,7 @@ The state and handlers (`createCompareState`, `compareKeyDown`, `comparePointerD
 
 - `Compare` owns `pointerdown` (surface drags with `dragAnywhere`); your `onPointerDown` runs after it.
 - `CompareHandle` owns `pointerdown`, `pointerover` (hover state), `focusin` (focus-visible) and `keydown`; your handlers run after the handle's.
-- Global DOM attributes (`id`, `data-*`, `aria-*`, events) land on the element of each part. `on*Capture` handlers do not resume yet.
+- Global DOM attributes (`id`, `data-*`, `aria-*`, events) land on the element of each part. `on*Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

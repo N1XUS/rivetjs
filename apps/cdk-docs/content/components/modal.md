@@ -131,7 +131,7 @@ A `Pressable` child needs an interactive ARIA role (`role="button"`) or a semant
 | underlay | the `ModalOverlay`'s global DOM props | `onPointerDown` (outside press) |
 | modal element | the `Modal`'s global DOM props | none |
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

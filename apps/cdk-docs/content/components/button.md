@@ -106,7 +106,7 @@ The button handles `onPointerDown`, `onPointerUp`, `onMouseDown`, `onClick` and 
 
 ::example{id=button-dom-events}
 
-`on…Capture` handlers do not resume yet.
+`on…Capture` handlers work on resumed pages too, the first event included.
 
 ## Styling
 

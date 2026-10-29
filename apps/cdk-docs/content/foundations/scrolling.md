@@ -234,7 +234,7 @@ Browsers disagree on `scrollLeft` in RTL containers. `getRtlScrollAxisType()` pr
 
 - The viewport owns `onScroll`, `onWheel` and `onPointerDown`: its handler (which starts the engine) runs first, then yours. It also listens to `focusin` and `keydown`.
 - `CdkVirtualScrollableElement` owns `onScroll` the same way.
-- `on*Capture` handlers do not resume yet.
+- `on*Capture` handlers work on resumed pages too, the first event included.
 
 ::example{id=scrolling-dom-events}
 
