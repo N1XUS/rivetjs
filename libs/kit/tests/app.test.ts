@@ -76,8 +76,8 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
     const nonce = /'nonce-([^']+)'/.exec(first.headers.get("content-security-policy") ?? "")![1]!;
     const head = /<head>([\s\S]*)<\/head>/.exec(html)![1]!;
     assert.match(head, /<title>Home \| Kit<\/title>/, head);
-    const order = ["<title>", /<link rel="stylesheet"|<style(?: data-href="[^"]+")? nonce/, "rivet-scripts", 'name="description"', 'rel="icon"', "ld+json"].map((s) =>
-      typeof s === "string" ? head.indexOf(s) : head.search(s),
+    const order = ["<title>", /<link rel="stylesheet"|<style(?: data-href="[^"]+")? nonce/, "rivet-scripts", 'name="description"', 'rel="icon"', "ld+json"].map(
+      (s) => (typeof s === "string" ? head.indexOf(s) : head.search(s)),
     );
     assert.ok(
       order.every((at) => at >= 0),

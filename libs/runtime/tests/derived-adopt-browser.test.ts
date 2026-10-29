@@ -81,7 +81,7 @@ test("boot from the tail: nothing runs before input (fetch-ahead only); a cold c
   await withPage(await files(), async (page, requests) => {
     await page.goto("http://rivet.test/");
     // Fetch-ahead (DERIVED-C, tail `data-fo`): the runtime + the boundary chunks as low-priority modulepreloads after
-    // `load` — fetched, never evaluated: nothing is adopted before the click.
+    // `load`; the idle prime (LITE-BOOT) may evaluate them and their imports, but nothing is adopted before the click.
     await page.waitForFunction(() => document.querySelectorAll('link[rel="modulepreload"]').length === 2);
     assert.deepEqual(
       await page.evaluate(() =>
@@ -93,7 +93,7 @@ test("boot from the tail: nothing runs before input (fetch-ahead only); a cold c
       ],
     );
     assert.ok(
-      requests.every((r) => ["/", "/rt.js", "/page.js", "/dom-derived.ts"].includes(r) || r.endsWith(".ts")),
+      requests.every((r) => ["/", "/rt.js", "/page.js", "/dom-derived.ts"].includes(r) || /\.m?[jt]s$/.test(r)),
       requests.join(" "),
     );
     assert.equal(await handled(page, "#inc"), false, "no module evaluated before an interaction");

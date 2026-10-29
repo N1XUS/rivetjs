@@ -3,8 +3,8 @@
 @rivetjs/reactivity/track ce983b5ae9df 1943
 @rivetjs/reactivity/store 02fab8d3fba0 10217
 @rivetjs/runtime/server b798dfe0eac7 54911
-@rivetjs/runtime/dom 65bb07527e57 50036
-@rivetjs/runtime/dom [resumed] e6096b46cbd5 51857
+@rivetjs/runtime/dom 5b05f25eecfc 50070
+@rivetjs/runtime/dom [resumed] 5db0c9c34ca1 51891
 @rivetjs/runtime/dev 488ee5df3c18 28
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176
@@ -12,8 +12,8 @@
 @rivetjs/runtime/async 82848baeb0de 866
 @rivetjs/runtime/lazy 3c11119c2312 697
 @rivetjs/runtime/router bd3c70cbcceb 2796
-@rivetjs/runtime/router/dom 5d500017841f 17782
-@rivetjs/runtime/router/dom [resumed] 3dc88573c969 18203
+@rivetjs/runtime/router/dom f487f6e702af 17816
+@rivetjs/runtime/router/dom [resumed] 74c95bad6c8b 18237
 @rivetjs/runtime/router/server b00240071d79 8228
 @rivetjs/runtime/server-resume b56ad116e7ad 58099
 @rivetjs/runtime/server-resume [domData] 6d80da25c5e4 64004
@@ -28,12 +28,12 @@
 @rivetjs/runtime/server-incr 77b31d8e25f1 35895
 @rivetjs/runtime/props e57eee2a8448 9502
 @rivetjs/runtime/dom-derived 22549fe5615e 5496
-@rivetjs/runtime/dom-derived-runtime b901240c6bd8 61162
-@rivetjs/runtime/dom-derived-runtime [resumed] e4a8a5c9b78b 61538
-@rivetjs/runtime/dom-derived-runtime [domData] c24e1f9457d4 61886
-@rivetjs/runtime/dom-lite a6947c32014c 11079
-@rivetjs/runtime/dom-lite [resumed] 3c9652846108 11079
-@rivetjs/runtime/dom-lite [domData] 64791afb35e8 11079
+@rivetjs/runtime/dom-derived-runtime 8b347be97bc2 61506
+@rivetjs/runtime/dom-derived-runtime [resumed] c9d0736cf4c5 61882
+@rivetjs/runtime/dom-derived-runtime [domData] db7f04fa9734 62232
+@rivetjs/runtime/dom-lite a075f055210e 11079
+@rivetjs/runtime/dom-lite [resumed] b2b5385e179f 11079
+@rivetjs/runtime/dom-lite [domData] 8d55403e8f2d 11079
 @rivetjs/runtime/derived-reactivity 540c9a53af42 15710
 @rivetjs/runtime/node 3c195fe5ea08 5769
 @rivetjs/runtime/hot 3ec01cdb200b 8208
@@ -50,7 +50,7 @@
 @rivetjs/runtime/comptime-tv 173c879dea33 1334
 @rivetjs/runtime/id 75dd524027f7 2904
 @rivetjs/runtime/image-plan 987fd7613ef7 1782
-@rivetjs/runtime/testing 8e25e77882e9 14108
-@rivetjs/runtime/testing [resumed] c7af85eab542 14395
+@rivetjs/runtime/testing 9a94cc74cfe7 14142
+@rivetjs/runtime/testing [resumed] 6204b5b42663 14429
 @rivetjs/runtime/testing/server 8cfd536afc8d 22169
 @rivetjs/runtime/testing/register 94505a670898 1672
