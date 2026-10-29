@@ -1,7 +1,7 @@
 /* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no file tree). Feature set inspired by HeroUI Pro's public File Tree docs; independent implementation on HeroUI tokens (--default, --accent-soft, --border, --muted, focus / disabled status utilities). Behaviour = @rivetjs/cdk/tree. */
 /* -------------------------------------------------------------------------------------------------
  * FileTree Component Styles
- * Block: file-tree (modifiers: sm / md / lg; [data-guide-lines="always | hover | none"]; parts: item / content / indent /
+ * Block: file-tree (modifiers: sm / md / lg; [data-guide-lines="always | hover | none"]; [data-reduce-motion]; parts: item / content / indent /
  *   indicator / indicator-icon / selection-cell / icon / title)
  * States: item [data-hovered] [data-selected] [data-focus-visible] [data-disabled] [data-expanded]
  * -----------------------------------------------------------------------------------------------*/
@@ -128,6 +128,14 @@
 .file-tree__indicator-icon {
   transition: rotate var(--duration-fast) var(--ease-out);
   @apply motion-reduce:transition-none;
+}
+
+/* reduceMotion: no transitions whatever the OS setting (state changes apply at once). */
+.file-tree[data-reduce-motion="true"] {
+  .file-tree__item,
+  .file-tree__indicator-icon {
+    transition: none;
+  }
 }
 
 /**

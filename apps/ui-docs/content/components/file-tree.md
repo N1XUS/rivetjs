@@ -36,6 +36,18 @@ Additional exported parts: `FileTree.Root`.
 
 ## Examples
 
+### Reduced Motion
+
+::example{id=file-tree-reduced-motion}
+
+The tree has no expand animation; its transitions are the chevron turn and the row colours, and they already stop under `prefers-reduced-motion`. `reduceMotion` turns them off for everyone.
+
+### With Icons
+
+::example{id=file-tree-with-icons}
+
+`icon` takes an element or a function of the row's render props (`isExpanded()`, `hasChildItems()`, …), here an open folder while expanded.
+
 ### Sizes
 
 ::example{id=file-tree-sizes}
@@ -87,7 +99,7 @@ The component’s parts emit these additional `data-slot` values: `file-tree-ite
 
 ### Data Attributes
 
-- `[data-size="sm|md|lg"]` and `[data-guide-lines="always|hover|none"]` on the tree.
+- `[data-size="sm|md|lg"]`, `[data-guide-lines="always|hover|none"]` and `[data-reduce-motion="true"]` on the tree.
 - `[data-expanded="true"]`, `[data-has-child-items="true"]`, `[data-level]`, `[data-selected="true"]`, `[data-hovered="true"]`, `[data-focus-visible="true"]`, `[data-disabled="true"]` on a row.
 
 ## API Reference
@@ -102,6 +114,7 @@ The cdk `Tree`.
 | --------------------- | ------------------------------------ | -------- | ----------------------------------------------------- |
 | `size`                | `"sm" \| "md" \| "lg"`               | `"md"`   | Row height, text size and indent                      |
 | `showGuideLines`      | `boolean \| "hover"`                 | `true`   | Guide lines always, while hovered / focused, or never |
+| `reduceMotion`        | `boolean`                            | `false`  | No transitions, whatever the OS setting               |
 | `selectionMode`       | `"none" \| "single" \| "multiple"`   | `"none"` | Selection; adds a checkbox per row                    |
 | `selectedKeys`        | `Signal<Selection> \| Iterable<Key>` | -        | Selected rows (a signal is two-way)                   |
 | `expandedKeys`        | `Signal<Set<Key>> \| Iterable<Key>`  | -        | Expanded folders (a signal is two-way)                |

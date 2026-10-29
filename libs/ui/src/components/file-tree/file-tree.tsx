@@ -4,6 +4,8 @@
 // independent implementation, Rivet-authored styles.
 // - Root = cdk `Tree`; `size` → `.file-tree--{sm,md,lg}`, `showGuideLines` (true | false | "hover") → `data-guide-lines`
 //   ("always" | "none" | "hover"); guide lines are CSS only (a repeating gradient over the indent, `--tree-item-level`).
+//   `reduceMotion` → `data-reduce-motion="true"`: no chevron turn / row colour transitions, whatever the OS setting
+//   (`prefers-reduced-motion` already turns them off).
 // - `Item` = cdk `TreeItem` + `TreeItemContent`: indent, expand button (`Button slot="chevron"`, lucide `ChevronRight`
 //   rotated by `[data-expanded]` CSS, or `indicator`), selection checkbox (ui `Checkbox slot="selection"` when selection
 //   is on with `selectionBehavior` "toggle"), `icon`, `title`; nested `FileTree.Item`s / a `Collection` go in `children`.
@@ -30,14 +32,25 @@ const SLOTS = fileTreeVariants();
 interface FileTreeRootProps<T extends object = object> extends TreePrimitiveProps<T>, FileTreeVariants {
   /** Vertical guide lines per nesting level: always, only while the tree is hovered / focused, or never. @default true */
   showGuideLines?: boolean | "hover";
+  /** Turn off the tree's transitions (chevron turn, row hover / selection colour) regardless of `prefers-reduced-motion`. @default false */
+  reduceMotion?: boolean;
 }
 
 function FileTreeRoot<T extends object>(props: FileTreeRootProps<T>): JSX.Element {
-  const [local, rest] = splitLive(props, ["class", "size", "showGuideLines"]);
+  const [local, rest] = splitLive(props, ["class", "size", "showGuideLines", "reduceMotion"]);
   const size = local.size ?? "md";
   const guides = local.showGuideLines === "hover" ? "hover" : local.showGuideLines === false ? "none" : "always";
   const cls = composeTwRenderProps(local.class as never, fileTreeVariants({ size }).base()) as string | ((values: TreeRenderProps) => string);
-  return <TreePrimitive data-slot="file-tree" data-size={size} data-guide-lines={guides} {...(rest as object)} class={cls as never} />;
+  return (
+    <TreePrimitive
+      data-slot="file-tree"
+      data-size={size}
+      data-guide-lines={guides}
+      data-reduce-motion={local.reduceMotion ? "true" : undefined}
+      {...(rest as object)}
+      class={cls as never}
+    />
+  );
 }
 
 /* -------------------------------------------------------------------------------------------------

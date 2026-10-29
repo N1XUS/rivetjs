@@ -22638,6 +22638,10 @@
     }
   }
 
+  .file-tree[data-reduce-motion="true"] .file-tree__item, .file-tree[data-reduce-motion="true"] .file-tree__indicator-icon {
+    transition: none;
+  }
+
   .file-tree__selection-cell {
     flex-shrink: 0;
     align-items: center;

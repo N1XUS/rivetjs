@@ -47,3 +47,20 @@ test("file tree SSR: sizes, guide lines, selection checkboxes, custom indicator"
   assert.match(off, /file-tree--lg/);
   assert.match(off, /data-guide-lines="none"/);
 });
+
+test("file tree SSR: reduceMotion sets data-reduce-motion (absent by default)", async () => {
+  const on = await renderToString(() => (
+    <FileTree aria-label="Files" reduceMotion defaultExpandedKeys={["src"]}>
+      <FileTree.Item id="src" title="src">
+        <FileTree.Item id="index" title="index.ts" />
+      </FileTree.Item>
+    </FileTree>
+  ));
+  assert.match(on, /role="treegrid"[^>]*data-reduce-motion="true"|data-reduce-motion="true"[^>]*role="treegrid"/);
+  const off = await renderToString(() => (
+    <FileTree aria-label="Files">
+      <FileTree.Item id="x" title="x" />
+    </FileTree>
+  ));
+  assert.doesNotMatch(off, /data-reduce-motion/);
+});
