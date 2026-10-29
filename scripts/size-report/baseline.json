@@ -149,7 +149,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 6913,
+          "htmlBr": 6869,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1362,7 +1362,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4652,
+          "htmlBr": 4651,
           "cssSheets": 0,
           "css": {
             "min": 0,
