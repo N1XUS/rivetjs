@@ -408,7 +408,7 @@ export default function ChatShowcase() {
             <p class="truncate text-xs text-muted">Answers from your orders, stock and suppliers</p>
           </div>
           <Chip id="assistant-online" size="sm" variant="soft" color="success" class="hidden sm:flex">
-            <Status color="success" size="sm" pulse class="me-1" />
+            <Status color="success" size="sm" pulse />
             Online
           </Chip>
           <AppLayout.AsideTrigger id="details-toggle" aria-label="Toggle chat details" />

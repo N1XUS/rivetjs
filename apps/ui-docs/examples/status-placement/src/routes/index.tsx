@@ -22,7 +22,7 @@ export function Placement() {
         <Status aria-label="Away" class="absolute end-0 bottom-0 ring-2 ring-background" />
       </span>
       <Chip id="order-chip" size="sm" variant="soft" color="warning">
-        <Status color="warning" size="sm" pulse class="me-1" />
+        <Status color="warning" size="sm" pulse />
         Pending
       </Chip>
     </div>

@@ -165,7 +165,7 @@ export function Dashboard() {
       header: "Status",
       cell: (o: Order) => (
         <Chip size="sm" variant="soft" color={STATUS_COLOR[o.status]}>
-          <Status color={STATUS_COLOR[o.status]} size="sm" pulse={o.status === "pending"} class="me-1" />
+          <Status color={STATUS_COLOR[o.status]} size="sm" pulse={o.status === "pending"} />
           {o.status}
         </Chip>
       ),

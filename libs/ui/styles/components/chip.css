@@ -75,6 +75,30 @@
   @apply px-3 py-1 text-sm leading-5 font-medium;
 }
 
+/* Rivet: mixed children (an icon / Status dot + text) are not wrapped in a Label, so they sat 2 px closer to the pill's
+   ends than a label's text (sm: 4 vs 6 px) and 2 px closer together than icon + label. They get the label's inset and
+   the icon + label spacing (TW-185). A leading / trailing icon next to an explicit Label gets the same inset. */
+.chip:not(:has(> .chip__label)) {
+  padding-inline: --spacing(2.5);
+  column-gap: --spacing(1);
+}
+
+.chip--sm:not(:has(> .chip__label)) {
+  padding-inline: --spacing(1.5);
+}
+
+.chip--lg:not(:has(> .chip__label)) {
+  padding-inline: --spacing(3.5);
+}
+
+.chip:has(> .chip__label) > :not(.chip__label):first-child {
+  margin-inline-start: --spacing(0.5);
+}
+
+.chip:has(> .chip__label) > :not(.chip__label):last-child {
+  margin-inline-end: --spacing(0.5);
+}
+
 /* ====================== */
 /* = Compound variants = */
 /* ====================== */

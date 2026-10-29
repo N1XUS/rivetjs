@@ -257,8 +257,8 @@
   "inlineJsBytes": 6183,
   "files": 21,
   "jsRaw": 314663,
-  "jsGz": 107002,
-  "jsBr": 96595,
+  "jsGz": 107000,
+  "jsBr": 96602,
   "urls": [
    "/assets/button.js",
    "/assets/circle-alert.js",
