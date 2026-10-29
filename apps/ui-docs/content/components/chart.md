@@ -8,6 +8,8 @@ related: [components/kpi, components/data-grid, components/meter]
 
 `@rivetjs/ui/chart` draws the charts a dashboard needs from plain data: `AreaChart`, `LineChart`, `BarChart` (grouped or stacked), `DonutChart` and `Sparkline`. Charts are computed and rendered on the server: no chart library, no canvas and no script in the browser. Tooltips, guides and dots appear on hover and keyboard focus with CSS alone, and cartesian charts expose labelled, focusable data slots while tooltips are enabled. DonutChart and Sparkline use a different, non-interactive structure.
 
+The cartesian charts have their own pages with every demo: [AreaChart](/components/area-chart/), [LineChart](/components/line-chart/) and [BarChart](/components/bar-chart/). This page is the overview: the props, styling and accessibility they share, plus `DonutChart` and `Sparkline`.
+
 ## Usage
 
 ```tsx
@@ -28,33 +30,7 @@ This subpath exports separate `AreaChart`, `LineChart`, `BarChart`, `DonutChart`
 
 ### Line
 
-::example{id=chart-line}
-
-`valueFormatter` formats the y axis and the tooltip values; `indexFormatter` the x labels. `minValue` / `maxValue` fix the y range.
-
-#### With dots
-
-::example{id=chart-line-dots}
-
-`showDots` (line and area) draws a dot on every data point; without it, dots appear on the hovered or focused x value only.
-
-#### Colors
-
-::example{id=chart-line-multi-colors}
-
-Each series takes any CSS colour as `color`, or a palette token such as `var(--chart-3)`. The legend, dots and tooltip follow it.
-
-#### Dashed comparison
-
-::example{id=chart-line-dashed-comparison}
-
-A series with `dashed: true` draws its line dashed (a previous period, a target).
-
-#### Missing values
-
-::example{id=chart-line-gaps}
-
-A `null` value (or a missing key) is no value: the line and the area break into separate runs, the hovered x value lists only the series that have a value, and a slot with no values is named "no data". `connectNulls` draws straight across the gaps instead. Stacked series count a missing value as 0, so the layers stay closed.
+[LineChart](/components/line-chart/) has its own page: usage, dashed comparison, KPI with chart, colours, portfolio, sparkline, stats with chart, traffic source, custom tooltip, dots and missing values demos.
 
 ### Bar
 
@@ -111,6 +87,8 @@ See the [full module API](/api/rivetjs/ui/chart/) for every named export and par
 
 ### AreaChart / LineChart / BarChart
 
+Shared props of the cartesian charts; each chart page lists the ones that apply to it.
+
 | Prop                                                                  | Type                                  | Default        | Description                                                                                  |
 | --------------------------------------------------------------------- | ------------------------------------- | -------------- | -------------------------------------------------------------------------------------------- |
 | `data`                                                                | `ChartDatum[]`                        | -              | One object per x value                                                                       |
@@ -150,6 +128,7 @@ Cartesian charts expose labelled, focusable data slots when tooltips are enabled
 
 - [AreaChart](/components/area-chart/): Area charts and sparklines.
 - [BarChart](/components/bar-chart/): Grouped, stacked and horizontal bars.
+- [LineChart](/components/line-chart/): Lines, dashed comparisons and gaps.
 - [Kpi](/components/kpi/): Metric cards with a sparkline.
 - [ChartTooltip](/components/chart-tooltip/): Parts for a custom `tooltip`.
 - [PieChart](/components/pie-chart/), [RadarChart](/components/radar-chart/), [RadialChart](/components/radial-chart/), [ComposedChart](/components/composed-chart/): More chart types.

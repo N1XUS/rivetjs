@@ -43,7 +43,7 @@ export default function Anatomy() {
 }
 ```
 
-`Kpi.Value` formats a number with `Intl.NumberFormat` (`formatOptions`, `locale`; one cached formatter per locale and options); pass an accessor to update it live, or children for a preformatted string. `Kpi.Trend` is a small [TrendChip](/components/trend-chip/). Put a [Sparkline](/components/chart/) in `Kpi.Chart`: it runs edge to edge across the card, and as the last part (no `Kpi.Footer`) it also reaches the bottom edge, clipped to the rounded corners.
+`Kpi.Value` formats a number with `Intl.NumberFormat` (`formatOptions`, `locale`; one cached formatter per locale and options); pass an accessor to update it live, or children for a preformatted string. `Kpi.Trend` is a small [TrendChip](/components/trend-chip/). Put a [Sparkline](/components/area-chart/#sparkline) in `Kpi.Chart`: it runs edge to edge across the card, and as the last part (no `Kpi.Footer`) it also reaches the bottom edge, clipped to the rounded corners.
 
 Additional exported parts: `Kpi.Root`.
 

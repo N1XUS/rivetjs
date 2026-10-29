@@ -63,6 +63,7 @@ export const groups: NavGroup[] = [
       "components/chart",
       "components/chart-tooltip",
       "components/composed-chart",
+      "components/line-chart",
       "components/pie-chart",
       "components/radar-chart",
       "components/radial-chart",

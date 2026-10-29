@@ -115,7 +115,8 @@ With tooltips enabled, each category is a focusable `role="group"` slot named by
 
 ## Related Components
 
-- [Chart](/components/chart/): Overview of the chart module, line and donut charts, shared styling.
+- [Chart](/components/chart/): Overview of the chart module, donut charts, shared styling.
+- [LineChart](/components/line-chart/): Lines, dashed comparisons and gaps.
 - [AreaChart](/components/area-chart/): Area charts and sparklines.
 - [ComposedChart](/components/composed-chart/): Bars with lines and areas on one set of axes.
 - [ChartTooltip](/components/chart-tooltip/): Parts for a custom `tooltip`.
