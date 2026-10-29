@@ -179,7 +179,7 @@
 }
 
 .prompt-input__token-suggestion {
-  @apply flex min-h-9 w-full items-center gap-2.5 px-2 py-1.5 text-foreground outline-none select-none;
+  @apply flex min-h-9 w-full items-center gap-3 px-2 py-1.5 text-foreground outline-none select-none;
   border-radius: var(--r-inner);
   cursor: var(--cursor-interactive);
   transition: background-color var(--duration-fast) var(--ease-out);
