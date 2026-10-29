@@ -103,6 +103,12 @@ Set the slide size with `--rv-carousel-slide-size` (on the root or an item); `sl
 
 ::example{id=carousel-api-access}
 
+### Modal Type
+
+::example{id=carousel-modal}
+
+A gallery in a [Modal](/components/modal/): the modal body is created when it opens, so `startIndex` picks the pressed photo. `placement="outside"` puts previous / next beside the slides, clear of the photo.
+
 ### Import
 
 ```tsx
