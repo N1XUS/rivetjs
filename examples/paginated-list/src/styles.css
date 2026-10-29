@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+/* The page uses the Pagination look on plain links (no ui component import), so it imports that stylesheet itself. */
+@import "@rivetjs/ui/styles/out/pagination.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}

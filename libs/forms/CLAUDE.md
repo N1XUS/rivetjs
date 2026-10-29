@@ -43,6 +43,7 @@ Flat: one file per module at package root, `server/` for server-only code (packa
 - `sideEffects: false`, `index.ts` re-exports only: an app pays only for imported functions.
 - Definitions are module-scope and never serialized; handlers/actions take the definition explicitly (`onInput(def, form, e)`) so the resumed browser reaches it via module imports.
 - Store stays small: per-field signals created on first use only; field values live in the DOM, not the store.
+- Form ownership reads the `id` attribute (`getAttribute`), never `form.id`: a hidden `name="id"` control shadows that DOM property and must not disable enhanced input / submit handlers. Regression: `examples/forms-in-overlays/tests/app.test.ts` (edit and delete without document navigation).
 - Reads subscribe to the fewest signals (field binding → that field's record only); `dev.ts` describers read untracked and never create lazy signals.
 - Lazy chunks: `enhance.ts`/`transport.ts` load on first valid submit / remote check (`submit.ts` after `enhance.ts` when `def.submit`), `array.ts` on array intents, resume-format decoder in autosave on demand. Don't add static imports of them from `handlers.ts`/`engine.ts`.
 - Client and server decode the same way (`decode.ts` used by both) → identical validation input.

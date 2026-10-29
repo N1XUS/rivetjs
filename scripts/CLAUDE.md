@@ -70,6 +70,8 @@ Plain Node scripts run from the repo root (`export PATH=/Users/denisseverin/.nvm
 
 Rules: an untouched feature costs 0 bytes — if an entry's hash changes for an entry you did not intend to touch, the change leaks into it (fix, don't `--update`). Intended deltas: `--update` and name them in the commit. Sizes in `runtime.txt` are the minified byte counts used in perf reviews.
 
+The 2026-10-29 form ownership fix (`name="id"` must not disable enhanced submission) regenerates only the `@rivetjs/forms` line in `zero-cost/packages.txt` from `packages-hashes.mjs#hash`; its minified size stays 4979 B. All runtime, sibling-package and SSR-lane hashes stay unchanged.
+
 ## Release (`scripts/release/`, `.github/workflows/release.yml`)
 
 - One version for every publishable lib (`publishableLibs()`; docs-kit has no `publishConfig`, never published). Workspace placeholder `0.0.0-experimental`; no `v*` tags yet (first changelog = whole history).

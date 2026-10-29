@@ -125,6 +125,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: npx vitest run --project examples --maxWorkers=1
 
   zero-cost:

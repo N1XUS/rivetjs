@@ -16,7 +16,11 @@ export function fieldOf(event: Event): string | null {
   return typeof name === "string" && name ? canonicalName(name) : null;
 }
 /** Whether a form element belongs to this store (forms without an id accept any store). */
-export const owns = (store: FormStore<any>, element: HTMLFormElement): boolean => !element.id || element.id === store.i;
+export const owns = (store: FormStore<any>, element: HTMLFormElement): boolean => {
+  // Named controls shadow HTMLFormElement properties: <input name="id"> replaces element.id.
+  const id = element.getAttribute("id");
+  return !id || id === store.i;
+};
 /** The store's `<form id>` in the document. */
 export const elementOf = (store: FormStore<any>): HTMLFormElement | null =>
   typeof document === "undefined" ? null : (document.getElementById(store.i) as HTMLFormElement | null);
