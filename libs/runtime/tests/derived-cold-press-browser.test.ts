@@ -18,6 +18,7 @@ export function App() {
   const presses = signal(0);
   const clicks = signal(0);
   const hovered = signal(false);
+  const downs = signal(0);
   const start = () => {
     pressed.set(true);
     document.addEventListener("pointerup", () => (pressed.set(false), presses.set(presses() + 1)), { once: true });
@@ -31,6 +32,9 @@ export function App() {
       <button id="held" onMouseDown={(e) => e.preventDefault()} onClick={() => clicks.set(clicks() + 1)}>
         held
       </button>
+      <div id="grip" tabIndex={0} onPointerDown={(e) => e.preventDefault()} onMouseDown={() => downs.set(downs() + 1)} onClick={() => clicks.set(clicks() + 1)}>
+        grip {downs()}
+      </div>
       <button id="plain" onClick={() => clicks.set(clicks() + 1)}>
         plain
       </button>
@@ -106,6 +110,23 @@ compiled("cold press: a mousedown a handler cancels gives focus back (radio labe
     await page.waitForFunction(() => document.querySelector("#clicks")!.textContent === "1", undefined, { timeout: 5000 });
     await idle(page);
     assert.equal(await active(page), "before");
+  });
+});
+
+compiled("cold press: a canceled pointerdown keeps focus and its compatibility mousedown never runs (resize handle shape)", async () => {
+  await cold(async (page) => {
+    // FUZZ-UI 2026-10-29 (ui `/app-layout-sheet`, sidebar resize handle): a canceled pointerdown suppresses the mousedown
+    // and its focus move in the browser; the replay ran the held mousedown and focused the handle.
+    await page.click("#grip");
+    await page.waitForFunction(() => document.querySelector("#clicks")!.textContent === "1", undefined, { timeout: 5000 });
+    await idle(page);
+    assert.equal(await active(page), "before");
+    assert.equal((await page.textContent("#grip"))!.trim(), "grip 0");
+    // Live: the same as a loaded page.
+    await page.click("#grip");
+    await page.waitForFunction(() => document.querySelector("#clicks")!.textContent === "2", undefined, { timeout: 5000 });
+    assert.equal(await active(page), "before");
+    assert.equal((await page.textContent("#grip"))!.trim(), "grip 0");
   });
 });
 

@@ -501,7 +501,7 @@ function replace(parent: Parent, current: Current, next: Node | null, marker: No
 
 /**
  * Remove `node` from `parent`. In a deferred first mouse click's flush (reactivity `_deferredFlush`) an element
- * under the pointer (`:hover`) is hidden instead and removed in the next frame's rAF, before paint: detaching the
+ * under the pointer (`:hover`) is hidden instead (`display: none` + `hidden`) and removed in the next frame's rAF, before paint: detaching the
  * hovered element posts Chrome's hover-update task, and the frame after a document's first click then waits
  * ~50 ms for its hover update (resume-bench navigate). Removed in the frame, the stall lands on the frame after
  * the paint. Every other removal (and every later click) is a plain `removeChild`.
@@ -518,13 +518,19 @@ function swap(parent: Parent, next: Node, node: Node): void {
   } else parent.replaceChild(next, node);
 }
 const hovered = (node: Node): boolean => _deferredFlush() && node.nodeType === 1 && (node as Element).matches(":hover");
+// The kept element is `hidden` too (FUZZ-UI 2026-10-29): code reading the DOM before that rAF (cdk DOM collections skip
+// `[hidden]` subtrees: a TagGroup's focused-key reset after a first-click removal saw the removed tag, focus fell to the
+// body) sees it gone.
 function keep(parent: Parent, el: HTMLElement): void {
   const style = el.style,
-    display = style.display;
+    display = style.display,
+    hidden = el.hidden;
   style.display = "none";
+  el.hidden = true;
   requestAnimationFrame(() => {
     if (el.parentNode === parent && style.display === "none") parent.removeChild(el);
     style.display = display;
+    el.hidden = hidden;
   });
 }
 

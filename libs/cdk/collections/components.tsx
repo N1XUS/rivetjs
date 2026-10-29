@@ -37,6 +37,7 @@ import {
   createContext,
   provide,
   runWithOwner,
+  signal,
   untrack,
   useContext,
   type Context,
@@ -364,6 +365,18 @@ function generatedId(parentKey: Key | null | undefined, ids: { n: number }): str
   return (parentKey == null ? "" : String(parentKey) + ".") + "$." + ids.n++;
 }
 
+/**
+ * Live mode's generated id, held in a keyed signal (the `resumedId` pattern, `../utils/resumed-id.tsx`): a resumed page
+ * runs a part's boundary twice (adopt probe + adopt run, derived `adoptUnit` / lazy `_adoptRow`) under the one scope its
+ * parent's run provided, so the shared `ids` counter advances twice per part (`$.1`, `$.3`, … where the server and a
+ * client render wrote `$.0`, `$.1`, …: FUZZ-UI ui `/icons`, `/visual/tag-group`). The record ships the server's id; both
+ * runs read it. A client render keeps the counter's id.
+ */
+function liveGeneratedId(parentKey: Key | null | undefined, ids: { n: number }): string {
+  const kept = signal(generatedId(parentKey, ids));
+  return kept();
+}
+
 /** Live-mode node of a part (see header: no sibling links). */
 function liveNode<T>(
   NodeClass: CollectionNodeClass<any>,
@@ -399,11 +412,24 @@ function nodeProps(props: Record<string, any>): [string | undefined, Record<stri
 }
 
 /**
- * The props a built part renders with: `node.props` plus its key / value. Live: the part's own props when no `items`
- * row supplied id / value (they already carry both; no per-render merge), else a merge that keeps the getters.
+ * The props a built part renders with: `node.props` plus its key / value (and its own `textValue`). Live: the part's own
+ * props when no `items` row supplied id / value (they already carry both; no per-render merge), else a merge that keeps
+ * the getters.
  */
 const withNode = (all: Record<string, any>, direct: boolean, props: Record<string, any>, live: boolean, extra: Record<string, unknown>): any =>
   direct ? all : live ? mergeLive(props, extra) : { ...props, ...extra };
+
+/**
+ * The key / value a built part renders with, plus the part's own `textValue`: `nodeProps` keeps it out of `node.props`
+ * (it is `node.textValue`), while the direct path renders the part's whole props. Without it a static props object
+ * (every server render) dropped `data-text-value` where a client render with live props wrote it (FUZZ-UI ui
+ * `/item-morph` load: ListBox items given a spread).
+ */
+const nodeExtra = (node: Node<any>, own: boolean, textValue: string | undefined): Record<string, unknown> => {
+  const extra: Record<string, unknown> = own ? { id: node.key, value: node.value } : { value: node.value };
+  if (textValue !== undefined) extra.textValue = textValue;
+  return extra;
+};
 
 type LeafRender<P, E extends Element, T> = (props: P, ref: RefProp<E> | undefined, node: Node<T>) => unknown;
 
@@ -440,7 +466,7 @@ export function createLeafComponent<P extends object, E extends Element = HTMLEl
         ownProps: true,
         render: (node: Node<any>) =>
           (render as LeafRender<P, E, T>)(
-            withNode(all, live && !defaults, node.props, live, explicitId == null ? { value: node.value } : { id: node.key, value: node.value }) as P,
+            withNode(all, live && !defaults, node.props, live, nodeExtra(node, explicitId != null, textValue)) as P,
             p.ref,
             node as Node<T>,
           ),
@@ -453,7 +479,7 @@ export function createLeafComponent<P extends object, E extends Element = HTMLEl
       if (render.length >= 3) throw new Error(name + " cannot be rendered outside a collection.");
       return (render as (props: P, ref: RefProp<E> | undefined) => unknown)(props, p.ref);
     }
-    const id = resolveId(p as Record<string, any>, defaults, useContext(CollectionContext)) ?? generatedId(scope.parentKey, scope.ids);
+    const id = resolveId(p as Record<string, any>, defaults, useContext(CollectionContext)) ?? liveGeneratedId(scope.parentKey, scope.ids);
     const value = p.value ?? defaults?.value;
     const node = liveNode<T>(NodeClass, p as Record<string, any>, id, value, scope);
     return (render as LeafRender<P, E, T>)(defaults ? ({ ...props, id, value } as P) : props, p.ref, node);
@@ -499,11 +525,7 @@ export function createBranchComponent<P extends { children?: unknown }, E extend
         props: rest,
         ownProps: true,
         render: (node: Node<any>) =>
-          render(
-            withNode(all, live && !defaults, node.props, live, id == null ? { value: node.value } : { id: node.key, value: node.value }) as P,
-            p.ref,
-            node as Node<T>,
-          ),
+          render(withNode(all, live && !defaults, node.props, live, nodeExtra(node, id != null, textValue)) as P, p.ref, node as Node<T>),
         children: [],
       };
       build.specs.push(spec);
@@ -513,7 +535,7 @@ export function createBranchComponent<P extends { children?: unknown }, E extend
       return buildMark(spec);
     }
     const scope = useContext(CollectionScopeContext);
-    const key = id ?? generatedId(scope?.parentKey, scope?.ids ?? { n: 0 });
+    const key = id ?? liveGeneratedId(scope?.parentKey, scope?.ids ?? { n: 0 });
     const node = liveNode<T>(NodeClass, all, key, value, scope) as Mutable<CollectionNode<T>> & { content?: () => unknown };
     node.hasChildNodes = true;
     const childScope: CollectionScope = {

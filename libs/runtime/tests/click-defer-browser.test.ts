@@ -129,7 +129,7 @@ mount(() => {
     if (n)
       queueMicrotask(() => {
         const old = document.getElementById("s" + (n - 1));
-        m.log.push(["flushed", old ? getComputedStyle(old).display : "removed"]);
+        m.log.push(["flushed", old ? getComputedStyle(old).display + (old.hidden ? " hidden" : "") : "removed"]);
         requestAnimationFrame(() => requestAnimationFrame(() => m.log.push(["frame", document.getElementById("s" + (n - 1)) ? "kept" : "removed"])));
       });
     _on(root.lastChild, "click", (e) => {
@@ -152,8 +152,9 @@ test("first mouse click detaching the hovered element: kept hidden until the nex
         .waitForFunction((n) => (window as unknown as { m: { log: unknown[] } }).m.log.length >= n, n)
         .then(() => p.evaluate(() => (window as unknown as { m: { log: unknown[] } }).m.log));
     await p.click("#s0 .go");
+    // Hidden (`hidden` too: DOM readers such as cdk DOM collections skip it before the rAF, FUZZ-UI 2026-10-29).
     assert.deepEqual(await entries(2), [
-      ["flushed", "none"],
+      ["flushed", "none hidden"],
       ["frame", "removed"],
     ]);
     await p.click("#s1 .go");

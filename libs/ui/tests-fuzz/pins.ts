@@ -44,6 +44,28 @@ export const pins: FuzzPin[] = [
     ),
     step: 29,
   },
+  {
+    ...pin(
+      "/table",
+      "mismatch",
+      '<tr>: resumed only [data-hovered="true"] / csr only []',
+      "runtime",
+      "frame timing: PageDown scrolls the grid under the parked pointer, hover lands on another row (FUZZ-UI 2026-10-29: 1 of 4 runs; same class as /colors)",
+      true,
+    ),
+    step: 30,
+  },
+  {
+    ...pin(
+      "/charts-c",
+      "missing",
+      "step #0 click: resumed gone, csr done",
+      "runtime",
+      "the first click (no earlier step) finds the chart group not actionable on the resumed page (FUZZ-UI 2026-10-29: 1 of 6 runs, under host load; cause not isolated)",
+      true,
+    ),
+    step: 1,
+  },
   // TABLE-NATIVE parity route: its grid-path twins (cdk Table, no handlers) show the shared cold-hover difference; the
   // native tables have no hover state attribute (`:hover` only). Grid behaviour on a resumed page: `/table`.
   pin("/table-static-parity", "mismatch", 'csr only [data-hovered="true"]', "runtime", COLD_HOVER + " (grid twins)", true),
@@ -64,18 +86,48 @@ export const pins: FuzzPin[] = [
     true,
   ),
 
-  // Open findings.
-  { ...pin("/action-bar-clear-grid", "recreated", "svg, path", "cdk", "grid rows " + NO_REGION), step: 1 },
-  pin("/avatar-group", "recreated", "span#ag-a.avatar", "ui", "Avatar " + NO_REGION),
-  { ...pin("/visual/card", "mismatch", 'csr only [data-hovered="true"]', "runtime", COLD_HOVER), step: 11 },
+  // FUZZ-UI 2026-10-29 (fresh run after the derived-only cut; rates from scoped reruns).
   pin(
-    "/disclosure-group",
-    "load",
-    'csr only [data-disabled="true"]',
-    "ui",
-    "DisclosureGroup Next button: server render misses the disabled state of the initial key",
+    "/list-view",
+    "mismatch",
+    /data-rv-view="19\d\d"/,
+    "cdk",
+    "virtualized GridList: End / PageDown on a resumed page renders an earlier window (row 19xx) than a client render; the step varies (17, 18, 28, 38 in 7 runs: virtualizer measure timing)",
+    true,
   ),
-  pin("/disclosure-group", "mismatch", 'csr: "dg-a"', "ui", "DisclosureGroup Previous/Next: the resumed page steps from a different expanded key"),
+  {
+    ...pin(
+      "/forms",
+      "mismatch",
+      ':value=" rivet"] / csr only [:value="rivet "]',
+      "runtime",
+      "native caret: a focused server-parsed input keeps its caret at 0, a client-set value puts it at the end, so the typed Space lands before / after the text (3/3; browser behaviour, not resume state)",
+      true,
+    ),
+    step: 20,
+  },
+  {
+    ...pin(
+      "/reanimate",
+      "mismatch",
+      /^resumed: "\w"\ncsr: "\w"$/,
+      "ui",
+      "InputOTP typing on the cold first keystrokes: one slot shows a different character (1 of 11 runs; input-otp selection sync timing)",
+      true,
+    ),
+    step: 2,
+  },
+  pin(
+    "/visual/avatar",
+    "load",
+    /^resumed: <span class="avatar__fallback avatar__fallback--default" data-slot="avatar-fallback">\ncsr: <span class="avatar avatar--md">$/,
+    "ui",
+    "Avatar.Fallback delayMs 600 (invalid image): the client render shows the fallback only after its timer, so the load snapshot depends on host speed (1 of 7 to 5 of 5 runs)",
+    true,
+  ),
+
+  // Open findings.
+  pin("/avatar-group", "recreated", "span#ag-a.avatar", "ui", "Avatar " + NO_REGION),
   pin("/lightbox", "recreated", "lightbox__slide", "cdk", "Lightbox slides " + NO_REGION),
   {
     ...pin(
@@ -95,53 +147,27 @@ export const pins: FuzzPin[] = [
     "cdk",
     "GridList rows: the server writes aria-labelledby = row id + description slot id (`grid-list/row.ts` slotRef: the slot id on the server), a client render none when no Text slot=description renders",
   ),
+  // FUZZ-UI 2026-10-29 (3/3 runs): keyed signals (`resumedId`, cdk utils/resumed-id.tsx) inside lazy `For` rows of a
+  // component without its own boundary (RadioButtonGroup `items` rows, story `#sh-rbg`) count from 1 in each row's adopt
+  // run, while the server numbers them across the boundary's rows (K, K#2): the second row adopts the first row's id.
   {
     ...pin(
-      "/list-view",
+      "/pro-forms",
       "mismatch",
-      /data-rv-view="19\d\d"/,
-      "cdk",
-      "virtualized GridList: End on a resumed page renders an earlier window (row 1992) than a client render (row 2000)",
+      'resumed only [aria-describedby="#15"] / csr only [aria-describedby="#16"]',
+      "runtime",
+      "first click: a lazy row's keyed id signals restart their count per row on the client (server numbers them across the boundary), ids shift by one (#15 vs #16)",
     ),
-    step: 17,
+    step: 1,
   },
+  pin(
+    "/pro-forms",
+    "mismatch",
+    'resumed only [data-rv-focus-scope="#21"] / csr only [data-rv-focus-scope="#22"]',
+    "runtime",
+    "follows the shifted row ids (above): the Website menu's focus scope id (steps 27 / 29 / 36 / 39)",
+  ),
   { ...pin("/file-tree", "recreated", "svg, path", "cdk", "Tree rows (lucide icons in TreeItemContent) " + NO_REGION), step: 1 },
-  pin("/resume", "recreated", "span#l-surface", "ui", "surface span " + NO_REGION),
-  pin("/selection-indicator", "recreated", "segment__indicator", "cdk", "SelectionIndicator " + NO_REGION),
-  pin("/visual/segment", "recreated", "segment__indicator", "cdk", "SelectionIndicator " + NO_REGION),
-  pin("/toggle-buttons", "recreated", "div#tg-live", "ui", "ToggleButtonGroup " + NO_REGION),
-  pin(
-    "/toggle-buttons",
-    "mismatch",
-    "touch-action:pan-x pan-y pinch-zoom",
-    "ui",
-    "follows the ToggleButtonGroup re-creation (re-created buttons lose the press style)",
-  ),
-  pin("/visual/tag-group", "recreated", "div.tag.tag--md", "cdk", "Tags " + NO_REGION),
-  // COLDFIX 2026-10-19: the cold replay no longer re-creates the Tags early (a cold press's queued focus events are
-  // dropped), so the old "resumed gone" finding is gone and the fuzz reaches the tag removal (same as cdk `/tag-group`).
-  pin(
-    "/visual/tag-group",
-    "mismatch",
-    'csr only [data-focused="true" tabindex="0" :focus]',
-    "cdk",
-    "removing the focused tag re-creates the Tags (" + NO_REGION + "); focus stays on the body instead of moving to the next tag",
-  ),
-  pin(
-    "/visual/tag-group",
-    "mismatch",
-    /csr: <div aria-label="Gaming" aria-selected="true"/,
-    "cdk",
-    "follows the lost focus after a tag removal (above): Enter selects nothing",
-  ),
-  // LAZY-FLIP 2026-10-21 (lazy rows on by default; 3/3). The `/data-grid` recreated (`data-grid__cell`) + missing pins left: the rows no longer re-create.
-  {
-    route: "/data-grid",
-    kind: "recreated",
-    match: /^svg, path/,
-    owner: "ui",
-    note: "lazy rows: the first header click re-creates the sort indicator icon (its header region re-creates instead of the rows; `resume.lazyRows: false` builds re-create the rows, `data-grid__cell`)",
-  },
   {
     route: "/lightbox",
     kind: "recreated",

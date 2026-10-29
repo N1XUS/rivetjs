@@ -506,9 +506,13 @@ function before(e: Keyed): void {
 }
 
 // `_for` in a unit's runs (`_adoption.list`): probe → a hole; adopt run → the list over the claimed server rows, lazily.
+// A row sample run (`sampleRow`, `u.all`) renders a nested list's rows like its child boundaries, inline: their bindings'
+// keyed reads are the sampled row's (FUZZ-UI 2026-10-29, ui `/scheduler-crud`: the month grid's day cells sit in a list
+// inside each week row; as a hole their roving `tabindex` reads were never sampled, so a `focusDay` write left the
+// lazy weeks on the old tab stop).
 function forHook(props: { each: unknown; by: unknown; children: (item: () => never, index: () => number) => unknown }): (() => Node[]) | undefined {
   const u = cur;
-  if (u === null || u.mode === CLIENT || inner) return undefined;
+  if (u === null || u.mode === CLIENT || inner || u.all) return undefined;
   const items = untrack(() => {
     const each = props.each;
     return ((typeof each === "function" ? (each as () => unknown)() : each) ?? []) as unknown[];
@@ -2131,8 +2135,10 @@ let added: Added[] = [],
   pressed: [HTMLElement | null] | false | undefined,
   start: [x: number, y: number, before: Element | null, after?: Element | null] | undefined,
   back: [Element | null] | undefined,
-  // The focus verdict of the last replayed linked pointerdown (`replay` `fresh`), for its mousedown.
-  pairFresh = false;
+  // The focus verdict of the last replayed linked pointerdown (`replay` `fresh`), for its mousedown; whether a handler
+  // canceled it (the browser then fires no compatibility mousedown and moves no focus: `replay` skips that mousedown).
+  pairFresh = false,
+  pairCanceled = false;
 const captures = (o: unknown): boolean => !!(typeof o == "object" ? (o as AddEventListenerOptions | null)?.capture : o);
 const sameAdded = (r: Added, t: EventTarget, type: string, fn: unknown, capture: boolean) =>
   r[0] === t && r[1] === type && r[2] === fn && r[3] === capture && !r[7];
@@ -2277,6 +2283,16 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     // A linked mousedown follows its pointerdown's verdict (that replay already put focus back).
     fresh = pair && type === "mousedown" ? pairFresh : !!press && before === ((hiddenMove.has(event) ? state[2] : press[0]) ?? doc!.body);
   if (pair && type === "pointerdown") pairFresh = fresh;
+  // A linked mousedown after a canceled pointerdown (FUZZ-UI ui `/app-layout-sheet`: the sidebar resize handle's
+  // `preventDefault`): the browser dispatches no compatibility mousedown, so its handlers do not run and no default focus
+  // follows — the pointerdown's replay already put focus back. Recorded as a canceled press (`undone`).
+  if (pair && type === "mousedown" && pairCanceled) {
+    if (press && press[0] && fresh) {
+      const list = undone.get(press[0]) ?? [];
+      (undone.set(press[0], list), list.push([state[2], performance.now(), event.timeStamp]));
+    }
+    return;
+  }
   if (press && !(pair && type === "mousedown") && doc!.activeElement === (press[0] ?? doc!.body)) {
     let was = state[2] as HTMLElement | null,
       ts = event.timeStamp,
@@ -2341,6 +2357,7 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     if (wrote && (target.value !== now![0] || target.checked !== now![1])) ((target.value = now![0] as string), (target.checked = now![1] as boolean));
   }
   const kept = canceled;
+  if (pair && type === "pointerdown") pairCanceled = kept;
   return Promise.resolve().then(() => {
     replayed = undefined;
     // The press's default focus (an unpaired pointerdown focuses even when canceled; a canceled mousedown keeps focus).
