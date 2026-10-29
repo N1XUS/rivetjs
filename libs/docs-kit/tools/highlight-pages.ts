@@ -8,7 +8,9 @@
 // renders). Example frame pages are not touched (`sitePages`). Coloured blocks carry `data-rv-text` (decoration: the
 // resumed unit adopts the token spans instead of rendering in the browser).
 import { readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
+import { buildCache, digest, sourceDigest, type BuildCache } from "./build-cache.ts";
 import { COMPILER_NAME, LANGS, langOf } from "../components/highlight-classes.ts";
 import type { Token } from "../components/highlighter.ts";
 import { sitePages } from "./critical-css.ts";
@@ -118,9 +120,41 @@ export function pageTokenizer(): Promise<Tokenize> {
   return (loading ??= import("../components/highlighter.ts").then((module) => module.loadTokenizer(LANGS)));
 }
 
-/** Colour the code blocks of a built client dir's docs pages (default: `sitePages`, frames excluded); rewrites changed files. */
-export async function highlightPages(client: string, options: { files?: readonly string[] } = {}): Promise<HighlightStats & { pages: number }> {
-  const tokenize = await pageTokenizer();
+/**
+ * The persistent token store of an app (INCR-BUILD, `build-cache.ts`): tokens per language + block text, scoped to the
+ * highlighter sources and the Shiki version (grammars, themes). Shiki tokenisation was ~6 s of a ui-docs build.
+ */
+export function highlightCache(root: string): BuildCache {
+  const shiki = (createRequire(import.meta.url)("shiki/package.json") as { version: string }).version;
+  const version = sourceDigest(
+    new URL("../components/highlighter.ts", import.meta.url),
+    new URL("../components/highlight-classes.ts", import.meta.url),
+    new URL("../components/format-html.ts", import.meta.url),
+  );
+  return buildCache(root, "highlight", digest(version, shiki, LANGS.join(",")));
+}
+
+/** `tokenize` answered from `cache` when it tokenised the same language + text before (JSON round trip of the tokens). */
+export function cachedTokenize(tokenize: Tokenize, cache: BuildCache): Tokenize {
+  return (text, lang) => {
+    const key = digest(lang, text);
+    const hit = cache.get(key);
+    if (hit !== undefined) return (JSON.parse(hit) as Token[][] | null) ?? undefined;
+    const tokens = tokenize(text, lang);
+    cache.set(key, JSON.stringify(tokens ?? null));
+    return tokens;
+  };
+}
+
+/**
+ * Colour the code blocks of a built client dir's docs pages (default: `sitePages`, frames excluded); rewrites changed
+ * files. `cache`: persistent tokens (`highlightCache`).
+ */
+export async function highlightPages(
+  client: string,
+  options: { files?: readonly string[]; cache?: BuildCache } = {},
+): Promise<HighlightStats & { pages: number }> {
+  const tokenize = options.cache ? cachedTokenize(await pageTokenizer(), options.cache) : await pageTokenizer();
   const files = options.files ?? (await sitePages(client));
   const stats: HighlightStats = { blocks: 0, plain: 0, left: 0 };
   const cache = new Map<string, Token[][] | undefined>();
