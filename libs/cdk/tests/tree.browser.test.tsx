@@ -3086,3 +3086,56 @@ describe("Tree virtualizer", () => {
     expect(texts(within(tree).getAllByRole("row")).slice(0, 2)).toEqual(["Folder 0", "Folder 1"]);
   });
 });
+
+// Rivet: rows of a createTreeData tree follow structural moves (cdk-docs `data-tree`, TREE-LEVEL 2026-10-29): RAC
+// re-renders the moved row from its new node, so aria-level / --tree-item-level follow the node's new level.
+describe("Tree over createTreeData moves", () => {
+  interface Person {
+    id: string;
+    name: string;
+    children?: Person[];
+  }
+  function PersonItem(props: { node: { key: Key; value: Person; children?: unknown[] | null } }) {
+    const node = props.node;
+    return (
+      <TreeItem id={node.key} textValue={node.value.name}>
+        <TreeItemContent>{node.value.name}</TreeItemContent>
+        <Collection items={(node.children ?? []) as never[]}>{(child: never) => <PersonItem node={child} />}</Collection>
+      </TreeItem>
+    );
+  }
+  it("move(key, null, 0): the moved row and its children take their new levels", async () => {
+    const tree = createTreeData<Person>({
+      initialItems: [
+        { id: "david", name: "David", children: [{ id: "john", name: "John", children: [{ id: "sam", name: "Sam" }] }] },
+        { id: "emma", name: "Emma" },
+      ],
+    });
+    const { container } = renderIt(() => (
+      <Tree aria-label="People" items={tree.items} defaultExpandedKeys={["david", "john"]}>
+        {(node: never) => <PersonItem node={node} />}
+      </Tree>
+    ));
+    const levels = () =>
+      [...container.querySelectorAll("[role=row]")].map((row) => [
+        row.textContent,
+        row.getAttribute("aria-level"),
+        (row as HTMLElement).style.getPropertyValue("--tree-item-level"),
+      ]);
+    expect(levels()).toEqual([
+      ["David", "1", "1"],
+      ["John", "2", "2"],
+      ["Sam", "3", "3"],
+      ["Emma", "1", "1"],
+    ]);
+    tree.move("john", null, 0);
+    flush();
+    await frame();
+    expect(levels()).toEqual([
+      ["John", "1", "1"],
+      ["Sam", "2", "2"],
+      ["David", "1", "1"],
+      ["Emma", "1", "1"],
+    ]);
+  });
+});

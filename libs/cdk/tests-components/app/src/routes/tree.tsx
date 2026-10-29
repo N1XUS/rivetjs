@@ -125,6 +125,9 @@ export default function TreeStory() {
       <button id="people-remove" onClick={() => people.remove("emma")}>
         Remove
       </button>
+      <button id="people-root" onClick={() => people.move("john", null, 0)}>
+        Move John to root
+      </button>
       <output id="tree-food-expanded">{[...expanded()].join(",")}</output>
       <output id="tree-food-selected">{[...selected()].join(",")}</output>
     </section>

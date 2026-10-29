@@ -118,3 +118,36 @@ test("createTreeData on a resumed page: update re-renders the row, remove drops 
   assert.deepEqual(logged, []);
   await page.close();
 });
+
+test("createTreeData on a resumed page: move(key, null, 0) re-levels the moved row and its children", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  const logged = consoleErrors(page);
+  await page.goto(s.origin + "/tree");
+  const levels = () =>
+    page.$$eval("#tree-people [role=row]", (els) =>
+      els.map((el) => [
+        (el.textContent ?? "").replace(/Toggle/g, "").trim(),
+        el.getAttribute("aria-level"),
+        (el as HTMLElement).style.getPropertyValue("--tree-item-level"),
+      ]),
+    );
+  assert.deepEqual(await levels(), [
+    ["David", "1", "1"],
+    ["John", "2", "2"],
+    ["Sam", "3", "3"],
+    ["Emma", "1", "1"],
+  ]);
+  await page.click("#people-root");
+  await untilRows(page, "#tree-people", ["John", "Sam", "David", "Emma"]);
+  await page.waitForFunction(() => document.querySelector("#tree-people [data-key=john]")?.getAttribute("aria-level") === "1");
+  assert.deepEqual(await levels(), [
+    ["John", "1", "1"],
+    ["Sam", "2", "2"],
+    ["David", "1", "1"],
+    ["Emma", "1", "1"],
+  ]);
+  assert.deepEqual(seen.errors, []);
+  assert.deepEqual(logged, []);
+  await page.close();
+});

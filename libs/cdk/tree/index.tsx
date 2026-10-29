@@ -330,6 +330,19 @@ export function Tree<T>(inProps: TreeProps<T>) {
       }
     : {};
   const dndProviders = (dnd?.providers ?? []) as never[];
+  // The provider's one child: the rows, after the root drop indicator with drag hooks. One child slot either way: a
+  // second (null) slot before the rows shifted a resumed tree's row adoption, and a later structural change (a
+  // `createTreeData.move`) then reconciled against the wrong anchors (TREE-LEVEL 2026-10-29, cdk-docs `data-tree`).
+  const collectionContent = () => {
+    const rows = (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
+      collection: flat as () => ICollection<Node<unknown>>,
+      scrollRef: el,
+      focusedKey,
+      renderDropIndicator: dnd?.renderDropIndicator,
+      renderRow: dnd?.renderRow,
+    });
+    return dnd?.rootIndicator ? [dnd.rootIndicator(), rows] : rows;
+  };
   // react-aria useHasTabbableChild (empty state with a tabbable child: the grid leaves the tab order).
   const hasTabbableChild = signal(false);
   // Resumed pages: only a tree rendered empty needs this before its first interaction (TREE-PRE 2026-10-28: an
@@ -429,16 +442,7 @@ export function Tree<T>(inProps: TreeProps<T>) {
       onScroll: (e: Event) => scrolled(e),
       children: () => [
         <Provider values={[[TreeStateContext, state], [TreeInternalContext, { shared }], [SharedElementContext, sharedElements], ...dndProviders]}>
-          {(dnd?.rootIndicator ? dnd.rootIndicator() : null) as never}
-          {
-            (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
-              collection: flat as () => ICollection<Node<unknown>>,
-              scrollRef: el,
-              focusedKey,
-              renderDropIndicator: dnd?.renderDropIndicator,
-              renderRow: dnd?.renderRow,
-            }) as never
-          }
+          {collectionContent() as never}
         </Provider>,
         renderEmptyState ? (
           <Show when={() => flat().size === 0}>
@@ -496,16 +500,7 @@ export function Tree<T>(inProps: TreeProps<T>) {
           ...dndProviders,
         ]}
       >
-        {(dnd?.rootIndicator ? dnd.rootIndicator() : null) as never}
-        {
-          (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
-            collection: flat as () => ICollection<Node<unknown>>,
-            scrollRef: el,
-            focusedKey,
-            renderDropIndicator: dnd?.renderDropIndicator,
-            renderRow: dnd?.renderRow,
-          }) as never
-        }
+        {collectionContent() as never}
       </Provider>
       {renderEmptyState ? (
         <Show when={() => flat().size === 0}>
@@ -741,7 +736,12 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
         style: props.style,
         values,
         defaultClassName: "rv-TreeItem",
-        defaultStyle: { "--tree-item-level": level() },
+        // A getter: the accessors spread `defaultStyle` when read, so the level follows a moved row (RAC re-renders it).
+        defaultStyle: {
+          get "--tree-item-level"() {
+            return level();
+          },
+        },
       },
       hasLive(props) ? (liveRenderProps(props) as never) : undefined,
     ),
