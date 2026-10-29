@@ -926,6 +926,13 @@ export const entries: ApiEntryConfig[] = [
       "PromptInput (Rivet addition): chat composer; autosizing TextArea (Enter sends), Toolbar, Action (tooltip), Send / Stop by status, layouts stacked / compact / inline, Attachments, Footer, Queue.",
   },
   {
+    entry: "@rivetjs/ui/prompt-input-tokens",
+    file: "ui/src/components/prompt-input-tokens/index.ts",
+    runsOn: "both",
+    summary:
+      "PromptInput token input (Rivet addition): usePromptInputTokens (triggers @ /, allowsSpaces, value), Tokens, TokenInput (textarea + mirror, atomic tokens), TokenSuggestions / TokenSuggestion (list autocomplete), Token.",
+  },
+  {
     entry: "@rivetjs/ui/chat-conversation",
     file: "ui/src/components/chat-conversation/index.ts",
     runsOn: "both",
