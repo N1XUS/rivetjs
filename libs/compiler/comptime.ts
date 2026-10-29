@@ -83,9 +83,14 @@ interface ImportBinding {
 interface ModuleInfo {
   readonly file: string;
   readonly code: string;
+  /**
+   * The module's AST. A cached info (`infoOf`: every module a call site's imports reach) holds it weakly and parses
+   * `code` again once it was collected: held strongly, the ASTs were ~0.28 GB of live heap in the ui-docs client build
+   * (UIDOCS-RSS 2026-10-29). Node identity holds within one read only (consumers compare names, never nodes of two reads).
+   */
   readonly program: Node;
   readonly imports: Map<string, ImportBinding>;
-  /** Top-level `const` declarators: name → init. */
+  /** Top-level `const` declarators: name → init (nodes of `program`; weakly held like it). */
   readonly consts: Map<string, Node>;
   /** Export name → local name, or a re-export. */
   readonly exports: Map<string, { local?: string; from?: ImportBinding }>;
@@ -176,9 +181,39 @@ const unwrap = (node: Node): Node => {
   return n;
 };
 
+/** Top-level `const` declarators of a program (`export const` included): name → init. */
+function topConsts(program: Node): Map<string, Node> {
+  const consts = new Map<string, Node>();
+  for (const stmt of program.body as Node[]) {
+    const decl = stmt.type === "ExportNamedDeclaration" && stmt.exportKind !== "type" ? (stmt.declaration as Node | null) : stmt;
+    if (decl?.type !== "VariableDeclaration" || decl.kind !== "const") continue;
+    for (const d of decl.declarations as Node[]) if ((d.id as Node).type === "Identifier" && d.init) consts.set((d.id as Node).name as string, d.init as Node);
+  }
+  return consts;
+}
+
+/** `moduleInfo` whose AST (`program`, `consts`) is held weakly and parsed again on demand (cached infos, `infoOf`). */
+function weakModuleInfo(file: string, code: string, program: Node): ModuleInfo {
+  const { program: _program, consts: _consts, ...light } = moduleInfo(file, code, program);
+  let ref = new WeakRef({ program, consts: _consts });
+  const ast = () => {
+    let held = ref.deref();
+    if (!held) {
+      const again = parse(code, langOf(file))!;
+      held = { program: again, consts: topConsts(again) };
+      ref = new WeakRef(held);
+    }
+    return held;
+  };
+  return Object.defineProperties(light, {
+    program: { get: () => ast().program, enumerable: true },
+    consts: { get: () => ast().consts, enumerable: true },
+  }) as ModuleInfo;
+}
+
 function moduleInfo(file: string, code: string, program: Node): ModuleInfo {
   const imports = new Map<string, ImportBinding>();
-  const consts = new Map<string, Node>();
+  const consts = topConsts(program);
   const exports = new Map<string, { local?: string; from?: ImportBinding }>();
   const stars: string[] = [];
   const exportedLocals = new Set<string>();
@@ -188,7 +223,6 @@ function moduleInfo(file: string, code: string, program: Node): ModuleInfo {
         const id = d.id as Node;
         if (id.type !== "Identifier") continue;
         const name = id.name as string;
-        if (decl.kind === "const" && d.init) consts.set(name, d.init as Node);
         if (exported) (exports.set(name, { local: name }), exportedLocals.add(name));
       }
     } else if ((decl.type === "FunctionDeclaration" || decl.type === "ClassDeclaration") && decl.id && exported) {
@@ -488,7 +522,7 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
         if (file.startsWith("\0") || !existsSync(file)) return null;
         const code = readFileSync(file, "utf8");
         const program = parse(code, langOf(file));
-        return program ? moduleInfo(file, code, program) : null;
+        return program ? weakModuleInfo(file, code, program) : null;
       })();
       infos.set(file, hit);
     }

@@ -2714,18 +2714,23 @@ function rivetPlugin(
       return null;
     },
     // Locale tables: the kept entries and languages, now that every client module's literals are known.
-    renderChunk(code) {
-      if (!localeMarks.length || !code.includes("__rivet_l")) return null;
-      const languages = localeLanguages();
-      const list = JSON.stringify([...languages].sort());
-      const next = code
-        .replace(
-          /\.\.\.\s*\(?\s*(["'`])__rivet_lt_(\d+)__\1\s*\)?/g,
-          (_, _quote, index: string) => "..." + entriesText(keptEntries(localeMarks[+index]!.table, languages)),
-        )
-        .replace(/(["'`])__rivet_ll_(\d+)__\1/g, () => list);
-      if (/__rivet_l[lt]_\d+__/.test(next)) this.error("locale table markers left in a chunk (locale-tables.ts)");
-      return { code: next, map: null };
+    // The hook filter keeps every other chunk's code in Rolldown (no JS string per chunk: ui-docs 5.6k chunks, −0.08 GB
+    // client build peak RSS, UIDOCS-RSS 2026-10-29); the handler checks again for bundlers without filters.
+    renderChunk: {
+      filter: { code: "__rivet_l" },
+      handler(code) {
+        if (!localeMarks.length || !code.includes("__rivet_l")) return null;
+        const languages = localeLanguages();
+        const list = JSON.stringify([...languages].sort());
+        const next = code
+          .replace(
+            /\.\.\.\s*\(?\s*(["'`])__rivet_lt_(\d+)__\1\s*\)?/g,
+            (_, _quote, index: string) => "..." + entriesText(keptEntries(localeMarks[+index]!.table, languages)),
+          )
+          .replace(/(["'`])__rivet_ll_(\d+)__\1/g, () => list);
+        if (/__rivet_l[lt]_\d+__/.test(next)) this.error("locale table markers left in a chunk (locale-tables.ts)");
+        return { code: next, map: null };
+      },
     },
     // Post: chunk code is final (Vite's preload helpers rewritten), so sizes match the emitted files.
     generateBundle: {

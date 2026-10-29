@@ -10,9 +10,10 @@ import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { COLOAD_ENV, planCoload, prerender, type ColoadReport } from "@rivetjs/router/static";
-import { loadBuild } from "../../router/adapters/build.ts";
-import { pagePreload } from "../frame-theme.ts";
+import type { ColoadReport } from "@rivetjs/router/static";
+// Deep import of the constant: the static adapter (prerender, planner) loads in the planning child only (`plan`), not in
+// the build's parent process while the Vite children run.
+import { COLOAD_ENV } from "../../router/build/coload.ts";
 import { loadApp } from "./app.ts";
 import { GENERATED_ENV, viteBuild, type ViteBuildOptions } from "./vite-build.ts";
 
@@ -78,6 +79,9 @@ function planChild(root: string, dist: string, lean: boolean): Promise<ColoadRep
 
 async function plan(root: string, dist: string, lean: boolean): Promise<ColoadReport> {
   const { site } = await loadApp(root);
+  const { planCoload, prerender } = await import("@rivetjs/router/static");
+  const { loadBuild } = await import("../../router/adapters/build.ts");
+  const { pagePreload } = await import("../frame-theme.ts");
   const build = await loadBuild(dist, lean ? { preload: pagePreload(site.leanPages) } : {});
   await prerender({
     handler: build.handler,

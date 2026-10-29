@@ -3,18 +3,13 @@
 // critical CSS inlined per page (tools/critical-css.ts) → search index → link check (host files + AI outputs after
 // prerender). Output: dist/client (the site), dist/server.
 import { constants, existsSync } from "node:fs";
-import { cp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
-import { prerender, writeDictionaries } from "@rivetjs/router/static";
-// Deep import (no package subpath): the loader `prerenderBuild` uses, so one bundle instance serves both prerender paths.
-import { loadBuild, type LoadedBuild } from "../../router/adapters/build.ts";
-import { pagePreload } from "../frame-theme.ts";
-import { EXAMPLES_JSON } from "./examples.ts";
 import { mb, memoryBudget, watchMemory } from "./memory.ts";
 import { loadApp } from "./app.ts";
 import type { ExampleData } from "../components/types.ts";
 import { coloadBuild } from "./coload.ts";
-import { buildCacheOn } from "./build-cache.ts";
+import { prunedNote, renderPages } from "./pages.ts";
 
 export interface BuildOptions {
   /** Example checks in Chromium (default true; `false` = `--no-checks`: the "What loaded" paragraphs stay empty). */
@@ -60,6 +55,7 @@ export async function buildDocs(root: string, options: BuildOptions = {}): Promi
     ...(options.cache === false ? { pageCache: false } : {}),
   });
   lap("site");
+  const { EXAMPLES_JSON } = await import("./examples.ts");
   const examples = Object.values(JSON.parse(await readFile(resolve(root, EXAMPLES_JSON), "utf8")) as Record<string, ExampleData>);
   log(`content: ${report.pages.length} pages, ${examples.length} examples (${examples.filter((example) => !example.codeOnly).length} live)`);
   const peak = await memory.stop();
@@ -125,33 +121,15 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
   await coloadBuild(root, { dist, graph: true, lean: true, log, ...(options.incremental ? { reuse: options.incremental.previous } : {}) });
   lap("vite");
   const client = resolve(dist, "client");
-  // One server bundle instance per process: the incremental path and its full fallback share it.
-  const build = await loadBuild(dist, { preload: pagePreload(site.leanPages) });
-  let report: Omit<SiteBuildReport, "timings">;
-  if (options.incremental) {
-    const { prerenderPartial } = await import("./incremental.ts");
-    const partial = await prerenderPartial({ dist, build, previous: options.incremental.previous, pages: options.incremental.pages, origin: site.origin });
-    if (partial.ok) report = { pages: [...options.incremental.pages], prerender: "incremental", rendered: partial.rendered };
-    else {
-      log(`prerender: incremental not possible (${partial.why}), full prerender`);
-      report = { ...(await fullPrerender(build, site.origin)), fallback: partial.why };
-    }
-  } else report = await fullPrerender(build, site.origin);
-  log(`prerender: ${report.rendered} pages (${report.prerender})`);
-  // Code blocks coloured in the HTML (tools/highlight-pages.ts): docs pages ship no highlighter JS.
+  // Prerender, code colouring, host files, AI outputs: in a child process too (`pages.ts`): the server bundle and the
+  // prerender's memory are released before the Chromium checks.
+  const { buildCacheOn } = await import("./build-cache.ts");
   const pageCache = options.pageCache !== false && buildCacheOn();
-  const { highlightCache, highlightPages } = await import("./highlight-pages.ts");
-  const tokens = pageCache ? highlightCache(root) : undefined;
-  const coloured = await highlightPages(client, tokens ? { cache: tokens } : {});
-  if (tokens) log(`highlight: tokens of ${tokens.hits} block(s) reused, ${tokens.misses} tokenised (build cache)${prunedNote(tokens.prune())}`);
-  log(`highlight: ${coloured.blocks} code blocks coloured in ${coloured.pages} pages (${coloured.plain} plain, ${coloured.left} left for the browser)`);
-  await hostFiles(client);
-  // AI outputs (llms.txt, llms-full.txt, `<page>.md`): tools/llms/generate.ts.
-  const llms = await import("./llms/generate.ts");
-  log(`llms: ${await llms.writeLlms(await llms.generateLlms(root), client)} files`);
+  const { base, ...report } = await renderPages(root, { dist, pageCache, ...(options.incremental ? { incremental: options.incremental } : {}) }, log);
   lap("prerender");
   if (options.checks !== false) {
     const { checkExamples, writeMeasures } = await import("./example-checks.ts");
+    const { EXAMPLES_JSON } = await import("./examples.ts");
     const examples = JSON.parse(await readFile(resolve(root, EXAMPLES_JSON), "utf8")) as Record<string, ExampleData>;
     const measures = await checkExamples(root, client, examples, { log, ...(typeof options.checks === "object" ? { cache: options.checks.cache } : {}) });
     const written = await writeMeasures(client, measures);
@@ -176,7 +154,9 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
   for (const { file, why } of critical.skipped.slice(0, 10)) log(`critical css: kept stylesheet links of ${file} (${why})`);
   if (critical.skipped.length > 10) log(`critical css: … ${critical.skipped.length - 10} more pages kept their stylesheet links`);
   // Compression dictionaries of the final pages (RFC 9842 `dcz`: docs-kit serve / the node adapter answer with them).
-  const dictionaries = writeDictionaries(client, build.entry.base ? { base: build.entry.base } : {}).dictionaries;
+  // Imported here: the router's static adapter stays out of this process while the Vite and pages children run.
+  const { writeDictionaries } = await import("@rivetjs/router/static");
+  const dictionaries = writeDictionaries(client, base ? { base } : {}).dictionaries;
   log(`dictionaries: ${dictionaries.length} (${dictionaries.map((d) => d.prefix).join(", ")})`);
   lap("critical");
   if (options.search === "reuse" && options.incremental && report.prerender === "incremental" && existsSync(resolve(options.incremental.previous, "pagefind")))
@@ -200,51 +180,10 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
   return { ...report, timings };
 }
 
-const prunedNote = (removed: number) => (removed ? `, ${removed} old entr${removed === 1 ? "y" : "ies"} pruned` : "");
-
 /** Token classes of components/highlight-classes.ts (`lightClass` / `darkClass` / `STYLE_CLASSES`, `code-rv`). */
 const HIGHLIGHT_CLASSES = /^(?:h[ld]-[0-9a-f]{3,8}|h[ibu]|code-rv)$/;
 /** A code block the browser would colour on sight: `data-lang`, no `data-hl` (coloured / plain at build), no `data-src` (hidden tab). */
 const PLAIN_CODE = /<pre(?![^>]*\sdata-(?:hl|src)[\s=>])[^>]*\sdata-lang=/;
-
-/** `prerenderBuild` over an already loaded build. */
-async function fullPrerender(build: LoadedBuild, origin: string): Promise<Omit<SiteBuildReport, "timings">> {
-  const { entry, handler, client } = build;
-  const report = await prerender({
-    handler,
-    routes: entry.routes,
-    outDir: client,
-    origin,
-    ...(entry.base ? { base: entry.base } : {}),
-    ...(entry.trailingSlash ? { trailingSlash: entry.trailingSlash } : {}),
-    // Written after critical CSS (below): the dictionaries hold the pages' final bytes.
-    dictionary: false,
-  });
-  return { pages: report.pages, prerender: "full", rendered: report.pages.length };
-}
-
-/**
- * Static host files (Cloudflare Pages format): immutable assets, security headers, and Speculation Rules served as a
- * header (inline rules would need `'inline-speculation-rules'` in the per-page CSP, which `hashCSP` does not emit).
- */
-async function hostFiles(client: string): Promise<void> {
-  const rules = { prerender: [{ where: { and: [{ href_matches: "/*" }, { not: { href_matches: "/pagefind/*" } }] }, eagerness: "moderate" }] };
-  await writeFile(resolve(client, "speculation-rules.json"), JSON.stringify(rules) + "\n");
-  await writeFile(
-    resolve(client, "_headers"),
-    [
-      "/*",
-      "  X-Content-Type-Options: nosniff",
-      "  Referrer-Policy: strict-origin-when-cross-origin",
-      '  Speculation-Rules: "/speculation-rules.json"',
-      "/assets/*",
-      "  Cache-Control: public, max-age=31536000, immutable",
-      "/speculation-rules.json",
-      "  Content-Type: application/speculationrules+json",
-      "",
-    ].join("\n"),
-  );
-}
 
 /** CLI: `docs-kit build <app root> [--no-checks] [--no-search] [--no-cache] [--dist dir]`. */
 export async function buildCommand(root: string, args: string[]): Promise<void> {
