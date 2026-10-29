@@ -1,9 +1,11 @@
 // Server-target suite: FileTree (Rivet addition, feature set inspired by HeroUI Pro's public File Tree docs): treegrid markup
-// (cdk Tree), size / guide-line attributes, expand buttons only on parent rows, icons, title, levels, selection checkboxes.
+// (cdk Tree), size / guide-line attributes, expand buttons only on parent rows, icons, title, levels, selection checkboxes,
+// drag handles with `useFileTreeDrag` hooks (no drop indicators on the server).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { renderToString } from "@rivetjs/runtime/testing/server";
-import { FileTree } from "../src/components/file-tree/index.ts";
+import { createTreeData } from "@rivetjs/cdk/data";
+import { FileTree, useFileTreeDrag } from "../src/components/file-tree/index.ts";
 
 test("file tree SSR: rows, levels, expand button, icon, title", async () => {
   const html = await renderToString(() => (
@@ -63,4 +65,35 @@ test("file tree SSR: reduceMotion sets data-reduce-motion (absent by default)", 
     </FileTree>
   ));
   assert.doesNotMatch(off, /data-reduce-motion/);
+});
+
+test("file tree SSR: drag handles with useFileTreeDrag, none without hooks", async () => {
+  const html = await renderToString(() => {
+    const tree = createTreeData<{ id: string; name: string; children?: { id: string; name: string }[] }>({
+      initialItems: [
+        { id: "src", name: "src", children: [{ id: "index", name: "index.ts" }] },
+        { id: "readme", name: "README.md" },
+      ],
+    });
+    const { dragAndDropHooks } = useFileTreeDrag({ tree });
+    return (
+      <FileTree aria-label="Files" items={tree.items} dragAndDropHooks={dragAndDropHooks}>
+        {(node: { key: string; value: { name: string } }) => (
+          <FileTree.Item id={node.key} title={node.value.name} dragIcon={node.key === "readme" ? false : undefined} />
+        )}
+      </FileTree>
+    );
+  });
+  assert.equal((html.match(/slot="drag"/g) ?? []).length, 2);
+  assert.match(html, /file-tree__drag-handle/);
+  assert.match(html, /aria-label="Drag README\.md"/);
+  assert.equal((html.match(/data-hidden="true"/g) ?? []).length, 1);
+  assert.match(html, /draggable="true"/);
+  assert.doesNotMatch(html, /file-tree__drop-indicator/);
+  const plain = await renderToString(() => (
+    <FileTree aria-label="Files">
+      <FileTree.Item id="a" title="a" />
+    </FileTree>
+  ));
+  assert.doesNotMatch(plain, /slot="drag"/);
 });

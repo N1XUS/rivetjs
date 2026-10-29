@@ -4,5 +4,11 @@
     "cells": "webkit",
     "reason": "platform: WebKit's Tab skips links by default (macOS \"Tab to links\" off) — the step expects a link focused; not a Rivet bug",
     "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
+  },
+  {
+    "id": "file-tree-drag-and-drop",
+    "cells": "webkit/mouse/*/*",
+    "reason": "harness: Playwright WebKit's synthetic mouse drag fires no dragend and the next click comes without pointerdown (pointer still down), so usePress ignores it (React Aria: a non-virtual click without a press) and the chevron step after the drag is lost; the drag steps themselves pass",
+    "owner": "unassigned (CDK-TREE-DND 2026-10-29)"
   }
 ]

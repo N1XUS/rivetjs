@@ -22,6 +22,8 @@ export type FileTree = {
  * -----------------------------------------------------------------------------------------------*/
 export { FileTreeRoot, FileTreeItem } from "./file-tree.tsx";
 export type { FileTreeRootProps, FileTreeRootProps as FileTreeProps, FileTreeItemProps } from "./file-tree.tsx";
+export { useFileTreeDrag } from "./use-file-tree-drag.tsx";
+export type { UseFileTreeDragOptions, UseFileTreeDragResult } from "./use-file-tree-drag.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * Variants

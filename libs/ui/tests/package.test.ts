@@ -1212,6 +1212,7 @@ test("package: barrel exports = ported components + upstream root utils (dom, tv
     "useCalendarOrRangeState",
     "useDefaultLayout",
     "useDisclosureGroupNavigation",
+    "useFileTreeDrag",
     "useGroupRef",
     "useItemMorph",
     "useItemMorphPanel",

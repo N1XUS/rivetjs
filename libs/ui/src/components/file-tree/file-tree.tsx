@@ -10,13 +10,17 @@
 //   rotated by `[data-expanded]` CSS, or `indicator`), selection checkbox (ui `Checkbox slot="selection"` when selection
 //   is on with `selectionBehavior` "toggle"), `icon`, `title`; nested `FileTree.Item`s / a `Collection` go in `children`.
 //   `textValue` defaults to `title` when it is a string.
-// - Not yet: drag and drop (cdk Tree DnD pending), sections (cdk `TreeSection` server render pending).
+// - Drag and drop: `dragAndDropHooks` (cdk Tree DnD; `useFileTreeDrag` in `use-file-tree-drag.tsx` builds them over a
+//   `createTreeData` manager). Draggable rows get a leading drag handle (`Button slot="drag"`, lucide `GripVertical` or
+//   `dragIcon`; shown on row hover / focus via CSS; `dragIcon={false}` keeps it visually hidden for keyboard drags);
+//   `[data-dragging]` / `[data-drop-target]` styles in CSS.
+// - Not yet: sections (cdk `TreeSection` server render pending).
 import { Button as ButtonPrimitive } from "@rivetjs/cdk/button";
 import { Tree as TreePrimitive, TreeItem as TreeItemPrimitive, TreeItemContent } from "@rivetjs/cdk/tree";
 import type { TreeItemContentRenderProps, TreeItemProps as TreeItemPrimitiveProps, TreeProps as TreePrimitiveProps, TreeRenderProps } from "@rivetjs/cdk/tree";
 import { Icon } from "@rivetjs/kit/icon";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { ChevronRight } from "lucide";
+import { ChevronRight, GripVertical } from "lucide";
 
 import type { FileTreeVariants } from "../../../styles/src/components/file-tree/index.ts";
 import { fileTreeVariants } from "../../../styles/src/components/file-tree/index.ts";
@@ -65,15 +69,19 @@ type FileTreeItemProps<T extends object = object> = Omit<TreeItemPrimitiveProps<
   icon?: Content | ((values: TreeItemContentRenderProps) => Content);
   /** Expand button content in place of the rotating chevron; a function gets the row's render props. */
   indicator?: Content | ((values: TreeItemContentRenderProps) => Content);
+  /** Drag handle content while the tree allows dragging (`dragAndDropHooks`); `false` hides it visually (keyboard drags
+   * still start from it). @default lucide `GripVertical` */
+  dragIcon?: Content | false;
   /** Nested `FileTree.Item`s or a `Collection` of them. */
   children?: Content;
 };
 
 function FileTreeItem<T extends object>(props: FileTreeItemProps<T>): JSX.Element {
-  const [local, rest] = splitLive(props, ["class", "title", "textValue", "icon", "indicator", "children"]);
+  const [local, rest] = splitLive(props, ["class", "title", "textValue", "icon", "indicator", "dragIcon", "children"]);
   const title = local.title;
   const icon = local.icon;
   const indicator = local.indicator;
+  const dragIcon = local.dragIcon;
   const textValue = local.textValue ?? (typeof title === "string" ? title : "");
   const cls = composeTwRenderProps(local.class as never, SLOTS.item()) as string;
   return (
@@ -81,6 +89,11 @@ function FileTreeItem<T extends object>(props: FileTreeItemProps<T>): JSX.Elemen
       <TreeItemContent>
         {(values: TreeItemContentRenderProps) => (
           <div class={SLOTS.content()} data-slot="file-tree-item-content">
+            {values.allowsDragging() ? (
+              <ButtonPrimitive slot="drag" class={SLOTS.dragHandle()} data-slot="file-tree-drag-handle" data-hidden={dragIcon === false ? "true" : undefined}>
+                {dragIcon == null || dragIcon === false ? <Icon icon={GripVertical} size={14} /> : dragIcon}
+              </ButtonPrimitive>
+            ) : null}
             <span class={SLOTS.indent()} aria-hidden="true" data-slot="file-tree-indent" />
             {values.hasChildItems() ? (
               <ButtonPrimitive slot="chevron" class={SLOTS.indicator()} data-slot="file-tree-indicator">

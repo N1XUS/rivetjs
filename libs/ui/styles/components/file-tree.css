@@ -2,8 +2,9 @@
 /* -------------------------------------------------------------------------------------------------
  * FileTree Component Styles
  * Block: file-tree (modifiers: sm / md / lg; [data-guide-lines="always | hover | none"]; [data-reduce-motion]; parts: item / content / indent /
- *   indicator / indicator-icon / selection-cell / icon / title)
- * States: item [data-hovered] [data-selected] [data-focus-visible] [data-disabled] [data-expanded]
+ *   drag-handle / indicator / indicator-icon / selection-cell / icon / title / drop-indicator)
+ * States: item [data-hovered] [data-selected] [data-focus-visible] [data-disabled] [data-expanded] [data-dragging]
+ *   [data-drop-target]; tree [data-drop-target]; drop-indicator [data-drop-target]
  * -----------------------------------------------------------------------------------------------*/
 
 /**
@@ -34,6 +35,12 @@
 
   --file-tree-indent: 1.5rem;
   --file-tree-row: 2.5rem;
+}
+
+.file-tree[data-drop-target="true"] {
+  @apply rounded-lg;
+
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
 .file-tree[data-guide-lines="none"] {
@@ -78,6 +85,15 @@
     @apply status-disabled;
   }
 
+  &[data-dragging="true"] {
+    opacity: 0.4;
+  }
+
+  &[data-drop-target="true"] {
+    background-color: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+
   &[data-expanded="true"] .file-tree__indicator-icon {
     rotate: 90deg;
   }
@@ -108,6 +124,55 @@
     transparent calc(var(--file-tree-indent) / 2 + 0.5px),
     transparent var(--file-tree-indent)
   );
+}
+
+/**
+ * Element: drag-handle - leading drag button (Button slot="drag") on draggable rows; shown on row hover / keyboard focus
+ */
+.file-tree__drag-handle {
+  @apply grid shrink-0 place-items-center rounded-md border-0 bg-transparent p-0 text-muted opacity-0 outline-none;
+
+  width: var(--file-tree-indent);
+  height: var(--file-tree-indent);
+  margin-inline-end: -0.25rem;
+  cursor: grab;
+  transition: opacity var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+
+    opacity: 1;
+  }
+
+  &[data-hidden="true"] {
+    @apply sr-only;
+  }
+}
+
+.file-tree__item[data-hovered="true"] .file-tree__drag-handle,
+.file-tree__item[data-focus-visible="true"] .file-tree__drag-handle,
+.file-tree__item[data-dragging="true"] .file-tree__drag-handle {
+  opacity: 1;
+}
+
+/**
+ * Element: drop-indicator - insertion line between rows while it is the drop target (cdk Tree DropIndicator row)
+ */
+.file-tree__drop-indicator {
+  @apply relative outline-none;
+
+  height: 0;
+
+  &[data-drop-target="true"]::before {
+    @apply absolute rounded-full;
+
+    content: "";
+    inset-inline: calc((var(--tree-item-level, 1) - 1) * var(--file-tree-indent) + 0.25rem) 0.25rem;
+    top: -1px;
+    height: 2px;
+    background-color: var(--accent);
+  }
 }
 
 /**
