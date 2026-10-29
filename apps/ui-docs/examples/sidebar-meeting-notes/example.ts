@@ -1,0 +1,32 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "Sidebar: meeting notes",
+  summary: "A notes app sidebar: a workspace switcher, a search command palette, spaces as collapsible note trees and off-canvas collapse.",
+  tags: ["sidebar", "navigation", "command", "dropdown"],
+  status: "experimental",
+  frame: { height: 520, width: "full" },
+  show: ["src/routes/index.tsx"],
+  test: [
+    { expect: ["#smn-title", "Sprint 14 retro"] },
+    { click: "#smn-search" },
+    { matches: "[data-slot=command-dialog][role=dialog]" },
+    { fill: ["[data-slot=command-input]", "kestrel"] },
+    { absent: "[role=menuitem][data-key=sprint-14-retro]" },
+    { press: ["[data-slot=command-input]", "Enter"] },
+    { absent: "[data-slot=command-dialog]" },
+    { expect: ["#smn-title", "Kestrel renewal"] },
+    { click: "#smn-space-product" },
+    { click: "#smn-q3-roadmap-review" },
+    { attr: ["#smn-q3-roadmap-review", "aria-current", "page"] },
+    { expect: ["#smn-title", "Q3 roadmap review"] },
+    { click: "#smn-workspace" },
+    { matches: "[role=menu][aria-label=Workspaces]" },
+    { click: "[data-key=personal]" },
+    { absent: "[role=menu]" },
+    { expect: ["#smn-workspace-name", "Personal"] },
+    { click: "#smn-trigger" },
+    { attr: ['[data-slot="sidebar"]', "data-state", "collapsed"] },
+    { attr: ['[data-slot="sidebar"]', "data-collapsible", "offcanvas"] },
+  ],
+});

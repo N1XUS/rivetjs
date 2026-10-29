@@ -87,6 +87,24 @@ A workspace header with an avatar, a navigation group with a chip, a project tre
 
 ::example{id=sidebar-compact-user}
 
+### Meeting notes
+
+A notes app: the header holds a workspace switcher (`Dropdown` on a `size="lg"` menu button) and a search item that opens a `Command` palette; spaces are collapsible note trees; `collapsible="offcanvas"` slides the panel away.
+
+::example{id=sidebar-meeting-notes}
+
+### Agent hub
+
+A compact agent sidebar: `size="sm"` menu buttons and a narrower `--sidebar-width`, workspaces with chips, recent chats with hover actions, and a user dropdown in the footer. Collapses to icons; the recent chats group hides then.
+
+::example{id=sidebar-agent-hub}
+
+### Agent workspace
+
+A coding-agent workspace: tasks grouped by repository in collapsible trees (`showGuideLines="hover"`), a `Status` dot per task (labelled, pulsing while running) and its diff size.
+
+::example{id=sidebar-agent-workspace}
+
 ### Groups
 
 Groups split the menu under labels. `closeMobileOnAction={false}` on a group keeps the mobile sheet open when its items are pressed (provider, group, menu and item accept it; the nearest wins).

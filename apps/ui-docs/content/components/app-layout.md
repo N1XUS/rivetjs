@@ -117,6 +117,12 @@ Set `contained` to keep the desktop sidebar inside a card or panel instead of th
 
 ::example{id=app-layout-scroll-content}
 
+### Complex
+
+A full shell: a compact sidebar with several menu groups and chips, breadcrumbs that follow the current page (a keyed `Show` re-creates the trail), navbar actions and a user dropdown.
+
+::example{id=app-layout-complex}
+
 ### Resizable
 
 Sizes are numbers (percent of the layout width) or CSS lengths. Keys on a focused handle: :kbd[ArrowLeft] / :kbd[ArrowRight] (1 %, with :kbd[Shift] 10 %), :kbd[Home] / :kbd[End] (min / max), :kbd[Enter] (default size).
