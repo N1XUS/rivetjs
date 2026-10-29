@@ -58,6 +58,7 @@ export const groups: NavGroup[] = [
   {
     title: "Charts",
     pages: [
+      "components/area-chart",
       "components/chart",
       "components/chart-tooltip",
       "components/composed-chart",

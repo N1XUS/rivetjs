@@ -24,9 +24,7 @@ This subpath exports separate `AreaChart`, `LineChart`, `BarChart`, `DonutChart`
 
 ### Area
 
-::example{id=chart-area}
-
-`curve` is `"monotone"` (default, never overshoots the data) or `"linear"`; `stacked` stacks the series.
+[AreaChart](/components/area-chart/) has its own page: usage, custom tooltip, KPI with area chart, multi area, sparkline and stacked demos.
 
 ### Line
 
@@ -86,7 +84,7 @@ Without `stacked`, the series of one category sit side by side; the whole group 
 
 ### Sparkline
 
-A `Sparkline` is an area chart without axes, grid, legend or tooltip, sized to its container; see [Kpi](/components/kpi/) for one in a metric card.
+A `Sparkline` is an area chart without axes, grid, legend or tooltip, sized to its container; see [AreaChart: Sparkline](/components/area-chart/#sparkline) and [Kpi](/components/kpi/) for one in a metric card.
 
 ### Behaviour without JavaScript
 
@@ -166,6 +164,7 @@ Cartesian charts expose labelled, focusable data slots when tooltips are enabled
 
 ## Related Components
 
+- [AreaChart](/components/area-chart/): Area charts and sparklines.
 - [Kpi](/components/kpi/): Metric cards with a sparkline.
 - [ChartTooltip](/components/chart-tooltip/): Parts for a custom `tooltip`.
 - [PieChart](/components/pie-chart/), [RadarChart](/components/radar-chart/), [RadialChart](/components/radial-chart/), [ComposedChart](/components/composed-chart/): More chart types.

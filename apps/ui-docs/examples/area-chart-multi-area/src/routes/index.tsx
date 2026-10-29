@@ -1,7 +1,7 @@
-// Rivet-authored Chart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored AreaChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
 import { AreaChart } from "@rivetjs/ui/chart";
 
-export const head = { title: "Chart: Area" };
+export const head = { title: "AreaChart: Multi Area" };
 
 // #region demo
 const MONTHS = [
@@ -13,10 +13,10 @@ const MONTHS = [
   { month: "Jun", direct: 5800, referral: 2610, social: 1330 },
 ];
 
-export function Area() {
+export function MultiArea() {
   return (
     <AreaChart
-      id="chart-area"
+      id="area-chart-multi-area"
       class="w-full max-w-2xl"
       data={MONTHS}
       index="month"
@@ -34,7 +34,7 @@ export function Area() {
 export default function Demo() {
   return (
     <div class="flex min-h-dvh items-center justify-center p-4">
-      <Area />
+      <MultiArea />
     </div>
   );
 }
