@@ -1,7 +1,7 @@
-// Rivet-authored Chart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored BarChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
 import { BarChart } from "@rivetjs/ui/chart";
 
-export const head = { title: "Chart: Horizontal bars" };
+export const head = { title: "BarChart: Horizontal bars" };
 
 // #region demo
 const BROWSERS = [
@@ -15,7 +15,7 @@ const BROWSERS = [
 export function HorizontalBars() {
   return (
     <BarChart
-      id="chart-bar-horizontal"
+      id="bar-chart-horizontal"
       class="w-full max-w-2xl"
       data={BROWSERS}
       index="browser"

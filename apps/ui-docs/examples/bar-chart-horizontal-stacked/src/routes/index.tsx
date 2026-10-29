@@ -1,7 +1,7 @@
-// Rivet-authored Chart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored BarChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
 import { BarChart } from "@rivetjs/ui/chart";
 
-export const head = { title: "Chart: Horizontal stacked bars" };
+export const head = { title: "BarChart: Horizontal stacked bars" };
 
 // #region demo
 const PLANS = [
@@ -14,7 +14,7 @@ const PLANS = [
 export function HorizontalStackedBars() {
   return (
     <BarChart
-      id="chart-bar-horizontal-stacked"
+      id="bar-chart-horizontal-stacked"
       class="w-full max-w-2xl"
       data={PLANS}
       index="plan"

@@ -105,6 +105,7 @@ With tooltips enabled, each x value is a focusable `role="group"` slot named by 
 
 ## Related Components
 
-- [Chart](/components/chart/): Overview of the chart module, line, bar and donut charts, shared styling.
+- [Chart](/components/chart/): Overview of the chart module, line and donut charts, shared styling.
+- [BarChart](/components/bar-chart/): Grouped, stacked and horizontal bars.
 - [ChartTooltip](/components/chart-tooltip/): Parts for a custom `tooltip`.
 - [Kpi](/components/kpi/): Metric cards with a chart.

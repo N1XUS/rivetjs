@@ -58,23 +58,7 @@ A `null` value (or a missing key) is no value: the line and the area break into 
 
 ### Bar
 
-::example{id=chart-bar}
-
-#### Grouped
-
-::example{id=chart-bar-grouped}
-
-Without `stacked`, the series of one category sit side by side; the whole group is one focusable slot. A missing value keeps an empty place in its group.
-
-#### Horizontal
-
-::example{id=chart-bar-horizontal}
-
-`orientation="horizontal"` puts the categories down the side (labels in a `categoryWidth` column, default `6rem`) and grows the bars along the inline axis, so they start at the right in right-to-left pages. The value ticks run along the bottom.
-
-#### Horizontal stacked
-
-::example{id=chart-bar-horizontal-stacked}
+[BarChart](/components/bar-chart/) has its own page: usage, comparison, custom tooltip, grouped, horizontal, horizontal stacked, KPI with bar chart and stacked demos.
 
 ### Donut
 
@@ -165,6 +149,7 @@ Cartesian charts expose labelled, focusable data slots when tooltips are enabled
 ## Related Components
 
 - [AreaChart](/components/area-chart/): Area charts and sparklines.
+- [BarChart](/components/bar-chart/): Grouped, stacked and horizontal bars.
 - [Kpi](/components/kpi/): Metric cards with a sparkline.
 - [ChartTooltip](/components/chart-tooltip/): Parts for a custom `tooltip`.
 - [PieChart](/components/pie-chart/), [RadarChart](/components/radar-chart/), [RadialChart](/components/radial-chart/), [ComposedChart](/components/composed-chart/): More chart types.

@@ -1,7 +1,7 @@
-// Rivet-authored Chart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
+// Rivet-authored BarChart demo (Rivet addition; feature set inspired by HeroUI Pro's public docs, own demo content).
 import { BarChart } from "@rivetjs/ui/chart";
 
-export const head = { title: "Chart: Grouped bars" };
+export const head = { title: "BarChart: Grouped bars" };
 
 // #region demo
 const TEAMS = [
@@ -14,7 +14,7 @@ const TEAMS = [
 export function GroupedBars() {
   return (
     <BarChart
-      id="chart-bar-grouped"
+      id="bar-chart-grouped"
       class="w-full max-w-2xl"
       data={TEAMS}
       index="team"
