@@ -57,6 +57,12 @@ export default function Members() {
 
 ## Examples
 
+### Users
+
+::example{id=data-grid-users}
+
+A minimal directory: `variant="secondary"`, columns that read the row by `accessorKey`, and one `cell` function for the row action link.
+
 ### Team Members
 
 ::example{id=data-grid-team-members}
