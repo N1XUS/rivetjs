@@ -19,8 +19,10 @@
 //   treegrid element is the scroll container (scroll forwarded to the renderer), the focused row is persisted.
 // `render` (RAC DOMRenderProps) on Tree / TreeItem / TreeSection (`<div>`) and TreeHeader (via GridListHeader): given, the attributes object goes to `render(attrs, renderProps)`;
 //   the aria prop objects become one accessor per key (object-literal accessors over `gridAttr` / `row`: only literal arrows resume), the row content is the `children` accessor.
+// - Drag and drop: `dragAndDropHooks` (`@rivetjs/cdk/dnd` `useDragAndDrop`), wired by `./dnd.tsx` (`treeDnd` /
+//   `treeItemDnd`): drag button slot `drag`, `data-allows-dragging` / `data-dragging` / `data-drop-target`, drop
+//   indicators (only during a drag), root drop indicator, expand on drop activation.
 // Deviations:
-// - Drag and drop (`dragAndDropHooks`, drop indicators, drag button slot) not wired yet (DnD lane).
 // - `TreeItem` row `data-pressed` follows the row's pointer / key handlers (a press released outside
 //   the row clears on the next row event).
 // - No `FocusScope` wrapper (RAC uses it only for its focus manager; nothing here reads it).
@@ -101,6 +103,9 @@ import { InternalNavigationTreeContext, NavigationTreeItemLinkContext, Navigatio
 import { treeItemExpandPress, treeItemProps, treeProps, type AriaTreeItemOptions, type AriaTreeOptions } from "./behaviour.tsx";
 import { hasLive, liveKeys } from "../utils/live.tsx";
 import { liveRenderProps } from "../slots/index.tsx";
+import { DragAndDropContext, type DragAndDropHooks } from "../dnd/index.tsx";
+import type { DropTargetDelegate } from "../dnd/types.ts";
+import { treeDnd, treeItemDnd } from "./dnd.tsx";
 
 export { TreeCollection } from "./collection.ts";
 export type { TreeState } from "../collections/tree-state.ts";
@@ -192,6 +197,8 @@ export interface TreeProps<T>
   onExpandedChange?: ((keys: Set<Key>) => void) | undefined;
   /** Provides content to display when there are no items in the tree. */
   renderEmptyState?: ((props: TreeEmptyStateRenderProps) => unknown) | undefined;
+  /** The drag and drop hooks returned by `useDragAndDrop` used to enable drag and drop behavior for the Tree. */
+  dragAndDropHooks?: DragAndDropHooks<NoInfer<T>> | undefined;
   ref?: RefValue<HTMLDivElement> | undefined;
 }
 
@@ -298,6 +305,31 @@ export function Tree<T>(inProps: TreeProps<T>) {
   const sharedElements: SharedElementScope = {};
   const el = elementRef<HTMLDivElement>();
   const rootRef = mergeRefValues<HTMLDivElement>(el as RefValue<HTMLDivElement>, userRef);
+  // RAC TreeInner drag and drop (null without `dragAndDropHooks`).
+  const dnd = treeDnd(props.dragAndDropHooks, {
+    state,
+    view,
+    flat: flat as () => ICollection<Node<unknown>>,
+    expanded,
+    el,
+    id: shared.id,
+    direction: props.direction,
+    layoutDelegate: renderer.layoutDelegate,
+    rendererDropTargetDelegate: renderer.dropTargetDelegate as DropTargetDelegate | undefined,
+  });
+  const drop = dnd?.collectionProps;
+  // Root drop handlers; the collection's description is removed (the root drop indicator carries it, RAC).
+  const dndRoot = drop
+    ? {
+        "aria-describedby": undefined,
+        onDragEnter: drop.onDragEnter,
+        onDragOver: drop.onDragOver,
+        onDragLeave: drop.onDragLeave,
+        onDrop: drop.onDrop,
+        onClick: drop.onClick,
+      }
+    : {};
+  const dndProviders = (dnd?.providers ?? []) as never[];
   // react-aria useHasTabbableChild (empty state with a tabbable child: the grid leaves the tab order).
   const hasTabbableChild = signal(false);
   // Resumed pages: only a tree rendered empty needs this before its first interaction (TREE-PRE 2026-10-28: an
@@ -323,8 +355,8 @@ export function Tree<T>(inProps: TreeProps<T>) {
     isFocused: () => focused(),
     isFocusVisible: () => focusVisible(),
     selectionMode: computed(() => view().selectionManager.selectionMode),
-    allowsDragging: () => false,
-    isDropTarget: () => false,
+    allowsDragging: dnd ? dnd.allowsDragging : () => false,
+    isDropTarget: dnd ? dnd.isRootDropTarget : () => false,
     state: state as TreeState<unknown>,
   };
   const rp = untrack(() =>
@@ -381,6 +413,9 @@ export function Tree<T>(inProps: TreeProps<T>) {
       slot,
       "data-empty": () => dataBool(flat().size === 0),
       "data-selection-mode": () => (values.selectionMode() === "none" ? undefined : values.selectionMode()),
+      "data-drop-target": () => dataBool(values.isDropTarget()),
+      "data-allows-dragging": () => dataBool(values.allowsDragging()),
+      ...dndRoot,
       onKeyDownCapture: (e: KeyboardEvent) => gridListKeyDownCapture(e as never, gridOpts, view()),
       onKeyDown: (e: KeyboardEvent) => gridListKeyDown(e as never, gridOpts, view()),
       onFocusIn: (e: FocusEvent) => gridListFocus(e as never, gridOpts, view()),
@@ -393,18 +428,15 @@ export function Tree<T>(inProps: TreeProps<T>) {
       },
       onScroll: (e: Event) => scrolled(e),
       children: () => [
-        <Provider
-          values={[
-            [TreeStateContext, state],
-            [TreeInternalContext, { shared }],
-            [SharedElementContext, sharedElements],
-          ]}
-        >
+        <Provider values={[[TreeStateContext, state], [TreeInternalContext, { shared }], [SharedElementContext, sharedElements], ...dndProviders]}>
+          {(dnd?.rootIndicator ? dnd.rootIndicator() : null) as never}
           {
             (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
               collection: flat as () => ICollection<Node<unknown>>,
               scrollRef: el,
               focusedKey,
+              renderDropIndicator: dnd?.renderDropIndicator,
+              renderRow: dnd?.renderRow,
             }) as never
           }
         </Provider>,
@@ -440,6 +472,9 @@ export function Tree<T>(inProps: TreeProps<T>) {
       slot={slot}
       data-empty={dataBool(flat().size === 0)}
       data-selection-mode={values.selectionMode() === "none" ? undefined : values.selectionMode()}
+      data-drop-target={dataBool(values.isDropTarget())}
+      data-allows-dragging={dataBool(values.allowsDragging())}
+      {...dndRoot}
       onKeyDownCapture={(e) => gridListKeyDownCapture(e, gridOpts, view())}
       onKeyDown={(e) => gridListKeyDown(e, gridOpts, view())}
       onFocusIn={(e) => gridListFocus(e, gridOpts, view())}
@@ -458,13 +493,17 @@ export function Tree<T>(inProps: TreeProps<T>) {
           [TreeInternalContext, { shared }],
           // RAC: the rows share one SharedElementTransition scope (a SelectionIndicator animates between them).
           [SharedElementContext, sharedElements],
+          ...dndProviders,
         ]}
       >
+        {(dnd?.rootIndicator ? dnd.rootIndicator() : null) as never}
         {
           (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
             collection: flat as () => ICollection<Node<unknown>>,
             scrollRef: el,
             focusedKey,
+            renderDropIndicator: dnd?.renderDropIndicator,
+            renderRow: dnd?.renderRow,
           }) as never
         }
       </Provider>
@@ -601,13 +640,15 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
   const hasChildItemsProp = props.hasChildItems;
   const router = useRouter();
   const view = () => treeStateView(state, shared);
+  // RAC: rows of a draggable tree select on press up (a press may start a drag).
+  const selectOnPressUp = !!useContext(DragAndDropContext)?.dragState;
   const opts = (collection: ICollection<Node<unknown>>, row?: Element | null): AriaTreeItemOptions => ({
     // A removed row's bindings may re-run once before the row is disposed: read it as a detached leaf.
     node: collection.getItem(key) ?? removedNode(key),
     focusMode,
     allowsArrowNavigation,
     hasChildItems: hasChildItemsProp,
-    shouldSelectOnPressUp: false,
+    shouldSelectOnPressUp: selectOnPressUp,
     router,
     ref: (row as HTMLElement | null | undefined) ?? undefined,
   });
@@ -625,9 +666,18 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
   const focusVisible = signal(false);
   const within = useFocusRing({ within: true });
   const { onHoverStart, onHoverChange, onHoverEnd } = props;
+  // RAC TreeItem drag and drop (drag button slot, "drop on" indicator row, drag handlers).
+  const itemDnd = treeItemDnd({
+    key,
+    row,
+    rowAttr: (name) => aria().rowProps[name],
+    expandLabel: () => aria().expandButtonProps["aria-label"] as string | undefined,
+  });
+  const dragProps = itemDnd.dragProps;
   const interaction: InteractionStateOptions = {
-    // RAC: hover only when the row can be selected or has an action (WebKit sticky hover after drops).
-    isDisabled: () => !aria().allowsSelection && !aria().hasAction,
+    // RAC: hover only when the row can be selected, has an action or can be dragged (WebKit sticky hover after drops
+    // of rows that are ONLY draggable).
+    isDisabled: () => !aria().allowsSelection && !aria().hasAction && !itemDnd.isDraggable(),
     onHoverStart,
     onHoverChange,
     onHoverEnd,
@@ -659,9 +709,9 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
     isDisabled: computed(() => aria().isDisabled),
     selectionMode: computed(() => view().selectionManager.selectionMode),
     selectionBehavior: computed(() => view().selectionManager.selectionBehavior),
-    allowsDragging: () => false,
-    isDragging: () => false,
-    isDropTarget: () => false,
+    allowsDragging: () => !!itemDnd.dragState,
+    isDragging: itemDnd.isDragging,
+    isDropTarget: itemDnd.isDropTarget,
     isExpanded,
     hasChildItems,
     level,
@@ -776,6 +826,12 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
       "data-current": nav ? () => dataBool(isCurrent()) : undefined,
       "data-current-ancestor": nav ? () => dataBool(isCurrentAncestor()) : undefined,
       "data-focus-visible": navFocusVisible ? () => dataBool(navFocusVisible()) : undefined,
+      "data-allows-dragging": () => dataBool(!!itemDnd.dragState),
+      "data-dragging": () => dataBool(itemDnd.isDragging()),
+      "data-drop-target": () => dataBool(itemDnd.isDropTarget()),
+      draggable: dragProps?.draggable,
+      onDrag: dragProps?.onDrag,
+      onDragEnd: dragProps?.onDragEnd,
       onKeyDownCapture: (e: KeyboardEvent) => {
         if (!arrowNav) return;
         const v = view();
@@ -838,6 +894,7 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
       onDragStart: (e: DragEvent) => {
         const v = view();
         gridListItemDragStart(e as never, opts(v.collection as ICollection<Node<unknown>>), v);
+        dragProps?.onDragStart?.(e);
       },
       children: () => (
         <div {...aria().gridCellProps} style={{ display: "contents" }}>
@@ -863,6 +920,7 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
                         treeItemExpandPress(undefined, o, v, treeItemProps(o, v).isDisabled);
                       },
                     },
+                    drag: itemDnd.dragButton,
                   },
                 },
               ],
@@ -903,9 +961,10 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
         </div>
       ),
     };
-    return props.render(attrs as never, values);
+    const rendered = props.render(attrs as never, values);
+    return itemDnd.indicatorRow ? [itemDnd.indicatorRow, rendered] : rendered;
   }
-  return (
+  const rowEl = (
     <div
       {...dom}
       {...aria().rowProps}
@@ -923,6 +982,10 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
       data-current={nav ? dataBool(isCurrent()) : undefined}
       data-current-ancestor={nav ? dataBool(isCurrentAncestor()) : undefined}
       data-focus-visible={navFocusVisible ? dataBool(navFocusVisible()) : undefined}
+      data-allows-dragging={dataBool(!!itemDnd.dragState)}
+      data-dragging={dataBool(itemDnd.isDragging())}
+      data-drop-target={dataBool(itemDnd.isDropTarget())}
+      draggable={dragProps ? dragProps.draggable() : undefined}
       onKeyDownCapture={
         arrowNav
           ? (e) => {
@@ -988,7 +1051,10 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
       onDragStart={(e) => {
         const v = view();
         gridListItemDragStart(e, opts(v.collection as ICollection<Node<unknown>>), v);
+        dragProps?.onDragStart?.(e);
       }}
+      onDrag={dragProps?.onDrag}
+      onDragEnd={dragProps?.onDragEnd}
     >
       <div {...aria().gridCellProps} style={{ display: "contents" }}>
         <Provider
@@ -1013,6 +1079,7 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
                       treeItemExpandPress(undefined, o, v, treeItemProps(o, v).isDisabled);
                     },
                   },
+                  drag: itemDnd.dragButton,
                 },
               },
             ],
@@ -1053,6 +1120,7 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
       </div>
     </div>
   );
+  return itemDnd.indicatorRow ? [itemDnd.indicatorRow, rowEl] : rowEl;
 });
 
 // ---------------------------------------------------------------------------------------------

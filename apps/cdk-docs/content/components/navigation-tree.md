@@ -215,4 +215,4 @@ Deviations:
 ## Not yet supported
 
 - `renderLink` / `NavigationTreeItemLink` of newer RAC releases: use `Link` inside `NavigationTreeItemContent`, routed by a `RouterProvider`.
-- Sections in server-rendered pages; drag and drop; virtualization.
+- Sections in server-rendered pages; drag and drop (Tree has it: [Tree: drag and drop](tree.md#drag-and-drop)); virtualization.

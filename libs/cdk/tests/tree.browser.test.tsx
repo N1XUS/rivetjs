@@ -7,7 +7,10 @@
 // (`EmptyTreeStaticStory`, `LoadingStoryDepOnTopStory`, `TreeWithTextFieldStory`) are inlined, their MenuTrigger /
 // ComboBox cells replaced by Buttons / native inputs (same tab stops, none of the ported tests open them).
 // Skipped (reasons inline): RAC Virtualizer cases beyond "should support virtualizer" (sections, loaders);
-// drag and drop (DnD lane); `data-rac` assertions (Rivet renders no `data-rac`).
+// `data-rac` assertions (Rivet renders no `data-rac`).
+// Drag and drop: `useTreeData` → `createTreeData`; the `TreeWithDragAndDrop` story is inlined (default args); `act` +
+// `jest.runAllTimers()` → `settle()` (a frame + the 50ms drop timeout); native drag events carry `bubbles` and
+// coordinates inside the target tree (jsdom has no layout: upstream's (50, 50) hits nothing in a real browser).
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import "@rivetjs/testing/jest-dom";
 import { signal } from "@rivetjs/reactivity";
@@ -24,6 +27,9 @@ import { Input } from "../input/index.tsx";
 import { ListLayout, CollectionVirtualizer } from "../virtualizer/index.tsx";
 import { Toolbar } from "../toolbar/index.tsx";
 import { Tree, TreeHeader, TreeItem, TreeItemContent, TreeLoadMoreItem, TreeSection } from "../tree/index.tsx";
+import { DropIndicator, isTextDropItem, isVirtualDragging, useDragAndDrop } from "../dnd/index.tsx";
+import { createTreeData, type TreeData } from "../data/tree-data.tsx";
+import type { Key } from "../collections/types.ts";
 
 const renderIt = (fn: () => unknown) => {
   const result = render(fn as never);
@@ -207,10 +213,12 @@ const DynamicTreeItem = (props: any) => {
   return (
     <TreeItem {...props}>
       <TreeItemContent>
-        {({ isExpanded, hasChildItems, selectionMode, selectionBehavior }: any) => (
+        {({ isExpanded, hasChildItems, selectionMode, selectionBehavior, allowsDragging }: any) => (
           <>
             {(selectionMode() !== "none" || props.href != null) && selectionBehavior() === "toggle" ? <Checkbox slot="selection" /> : null}
+            {allowsDragging() ? <Button slot="drag">Drag</Button> : null}
             {hasChildItems() ? <Button slot="chevron">{isExpanded() ? "Collapse" : "Expand"}</Button> : null}
+            {props.supportsDragging ? <Button slot="drag">Drag</Button> : null}
             <Text>{props.title || props.children}</Text>
             <Button aria-label="Info">Info</Button>
             <Button aria-label="Menu">Menu</Button>
@@ -219,7 +227,7 @@ const DynamicTreeItem = (props: any) => {
       </TreeItemContent>
       <Collection items={props.childItems}>
         {(item: any) => (
-          <DynamicTreeItem childItems={item.childItems} textValue={item.name} href={props.href}>
+          <DynamicTreeItem supportsDragging={props.supportsDragging} childItems={item.childItems} textValue={item.name} href={props.href}>
             {item.name}
           </DynamicTreeItem>
         )}
@@ -433,6 +441,138 @@ const TreeWithTextFieldStory = (props: any) => (
       </TextFieldTreeItem>
     </Tree>
     <input aria-label="After tree" />
+  </div>
+);
+
+/** A keyboard drag session starts / a drop's focus update runs after a frame / 50ms (jest `runAllTimers` upstream). */
+const settle = async () => {
+  await frame();
+  await wait(60);
+  await flush();
+};
+
+const DraggableTree = (props: any) => {
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: (keys) => [...keys].map((key) => ({ "text/plain": key as string })),
+    ...props,
+  });
+  return <DynamicTree treeProps={{ dragAndDropHooks }} />;
+};
+
+const DraggableTreeWithSelection = (props: any) => {
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: (keys) => [...keys].map((key) => ({ "text/plain": key as string })),
+    ...props,
+  });
+  return <DynamicTree treeProps={{ dragAndDropHooks, selectionMode: "multiple" }} />;
+};
+
+/** stories/Tree.stories.tsx `DynamicTreeItem` over `createTreeData` nodes (`key` / `value` / `children`). */
+const TreeDataItem = (props: any) => (
+  <TreeItem id={props.id} textValue={props.textValue}>
+    <TreeItemContent>
+      {({ hasChildItems, isExpanded, selectionMode, selectionBehavior }: any) => (
+        <>
+          {selectionMode() !== "none" && selectionBehavior() === "toggle" ? <Checkbox slot="selection" /> : null}
+          {hasChildItems() ? <Button slot="chevron">{isExpanded() ? "Collapse" : "Expand"}</Button> : null}
+          <Button slot="drag">Drag</Button>
+          <Text>{props.children}</Text>
+          <Button aria-label="Info">Info</Button>
+          <Button aria-label="Menu">Menu</Button>
+        </>
+      )}
+    </TreeItemContent>
+    <Collection items={props.nodes}>
+      {(node: any) => (
+        <TreeDataItem id={node.key} nodes={node.children ?? []} textValue={node.value.name}>
+          {node.value.name}
+        </TreeDataItem>
+      )}
+    </Collection>
+  </TreeItem>
+);
+/** react-aria-components stories/Tree.stories.tsx `TreeWithDragAndDrop` (TreeDragAndDropExample + SecondTree, default args). */
+const serializeOf = (treeData: TreeData<any>) => (keys: Set<Key>) =>
+  [...keys].map((key) => {
+    const item = treeData.getItem(key)!;
+    const serializeItem = (nodeItem: any): any => ({ ...nodeItem.value, childItems: nodeItem.children ? [...nodeItem.children].map(serializeItem) : [] });
+    return { "text/plain": item.value.name, "tree-item": JSON.stringify(serializeItem(item)) };
+  });
+const moveIn = (treeData: TreeData<any>) => (e: any) => {
+  if (e.target.dropPosition === "before") treeData.moveBefore(e.target.key, e.keys);
+  else if (e.target.dropPosition === "after") treeData.moveAfter(e.target.key, e.keys);
+  else if (e.target.dropPosition === "on") {
+    const targetNode = treeData.getItem(e.target.key);
+    if (targetNode) {
+      const targetIndex = targetNode.children ? targetNode.children.length : 0;
+      const keyArray = Array.from(e.keys as Set<Key>);
+      for (let i = 0; i < keyArray.length; i++) treeData.move(keyArray[i]!, e.target.key, targetIndex + i);
+    }
+  }
+};
+function TreeDragAndDropExample(args: any) {
+  const treeData = createTreeData<any>({ initialItems: rows, getKey: (item) => item.id, getChildren: (item) => item.childItems });
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: serializeOf(treeData),
+    getAllowedDropOperations: () => ["move"],
+    renderDragPreview: (items) => <div style={{ background: "blue", color: "white", padding: "4px" }}>{items.length} items</div>,
+    shouldAcceptItemDrop: () => true,
+    onMove: moveIn(treeData),
+  });
+  return (
+    <Tree dragAndDropHooks={dragAndDropHooks} {...args} aria-label="Tree with drag and drop" items={treeData.items}>
+      {(item: any) => (
+        <TreeDataItem id={item.key} nodes={item.children ?? []} textValue={item.value.name}>
+          {item.value.name}
+        </TreeDataItem>
+      )}
+    </Tree>
+  );
+}
+function SecondTree(args: any) {
+  const treeData = createTreeData<any>({ initialItems: [], getKey: (item) => item.id, getChildren: (item) => item.childItems });
+  const processIncomingItems = async (e: any) =>
+    await Promise.all(
+      e.items.filter(isTextDropItem).map(async (item: any) => {
+        const parsed = JSON.parse(await item.getText("tree-item"));
+        const convertItem = (item: any): any => ({ ...item, id: Math.random().toString(36), childItems: item.childItems?.map(convertItem) });
+        return convertItem(parsed);
+      }),
+    );
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: serializeOf(treeData),
+    getAllowedDropOperations: () => ["move"],
+    acceptedDragTypes: ["tree-item"],
+    async onInsert(e) {
+      const items = await processIncomingItems(e);
+      if (e.target.dropPosition === "before") treeData.insertBefore(e.target.key, ...items);
+      else if (e.target.dropPosition === "after") treeData.insertAfter(e.target.key, ...items);
+    },
+    async onItemDrop(e) {
+      const items = await processIncomingItems(e);
+      treeData.insert(e.target.key, 0, ...items);
+    },
+    async onRootDrop(e) {
+      const items = await processIncomingItems(e);
+      treeData.insert(null, 0, ...items);
+    },
+    shouldAcceptItemDrop: () => true,
+    onMove: moveIn(treeData),
+  });
+  return (
+    <Tree dragAndDropHooks={dragAndDropHooks} {...args} aria-label="Tree with drag and drop" items={treeData.items} renderEmptyState={() => "Drop items here"}>
+      {(item: any) => (
+        <TreeDataItem id={item.key} nodes={item.children ?? []} textValue={item.value.name}>
+          {item.value.name}
+        </TreeDataItem>
+      )}
+    </Tree>
+  );
+}
+const TreeWithDragAndDrop = (args: any) => (
+  <div style={{ display: "flex", gap: "12px", "flex-wrap": "wrap" }}>
+    <TreeDragAndDropExample {...args} />
+    <SecondTree {...args} />
   </div>
 );
 
@@ -747,7 +887,15 @@ describe("Tree", () => {
       expect(row).not.toHaveClass("hover");
     });
 
-    it.skip("should show hover state on draggable rows even when not selectable/actionable (drag and drop: DnD lane)", () => {});
+    it("should show hover state on draggable rows even when not selectable/actionable", async () => {
+      const { getAllByRole } = renderIt(() => <DraggableTree />);
+      const row = getAllByRole("row")[1]!;
+      expect(row).not.toHaveAttribute("data-hovered");
+      await user.hover(row);
+      expect(row).toHaveAttribute("data-hovered", "true");
+      await user.unhover(row);
+      expect(row).not.toHaveAttribute("data-hovered");
+    });
 
     it("should not update the hover state if the row is not interactive", async () => {
       const onHoverStart = vi.fn();
@@ -1735,8 +1883,410 @@ describe("Tree", () => {
     });
   });
 
-  describe.skip("drag and drop (DnD lane: dragAndDropHooks not wired in Tree yet)", () => {
-    it("ports pending", () => {});
+  describe("drag and drop", () => {
+    const getItems = vi.fn();
+    function DnDTree(props: any) {
+      const treeData = createTreeData<any>({ initialItems: rows, getKey: (item) => item.id, getChildren: (item) => item.childItems });
+      const { dragAndDropHooks } = useDragAndDrop({
+        getItems: (keys) => {
+          getItems(keys);
+          return [...keys].map((key) => ({ "text/plain": treeData.getItem(key)?.value.name }));
+        },
+        getAllowedDropOperations: () => ["move"],
+      });
+      return (
+        <Tree dragAndDropHooks={dragAndDropHooks} aria-label="Tree with drag and drop" items={treeData.items} {...props}>
+          {(item: any) => (
+            <TreeDataItem id={item.key} nodes={item.children ?? []} textValue={item.value.name}>
+              {item.value.name}
+            </TreeDataItem>
+          )}
+        </Tree>
+      );
+    }
+
+    // A keyboard drag session hides everything but its drop targets with `inert` (Chromium supports it; react-aria's
+    // jsdom run falls back to `aria-hidden`, which testing-library's role queries skip): count the rows a session leaves.
+    const sessionRows = (rows: HTMLElement[]) => rows.filter((row) => !row.closest("[inert]"));
+    // Chromium ignores `effectAllowed` / `dropEffect` writes on a constructed DataTransfer outside a real drag (react-aria's
+    // jsdom DataTransfer stores them): shadow them with own data properties, written by the drag source as usual.
+    const writableEffects = (dataTransfer: DataTransfer): DataTransfer => {
+      Object.defineProperty(dataTransfer, "effectAllowed", { value: "all", writable: true });
+      Object.defineProperty(dataTransfer, "dropEffect", { value: "none", writable: true });
+      return dataTransfer;
+    };
+
+    afterEach(async () => {
+      // A keyboard drag session still running ends (Escape) so the next test starts without one.
+      if (isVirtualDragging()) {
+        fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+        fireEvent.keyUp(document.activeElement ?? document.body, { key: "Escape" });
+      }
+      await wait(60);
+      vi.clearAllMocks();
+    });
+
+    it("should support drag button slot", () => {
+      const { getAllByRole } = renderIt(() => <DraggableTree />);
+      const button = getAllByRole("button")[0]!;
+      expect(button).toHaveAttribute("aria-label", "Drag Projects");
+    });
+
+    it("should render drop indicators", async () => {
+      const onReorder = vi.fn();
+      const { getAllByRole } = renderIt(() => (
+        <DraggableTree onReorder={onReorder} renderDropIndicator={(target: any) => <DropIndicator target={target}>Test</DropIndicator>} />
+      ));
+      await user.tab();
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+
+      const rows = sessionRows(getAllByRole("row"));
+      expect(rows).toHaveLength(4);
+      expect(rows[0]).toHaveAttribute("class", "rv-DropIndicator");
+      expect(rows[0]).not.toHaveAttribute("data-drop-target", "true");
+      expect(rows[0]).toHaveTextContent("Test");
+      expect(within(rows[0]!).getByRole("button")).toHaveAttribute("aria-label", "Insert before Projects");
+      expect(rows[2]).toHaveAttribute("class", "rv-DropIndicator");
+      expect(rows[2]).toHaveAttribute("data-drop-target");
+      expect(within(rows[2]!).getByRole("button")).toHaveAttribute("aria-label", "Insert between Projects and Reports");
+      expect(rows[3]).toHaveAttribute("class", "rv-DropIndicator");
+      expect(rows[3]).not.toHaveAttribute("data-drop-target");
+      expect(within(rows[3]!).getByRole("button")).toHaveAttribute("aria-label", "Insert after Reports");
+
+      await user.keyboard("{ArrowDown}");
+
+      expect(document.activeElement).toHaveAttribute("aria-label", "Insert after Reports");
+      expect(rows[0]).not.toHaveAttribute("data-drop-target", "true");
+      expect(rows[2]).not.toHaveAttribute("data-drop-target", "true");
+      expect(rows[3]).toHaveAttribute("data-drop-target", "true");
+
+      await user.keyboard("{Enter}");
+      await settle();
+
+      expect(onReorder).toHaveBeenCalledTimes(1);
+    });
+
+    it("should not skip drop positions before/after a disabled item", async () => {
+      const siblings = [
+        { id: "cat", name: "Cat" },
+        { id: "dog", name: "Dog" },
+        { id: "kangaroo", name: "Kangaroo" },
+      ];
+      const onReorder = vi.fn();
+      const FlatDraggableTree = () => {
+        const { dragAndDropHooks } = useDragAndDrop({
+          getItems: (keys) => [...keys].map((key) => ({ "text/plain": key as string })),
+          onReorder,
+        });
+        return (
+          <Tree aria-label="flat draggable tree" items={siblings} disabledKeys={["dog"]} disabledBehavior="all" dragAndDropHooks={dragAndDropHooks}>
+            {(item: any) => (
+              <DynamicTreeItem supportsDragging childItems={item.childItems} textValue={item.name}>
+                {item.name}
+              </DynamicTreeItem>
+            )}
+          </Tree>
+        );
+      };
+      renderIt(() => <FlatDraggableTree />);
+      await user.tab();
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+
+      expect(document.activeElement).toHaveAttribute("aria-label", "Insert between Cat and Dog");
+      await user.keyboard("{ArrowDown}");
+      expect(document.activeElement).toHaveAttribute("aria-label", "Insert between Dog and Kangaroo");
+      await user.keyboard("{ArrowDown}");
+      expect(document.activeElement).toHaveAttribute("aria-label", "Insert after Kangaroo");
+      await user.keyboard("{Escape}");
+      await settle();
+    });
+
+    it("should support dropping on items", async () => {
+      const onItemDrop = vi.fn();
+      const { getAllByRole } = renderIt(() => (
+        <>
+          <DraggableTree />
+          <DraggableTree onItemDrop={onItemDrop} />
+        </>
+      ));
+
+      await user.tab();
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+
+      const tree = getAllByRole("treegrid")[1]!;
+      const rows = sessionRows(within(tree).getAllByRole("row"));
+      expect(rows).toHaveLength(20);
+      expect(within(rows[0]!).getAllByRole("button")[0]).toHaveAttribute("aria-label", "Drop on Projects");
+      expect(rows[0]!.nextElementSibling).toHaveAttribute("data-drop-target", "true");
+      expect(within(rows[1]!).getAllByRole("button")[0]).toHaveAttribute("aria-label", "Drop on Project 1");
+      expect(rows[1]!.nextElementSibling).not.toHaveAttribute("data-drop-target");
+      expect(within(rows[2]!).getAllByRole("button")[0]).toHaveAttribute("aria-label", "Drop on Project 2");
+      expect(rows[2]!.nextElementSibling).not.toHaveAttribute("data-drop-target");
+
+      expect(document.activeElement).toBe(within(rows[0]!).getAllByRole("button")[0]);
+
+      await user.keyboard("{Enter}");
+      await settle();
+
+      expect(onItemDrop).toHaveBeenCalledTimes(1);
+    });
+
+    it("should support dropping on the root", async () => {
+      const onRootDrop = vi.fn();
+      const { getAllByRole } = renderIt(() => (
+        <>
+          <DraggableTree />
+          <DraggableTree onRootDrop={onRootDrop} />
+        </>
+      ));
+
+      await user.tab();
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+
+      const tree = getAllByRole("treegrid")[1]!;
+      const rows = sessionRows(within(tree).getAllByRole("row"));
+      expect(rows).toHaveLength(1);
+      expect(within(rows[0]!).getAllByRole("button")[0]).toHaveAttribute("aria-label", "Drop on");
+      expect(document.activeElement).toBe(within(rows[0]!).getAllByRole("button")[0]);
+      expect(tree).toHaveAttribute("data-drop-target", "true");
+
+      await user.keyboard("{Enter}");
+      await settle();
+
+      expect(onRootDrop).toHaveBeenCalledTimes(1);
+    });
+
+    it("should automatically focus the newly added dropped item", async () => {
+      const { getAllByRole } = renderIt(() => <TreeWithDragAndDrop />);
+
+      const trees = getAllByRole("treegrid");
+      const firstTreeRows = within(trees[0]!).getAllByRole("row");
+      const dataTransfer = writableEffects(new DataTransfer());
+
+      fireEvent(firstTreeRows[1]!, new DragEvent("dragstart", { dataTransfer, clientX: 5, clientY: 5, bubbles: true }));
+      await settle();
+
+      const r = trees[1]!.getBoundingClientRect();
+      const x = r.left + 5;
+      const y = r.top + 5;
+      fireEvent(trees[1]!, new DragEvent("dragenter", { dataTransfer, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+      fireEvent(trees[1]!, new DragEvent("dragover", { dataTransfer, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+      expect(trees[1]).toHaveAttribute("data-drop-target", "true");
+
+      fireEvent(trees[1]!, new DragEvent("drop", { dataTransfer, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+      await settle();
+
+      let secondTreeRows = within(trees[1]!).getAllByRole("row");
+
+      expect(secondTreeRows).toHaveLength(1);
+      // The newly added row in the second tree should be the active element
+      expect(secondTreeRows[0]).toBe(document.activeElement);
+
+      await user.click(document.body);
+      await settle();
+
+      await user.tab();
+      await user.keyboard("{ArrowRight}"); // expand the projects item
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+
+      await user.tab();
+      await settle();
+
+      secondTreeRows = sessionRows(within(trees[1]!).getAllByRole("row"));
+      expect(secondTreeRows).toHaveLength(4);
+      expect(within(secondTreeRows[3]!).getAllByRole("button")[0]).toHaveAttribute("aria-label", "Insert after Reports");
+      expect(document.activeElement).toBe(within(secondTreeRows[3]!).getAllByRole("button")[0]);
+      expect(secondTreeRows[3]).toHaveAttribute("data-drop-target", "true");
+
+      await user.keyboard("{ArrowUp}");
+      expect(within(secondTreeRows[2]!).getAllByRole("button")[0]).toHaveAttribute("aria-label", "Drop on Reports");
+      expect(document.activeElement).toBe(within(secondTreeRows[2]!).getAllByRole("button")[0]);
+
+      await user.keyboard("{Enter}");
+      await settle();
+
+      secondTreeRows = within(trees[1]!).getAllByRole("row");
+      expect(secondTreeRows).toHaveLength(1);
+      expect(secondTreeRows[0]).toBe(document.activeElement);
+    });
+
+    it("should support disabled drag and drop", async () => {
+      const { getByRole, queryAllByRole } = renderIt(() => <DraggableTree isDisabled />);
+
+      const dragButtons = queryAllByRole("button").filter((button) => button.getAttribute("slot") === "drag");
+      dragButtons.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
+
+      const tree = getByRole("treegrid");
+      expect(tree).not.toHaveAttribute("data-allows-dragging", "true");
+      expect(tree).not.toHaveAttribute("draggable", "true");
+
+      const rows = within(tree).getAllByRole("row");
+      rows.forEach((row) => {
+        expect(row).not.toHaveAttribute("draggable", "true");
+      });
+    });
+
+    it("should allow selection even when drag and drop is disabled", async () => {
+      const { getByRole, getAllByRole } = renderIt(() => <DraggableTreeWithSelection isDisabled />);
+
+      for (const row of getAllByRole("row")) {
+        const checkbox = within(row).getByRole("checkbox");
+        expect(checkbox).not.toBeChecked();
+      }
+
+      const checkbox = getAllByRole("checkbox")[0]!;
+      expect(checkbox).toHaveAttribute("aria-label", "Select");
+
+      await user.click(checkbox);
+
+      const tree = getByRole("treegrid");
+      const rows = within(tree).getAllByRole("row");
+      expect(rows[0]).toHaveAttribute("data-selected", "true");
+      expect(checkbox).toBeChecked();
+    });
+
+    it("should filter out selected child keys in getItems if a parent is also selected", async () => {
+      const { getAllByRole } = renderIt(() => (
+        <DnDTree selectionMode="multiple" selectedKeys={new Set(["projects", "project-1", "reports", "reports-1AB", "reports-2"])} />
+      ));
+
+      const rows = getAllByRole("row");
+      const projectsRow = rows[0]!;
+      expect(projectsRow).toHaveAttribute("aria-selected", "true");
+
+      const dataTransfer = writableEffects(new DataTransfer());
+
+      fireEvent.pointerDown(projectsRow, { pointerType: "mouse", button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+      fireEvent(projectsRow, new DragEvent("dragstart", { dataTransfer, clientX: 5, clientY: 5, bubbles: true }));
+      fireEvent.pointerUp(projectsRow, { button: 0, pointerId: 1, clientX: 5, clientY: 5 });
+      fireEvent(projectsRow, new DragEvent("dragend", { dataTransfer, clientX: 5, clientY: 5, bubbles: true }));
+      expect(getItems).toHaveBeenCalledTimes(1);
+      expect(getItems).toHaveBeenCalledWith(new Set(["projects", "reports"]));
+    });
+
+    it("should select the parent and all its children when dropped", async () => {
+      const { getAllByRole } = renderIt(() => <TreeWithDragAndDrop selectionMode="multiple" />);
+      const trees = getAllByRole("treegrid");
+
+      const firstTreeTester = testUtilUser.createTester("Tree", { root: trees[0]! });
+      const secondTreeTester = testUtilUser.createTester("Tree", { root: trees[1]! });
+      expect(firstTreeTester.getRows()).toHaveLength(2);
+      // has the empty state row
+      expect(secondTreeTester.getRows()).toHaveLength(1);
+      await user.tab();
+      // selects and drops first row onto second tree
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+      await user.tab();
+      expect(document.activeElement).toHaveAttribute("aria-label", "Drop on");
+      fireEvent.keyDown(document.activeElement as Element, { key: "Enter" });
+      fireEvent.keyUp(document.activeElement as Element, { key: "Enter" });
+      await settle();
+      expect(secondTreeTester.getRows()).toHaveLength(1);
+      // expands tree row children
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{ArrowRight}");
+      expect(secondTreeTester.getSelectedRows()).toHaveLength(9);
+    });
+
+    it("should focus the parent row when dropped on if it isnt expanded", async () => {
+      const { getAllByRole } = renderIt(() => <TreeWithDragAndDrop />);
+      const trees = getAllByRole("treegrid");
+
+      const firstTreeTester = testUtilUser.createTester("Tree", { root: trees[0]! });
+      const secondTreeTester = testUtilUser.createTester("Tree", { root: trees[1]! });
+      expect(firstTreeTester.getRows()).toHaveLength(2);
+      // has the empty state row
+      expect(secondTreeTester.getRows()).toHaveLength(1);
+      await user.tab();
+      // selects and drops first row onto second tree
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+      await user.tab();
+      expect(document.activeElement).toHaveAttribute("aria-label", "Drop on");
+      fireEvent.keyDown(document.activeElement as Element, { key: "Enter" });
+      fireEvent.keyUp(document.activeElement as Element, { key: "Enter" });
+      await settle();
+      expect(secondTreeTester.getRows()).toHaveLength(1);
+      await user.keyboard("{ArrowRight}");
+      expect(secondTreeTester.getRows()).toHaveLength(6);
+      // tab back to the first tree and drop a new row onto one of the 2nd tree's child rows as it is expanded
+      await user.tab({ shift: true });
+      expect(document.activeElement).toBe(firstTreeTester.getRows()[0]);
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+      await user.tab();
+      for (let i = 0; i < 7; i++) await user.keyboard("{ArrowDown}");
+      expect(document.activeElement).toHaveAttribute("aria-label", "Drop on Project 2");
+      fireEvent.keyDown(document.activeElement as Element, { key: "Enter" });
+      fireEvent.keyUp(document.activeElement as Element, { key: "Enter" });
+      await settle();
+      expect(document.activeElement).toBe(secondTreeTester.getRows()[2]);
+    });
+
+    it("should focus the dropped row when dropped on a parent that is expanded", async () => {
+      const { getAllByRole } = renderIt(() => <TreeWithDragAndDrop />);
+      const trees = getAllByRole("treegrid");
+
+      const firstTreeTester = testUtilUser.createTester("Tree", { root: trees[0]! });
+      const secondTreeTester = testUtilUser.createTester("Tree", { root: trees[1]! });
+      expect(firstTreeTester.getRows()).toHaveLength(2);
+      // has the empty state row
+      expect(secondTreeTester.getRows()).toHaveLength(1);
+      await user.tab();
+      // selects and drops first row onto second tree
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+
+      await user.tab();
+      expect(document.activeElement).toHaveAttribute("aria-label", "Drop on");
+      fireEvent.keyDown(document.activeElement as Element, { key: "Enter" });
+      fireEvent.keyUp(document.activeElement as Element, { key: "Enter" });
+      await settle();
+      expect(secondTreeTester.getRows()).toHaveLength(1);
+      // expands tree row children
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{ArrowRight}");
+      expect(secondTreeTester.getRows()).toHaveLength(9);
+      // tab back to the first tree and drop a new row onto one of the 2nd tree's child rows as it is expanded
+      await user.tab({ shift: true });
+      expect(document.activeElement).toBe(firstTreeTester.getRows()[0]);
+      await user.keyboard("{ArrowRight}");
+      await user.keyboard("{Enter}");
+      await settle();
+      await user.tab();
+      for (let i = 0; i < 14; i++) await user.keyboard("{ArrowDown}");
+      expect(document.activeElement).toHaveAttribute("aria-label", "Drop on Project 2");
+      fireEvent.keyDown(document.activeElement as Element, { key: "Enter" });
+      fireEvent.keyUp(document.activeElement as Element, { key: "Enter" });
+      await settle();
+      expect(document.activeElement).toHaveTextContent("Projects");
+      expect(document.activeElement).toBe(secondTreeTester.getRows()[3]);
+    });
   });
 
   // TODO(C6a): gridListItemProps does not merge the item's onPress* / onClick props yet (grid-list.browser.test.tsx skips

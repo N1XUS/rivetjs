@@ -169,6 +169,13 @@ React Spectrum (react-stately, react-aria, react-aria-components) — formerly @
 - progress-bar/index.tsx, progress-bar/behaviour.tsx, meter/index.tsx, meter/behaviour.tsx — react-aria progress/useProgressBar.ts,
   meter/useMeter.ts, react-aria-components ProgressBar.tsx, Meter.tsx (© 2020/2022 Adobe)
 - file-trigger/index.tsx — react-aria-components FileTrigger.tsx (© 2023 Adobe)
+- dnd/* (constants, types, utils, intl, drag-manager, use-drag, use-drop, use-virtual-drop, use-auto-scroll,
+  use-draggable-collection, use-draggable-item, use-droppable-collection, use-droppable-item, use-drop-indicator,
+  drop-target-keyboard-navigation, list-drop-target-delegate, drag-preview, index), state/draggable-collection.ts,
+  state/droppable-collection.ts, tree/dnd.tsx, tree/drop-target-delegate.ts — react-aria dnd/*.ts(x) + intl/dnd/*.json,
+  react-stately dnd/useDraggableCollectionState.ts / useDroppableCollectionState.ts, react-aria-components
+  useDragAndDrop.tsx, DragAndDrop.tsx, Tree.tsx (TreeDropTargetDelegate, drag and drop parts) and test/Tree.test.tsx
+  "drag and drop" cases (react-spectrum 06891de, © 2020–2024 Adobe)
 - drop-zone/index.tsx, drop-zone/dnd.ts, drop-zone/intl.ts, tests/drop-zone.browser.test.tsx — react-aria dnd/{useDrop,utils,constants,useClipboard}.ts + intl,
   react-aria-components DropZone.tsx, test/DropZone.test.js (© 2020/2023 Adobe)
 - toggle-button-group/index.tsx, toggle-button-group/context.ts, toggle-button-group/behaviour.tsx, toggle-button-group/item.tsx,

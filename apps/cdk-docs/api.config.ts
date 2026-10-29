@@ -694,6 +694,12 @@ export const entries: ApiEntryConfig[] = [
     summary: "RAC DisclosureGroup, Disclosure, DisclosurePanel; DetailsDisclosure.",
   },
   {
+    entry: "@rivetjs/cdk/dnd",
+    file: "cdk/dnd/index.tsx",
+    runsOn: "both",
+    summary: "Collection drag and drop (react-aria-components useDragAndDrop, DropIndicator; react-aria / react-stately dnd hooks and states).",
+  },
+  {
     entry: "@rivetjs/cdk/drop-zone",
     file: "cdk/drop-zone/index.tsx",
     runsOn: "both",

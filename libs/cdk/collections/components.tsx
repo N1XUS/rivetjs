@@ -29,6 +29,8 @@
 // Deviation: `dependencies` is accepted and ignored (signals re-render; no item cache to invalidate).
 // Deviation: React hook names → Rivet (`useIsHidden` → `isHidden`, `usePersistedKeys` →
 //   `persistedKeys`, `useCachedChildren` → `collectionChildren`).
+// `renderRow` (Rivet, DnD): a host's row renderer for built rows (`@rivetjs/cdk/dnd` `dropIndicatorRow`: RAC
+//   `useCollectionRender` with `renderDropIndicator`): keeps drop-indicator code out of collections without DnD.
 import {
   _observer,
   _reobserve,
@@ -680,6 +682,8 @@ export interface CollectionBranchProps {
   parent: Node<unknown>;
   /** A function that renders a drop indicator between items (DnD, C8). */
   renderDropIndicator?: ((target: { type: "item"; key: Key; dropPosition: "before" | "after" | "on" }) => unknown) | undefined;
+  /** Rivet: renders the built row of `key` (default: the node; DnD: `@rivetjs/cdk/dnd` `dropIndicatorRow`). */
+  renderRow?: ((key: Key) => unknown) | undefined;
 }
 
 export interface CollectionRootProps {
@@ -702,6 +706,8 @@ export interface CollectionRootProps {
   /** The scroll container (virtualizers). */
   scrollRef?: unknown;
   renderDropIndicator?: CollectionBranchProps["renderDropIndicator"];
+  /** Rivet: renders the built row of `key` (see `CollectionBranchProps.renderRow`). */
+  renderRow?: CollectionBranchProps["renderRow"];
 }
 
 export interface CollectionRenderer {
@@ -790,7 +796,7 @@ export function renderNodeAt(collection: () => ICollection<Node<unknown>> | null
   });
 }
 
-function renderNodes(collection: CollectionInput, parent: Node<unknown> | null): unknown {
+function renderNodes(collection: CollectionInput, parent: Node<unknown> | null, renderRow?: (key: Key) => unknown): unknown {
   // Rows are keyed by primitive keys (stable across rebuilds) so an adopted (resumed) row survives a
   // collection rebuild; a row re-renders only when its node's render inputs changed (`renderNodeAt`) and parts
   // read live data by key.
@@ -802,7 +808,7 @@ function renderNodes(collection: CollectionInput, parent: Node<unknown> | null):
   };
   return (
     <For each={keys} by={(key: Key) => key}>
-      {(key: () => Key) => renderNodeAt(() => resolveCollection(collection), key) as never}
+      {(key: () => Key) => (renderRow ? renderRow(untrack(key)) : renderNodeAt(() => resolveCollection(collection), key)) as never}
     </For>
   );
 }
@@ -810,8 +816,8 @@ function renderNodes(collection: CollectionInput, parent: Node<unknown> | null):
 /** RAC `DefaultCollectionRenderer`: built collections render node by node; live mode renders content in place. */
 export const DefaultCollectionRenderer: CollectionRenderer = {
   CollectionRoot(props: CollectionRootProps): unknown {
-    const { collection, content, idScope } = props;
-    if (collection) return renderNodes(collection, null);
+    const { collection, content, idScope, renderRow } = props;
+    if (collection) return renderNodes(collection, null, renderRow);
     return (
       <Provider token={CollectionScopeContext} value={{ parentKey: null, level: 0, idScope, ids: { n: 0 } }}>
         {place(content) as never}
@@ -819,10 +825,10 @@ export const DefaultCollectionRenderer: CollectionRenderer = {
     );
   },
   CollectionBranch(props: CollectionBranchProps): unknown {
-    const { collection, parent } = props;
+    const { collection, parent, renderRow } = props;
     // `parent` may be row data (`{ key }`, a resumable capture), not the node: its type comes from the collection.
     const node = collection ? untrack(() => resolveCollection(collection)?.getItem(parent.key)) : null;
-    if (node) return renderNodes(collection, parent);
+    if (node) return renderNodes(collection, parent, renderRow);
     return ((parent as { content?: () => unknown }).content?.() ?? null) as never;
   },
 };

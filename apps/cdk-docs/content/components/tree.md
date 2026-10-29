@@ -112,13 +112,14 @@ import type { Key, Selection } from "@rivetjs/cdk/collections/types";
 | `linkBehavior` | `"action" \| "selection" \| "override"` | `"action"` | How rows with `href` behave when selection is on. |
 | `autoFocus` | `boolean \| "first" \| "last"` | none | |
 | `direction`, `locale` | | from the document | Rivet: reading direction of the arrow keys; typeahead collator / chevron label locale. |
+| `dragAndDropHooks` | `DragAndDropHooks` | none | From [`useDragAndDrop`](#drag-and-drop) (`@rivetjs/cdk/dnd`): rows become draggable and / or the tree a drop target. Root `data-allows-dragging` / `data-drop-target`. |
 | `renderEmptyState` | `(props: TreeEmptyStateRenderProps) => content` | none | Shown while the tree has no rows. |
 | `class`, `style` | value or `(props: TreeRenderProps) => value` | `rv-Tree` | |
 | `render` | `(props, renderProps) => element` | none | Replaces the default `<div>` of `Tree`; see [Render](#render). |
 | `slot`, `id`, `ref` | | | `TreeContext` slots. |
 | global DOM props | `GlobalDOMAttributes` | none | See [DOM events and attributes](#dom-events-and-attributes). |
 
-`TreeRenderProps` (accessors): `isEmpty()`, `isFocused()`, `isFocusVisible()`, `selectionMode()`, `allowsDragging()`, `isDropTarget()` (both always false: no drag and drop yet), `state`. `TreeEmptyStateRenderProps`: the same without `isEmpty`.
+`TreeRenderProps` (accessors): `isEmpty()`, `isFocused()`, `isFocusVisible()`, `selectionMode()`, `allowsDragging()` (drag hooks set), `isDropTarget()` (the whole tree is the drop target), `state`. `TreeEmptyStateRenderProps`: the same without `isEmpty`.
 
 ### TreeItem
 
@@ -139,13 +140,13 @@ import type { Key, Selection } from "@rivetjs/cdk/collections/types";
 | `class`, `style` | value or function of `TreeItemRenderProps` | Default `rv-TreeItem`; `--tree-item-level` is merged into the style. |
 | global DOM props | | On the row element (except `onClick`, as RAC). |
 
-`TreeItemRenderProps` (accessors, also given to `TreeItemContent` children): `isHovered()`, `isPressed()`, `isSelected()`, `isFocused()`, `isFocusVisible()`, `isDisabled()`, `selectionMode()`, `selectionBehavior()`, `isExpanded()`, `hasChildItems()`, `level()`, `isFocusVisibleWithin()`, `allowsDragging()`, `isDragging()`, `isDropTarget()`, `state`, `id`.
+`TreeItemRenderProps` (accessors, also given to `TreeItemContent` children): `isHovered()`, `isPressed()`, `isSelected()`, `isFocused()`, `isFocusVisible()`, `isDisabled()`, `selectionMode()`, `selectionBehavior()`, `isExpanded()`, `hasChildItems()`, `level()`, `isFocusVisibleWithin()`, `allowsDragging()`, `isDragging()`, `isDropTarget()` (drag and drop: the row is draggable / being dragged / the "drop on" target; also `data-allows-dragging` / `data-dragging` / `data-drop-target`), `state`, `id`.
 
 ### TreeItemContent, TreeSection, TreeHeader, TreeLoadMoreItem
 
 | Part | Props |
 | --- | --- |
-| `TreeItemContent` | `children`: content, or `(props: TreeItemContentRenderProps) => content`. Provides the `chevron` Button slot, the `selection` Checkbox slot and `SelectionIndicator`. |
+| `TreeItemContent` | `children`: content, or `(props: TreeItemContentRenderProps) => content`. Provides the `chevron` and `drag` Button slots, the `selection` Checkbox slot and `SelectionIndicator`. |
 | `TreeSection` | `id`, `value`, `aria-label`, `items` + item renderer (or static children), `class` (`rv-TreeSection`), `style`, `ref`, global DOM props (not `id` / `data-*`). |
 | `TreeHeader` | `children`, `id`, `class` (`rv-TreeHeader`), `style`, `ref`, global DOM props. |
 | `TreeLoadMoreItem` | `onLoadMore`, `isLoading` (boolean or accessor), `scrollOffset` (fraction of the viewport height, default `1`), `children` (loading content), `class` / `style` (value or function of `{ level }`, default `rv-TreeLoader`), global DOM props. |
@@ -228,12 +229,33 @@ By default arrow keys move between rows and into a row's focusable children. Set
 
 ::example{id=tree-keyboard}
 
+## Drag and drop
+
+Pass `dragAndDropHooks` from `useDragAndDrop` (`@rivetjs/cdk/dnd`, React Aria's hook). `getItems(keys)` makes rows draggable (the dragged data per row); `onMove` / `onReorder` (within the tree), `onInsert` / `onItemDrop` / `onRootDrop` (from elsewhere) or `onDrop` make the tree a drop target. Each draggable row needs a `<Button slot="drag">` in its `TreeItemContent` (a dev warning otherwise): keyboard and screen reader users start a drag from it. The mouse drags the row itself (`draggable`).
+
+While a drag runs, drop indicators render between the rows (`renderDropIndicator`, default `<DropIndicator target={target} />`, class `rv-DropIndicator`, `data-drop-target` on the current one; `--tree-item-level` gives the indent) and a "drop on" target per row. Hovering a collapsed folder during a mouse drag expands it; during a keyboard drag :kbd[ArrowRight] / :kbd[ArrowLeft] expand / collapse the targeted row. After a drop that adds rows, the new rows are selected and the first one is focused; a drop on a row focuses that row.
+
+::example{id=tree-drag-and-drop}
+
+| Option (`useDragAndDrop`) | Notes |
+| --- | --- |
+| `getItems(keys, items)` | Drag data per dragged row (`{ "text/plain": … }`, custom types). |
+| `getAllowedDropOperations()` | `"move"`, `"copy"`, `"link"`. |
+| `renderDragPreview(items)` | Custom drag image (rendered off screen at `dragstart`). |
+| `renderDropIndicator(target)` | Content of the indicator between rows. |
+| `acceptedDragTypes`, `shouldAcceptItemDrop`, `getDropOperation` | Which drops are allowed where. |
+| `onMove`, `onReorder`, `onInsert`, `onItemDrop`, `onRootDrop`, `onDrop` | Drop handlers. |
+| `onDragStart`, `onDragMove`, `onDragEnd`, `onDropEnter`, `onDropExit`, `onDropActivate` | Lifecycle events. |
+| `dropTargetDelegate`, `isDisabled` | Custom pointer targets; turn drag and drop off. |
+
+Keyboard drag: focus a row, :kbd[ArrowRight] to its drag button, :kbd[Enter] starts the drag (everything except the drop targets is made inert), :kbd[ArrowDown] / :kbd[ArrowUp] / :kbd[Home] / :kbd[End] / :kbd[PageDown] / :kbd[PageUp] move between drop positions, :kbd[Tab] moves to the next drop target (another collection), :kbd[Enter] drops, :kbd[Escape] cancels.
+
 ## DOM events and attributes
 
 Every part takes the global DOM events and attributes (`GlobalDOMAttributes` from `@rivetjs/cdk/dom-props`): `Tree` props land on the treegrid, `TreeItem` props on the row, `TreeSection` props on the rowgroup, `TreeLoadMoreItem` props on the loading row.
 
 - The tree handles `onMouseDown` itself (your handler runs right after its own) plus the key, focus and blur events of the treegrid.
-- A row handles `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onPointerEnter`, `onPointerLeave` and `onDblClick` (yours chained after its own), `onDragStart`, and drops `onClick` (as RAC).
+- A row handles `onPointerDown`, `onPointerUp`, `onPointerCancel`, `onPointerEnter`, `onPointerLeave` and `onDblClick` (yours chained after its own), `onDragStart` / `onDrag` / `onDragEnd` (drag and drop first, then yours), and drops `onClick` (as RAC).
 
 `on…Capture` handlers do not resume yet.
 
@@ -312,6 +334,7 @@ Indent rows with `--tree-item-level`, rotate the chevron icon from `isExpanded()
 - Pass `items` as a `computed` or signal.
 - Interactive row content (text fields, inputs) belongs in a function child of `TreeItemContent`: plain JSX passed as item props is evaluated in the collection build pass.
 - `on…Capture` handlers do not resume yet.
+- Drag and drop: the server renders `draggable` rows and the drag buttons only (no drop indicators); the first key or pointer press on a resumed page renders the tree in the browser and starts the drag in the same input (keyboard and mouse).
 
 Known issues: a conditionally rendered row (`{cond() && <TreeItem/>}`) is not added after resume (derive `items` instead); `TreeItem` `onAction` on :kbd[Enter] may not fire (use the Tree `onAction`); signals read inside nested row components during the collection build pass may not update; removing rows logs an error from the removed `TreeItem`; a row does not re-render when only its item's value changes.
 
@@ -322,6 +345,9 @@ Known issues: a conditionally rendered row (`{cond() && <TreeItem/>}`) is not ad
 | `Tree`, `TreeItem`, `TreeItemContent`, `TreeSection`, `TreeHeader`, `TreeLoadMoreItem`, `TreeContext`, `TreeStateContext`, `TreeItemContentContext` | RAC `Tree.tsx` |
 | `@rivetjs/cdk/tree/behaviour` | react-aria `useTree`, `useTreeItem` |
 | `@rivetjs/cdk/collections/tree-state` | react-stately `useTreeState` |
+| `@rivetjs/cdk/dnd`: `useDragAndDrop`, `DropIndicator`, `DragAndDropContext`, `DropIndicatorContext` | RAC `useDragAndDrop.tsx`, `DragAndDrop.tsx` |
+| `@rivetjs/cdk/dnd`: `useDrag`, `useDrop`, `useDraggableCollection`, `useDraggableItem`, `useDroppableCollection`, `useDroppableItem`, `useDropIndicator`, `ListDropTargetDelegate`, `DragPreview` | react-aria dnd hooks |
+| `@rivetjs/cdk/dnd`: `useDraggableCollectionState`, `useDroppableCollectionState` | react-stately dnd |
 | `@rivetjs/cdk/tree/cdk`: `TreeKeyManager`, `TREE_KEY_MANAGER` | Angular CDK `TreeKeyManager` (`@angular/cdk/a11y`) |
 | `@rivetjs/cdk/tree/cdk`: `FlatTreeControl`, `NestedTreeControl`, `BaseTreeControl` | Angular CDK tree controls (`@angular/cdk/tree`) |
 
@@ -340,7 +366,7 @@ Deviations:
 
 ## Not yet supported
 
-- Drag and drop (`dragAndDropHooks`, drop indicators, `Button slot="drag"`). Virtualized trees: `<CollectionVirtualizer layout={ListLayout}>` (see [Virtualizer](../foundations/virtualizer.md#collection-components)); `TreeLoadMoreItem` and `TreeSection` inside it are not covered yet.
+- Drop indicators in virtualized trees (the virtualizer renderer does not render them yet). Virtualized trees: `<CollectionVirtualizer layout={ListLayout}>` (see [Virtualizer](../foundations/virtualizer.md#collection-components)); `TreeLoadMoreItem` and `TreeSection` inside it are not covered yet.
 - `dependencies` is accepted and ignored.
 - `TreeSection` / `TreeHeader` in server-rendered pages (see [Sections](#sections)).
 - Press events on items (`onPress*`); a row click does not stop propagation yet.

@@ -41,6 +41,7 @@ Each module is a separate import path. Code you do not import is not shipped.
 | `@rivetjs/cdk/i18n`, `@rivetjs/cdk/i18n-provider` | `I18nProvider`, `useLocale()`, cached date formatters, localized string tables. | [Internationalization](i18n.md) |
 | `@rivetjs/cdk/bidi`, `@rivetjs/cdk/bidi-dir` | The text direction of an element, `logicalKey()`, `<Dir>` and the `Directionality` state. | [Text direction](bidi.md) |
 | `@rivetjs/cdk/date` | `@internationalized/date`: `CalendarDate`, time zones, calendar systems, date math, string forms for state. | [Dates](dates.md) |
+| `@rivetjs/cdk/dnd` | React Aria collection drag and drop: `useDragAndDrop` (`dragAndDropHooks` for `Tree`), `DropIndicator`, the dnd hooks and states. | [Tree: drag and drop](../components/tree.md#drag-and-drop) |
 | `@rivetjs/cdk/drag-drop` | Angular CDK drag and drop: `Drag`, `DropList`, `DropListGroup`, `DragHandle`, `DragPreview`, `DragPlaceholder`, the engine. | [Drag and drop](../components/drag-and-drop.md) |
 
 All small modules at a glance: [Utilities](utilities.md).

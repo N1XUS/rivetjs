@@ -27,5 +27,5 @@ Rivet-authored (not a port): headless, data-driven grid. Feature set inspired by
 - Docs: `apps/cdk-docs/content/components/data-grid.md`, examples `data-grid-{basic,virtual}`; styled `apps/ui-docs/content/components/data-grid.md`.
 
 ## Not supported (vs HeroUI Pro's public API)
-- `dragAndDropHooks` (React Aria DnD between collections; cdk has no RA DnD port) — `onReorder` covers in-grid reordering.
+- `dragAndDropHooks` (React Aria DnD between collections; the cdk port `@rivetjs/cdk/dnd` is wired into Tree only) — `onReorder` covers in-grid reordering.
 - Function `header` gets `sortDirection` as an accessor, not a value.
