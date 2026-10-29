@@ -109,11 +109,9 @@ function PromptInputQueueReorderItem<T>(props: PromptInputQueueReorderItemProps<
         const to = from + (event.key === back ? -1 : 1);
         if (!context.canMove(from, to)) return;
         event.preventDefault();
-        // Blur before the move, refocus after: on a resumed page a keyed `For` that moves the focused row (its focusout
-        // fires mid-reconcile) rendered one row twice and lost another (runtime gap, PRO-LAST report;
-        // `tests-components/prompt-input-queue-reorder.test.ts`). Then focus the row now at the target index.
+        // The move re-inserts the focused row (the browser drops its focus). The store write flushes after this handler, so
+        // refocus in the next task: the row now at the target index.
         setTimeout(() => {
-          row.blur();
           context.move(from, to);
           const target = row.isConnected ? row : rowsOf()[to];
           if (target && target !== target.ownerDocument.activeElement) target.focus();

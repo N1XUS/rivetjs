@@ -445,11 +445,13 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
     replace(parent, current, null, marker);
     slot.current = null;
   } else {
+    if (DERIVED) _adoption.moving = true;
     if (Array.isArray(current) && current.length) reconcile(parent, current, nodes, marker);
     else {
       replace(parent, current, null, marker);
       appendAll(parent, nodes, marker);
     }
+    if (DERIVED) _adoption.moving = false;
     slot.current = nodes;
   }
 }
@@ -717,6 +719,13 @@ export const _adoption: {
   /** Dev runtime only (`dom-derived.ts` sets it, `dev/dom.ts` reads it): a probe run is rendering — its components are
    * discarded, so they report no mount to DevTools. */
   probe?: (() => boolean) | null;
+  /**
+   * Derived builds (`DERIVED` only): an insertion is mutating the DOM (`reconcile`, `replace`; no try / finally: it would
+   * cost every build bytes, and a throwing DOM mutation breaks the page anyway). Moving or removing the focused node
+   * fires focusout synchronously, mid-move; the resume runtime must not adopt anything for those
+   * (`dom-derived.ts` `on`): a row adopting over a half-moved range stamped its neighbour's nodes (one row twice, one lost).
+   */
+  moving?: boolean;
 } = { rows: null, same: null, dev: null };
 /**
  * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place

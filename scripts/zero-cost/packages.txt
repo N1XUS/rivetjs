@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 44aa81675233 557433 css 97f49e3cc126 1216528
-@rivetjs/ui [server] b09c4d1754fc 495508 css 97f49e3cc126 1216528
+@rivetjs/ui [dom] d5a2d0c4ffc7 557424 css 97f49e3cc126 1216528
+@rivetjs/ui [server] a90885380c23 495499 css 97f49e3cc126 1216528
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -367,8 +367,8 @@
 @rivetjs/ui/prompt-input [server] d2975fd7c101 17114 css e8779bde6e92 1206226
 @rivetjs/ui/prompt-input-tokens [dom] ba0bea45c73b 13671 css e8779bde6e92 1206226
 @rivetjs/ui/prompt-input-tokens [server] 38c9b4513ae4 12431 css e8779bde6e92 1206226
-@rivetjs/ui/prompt-input-queue-reorder [dom] f1ce21a70a8b 2118
-@rivetjs/ui/prompt-input-queue-reorder [server] 5d3d9c71045b 1859
+@rivetjs/ui/prompt-input-queue-reorder [dom] c2f18f63a2ec 2109
+@rivetjs/ui/prompt-input-queue-reorder [server] 38b70d125f89 1850
 @rivetjs/ui/table-tanstack 3be7eaa54140 2918
 @rivetjs/ui/theme 886dd092c8f6 23546
 @rivetjs/motion [dom] ec524509790b 46351

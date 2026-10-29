@@ -2630,6 +2630,9 @@ const runtime: DerivedRuntime = {
   on(event) {
     if (DEV && disposed) return true;
     if (pending.length && !replaying) return false;
+    // The focusout / focusin of a focused node an insertion is moving or removing right now: not an interaction, and
+    // adopting mid-move reads a half-moved row range. Left to the page (nothing listens on an unadopted row).
+    if (_adoption.moving && /^focus(in|out)$/.test(event.type)) return true;
     // A click that adopts a document click listener's boundary (tail `g`, the router's `App`) is held: listeners
     // added to the document while the click is at the document are skipped natively (the router's capture listener
     // that routes a link whose own handler stopped propagation); its replay reaches them (`late`).

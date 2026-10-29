@@ -3,8 +3,8 @@
     "playground": {
       "totalJS": {
         "files": 36,
-        "min": 140627,
-        "br": 53918
+        "min": 140715,
+        "br": 53973
       },
       "serverJS": {
         "min": 197293,
@@ -13,7 +13,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 7000,
+          "htmlBr": 7010,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -23,8 +23,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 18,
           "eagerJS": {
-            "min": 124833,
-            "br": 46287
+            "min": 124921,
+            "br": 46381
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -47,12 +47,12 @@
             "analytics.js"
           ],
           "runtimeJS": {
-            "min": 75486,
-            "br": 25815
+            "min": 75574,
+            "br": 25912
           },
           "pageJS": {
-            "min": 124523,
-            "br": 46044
+            "min": 124611,
+            "br": 46161
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -63,7 +63,7 @@
         },
         "/items/1": {
           "status": 200,
-          "htmlBr": 6742,
+          "htmlBr": 6769,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -73,8 +73,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 16,
           "eagerJS": {
-            "min": 122626,
-            "br": 45264
+            "min": 122714,
+            "br": 45362
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -95,17 +95,17 @@
             "analytics.js"
           ],
           "runtimeJS": {
-            "min": 75486,
-            "br": 25815
+            "min": 75574,
+            "br": 25912
           },
           "pageJS": {
-            "min": 116138,
-            "br": 42354
+            "min": 116226,
+            "br": 42471
           }
         },
         "/resume": {
           "status": 200,
-          "htmlBr": 7054,
+          "htmlBr": 7039,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -115,8 +115,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 18,
           "eagerJS": {
-            "min": 120452,
-            "br": 44406
+            "min": 120540,
+            "br": 44501
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -139,17 +139,17 @@
             "analytics.js"
           ],
           "runtimeJS": {
-            "min": 75486,
-            "br": 25815
+            "min": 75574,
+            "br": 25912
           },
           "pageJS": {
-            "min": 120142,
-            "br": 44163
+            "min": 120230,
+            "br": 44281
           }
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 6883,
+          "htmlBr": 6876,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -159,8 +159,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 16,
           "eagerJS": {
-            "min": 118696,
-            "br": 43668
+            "min": 118784,
+            "br": 43762
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -181,17 +181,17 @@
             "analytics.js"
           ],
           "runtimeJS": {
-            "min": 75486,
-            "br": 25815
+            "min": 75574,
+            "br": 25912
           },
           "pageJS": {
-            "min": 118386,
-            "br": 43425
+            "min": 118474,
+            "br": 43542
           }
         },
         "/styles": {
           "status": 200,
-          "htmlBr": 6859,
+          "htmlBr": 6860,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -201,8 +201,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 16,
           "eagerJS": {
-            "min": 117724,
-            "br": 43343
+            "min": 117812,
+            "br": 43412
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -223,17 +223,17 @@
             "analytics.js"
           ],
           "runtimeJS": {
-            "min": 75486,
-            "br": 25815
+            "min": 75574,
+            "br": 25912
           },
           "pageJS": {
-            "min": 117414,
-            "br": 43100
+            "min": 117502,
+            "br": 43192
           }
         },
         "/nested/one": {
           "status": 200,
-          "htmlBr": 6807,
+          "htmlBr": 6779,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -243,8 +243,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 15,
           "eagerJS": {
-            "min": 116605,
-            "br": 42715
+            "min": 116693,
+            "br": 42810
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -264,17 +264,17 @@
             "analytics.js"
           ],
           "runtimeJS": {
-            "min": 75486,
-            "br": 25815
+            "min": 75574,
+            "br": 25912
           },
           "pageJS": {
-            "min": 116138,
-            "br": 42354
+            "min": 116226,
+            "br": 42471
           }
         },
         "/csr": {
           "status": 200,
-          "htmlBr": 7000,
+          "htmlBr": 7010,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -284,8 +284,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 18,
           "eagerJS": {
-            "min": 124833,
-            "br": 46287
+            "min": 124921,
+            "br": 46381
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -308,12 +308,12 @@
             "analytics.js"
           ],
           "runtimeJS": {
-            "min": 75486,
-            "br": 25815
+            "min": 75574,
+            "br": 25912
           },
           "pageJS": {
-            "min": 124523,
-            "br": 46044
+            "min": 124611,
+            "br": 46161
           }
         }
       }
@@ -321,8 +321,8 @@
     "kit-fixture": {
       "totalJS": {
         "files": 14,
-        "min": 107018,
-        "br": 38679
+        "min": 107106,
+        "br": 38706
       },
       "serverJS": {
         "min": 174570,
@@ -331,7 +331,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 2677,
+          "htmlBr": 2675,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -341,8 +341,8 @@
           "inlineBytes": 4214,
           "eagerRequests": 10,
           "eagerJS": {
-            "min": 103701,
-            "br": 36999
+            "min": 103789,
+            "br": 37022
           },
           "eagerFiles": [
             "late.js",
@@ -357,17 +357,17 @@
             "routes.js"
           ],
           "runtimeJS": {
-            "min": 70705,
-            "br": 24357
+            "min": 70793,
+            "br": 24368
           },
           "pageJS": {
-            "min": 103126,
-            "br": 36644
+            "min": 103214,
+            "br": 36652
           }
         },
         "/about": {
           "status": 200,
-          "htmlBr": 2532,
+          "htmlBr": 2548,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -377,8 +377,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 9,
           "eagerJS": {
-            "min": 103886,
-            "br": 37068
+            "min": 103974,
+            "br": 37079
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -392,12 +392,12 @@
             "about.js"
           ],
           "runtimeJS": {
-            "min": 70705,
-            "br": 24357
+            "min": 70793,
+            "br": 24368
           },
           "pageJS": {
-            "min": 103126,
-            "br": 36644
+            "min": 103214,
+            "br": 36652
           }
         }
       }
@@ -405,8 +405,8 @@
     "router:nav-api": {
       "totalJS": {
         "files": 13,
-        "min": 105346,
-        "br": 37558
+        "min": 105434,
+        "br": 37610
       },
       "serverJS": {
         "min": 150757,
@@ -415,7 +415,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 2428,
+          "htmlBr": 2439,
           "cssSheets": 1,
           "css": {
             "min": 62,
@@ -425,8 +425,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 9,
           "eagerJS": {
-            "min": 102324,
-            "br": 36032
+            "min": 102412,
+            "br": 36081
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -440,12 +440,12 @@
             "routes.js"
           ],
           "runtimeJS": {
-            "min": 69872,
-            "br": 24036
+            "min": 69960,
+            "br": 24084
           },
           "pageJS": {
-            "min": 102324,
-            "br": 36032
+            "min": 102412,
+            "br": 36081
           }
         }
       }
@@ -453,8 +453,8 @@
     "router:nested": {
       "totalJS": {
         "files": 16,
-        "min": 105719,
-        "br": 37365
+        "min": 105807,
+        "br": 37369
       },
       "serverJS": {
         "min": 155591,
@@ -463,7 +463,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 2284,
+          "htmlBr": 2283,
           "cssSheets": 1,
           "css": {
             "min": 62,
@@ -478,12 +478,12 @@
           },
           "eagerFiles": [],
           "runtimeJS": {
-            "min": 69601,
-            "br": 23720
+            "min": 69689,
+            "br": 23728
           },
           "pageJS": {
-            "min": 102716,
-            "br": 35525
+            "min": 102804,
+            "br": 35523
           }
         }
       }
@@ -491,8 +491,8 @@
     "starter-server": {
       "totalJS": {
         "files": 2,
-        "min": 60422,
-        "br": 19922
+        "min": 60510,
+        "br": 19954
       },
       "serverJS": {
         "min": 149095,
@@ -529,8 +529,8 @@
     "starter-static": {
       "totalJS": {
         "files": 23,
-        "min": 174092,
-        "br": 62466
+        "min": 174268,
+        "br": 62475
       },
       "serverJS": {
         "min": 160385,
@@ -539,7 +539,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5010,
+          "htmlBr": 5050,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -550,18 +550,18 @@
           "eagerRequests": 1,
           "eagerJS": {
             "min": 5651,
-            "br": 2459
+            "br": 2453
           },
           "eagerFiles": [
             "lite.js"
           ],
           "runtimeJS": {
             "min": 5651,
-            "br": 2459
+            "br": 2453
           },
           "pageJS": {
-            "min": 58307,
-            "br": 21909
+            "min": 58331,
+            "br": 21898
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -575,8 +575,8 @@
     "starter-minimal": {
       "totalJS": {
         "files": 10,
-        "min": 135163,
-        "br": 46986
+        "min": 135339,
+        "br": 47020
       },
       "serverJS": {
         "min": 143066,
@@ -585,7 +585,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 2013,
+          "htmlBr": 2011,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -596,7 +596,7 @@
           "eagerRequests": 2,
           "eagerJS": {
             "min": 5735,
-            "br": 2550
+            "br": 2546
           },
           "eagerFiles": [
             "lite-runtime.js",
@@ -604,11 +604,11 @@
           ],
           "runtimeJS": {
             "min": 5735,
-            "br": 2550
+            "br": 2546
           },
           "pageJS": {
             "min": 5735,
-            "br": 2550
+            "br": 2546
           }
         }
       }
@@ -616,8 +616,8 @@
     "starter-ui": {
       "totalJS": {
         "files": 49,
-        "min": 193141,
-        "br": 69209
+        "min": 193229,
+        "br": 69204
       },
       "serverJS": {
         "min": 244732,
@@ -626,7 +626,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 3668,
+          "htmlBr": 3669,
           "cssSheets": 2,
           "css": {
             "min": 81851,
@@ -636,8 +636,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 30,
           "eagerJS": {
-            "min": 183787,
-            "br": 64612
+            "min": 183875,
+            "br": 64647
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -672,12 +672,12 @@
             "tv.js"
           ],
           "runtimeJS": {
-            "min": 83457,
-            "br": 28010
+            "min": 83545,
+            "br": 28020
           },
           "pageJS": {
-            "min": 183787,
-            "br": 64612
+            "min": 183875,
+            "br": 64647
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -691,8 +691,8 @@
     "example:counter": {
       "totalJS": {
         "files": 10,
-        "min": 135324,
-        "br": 47108
+        "min": 135500,
+        "br": 47153
       },
       "serverJS": {
         "min": 143147,
@@ -712,7 +712,7 @@
           "eagerRequests": 2,
           "eagerJS": {
             "min": 5768,
-            "br": 2560
+            "br": 2558
           },
           "eagerFiles": [
             "lite-runtime.js",
@@ -720,11 +720,11 @@
           ],
           "runtimeJS": {
             "min": 5768,
-            "br": 2560
+            "br": 2558
           },
           "pageJS": {
             "min": 5768,
-            "br": 2560
+            "br": 2558
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -738,8 +738,8 @@
     "example:todo-list": {
       "totalJS": {
         "files": 11,
-        "min": 156645,
-        "br": 54752
+        "min": 156821,
+        "br": 54815
       },
       "serverJS": {
         "min": 161349,
@@ -748,7 +748,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4818,
+          "htmlBr": 4817,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -759,7 +759,7 @@
           "eagerRequests": 2,
           "eagerJS": {
             "min": 8356,
-            "br": 3545
+            "br": 3553
           },
           "eagerFiles": [
             "lite-runtime.js",
@@ -767,11 +767,11 @@
           ],
           "runtimeJS": {
             "min": 8356,
-            "br": 3545
+            "br": 3553
           },
           "pageJS": {
             "min": 8356,
-            "br": 3545
+            "br": 3553
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -785,8 +785,8 @@
     "example:loader-data": {
       "totalJS": {
         "files": 4,
-        "min": 67364,
-        "br": 23139
+        "min": 67452,
+        "br": 23163
       },
       "serverJS": {
         "min": 151406,
@@ -795,7 +795,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4653,
+          "htmlBr": 4637,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -805,8 +805,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 3,
           "eagerJS": {
-            "min": 65710,
-            "br": 22396
+            "min": 65798,
+            "br": 22420
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -814,12 +814,12 @@
             "index.js"
           ],
           "runtimeJS": {
-            "min": 64638,
-            "br": 21849
+            "min": 64726,
+            "br": 21872
           },
           "pageJS": {
-            "min": 65710,
-            "br": 22396
+            "min": 65798,
+            "br": 22420
           },
           "interactionError": "page.waitForFunction: Timeout 5000ms exceeded.",
           "errors": [
@@ -831,8 +831,8 @@
     "example:search-with-debounce": {
       "totalJS": {
         "files": 5,
-        "min": 76173,
-        "br": 26462
+        "min": 76261,
+        "br": 26472
       },
       "serverJS": {
         "min": 163300,
@@ -841,7 +841,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4826,
+          "htmlBr": 4843,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -851,8 +851,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 3,
           "eagerJS": {
-            "min": 71486,
-            "br": 24362
+            "min": 71574,
+            "br": 24372
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -860,12 +860,12 @@
             "index.js"
           ],
           "runtimeJS": {
-            "min": 69225,
-            "br": 23336
+            "min": 69313,
+            "br": 23361
           },
           "pageJS": {
-            "min": 71486,
-            "br": 24362
+            "min": 71574,
+            "br": 24372
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -879,8 +879,8 @@
     "example:lazy-chunk-demo": {
       "totalJS": {
         "files": 16,
-        "min": 138939,
-        "br": 48932
+        "min": 139115,
+        "br": 49009
       },
       "serverJS": {
         "min": 143818,
@@ -889,7 +889,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4748,
+          "htmlBr": 4752,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -900,7 +900,7 @@
           "eagerRequests": 3,
           "eagerJS": {
             "min": 6460,
-            "br": 3004
+            "br": 3003
           },
           "eagerFiles": [
             "dom-lite.js",
@@ -913,7 +913,7 @@
           },
           "pageJS": {
             "min": 6460,
-            "br": 3004
+            "br": 3003
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -927,8 +927,8 @@
     "example:nested-layouts": {
       "totalJS": {
         "files": 18,
-        "min": 170268,
-        "br": 60182
+        "min": 170444,
+        "br": 60236
       },
       "serverJS": {
         "min": 147620,
@@ -937,7 +937,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5072,
+          "htmlBr": 5062,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -947,8 +947,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 7,
           "eagerJS": {
-            "min": 96870,
-            "br": 33907
+            "min": 96958,
+            "br": 33911
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -960,12 +960,12 @@
             "(shop).js"
           ],
           "runtimeJS": {
-            "min": 69601,
-            "br": 23720
+            "min": 69689,
+            "br": 23728
           },
           "pageJS": {
-            "min": 96632,
-            "br": 33713
+            "min": 96720,
+            "br": 33719
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -979,8 +979,8 @@
     "example:two-way-input": {
       "totalJS": {
         "files": 10,
-        "min": 139859,
-        "br": 48726
+        "min": 140035,
+        "br": 48780
       },
       "serverJS": {
         "min": 144397,
@@ -989,7 +989,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4663,
+          "htmlBr": 4660,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1000,7 +1000,7 @@
           "eagerRequests": 2,
           "eagerJS": {
             "min": 6367,
-            "br": 2784
+            "br": 2781
           },
           "eagerFiles": [
             "lite-runtime.js",
@@ -1008,11 +1008,11 @@
           ],
           "runtimeJS": {
             "min": 6367,
-            "br": 2784
+            "br": 2781
           },
           "pageJS": {
             "min": 6367,
-            "br": 2784
+            "br": 2781
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1026,8 +1026,8 @@
     "example:route-transitions": {
       "totalJS": {
         "files": 10,
-        "min": 104633,
-        "br": 37630
+        "min": 104721,
+        "br": 37637
       },
       "serverJS": {
         "min": 159431,
@@ -1036,7 +1036,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5398,
+          "htmlBr": 5401,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1051,12 +1051,12 @@
           },
           "eagerFiles": [],
           "runtimeJS": {
-            "min": 72617,
-            "br": 24702
+            "min": 72705,
+            "br": 24731
           },
           "pageJS": {
-            "min": 99125,
-            "br": 35095
+            "min": 99213,
+            "br": 35112
           }
         }
       }
@@ -1064,8 +1064,8 @@
     "example:action-form": {
       "totalJS": {
         "files": 2,
-        "min": 60422,
-        "br": 19922
+        "min": 60510,
+        "br": 19954
       },
       "serverJS": {
         "min": 150759,
@@ -1102,8 +1102,8 @@
     "example:motion-basics": {
       "totalJS": {
         "files": 71,
-        "min": 158733,
-        "br": 63584
+        "min": 158821,
+        "br": 63691
       },
       "serverJS": {
         "min": 173965,
@@ -1112,7 +1112,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5091,
+          "htmlBr": 5081,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1122,8 +1122,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 7,
           "eagerJS": {
-            "min": 117985,
-            "br": 41267
+            "min": 118073,
+            "br": 41280
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1135,12 +1135,12 @@
             "transition.js"
           ],
           "runtimeJS": {
-            "min": 81834,
-            "br": 27646
+            "min": 81922,
+            "br": 27660
           },
           "pageJS": {
-            "min": 117985,
-            "br": 41267
+            "min": 118073,
+            "br": 41280
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1154,8 +1154,8 @@
     "example:motion-gestures": {
       "totalJS": {
         "files": 71,
-        "min": 159907,
-        "br": 63980
+        "min": 159995,
+        "br": 64114
       },
       "serverJS": {
         "min": 175237,
@@ -1164,7 +1164,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4916,
+          "htmlBr": 4905,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1174,8 +1174,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 7,
           "eagerJS": {
-            "min": 119171,
-            "br": 41632
+            "min": 119259,
+            "br": 41691
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1187,12 +1187,12 @@
             "transition.js"
           ],
           "runtimeJS": {
-            "min": 82008,
-            "br": 27645
+            "min": 82096,
+            "br": 27704
           },
           "pageJS": {
-            "min": 119171,
-            "br": 41632
+            "min": 119259,
+            "br": 41691
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1206,8 +1206,8 @@
     "example:motion-presence": {
       "totalJS": {
         "files": 74,
-        "min": 162894,
-        "br": 65342
+        "min": 162982,
+        "br": 65459
       },
       "serverJS": {
         "min": 184420,
@@ -1216,7 +1216,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5562,
+          "htmlBr": 5582,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1226,8 +1226,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 9,
           "eagerJS": {
-            "min": 122595,
-            "br": 43198
+            "min": 122683,
+            "br": 43230
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1241,12 +1241,12 @@
             "transition.js"
           ],
           "runtimeJS": {
-            "min": 82209,
-            "br": 27729
+            "min": 82297,
+            "br": 27748
           },
           "pageJS": {
-            "min": 122595,
-            "br": 43198
+            "min": 122683,
+            "br": 43230
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1260,8 +1260,8 @@
     "example:motion-layout": {
       "totalJS": {
         "files": 72,
-        "min": 167326,
-        "br": 66951
+        "min": 167414,
+        "br": 66865
       },
       "serverJS": {
         "min": 188710,
@@ -1270,7 +1270,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5273,
+          "htmlBr": 5248,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1280,8 +1280,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 8,
           "eagerJS": {
-            "min": 127136,
-            "br": 44811
+            "min": 127224,
+            "br": 44867
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1294,12 +1294,12 @@
             "transition.js"
           ],
           "runtimeJS": {
-            "min": 82517,
-            "br": 27817
+            "min": 82605,
+            "br": 27890
           },
           "pageJS": {
-            "min": 127136,
-            "br": 44811
+            "min": 127224,
+            "br": 44867
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1313,8 +1313,8 @@
     "example:motion-scroll": {
       "totalJS": {
         "files": 2,
-        "min": 60422,
-        "br": 19922
+        "min": 60510,
+        "br": 19954
       },
       "serverJS": {
         "min": 148519,
@@ -1352,8 +1352,8 @@
     "example:resume-demo": {
       "totalJS": {
         "files": 10,
-        "min": 135732,
-        "br": 47281
+        "min": 135908,
+        "br": 47342
       },
       "serverJS": {
         "min": 143329,
@@ -1362,7 +1362,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4655,
+          "htmlBr": 4656,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1373,7 +1373,7 @@
           "eagerRequests": 2,
           "eagerJS": {
             "min": 5736,
-            "br": 2551
+            "br": 2547
           },
           "eagerFiles": [
             "lite-runtime.js",
@@ -1381,11 +1381,11 @@
           ],
           "runtimeJS": {
             "min": 5736,
-            "br": 2551
+            "br": 2547
           },
           "pageJS": {
             "min": 5736,
-            "br": 2551
+            "br": 2547
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1399,8 +1399,8 @@
     "example:tutorial-03": {
       "totalJS": {
         "files": 12,
-        "min": 138875,
-        "br": 48286
+        "min": 139051,
+        "br": 48352
       },
       "serverJS": {
         "min": 143811,
@@ -1409,7 +1409,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4820,
+          "htmlBr": 4814,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1420,18 +1420,18 @@
           "eagerRequests": 1,
           "eagerJS": {
             "min": 5681,
-            "br": 2473
+            "br": 2477
           },
           "eagerFiles": [
             "lite.js"
           ],
           "runtimeJS": {
             "min": 5681,
-            "br": 2473
+            "br": 2477
           },
           "pageJS": {
             "min": 5681,
-            "br": 2473
+            "br": 2477
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1445,8 +1445,8 @@
     "example:card-slots": {
       "totalJS": {
         "files": 6,
-        "min": 69629,
-        "br": 24117
+        "min": 69717,
+        "br": 24145
       },
       "serverJS": {
         "min": 144593,
@@ -1455,7 +1455,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4874,
+          "htmlBr": 4878,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1465,8 +1465,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 4,
           "eagerJS": {
-            "min": 67889,
-            "br": 23284
+            "min": 67977,
+            "br": 23312
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1475,12 +1475,12 @@
             "Card.js"
           ],
           "runtimeJS": {
-            "min": 65880,
-            "br": 22221
+            "min": 65968,
+            "br": 22252
           },
           "pageJS": {
-            "min": 67889,
-            "br": 23284
+            "min": 67977,
+            "br": 23312
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1494,8 +1494,8 @@
     "cdk-example:masonry-expand": {
       "totalJS": {
         "files": 8,
-        "min": 170369,
-        "br": 56888
+        "min": 170457,
+        "br": 56861
       },
       "serverJS": {
         "min": 225845,
@@ -1504,7 +1504,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 6264,
+          "htmlBr": 6267,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1514,8 +1514,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 6,
           "eagerJS": {
-            "min": 168615,
-            "br": 56044
+            "min": 168703,
+            "br": 56023
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1526,12 +1526,12 @@
             "index.js"
           ],
           "runtimeJS": {
-            "min": 71967,
-            "br": 24175
+            "min": 72055,
+            "br": 24191
           },
           "pageJS": {
-            "min": 168615,
-            "br": 56044
+            "min": 168703,
+            "br": 56023
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1545,8 +1545,8 @@
     "cdk-example:masonry-feed": {
       "totalJS": {
         "files": 8,
-        "min": 169748,
-        "br": 56648
+        "min": 169836,
+        "br": 56634
       },
       "serverJS": {
         "min": 225333,
@@ -1555,7 +1555,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 6000,
+          "htmlBr": 6006,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1565,8 +1565,8 @@
           "inlineBytes": 3860,
           "eagerRequests": 6,
           "eagerJS": {
-            "min": 167994,
-            "br": 55804
+            "min": 168082,
+            "br": 55796
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1577,12 +1577,12 @@
             "index.js"
           ],
           "runtimeJS": {
-            "min": 71967,
-            "br": 24175
+            "min": 72055,
+            "br": 24191
           },
           "pageJS": {
-            "min": 167994,
-            "br": 55804
+            "min": 168082,
+            "br": 55796
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1596,8 +1596,8 @@
     "cdk-example:scheduler-views-binding": {
       "totalJS": {
         "files": 82,
-        "min": 446634,
-        "br": 150341
+        "min": 446722,
+        "br": 150332
       },
       "serverJS": {
         "min": 426109,
@@ -1606,7 +1606,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5573,
+          "htmlBr": 5568,
           "cssSheets": 1,
           "css": {
             "min": 43066,
@@ -1616,8 +1616,8 @@
           "inlineBytes": 4274,
           "eagerRequests": 51,
           "eagerJS": {
-            "min": 381043,
-            "br": 127926
+            "min": 381131,
+            "br": 127911
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1673,12 +1673,12 @@
             "transition.js"
           ],
           "runtimeJS": {
-            "min": 88435,
-            "br": 29554
+            "min": 88523,
+            "br": 29622
           },
           "pageJS": {
-            "min": 381043,
-            "br": 127926
+            "min": 381131,
+            "br": 127911
           },
           "interactionRequests": 0,
           "interactionJS": {

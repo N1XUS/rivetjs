@@ -1,7 +1,7 @@
 // PromptInput queue reordering on a resumed page (`/prompt-input-queue-reorder`; PRO-LAST): server drag markup; a cold
 // mouse drag moves the first row below the last (stored order + DOM order), a warm drag moves it back up; cold
-// Alt+ArrowUp / Alt+ArrowDown move the focused row and keep focus (the row is blurred around the move: a resumed keyed
-// `For` moving the focused row rendered one row twice, runtime gap); `axis="x"` drags horizontally, Alt+ArrowLeft / Right.
+// Alt+ArrowUp / Alt+ArrowDown move the focused row and keep focus (a resumed keyed `For` moving the focused row used to render one row
+// twice: FOR-FOCUS, `libs/runtime/tests/derived-rows-move-browser.test.ts`); `axis="x"` drags horizontally, Alt+ArrowLeft / Right.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import { stories, watch, type Stories } from "./harness.ts";
