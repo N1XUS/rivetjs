@@ -150,7 +150,7 @@ The `templates` folder has four starters. `npm create rivet` copies the one you 
 
 Every starter also has:
 
-- `npm run check`: runs `rivet sync`, then `rivet-check`, the Rivet compiler's checks for all `.tsx` files (for example a browser global read during server rendering), then `tsc` for the types, typed route links included. It exits with code 1 on an error, so you can run it in CI. See [language service](../guides/tooling/language-service.md#check-in-ci).
+- `npm run check`: runs `rivet sync`, then `rivet-check`, the Rivet compiler's checks for all `.tsx` files (for example a browser global read during server rendering), then `tsgo` (the TypeScript 7 native compiler) for the types, typed route links included. It exits with code 1 on an error, so you can run it in CI. See [language service](../guides/tooling/language-service.md#check-in-ci).
 - `@rivetjs/devtools` as a dev dependency: `npm run dev` shows the [DevTools](../guides/tooling/devtools.md) panel (:kbd[Alt]+:kbd[Shift]+:kbd[R]). Builds never include it.
 - `@rivetjs/typescript-plugin` in `tsconfig.json`: compiler errors in your editor while you type. See [editor setup](editor-setup.md).
 - `"engines": { "node": ">=24" }` in `package.json`.

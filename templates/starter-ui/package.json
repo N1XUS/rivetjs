@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "vite build && vite build --ssr && node prerender.js",
     "preview": "node serve.js",
-    "check": "rivet sync && rivet-check && tsc"
+    "check": "rivet sync && rivet-check && tsgo"
   },
   "dependencies": {
     "@rivetjs/kit": "experimental",
@@ -28,6 +28,7 @@
     "@rivetjs/typescript-plugin": "experimental",
     "@tailwindcss/vite": "^4.3.3",
     "tailwindcss": "^4.3.3",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "typescript": "^5.9.3",
     "vite": "^8.3.2"
   }

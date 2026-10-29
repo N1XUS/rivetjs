@@ -7,7 +7,7 @@
 //      dependencies at the tarballs (`file:` + `overrides`, the local stand-in for the registry),
 //   4. checks the AI instruction files (AGENTS.md, CLAUDE.md, skills, Cursor / Copilot rules) equal what
 //      `libs/mcp/ai/sync.ts` generates for that starter, `npm install --offline` (no network: `@rivetjs/*` from the
-//      tarballs; see INSTALL_MODE for the third-party tools), `npm run build`, `npm run check` (`rivet sync && rivet-check && tsc`),
+//      tarballs; see INSTALL_MODE for the third-party tools), `npm run build`, `npm run check` (`rivet sync && rivet-check && tsgo`),
 //   5. starts the app's server (`start`, `preview`, or a static file server over dist/client for starters
 //      without one) on a free port ≥ 4400, fetches `/` (PAGE_CHECK): interactive starters = HTML + the resume state
 //      script + the inline resume bootstrap + the resume runtime file; the server starter (a loader + a form action,

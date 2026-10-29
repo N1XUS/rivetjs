@@ -22,7 +22,7 @@ The `rivetRouter()` Vite plugin writes `.rivet/routes.d.ts` whenever it starts (
 }
 ```
 
-The starter templates already include it. Run `npx rivet sync` once after cloning, so the file exists before you run `tsc`; dev and build generate it too.
+The starter templates already include it. Run `npx rivet sync` once after cloning, so the file exists before you run the type check (`tsgo` or `tsc`); dev and build generate it too.
 
 ## What the file contains
 
@@ -159,7 +159,7 @@ export const itemPath = (id: string): RoutePath => `/items/${encodeURIComponent(
 ## Common mistakes
 
 - **`routes.d.ts` missing from `include`.** Then `RoutePath` is `string` and every link passes. Check `tsconfig.json`.
-- **Running `tsc` before generating route types.** `.rivet/` is generated, so a fresh checkout has no `routes.d.ts`. Run `npx rivet sync` before `tsc`, as the starters' `npm run check` does.
+- **Type-checking before generating route types.** `.rivet/` is generated, so a fresh checkout has no `routes.d.ts`. Run `npx rivet sync` before `tsgo` / `tsc`, as the starters' `npm run check` does.
 - **Using the URL instead of the route id.** `RouteParams["/items/:id"]` does not exist. The key is the file path: `"items/[id]"`, and group folders stay in it: `"(shop)/cart"`.
 
 ## See also
