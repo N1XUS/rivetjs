@@ -149,7 +149,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 6893,
+          "htmlBr": 6869,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -620,8 +620,8 @@
         "br": 69010
       },
       "serverJS": {
-        "min": 244670,
-        "br": 78794
+        "min": 244732,
+        "br": 78888
       },
       "routes": {
         "/": {
@@ -1362,7 +1362,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4646,
+          "htmlBr": 4644,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1596,17 +1596,17 @@
     "cdk-example:scheduler-views-binding": {
       "totalJS": {
         "files": 82,
-        "min": 445305,
-        "br": 149893
+        "min": 446139,
+        "br": 150053
       },
       "serverJS": {
-        "min": 425228,
-        "br": 127357
+        "min": 426109,
+        "br": 127697
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5560,
+          "htmlBr": 5553,
           "cssSheets": 1,
           "css": {
             "min": 43066,
@@ -1616,8 +1616,8 @@
           "inlineBytes": 4274,
           "eagerRequests": 51,
           "eagerJS": {
-            "min": 379709,
-            "br": 127491
+            "min": 380548,
+            "br": 127672
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1673,12 +1673,12 @@
             "transition.js"
           ],
           "runtimeJS": {
-            "min": 87619,
-            "br": 29334
+            "min": 87940,
+            "br": 29376
           },
           "pageJS": {
-            "min": 379709,
-            "br": 127491
+            "min": 380548,
+            "br": 127672
           },
           "interactionRequests": 0,
           "interactionJS": {
