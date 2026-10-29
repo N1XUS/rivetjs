@@ -1,6 +1,6 @@
 ---
 title: Showcase
-description: "Whole screens built from @rivetjs/ui: a storefront, a dashboard, mail, chat, a kanban board, settings, sign-in, pricing and a music player."
+description: "Whole screens built from @rivetjs/ui: a storefront, a dashboard, personal finance, mail, chat, a kanban board, settings, sign-in, pricing and a music player."
 template: guide
 status: experimental
 related: [components/overview, start/introduction]
@@ -20,6 +20,7 @@ Rivet-authored screens with invented content (shops, people, numbers). Product p
 ## Analytics
 
 - [Dashboard](/showcase/dashboard/): KPIs with sparklines and trend chips, a revenue area chart against the previous period, a channel donut, and an orders grid with status filter, search and sorting.
+- [Finance](/showcase/finance/): net worth with a range switch, account balances, monthly income / spending KPIs, cash flow and category charts, budget meters, upcoming bills and a searchable transactions grid.
 
 ## Communication
 
