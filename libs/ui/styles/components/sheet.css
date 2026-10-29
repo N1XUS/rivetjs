@@ -253,7 +253,7 @@
   & > [data-slot="sheet-handle-bar"] {
     @apply h-1 w-10 rounded-full;
     @apply bg-separator;
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   &:hover > [data-slot="sheet-handle-bar"] {

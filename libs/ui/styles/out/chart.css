@@ -170,8 +170,10 @@
     transition-property: filter;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     background-color: var(--chart-color);
     flex: 1;
   }
@@ -209,7 +211,7 @@
     opacity: 0;
     background-color: var(--border, var(--separator));
     width: 1px;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     position: absolute;
     inset-block: 0;
     inset-inline-start: 50%;
@@ -225,7 +227,7 @@
     opacity: 0;
     background-color: var(--chart-color);
     box-shadow: 0 0 0 2px var(--background);
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
     position: absolute;
     left: 50%;
@@ -246,7 +248,7 @@
     color: var(--foreground);
     opacity: 0;
     max-width: min(16rem, 80cqw);
-    transition: opacity var(--duration-fast) var(--ease-smooth), display var(--duration-fast) allow-discrete;
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), display var(--motion-state-duration) allow-discrete;
     box-shadow: var(--overlay-shadow);
     flex-direction: column;
     display: none;
@@ -368,7 +370,7 @@
   .chart__donut-segment {
     fill: none;
     stroke: var(--chart-color);
-    transition: stroke-width var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
+    transition: stroke-width var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .chart__donut-segment:hover {
@@ -455,7 +457,7 @@
   .chart__sector-path {
     fill: var(--chart-color);
     pointer-events: visiblePainted;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .chart__sector:focus-visible .chart__sector-path {

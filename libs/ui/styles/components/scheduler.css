@@ -107,7 +107,7 @@
   border: 0;
   text-align: start;
   cursor: var(--cursor-interactive);
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
 }
 .scheduler__more:hover { background: var(--accent-soft); }
 .scheduler .rv-SchedulerTimeGrid-scroller { height: var(--rv-scheduler-height, 640px); }
@@ -182,7 +182,7 @@
   background: var(--scheduler-event-bg);
   color: var(--scheduler-event-fg);
   cursor: var(--cursor-interactive);
-  transition: opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
 }
 .scheduler__event[data-color="default"] { --scheduler-event-bg: var(--default-soft); --scheduler-event-fg: var(--default-soft-foreground); --scheduler-event-bar: var(--default-foreground); }
 .scheduler__event[data-color="accent"] { --scheduler-event-bg: var(--accent-soft); --scheduler-event-fg: var(--accent-soft-foreground); --scheduler-event-bar: var(--accent); }
@@ -203,7 +203,7 @@
 .scheduler__event-time { @apply shrink-0 truncate; font-variant-numeric: tabular-nums; }
 .scheduler__event[data-timed="true"] .scheduler__event-time { max-width: 100%; overflow: hidden; }
 .scheduler__handle { position: absolute; z-index: 2; display: flex; align-items: center; justify-content: center; }
-.scheduler__handle > .rv-SchedulerEvent-grip { width: 2px; height: 12px; border-radius: 2px; background: currentColor; opacity: 0; transition: opacity var(--duration-fast) var(--ease-smooth); }
+.scheduler__handle > .rv-SchedulerEvent-grip { width: 2px; height: 12px; border-radius: 2px; background: currentColor; opacity: 0; transition: opacity var(--motion-state-duration) var(--motion-state-ease); }
 .scheduler__event:hover .rv-SchedulerEvent-grip,
 .scheduler__event:focus-visible .rv-SchedulerEvent-grip { opacity: 1; }
 .scheduler__event[data-timed="true"] .rv-SchedulerEvent-grip { width: 12px; height: 2px; }

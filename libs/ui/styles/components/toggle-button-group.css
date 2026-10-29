@@ -99,7 +99,7 @@
    * Transitions
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
-  transition: opacity var(--duration-fast) var(--ease-smooth);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   /* Horizontal orientation - vertical divider */

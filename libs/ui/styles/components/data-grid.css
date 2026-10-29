@@ -144,8 +144,8 @@
   background-color: var(--surface-secondary);
   background-image: linear-gradient(var(--data-grid-pinned-state), var(--data-grid-pinned-state));
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    --data-grid-pinned-state var(--duration-fast) var(--ease-out);
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    --data-grid-pinned-state var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 }
 
@@ -227,7 +227,7 @@
  * Element: sort-indicator - hidden until the column is sorted (hover previews it)
  */
 .data-grid__sort-indicator {
-  @apply ms-1 align-middle text-muted opacity-0 transition-opacity duration-(--duration-fast) motion-reduce:transition-none;
+  @apply ms-1 align-middle text-muted opacity-0 transition-opacity duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
 
   &[data-direction] {
     @apply text-foreground opacity-100;
@@ -249,8 +249,8 @@
   @apply me-1 inline-flex size-5 shrink-0 items-center justify-center rounded-md align-middle text-muted outline-none;
   cursor: var(--cursor-interactive);
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &[data-placeholder] {
@@ -258,7 +258,7 @@
   }
 
   & svg {
-    @apply size-3.5 transition-transform duration-(--duration-fast) ease-out motion-reduce:transition-none;
+    @apply size-3.5 transition-transform duration-(--motion-move-duration) ease-(--motion-move-ease) motion-reduce:transition-none;
   }
 
   &[data-expanded="true"] svg {
@@ -287,8 +287,8 @@
   @apply inline-flex size-6 items-center justify-center rounded-md align-middle text-muted outline-none;
   cursor: grab;
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out);
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   & svg {

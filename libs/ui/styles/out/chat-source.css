@@ -29,8 +29,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     --tw-outline-style: none;
     border-radius: 3.40282e38px;
     outline-style: none;
@@ -173,8 +175,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     display: flex;
   }
 

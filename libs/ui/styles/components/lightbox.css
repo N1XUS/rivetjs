@@ -228,7 +228,7 @@
 
 .lightbox__thumbnail {
   @apply relative cursor-pointer border-white/20 bg-white/5 text-white/80 outline-none;
-  @apply transition-[border-color,opacity,transform] duration-(--duration-fast) motion-reduce:transition-none;
+  @apply transition-[border-color,opacity,transform] duration-(--motion-move-duration) ease-(--motion-move-ease) motion-reduce:transition-none;
   opacity: 0.6;
 
   &:hover {

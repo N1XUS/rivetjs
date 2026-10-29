@@ -64,7 +64,7 @@
 
   min-height: var(--file-tree-row);
   cursor: var(--cursor-interactive);
-  transition: background-color var(--duration-fast) var(--ease-out);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   @media (hover: hover) {
@@ -136,7 +136,7 @@
   height: var(--file-tree-indent);
   margin-inline-end: -0.25rem;
   cursor: grab;
-  transition: opacity var(--duration-fast) var(--ease-out);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &[data-focus-visible="true"] {
@@ -191,7 +191,7 @@
 }
 
 .file-tree__indicator-icon {
-  transition: rotate var(--duration-fast) var(--ease-out);
+  transition: rotate var(--motion-move-duration) var(--motion-move-ease);
   @apply motion-reduce:transition-none;
 }
 

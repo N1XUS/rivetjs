@@ -38,7 +38,7 @@
   width: var(--resizable-handle-size);
   background-color: var(--resizable-line-color);
   cursor: col-resize;
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &::after {
@@ -122,7 +122,7 @@
   width: var(--resizable-indicator-pill-width);
   height: var(--resizable-indicator-pill-height);
   background-color: var(--resizable-line-color, var(--color-separator));
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   .resizable__handle[aria-orientation="horizontal"] > & {

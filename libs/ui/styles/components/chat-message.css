@@ -48,9 +48,9 @@
 .chat-message__actions {
   @apply flex items-center gap-0.5 text-muted;
   transition:
-    opacity var(--duration-base) var(--ease-out, ease-out),
-    translate var(--duration-base) var(--ease-out, ease-out),
-    visibility var(--duration-base);
+    opacity var(--motion-state-duration) var(--motion-state-ease),
+    translate var(--motion-move-duration) var(--motion-move-ease),
+    visibility var(--motion-move-duration);
   @apply motion-reduce:transition-none;
 }
 
@@ -64,7 +64,7 @@
 }
 
 .chat-message[data-actions="hover"] .chat-message__actions {
-  @apply opacity-0 transition-opacity duration-(--duration-fast) motion-reduce:transition-none;
+  @apply opacity-0 transition-opacity duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
 }
 
 .chat-message[data-actions="hover"]:hover .chat-message__actions,

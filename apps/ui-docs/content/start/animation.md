@@ -57,9 +57,9 @@ Every component transition belongs to one motion role, and each role has its own
 | state     | `--motion-state-duration`, `--motion-state-ease`                         | 120 ms, smooth                | colour, background, border and opacity changes (hover, press, focus, selection)            |
 | move      | `--motion-move-duration`, `--motion-move-ease`                           | 180 ms, smooth                | transforms: press scale, rotating chevrons, switch and slider thumbs                       |
 | collapse  | `--motion-collapse-duration`, `--motion-collapse-ease`                   | 180 ms, ease-out-quad         | size changes: Accordion, Disclosure, field errors, Sidebar collapse, AppLayout aside       |
-| indicator | `--motion-indicator-duration`, `--motion-indicator-ease`                 | 180 ms, ease-out-fluid        | selection indicators sliding between items (Tabs, Segment, carousel dots)                  |
+| indicator | `--motion-indicator-duration`, `--motion-indicator-ease`                 | 180 ms, ease-out-fluid        | indicators of position or amount: Tabs / Segment pill, Switch thumb, carousel dots, progress fill |
 | popup     | `--popup-duration`, `--popup-exit-duration`, `--popup-ease`              | 120 ms in, 120 ms out, smooth | Popover, Tooltip, Dropdown, Select, ComboBox, Autocomplete, HoverCard, the pickers         |
-| entrance  | `--motion-enter-duration`, `--motion-exit-duration`, `--motion-enter-ease` | 260 ms in, 180 ms out, ease-out-fluid | elements that join or leave the page: Toast, ActionBar, DropZone items          |
+| entrance  | `--motion-enter-duration`, `--motion-exit-duration`, `--motion-enter-ease` | 260 ms in, 180 ms out, ease-out-fluid | elements that join or leave the page: Toast, ActionBar, DropZone items, streamed Markdown |
 
 The roles point at a small set of primitives, which you can also override: `--duration-fast` (120 ms), `--duration-base` (180 ms), `--duration-slow` (260 ms), `--ease-smooth` (`cubic-bezier(0.2, 0, 0, 1)`), `--ease-out-quad` and `--ease-out-fluid` (`cubic-bezier(0.32, 0.72, 0, 1)`).
 

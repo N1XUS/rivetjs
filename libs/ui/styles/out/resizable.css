@@ -26,7 +26,7 @@
     width: var(--resizable-handle-size);
     background-color: var(--resizable-line-color);
     cursor: col-resize;
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -150,7 +150,7 @@
     width: var(--resizable-indicator-pill-width);
     height: var(--resizable-indicator-pill-height);
     background-color: var(--resizable-line-color, var(--color-separator));
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
   }
 

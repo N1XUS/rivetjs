@@ -16,7 +16,7 @@
   }
 
   & svg {
-    @apply transition-transform duration-(--duration-fast) motion-reduce:transition-none;
+    @apply transition-transform duration-(--motion-move-duration) ease-(--motion-move-ease) motion-reduce:transition-none;
   }
 
   &:active svg {

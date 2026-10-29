@@ -36,8 +36,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     position: absolute;
     inset: 0;
   }

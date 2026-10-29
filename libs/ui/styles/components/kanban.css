@@ -58,7 +58,7 @@
 
 .kanban__column-actions {
   @apply ms-auto flex items-center gap-1 opacity-0;
-  transition: opacity var(--duration-fast) var(--ease-smooth);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease);
 
   .kanban__column-header:hover &,
   .kanban__column-header:focus-within & {
@@ -82,7 +82,7 @@
 
 .kanban__card-list {
   @apply flex min-h-16 flex-col gap-2 rounded-xl;
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
 
   &.cdk-drop-list-receiving,
   &.cdk-drop-list-dragging {
@@ -125,14 +125,14 @@
 
   &.cdk-drag-animating,
   .kanban__card-list.cdk-drop-list-dragging &:not(.cdk-drag-placeholder) {
-    transition: transform var(--duration-base) var(--ease-smooth);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
   }
 }
 
 .kanban__card-content {
   @apply flex flex-col gap-2 rounded-xl bg-overlay p-3 text-sm text-foreground;
   box-shadow: var(--surface-shadow);
-  transition: box-shadow var(--duration-fast) var(--ease-smooth);
+  transition: box-shadow var(--motion-state-duration) var(--motion-state-ease);
 
   .kanban__card:hover .kanban__card:hover > & {
     box-shadow: var(--overlay-shadow);
@@ -173,7 +173,7 @@
 .kanban__drag-handle {
   @apply absolute end-2 top-2 inline-flex size-6 items-center justify-center rounded-md text-muted opacity-0;
   cursor: grab;
-  transition: opacity var(--duration-fast) var(--ease-smooth);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease);
 
   .kanban__card:hover &,
   .kanban__card:focus-within &,

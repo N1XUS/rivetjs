@@ -36,7 +36,7 @@
   @apply flex touch-none select-none;
   padding: var(--scroll-area-padding);
   background-color: var(--scrollbar-track);
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &[data-orientation="vertical"] {
@@ -55,11 +55,11 @@
 
   /* type="hover" / "scroll": fade in and out (the cdk Presence keeps the hidden scrollbar until the animation ends) */
   &[data-state="visible"] {
-    @apply animate-in duration-(--duration-fast) ease-smooth fade-in-0;
+    @apply animate-in duration-(--motion-state-duration) ease-(--motion-state-ease) fade-in-0;
   }
 
   &[data-state="hidden"] {
-    @apply animate-out duration-(--duration-base) ease-smooth fade-out;
+    @apply animate-out duration-(--motion-state-duration) ease-(--motion-state-ease) fade-out;
   }
 
   @apply motion-reduce:animate-none;
@@ -71,7 +71,7 @@
 .scroll-area__thumb {
   @apply relative flex-1 rounded-full;
   background-color: var(--scrollbar-thumb);
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   /* a larger hit area than the visible thumb (touch / precise pointers) */

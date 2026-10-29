@@ -64,8 +64,8 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    width var(--duration-fast) var(--ease-out),
-    height var(--duration-fast) var(--ease-out);
+    width var(--motion-collapse-duration) var(--motion-collapse-ease),
+    height var(--motion-collapse-duration) var(--motion-collapse-ease);
   @apply motion-reduce:transition-none;
 
   /* Focus state */

@@ -34,7 +34,7 @@
     border-style: var(--tw-border-style);
     color: var(--foreground);
     --tw-outline-style: none;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     background-color: #0000;
     border-width: 0;
     border-radius: 3.40282e38px;
@@ -148,7 +148,7 @@
     -webkit-tap-highlight-color: transparent;
     z-index: 1;
     cursor: var(--cursor-interactive);
-    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     justify-content: center;
     align-items: center;
@@ -221,7 +221,7 @@
   }
 
   .tabs__separator {
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .tabs__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .tabs__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .tabs__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -278,9 +278,9 @@
     height: 100%;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     z-index: -1;
-    transition-duration: var(--duration-base);
+    transition-duration: var(--motion-indicator-duration);
     transition-property: translate, width, height;
-    transition-timing-function: var(--ease-out-fluid);
+    transition-timing-function: var(--motion-indicator-ease);
     inset-inline-start: calc(var(--spacing, .25rem) * 0);
     position: absolute;
     top: 0;

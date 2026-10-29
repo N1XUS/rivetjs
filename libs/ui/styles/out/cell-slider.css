@@ -55,7 +55,7 @@
 
   .cell-slider__fill {
     background-color: var(--cell-slider-fill);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .cell-slider__fill:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .cell-slider__fill:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .cell-slider__fill:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -84,7 +84,7 @@
     background-color: var(--cell-slider-thumb);
     width: 3px;
     height: 50%;
-    transition: height var(--duration-fast) var(--ease-out);
+    transition: height var(--motion-collapse-duration) var(--motion-collapse-ease);
     border-radius: 3.40282e38px;
   }
 

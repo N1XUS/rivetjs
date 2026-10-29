@@ -328,8 +328,10 @@
     transition-property: border-color, opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     outline-style: none;
   }
 

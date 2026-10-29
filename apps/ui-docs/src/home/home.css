@@ -279,7 +279,7 @@
   }
   .uih-looks-glow {
     @apply pointer-events-none absolute inset-0 -z-10 opacity-0;
-    transition: opacity var(--duration-slow, 0.4s);
+    transition: opacity var(--motion-enter-duration) var(--motion-enter-ease);
   }
   [data-ui-preset="glass"] > .uih-looks-glow {
     opacity: 1;

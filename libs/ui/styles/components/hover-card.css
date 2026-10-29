@@ -50,7 +50,7 @@
 
   &[data-exiting="true"],
   &[data-entering="true"] {
-    @apply transition-[opacity,transform] will-change-[opacity,transform];
+    @apply transition-[opacity,transform] duration-(--popup-duration) ease-(--popup-ease) will-change-[opacity,transform];
   }
 }
 

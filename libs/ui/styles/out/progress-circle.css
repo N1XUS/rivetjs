@@ -22,7 +22,7 @@
 
   .progress-circle .progress-circle__fill-circle {
     stroke: var(--progress-circle-stroke);
-    transition: stroke-dashoffset var(--duration-slow) var(--ease-out);
+    transition: stroke-dashoffset var(--motion-indicator-duration) var(--motion-indicator-ease);
   }
 
   .progress-circle .progress-circle__fill-circle:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .progress-circle .progress-circle__fill-circle:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .progress-circle .progress-circle__fill-circle:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

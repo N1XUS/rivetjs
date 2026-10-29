@@ -35,7 +35,7 @@
     padding-block: calc(var(--spacing, .25rem) * 2.5);
     text-align: start;
     color: var(--muted);
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
   }
 
@@ -76,7 +76,7 @@
   .chat-tool__status-icon {
     width: calc(var(--spacing, .25rem) * 4);
     height: calc(var(--spacing, .25rem) * 4);
-    transition: color var(--duration-base) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     flex-shrink: 0;
     justify-content: center;
     align-items: center;
@@ -213,7 +213,7 @@
     font-size: var(--text-sm, .875rem);
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     color: var(--muted);
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
   }
 

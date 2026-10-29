@@ -11,9 +11,9 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    background-color var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth),
-    box-shadow var(--duration-fast) var(--ease-out);
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    border-color var(--motion-state-duration) var(--motion-state-ease),
+    box-shadow var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   @media (hover: hover) {

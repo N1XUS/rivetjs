@@ -169,7 +169,7 @@
     color: var(--accent-soft-foreground);
     text-align: start;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     background: none;
     border: 0;
   }
@@ -315,7 +315,7 @@
     min-width: 0;
     color: var(--scheduler-event-fg);
     cursor: var(--cursor-interactive);
-    transition: opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
     position: relative;
     overflow: hidden;
@@ -427,7 +427,7 @@
     opacity: 0;
     width: 2px;
     height: 12px;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     background: currentColor;
     border-radius: 2px;
   }

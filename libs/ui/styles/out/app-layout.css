@@ -208,7 +208,7 @@
     width: 1px;
     translate: var(--tw-translate-x) var(--tw-translate-y);
     content: "";
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     inset-block: 0;
     background-color: #0000;
     position: absolute;

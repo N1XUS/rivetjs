@@ -17,7 +17,7 @@
   cursor: var(--cursor-interactive);
   @apply relative flex w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2 text-start text-sm text-foreground no-highlight outline-none select-none;
   text-decoration: none;
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   @media (hover: hover) {

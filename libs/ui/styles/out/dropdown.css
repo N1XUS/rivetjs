@@ -11,7 +11,7 @@
 
   .dropdown__trigger {
     --tw-outline-style: none;
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     outline-style: none;
     display: inline-block;
@@ -128,6 +128,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 

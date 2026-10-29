@@ -64,7 +64,7 @@
 
 .markdown__link {
   @apply rounded-sm text-accent underline decoration-accent/40 underline-offset-2 outline-none;
-  transition: text-decoration-color var(--duration-fast) var(--ease-out);
+  transition: text-decoration-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &:hover {
@@ -164,11 +164,11 @@
 
 /* Live tail: each new word and each new block fades + un-blurs in (only nodes the stream creates have these classes). */
 .markdown__word {
-  animation: markdown-word-in var(--duration-base) var(--ease-out, ease-out) both;
+  animation: markdown-word-in var(--motion-enter-duration) var(--motion-enter-ease) both;
 }
 
 .markdown__live {
-  animation: markdown-block-in var(--duration-slow) var(--ease-out, ease-out) both;
+  animation: markdown-block-in var(--motion-enter-duration) var(--motion-enter-ease) both;
 }
 
 @keyframes markdown-word-in {

@@ -16,7 +16,7 @@
 
 .chat-source__trigger-link {
   cursor: var(--cursor-interactive);
-  @apply inline-flex h-6 max-w-56 items-center gap-1.5 rounded-full bg-default px-2 text-xs font-medium text-foreground no-underline outline-none transition-colors duration-(--duration-fast) motion-reduce:transition-none;
+  @apply inline-flex h-6 max-w-56 items-center gap-1.5 rounded-full bg-default px-2 text-xs font-medium text-foreground no-underline outline-none transition-colors duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
 
   &:hover {
     @apply bg-default-hover;
@@ -74,7 +74,7 @@
 }
 
 .chat-sources__trigger {
-  @apply -mx-1.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm text-muted transition-colors duration-(--duration-fast) motion-reduce:transition-none;
+  @apply -mx-1.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm text-muted transition-colors duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
 
   &:hover,
   &[data-hovered="true"] {

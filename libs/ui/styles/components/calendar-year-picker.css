@@ -38,7 +38,7 @@
   /* Rivet (WILL-CHANGE, TW-179): no permanent `will-change: opacity` on the day grid / year grid — the hidden year grid's
      hint kept 200 year-cell layers alive while closed; the crossfade promotes itself while it runs. */
   transition:
-    opacity var(--duration-fast) var(--ease-out),
+    opacity var(--motion-state-duration) var(--motion-state-ease),
     visibility 0ms linear;
   @apply motion-reduce:transition-none;
 }
@@ -50,8 +50,8 @@
   @apply pointer-events-none opacity-0;
   visibility: hidden;
   transition:
-    opacity var(--duration-fast) var(--ease-out),
-    visibility 0ms linear var(--duration-fast);
+    opacity var(--motion-state-duration) var(--motion-state-ease),
+    visibility 0ms linear var(--motion-state-duration);
   @apply motion-reduce:transition-none;
 }
 
@@ -73,14 +73,14 @@
 .calendar-year-picker__trigger-heading {
   @apply text-sm font-medium;
 
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 }
 
 .calendar-year-picker__trigger-indicator {
   @apply text-xs text-accent-soft-foreground rtl:[transform:rotate(180deg)];
 
-  transition: transform var(--duration-fast) var(--ease-out);
+  transition: transform var(--motion-move-duration) var(--motion-move-ease);
   @apply motion-reduce:transition-none;
 }
 
@@ -112,7 +112,7 @@
   @apply pointer-events-auto opacity-100;
 
   /* When opening: slight delay so the day grid starts fading out first */
-  transition: opacity var(--duration-base) var(--ease-out) 50ms;
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease) 50ms;
   @apply motion-reduce:transition-none;
 }
 
@@ -130,11 +130,11 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    color var(--duration-fast) var(--ease-smooth),
-    scale var(--duration-fast) var(--ease-smooth),
-    opacity var(--duration-fast) var(--ease-smooth),
-    background-color var(--duration-fast) var(--ease-smooth),
-    box-shadow var(--duration-fast) var(--ease-out);
+    color var(--motion-state-duration) var(--motion-state-ease),
+    scale var(--motion-move-duration) var(--motion-move-ease),
+    opacity var(--motion-state-duration) var(--motion-state-ease),
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    box-shadow var(--motion-state-duration) var(--motion-state-ease);
   @apply origin-center transform-gpu motion-reduce:transition-none;
 
   cursor: var(--cursor-interactive);

@@ -259,7 +259,7 @@
     height: var(--spacing, .25rem);
     width: calc(var(--spacing, .25rem) * 10);
     background-color: var(--separator);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
   }
 

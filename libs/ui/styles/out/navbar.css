@@ -187,7 +187,7 @@
     --tw-outline-style: none;
     -webkit-user-select: none;
     user-select: none;
-    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     text-decoration-line: none;
@@ -247,7 +247,7 @@
     cursor: var(--cursor-interactive);
     color: var(--foreground);
     --tw-outline-style: none;
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -350,7 +350,7 @@
     --tw-outline-style: none;
     -webkit-user-select: none;
     user-select: none;
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     text-decoration-line: none;

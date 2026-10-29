@@ -91,11 +91,11 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    transform var(--duration-base) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out),
-    opacity var(--duration-fast) var(--ease-out);
+    transform var(--motion-move-duration) var(--motion-move-ease),
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    color var(--motion-state-duration) var(--motion-state-ease),
+    box-shadow var(--motion-state-duration) var(--motion-state-ease),
+    opacity var(--motion-state-duration) var(--motion-state-ease);
   @apply transform-gpu motion-reduce:transition-none;
 
   cursor: var(--cursor-interactive);
@@ -194,10 +194,10 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    transform var(--duration-base) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+    transform var(--motion-move-duration) var(--motion-move-ease),
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    color var(--motion-state-duration) var(--motion-state-ease),
+    box-shadow var(--motion-state-duration) var(--motion-state-ease);
   @apply transform-gpu motion-reduce:transition-none;
 
   cursor: var(--cursor-interactive);
@@ -270,7 +270,7 @@
 /* Cell indicator - small dot at bottom center of cell */
 .calendar__cell-indicator {
   @apply absolute bottom-1 left-1/2 size-[3px] -translate-x-1/2 rounded-xs bg-muted;
-  transition: background-color var(--duration-fast) var(--ease-out);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   /* Indicator color changes when cell is selected */

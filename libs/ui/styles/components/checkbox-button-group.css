@@ -51,10 +51,10 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    background-color var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth),
-    box-shadow var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    border-color var(--motion-state-duration) var(--motion-state-ease),
+    box-shadow var(--motion-state-duration) var(--motion-state-ease),
+    transform var(--motion-move-duration) var(--motion-move-ease);
   @apply motion-reduce:transition-none;
 
   &:has(> .checkbox-button-group__indicator) {
@@ -102,8 +102,8 @@
     border-color: color-mix(in oklab, var(--muted) 70%, transparent);
 
     transition:
-      background-color var(--duration-base) var(--ease-out),
-      border-color var(--duration-base) var(--ease-out);
+      background-color var(--motion-state-duration) var(--motion-state-ease),
+      border-color var(--motion-state-duration) var(--motion-state-ease);
     @apply motion-reduce:transition-none;
 
     & svg {
@@ -112,8 +112,8 @@
       opacity: 0;
       scale: 0.6;
       transition:
-        opacity var(--duration-fast) var(--ease-out),
-        scale var(--duration-base) var(--ease-out);
+        opacity var(--motion-state-duration) var(--motion-state-ease),
+        scale var(--motion-move-duration) var(--motion-move-ease);
       @apply motion-reduce:transition-none;
     }
   }
@@ -129,7 +129,7 @@
 
   &[data-custom] {
     @apply text-muted;
-    transition: color var(--duration-base) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     @apply motion-reduce:transition-none;
   }
 
@@ -145,8 +145,8 @@
   @apply flex size-9 shrink-0 items-center justify-center rounded-xl bg-default text-foreground;
 
   transition:
-    background-color var(--duration-fast) var(--ease-smooth),
-    color var(--duration-fast) var(--ease-smooth);
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   & svg {

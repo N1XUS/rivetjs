@@ -163,6 +163,8 @@
     --motion-move-ease: var(--ease-smooth);
     --motion-collapse-duration: var(--duration-base);
     --motion-collapse-ease: var(--ease-out-quad);
+    --motion-indicator-duration: var(--duration-base);
+    --motion-indicator-ease: var(--ease-out-fluid);
     --motion-enter-duration: var(--duration-slow);
     --motion-exit-duration: var(--duration-base);
     --motion-enter-ease: var(--ease-out-fluid);
@@ -177,7 +179,6 @@
     --field-gap-label: .375rem;
     --field-gap-help: .25rem;
     --field-gap-group: 1rem;
-    --ease-out-quart: cubic-bezier(.165, .84, .44, 1);
     --ease-linear: linear;
   }
 
@@ -1522,7 +1523,7 @@
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     cursor: var(--cursor-interactive);
-    transition: transform var(--duration-base) var(--ease-out-quart), color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), color var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     flex-shrink: 0;
     justify-content: center;
@@ -1876,7 +1877,7 @@
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     flex: 1;
     justify-content: space-between;
     align-items: center;
@@ -2175,7 +2176,7 @@
     text-decoration-color: var(--separator-tertiary);
     text-underline-offset: 4px;
     -webkit-tap-highlight-color: transparent;
-    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     align-items: center;
     text-decoration-thickness: 1.5px;
     display: inline-flex;
@@ -2255,7 +2256,7 @@
     opacity: .6;
     width: .75em;
     height: .75em;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     flex-shrink: 0;
     justify-content: center;
     align-items: center;
@@ -2366,7 +2367,7 @@
 
   .pagination__link {
     cursor: var(--cursor-interactive);
-    transition: transform var(--duration-base) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
   }
 
@@ -2569,7 +2570,7 @@
     border-style: var(--tw-border-style);
     color: var(--foreground);
     --tw-outline-style: none;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     background-color: #0000;
     border-width: 0;
     border-radius: 3.40282e38px;
@@ -2683,7 +2684,7 @@
     -webkit-tap-highlight-color: transparent;
     z-index: 1;
     cursor: var(--cursor-interactive);
-    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     justify-content: center;
     align-items: center;
@@ -2756,7 +2757,7 @@
   }
 
   .tabs__separator {
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .tabs__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .tabs__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .tabs__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -2813,9 +2814,9 @@
     height: 100%;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     z-index: -1;
-    transition-duration: var(--duration-base);
+    transition-duration: var(--motion-indicator-duration);
     transition-property: translate, width, height;
-    transition-timing-function: var(--ease-out-fluid);
+    transition-timing-function: var(--motion-indicator-ease);
     inset-inline-start: calc(var(--spacing, .25rem) * 0);
     position: absolute;
     top: 0;
@@ -4196,7 +4197,7 @@
     border: 2px solid var(--stepper-inactive-border);
     color: var(--stepper-inactive-fg);
     font-size: calc(var(--stepper-indicator-size) * .42);
-    transition: background-color var(--duration-base) var(--ease-smooth), border-color var(--duration-base) var(--ease-smooth), color var(--duration-base) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
     flex-shrink: 0;
     justify-content: center;
@@ -4295,7 +4296,7 @@
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
     color: var(--muted);
-    transition: color var(--duration-base) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     display: block;
   }
 
@@ -4372,7 +4373,7 @@
     background-color: var(--stepper-complete-color);
     width: 100%;
     height: 100%;
-    transition: transform var(--duration-slow) var(--ease-smooth);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
     border-radius: 3.40282e38px;
     display: block;
   }
@@ -4608,7 +4609,7 @@
     width: 1px;
     translate: var(--tw-translate-x) var(--tw-translate-y);
     content: "";
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     inset-block: 0;
     background-color: #0000;
     position: absolute;
@@ -4707,7 +4708,7 @@
     width: var(--resizable-handle-size);
     background-color: var(--resizable-line-color);
     cursor: col-resize;
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -4831,7 +4832,7 @@
     width: var(--resizable-indicator-pill-width);
     height: var(--resizable-indicator-pill-height);
     background-color: var(--resizable-line-color, var(--color-separator));
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
   }
 
@@ -4913,7 +4914,7 @@
   }
 
   .button {
-    transition: transform var(--duration-base) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
   }
 
@@ -5253,7 +5254,7 @@
     border-radius: calc(var(--radius) * .5);
     opacity: .15;
     pointer-events: none;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     background-color: currentColor;
     position: absolute;
   }
@@ -5348,7 +5349,7 @@
   }
 
   .toggle-button {
-    transition: transform var(--duration-base) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
   }
 
@@ -5576,7 +5577,7 @@
     border-radius: calc(var(--radius) * .5);
     opacity: .15;
     pointer-events: none;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     background-color: currentColor;
     position: absolute;
   }
@@ -5678,7 +5679,7 @@
     font-size: var(--segment-font-size);
     border-radius: calc(var(--radius) * 2);
     cursor: var(--cursor-interactive);
-    transition: color var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     display: inline-flex;
@@ -5743,9 +5744,9 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     z-index: -1;
     border-radius: inherit;
-    transition-duration: var(--duration-base);
+    transition-duration: var(--motion-indicator-duration);
     transition-property: translate, width, height;
-    transition-timing-function: var(--ease-out-fluid);
+    transition-timing-function: var(--motion-indicator-ease);
     position: absolute;
     inset: 0;
   }
@@ -5769,7 +5770,7 @@
   .segment__label {
     align-items: center;
     gap: var(--segment-gap);
-    transition: scale var(--duration-fast) var(--ease-out);
+    transition: scale var(--motion-move-duration) var(--motion-move-ease);
     display: inline-flex;
   }
 
@@ -5801,7 +5802,7 @@
 
   .segment__separator {
     margin-inline: calc(var(--spacing) * -.25);
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .segment__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .segment__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .segment__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -5865,7 +5866,7 @@
 
   .dropdown__trigger {
     --tw-outline-style: none;
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     outline-style: none;
     display: inline-block;
@@ -5982,6 +5983,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -6045,7 +6050,7 @@
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
     border-radius: var(--r-inner, var(--radius-2xl));
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
     position: relative;
@@ -6119,8 +6124,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     inset-inline-end: calc(var(--spacing, .25rem) * 2);
     flex-shrink: 0;
     justify-content: center;
@@ -6147,8 +6154,10 @@
     transition-property: all;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-slow);
-    transition-duration: var(--duration-slow);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
   }
 
   .list-box-item__indicator [data-slot="list-box-item-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .list-box-item__indicator [data-slot="list-box-item-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .list-box-item__indicator [data-slot="list-box-item-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -6235,7 +6244,7 @@
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
     border-radius: var(--r-inner, var(--radius-2xl));
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
     position: relative;
@@ -6341,8 +6350,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     inset-inline-start: calc(var(--spacing, .25rem) * 2);
     flex-shrink: 0;
     justify-content: center;
@@ -6377,8 +6388,10 @@
     transition-property: all;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-slow);
-    transition-duration: var(--duration-slow);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
   }
 
   .menu-item[data-selection-mode="multiple"] :is(.menu-item__indicator [data-slot="menu-item-indicator--checkmark"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .menu-item[data-selection-mode="multiple"] :is(.menu-item__indicator [data-slot="menu-item-indicator--checkmark"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .menu-item[data-selection-mode="multiple"] :is(.menu-item__indicator [data-slot="menu-item-indicator--checkmark"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -6400,8 +6413,10 @@
     transition-property: all;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
   }
 
   .menu-item[data-selection-mode="multiple"] :is(.menu-item__indicator [data-slot="menu-item-indicator--dot"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .menu-item[data-selection-mode="multiple"] :is(.menu-item__indicator [data-slot="menu-item-indicator--dot"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .menu-item[data-selection-mode="multiple"] :is(.menu-item__indicator [data-slot="menu-item-indicator--dot"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -6523,7 +6538,7 @@
     padding-block: var(--spacing, .25rem);
     font-size: var(--text-xs, .75rem);
     line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
-    transition: color var(--duration-fast) var(--ease-smooth), scale var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), scale var(--motion-move-duration) var(--motion-move-ease), opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform-origin: center;
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     display: inline-flex;
@@ -6697,7 +6712,7 @@
     height: calc(var(--spacing, .25rem) * 4);
     border-radius: calc(var(--radius) * 1.5);
     background-color: var(--color-area-thumb-color);
-    transition: width var(--duration-fast) var(--ease-out), height var(--duration-fast) var(--ease-out);
+    transition: width var(--motion-collapse-duration) var(--motion-collapse-ease), height var(--motion-collapse-duration) var(--motion-collapse-ease);
     border: 3px solid #fff;
     box-shadow: 0 0 0 1px #0000001a, inset 0 0 0 1px #0000001a;
   }
@@ -6747,7 +6762,7 @@
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     -webkit-tap-highlight-color: transparent;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     display: inline-flex;
   }
 
@@ -6849,6 +6864,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 }
@@ -6926,7 +6945,7 @@
     --tw-shadow: var(--overlay-shadow);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     z-index: 1;
-    transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     justify-content: center;
     align-items: center;
     display: flex;
@@ -7154,7 +7173,7 @@
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
     cursor: var(--cursor-interactive);
-    transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     border-width: 2px;
     border-color: #0000;
@@ -7205,7 +7224,7 @@
     border-radius: inherit;
     width: 100%;
     height: 100%;
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     display: block;
   }
@@ -7240,7 +7259,7 @@
     width: 33.3333%;
     height: 33.3333%;
     color: var(--color-white, #fff);
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
     transform: scale(0) translateZ(0);
   }
 
@@ -7349,7 +7368,7 @@
     border-width: 1px;
     border-width: var(--border-width-field);
     border-color: var(--field-border);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     align-items: center;
     display: inline-flex;
@@ -7630,7 +7649,7 @@
     color: var(--muted);
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
-    transition: color var(--duration-base) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     grid-area: 1 / 1;
     justify-self: start;
     position: relative;
@@ -7656,7 +7675,7 @@
     border-radius: calc(var(--radius) * 1.5);
     background-color: var(--accent);
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-base) var(--ease-smooth), transform var(--duration-base) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     justify-content: center;
     align-items: center;
     display: flex;
@@ -7685,6 +7704,10 @@
     transition-property: all;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     position: relative;
   }
 
@@ -7937,7 +7960,7 @@
 
   .cell-slider__fill {
     background-color: var(--cell-slider-fill);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .cell-slider__fill:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .cell-slider__fill:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .cell-slider__fill:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -7966,7 +7989,7 @@
     background-color: var(--cell-slider-thumb);
     width: 3px;
     height: 50%;
-    transition: height var(--duration-fast) var(--ease-out);
+    transition: height var(--motion-collapse-duration) var(--motion-collapse-ease);
     border-radius: 3.40282e38px;
   }
 
@@ -8089,7 +8112,7 @@
     background-color: var(--switch-control-bg);
     width: 2.5rem;
     height: 1.25rem;
-    transition: background-color var(--duration-base) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     flex-shrink: 0;
     align-items: center;
     display: flex;
@@ -8199,7 +8222,7 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     width: 1.375rem;
     height: 1rem;
-    transition: margin var(--duration-slow) var(--ease-out-fluid), background-color var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
+    transition: margin var(--motion-indicator-duration) var(--motion-indicator-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     margin-inline-start: calc(var(--spacing, .25rem) * .5);
     display: flex;
   }
@@ -8713,7 +8736,7 @@
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
     color: var(--muted);
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     position: relative;
   }
 
@@ -8779,10 +8802,10 @@
     transition-property: transform, translate, scale, rotate;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     place-content: center;
     display: inline-grid;
   }
@@ -8867,7 +8890,7 @@
   }
 
   .table__row {
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .table__row:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .table__row:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .table__row:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -8909,7 +8932,7 @@
   }
 
   .table__cell {
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .table__cell:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .table__cell:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .table__cell:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -9154,7 +9177,7 @@
     --data-grid-pinned-state: var(--surface);
     background-color: var(--surface-secondary);
     background-image: linear-gradient(var(--data-grid-pinned-state), var(--data-grid-pinned-state));
-    transition: background-color var(--duration-fast) var(--ease-out), --data-grid-pinned-state var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), --data-grid-pinned-state var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -9281,8 +9304,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     margin-inline-start: var(--spacing, .25rem);
   }
 
@@ -9318,7 +9343,7 @@
     color: var(--muted);
     --tw-outline-style: none;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -9347,10 +9372,10 @@
     transition-property: transform, translate, scale, rotate;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
   }
 
   .data-grid__expand svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .data-grid__expand svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .data-grid__expand svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -9397,7 +9422,7 @@
     color: var(--muted);
     --tw-outline-style: none;
     cursor: grab;
-    transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     justify-content: center;
     align-items: center;
@@ -9759,7 +9784,7 @@
     border-radius: calc(var(--radius) * .5);
     background-color: var(--meter-fill);
     height: 100%;
-    transition: width var(--duration-slow) var(--ease-out);
+    transition: width var(--motion-indicator-duration) var(--motion-indicator-ease);
     inset-inline-start: calc(var(--spacing, .25rem) * 0);
     position: absolute;
     top: 0;
@@ -9866,7 +9891,7 @@
     border-radius: calc(var(--radius) * .5);
     background-color: var(--progress-bar-fill);
     height: 100%;
-    transition: width var(--duration-slow) var(--ease-out);
+    transition: width var(--motion-indicator-duration) var(--motion-indicator-ease);
     inset-inline-start: calc(var(--spacing, .25rem) * 0);
     position: absolute;
     top: 0;
@@ -9975,7 +10000,7 @@
 
   .progress-circle .progress-circle__fill-circle {
     stroke: var(--progress-circle-stroke);
-    transition: stroke-dashoffset var(--duration-slow) var(--ease-out);
+    transition: stroke-dashoffset var(--motion-indicator-duration) var(--motion-indicator-ease);
   }
 
   .progress-circle .progress-circle__fill-circle:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .progress-circle .progress-circle__fill-circle:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .progress-circle .progress-circle__fill-circle:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -10538,7 +10563,7 @@
     border-width: 1px;
     border-color: var(--border);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease);
     outline-style: none;
     display: flex;
     position: relative;
@@ -10624,7 +10649,7 @@
   }
 
   .checkbox-button-group__indicator:not([data-custom]) {
-    transition: background-color var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .checkbox-button-group__indicator:not([data-custom]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .checkbox-button-group__indicator:not([data-custom]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .checkbox-button-group__indicator:not([data-custom]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -10642,7 +10667,7 @@
     height: calc(var(--spacing, .25rem) * 3);
     stroke-width: 3px;
     opacity: 0;
-    transition: opacity var(--duration-fast) var(--ease-out), scale var(--duration-base) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), scale var(--motion-move-duration) var(--motion-move-ease);
     scale: .6;
   }
 
@@ -10668,7 +10693,7 @@
 
   .checkbox-button-group__indicator[data-custom] {
     color: var(--muted);
-    transition: color var(--duration-base) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .checkbox-button-group__indicator[data-custom]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .checkbox-button-group__indicator[data-custom]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .checkbox-button-group__indicator[data-custom]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -10691,7 +10716,7 @@
     border-radius: calc(var(--radius) * 1.5);
     background-color: var(--default);
     color: var(--foreground);
-    transition: background-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease);
     flex-shrink: 0;
     justify-content: center;
     align-items: center;
@@ -10793,8 +10818,10 @@
     transition-property: all;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
   }
 
   .checkbox [data-slot="checkbox-default-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .checkbox [data-slot="checkbox-default-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .checkbox [data-slot="checkbox-default-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -10841,7 +10868,7 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -10878,7 +10905,7 @@
     opacity: 0;
     --tw-content: "";
     content: var(--tw-content);
-    transition: scale var(--duration-fast) var(--ease-linear), opacity var(--duration-base) var(--ease-linear), background-color var(--duration-base) var(--ease-out);
+    transition: scale var(--duration-fast) var(--ease-linear), opacity var(--duration-base) var(--ease-linear), background-color var(--motion-state-duration) var(--motion-state-ease);
     position: absolute;
     inset: 0;
   }
@@ -11113,7 +11140,7 @@
     border-width: 1px;
     border-width: var(--border-width-field);
     border-color: var(--field-border);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex: 1;
     justify-content: center;
@@ -11189,7 +11216,7 @@
     line-height: calc(var(--spacing, .25rem) * 6);
     --tw-tracking: -.27px;
     letter-spacing: -.27px;
-    animation: slot-value-in var(--duration-base) var(--ease-smooth) both;
+    animation: slot-value-in var(--motion-move-duration) var(--motion-move-ease) both;
     transform-origin: bottom;
   }
 
@@ -11282,7 +11309,7 @@
   .input {
     border-width: var(--border-width-field);
     border-color: var(--field-border);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .input:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .input:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .input:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -11415,7 +11442,7 @@
   }
 
   .input-group {
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .input-group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .input-group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .input-group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -11596,7 +11623,7 @@
   }
 
   .input-group__prefix {
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .input-group__prefix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .input-group__prefix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .input-group__prefix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -11636,7 +11663,7 @@
   }
 
   .input-group__suffix {
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .input-group__suffix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .input-group__suffix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .input-group__suffix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -11825,7 +11852,7 @@
   }
 
   .number-field__group {
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .number-field__group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .number-field__group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .number-field__group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -11977,7 +12004,7 @@
     --tw-outline-style: none;
     border-width: var(--border-width-field);
     border-color: var(--field-border);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     background-color: #0000;
     border-style: solid;
     border-radius: 0;
@@ -12197,7 +12224,7 @@
     width: var(--number-stepper-button);
     height: var(--number-stepper-button);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease), opacity var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
     outline-style: none;
     flex-shrink: 0;
@@ -12305,7 +12332,7 @@
   }
 
   .number-stepper__char[data-roll] {
-    animation: number-stepper-roll var(--duration-base) var(--ease-out);
+    animation: number-stepper-roll var(--motion-move-duration) var(--motion-move-ease);
   }
 
   .number-stepper__char[data-roll]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .number-stepper__char[data-roll]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .number-stepper__char[data-roll]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -12417,7 +12444,7 @@
     border-width: 1px;
     border-color: var(--border);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease);
     outline-style: none;
     display: flex;
     position: relative;
@@ -12502,7 +12529,7 @@
   }
 
   .radio-button-group__indicator:not([data-custom]) {
-    transition: background-color var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .radio-button-group__indicator:not([data-custom]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .radio-button-group__indicator:not([data-custom]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .radio-button-group__indicator:not([data-custom]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -12520,7 +12547,7 @@
     width: calc(var(--spacing, .25rem) * 1.5);
     height: calc(var(--spacing, .25rem) * 1.5);
     background-color: var(--accent-foreground);
-    transition: scale var(--duration-base) var(--ease-out);
+    transition: scale var(--motion-move-duration) var(--motion-move-ease);
     border-radius: 3.40282e38px;
     scale: 0;
   }
@@ -12546,7 +12573,7 @@
 
   .radio-button-group__indicator[data-custom] {
     color: var(--muted);
-    transition: color var(--duration-base) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .radio-button-group__indicator[data-custom]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .radio-button-group__indicator[data-custom]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .radio-button-group__indicator[data-custom]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -12569,7 +12596,7 @@
     border-radius: calc(var(--radius) * 1.5);
     background-color: var(--default);
     color: var(--foreground);
-    transition: background-color var(--duration-fast) var(--ease-smooth), color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease);
     flex-shrink: 0;
     justify-content: center;
     align-items: center;
@@ -12680,7 +12707,7 @@
     height: 100%;
     color: var(--rating-empty);
     fill: currentColor;
-    transition: color var(--duration-fast) var(--ease-smooth), scale var(--duration-fast) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), scale var(--motion-move-duration) var(--motion-move-ease);
     position: absolute;
     inset: 0;
   }
@@ -12691,7 +12718,7 @@
     color: var(--rating-color);
     fill: currentColor;
     clip-path: inset(0 calc(100% - var(--rating-fill, 0%)) 0 0);
-    transition: clip-path var(--duration-fast) var(--ease-smooth), scale var(--duration-fast) var(--ease-smooth);
+    transition: clip-path var(--motion-state-duration) var(--motion-state-ease), scale var(--motion-move-duration) var(--motion-move-ease);
     position: absolute;
     inset: 0;
   }
@@ -12822,7 +12849,7 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out), transform var(--duration-fast) var(--ease-out), scale var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease), scale var(--motion-move-duration) var(--motion-move-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -12929,7 +12956,7 @@
     background-color: var(--field-background, var(--default));
     width: 100%;
     height: 100%;
-    transition: scale var(--duration-base) var(--ease-out), background-color var(--duration-base) var(--ease-out);
+    transition: scale var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
     scale: 1;
   }
 
@@ -13001,7 +13028,7 @@
     border-width: 1px;
     border-width: var(--border-width-field);
     border-color: var(--field-border);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     align-items: center;
     display: inline-flex;
@@ -13260,7 +13287,7 @@
     border-width: var(--border-width-field);
     border-color: var(--field-border);
     min-height: 38px;
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .textarea:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .textarea:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .textarea:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -13437,7 +13464,7 @@
     height: calc(var(--spacing, .25rem) * 6);
     border-radius: calc(var(--radius) * 2);
     color: var(--accent-soft-foreground);
-    transition: transform var(--duration-base) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     justify-content: center;
     align-items: center;
@@ -13541,7 +13568,7 @@
     font-weight: var(--font-weight-medium, 500);
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
-    transition: transform var(--duration-base) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     outline-style: none;
     justify-content: center;
@@ -13636,7 +13663,7 @@
     translate: var(--tw-translate-x) var(--tw-translate-y);
     border-radius: calc(var(--radius) * .25);
     background-color: var(--muted);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     position: absolute;
     left: 50%;
   }
@@ -13725,7 +13752,7 @@
     height: calc(var(--spacing, .25rem) * 6);
     border-radius: calc(var(--radius) * 1.5);
     color: var(--accent-soft-foreground);
-    transition: transform var(--duration-base) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     justify-content: center;
     align-items: center;
@@ -13822,7 +13849,7 @@
     border-radius: calc(var(--radius) * 3);
     --tw-outline-style: none;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     outline-style: none;
     margin-block: 2px;
@@ -13851,7 +13878,7 @@
     font-weight: var(--font-weight-medium, 500);
     color: var(--foreground);
     -webkit-tap-highlight-color: transparent;
-    transition: scale var(--duration-base) var(--ease-out), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+    transition: scale var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     justify-content: center;
     align-items: center;
@@ -14008,7 +14035,7 @@
     translate: var(--tw-translate-x) var(--tw-translate-y);
     border-radius: calc(var(--radius) * .25);
     background-color: var(--muted);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     position: absolute;
     left: 50%;
   }
@@ -14033,7 +14060,7 @@
   }
 
   .calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"] {
-    transition: opacity var(--duration-fast) var(--ease-out), visibility 0s linear;
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), visibility 0s linear;
   }
 
   :is(.calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), :is(.calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, :is(.calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -14050,7 +14077,7 @@
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--duration-fast) var(--ease-out), visibility 0s linear var(--duration-fast);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), visibility 0s linear var(--motion-state-duration);
   }
 
   :is(.calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), :is(.calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, :is(.calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -14092,7 +14119,7 @@
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .calendar-year-picker__trigger-heading:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .calendar-year-picker__trigger-heading:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .calendar-year-picker__trigger-heading:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -14116,7 +14143,7 @@
   }
 
   .calendar-year-picker__trigger-indicator {
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
   }
 
   .calendar-year-picker__trigger-indicator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .calendar-year-picker__trigger-indicator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .calendar-year-picker__trigger-indicator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -14158,7 +14185,7 @@
   .calendar-year-picker__year-grid[data-open="true"] {
     pointer-events: auto;
     opacity: 1;
-    transition: opacity var(--duration-base) var(--ease-out) 50ms;
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease) 50ms;
   }
 
   .calendar-year-picker__year-grid[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .calendar-year-picker__year-grid[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .calendar-year-picker__year-grid[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -14184,7 +14211,7 @@
     -webkit-tap-highlight-color: transparent;
     border-radius: var(--r-year, var(--radius-3xl));
     touch-action: manipulation;
-    transition: color var(--duration-fast) var(--ease-smooth), scale var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), scale var(--motion-move-duration) var(--motion-move-ease), opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform-origin: center;
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     outline-style: none;
@@ -14290,7 +14317,7 @@
     border-width: 1px;
     border-width: var(--border-width-field);
     border-color: var(--field-border);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     align-items: center;
     display: inline-flex;
@@ -14541,7 +14568,7 @@
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     -webkit-tap-highlight-color: transparent;
     cursor: var(--cursor-interactive);
-    transition: box-shadow var(--duration-fast) var(--ease-out);
+    transition: box-shadow var(--motion-state-duration) var(--motion-state-ease);
     align-items: center;
     display: inline-flex;
   }
@@ -14657,6 +14684,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -14683,7 +14714,7 @@
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     -webkit-tap-highlight-color: transparent;
     cursor: var(--cursor-interactive);
-    transition: box-shadow var(--duration-fast) var(--ease-out);
+    transition: box-shadow var(--motion-state-duration) var(--motion-state-ease);
     align-items: center;
     display: inline-flex;
   }
@@ -14805,6 +14836,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -15021,8 +15056,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     position: absolute;
     inset: 0;
   }
@@ -15254,7 +15291,7 @@
 
   .carousel__control {
     z-index: 10;
-    transition: transform var(--duration-base) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     grid-area: stage;
     align-self: center;
   }
@@ -15415,7 +15452,7 @@
 
   .carousel__dot {
     cursor: var(--cursor-interactive);
-    transition: width var(--duration-slow) var(--ease-out-quart), height var(--duration-slow) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-out);
+    transition: width var(--motion-indicator-duration) var(--motion-indicator-ease), height var(--motion-indicator-duration) var(--motion-indicator-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .carousel__dot:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .carousel__dot:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .carousel__dot:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -15488,7 +15525,7 @@
     aspect-ratio: 1;
     opacity: .55;
     cursor: var(--cursor-interactive);
-    transition: opacity var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     position: relative;
@@ -15862,8 +15899,10 @@
     transition-property: border-color, opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     outline-style: none;
   }
 
@@ -16082,8 +16121,10 @@
     transition-property: filter;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     background-color: var(--chart-color);
     flex: 1;
   }
@@ -16121,7 +16162,7 @@
     opacity: 0;
     background-color: var(--border, var(--separator));
     width: 1px;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     position: absolute;
     inset-block: 0;
     inset-inline-start: 50%;
@@ -16137,7 +16178,7 @@
     opacity: 0;
     background-color: var(--chart-color);
     box-shadow: 0 0 0 2px var(--background);
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
     position: absolute;
     left: 50%;
@@ -16158,7 +16199,7 @@
     color: var(--foreground);
     opacity: 0;
     max-width: min(16rem, 80cqw);
-    transition: opacity var(--duration-fast) var(--ease-smooth), display var(--duration-fast) allow-discrete;
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), display var(--motion-state-duration) allow-discrete;
     box-shadow: var(--overlay-shadow);
     flex-direction: column;
     display: none;
@@ -16280,7 +16321,7 @@
   .chart__donut-segment {
     fill: none;
     stroke: var(--chart-color);
-    transition: stroke-width var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
+    transition: stroke-width var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .chart__donut-segment:hover {
@@ -16367,7 +16408,7 @@
   .chart__sector-path {
     fill: var(--chart-color);
     pointer-events: visiblePainted;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .chart__sector:focus-visible .chart__sector-path {
@@ -16551,7 +16592,7 @@
 @layer components {
   .alert-dialog__trigger {
     cursor: var(--cursor-interactive);
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     display: inline-block;
   }
 
@@ -16908,7 +16949,7 @@
 @layer components {
   .drawer__trigger {
     cursor: var(--cursor-interactive);
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     display: inline-block;
   }
 
@@ -17456,7 +17497,7 @@
     height: var(--spacing, .25rem);
     width: calc(var(--spacing, .25rem) * 10);
     background-color: var(--separator);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
   }
 
@@ -17758,7 +17799,7 @@
     --tw-outline-style: none;
     -webkit-user-select: none;
     user-select: none;
-    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     text-decoration-line: none;
@@ -17818,7 +17859,7 @@
     cursor: var(--cursor-interactive);
     color: var(--foreground);
     --tw-outline-style: none;
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -17921,7 +17962,7 @@
     --tw-outline-style: none;
     -webkit-user-select: none;
     user-select: none;
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     text-decoration-line: none;
@@ -18079,7 +18120,7 @@
 @layer components {
   .modal__trigger {
     cursor: var(--cursor-interactive);
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     display: inline-block;
   }
 
@@ -18840,7 +18881,7 @@
     color: var(--foreground);
     width: var(--compare-handle-size);
     height: var(--compare-handle-size);
-    transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-smooth);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
     flex-shrink: 0;
     justify-content: center;
@@ -19257,7 +19298,7 @@
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     -webkit-tap-highlight-color: transparent;
     cursor: var(--cursor-interactive);
-    transition: box-shadow var(--duration-fast) var(--ease-out);
+    transition: box-shadow var(--motion-state-duration) var(--motion-state-ease);
     align-items: center;
     display: inline-flex;
   }
@@ -19367,6 +19408,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -19500,6 +19545,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -19532,7 +19581,7 @@
   }
 
   .popover__trigger {
-    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     display: inline-block;
   }
 
@@ -19621,6 +19670,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -19651,7 +19704,7 @@
   }
 
   .tooltip__trigger {
-    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     display: inline-block;
   }
 
@@ -19873,8 +19926,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     -webkit-tap-highlight-color: transparent;
     --tw-border-style: none;
     --tw-outline-style: none;
@@ -19987,6 +20042,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -20057,7 +20116,7 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     border-width: 1px;
     outline-style: none;
     display: inline-flex;
@@ -20203,7 +20262,7 @@
   }
 
   .select__clear-button:not([data-empty="true"]) {
-    transition: opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease);
   }
 
   .select__clear-button:not([data-empty="true"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .select__clear-button:not([data-empty="true"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .select__clear-button:not([data-empty="true"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -20241,8 +20300,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     flex-shrink: 0;
     justify-content: center;
     align-items: center;
@@ -20326,6 +20387,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -20430,7 +20495,7 @@
     border-width: var(--border-width-field);
     border-color: var(--field-border);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -20565,7 +20630,7 @@
     height: var(--cell-select-height);
     background-color: var(--cell-select-bg);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
     position: relative;
@@ -20651,7 +20716,7 @@
     width: calc(var(--spacing, .25rem) * 4);
     height: calc(var(--spacing, .25rem) * 4);
     color: var(--muted);
-    transition: rotate var(--duration-fast) var(--ease-out);
+    transition: rotate var(--motion-move-duration) var(--motion-move-ease);
     flex-shrink: 0;
     justify-content: center;
     align-items: center;
@@ -20709,7 +20774,7 @@
     font-size: inherit;
     line-height: inherit;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: inline-flex;
   }
@@ -20816,7 +20881,7 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     border-width: 1px;
     outline-style: none;
     display: inline-flex;
@@ -20938,8 +21003,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     cursor: var(--cursor-interactive);
     flex-shrink: 0;
     justify-content: center;
@@ -21027,6 +21094,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -21122,7 +21193,7 @@
   }
 
   .autocomplete__clear-button:not([data-empty="true"]) {
-    transition: opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease);
   }
 
   .autocomplete__clear-button:not([data-empty="true"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .autocomplete__clear-button:not([data-empty="true"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .autocomplete__clear-button:not([data-empty="true"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -21469,7 +21540,7 @@
     align-items: center;
     gap: var(--spacing, .25rem);
     opacity: 0;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     margin-inline-start: auto;
     display: flex;
   }
@@ -21510,7 +21581,7 @@
     min-height: calc(var(--spacing, .25rem) * 16);
     gap: calc(var(--spacing, .25rem) * 2);
     border-radius: calc(var(--radius) * 1.5);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     flex-direction: column;
     display: flex;
   }
@@ -21571,7 +21642,7 @@
   }
 
   .kanban__card.cdk-drag-animating, .kanban__card-list.cdk-drop-list-dragging .kanban__card:not(.cdk-drag-placeholder) {
-    transition: transform var(--duration-base) var(--ease-smooth);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
   }
 
   .kanban__card-content {
@@ -21583,7 +21654,7 @@
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     color: var(--foreground);
     box-shadow: var(--surface-shadow);
-    transition: box-shadow var(--duration-fast) var(--ease-smooth);
+    transition: box-shadow var(--motion-state-duration) var(--motion-state-ease);
     flex-direction: column;
     display: flex;
   }
@@ -21658,7 +21729,7 @@
     color: var(--muted);
     opacity: 0;
     cursor: grab;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     justify-content: center;
     align-items: center;
     display: inline-flex;
@@ -21894,7 +21965,7 @@
     height: var(--cell-color-picker-height);
     background-color: var(--cell-color-picker-bg);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     border-width: 0;
     outline-style: none;
     display: flex;
@@ -22027,7 +22098,7 @@
     width: calc(var(--floating-toc-bar-width) - (var(--floating-toc-level, 1) - 1) * var(--floating-toc-bar-level-step));
     background-color: var(--muted);
     opacity: .5;
-    transition: width var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: width var(--motion-indicator-duration) var(--motion-indicator-ease), background-color var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 9999px;
     position: absolute;
     inset-block: 0;
@@ -22120,7 +22191,7 @@
     -webkit-user-select: none;
     user-select: none;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     background-color: #0000;
     border-width: 0;
     outline-style: none;
@@ -22379,7 +22450,7 @@
     border-radius: inherit;
     background-color: var(--pressable-feedback-highlight-color, currentColor);
     opacity: 0;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     position: absolute;
     inset: 0;
   }
@@ -22589,7 +22660,7 @@
     user-select: none;
     min-height: var(--file-tree-row);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     position: relative;
   }
@@ -22660,7 +22731,7 @@
     width: var(--file-tree-indent);
     height: var(--file-tree-indent);
     cursor: grab;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     background-color: #0000;
     border-width: 0;
     outline-style: none;
@@ -22755,7 +22826,7 @@
   }
 
   .file-tree__indicator-icon {
-    transition: rotate var(--duration-fast) var(--ease-out);
+    transition: rotate var(--motion-move-duration) var(--motion-move-ease);
   }
 
   .file-tree__indicator-icon:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .file-tree__indicator-icon:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .file-tree__indicator-icon:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -22862,7 +22933,7 @@
     user-select: none;
     background-color: var(--list-view-item-bg);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
     position: relative;
@@ -22991,7 +23062,7 @@
     --tw-outline-style: none;
     background-color: var(--surface);
     cursor: default;
-    transition: background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-direction: column;
     display: flex;
@@ -23560,7 +23631,7 @@
     --erb-bg: var(--default);
     --erb-bg-hover: var(--default-hover);
     --erb-border: transparent;
-    transition: transform var(--duration-base) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     border-radius: 3.40282e38px;
     outline-style: none;
@@ -23723,6 +23794,10 @@
     transition-property: opacity, transform;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     will-change: opacity,transform;
   }
 
@@ -23764,7 +23839,7 @@
     min-height: var(--cell-switch-height);
     background-color: var(--cell-switch-bg);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
     position: relative;
@@ -23908,8 +23983,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     text-decoration-line: none;
     display: flex;
     position: relative;
@@ -25384,7 +25461,7 @@
     align-items: center;
     gap: calc(var(--spacing, .25rem) * .5);
     color: var(--muted);
-    transition: opacity var(--duration-base) var(--ease-out, ease-out), translate var(--duration-base) var(--ease-out, ease-out), visibility var(--duration-base);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), translate var(--motion-move-duration) var(--motion-move-ease), visibility var(--motion-move-duration);
     display: flex;
   }
 
@@ -25416,8 +25493,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
   }
 
   .chat-message[data-actions="hover"] .chat-message__actions:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .chat-message[data-actions="hover"] .chat-message__actions:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .chat-message[data-actions="hover"] .chat-message__actions:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -25460,8 +25539,10 @@
     transition-property: transform, translate, scale, rotate;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
   }
 
   .chat-message-actions__action svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .chat-message-actions__action svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .chat-message-actions__action svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -25535,7 +25616,7 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), scale var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), scale var(--motion-move-duration) var(--motion-move-ease);
     outline-style: none;
   }
 
@@ -25701,7 +25782,7 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     text-decoration: none;
     display: flex;
@@ -26114,7 +26195,7 @@
   .markdown__link {
     text-underline-offset: 2px;
     --tw-outline-style: none;
-    transition: text-decoration-color var(--duration-fast) var(--ease-out);
+    transition: text-decoration-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
   }
 
@@ -26295,11 +26376,11 @@
   }
 
   .markdown__word {
-    animation: markdown-word-in var(--duration-base) var(--ease-out, ease-out) both;
+    animation: markdown-word-in var(--motion-enter-duration) var(--motion-enter-ease) both;
   }
 
   .markdown__live {
-    animation: markdown-block-in var(--duration-slow) var(--ease-out, ease-out) both;
+    animation: markdown-block-in var(--motion-enter-duration) var(--motion-enter-ease) both;
   }
 
   @keyframes markdown-word-in {
@@ -26354,8 +26435,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     display: flex;
   }
 
@@ -26489,7 +26572,7 @@
 
   .chain-of-thought[data-streaming="true"] .chain-of-thought__step {
     interpolate-size: allow-keywords;
-    animation: chain-of-thought-step-in var(--duration-slow) var(--ease-out, ease-out) both;
+    animation: chain-of-thought-step-in var(--motion-enter-duration) var(--motion-enter-ease) both;
     overflow: clip;
   }
 
@@ -26543,8 +26626,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     --tw-outline-style: none;
     border-radius: 3.40282e38px;
     outline-style: none;
@@ -26687,8 +26772,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     display: flex;
   }
 
@@ -26776,7 +26863,7 @@
     padding-block: calc(var(--spacing, .25rem) * 2.5);
     text-align: start;
     color: var(--muted);
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
   }
 
@@ -26817,7 +26904,7 @@
   .chat-tool__status-icon {
     width: calc(var(--spacing, .25rem) * 4);
     height: calc(var(--spacing, .25rem) * 4);
-    transition: color var(--duration-base) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     flex-shrink: 0;
     justify-content: center;
     align-items: center;
@@ -26954,7 +27041,7 @@
     font-size: var(--text-sm, .875rem);
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     color: var(--muted);
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
   }
 
@@ -27065,8 +27152,10 @@
     transition-property: opacity, visibility, translate;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     border-radius: 3.40282e38px;
   }
 
@@ -27230,8 +27319,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
   }
 
   .chat-attachment[data-variant="media"] .chat-attachment__info:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .chat-attachment[data-variant="media"] .chat-attachment__info:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .chat-attachment[data-variant="media"] .chat-attachment__info:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -27281,8 +27372,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     padding: 0;
   }
 
@@ -27339,8 +27432,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     border: 1px dashed #0000;
   }
 
@@ -27398,10 +27493,10 @@
     transition-property: border-color, box-shadow, background-color, opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     flex-direction: column;
     display: flex;
     position: relative;
@@ -27505,10 +27600,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     overflow-y: auto;
   }
 
@@ -27692,7 +27787,7 @@
     user-select: none;
     border-radius: var(--r-inner);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
   }
@@ -27754,7 +27849,7 @@
   }
 
   .prompt-input .prompt-input__send {
-    transition: transform var(--duration-base) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .prompt-input .prompt-input__send:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .prompt-input .prompt-input__send:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .prompt-input .prompt-input__send:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -27942,8 +28037,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     flex-shrink: 0;
     display: flex;
   }
@@ -28024,7 +28121,7 @@
     user-select: none;
     padding: var(--scroll-area-padding);
     background-color: var(--scrollbar-track);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
   }
 
@@ -28060,20 +28157,20 @@
 
   .scroll-area__scrollbar[data-state="visible"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: cubic-bezier(.2, 0, 0, 1);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     --tw-enter-opacity: 0;
-    transition-timing-function: cubic-bezier(.2, 0, 0, 1);
   }
 
   .scroll-area__scrollbar[data-state="hidden"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
-    --tw-ease: cubic-bezier(.2, 0, 0, 1);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     --tw-exit-opacity: 0;
-    transition-timing-function: cubic-bezier(.2, 0, 0, 1);
   }
 
   .scroll-area__scrollbar:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .scroll-area__scrollbar:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .scroll-area__scrollbar:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -28088,7 +28185,7 @@
 
   .scroll-area__thumb {
     background-color: var(--scrollbar-thumb);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
     flex: 1;
     position: relative;
@@ -28465,7 +28562,7 @@
     color: var(--accent-soft-foreground);
     text-align: start;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     background: none;
     border: 0;
   }
@@ -28611,7 +28708,7 @@
     min-width: 0;
     color: var(--scheduler-event-fg);
     cursor: var(--cursor-interactive);
-    transition: opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
     position: relative;
     overflow: hidden;
@@ -28723,7 +28820,7 @@
     opacity: 0;
     width: 2px;
     height: 12px;
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     background: currentColor;
     border-radius: 2px;
   }

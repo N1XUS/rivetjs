@@ -24,7 +24,7 @@
   line-height: inherit;
   cursor: var(--cursor-interactive);
 
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   @media (hover: hover) {

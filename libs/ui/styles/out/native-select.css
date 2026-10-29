@@ -62,7 +62,7 @@
     border-width: var(--border-width-field);
     border-color: var(--field-border);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

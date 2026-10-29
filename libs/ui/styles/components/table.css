@@ -124,7 +124,7 @@
   @apply relative px-4 py-2.5 text-start text-xs font-medium text-muted;
 
   /* Rivet: sortable header hover colour eases (upstream snaps) */
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   /* Separator between columns — a short vertical line on the right edge */
@@ -177,7 +177,7 @@
    Defaults to pointing up (ascending) and rotates 180° for descending.
    -------------------------------------------------------------------------- */
 .table__sortable-column-indicator {
-  @apply inline-grid size-3 transform place-content-center transition-transform duration-(--duration-fast) ease-out;
+  @apply inline-grid size-3 transform place-content-center transition-transform duration-(--motion-move-duration) ease-(--motion-move-ease);
 
   &[data-direction="descending"] {
     @apply rotate-180;
@@ -254,7 +254,7 @@
   }
 
   /* Rivet: dragged row fades (upstream snaps) */
-  transition: opacity var(--duration-fast) var(--ease-out);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   /* Dragging state */
@@ -277,7 +277,7 @@
   @apply border-b border-separator-tertiary/50;
 
   /* Rivet: row hover / selected / drop-target fills ease (upstream snaps) */
-  transition: background-color var(--duration-fast) var(--ease-out);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   /* Focus visible — inset shadow so focus stays within the cell boundaries */

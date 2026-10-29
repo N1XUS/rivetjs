@@ -40,10 +40,10 @@
     transition-property: border-color, box-shadow, background-color, opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     flex-direction: column;
     display: flex;
     position: relative;
@@ -147,10 +147,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     overflow-y: auto;
   }
 
@@ -334,7 +334,7 @@
     user-select: none;
     border-radius: var(--r-inner);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
   }
@@ -396,7 +396,7 @@
   }
 
   .prompt-input .prompt-input__send {
-    transition: transform var(--duration-base) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .prompt-input .prompt-input__send:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .prompt-input .prompt-input__send:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .prompt-input .prompt-input__send:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -584,8 +584,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     flex-shrink: 0;
     display: flex;
   }

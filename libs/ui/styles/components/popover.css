@@ -39,7 +39,7 @@
 
   &[data-exiting="true"],
   &[data-entering="true"] {
-    @apply transition-[opacity,transform] will-change-[opacity,transform];
+    @apply transition-[opacity,transform] duration-(--popup-duration) ease-(--popup-ease) will-change-[opacity,transform];
   }
 
   /* Arrow styling */
@@ -82,9 +82,9 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    color var(--duration-fast) var(--ease-smooth),
-    background-color var(--duration-fast) var(--ease-smooth),
-    box-shadow var(--duration-fast) var(--ease-out);
+    color var(--motion-state-duration) var(--motion-state-ease),
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    box-shadow var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   cursor: var(--cursor-interactive);

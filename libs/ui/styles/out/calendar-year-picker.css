@@ -8,7 +8,7 @@
   }
 
   .calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"] {
-    transition: opacity var(--duration-fast) var(--ease-out), visibility 0s linear;
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), visibility 0s linear;
   }
 
   :is(.calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), :is(.calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, :is(.calendar:has(.calendar-year-picker__year-grid) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -25,7 +25,7 @@
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--duration-fast) var(--ease-out), visibility 0s linear var(--duration-fast);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), visibility 0s linear var(--motion-state-duration);
   }
 
   :is(.calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), :is(.calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, :is(.calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="calendar-grid"], .range-calendar:has(.calendar-year-picker__year-grid[data-open="true"]) > [data-slot="range-calendar-grid"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -67,7 +67,7 @@
     line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
     --tw-font-weight: var(--font-weight-medium, 500);
     font-weight: var(--font-weight-medium, 500);
-    transition: color var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .calendar-year-picker__trigger-heading:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .calendar-year-picker__trigger-heading:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .calendar-year-picker__trigger-heading:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -91,7 +91,7 @@
   }
 
   .calendar-year-picker__trigger-indicator {
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
   }
 
   .calendar-year-picker__trigger-indicator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .calendar-year-picker__trigger-indicator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .calendar-year-picker__trigger-indicator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -133,7 +133,7 @@
   .calendar-year-picker__year-grid[data-open="true"] {
     pointer-events: auto;
     opacity: 1;
-    transition: opacity var(--duration-base) var(--ease-out) 50ms;
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease) 50ms;
   }
 
   .calendar-year-picker__year-grid[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .calendar-year-picker__year-grid[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .calendar-year-picker__year-grid[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -159,7 +159,7 @@
     -webkit-tap-highlight-color: transparent;
     border-radius: var(--r-year, var(--radius-3xl));
     touch-action: manipulation;
-    transition: color var(--duration-fast) var(--ease-smooth), scale var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), scale var(--motion-move-duration) var(--motion-move-ease), opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform-origin: center;
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     outline-style: none;

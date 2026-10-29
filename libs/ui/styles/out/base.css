@@ -163,6 +163,8 @@
     --motion-move-ease: var(--ease-smooth);
     --motion-collapse-duration: var(--duration-base);
     --motion-collapse-ease: var(--ease-out-quad);
+    --motion-indicator-duration: var(--duration-base);
+    --motion-indicator-ease: var(--ease-out-fluid);
     --motion-enter-duration: var(--duration-slow);
     --motion-exit-duration: var(--duration-base);
     --motion-enter-ease: var(--ease-out-fluid);
@@ -177,7 +179,6 @@
     --field-gap-label: .375rem;
     --field-gap-help: .25rem;
     --field-gap-group: 1rem;
-    --ease-out-quart: cubic-bezier(.165, .84, .44, 1);
     --ease-linear: linear;
   }
 

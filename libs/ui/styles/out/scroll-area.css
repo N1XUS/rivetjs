@@ -38,7 +38,7 @@
     user-select: none;
     padding: var(--scroll-area-padding);
     background-color: var(--scrollbar-track);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
   }
 
@@ -74,20 +74,20 @@
 
   .scroll-area__scrollbar[data-state="visible"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: cubic-bezier(.2, 0, 0, 1);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     --tw-enter-opacity: 0;
-    transition-timing-function: cubic-bezier(.2, 0, 0, 1);
   }
 
   .scroll-area__scrollbar[data-state="hidden"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
-    --tw-ease: cubic-bezier(.2, 0, 0, 1);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     --tw-exit-opacity: 0;
-    transition-timing-function: cubic-bezier(.2, 0, 0, 1);
   }
 
   .scroll-area__scrollbar:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .scroll-area__scrollbar:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .scroll-area__scrollbar:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -102,7 +102,7 @@
 
   .scroll-area__thumb {
     background-color: var(--scrollbar-thumb);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
     flex: 1;
     position: relative;

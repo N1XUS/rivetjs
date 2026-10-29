@@ -58,7 +58,7 @@
 }
 
 .combo-box__trigger {
-  @apply absolute end-0 top-1/2 flex h-full shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center pe-2 text-field-placeholder transition duration-(--duration-fast) no-highlight;
+  @apply absolute end-0 top-1/2 flex h-full shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center pe-2 text-field-placeholder transition duration-(--motion-state-duration) ease-(--motion-state-ease) no-highlight;
 
   /* Remove default button styles */
   @apply border-none bg-transparent outline-none;
@@ -140,7 +140,7 @@
 
   &[data-exiting="true"],
   &[data-entering="true"] {
-    @apply transition-[opacity,transform] will-change-[opacity,transform];
+    @apply transition-[opacity,transform] duration-(--popup-duration) ease-(--popup-ease) will-change-[opacity,transform];
   }
 
   /* Arrow styling */

@@ -17,7 +17,7 @@
   /**
    * Transitions
    */
-  @apply transition-opacity duration-(--duration-base) motion-reduce:transition-none;
+  @apply transition-opacity duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
 }
 
 /* Size modifiers */

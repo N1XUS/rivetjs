@@ -49,7 +49,7 @@
     /**
      * Transitions
      */
-    @apply transition-all duration-(--duration-base) motion-reduce:transition-none;
+    @apply transition-all duration-(--motion-move-duration) ease-(--motion-move-ease) motion-reduce:transition-none;
   }
 
   &[data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"],
@@ -98,9 +98,9 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    background-color var(--duration-base) var(--ease-out),
-    border-color var(--duration-base) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out);
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    border-color var(--motion-state-duration) var(--motion-state-ease),
+    transform var(--motion-move-duration) var(--motion-move-ease);
   @apply motion-reduce:transition-none;
 
   cursor: var(--cursor-interactive);
@@ -116,7 +116,7 @@
     transition:
       scale var(--duration-fast) var(--ease-linear),
       opacity var(--duration-base) var(--ease-linear),
-      background-color var(--duration-base) var(--ease-out);
+      background-color var(--motion-state-duration) var(--motion-state-ease);
     @apply motion-reduce:transition-none;
   }
 

@@ -91,7 +91,7 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-base) var(--ease-out), border-color var(--duration-base) var(--ease-out), transform var(--duration-fast) var(--ease-out), scale var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease), scale var(--motion-move-duration) var(--motion-move-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -198,7 +198,7 @@
     background-color: var(--field-background, var(--default));
     width: 100%;
     height: 100%;
-    transition: scale var(--duration-base) var(--ease-out), background-color var(--duration-base) var(--ease-out);
+    transition: scale var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
     scale: 1;
   }
 

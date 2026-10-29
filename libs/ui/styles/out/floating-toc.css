@@ -49,7 +49,7 @@
     width: calc(var(--floating-toc-bar-width) - (var(--floating-toc-level, 1) - 1) * var(--floating-toc-bar-level-step));
     background-color: var(--muted);
     opacity: .5;
-    transition: width var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: width var(--motion-indicator-duration) var(--motion-indicator-ease), background-color var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 9999px;
     position: absolute;
     inset-block: 0;
@@ -142,7 +142,7 @@
     -webkit-user-select: none;
     user-select: none;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     background-color: #0000;
     border-width: 0;
     outline-style: none;

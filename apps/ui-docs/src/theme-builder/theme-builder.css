@@ -101,8 +101,8 @@
     background: transparent;
     color: var(--fg);
     transition:
-      background-color 0.15s var(--ease-out),
-      border-color 0.15s var(--ease-out);
+      background-color var(--motion-state-duration) var(--motion-state-ease),
+      border-color var(--motion-state-duration) var(--motion-state-ease);
   }
   .tb-preset:hover {
     background: var(--bg-soft);
@@ -165,9 +165,9 @@
     @apply inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[10px] border-0 bg-transparent px-3 py-1.5 text-sm font-medium;
     color: var(--fg-soft);
     transition:
-      background-color 0.15s var(--ease-out),
-      color 0.15s var(--ease-out),
-      box-shadow 0.15s var(--ease-out);
+      background-color var(--motion-state-duration) var(--motion-state-ease),
+      color var(--motion-state-duration) var(--motion-state-ease),
+      box-shadow var(--motion-state-duration) var(--motion-state-ease);
   }
   .tb-seg[aria-pressed="true"] {
     background: var(--bg-raised);
@@ -192,7 +192,7 @@
     border-color: var(--line-strong);
     background: var(--bg-raised);
     color: var(--fg);
-    transition: background-color 0.15s var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   }
   .tb-button:hover {
     background: var(--bg-soft);

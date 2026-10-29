@@ -24,9 +24,9 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    background-color var(--duration-fast) var(--ease-smooth),
-    border-color var(--duration-fast) var(--ease-smooth),
-    box-shadow var(--duration-fast) var(--ease-out);
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    border-color var(--motion-state-duration) var(--motion-state-ease),
+    box-shadow var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   /* Cursor */
@@ -145,9 +145,9 @@
   /* Transition only when visible - disappears immediately when cleared */
   &:not([data-empty="true"]) {
     transition:
-      opacity var(--duration-fast) var(--ease-smooth),
-      background-color var(--duration-fast) var(--ease-out),
-      transform var(--duration-fast) var(--ease-out);
+      opacity var(--motion-state-duration) var(--motion-state-ease),
+      background-color var(--motion-state-duration) var(--motion-state-ease),
+      transform var(--motion-move-duration) var(--motion-move-ease);
     @apply motion-reduce:transition-none;
   }
 
@@ -173,7 +173,7 @@
 }
 
 .select__indicator {
-  @apply absolute inset-y-0 end-2 my-auto flex shrink-0 items-center justify-center text-field-placeholder transition duration-(--duration-fast);
+  @apply absolute inset-y-0 end-2 my-auto flex shrink-0 items-center justify-center text-field-placeholder transition duration-(--motion-state-duration) ease-(--motion-state-ease);
 
   /* Custom indicator children rotate; the default morph chevron (morph-icon.css, TW-149) flattens and folds instead. */
   &[data-open="true"]:not(.morph-chevron) {
@@ -230,7 +230,7 @@
 
   &[data-exiting="true"],
   &[data-entering="true"] {
-    @apply transition-[opacity,transform] will-change-[opacity,transform];
+    @apply transition-[opacity,transform] duration-(--popup-duration) ease-(--popup-ease) will-change-[opacity,transform];
   }
 
   /* Arrow styling */

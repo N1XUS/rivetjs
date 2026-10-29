@@ -36,7 +36,7 @@
 }
 
 .prompt-input__shell {
-  @apply relative flex w-full min-w-0 flex-col gap-1 border border-separator bg-surface shadow-surface transition-[border-color,box-shadow,background-color,opacity] duration-(--duration-fast) ease-out motion-reduce:transition-none;
+  @apply relative flex w-full min-w-0 flex-col gap-1 border border-separator bg-surface shadow-surface transition-[border-color,box-shadow,background-color,opacity] duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
   border-radius: var(--prompt-input-radius);
   padding: var(--prompt-input-padding);
 
@@ -78,7 +78,7 @@
   max-height: var(--prompt-input-max-height);
   overflow-y: auto;
 
-  @apply transition-opacity duration-(--duration-fast) ease-out motion-reduce:transition-none;
+  @apply transition-opacity duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
 
   &:disabled {
     @apply cursor-not-allowed opacity-70;
@@ -182,7 +182,7 @@
   @apply flex min-h-9 w-full items-center gap-3 px-2 py-1.5 text-foreground outline-none select-none;
   border-radius: var(--r-inner);
   cursor: var(--cursor-interactive);
-  transition: background-color var(--duration-fast) var(--ease-out);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &[data-focused="true"] {
@@ -227,11 +227,11 @@
 /* Disabled <-> enabled (typing, run state) fades instead of snapping: the button keeps its node, only the attribute flips. */
 .prompt-input .prompt-input__send {
   transition:
-    transform var(--duration-base) var(--ease-smooth),
-    background-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out),
-    opacity var(--duration-fast) var(--ease-out);
+    transform var(--motion-move-duration) var(--motion-move-ease),
+    background-color var(--motion-state-duration) var(--motion-state-ease),
+    color var(--motion-state-duration) var(--motion-state-ease),
+    box-shadow var(--motion-state-duration) var(--motion-state-ease),
+    opacity var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 }
 
@@ -349,7 +349,7 @@
 }
 
 .prompt-input__queue-item-actions {
-  @apply flex shrink-0 items-center gap-0.5 transition-opacity duration-(--duration-fast) motion-reduce:transition-none;
+  @apply flex shrink-0 items-center gap-0.5 transition-opacity duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
 }
 
 .prompt-input__queue[data-actions="hover"] .prompt-input__queue-item:not(:hover):not(:focus-within) .prompt-input__queue-item-actions {

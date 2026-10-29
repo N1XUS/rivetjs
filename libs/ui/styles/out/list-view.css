@@ -71,7 +71,7 @@
     user-select: none;
     background-color: var(--list-view-item-bg);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
     position: relative;

@@ -163,7 +163,7 @@
   &::after {
     @apply absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent;
     content: "";
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   @media (hover: hover) {

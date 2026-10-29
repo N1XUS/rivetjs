@@ -62,7 +62,7 @@
     font-size: var(--segment-font-size);
     border-radius: calc(var(--radius) * 2);
     cursor: var(--cursor-interactive);
-    transition: color var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     display: inline-flex;
@@ -127,9 +127,9 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     z-index: -1;
     border-radius: inherit;
-    transition-duration: var(--duration-base);
+    transition-duration: var(--motion-indicator-duration);
     transition-property: translate, width, height;
-    transition-timing-function: var(--ease-out-fluid);
+    transition-timing-function: var(--motion-indicator-ease);
     position: absolute;
     inset: 0;
   }
@@ -153,7 +153,7 @@
   .segment__label {
     align-items: center;
     gap: var(--segment-gap);
-    transition: scale var(--duration-fast) var(--ease-out);
+    transition: scale var(--motion-move-duration) var(--motion-move-ease);
     display: inline-flex;
   }
 
@@ -185,7 +185,7 @@
 
   .segment__separator {
     margin-inline: calc(var(--spacing) * -.25);
-    transition: opacity var(--duration-fast) var(--ease-smooth);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .segment__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .segment__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .segment__separator:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

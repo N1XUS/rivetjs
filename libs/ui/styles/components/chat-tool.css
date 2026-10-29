@@ -17,7 +17,7 @@
 
 .chat-tool__trigger {
   @apply flex w-full min-w-0 items-center gap-2 rounded-2xl px-3 py-2.5 text-start text-muted;
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &:hover,
@@ -40,7 +40,7 @@
 
 .chat-tool__status-icon {
   @apply inline-flex size-4 shrink-0 items-center justify-center;
-  transition: color var(--duration-base) var(--ease-out);
+  transition: color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   & > svg {
@@ -118,7 +118,7 @@
 
 .chat-tool-group__trigger {
   @apply -mx-1.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm text-muted;
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &:hover,

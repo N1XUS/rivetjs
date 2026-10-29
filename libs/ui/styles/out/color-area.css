@@ -36,7 +36,7 @@
     height: calc(var(--spacing, .25rem) * 4);
     border-radius: calc(var(--radius) * 1.5);
     background-color: var(--color-area-thumb-color);
-    transition: width var(--duration-fast) var(--ease-out), height var(--duration-fast) var(--ease-out);
+    transition: width var(--motion-collapse-duration) var(--motion-collapse-ease), height var(--motion-collapse-duration) var(--motion-collapse-ease);
     border: 3px solid #fff;
     box-shadow: 0 0 0 1px #0000001a, inset 0 0 0 1px #0000001a;
   }

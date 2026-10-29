@@ -109,7 +109,7 @@
     --data-grid-pinned-state: var(--surface);
     background-color: var(--surface-secondary);
     background-image: linear-gradient(var(--data-grid-pinned-state), var(--data-grid-pinned-state));
-    transition: background-color var(--duration-fast) var(--ease-out), --data-grid-pinned-state var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), --data-grid-pinned-state var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .data-grid .table__row .data-grid__cell[data-pinned]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -236,8 +236,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
     margin-inline-start: var(--spacing, .25rem);
   }
 
@@ -273,7 +275,7 @@
     color: var(--muted);
     --tw-outline-style: none;
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     justify-content: center;
@@ -302,10 +304,10 @@
     transition-property: transform, translate, scale, rotate;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
   }
 
   .data-grid__expand svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .data-grid__expand svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .data-grid__expand svg:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -352,7 +354,7 @@
     color: var(--muted);
     --tw-outline-style: none;
     cursor: grab;
-    transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     justify-content: center;
     align-items: center;

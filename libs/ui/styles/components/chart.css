@@ -102,7 +102,7 @@
 }
 
 .chart__bar {
-  @apply min-w-0 max-w-8 flex-1 rounded-t-md transition-[filter] duration-(--duration-fast);
+  @apply min-w-0 max-w-8 flex-1 rounded-t-md transition-[filter] duration-(--motion-state-duration) ease-(--motion-state-ease);
   background-color: var(--chart-color);
 
   .chart__bar-stack & {
@@ -131,14 +131,14 @@
 .chart__guide {
   @apply pointer-events-none absolute inset-y-0 start-1/2 w-px opacity-0;
   background-color: var(--border, var(--separator));
-  transition: opacity var(--duration-fast) var(--ease-smooth);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease);
 }
 
 .chart__dot {
   @apply pointer-events-none absolute left-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0;
   background-color: var(--chart-color);
   box-shadow: 0 0 0 2px var(--background);
-  transition: opacity var(--duration-fast) var(--ease-smooth);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease);
 }
 
 .chart__tooltip {
@@ -146,8 +146,8 @@
   /* display: none at rest (a hidden tooltip near the edge must not widen the page); fades in on show. */
   max-width: min(16rem, 80cqw);
   transition:
-    opacity var(--duration-fast) var(--ease-smooth),
-    display var(--duration-fast) allow-discrete;
+    opacity var(--motion-state-duration) var(--motion-state-ease),
+    display var(--motion-state-duration) allow-discrete;
   box-shadow: var(--overlay-shadow);
   inset-inline-start: calc(var(--chart-anchor, 50%) + 10px);
 
@@ -250,7 +250,7 @@
 .chart__donut-segment {
   fill: none;
   stroke: var(--chart-color);
-  transition: stroke-width var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
+  transition: stroke-width var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
 
   &:hover {
     stroke-width: 15;
@@ -318,7 +318,7 @@
 .chart__sector-path {
   fill: var(--chart-color);
   pointer-events: visiblePainted;
-  transition: opacity var(--duration-fast) var(--ease-smooth);
+  transition: opacity var(--motion-state-duration) var(--motion-state-ease);
 
   .chart__sector:focus-visible & {
     stroke: var(--focus);

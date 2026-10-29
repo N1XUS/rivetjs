@@ -57,7 +57,7 @@
     user-select: none;
     min-height: var(--file-tree-row);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     position: relative;
   }
@@ -128,7 +128,7 @@
     width: var(--file-tree-indent);
     height: var(--file-tree-indent);
     cursor: grab;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     background-color: #0000;
     border-width: 0;
     outline-style: none;
@@ -223,7 +223,7 @@
   }
 
   .file-tree__indicator-icon {
-    transition: rotate var(--duration-fast) var(--ease-out);
+    transition: rotate var(--motion-move-duration) var(--motion-move-ease);
   }
 
   .file-tree__indicator-icon:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .file-tree__indicator-icon:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .file-tree__indicator-icon:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

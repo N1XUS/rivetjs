@@ -14,7 +14,7 @@
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
     border-radius: var(--r-inner, var(--radius-2xl));
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     display: flex;
     position: relative;
@@ -88,8 +88,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     inset-inline-end: calc(var(--spacing, .25rem) * 2);
     flex-shrink: 0;
     justify-content: center;
@@ -116,8 +118,10 @@
     transition-property: all;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-slow);
-    transition-duration: var(--duration-slow);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
   }
 
   .list-box-item__indicator [data-slot="list-box-item-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .list-box-item__indicator [data-slot="list-box-item-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .list-box-item__indicator [data-slot="list-box-item-indicator--checkmark"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

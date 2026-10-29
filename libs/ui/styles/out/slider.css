@@ -88,7 +88,7 @@
     color: var(--muted);
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
-    transition: color var(--duration-base) var(--ease-smooth);
+    transition: color var(--motion-state-duration) var(--motion-state-ease);
     grid-area: 1 / 1;
     justify-self: start;
     position: relative;
@@ -114,7 +114,7 @@
     border-radius: calc(var(--radius) * 1.5);
     background-color: var(--accent);
     -webkit-tap-highlight-color: transparent;
-    transition: background-color var(--duration-base) var(--ease-smooth), transform var(--duration-base) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), transform var(--motion-move-duration) var(--motion-move-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     justify-content: center;
     align-items: center;
     display: flex;
@@ -143,6 +143,10 @@
     transition-property: all;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     position: relative;
   }
 

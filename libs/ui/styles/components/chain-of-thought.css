@@ -15,7 +15,7 @@
 }
 
 .chain-of-thought__trigger {
-  @apply -mx-1.5 flex max-w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-muted transition-colors duration-(--duration-fast) motion-reduce:transition-none;
+  @apply -mx-1.5 flex max-w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-muted transition-colors duration-(--motion-state-duration) ease-(--motion-state-ease) motion-reduce:transition-none;
 
   &:hover,
   &[data-hovered="true"] {
@@ -108,7 +108,7 @@
 .chain-of-thought[data-streaming="true"] .chain-of-thought__step {
   interpolate-size: allow-keywords;
   overflow: clip;
-  animation: chain-of-thought-step-in var(--duration-slow) var(--ease-out, ease-out) both;
+  animation: chain-of-thought-step-in var(--motion-enter-duration) var(--motion-enter-ease) both;
 }
 
 @keyframes chain-of-thought-step-in {

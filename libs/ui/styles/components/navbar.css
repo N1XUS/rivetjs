@@ -129,8 +129,8 @@ html:has(.navbar[data-menu-open="true"][data-block-scroll="true"]) {
   @apply inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-3;
   @apply cursor-(--cursor-interactive) font-medium text-muted no-underline outline-none select-none;
   transition:
-    color var(--duration-fast) var(--ease-smooth),
-    background-color var(--duration-fast) var(--ease-smooth);
+    color var(--motion-state-duration) var(--motion-state-ease),
+    background-color var(--motion-state-duration) var(--motion-state-ease);
 
   &:hover,
   &[data-hovered="true"] {
@@ -171,7 +171,7 @@ html:has(.navbar[data-menu-open="true"][data-block-scroll="true"]) {
 .navbar__menu-toggle {
   @apply inline-flex size-9 shrink-0 items-center justify-center rounded-xl;
   @apply cursor-(--cursor-interactive) text-foreground outline-none;
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
 
   &:hover {
     @apply bg-default;
@@ -239,7 +239,7 @@ html:has(.navbar[data-menu-open="true"][data-block-scroll="true"]) {
 .navbar__menu-item {
   @apply flex h-11 w-full shrink-0 items-center gap-2 rounded-xl px-3;
   @apply cursor-(--cursor-interactive) text-base text-foreground no-underline outline-none select-none;
-  transition: background-color var(--duration-fast) var(--ease-smooth);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
 
   &:hover,
   &[data-hovered="true"] {

@@ -69,7 +69,7 @@
     align-items: center;
     gap: calc(var(--spacing, .25rem) * .5);
     color: var(--muted);
-    transition: opacity var(--duration-base) var(--ease-out, ease-out), translate var(--duration-base) var(--ease-out, ease-out), visibility var(--duration-base);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), translate var(--motion-move-duration) var(--motion-move-ease), visibility var(--motion-move-duration);
     display: flex;
   }
 
@@ -101,8 +101,10 @@
     transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
+    --tw-duration: var(--motion-state-duration);
+    transition-duration: var(--motion-state-duration);
+    --tw-ease: var(--motion-state-ease);
+    transition-timing-function: var(--motion-state-ease);
   }
 
   .chat-message[data-actions="hover"] .chat-message__actions:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .chat-message[data-actions="hover"] .chat-message__actions:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .chat-message[data-actions="hover"] .chat-message__actions:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

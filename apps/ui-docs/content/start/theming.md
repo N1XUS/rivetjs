@@ -402,6 +402,22 @@ Shape tokens of the current theme, read live from this page's CSS:
   --ease-out-fluid: cubic-bezier(0.32, 0.72, 0, 1);
   /* … --ease-in-*, --ease-out-*, --ease-in-out-* (quad to circ), --ease-linear */
 
+  /* Motion roles (components read these, never the primitives above; see Animation) */
+  --motion-state-duration: var(--duration-fast);
+  --motion-state-ease: var(--ease-smooth);
+  --motion-move-duration: var(--duration-base);
+  --motion-move-ease: var(--ease-smooth);
+  --motion-collapse-duration: var(--duration-base);
+  --motion-collapse-ease: var(--ease-out-quad);
+  --motion-indicator-duration: var(--duration-base);
+  --motion-indicator-ease: var(--ease-out-fluid);
+  --motion-enter-duration: var(--duration-slow);
+  --motion-exit-duration: var(--duration-base);
+  --motion-enter-ease: var(--ease-out-fluid);
+  --popup-duration: var(--duration-fast);
+  --popup-exit-duration: var(--duration-fast);
+  --popup-ease: var(--ease-smooth);
+
   /* Animations */
   --animate-spin-fast: spin 0.75s linear infinite;
   --animate-skeleton: skeleton 2s linear infinite;

@@ -28,7 +28,7 @@
      * Transitions
      * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
      */
-    transition: stroke-dashoffset var(--duration-slow) var(--ease-out);
+    transition: stroke-dashoffset var(--motion-indicator-duration) var(--motion-indicator-ease);
     @apply motion-reduce:transition-none;
   }
 

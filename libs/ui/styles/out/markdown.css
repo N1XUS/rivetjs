@@ -103,7 +103,7 @@
   .markdown__link {
     text-underline-offset: 2px;
     --tw-outline-style: none;
-    transition: text-decoration-color var(--duration-fast) var(--ease-out);
+    transition: text-decoration-color var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
   }
 
@@ -284,11 +284,11 @@
   }
 
   .markdown__word {
-    animation: markdown-word-in var(--duration-base) var(--ease-out, ease-out) both;
+    animation: markdown-word-in var(--motion-enter-duration) var(--motion-enter-ease) both;
   }
 
   .markdown__live {
-    animation: markdown-block-in var(--duration-slow) var(--ease-out, ease-out) both;
+    animation: markdown-block-in var(--motion-enter-duration) var(--motion-enter-ease) both;
   }
 
   @keyframes markdown-word-in {

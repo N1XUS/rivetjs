@@ -97,7 +97,7 @@
 
   .carousel__control {
     z-index: 10;
-    transition: transform var(--duration-base) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     grid-area: stage;
     align-self: center;
   }
@@ -258,7 +258,7 @@
 
   .carousel__dot {
     cursor: var(--cursor-interactive);
-    transition: width var(--duration-slow) var(--ease-out-quart), height var(--duration-slow) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-out);
+    transition: width var(--motion-indicator-duration) var(--motion-indicator-ease), height var(--motion-indicator-duration) var(--motion-indicator-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .carousel__dot:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .carousel__dot:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .carousel__dot:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -331,7 +331,7 @@
     aspect-ratio: 1;
     opacity: .55;
     cursor: var(--cursor-interactive);
-    transition: opacity var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     flex-shrink: 0;
     position: relative;

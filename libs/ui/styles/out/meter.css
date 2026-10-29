@@ -45,7 +45,7 @@
     border-radius: calc(var(--radius) * .5);
     background-color: var(--meter-fill);
     height: 100%;
-    transition: width var(--duration-slow) var(--ease-out);
+    transition: width var(--motion-indicator-duration) var(--motion-indicator-ease);
     inset-inline-start: calc(var(--spacing, .25rem) * 0);
     position: absolute;
     top: 0;

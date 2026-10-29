@@ -22,7 +22,7 @@
    * Transitions
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
-  transition: box-shadow var(--duration-fast) var(--ease-out);
+  transition: box-shadow var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   &:focus-visible:not([data-focused]),
@@ -83,7 +83,7 @@
 
   &[data-exiting="true"],
   &[data-entering="true"] {
-    @apply transition-[opacity,transform] will-change-[opacity,transform];
+    @apply transition-[opacity,transform] duration-(--popup-duration) ease-(--popup-ease) will-change-[opacity,transform];
   }
 }
 

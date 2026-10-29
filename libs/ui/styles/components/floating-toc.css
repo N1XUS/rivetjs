@@ -48,9 +48,9 @@
     background-color: var(--muted);
     opacity: 0.5;
     transition:
-      width var(--duration-fast) var(--ease-out),
-      background-color var(--duration-fast) var(--ease-out),
-      opacity var(--duration-fast) var(--ease-out);
+      width var(--motion-indicator-duration) var(--motion-indicator-ease),
+      background-color var(--motion-state-duration) var(--motion-state-ease),
+      opacity var(--motion-state-duration) var(--motion-state-ease);
     @apply motion-reduce:transition-none;
   }
 
@@ -109,7 +109,7 @@
 
   padding-inline-start: calc(0.625rem + (var(--floating-toc-level, 1) - 1) * var(--floating-toc-item-indent));
   cursor: var(--cursor-interactive);
-  transition: background-color var(--duration-fast) var(--ease-out);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   @media (hover: hover) {

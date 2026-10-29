@@ -28,7 +28,7 @@
   }
 
   .input-group {
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .input-group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .input-group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .input-group:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -209,7 +209,7 @@
   }
 
   .input-group__prefix {
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .input-group__prefix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .input-group__prefix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .input-group__prefix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -249,7 +249,7 @@
   }
 
   .input-group__suffix {
-    transition: background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .input-group__suffix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .input-group__suffix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .input-group__suffix:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

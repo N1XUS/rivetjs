@@ -42,7 +42,7 @@
     border-radius: inherit;
     background-color: var(--pressable-feedback-highlight-color, currentColor);
     opacity: 0;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     position: absolute;
     inset: 0;
   }

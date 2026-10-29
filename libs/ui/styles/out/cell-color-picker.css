@@ -25,7 +25,7 @@
     height: var(--cell-color-picker-height);
     background-color: var(--cell-color-picker-bg);
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     border-width: 0;
     outline-style: none;
     display: flex;

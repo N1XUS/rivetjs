@@ -40,7 +40,7 @@
 }
 
 .chat-conversation__scroll-button {
-  @apply pointer-events-auto -translate-y-[calc(100%+1rem)] rounded-full shadow-surface transition-[opacity,visibility,translate] duration-(--duration-base) motion-reduce:transition-none;
+  @apply pointer-events-auto -translate-y-[calc(100%+1rem)] rounded-full shadow-surface transition-[opacity,visibility,translate] duration-(--motion-move-duration) ease-(--motion-move-ease) motion-reduce:transition-none;
 }
 
 .chat-conversation[data-at-bottom="true"] .chat-conversation__scroll-button {

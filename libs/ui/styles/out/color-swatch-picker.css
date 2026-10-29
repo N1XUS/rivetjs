@@ -18,7 +18,7 @@
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
     cursor: var(--cursor-interactive);
-    transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+    transition: border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     border-width: 2px;
     border-color: #0000;
@@ -69,7 +69,7 @@
     border-radius: inherit;
     width: 100%;
     height: 100%;
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
     transform: translateZ(0) var(--tw-rotate-x, ) var(--tw-rotate-y, ) var(--tw-rotate-z, ) var(--tw-skew-x, ) var(--tw-skew-y, );
     display: block;
   }
@@ -104,7 +104,7 @@
     width: 33.3333%;
     height: 33.3333%;
     color: var(--color-white, #fff);
-    transition: transform var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease);
     transform: scale(0) translateZ(0);
   }
 

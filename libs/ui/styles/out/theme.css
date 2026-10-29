@@ -159,6 +159,8 @@
     --motion-move-ease: var(--ease-smooth);
     --motion-collapse-duration: var(--duration-base);
     --motion-collapse-ease: var(--ease-out-quad);
+    --motion-indicator-duration: var(--duration-base);
+    --motion-indicator-ease: var(--ease-out-fluid);
     --motion-enter-duration: var(--duration-slow);
     --motion-exit-duration: var(--duration-base);
     --motion-enter-ease: var(--ease-out-fluid);
@@ -174,7 +176,6 @@
     --field-gap-help: .25rem;
     --field-gap-group: 1rem;
     --ease-out-quad: cubic-bezier(.25, .46, .45, .94);
-    --ease-out-quart: cubic-bezier(.165, .84, .44, 1);
     --ease-out-fluid: cubic-bezier(.32, .72, 0, 1);
     --ease-linear: linear;
   }

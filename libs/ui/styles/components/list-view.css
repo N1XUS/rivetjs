@@ -53,7 +53,7 @@
 
   background-color: var(--list-view-item-bg);
   cursor: var(--cursor-interactive);
-  transition: background-color var(--duration-fast) var(--ease-out);
+  transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   @media (hover: hover) {
