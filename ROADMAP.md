@@ -17,7 +17,6 @@ Living plan, updated 2026-10-29 (previous: 2026-10-12). Status: **done** · **in
 | --- | --- | --- |
 | Peak SSR memory vs Qwik (the last SSR metric we lose) | in progress — SSR-MEM 2026-10-29: 1000 rows 837 → 729 KB/page, RSS 318 → 302 MiB, no leak (peak = V8 garbage high-water); next: ~40 fixed per-request router objects (~46 KB/request) | [2026-10-28 SSR comparison](docs/benchmarks/2026-10-28-ssr-comparison.md) |
 | First input on router pages | done 2026-10-29 (ROUTER-PRIME): the idle prime runs `Root.ready`; first click slow 4G 181 → 14–18 ms, fast 31 → 15 ms, 0 requests after the click (cost: +1 eager request on nested-layout pages) | [router-prime](docs/benchmarks/2026-10-29-router-prime.md) |
-| Release `0.1.0-alpha.2` on `latest` (`npm create rivet@latest` picks it up) | in progress 2026-10-29 — through `release.yml` (repository public: Actions run, npm provenance on) | `scripts/CLAUDE.md` "Release" |
 | GitHub CI | repository public since 2026-10-29: Actions run again; first green run pending | `.github/workflows/ci.yml` |
 | Lane harness (launch / watch / retry / intake for agent lanes) | designed — spec uncommitted, two questions open | `docs/design/specs/2026-10-28-lane-harness-design.md` |
 | Framework bridges: Vue / Svelte / Solid adapters | planned — React 19 (T6) + Preact (T8) adapters, server protocol, client driver, Vite integration, islands-only lean client done; Vue / Svelte / Solid bytes measured only | [spec](docs/design/specs/2026-10-11-framework-bridges-design.md) · `libs/bridge/CLAUDE.md` |
@@ -33,7 +32,6 @@ Living plan, updated 2026-10-29 (previous: 2026-10-12). Status: **done** · **in
 | Editorial rerun ("dynamic at static cost") after STATIC-ZERO, route cache and dictionary transport | planned | [editorial](docs/benchmarks/2026-10-11-editorial.md) |
 | PERF-GAPS list (2026-10-11 scout): CSS-INLINE, PRERENDER-FAST, EARLY-HINTS, MULTICORE, INCR-PRERENDER, CONTENT-MD, LH-CI + DEV-BENCH | planned — not re-audited since; ROUTE-CACHE, CSS-SPLIT, LOADER-DIET work landed in other lanes | PERF-GAPS report (lane scratch) |
 | Pro components, remaining P1: tags input, confirm `await`, `rivet add` block registry | planned | [research](docs/design/research/2026-10-12-pro-components.md) |
-| HeroUI Pro gaps: FileTree sections (cdk `TreeSection` SSR), PromptInput Queue drag reorder | in progress — lane PRO-LAST (2026-10-29) | `libs/cdk/tree/CLAUDE.md` · `libs/ui/CLAUDE.md` |
 | cdk / ui API wave 2: naming review outcome (T10), controlled / uncontrolled symmetry | planned (R4: targeted, no mass rename) | [ui-identity spec §4](docs/design/specs/2026-10-11-ui-identity-design.md) |
 | uWebSockets.js adapter: default or not | idea — experimental; pilot 1.08–1.31× < 1.3× bar (2026-10-11) | `libs/router/adapters/uws.ts` |
 
@@ -56,6 +54,8 @@ Living plan, updated 2026-10-29 (previous: 2026-10-12). Status: **done** · **in
 
 | Item | Landed | Links / notes |
 | --- | --- | --- |
+| Release `0.1.0-alpha.2` on `latest`: all 20 packages with npm provenance (`npm create rivet@latest` picks it up) | 2026-10-29 | `CHANGELOG.md` · `scripts/CLAUDE.md` "Release" |
+| FileTree sections (`FileTree.Section` / `.Header`) and PromptInput queue drag reorder (`@rivetjs/ui/prompt-input-queue-reorder`) | 2026-10-29 | `libs/ui/CLAUDE.md` |
 | Derived client: the only resume model (M6 cut, serialized runtime / lowering / options deleted); parity: bridges, forms progressive enhancement, streamed `Suspense`, non-JSON `resource` values, `intent` cold presses | 2026-10-22 … 10-28 | [research](docs/design/research/2026-10-18-beyond-resume-hydration.md) · [`resumability.md`](docs/guides/resumability.md) |
 | Static pages ship 0 JS; native automata (ZERO STATESPACE) and native Button for proven `onPress` (PRESS-LITE) | 2026-10-23 … 10-28 | [`resumability.md`](docs/guides/resumability.md) "Native automata" |
 | JS before first input 25.7 → 3.5–4.8 KB (JS-DIET-2); first input in its own task (LITE-BOOT); router idle prime (ROUTER-PRIME) | 2026-10-28 … 10-29 | [real pages](docs/benchmarks/2026-10-28-real-pages-jsdiet.md) · [lite-boot](docs/benchmarks/2026-10-29-lite-boot.md) |
