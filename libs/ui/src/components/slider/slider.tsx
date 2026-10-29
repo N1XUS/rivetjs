@@ -1,4 +1,6 @@
 // Ported from HeroUI v3.2.6 packages/react/src/components/slider/slider.tsx (Apache-2.0, © 2025 NextUI Inc.; modified).
+// Slider.Steps / Slider.Marks / Slider.Mark (+ `getIndicatorProps` / `getDecimalPlaces`): ported from the HeroUI `v3` branch
+// @ e5feb0a3 (post-3.2.6, same file, Apache-2.0, © 2025 NextUI Inc.; modified), replacing the former `Marks` stub.
 // Rivet:
 // - `"use client"` dropped; `className` → `class`; `react-aria-components/Slider` → `@rivetjs/cdk/slider` (accessor render
 //   props; `state` = the cdk `SliderState`, read through `sliderValues(state)` / `getThumbValueLabel(state, i)` / …);
@@ -14,6 +16,9 @@
 //   with `children` themselves (passed through).
 // - Shorthand (identity spec §4.2): no children = Label (`label`) + Output + Track(Fill, one Thumb per value: two for an array
 //   `value` / `defaultValue`, read once at mount).
+// - Steps / Marks / Mark read the cdk state (range, step, orientation, read once at mount; `data-filled` follows the thumb
+//   positions, free drag included, the way the Fill does) and the cdk locale direction (`useLocale()` from `@rivetjs/cdk/i18n`).
+//   Dots and marks render on the server with their positions (static styles), so resumed markup = client markup.
 // - Live `class` → render-prop class functions (the composed class is a local: it reaches the cdk part as a plain value). `value` takes a two-way signal.
 import {
   Slider as SliderPrimitive,
@@ -22,10 +27,17 @@ import {
   SliderStateContext,
   SliderThumb as SliderThumbPrimitive,
   SliderTrack as SliderTrackPrimitive,
+  getFormattedValue,
   getThumbPositionPercent,
   getThumbValueLabel,
+  getValuePercent,
+  isSliderDisabled,
+  sliderMax,
+  sliderMin,
+  sliderStep,
   sliderValues,
 } from "@rivetjs/cdk/slider";
+import { useLocale } from "@rivetjs/cdk/i18n";
 import type {
   SliderFillProps as SliderFillPrimitiveProps,
   SliderFillRenderProps,
@@ -185,7 +197,117 @@ const SliderThumb = (props: SliderThumbProps): JSX.Element => {
 };
 
 /* -------------------------------------------------------------------------------------------------
- * Slider Marks (upstream TODO: a styled `div` slot)
+ * Slider Indicators (Steps / Marks / Mark: upstream v3 branch after 3.2.6, see the header)
+ * -----------------------------------------------------------------------------------------------*/
+type Direction = "ltr" | "rtl";
+
+/** Upstream `getIndicatorProps`: `data-filled` (between the fill's ends, endpoints included), `data-value`, the position. */
+function indicatorProps(state: SliderState, value: number, direction: Direction, min: number, max: number) {
+  const percent = min === max ? 0 : getValuePercent(state, value);
+  const side = state.orientation === "vertical" ? "bottom" : direction === "rtl" ? "right" : "left";
+  return {
+    "data-disabled": disabledOf(state),
+    // Rivet: against the thumb positions (free during a pointer drag, as the fill), not only the stepped values.
+    "data-filled": () => {
+      const [start, end] = fillRange(state);
+      return (percent >= start - EPSILON && percent <= end + EPSILON) || undefined;
+    },
+    "data-value": value,
+    position: { [side]: `${percent * 100}%` } as Record<string, string>,
+  };
+}
+
+const EPSILON = 1e-9;
+
+/** `data-disabled` of an indicator: the slider's disabled state (an accessor when `isDisabled` is live). */
+const disabledOf = (state: SliderState): true | undefined | (() => true | undefined) =>
+  state.disabled ? () => isSliderDisabled(state) || undefined : state.isDisabled || undefined;
+
+/** An attribute value or its accessor, read (inline reads in JSX attributes are reactive). */
+const read = <V,>(v: V | (() => V)): V => (typeof v === "function" ? (v as () => V)() : v);
+
+function getDecimalPlaces(value: number): number {
+  const [coefficient, exponent = "0"] = value.toString().split("e");
+  return Math.max(0, (coefficient!.split(".")[1]?.length ?? 0) - Number(exponent));
+}
+
+/** Merges a caller `style` object with the indicator position (upstream `{ ...style, ...position }`). */
+function withPosition(style: unknown, position: Record<string, string>): Record<string, string> {
+  return { ...((style as Record<string, string> | undefined) ?? {}), ...position };
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * Slider Steps
+ * -----------------------------------------------------------------------------------------------*/
+interface SliderStepsProps<E extends keyof JSX.IntrinsicElements = "div"> extends DOMRenderProps<E, undefined> {
+  class?: string;
+  /** The dots are generated (one per step). */
+  children?: never;
+}
+
+type SliderStepsDivProps = SliderStepsProps & Omit<JSX.IntrinsicElements["div"], keyof SliderStepsProps | "children">;
+
+/**
+ * Decorative dots at each step, composed inside Slider.Track.
+ * Omitted for invalid ranges or more than 1,000 dots to avoid unbounded DOM output.
+ * Exposes slider-steps and slider-step data-slot hooks; dots expose data-value and data-filled.
+ * Rivet: the range and step are read once at mount (a live `minValue` / `maxValue` / `step` keeps the first dots).
+ */
+const SliderSteps = <E extends keyof JSX.IntrinsicElements = "div">(props: SliderStepsProps<E> & JSX.IntrinsicElements[E]): JSX.Element => {
+  const [local, rest] = splitLive(props as unknown as SliderStepsDivProps, ["class"]);
+  const state = useContext(SliderStateContext);
+  if (!state) return null as unknown as JSX.Element;
+  const { direction } = useLocale();
+  const [min, max, step] = untrack(() => [sliderMin(state), sliderMax(state), sliderStep(state)]);
+  const stepCount = (max - min) / step;
+  // Account for decimal division such as (0.3 - 0) / 0.1 without adding an off-step endpoint.
+  const count = Math.floor(stepCount + Number.EPSILON * Math.max(1, stepCount) * 4) + 1;
+  if (
+    !Number.isFinite(min) ||
+    !Number.isFinite(max) ||
+    max < min ||
+    !Number.isFinite(step) ||
+    step <= 0 ||
+    !Number.isFinite(count) ||
+    count <= 0 ||
+    count > 1000
+  )
+    return null as unknown as JSX.Element;
+  const precision = Math.max(getDecimalPlaces(min), getDecimalPlaces(step));
+  const slots = slotsFor();
+
+  return (
+    <dom.div
+      class={composeSlotClassName(slots.steps, local.class)}
+      data-direction={direction}
+      data-disabled={disabledOf(state)}
+      data-orientation={state.orientation}
+      data-slot="slider-steps"
+      {...rest}
+      aria-hidden="true"
+    >
+      {Array.from({ length: count }, (_, index) => {
+        // Avoid cumulative floating-point drift in decimal steps and data-value hooks.
+        const raw = min + index * step;
+        const value = Math.min(max, precision <= 100 ? Number(raw.toFixed(precision)) : raw);
+        const ind = indicatorProps(state, value, direction, min, max);
+        return (
+          <span
+            class={slots.step()}
+            data-slot="slider-step"
+            data-disabled={read(ind["data-disabled"])}
+            data-filled={ind["data-filled"]()}
+            data-value={value}
+            style={ind.position}
+          />
+        );
+      })}
+    </dom.div>
+  );
+};
+
+/* -------------------------------------------------------------------------------------------------
+ * Slider Marks
  * -----------------------------------------------------------------------------------------------*/
 interface SliderMarksProps<E extends keyof JSX.IntrinsicElements = "div"> extends DOMRenderProps<E, undefined> {
   class?: string;
@@ -193,17 +315,68 @@ interface SliderMarksProps<E extends keyof JSX.IntrinsicElements = "div"> extend
 
 type SliderMarksDivProps = SliderMarksProps & Omit<JSX.IntrinsicElements["div"], keyof SliderMarksProps>;
 
+/** Composed after Slider.Track. Contains Slider.Mark labels and exposes data-slot="slider-marks". */
 const SliderMarks = <E extends keyof JSX.IntrinsicElements = "div">(props: SliderMarksProps<E> & JSX.IntrinsicElements[E]): JSX.Element => {
   const [local, rest] = splitLive(props as SliderMarksDivProps, ["class"]);
   const state = useContext(SliderStateContext);
+  const { direction } = useLocale();
 
-  return <dom.div class={composeSlotClassName(slotsOf(state)?.marks, local.class)} data-slot="slider-marks" {...rest} />;
+  return (
+    <dom.div
+      class={composeSlotClassName(slotsOf(state)?.marks, local.class)}
+      data-direction={direction}
+      data-disabled={state ? disabledOf(state) : undefined}
+      data-orientation={state?.orientation}
+      data-slot="slider-marks"
+      dir={direction}
+      {...rest}
+    />
+  );
+};
+
+/* -------------------------------------------------------------------------------------------------
+ * Slider Mark
+ * -----------------------------------------------------------------------------------------------*/
+interface SliderMarkProps<E extends keyof JSX.IntrinsicElements = "div"> extends DOMRenderProps<E, undefined> {
+  class?: string;
+  /** Value at which to position the label. Values outside the slider bounds are not rendered. */
+  value: number;
+}
+
+type SliderMarkDivProps = SliderMarkProps & Omit<JSX.IntrinsicElements["div"], keyof SliderMarkProps>;
+
+/**
+ * Exposes data-slot="slider-mark", data-value, data-filled, and data-disabled.
+ * Rivet: the bounds are read once at mount (upstream `getThumbMinValue(0)` / `getThumbMaxValue(last)` = the slider's
+ * `minValue` / `maxValue`); without children the label is `getFormattedValue(state, value)` (locale + `formatOptions`).
+ */
+const SliderMark = <E extends keyof JSX.IntrinsicElements = "div">(props: SliderMarkProps<E> & JSX.IntrinsicElements[E]): JSX.Element => {
+  const [local, rest] = splitLive(props as unknown as SliderMarkDivProps, ["children", "class", "style", "value"]);
+  const state = useContext(SliderStateContext);
+  const value = local.value;
+  if (!state) return null as unknown as JSX.Element;
+  const [min, max] = untrack(() => [sliderMin(state), sliderMax(state)]);
+  if (!Number.isFinite(value) || value < min || value > max) return null as unknown as JSX.Element;
+  const { direction } = useLocale();
+  const { position, ...attrs } = indicatorProps(state, value, direction, min, max);
+
+  return (
+    <dom.div
+      class={composeSlotClassName(slotsFor().mark, local.class)}
+      data-slot="slider-mark"
+      {...attrs}
+      {...rest}
+      style={withPosition(local.style, position)}
+    >
+      {local.children ?? getFormattedValue(state, value)}
+    </dom.div>
+  );
 };
 
 /* -------------------------------------------------------------------------------------------------
  * Exports
  * -----------------------------------------------------------------------------------------------*/
-export { SliderRoot, SliderOutput, SliderTrack, SliderFill, SliderThumb, SliderMarks };
+export { SliderRoot, SliderOutput, SliderTrack, SliderFill, SliderThumb, SliderSteps, SliderMarks, SliderMark };
 
-export type { SliderRootProps, SliderOutputProps, SliderTrackProps, SliderFillProps, SliderThumbProps, SliderMarksProps };
+export type { SliderRootProps, SliderOutputProps, SliderTrackProps, SliderFillProps, SliderThumbProps, SliderStepsProps, SliderMarksProps, SliderMarkProps };
 export type { SliderRenderProps, SliderTrackRenderProps, SliderFillRenderProps, SliderThumbRenderProps, SliderState };

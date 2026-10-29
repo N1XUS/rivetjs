@@ -2,3 +2,4 @@ heroui v3.2.6 @ 73000ea (https://github.com/heroui-inc/heroui, 2026-10-02)
 packages/react/src/components -> libs/ui/src/components
 packages/styles               -> libs/ui/styles
 Current release only: no upstream tracking (user decision 2026-10-07).
+Exception: Slider Steps / Marks / Mark (+ slider.css steps / marks rules) ported from the `v3` branch @ e5feb0a3a59fdb67f1ea220d28d1477be3f13065 (2026-10-29, UI-SLIDER).

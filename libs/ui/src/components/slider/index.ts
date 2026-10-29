@@ -1,6 +1,16 @@
-// Ported from HeroUI v3.2.6 packages/react/src/components/slider/index.ts (Apache-2.0, © 2025 NextUI Inc.; modified).
-import { SliderFill, SliderMarks, SliderOutput, SliderRoot, SliderThumb, SliderTrack } from "./slider.tsx";
-import type { SliderFillProps, SliderMarksProps, SliderOutputProps, SliderRootProps, SliderThumbProps, SliderTrackProps } from "./slider.tsx";
+// Ported from HeroUI v3.2.6 packages/react/src/components/slider/index.ts (Apache-2.0, © 2025 NextUI Inc.; modified);
+// Steps / Mark entries from the HeroUI `v3` branch @ e5feb0a3.
+import { SliderFill, SliderMark, SliderMarks, SliderOutput, SliderRoot, SliderSteps, SliderThumb, SliderTrack } from "./slider.tsx";
+import type {
+  SliderFillProps,
+  SliderMarkProps,
+  SliderMarksProps,
+  SliderOutputProps,
+  SliderRootProps,
+  SliderStepsProps,
+  SliderThumbProps,
+  SliderTrackProps,
+} from "./slider.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * Compound Component
@@ -11,7 +21,9 @@ export const Slider = Object.assign(SliderRoot, {
   Track: SliderTrack,
   Fill: SliderFill,
   Thumb: SliderThumb,
+  Steps: SliderSteps,
   Marks: SliderMarks,
+  Mark: SliderMark,
 });
 
 export type Slider = {
@@ -21,13 +33,15 @@ export type Slider = {
   TrackProps: SliderTrackProps;
   FillProps: SliderFillProps;
   ThumbProps: SliderThumbProps;
+  StepsProps: SliderStepsProps;
   MarksProps: SliderMarksProps;
+  MarkProps: SliderMarkProps;
 };
 
 /* -------------------------------------------------------------------------------------------------
  * Named Component
  * -----------------------------------------------------------------------------------------------*/
-export { SliderRoot, SliderOutput, SliderTrack, SliderFill, SliderThumb, SliderMarks };
+export { SliderRoot, SliderOutput, SliderTrack, SliderFill, SliderThumb, SliderSteps, SliderMarks, SliderMark };
 
 export type {
   SliderRootProps,
@@ -36,7 +50,9 @@ export type {
   SliderTrackProps,
   SliderFillProps,
   SliderThumbProps,
+  SliderStepsProps,
   SliderMarksProps,
+  SliderMarkProps,
   SliderRenderProps,
   SliderTrackRenderProps,
   SliderFillRenderProps,

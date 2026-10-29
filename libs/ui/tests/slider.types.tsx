@@ -12,9 +12,15 @@ export const ok = [
     <Slider.Output class="o" />
     <Slider.Track class="t">
       <Slider.Fill class="f" />
+      <Slider.Steps class="s" />
       <Slider.Thumb class={(s: SliderThumbRenderProps) => (s.isDragging() ? "d" : "")} index={0} />
-      <Slider.Marks class="m" />
     </Slider.Track>
+    <Slider.Marks class="m">
+      <Slider.Mark value={0} />
+      <Slider.Mark value={50} class="mk" style={{ color: "red" }}>
+        Half
+      </Slider.Mark>
+    </Slider.Marks>
   </Slider>,
   <Slider value={volume} orientation="vertical" isDisabled formatOptions={{ style: "percent" }}>
     <Slider.Output>
@@ -36,3 +42,7 @@ export const props: SliderTypes["Props"] = { defaultValue: 1 };
 export const bad1 = <Slider orientation="diagonal" />;
 // @ts-expect-error Marks is a div slot, no render props
 export const bad2 = <Slider.Marks class={() => "x"} />;
+// @ts-expect-error Mark needs a value
+export const bad3 = <Slider.Mark />;
+// @ts-expect-error Steps generates its own children
+export const bad4 = <Slider.Steps>x</Slider.Steps>;

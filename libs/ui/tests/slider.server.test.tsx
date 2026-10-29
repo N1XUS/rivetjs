@@ -41,15 +41,20 @@ test("SSR: range output joined with an en dash; fill between the thumbs; disable
         <Slider.Fill />
         <Slider.Thumb index={0} />
         <Slider.Thumb index={1} />
-        <Slider.Marks />
       </Slider.Track>
+      <Slider.Marks />
     </Slider>
   ));
   assert.match(html, /<output[^>]*>100 – 500<\/output>/);
   assert.match(html, /inset-inline-start:\s*10%/);
   assert.match(html, /width:\s*40%/);
   assert.match(html, /data-slot="slider-track"[^>]*data-disabled="true"|data-disabled="true"[^>]*data-slot="slider-track"/);
-  assert.match(html, new RegExp(`class="${esc(sliderVariants({}).marks())}" data-slot="slider-marks"`));
+  assert.match(
+    html,
+    new RegExp(
+      `class="${esc(sliderVariants({}).marks())}" data-direction="ltr" data-disabled="true" data-orientation="horizontal" data-slot="slider-marks" dir="ltr"`,
+    ),
+  );
   assert.doesNotMatch(html, /data-snapping/);
 });
 
@@ -94,4 +99,29 @@ test("shorthand SSR (T21): Slider label without children = Label, Output, Track(
       </Slider>
     ),
   );
+});
+
+test("SSR: steps and marks render with their positions and filled states (resumed markup = client markup)", async () => {
+  const html = await renderToString(() => (
+    <Slider defaultValue={0.5} maxValue={1} step={0.5} aria-label="v">
+      <Slider.Track>
+        <Slider.Fill />
+        <Slider.Steps />
+        <Slider.Thumb />
+      </Slider.Track>
+      <Slider.Marks>
+        <Slider.Mark value={0} />
+        <Slider.Mark value={1}>Max</Slider.Mark>
+      </Slider.Marks>
+    </Slider>
+  ));
+  const slots = sliderVariants({});
+  assert.match(html, new RegExp(`class="${esc(slots.steps())}"[^>]*data-slot="slider-steps"[^>]*aria-hidden="true"`));
+  assert.equal(html.match(/data-slot="slider-step"/g)?.length, 3);
+  assert.match(html, /data-slot="slider-step" data-filled="true" data-value="0" style="left:\s*0%"/);
+  assert.match(html, /data-slot="slider-step" data-filled="true" data-value="0.5" style="left:\s*50%"/);
+  assert.match(html, /data-slot="slider-step" data-value="1" style="left:\s*100%"/);
+  assert.match(html, /data-slot="slider-marks" dir="ltr"/);
+  assert.match(html, /data-filled="true" data-value="0" style="left:\s*0%"[^>]*>0<\/div>/);
+  assert.match(html, /data-value="1" style="left:\s*100%"[^>]*>Max<\/div>/);
 });

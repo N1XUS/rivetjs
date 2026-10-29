@@ -115,3 +115,69 @@ test("slider shorthand (T21): label-only range slider renders Output + two thumb
     await waitText(page, "[data-testid=sh-range] [data-slot=slider-output]", "30 – 50");
     assert.deepEqual(seen.errors, []);
   }));
+
+const centerOf = (b: { x: number; y: number; width: number; height: number }) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
+
+test("slider steps + marks (UI-SLIDER): dots centred on the track at their values, marks below in the marks row, vertical beside", () =>
+  onPage(async (page) => {
+    const seen = watch(page);
+    await page.goto(s.origin + "/slider");
+    const track = (await page.locator("[data-testid=marks] [data-slot=slider-track]").boundingBox())!;
+    const inner = { x: track.x + 12, width: track.width - 24 };
+    assert.equal(await page.locator("[data-testid=marks] [data-slot=slider-step]").count(), 11);
+    for (const v of [0, 30, 100]) {
+      const dot = centerOf((await page.locator(`[data-testid=marks] [data-slot=slider-step][data-value="${v}"]`).boundingBox())!);
+      assert.ok(Math.abs(dot.x - (inner.x + (inner.width * v) / 100)) < 1, `dot ${v} x`);
+      assert.ok(Math.abs(dot.y - (track.y + track.height / 2)) < 1, `dot ${v} y`);
+    }
+    for (const v of [0, 50, 100]) {
+      const box = (await page.locator(`[data-testid=marks] [data-slot=slider-mark][data-value="${v}"]`).boundingBox())!;
+      assert.ok(Math.abs(centerOf(box).x - (inner.x + (inner.width * v) / 100)) < 1, `mark ${v} centred on its value`);
+      assert.ok(box.y >= track.y + track.height - 0.5, `mark ${v} below the track`);
+    }
+    assert.equal(await page.textContent("[data-testid=marks] [data-slot=slider-mark][data-value='50']"), "50");
+    // The thumb paints over the dots (z-index 2 over 1).
+    const thumbZ = await page.locator("[data-testid=marks] [data-slot=slider-thumb]").evaluate((el) => getComputedStyle(el).zIndex);
+    assert.equal(thumbZ, "2");
+    // Vertical: dots on the track's centre line from the bottom, marks in the column beside it.
+    const vtrack = (await page.locator("[data-testid=vmarks] [data-slot=slider-track]").boundingBox())!;
+    const vinner = { y: vtrack.y + 12, height: vtrack.height - 24 };
+    const vdot = centerOf((await page.locator("[data-testid=vmarks] [data-slot=slider-step][data-value='0.3']").boundingBox())!);
+    assert.ok(Math.abs(vdot.y - (vinner.y + vinner.height * 0.7)) < 1, "vertical dot y");
+    assert.ok(Math.abs(vdot.x - (vtrack.x + vtrack.width / 2)) < 1, "vertical dot x");
+    const vmark = (await page.locator("[data-testid=vmarks] [data-slot=slider-mark][data-value='0.5']").boundingBox())!;
+    assert.ok(vmark.x >= vtrack.x + vtrack.width - 0.5, "vertical mark right of the track");
+    assert.ok(Math.abs(centerOf(vmark).y - (vinner.y + vinner.height * 0.5)) < 1, "vertical mark centred on its value");
+    assert.deepEqual(seen.errors, []);
+  }));
+
+test("slider steps + marks (UI-SLIDER): filled states follow the free drag on a resumed page, settle on the step", () =>
+  onPage(async (page) => {
+    const seen = watch(page);
+    await page.goto(s.origin + "/slider");
+    const filled = (v: number) => `[data-testid=marks] [data-slot=slider-step][data-value="${v}"][data-filled=true]`;
+    assert.equal(await page.locator(filled(40)).count(), 1);
+    assert.equal(await page.locator(filled(50)).count(), 0);
+    const thumbSel = "[data-testid=marks] [data-slot=slider-thumb]";
+    await page.locator("[data-testid=marks]").scrollIntoViewIfNeeded();
+    const thumb = (await page.locator(thumbSel).boundingBox())!;
+    const track = (await page.locator("[data-testid=marks] [data-slot=slider-track]").boundingBox())!;
+    const inner = { x: track.x + 12, width: track.width - 24 };
+    const y = thumb.y + thumb.height / 2;
+    await page.mouse.move(thumb.x + thumb.width / 2, y);
+    await page.mouse.down();
+    await page.waitForFunction((sel) => document.querySelector(sel)?.hasAttribute("data-dragging"), thumbSel);
+    await page.mouse.move(inner.x + inner.width * 0.7, y, { steps: 6 });
+    // Free position just short of 70 % (the drag start eats a few px): stepped value 70, dot 70 not filled until the snap.
+    await waitText(page, "#marks-state", "70");
+    const free = await page.locator(thumbSel).evaluate((el) => parseFloat((el as HTMLElement).style.left));
+    assert.ok(free > 65 && free < 70, `free position ${free}%`);
+    await page.waitForSelector(filled(60));
+    assert.equal(await page.locator(filled(70)).count(), 0);
+    await page.mouse.up();
+    await page.waitForSelector(filled(70));
+    assert.equal(await page.locator(filled(80)).count(), 0);
+    assert.equal(await page.locator("[data-testid=marks] [data-slot=slider-mark][data-value='50'][data-filled=true]").count(), 1);
+    assert.equal(await page.locator("[data-testid=marks] [data-slot=slider-mark][data-value='100'][data-filled=true]").count(), 0);
+    assert.deepEqual(seen.errors, []);
+  }));

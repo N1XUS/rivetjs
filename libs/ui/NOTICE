@@ -6,7 +6,8 @@ Copyright 2025 NextUI Inc., licensed under the Apache License 2.0; files under
 `src/` and `styles/` are modified ports (see each file header). `src/theme/derive.ts` and
 `src/theme/presets.ts` port the HeroUI docs theme builder (apps/docs/src/app/[lang]/themes,
 same repository and license).
-Upstream: heroui v3.2.6 @ 73000ea (see UPSTREAM).
+Upstream: heroui v3.2.6 @ 73000ea (see UPSTREAM); Slider Steps / Marks / Mark and their
+styles: heroui `v3` branch @ e5feb0a3 (same license).
 
 --------------------------------------------------------------------------------
 HeroUI license (Apache License 2.0), copied verbatim from upstream LICENSE:

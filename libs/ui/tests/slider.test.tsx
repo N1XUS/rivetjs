@@ -8,7 +8,7 @@ installOverlayDom();
 
 const { render, flush } = await import("@rivetjs/runtime/testing");
 const { signal } = await import("@rivetjs/reactivity");
-const { Slider, SliderRoot, SliderOutput, SliderTrack, SliderFill, SliderThumb, SliderMarks, sliderVariants } =
+const { Slider, SliderRoot, SliderOutput, SliderTrack, SliderFill, SliderThumb, SliderSteps, SliderMarks, SliderMark, sliderVariants } =
   await import("../src/components/slider/index.ts");
 const { Label } = await import("../src/components/label/index.ts");
 
@@ -69,7 +69,9 @@ test("index: compound parts, named exports, variants", () => {
   assert.equal(Slider.Track, SliderTrack);
   assert.equal(Slider.Fill, SliderFill);
   assert.equal(Slider.Thumb, SliderThumb);
+  assert.equal(Slider.Steps, SliderSteps);
   assert.equal(Slider.Marks, SliderMarks);
+  assert.equal(Slider.Mark, SliderMark);
   assert.equal(typeof sliderVariants, "function");
 });
 
@@ -267,8 +269,8 @@ test("class merged with the slot class on every part; Marks slot", () => {
       <Slider.Track class="bg-default">
         <Slider.Fill class="bg-accent" />
         <Slider.Thumb class="bg-accent" />
-        <Slider.Marks class="m" />
       </Slider.Track>
+      <Slider.Marks class="m" />
     </Slider>
   )).container as HTMLElement;
   const slots = sliderVariants({});
@@ -324,4 +326,155 @@ test("parts outside a Slider carry no slot class (Marks)", () => {
   const root = render(() => <SliderMarks class="m" />).container as HTMLElement;
   const marks = q(root, "[data-slot=slider-marks]");
   assert.equal(marks.className, "m");
+});
+
+const { I18nProvider } = await import("@rivetjs/cdk/i18n-provider");
+
+/* ------------------------------------------------------------------ steps / marks (upstream v3 branch slider tests) */
+
+const stepsOf = (root: ParentNode) => qa(root, "[data-slot=slider-step]");
+const marksOf = (root: ParentNode) => qa(root, "[data-slot=slider-mark]");
+const filled = (els: HTMLElement[]) => els.map((el) => el.getAttribute("data-filled") === "true");
+
+test("Steps: one decorative dot per step, positioned by value, filled up to the thumb", async () => {
+  const root = render(() => (
+    <Slider defaultValue={40} step={10} aria-label="v">
+      <Slider.Track>
+        <Slider.Fill />
+        <Slider.Steps class="s" />
+        <Slider.Thumb />
+      </Slider.Track>
+    </Slider>
+  )).container as HTMLElement;
+  const steps = q(root, "[data-slot=slider-steps]");
+  assert.equal(steps.getAttribute("aria-hidden"), "true");
+  assert.ok(steps.classList.contains(sliderVariants({}).steps()) && steps.classList.contains("s"));
+  assert.equal(steps.getAttribute("data-orientation"), "horizontal");
+  assert.equal(steps.getAttribute("data-direction"), "ltr");
+  const dots = stepsOf(root);
+  assert.equal(dots.length, 11);
+  assert.deepEqual(
+    dots.map((d) => d.getAttribute("data-value")),
+    ["0", "10", "20", "30", "40", "50", "60", "70", "80", "90", "100"],
+  );
+  assert.equal(dots[3]!.style.left, "30%");
+  assert.ok(dots[0]!.classList.contains(sliderVariants({}).step()));
+  assert.deepEqual(filled(dots), [true, true, true, true, true, false, false, false, false, false, false]);
+  await key(thumbs(root)[0]!, "ArrowRight");
+  assert.deepEqual(filled(dots), [true, true, true, true, true, true, false, false, false, false, false]);
+});
+
+test("Steps: decimal steps without drift; no off-step endpoint; invalid / huge ranges render nothing", () => {
+  const dec = render(() => (
+    <Slider defaultValue={0.4} maxValue={1} step={0.1} aria-label="v">
+      <Slider.Track>
+        <Slider.Steps />
+        <Slider.Thumb />
+      </Slider.Track>
+    </Slider>
+  )).container as HTMLElement;
+  assert.deepEqual(
+    stepsOf(dec).map((d) => d.getAttribute("data-value")),
+    ["0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1"],
+  );
+  const off = render(() => (
+    <Slider defaultValue={0} maxValue={10} step={3} aria-label="v">
+      <Slider.Track>
+        <Slider.Steps />
+        <Slider.Thumb />
+      </Slider.Track>
+    </Slider>
+  )).container as HTMLElement;
+  assert.deepEqual(
+    stepsOf(off).map((d) => d.getAttribute("data-value")),
+    ["0", "3", "6", "9"],
+  );
+  const huge = render(() => (
+    <Slider defaultValue={0} maxValue={2000} aria-label="v">
+      <Slider.Track>
+        <Slider.Steps />
+        <Slider.Thumb />
+      </Slider.Track>
+    </Slider>
+  )).container as HTMLElement;
+  assert.equal(q(huge, "[data-slot=slider-steps]"), null);
+  const outside = render(() => <SliderSteps />).container as HTMLElement;
+  assert.equal(q(outside, "[data-slot=slider-steps]"), null);
+});
+
+test("Marks: labels at their values, formatted without children, filled between the range thumbs", async () => {
+  const root = render(() => (
+    <Slider defaultValue={[0.2, 0.8]} maxValue={1} step={0.1} formatOptions={{ style: "percent" }}>
+      <Label>Range</Label>
+      <Slider.Track>
+        <Slider.Fill />
+        <Slider.Thumb index={0} />
+        <Slider.Thumb index={1} />
+      </Slider.Track>
+      <Slider.Marks class="m">
+        <Slider.Mark value={0} />
+        <Slider.Mark value={0.5} class="mk" style={{ color: "red" }} />
+        <Slider.Mark value={1}>Max</Slider.Mark>
+        <Slider.Mark value={2} />
+        <Slider.Mark value={Number.NaN} />
+      </Slider.Marks>
+    </Slider>
+  )).container as HTMLElement;
+  const marks = q(root, "[data-slot=slider-marks]");
+  assert.ok(marks.classList.contains(sliderVariants({}).marks()) && marks.classList.contains("m"));
+  assert.equal(marks.getAttribute("dir"), "ltr");
+  const labels = marksOf(root);
+  assert.deepEqual(
+    labels.map((m) => m.textContent),
+    ["0%", "50%", "Max"],
+  );
+  assert.equal(labels[1]!.style.left, "50%");
+  assert.equal(labels[1]!.style.color, "red");
+  assert.ok(labels[1]!.classList.contains("mk") && labels[1]!.classList.contains(sliderVariants({}).mark()));
+  assert.deepEqual(filled(labels), [false, true, false]);
+  await key(thumbs(root)[0]!, "Home");
+  assert.deepEqual(filled(labels), [true, true, false]);
+  // Marks are labels: the value and its snapping are unchanged.
+  assert.equal(thumbs(root)[0]!.value, "0");
+});
+
+test("Marks / Steps: vertical positions from the bottom; RTL positions from the right; disabled", () => {
+  const vertical = render(() => (
+    <Slider defaultValue={40} orientation="vertical" step={50} isDisabled aria-label="v">
+      <Slider.Track>
+        <Slider.Steps />
+        <Slider.Thumb />
+      </Slider.Track>
+      <Slider.Marks>
+        <Slider.Mark value={50} />
+      </Slider.Marks>
+    </Slider>
+  )).container as HTMLElement;
+  assert.equal(stepsOf(vertical)[1]!.style.bottom, "50%");
+  assert.equal(marksOf(vertical)[0]!.style.bottom, "50%");
+  assert.equal(q(vertical, "[data-slot=slider-marks]").getAttribute("data-orientation"), "vertical");
+  for (const el of [q(vertical, "[data-slot=slider-steps]"), stepsOf(vertical)[0]!, q(vertical, "[data-slot=slider-marks]"), marksOf(vertical)[0]!])
+    assert.equal(el.getAttribute("data-disabled"), "true");
+  const rtl = render(() => (
+    <I18nProvider locale="ar-EG">
+      <Slider defaultValue={40} step={50} aria-label="v">
+        <Slider.Track>
+          <Slider.Steps />
+          <Slider.Thumb />
+        </Slider.Track>
+        <Slider.Marks>
+          <Slider.Mark value={50}>Half</Slider.Mark>
+        </Slider.Marks>
+      </Slider>
+    </I18nProvider>
+  )).container as HTMLElement;
+  assert.equal(q(rtl, "[data-slot=slider-steps]").getAttribute("data-direction"), "rtl");
+  assert.equal(stepsOf(rtl)[1]!.style.right, "50%");
+  assert.equal(marksOf(rtl)[0]!.style.right, "50%");
+  assert.equal(q(rtl, "[data-slot=slider-marks]").getAttribute("dir"), "rtl");
+});
+
+test("Mark outside a Slider renders nothing", () => {
+  const root = render(() => <SliderMark value={1} />).container as HTMLElement;
+  assert.equal(q(root, "[data-slot=slider-mark]"), null);
 });
