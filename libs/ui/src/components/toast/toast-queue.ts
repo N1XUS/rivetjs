@@ -3,6 +3,8 @@
 // - `react-aria-components/Toast` `UNSTABLE_ToastQueue` → `@rivetjs/cdk/state/toast` `ToastQueue` (react-stately port: same
 //   `visibleToasts` / `subscribe` / `add` / `close` / `clear` / `pauseAll` / `resumeAll`, private `updateVisibleToasts`); its
 //   `Timer` already guards against a second timeout (Rivet deviation), the `guardTimer` wrap stays for parity.
+// - `holdExit` / `finishExit` (Rivet, MOTION-HARMONY): a rendered toast replaces the `exitDuration` timer with the end of its
+//   CSS exit animations; the timer stays the fallback without one.
 // - `ReactNode` → Rivet `Content`; `ButtonProps` → `@rivetjs/ui/button` props.
 // - Queue `name` (Rivet, `ToastQueueOptions.name`): a server-rendered `<Toast.Provider>` finds its queue on a resumed page by name
 //   (cdk `ToastRegion` wake event). `toastQueue` (the `toast()` queue) is named `"toast"`, a `new ToastQueue()` defaults to the cdk
@@ -24,7 +26,9 @@ import { DEFAULT_EXIT_DURATION, DEFAULT_RAC_MAX_VISIBLE_TOAST, DEFAULT_TOAST_TIM
 export interface ToastQueueOptions {
   /**
    * How long a closing toast stays mounted for its exit animation, in
-   * milliseconds. Set to 0 to remove toasts immediately.
+   * milliseconds, when no rendered toast reports the end of its CSS exit (a
+   * mounted `Toast` unmounts when its own exit animations finish). Set to 0 to
+   * remove toasts immediately.
    * @default 300
    */
   exitDuration?: number;
@@ -113,7 +117,8 @@ class ExitAwareToastQueue<T extends object> extends ToastQueuePrimitive<T> {
   private static didWarnMissingNotify = false;
 
   private readonly exitDuration: number;
-  private exitTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  // Exiting keys → fallback timer (`null` once a rendered toast holds its exit).
+  private exitTimers = new Map<string, ReturnType<typeof setTimeout> | null>();
   private exitingSnapshot: ReadonlySet<string> = new Set();
   private exitSubscriptions = new Set<() => void>();
   private suspensions = new Set<string>();
@@ -253,6 +258,35 @@ class ExitAwareToastQueue<T extends object> extends ToastQueuePrimitive<T> {
   // Stable snapshot of the keys currently in their exit animation.
   getExitingKeys = (): ReadonlySet<string> => this.exitingSnapshot;
 
+  /**
+   * Rivet: a rendered toast takes over its exit (MOTION-HARMONY): drops the `exitDuration` fallback timer, so the toast
+   * stays mounted until the element calls `finishExit` when its CSS exit animations end (no duration copied into JS).
+   * Returns false when `key` is not exiting or already held.
+   */
+  holdExit(key: string): boolean {
+    const timer = this.exitTimers.get(key);
+    // Not exiting, or already held by its element.
+    if (timer == null) return false;
+    clearTimeout(timer);
+    this.exitTimers.set(key, null);
+    return true;
+  }
+
+  /** Rivet: removes an exiting toast now (its exit animation ended, or the `exitDuration` fallback fired). */
+  finishExit(key: string): void {
+    if (!this.exitTimers.has(key)) return;
+    const timer = this.exitTimers.get(key);
+    if (timer != null) clearTimeout(timer);
+    // Rebuild the snapshot before super.close notifies subscribers so no render sees the toast as exiting after removal.
+    this.exitTimers.delete(key);
+    this.exitingSnapshot = new Set(this.exitTimers.keys());
+    super.close(key);
+
+    if (!this.isBatchingExits) {
+      this.notifyExitSubscribers();
+    }
+  }
+
   // Subscribe to exiting-key changes (for useSyncExternalStore).
   subscribeExiting = (fn: () => void): (() => void) => {
     this.exitSubscriptions.add(fn);
@@ -290,18 +324,10 @@ class ExitAwareToastQueue<T extends object> extends ToastQueuePrimitive<T> {
 
     queuedToast.onClose = undefined;
 
+    // Fallback removal; a mounted toast element replaces it with its CSS exit end (`holdExit` / `finishExit`).
     this.exitTimers.set(
       key,
-      setTimeout(() => {
-        // Rebuild the snapshot before super.close notifies React so no render sees the toast as exiting after removal.
-        this.exitTimers.delete(key);
-        this.exitingSnapshot = new Set(this.exitTimers.keys());
-        super.close(key);
-
-        if (!this.isBatchingExits) {
-          this.notifyExitSubscribers();
-        }
-      }, this.exitDuration),
+      setTimeout(() => this.finishExit(key), this.exitDuration),
     );
 
     if (!this.isBatchingExits) {
@@ -330,7 +356,7 @@ class ExitAwareToastQueue<T extends object> extends ToastQueuePrimitive<T> {
   // Releases pending exit timeouts, subscriptions, suspension state, and running timers, for HMR and test teardown. The queue stays usable.
   destroy(): void {
     for (const timeoutId of this.exitTimers.values()) {
-      clearTimeout(timeoutId);
+      if (timeoutId != null) clearTimeout(timeoutId);
     }
 
     this.exitTimers.clear();

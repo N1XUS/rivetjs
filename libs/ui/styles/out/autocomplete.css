@@ -198,12 +198,12 @@
 
   .autocomplete__popover[data-entering="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
-    --tw-ease: cubic-bezier(.32, .72, 0, 1);
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     --tw-enter-opacity: 0;
     --tw-enter-scale: .95;
-    transition-timing-function: cubic-bezier(.32, .72, 0, 1);
   }
 
   .autocomplete__popover[data-entering="true"][data-placement="top"] {
@@ -224,13 +224,13 @@
 
   .autocomplete__popover[data-exiting="true"] {
     animation: exit var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: cubic-bezier(.25, .46, .45, .94);
+    --tw-duration: var(--popup-exit-duration);
+    transition-duration: var(--popup-exit-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     --tw-exit-scale: .95;
     --tw-exit-opacity: 0;
     pointer-events: none;
-    transition-timing-function: cubic-bezier(.25, .46, .45, .94);
   }
 
   .autocomplete__popover[data-exiting="true"], .autocomplete__popover[data-entering="true"] {

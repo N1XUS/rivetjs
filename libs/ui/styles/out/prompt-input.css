@@ -303,12 +303,12 @@
 
   .prompt-input__token-suggestions[data-open="true"] {
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-fast);
-    transition-duration: var(--duration-fast);
-    --tw-ease: cubic-bezier(.2, 0, 0, 1);
+    --tw-duration: var(--popup-duration);
+    transition-duration: var(--popup-duration);
+    --tw-ease: var(--popup-ease);
+    transition-timing-function: var(--popup-ease);
     --tw-enter-opacity: 0;
     --tw-enter-scale: .95;
-    transition-timing-function: cubic-bezier(.2, 0, 0, 1);
   }
 
   .prompt-input__token-suggestions[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .prompt-input__token-suggestions[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .prompt-input__token-suggestions[data-open="true"]:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

@@ -130,10 +130,24 @@ test("sidebar: mobile sheet below 768px opens with the sheet classes; Escape clo
     { width: 500, height: 800 },
   ));
 
-/** Running CSS transitions of the panel (`panel`) and backdrop (`backdrop`) shortly after `act`: [property, ms, easing]. */
+/** Running CSS transitions of the panel (`panel`) and backdrop (`backdrop`) once both run after `act`: [property, ms, easing]. */
 async function overlayTimings(page: Page, act: () => Promise<unknown>, panel: string, backdrop: string): Promise<string[]> {
   await act();
-  await page.waitForTimeout(40);
+  // A cold page's first click adopts + flushes a task later (first-click defer): wait for both transitions, not a fixed delay.
+  await page
+    .waitForFunction(
+      ([panel, backdrop]) =>
+        new Set(
+          document
+            .getAnimations()
+            .filter((a) => a instanceof CSSTransition && (a.effect as KeyframeEffect).target instanceof Element)
+            .map((a) => (a.effect as KeyframeEffect).target as Element)
+            .filter((el) => el.matches(panel) || el.matches(backdrop)),
+        ).size >= 2,
+      [panel, backdrop],
+      { timeout: 2000, polling: 10 },
+    )
+    .catch(() => {});
   return page.evaluate(
     ([panel, backdrop]) =>
       document

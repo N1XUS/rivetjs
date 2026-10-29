@@ -9,7 +9,7 @@
     line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
     overflow-wrap: break-word;
     color: var(--danger);
-    transition: opacity var(--duration-fast) var(--ease-out), height var(--duration-slow) var(--ease-smooth);
+    transition: opacity var(--motion-collapse-duration) var(--motion-collapse-ease), height var(--motion-collapse-duration) var(--motion-collapse-ease);
   }
 
   .error-message:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .error-message:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .error-message:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

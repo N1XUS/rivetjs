@@ -31,8 +31,10 @@
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function, cubic-bezier(.4, 0, .2, 1)));
     transition-duration: var(--tw-duration, var(--default-transition-duration, .15s));
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
+    --tw-duration: var(--motion-move-duration);
+    transition-duration: var(--motion-move-duration);
+    --tw-ease: var(--motion-move-ease);
+    transition-timing-function: var(--motion-move-ease);
     flex-shrink: 0;
     margin-inline-start: auto;
   }
@@ -155,7 +157,7 @@
   .accordion__panel {
     opacity: 0;
     height: var(--disclosure-panel-height);
-    transition: height var(--duration-base) var(--ease-out-quad), opacity var(--duration-base) var(--ease-out);
+    transition: height var(--motion-collapse-duration) var(--motion-collapse-ease), opacity var(--motion-collapse-duration) var(--motion-collapse-ease);
     overflow: clip;
   }
 
@@ -176,7 +178,7 @@
   @supports selector(::details-content) {
     details.accordion__item::details-content {
       opacity: 0;
-      transition: grid-template-rows var(--duration-base) var(--ease-out-quad), opacity var(--duration-base) var(--ease-out), content-visibility var(--duration-base) allow-discrete;
+      transition: grid-template-rows var(--motion-collapse-duration) var(--motion-collapse-ease), opacity var(--motion-collapse-duration) var(--motion-collapse-ease), content-visibility var(--motion-collapse-duration) allow-discrete;
       grid-template-rows: 0fr;
       display: grid;
     }

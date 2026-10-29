@@ -9,8 +9,8 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    opacity var(--duration-fast) var(--ease-out),
-    height var(--duration-slow) var(--ease-smooth);
+    opacity var(--motion-collapse-duration) var(--motion-collapse-ease),
+    height var(--motion-collapse-duration) var(--motion-collapse-ease);
   @apply motion-reduce:transition-none;
 }
 

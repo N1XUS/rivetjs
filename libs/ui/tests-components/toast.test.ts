@@ -68,6 +68,23 @@ test("toast: shows a toast in the region and dismisses it via Close (upstream br
     await page.waitForFunction(() => !document.querySelector('[role="alertdialog"]'));
   }));
 
+// MOTION-HARMONY (TW-187): a closing toast stays mounted until its CSS exit ends, not for the queue's copied 300 ms
+// `exitDuration`: with a 700 ms exit (theme override) it is still there at 450 ms, and gone after the transition.
+test("toast: a closing toast unmounts when its CSS exit ends (no JS duration)", () =>
+  onPage(async (page) => {
+    await page.addStyleTag({ content: ".toast { --toast-exit-duration: 700ms; --toast-opacity-duration: 700ms; }" });
+    await page.click("#t-add");
+    await page.waitForSelector('[role="alertdialog"]');
+    await settled(page);
+    await page.hover('[data-slot="toast"]');
+    await page.click('[role="alertdialog"] [data-slot="toast-close"]');
+    const closed = Date.now();
+    await page.waitForTimeout(450);
+    assert.equal(await page.locator('[role="alertdialog"][data-exiting="true"]').count(), 1, "still exiting past the 300 ms fallback");
+    await page.waitForFunction(() => !document.querySelector('[role="alertdialog"]'), undefined, { timeout: 3000 });
+    assert.ok(Date.now() - closed >= 650, `removed after ${Date.now() - closed} ms`);
+  }));
+
 // TW-177 (COLD-FIX-B 2026-10-27): a touch screen has no hover, so the frontmost toast shows its close button without one and a
 // tap closes it (before: hover-revealed only — WebKit dropped the touch's hover before the pointerup and the tap closed nothing).
 test("toast: under (hover: none) the close button shows without hover and a tap closes the toast", async () => {

@@ -26,11 +26,11 @@ A few of the built-in rules, simplified:
 ```css
 /* Popover opens with a fade + zoom, closes with the reverse */
 .popover[data-entering="true"] {
-  @apply animate-in duration-(--duration-fast) ease-smooth fade-in-0 zoom-in-90;
+  @apply animate-in duration-(--popup-duration) ease-(--popup-ease) fade-in-0 zoom-in-90;
 }
 
 .popover[data-exiting="true"] {
-  @apply animate-out duration-(--duration-fast) ease-smooth zoom-out-95 fade-out;
+  @apply animate-out duration-(--popup-exit-duration) ease-(--popup-ease) zoom-out-95 fade-out;
 }
 
 /* Button shrinks slightly while pressed */
@@ -43,21 +43,25 @@ A few of the built-in rules, simplified:
 .accordion__panel {
   height: var(--disclosure-panel-height);
   transition:
-    height var(--duration-base) var(--ease-out-quad),
-    opacity var(--duration-base) var(--ease-out);
+    height var(--motion-collapse-duration) var(--motion-collapse-ease),
+    opacity var(--motion-collapse-duration) var(--motion-collapse-ease);
 }
 ```
 
 ## Motion Tokens
 
-All component transitions draw on three durations and one easing curve defined in the theme. Change them once and the whole app follows:
+Every component transition belongs to one motion role, and each role has its own duration and easing tokens in the theme. The same kind of motion therefore looks the same everywhere: every popup opens like every other popup, every collapsing panel collapses the same way. Change a role once and every component in it follows:
 
-| Token             | Value                        | Used for                                                |
-| ----------------- | ---------------------------- | ------------------------------------------------------- |
-| `--duration-fast` | 120 ms                       | colour, opacity, small moves (hover, press, indicators) |
-| `--duration-base` | 180 ms                       | transforms, popovers, panels                            |
-| `--duration-slow` | 260 ms                       | large surfaces (drawers, sidebars, calendars)           |
-| `--ease-smooth`   | `cubic-bezier(0.2, 0, 0, 1)` | the default curve: fast start, soft stop                |
+| Role      | Tokens                                                                   | Value                         | Used for                                                                                   |
+| --------- | ------------------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------ |
+| state     | `--motion-state-duration`, `--motion-state-ease`                         | 120 ms, smooth                | colour, background, border and opacity changes (hover, press, focus, selection)            |
+| move      | `--motion-move-duration`, `--motion-move-ease`                           | 180 ms, smooth                | transforms: press scale, rotating chevrons, switch and slider thumbs                       |
+| collapse  | `--motion-collapse-duration`, `--motion-collapse-ease`                   | 180 ms, ease-out-quad         | size changes: Accordion, Disclosure, field errors, Sidebar collapse, AppLayout aside       |
+| indicator | `--motion-indicator-duration`, `--motion-indicator-ease`                 | 180 ms, ease-out-fluid        | selection indicators sliding between items (Tabs, Segment, carousel dots)                  |
+| popup     | `--popup-duration`, `--popup-exit-duration`, `--popup-ease`              | 120 ms in, 120 ms out, smooth | Popover, Tooltip, Dropdown, Select, ComboBox, Autocomplete, HoverCard, the pickers         |
+| entrance  | `--motion-enter-duration`, `--motion-exit-duration`, `--motion-enter-ease` | 260 ms in, 180 ms out, ease-out-fluid | elements that join or leave the page: Toast, ActionBar, DropZone items          |
+
+The roles point at a small set of primitives, which you can also override: `--duration-fast` (120 ms), `--duration-base` (180 ms), `--duration-slow` (260 ms), `--ease-smooth` (`cubic-bezier(0.2, 0, 0, 1)`), `--ease-out-quad` and `--ease-out-fluid` (`cubic-bezier(0.32, 0.72, 0, 1)`).
 
 Full-screen overlays (Modal, AlertDialog, Drawer, Sheet, Command, Lightbox, the Sidebar's mobile sheet and the Navbar's mobile menu) share a separate timing based on the iOS sheet curve, so they all open and close the same way (the Sidebar's mobile sheet slides exactly like a Drawer on the same side):
 
@@ -81,11 +85,11 @@ Override a token in your theme, or reuse it in your own rules:
 
 ```css
 :root {
-  --duration-base: 220ms;
+  --motion-collapse-duration: 240ms;
 }
 
 .my-panel {
-  transition: transform var(--duration-base) var(--ease-smooth);
+  transition: transform var(--motion-move-duration) var(--motion-move-ease);
 }
 ```
 
@@ -93,7 +97,8 @@ Some details are fixed rather than tokenised:
 
 - Pill controls (Button, ToggleButton) scale to 0.97 while pressed, at every size.
 - Loading spinners take the icon size of their control: 16 px in a Button, 20 px in a large one.
-- Sheet drag and snap physics and looping indicators (spinners, shimmer) keep their own timings.
+- Drag release physics is shared: a swiped Drawer, Sheet or Sidebar mobile sheet settles with the same friction. Looping indicators (spinners, shimmer) keep their own timings.
+- Script animations that follow a CSS transition (the Sidebar sheet fading its backdrop after a swipe, the Sidebar resize snap, a Toast waiting for its exit) read the computed timing, so overriding a token changes them too.
 
 ## CSS animations
 

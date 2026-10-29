@@ -4,7 +4,7 @@
 @layer components {
   .app-layout {
     --app-layout-aside-width: 320px;
-    --app-layout-aside-duration: var(--duration-base);
+    --app-layout-aside-duration: var(--motion-collapse-duration);
     --app-layout-header-height: 3.5rem;
     background-color: var(--background);
     color: var(--foreground);
@@ -120,7 +120,7 @@
     top: var(--app-layout-header-height);
     width: var(--app-layout-aside-width);
     max-height: calc(100svh - var(--app-layout-header-height));
-    transition: width var(--app-layout-aside-duration) var(--ease-smooth), transform var(--app-layout-aside-duration) var(--ease-smooth), border-color var(--app-layout-aside-duration) var(--ease-smooth);
+    transition: width var(--app-layout-aside-duration) var(--motion-collapse-ease), transform var(--app-layout-aside-duration) var(--motion-collapse-ease), border-color var(--app-layout-aside-duration) var(--motion-collapse-ease);
     flex-shrink: 0;
     position: sticky;
     overflow: hidden;

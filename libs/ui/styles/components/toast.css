@@ -58,13 +58,13 @@
 
   @apply pointer-events-auto flex flex-row items-start justify-start gap-1.5 bg-surface px-4 py-3 shadow-overlay;
 
-  /* Timing tokens */
-  --toast-ease: var(--ease-out-fluid);
-  --toast-enter-duration: var(--duration-slow);
-  --toast-exit-duration: var(--duration-base);
+  /* Timing tokens (Rivet: enter / exit motion role, TWEAKS.md TW-187; the only timing source of this file) */
+  --toast-ease: var(--motion-enter-ease);
+  --toast-enter-duration: var(--motion-enter-duration);
+  --toast-exit-duration: var(--motion-exit-duration);
   --toast-translate-duration: var(--toast-enter-duration);
   --toast-height-duration: var(--toast-enter-duration);
-  --toast-opacity-duration: var(--duration-fast);
+  --toast-opacity-duration: var(--motion-state-duration);
 
   /**
    * Transitions
@@ -116,7 +116,7 @@
    * Transitions
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
-  transition: opacity var(--duration-base) var(--toast-ease);
+  transition: opacity var(--toast-exit-duration) var(--toast-ease);
   @apply motion-reduce:transition-none;
 }
 
@@ -158,20 +158,17 @@
 
 .toast[data-exiting="true"][data-frontmost="true"] {
   --toast-translate-duration: var(--toast-exit-duration);
-  --toast-opacity-duration: var(--duration-fast);
   --toast-enter: -100%;
   --toast-scale: 1;
 }
 
 .toast[data-exiting="true"][data-expanded="true"]:not([data-frontmost="true"]) {
-  --toast-translate-duration: var(--duration-base);
-  --toast-opacity-duration: var(--duration-fast);
+  --toast-translate-duration: var(--toast-exit-duration);
   --toast-scale: 0.96;
 }
 
 .toast[data-exiting="true"]:not([data-expanded="true"]):not([data-frontmost="true"]) {
-  --toast-translate-duration: var(--duration-base);
-  --toast-opacity-duration: var(--duration-fast);
+  --toast-translate-duration: var(--toast-exit-duration);
   --toast-scale: calc(var(--scale-collapsed, 1) * 0.96);
 }
 
@@ -213,8 +210,8 @@
    * CRITICAL: motion-reduce must be AFTER animation/transition for correct override specificity
    */
   animation:
-    toast-indicator-fade var(--duration-fast) var(--toast-ease),
-    toast-indicator-scale var(--duration-base) var(--toast-ease);
+    toast-indicator-fade var(--toast-opacity-duration) var(--toast-ease),
+    toast-indicator-scale var(--toast-exit-duration) var(--toast-ease);
   @apply motion-reduce:animate-none;
 }
 
@@ -237,8 +234,8 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    opacity var(--duration-fast) var(--ease-smooth),
-    background-color var(--duration-fast) var(--ease-out);
+    opacity var(--motion-state-duration) var(--motion-state-ease),
+    background-color var(--motion-state-duration) var(--motion-state-ease);
   @apply motion-reduce:transition-none;
 
   [data-slot="close-button-icon"] {

@@ -4,7 +4,8 @@
 @layer components {
   .action-bar {
     --action-bar-offset: calc(var(--spacing) * 6);
-    --action-bar-transition-duration: var(--duration-base);
+    --action-bar-transition-duration: var(--motion-enter-duration);
+    --action-bar-exit-duration: var(--motion-exit-duration);
     pointer-events: none;
     z-index: 50;
     padding-inline: calc(var(--spacing, .25rem) * 4);
@@ -19,12 +20,13 @@
     pointer-events: auto;
     opacity: 1;
     max-width: 100%;
-    transition: opacity var(--action-bar-transition-duration) var(--ease-smooth), translate var(--action-bar-transition-duration) var(--ease-smooth), scale var(--action-bar-transition-duration) var(--ease-smooth), display var(--action-bar-transition-duration) allow-discrete;
+    transition: opacity var(--action-bar-transition-duration) var(--motion-enter-ease), translate var(--action-bar-transition-duration) var(--motion-enter-ease), scale var(--action-bar-transition-duration) var(--motion-enter-ease), display var(--action-bar-transition-duration) allow-discrete;
     translate: 0;
     scale: 1;
   }
 
   .action-bar:not([data-open="true"]) .action-bar__wrapper {
+    transition-duration: var(--action-bar-exit-duration);
     opacity: 0;
     display: none;
     translate: 0 .75rem;

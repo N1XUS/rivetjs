@@ -19,7 +19,7 @@
   }
 
   .field-error {
-    transition: opacity var(--duration-fast) var(--ease-out), height var(--duration-slow) var(--ease-smooth);
+    transition: opacity var(--motion-collapse-duration) var(--motion-collapse-ease), height var(--motion-collapse-duration) var(--motion-collapse-ease);
   }
 
   .field-error:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .field-error:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .field-error:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

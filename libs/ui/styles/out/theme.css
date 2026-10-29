@@ -36,6 +36,7 @@
       --tw-font-weight: initial;
       --tw-content: "";
       --tw-duration: initial;
+      --tw-ease: initial;
       --tw-leading: initial;
       --tw-border-style: solid;
       --tw-translate-x: 0;
@@ -55,7 +56,6 @@
       --tw-backdrop-opacity: initial;
       --tw-backdrop-saturate: initial;
       --tw-backdrop-sepia: initial;
-      --tw-ease: initial;
       --tw-scale-x: 1;
       --tw-scale-y: 1;
       --tw-scale-z: 1;
@@ -153,6 +153,18 @@
     --overlay-duration: .5s;
     --overlay-fade-duration: .4s;
     --overlay-exit-duration: var(--duration-slow);
+    --motion-state-duration: var(--duration-fast);
+    --motion-state-ease: var(--ease-smooth);
+    --motion-move-duration: var(--duration-base);
+    --motion-move-ease: var(--ease-smooth);
+    --motion-collapse-duration: var(--duration-base);
+    --motion-collapse-ease: var(--ease-out-quad);
+    --motion-enter-duration: var(--duration-slow);
+    --motion-exit-duration: var(--duration-base);
+    --motion-enter-ease: var(--ease-out-fluid);
+    --popup-duration: var(--duration-fast);
+    --popup-exit-duration: var(--duration-fast);
+    --popup-ease: var(--ease-smooth);
     --duration-morph-chevron: .32s;
     --duration-morph-burger: .24s;
     --ease-morph-chevron-open: linear(0, .0033 4.17%, .0167 8.33%, .0398 12.5%, .071 16.67%, .109 20.83%, .1526 25%, .2013 29.17%, .2542 33.33%, .3109 37.5%, .371 41.67%, .4341 45.83%, .5, .6593 54.17%, .7614 58.33%, .8331 62.5%, .8853 66.67%, .9235 70.83%, .9514 75%, .9713 79.17%, .9848 83.33%, .9932 87.5%, .9979 91.67%, .9997 95.83%, 1);

@@ -47,7 +47,7 @@
 
   .sidebar__gap {
     width: var(--sidebar-width);
-    transition: width var(--duration-base) var(--ease-out-quad);
+    transition: width var(--motion-collapse-duration) var(--motion-collapse-ease);
     background-color: #0000;
     position: relative;
   }
@@ -78,7 +78,7 @@
     z-index: 10;
     height: 100svh;
     width: var(--sidebar-width);
-    transition: inset-inline-start var(--duration-base) var(--ease-out-quad), inset-inline-end var(--duration-base) var(--ease-out-quad), width var(--duration-base) var(--ease-out-quad);
+    transition: inset-inline-start var(--motion-collapse-duration) var(--motion-collapse-ease), inset-inline-end var(--motion-collapse-duration) var(--motion-collapse-ease), width var(--motion-collapse-duration) var(--motion-collapse-ease);
     display: flex;
     position: fixed;
     inset-block: 0;
@@ -199,7 +199,7 @@
   }
 
   .sidebar__rail {
-    transition: all var(--duration-base) var(--ease-smooth);
+    transition: all var(--motion-collapse-duration) var(--motion-collapse-ease);
   }
 
   .sidebar__rail:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .sidebar__rail:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .sidebar__rail:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -216,7 +216,7 @@
     width: calc(var(--spacing, .25rem) * .5);
     --tw-content: "";
     content: var(--tw-content);
-    transition: background-color var(--duration-fast) var(--ease-out);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     border-radius: 3.40282e38px;
     position: absolute;
     inset-block: 0;
@@ -295,7 +295,7 @@
     width: 1px;
     translate: var(--tw-translate-x) var(--tw-translate-y);
     content: "";
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
     inset-block: 0;
     background-color: #0000;
     position: absolute;
@@ -315,7 +315,7 @@
   @media (hover: hover) {
     .sidebar__resize-handle:hover:after {
       background-color: var(--accent);
-      transition-delay: var(--duration-fast);
+      transition-delay: var(--motion-state-duration);
     }
   }
 
@@ -410,7 +410,7 @@
     font-weight: var(--font-weight-medium, 500);
     color: var(--muted);
     --tw-outline-style: none;
-    transition: margin var(--duration-base) var(--ease-smooth), opacity var(--duration-base) var(--ease-smooth);
+    transition: margin var(--motion-collapse-duration) var(--motion-collapse-ease), opacity var(--motion-collapse-duration) var(--motion-collapse-ease);
     outline-style: none;
     flex-shrink: 0;
     align-items: center;
@@ -458,7 +458,7 @@
     color: var(--foreground);
     --tw-outline-style: none;
     cursor: var(--cursor-interactive);
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
     outline-style: none;
     justify-content: center;
     align-items: center;
@@ -552,7 +552,7 @@
     --tw-outline-style: none;
     -webkit-tap-highlight-color: transparent;
     cursor: var(--cursor-interactive);
-    transition: transform var(--duration-base) var(--ease-out-quart), background-color var(--duration-fast) var(--ease-smooth), width var(--duration-base) var(--ease-out-quad), height var(--duration-base) var(--ease-out-quad), padding var(--duration-base) var(--ease-out-quad);
+    transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), width var(--motion-collapse-duration) var(--motion-collapse-ease), height var(--motion-collapse-duration) var(--motion-collapse-ease), padding var(--motion-collapse-duration) var(--motion-collapse-ease);
     outline-style: none;
     text-decoration-line: none;
     display: flex;
@@ -684,7 +684,7 @@
     font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
     -webkit-user-select: none;
     user-select: none;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     justify-content: center;
     align-items: center;
     display: flex;
@@ -781,7 +781,7 @@
 
   .sidebar__menu-sub-button {
     cursor: var(--cursor-interactive);
-    transition: background-color var(--duration-fast) var(--ease-smooth);
+    transition: background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .sidebar__menu-sub-button:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .sidebar__menu-sub-button:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .sidebar__menu-sub-button:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -846,7 +846,7 @@
 
   .sidebar__menu-indicator {
     color: var(--muted);
-    transition: rotate var(--duration-base) var(--ease-smooth);
+    transition: rotate var(--motion-move-duration) var(--motion-move-ease);
     flex-shrink: 0;
     margin-inline-start: auto;
     display: inline-flex;
@@ -881,7 +881,7 @@
 
   .sidebar__menu-sub-panel {
     block-size: var(--disclosure-panel-height);
-    transition: block-size var(--duration-base) var(--ease-out-quart);
+    transition: block-size var(--motion-collapse-duration) var(--motion-collapse-ease);
     overflow: hidden;
   }
 
@@ -908,7 +908,7 @@
   }
 
   .sidebar__menu[data-guide-lines="hover"] .sidebar__menu-sub {
-    transition: border-color var(--duration-fast) var(--ease-smooth);
+    transition: border-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .sidebar__menu[data-guide-lines="hover"] .sidebar__menu-sub:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .sidebar__menu[data-guide-lines="hover"] .sidebar__menu-sub:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .sidebar__menu[data-guide-lines="hover"] .sidebar__menu-sub:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -930,7 +930,7 @@
     top: calc(var(--spacing, .25rem) * 1.5);
     align-items: center;
     gap: calc(var(--spacing, .25rem) * .5);
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     display: flex;
     position: absolute;
   }
@@ -981,7 +981,7 @@
     top: calc(var(--spacing, .25rem) * 2);
     -webkit-user-select: none;
     user-select: none;
-    transition: opacity var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease);
     position: absolute;
   }
 

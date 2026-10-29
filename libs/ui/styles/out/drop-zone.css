@@ -131,10 +131,10 @@
     padding-block: calc(var(--spacing, .25rem) * 2);
     background-color: var(--surface);
     animation: enter var(--tw-animation-duration, var(--tw-duration, .15s))var(--tw-ease, ease)var(--tw-animation-delay, 0s)var(--tw-animation-iteration-count, 1)var(--tw-animation-direction, normal)var(--tw-animation-fill-mode, none);
-    --tw-duration: var(--duration-base);
-    transition-duration: var(--duration-base);
-    --tw-ease: var(--ease-out, cubic-bezier(0, 0, .2, 1));
-    transition-timing-function: var(--ease-out, cubic-bezier(0, 0, .2, 1));
+    --tw-duration: var(--motion-enter-duration);
+    transition-duration: var(--motion-enter-duration);
+    --tw-ease: var(--motion-enter-ease);
+    transition-timing-function: var(--motion-enter-ease);
     --tw-enter-opacity: 0;
     --tw-enter-translate-y: calc(1*var(--spacing)*-1);
     grid-template-columns: auto minmax(0, 1fr);

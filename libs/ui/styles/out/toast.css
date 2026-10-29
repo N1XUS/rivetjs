@@ -80,12 +80,12 @@
     padding-block: calc(var(--spacing, .25rem) * 3);
     --tw-shadow: var(--overlay-shadow);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    --toast-ease: var(--ease-out-fluid);
-    --toast-enter-duration: var(--duration-slow);
-    --toast-exit-duration: var(--duration-base);
+    --toast-ease: var(--motion-enter-ease);
+    --toast-enter-duration: var(--motion-enter-duration);
+    --toast-exit-duration: var(--motion-exit-duration);
     --toast-translate-duration: var(--toast-enter-duration);
     --toast-height-duration: var(--toast-enter-duration);
-    --toast-opacity-duration: var(--duration-fast);
+    --toast-opacity-duration: var(--motion-state-duration);
     transition: transform var(--toast-translate-duration) var(--toast-ease), height var(--toast-height-duration) var(--toast-ease), opacity var(--toast-opacity-duration) var(--toast-ease);
     flex-direction: row;
     display: flex;
@@ -140,7 +140,7 @@
   }
 
   .toast > :not([data-slot="toast-close"]) {
-    transition: opacity var(--duration-base) var(--toast-ease);
+    transition: opacity var(--toast-exit-duration) var(--toast-ease);
   }
 
   .toast > :not([data-slot="toast-close"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .toast > :not([data-slot="toast-close"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .toast > :not([data-slot="toast-close"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -188,20 +188,17 @@
 
   .toast[data-exiting="true"][data-frontmost="true"] {
     --toast-translate-duration: var(--toast-exit-duration);
-    --toast-opacity-duration: var(--duration-fast);
     --toast-enter: -100%;
     --toast-scale: 1;
   }
 
   .toast[data-exiting="true"][data-expanded="true"]:not([data-frontmost="true"]) {
-    --toast-translate-duration: var(--duration-base);
-    --toast-opacity-duration: var(--duration-fast);
+    --toast-translate-duration: var(--toast-exit-duration);
     --toast-scale: .96;
   }
 
   .toast[data-exiting="true"]:not([data-expanded="true"]):not([data-frontmost="true"]) {
-    --toast-translate-duration: var(--duration-base);
-    --toast-opacity-duration: var(--duration-fast);
+    --toast-translate-duration: var(--toast-exit-duration);
     --toast-scale: calc(var(--scale-collapsed, 1) * .96);
   }
 
@@ -249,7 +246,7 @@
   }
 
   .toast__indicator[data-swapped="true"] > :not([data-slot="spinner"]) {
-    animation: toast-indicator-fade var(--duration-fast) var(--toast-ease), toast-indicator-scale var(--duration-base) var(--toast-ease);
+    animation: toast-indicator-fade var(--toast-opacity-duration) var(--toast-ease), toast-indicator-scale var(--toast-exit-duration) var(--toast-ease);
   }
 
   .toast__indicator[data-swapped="true"] > :not([data-slot="spinner"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .toast__indicator[data-swapped="true"] > :not([data-slot="spinner"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .toast__indicator[data-swapped="true"] > :not([data-slot="spinner"]):is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -299,7 +296,7 @@
   }
 
   .toast__close-button {
-    transition: opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-out);
+    transition: opacity var(--motion-state-duration) var(--motion-state-ease), background-color var(--motion-state-duration) var(--motion-state-ease);
   }
 
   .toast__close-button:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .toast__close-button:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .toast__close-button:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {

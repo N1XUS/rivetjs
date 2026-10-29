@@ -17,9 +17,9 @@ export const DEFAULT_TOAST_WIDTH = 460;
 // Auto-dismiss timeout in milliseconds.
 export const DEFAULT_TOAST_TIMEOUT = 4000;
 
-// How long a closing toast stays mounted for its exit animation, in milliseconds.
-// Must be at least the longest exit transition in @heroui/styles, which is the
-// frontmost toast's --toast-exit-duration (250ms); the rest is headroom.
+// Rivet: fallback for how long a closing toast stays mounted, in milliseconds, when no
+// rendered toast reports the end of its exit: a mounted Toast unmounts when its CSS exit
+// animations finish (MOTION-HARMONY: timing lives in toast.css only).
 export const DEFAULT_EXIT_DURATION = 300;
 
 // Modifiers match KeyboardEvent boolean props; other keys match event.code.

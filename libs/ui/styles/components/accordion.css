@@ -27,7 +27,7 @@
   /**
    * Transitions
    */
-  @apply transition duration-(--duration-base) motion-reduce:transition-none;
+  @apply transition duration-(--motion-move-duration) ease-(--motion-move-ease) motion-reduce:transition-none;
 
   /* Expanded state for indicator rotation (Rivet, TW-156: a native item's `[open]`) */
   &[data-expanded="true"],
@@ -139,8 +139,8 @@ span.accordion__indicator {
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    height var(--duration-base) var(--ease-out-quad),
-    opacity var(--duration-base) var(--ease-out);
+    height var(--motion-collapse-duration) var(--motion-collapse-ease),
+    opacity var(--motion-collapse-duration) var(--motion-collapse-ease);
   @apply motion-reduce:transition-none;
 
   /* Rivet (WILL-CHANGE, TW-179): no `will-change` here — it held a layer on every expanded panel for as long as it stayed
@@ -164,9 +164,9 @@ span.accordion__indicator {
     grid-template-rows: 0fr;
     opacity: 0;
     transition:
-      grid-template-rows var(--duration-base) var(--ease-out-quad),
-      opacity var(--duration-base) var(--ease-out),
-      content-visibility var(--duration-base) allow-discrete;
+      grid-template-rows var(--motion-collapse-duration) var(--motion-collapse-ease),
+      opacity var(--motion-collapse-duration) var(--motion-collapse-ease),
+      content-visibility var(--motion-collapse-duration) allow-discrete;
   }
 
   details.accordion__item[open]::details-content {

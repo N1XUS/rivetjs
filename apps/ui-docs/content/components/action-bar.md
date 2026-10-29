@@ -77,10 +77,11 @@ The component’s parts emit these additional `data-slot` values: `action-bar-an
 | `action-bar__suffix`                    | `ActionBar.Suffix`                                                                         |
 | `action-bar__label`                     | your button text; `sr-only` below 640px                                                    |
 
-| CSS variable                       | Default  | What                                                       |
-| ---------------------------------- | -------- | ---------------------------------------------------------- |
-| `--action-bar-offset`              | `1.5rem` | distance from the viewport bottom (at least the safe area) |
-| `--action-bar-transition-duration` | `200ms`  | enter / exit transition                                    |
+| CSS variable                       | Default                                  | What                                                       |
+| ---------------------------------- | ---------------------------------------- | ---------------------------------------------------------- |
+| `--action-bar-offset`              | `1.5rem`                                 | distance from the viewport bottom (at least the safe area) |
+| `--action-bar-transition-duration` | `var(--motion-enter-duration)` (`260ms`) | enter transition                                           |
+| `--action-bar-exit-duration`       | `var(--motion-exit-duration)` (`180ms`)  | exit transition                                            |
 
 ## API Reference
 

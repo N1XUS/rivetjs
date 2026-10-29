@@ -183,7 +183,7 @@ The component’s parts emit these additional `data-slot` values: `sidebar-gap`,
 | ----------------------------- | -------- | ------------------------------------------- |
 | `--app-layout-aside-width`    | `320px`  | aside width (set by `asideDefaultSize`)     |
 | `--app-layout-header-height`  | `3.5rem` | navbar min height, sticky offset of aside   |
-| `--app-layout-aside-duration` | `200ms`  | aside open / close transition               |
+| `--app-layout-aside-duration` | `var(--motion-collapse-duration)` (`180ms`) | aside open / close transition |
 | `--sidebar-width`             | sidebar  | sidebar width (set by `sidebarDefaultSize`) |
 
 `reduceMotion` (or `prefers-reduced-motion`) turns the transitions off. `class` / `style` land on the wrapper.

@@ -10,7 +10,7 @@
 
   /* Entering animations */
   &[data-entering="true"] {
-    @apply animate-in duration-(--duration-fast) ease-smooth fade-in-0 zoom-in-90;
+    @apply animate-in duration-(--popup-duration) ease-(--popup-ease) fade-in-0 zoom-in-90;
 
     /* Placement-specific translations */
     &[data-placement="top"] {
@@ -32,7 +32,7 @@
 
   /* Exiting animations */
   &[data-exiting="true"] {
-    @apply animate-out duration-(--duration-fast) ease-smooth zoom-out-95 fade-out;
+    @apply animate-out duration-(--popup-exit-duration) ease-(--popup-ease) zoom-out-95 fade-out;
     /* Stays non-interactive while closing, even if the exit animation is interrupted. */
     @apply pointer-events-none;
   }

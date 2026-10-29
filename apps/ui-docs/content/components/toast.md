@@ -14,7 +14,7 @@ Notes:
 - The server renders no region and no toast: `Toast.Provider` leaves an empty anchor. A resumed page loads the provider's listener at idle, and the first toast renders the region. Every example renders its own `<Toast.Provider />` for the shared queue (an app mounts one at its root).
 - Queues live at module level. A page with several queues gives each a distinct `name` (`new ToastQueue({ name: "errors" })`): the name connects a queue to its provider on a resumed page.
 - A custom render function (`Toast.Provider` children) runs once per toast; read `toast.content` there, update a toast's look through `toast.update` / the default layout.
-- Enter and exit animations are CSS (`data-entering` / `data-exiting`); closing toasts stay mounted for `exitDuration`.
+- Enter and exit animations are CSS (`data-entering` / `data-exiting`, the enter / exit motion tokens); a closing toast stays mounted until its exit animations finish (`exitDuration` is the fallback when no toast element is rendered).
 
 ## Usage
 
@@ -249,12 +249,12 @@ A `ToastQueue` manages the state for a `<Toast.Provider>`. The state is stored o
 
 #### Constructor Options
 
-| Option             | Type                       | Default | Description                                                                                                                                      |
-| ------------------ | -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`             | `string`                   | -       | Rivet: identifies the queue to its `Toast.Provider` on a resumed page; required when a page has more than one queue (each needs a distinct name) |
-| `exitDuration`     | `number`                   | `300`   | How long a closing toast stays mounted for its exit animation (0 removes immediately)                                                            |
-| `maxVisibleToasts` | `number`                   | `3`     | Maximum number of toasts to display at once (visual only)                                                                                        |
-| `wrapUpdate`       | `(fn: () => void) => void` | -       | Function to wrap state updates (e.g. `document.startViewTransition`); by default updates are applied directly and animated with CSS transitions  |
+| Option             | Type                       | Default | Description                                                                                                                                                      |
+| ------------------ | -------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`             | `string`                   | -       | Rivet: identifies the queue to its `Toast.Provider` on a resumed page; required when a page has more than one queue (each needs a distinct name)                 |
+| `exitDuration`     | `number`                   | `300`   | Fallback mount time of a closing toast when no rendered toast reports its exit end (a rendered toast unmounts when its CSS exit finishes; 0 removes immediately) |
+| `maxVisibleToasts` | `number`                   | `3`     | Maximum number of toasts to display at once (visual only)                                                                                                        |
+| `wrapUpdate`       | `(fn: () => void) => void` | -       | Function to wrap state updates (e.g. `document.startViewTransition`); by default updates are applied directly and animated with CSS transitions                  |
 
 #### Methods
 

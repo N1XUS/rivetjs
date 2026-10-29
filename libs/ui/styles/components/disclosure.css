@@ -32,7 +32,7 @@
   /**
    * Transitions
    */
-  @apply transition duration-(--duration-base) motion-reduce:transition-none;
+  @apply transition duration-(--motion-move-duration) ease-(--motion-move-ease) motion-reduce:transition-none;
 
   /* Expanded state for indicator rotation */
   &[data-expanded="true"] {
@@ -50,8 +50,8 @@
    * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
    */
   transition:
-    height var(--duration-base) var(--ease-out-quad),
-    opacity var(--duration-base) var(--ease-out);
+    height var(--motion-collapse-duration) var(--motion-collapse-ease),
+    opacity var(--motion-collapse-duration) var(--motion-collapse-ease);
   @apply motion-reduce:transition-none;
 
   /* Rivet (WILL-CHANGE, TW-179): no `will-change` (it held a layer while expanded; see accordion.css). */

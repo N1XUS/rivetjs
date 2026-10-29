@@ -100,7 +100,7 @@
   grid-auto-columns: auto;
 
   background-color: var(--surface);
-  @apply animate-in duration-(--duration-base) ease-out fade-in-0 slide-in-from-top-1 motion-reduce:animate-none;
+  @apply animate-in duration-(--motion-enter-duration) ease-(--motion-enter-ease) fade-in-0 slide-in-from-top-1 motion-reduce:animate-none;
 
   &[data-status="failed"] {
     @apply border-danger;

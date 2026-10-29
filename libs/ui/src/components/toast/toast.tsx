@@ -17,6 +17,9 @@
 // - `Toast` element: the cdk `Toast` `render` prop renders the `div` with an explicit `ref` (upstream `mergeRefs`; the cdk part
 //   takes no `ref`) and the reactive `data-*` state; tab index / `aria-hidden` / `inert` are set imperatively from an effect, as
 //   upstream's layout effect.
+// - Exit end (MOTION-HARMONY 2026-10-29): an exiting toast element holds its queue entry (`holdExit`) and is removed when its
+//   running CSS exit animations finish (`finishExit`): the timing lives in `toast.css` only; `exitDuration` = fallback
+//   without a rendered toast.
 // - `ToastIndicator` `data-swapped`: Rivet children are slots (static); a function child is re-evaluated and its result's kind
 //   (element `data-slot` / tag, text, nothing) is compared, as upstream compares `children.type` across renders.
 // - Default icons: upstream's inline `InfoIcon` / `SuccessIcon` / `WarningIcon` / `DangerIcon` svgs → lucide `Info` /
@@ -82,6 +85,8 @@ type ToastContext = {
   heightsByKey?: () => Record<string, number>;
   // Keys of toasts currently playing their exit animation.
   exitingKeys?: () => ReadonlySet<string>;
+  /** Rivet: an exiting toast element ends its own exit when its CSS exit animations finish (exit-aware queue only). */
+  exitWithElement?: (key: string, element: HTMLElement) => void;
   isExpanded?: () => boolean;
   /** Rivet: upstream's provider-level `useMediaQuery("(max-width: 768px)")`. */
   isMobile?: () => boolean;
@@ -334,6 +339,7 @@ const Toast = <T extends object = ToastContentValue>(props: ToastProps<T>): JSX.
         el.setAttribute("aria-hidden", "true");
 
         if (exiting) {
+          if (toastKey) context.exitWithElement?.(toastKey, el);
           // Exiting is one-way: drop the dying controls from the tab order.
           // inert would also stop pointer events, which must keep hitting the ghost so the stack stays expanded under a resting cursor.
           for (const control of el.querySelectorAll<HTMLElement>("button, a")) {
@@ -870,6 +876,19 @@ const ToastRegionHost = <T extends object>(props: {
   const contextValue: ToastContext = {
     inToast: true,
     exitingKeys,
+    // MOTION-HARMONY: the toast stays mounted until its exit transitions (toast.css timing) end, not for a copied duration.
+    exitWithElement: exitAwareQueue
+      ? (key, element) => {
+          // A frame later the exit transitions run (attributes flipped, styles recalculated). Running ones hold the toast
+          // until they end; none (no stylesheet, no animation support) leaves the `exitDuration` fallback timer in charge.
+          const collect = (): void => {
+            const running = typeof element.getAnimations === "function" ? element.getAnimations({ subtree: true }) : [];
+            if (!running.length || !exitAwareQueue.holdExit(key)) return;
+            void Promise.allSettled(running.map((a) => a.finished)).then(() => exitAwareQueue.finishExit(key));
+          };
+          element.ownerDocument.defaultView?.requestAnimationFrame?.(collect);
+        }
+      : undefined,
     gap: options.gap,
     heightsByKey: toastHeights,
     isExpanded,
