@@ -91,6 +91,8 @@ Docs site of `@rivetjs/ui` (`libs/ui`), third site on `@rivetjs/docs-kit` (same 
 
 ## Examples
 
+- UI-STEPPRESS-01 (2026-10-29): `components/stepper.md` follows the HeroUI Pro public docs section list 1:1 (names only; Rivet-authored content): +9 `stepper-package-tracking`, `-controlled-vertical`, `-custom-color-vertical`, `-custom-completed-icon`, `-dynamic-icon`, `-free-trial-timeline`, `-onboarding-timeline`, `-vertical-sizes`, `-vertical-with-icons`; existing ids kept, sections / titles renamed to Bullet Steps, With Descriptions, With Icons. No component API change: custom / dynamic indicator icons = Step render function + `Show` on `status()` inside `Stepper.Indicator`; a step holding its own button needs a display-only stepper (accessor `currentStep`), interactive steps are buttons.
+
 - CX-DRPTOUCH (2026-10-28): `date-range-picker-controlled` checks two calendar taps after Clear, the unchanged empty value and open popover after the first tap, then the committed dates and closed popover after the second. Day-suffix selectors keep this check independent of the current month. The shared CDK calendar quick-touch release previously committed a one-day range on the first tap.
 
 - CX-CAR (2026-10-28): `carousel-shadcn-spacing` uses `align="start"` so its first Next selects slide 1. A production trace of the prior centered configuration showed one replayed handler and one `scrollNext` (selected snap 0 → 1, registry `[[0,1],[2],[3,4]]`), no synthetic click: the quarantine diagnosis confused slide indexes with snap indexes. Manifest checks cover cold Next, later Next and Previous; the matching CDK story also counts selections.

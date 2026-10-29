@@ -1,7 +1,7 @@
 // Rivet-authored demo (Stepper is a Rivet addition: feature set inspired by HeroUI Pro's public docs; independent implementation on @rivetjs/cdk/stepper).
 import { Stepper } from "@rivetjs/ui/stepper";
 
-export const head = { title: "Stepper: Descriptions" };
+export const head = { title: "Stepper: With Descriptions" };
 
 // #region demo
 export function StepperDescriptions() {

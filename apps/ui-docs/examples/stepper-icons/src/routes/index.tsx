@@ -3,7 +3,7 @@ import { Icon } from "@rivetjs/kit/icon";
 import { CreditCard, PackageCheck, ShoppingCart, Truck } from "lucide";
 import { Stepper } from "@rivetjs/ui/stepper";
 
-export const head = { title: "Stepper: Icons" };
+export const head = { title: "Stepper: With Icons" };
 
 // #region demo
 export function StepperIcons() {

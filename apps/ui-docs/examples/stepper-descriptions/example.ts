@@ -1,7 +1,7 @@
 import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
-  title: "Stepper: Descriptions",
+  title: "Stepper: With Descriptions",
   summary: "Stepper.Description adds a second line under each title.",
   tags: ["stepper", "navigation"],
   status: "experimental",

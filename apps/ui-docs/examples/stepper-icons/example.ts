@@ -1,7 +1,7 @@
 import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
-  title: "Stepper: Icons",
+  title: "Stepper: With Icons",
   summary: "A lucide icon in each indicator via Stepper.Icon.",
   tags: ["stepper", "navigation"],
   status: "experimental",

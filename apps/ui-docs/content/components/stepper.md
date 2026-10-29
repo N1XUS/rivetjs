@@ -66,7 +66,13 @@ The form is decided once, at render: adding or removing `title` / children later
 
 ::example{id=stepper-shorthand}
 
-### Bullet
+### Package Tracking
+
+A display-only tracker: icon indicators, timestamps as descriptions, and `Stepper.Separator progress={0.5}` after the current step while the parcel is on its way.
+
+::example{id=stepper-package-tracking}
+
+### Bullet Steps
 
 An empty `Stepper.Icon` renders a dot instead of the number.
 
@@ -78,37 +84,79 @@ An empty `Stepper.Icon` renders a dot instead of the number.
 
 ::example{id=stepper-controlled}
 
-### Vertical
+### Controlled Vertical
 
-::example{id=stepper-vertical}
+The same two-way Signal on a vertical stepper: Back / Next buttons and the step buttons move the current step.
 
-### Sizes
+::example{id=stepper-controlled-vertical}
 
-::example{id=stepper-sizes}
+### Custom Color
 
-### Icons
+::example{id=stepper-custom-color}
 
-::example{id=stepper-icons}
+### Custom Color Vertical
 
-### Descriptions
+The colour variables (`--stepper-active-color`, `--stepper-complete-color`, `--stepper-complete-fg`) work the same in either orientation.
 
-::example{id=stepper-descriptions}
+::example{id=stepper-custom-color-vertical}
 
-### Render function
+### Custom Completed Icon
+
+`Stepper.Indicator` children replace its default number / check. In a render function, show your own icon for `status() === "complete"` and keep the number otherwise.
+
+::example{id=stepper-custom-completed-icon}
+
+### Display Only
+
+Without `onStepChange` and without a Signal `currentStep`, steps are plain elements (no buttons, not in the Tab order).
+
+::example{id=stepper-display-only}
+
+### Dynamic Icon
+
+The indicator icon follows the step status: a check when complete, a spinner while active, the step's own icon when upcoming. An accessor `currentStep` keeps the stepper display only while buttons outside drive it.
+
+::example{id=stepper-dynamic-icon}
+
+### Free Trial Timeline
+
+::example{id=stepper-free-trial-timeline}
+
+### Onboarding Timeline
+
+A display-only stepper (accessor `currentStep`) can hold interactive content: the current step shows its action button. Interactive steps are buttons themselves, so do not nest buttons in them.
+
+::example{id=stepper-onboarding-timeline}
+
+### Render Function
 
 A function child of `Stepper.Step` gets the step state: `index()`, `status()`, `isLast()` (accessors). `useStepperStep()` returns the same inside any custom part.
 
 ::example{id=stepper-render-function}
 
-### Custom color
+### Sizes
 
-::example{id=stepper-custom-color}
+::example{id=stepper-sizes}
 
-### Display only
+### Vertical
 
-Without `onStepChange` and without a Signal `currentStep`, steps are plain elements (no buttons, not in the Tab order).
+::example{id=stepper-vertical}
 
-::example{id=stepper-display-only}
+### Vertical Sizes
+
+::example{id=stepper-vertical-sizes}
+
+### Vertical With Icons
+
+::example{id=stepper-vertical-with-icons}
+
+### With Descriptions
+
+::example{id=stepper-descriptions}
+
+### With Icons
+
+::example{id=stepper-icons}
 
 ### Import
 

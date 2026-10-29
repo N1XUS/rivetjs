@@ -1,7 +1,7 @@
 import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
-  title: "Stepper: Bullet",
+  title: "Stepper: Bullet Steps",
   summary: "Dots instead of numbers: an empty Stepper.Icon inside each indicator.",
   tags: ["stepper", "navigation"],
   status: "experimental",
