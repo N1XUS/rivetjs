@@ -37,6 +37,12 @@ export function App() {
             if (event.key === "PageDown") items.set([1, 9999]);
             if (event.key === "Home") items.set([1]);
             if (event.key === "Delete") items.set([]);
+            if (event.key === "x") items.set(items().slice(1));
+            if (event.key === "y") items.set(items().filter((_, index) => index !== 1));
+            if (event.key === "z") items.set([7777, ...items().slice(1)]);
+            if (event.key === "w") items.set([2, 0]);
+            if (event.key === "v") items.set(items().slice(0, 2));
+            if (event.key === "u") items.set([2, 7777, 0]);
           }}
         >
           {renderRows(items, selected)}

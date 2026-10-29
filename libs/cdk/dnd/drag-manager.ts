@@ -50,6 +50,9 @@ export interface DropTarget {
 export function registerDropTarget(target: DropTarget): () => void {
   dropTargets.set(target.element, target);
   dragSession?.updateValidDropTargets();
+  // A cold page: the drag button's unit started the session before the collection's unit registered its target.
+  // (An effect re-run unregisters and registers again: the target the first registration got is reset in between.)
+  if (dragSession?.keyboard && !dragSession.currentDropTarget && dragSession.validDropTargets.length) dragSession.next();
   return (): void => {
     dropTargets.delete(target.element);
     dragSession?.updateValidDropTargets();
@@ -74,6 +77,9 @@ export interface DragTarget {
   element: FocusableElement;
   items: DragItem[];
   allowedDropOperations: DropOperation[];
+  /** The press that started the drag was a keyboard one. The interaction modality can already read "virtual": the native
+   * click an Enter keydown fires on a cold drag button (the key's release restores "keyboard" only afterwards). */
+  keyboard?: boolean | undefined;
   onDragEnd?: ((e: DragEndEvent) => void) | undefined;
 }
 
@@ -86,7 +92,10 @@ export function beginDragging(target: DragTarget, stringFormatter: DragFormat): 
   requestAnimationFrame(() => {
     if (dragSession) {
       dragSession.setup();
-      if (getDragModality() === "keyboard") dragSession.next();
+      if (dragSession.dragTarget.keyboard || getDragModality() === "keyboard") {
+        dragSession.keyboard = true;
+        dragSession.next();
+      }
     }
   });
   session.set(dragSession);
@@ -153,6 +162,11 @@ export class DragSession {
   private stringFormatter: DragFormat;
   private isVirtualClick: boolean = false;
   private initialFocused: boolean;
+  // An Enter keydown this session saw. The Enter that started the session on a native drag button (its click, fired by
+  // the keydown, ends the press) is released after `setup`: that stray keyup must not drop.
+  private enterDown = false;
+  /** Set up as a keyboard session (`registerDropTarget` moves to the first target that registers after it found none). */
+  keyboard = false;
 
   constructor(target: DragTarget, stringFormatter: DragFormat) {
     this.dragTarget = target;
@@ -198,6 +212,7 @@ export class DragSession {
       this.cancel();
       return;
     }
+    if (e.key === "Enter") this.enterDown = true;
     if (e.key === "Tab" && !(e.metaKey || e.altKey || e.ctrlKey)) {
       if (e.shiftKey) this.previous();
       else this.next();
@@ -208,6 +223,8 @@ export class DragSession {
   onKeyUp(e: KeyboardEvent): void {
     this.cancelEvent(e);
     if (e.key === "Enter") {
+      if (!this.enterDown) return;
+      this.enterDown = false;
       if (e.altKey || nodeContains(this.getCurrentActivateButton(), getEventTarget(e) as Node)) this.activate(this.currentDropTarget, this.currentDropItem);
       else this.drop();
     }

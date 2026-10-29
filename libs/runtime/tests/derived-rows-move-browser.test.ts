@@ -1,5 +1,6 @@
 // A resumed keyed For that reorders so the row holding document focus moves (insertBefore blurs it; its focusout is
 // delegated and runs mid-reconcile). Every row must still appear once, in the new order, and keep focus afterwards.
+// Removing or replacing the focused row shares that guard (`_adoption.moving`).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -53,3 +54,51 @@ for (const engine of engines)
       { engine },
     );
   });
+
+const removals = [
+  { name: "removing the focused first row", focus: "0", key: "x", keys: ["1", "2"] },
+  { name: "removing the focused middle row", focus: "1", key: "y", keys: ["0", "2"] },
+  { name: "replacing the focused first row", focus: "0", key: "z", keys: ["7777", "1", "2"] },
+  { name: "removing the focused last row", focus: "2", key: "v", keys: ["0", "1"] },
+  { name: "removing the focused middle row while the others swap", focus: "1", key: "w", keys: ["2", "0"] },
+  { name: "removing the focused middle row while a row is inserted and the others swap", focus: "1", key: "u", keys: ["2", "7777", "0"] },
+] as const;
+for (const engine of engines)
+  for (const { name, focus, key, keys: expected } of removals)
+    test(`derived For (${engine}): ${name} keeps the remaining rows once`, async () => {
+      const server = await readFile(new URL("./derived/rows-move.server.tsx", import.meta.url), "utf8");
+      const client = await readFile(new URL("./derived/rows-move.dom.tsx", import.meta.url), "utf8");
+      const ssr = compile(server, { target: "server", filename: "move.server.tsx" });
+      const dom = compile(client, { target: "dom", filename: "move.dom.tsx" });
+      assert.deepEqual(ssr.diagnostics, []);
+      assert.deepEqual(dom.diagnostics, []);
+      const { App } = await importServer<{ App: () => ServerValue }>(ssr.code);
+      const manifest = { hash: "t", runtime: "/rt.js", symbols: { App: "/page.js", View: "/page.js" } };
+      await withPage(
+        {
+          ...DERIVED_BUILD,
+          "/": "<!doctype html><body>" + (await derivedToString(() => App(), { manifest })) + "</body>",
+          "/rt.js": 'export { default } from "/dom-derived.ts";',
+          "/page.js": rewrite(dom.code),
+        },
+        async (page) => {
+          const errors: string[] = [];
+          page.on("pageerror", (error) => errors.push(error.message));
+          await page.goto("http://rivet.test/");
+          await page.focus(`[data-key="${focus}"]`);
+          assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-key")), focus);
+          await page.keyboard.press(key);
+          await page
+            .waitForFunction(
+              (want) => Array.from(document.querySelectorAll("#list > [data-key]"), (el) => el.getAttribute("data-key")).join() === want,
+              expected.join(),
+              { timeout: 2000 },
+            )
+            .catch(() => {});
+          assert.deepEqual(await page.$$eval("#list > [data-key]", (els) => els.map((el) => el.getAttribute("data-key"))), expected);
+          assert.deepEqual(await page.$$eval("#list > i", (els) => els.map((el) => el.textContent)), expected);
+          assert.deepEqual(errors, []);
+        },
+        { engine },
+      );
+    });

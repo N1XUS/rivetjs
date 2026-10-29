@@ -91,7 +91,9 @@ function render(c: Controller, state: LightboxState): void {
   const x = c.x.settled() ? c.x.target.get() : c.x.get(),
     y = c.y.settled() ? c.y.target.get() : c.y.get();
   if (track) {
-    if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5 && c.x.settled() && c.y.settled()) track.style.removeProperty("transform");
+    // The loop's last frame can render a hair short of the target (interpolated offset, `settled()` < 0.001) and then
+    // stop: at rest = the offset and the target are both within half a pixel of the origin.
+    if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5 && Math.abs(c.x.target.get()) < 0.5 && Math.abs(c.y.target.get()) < 0.5) track.style.removeProperty("transform");
     else track.style.transform = `translate3d(${round(x, 2)}px, ${round(y, 2)}px, 0)`;
   }
   const ctl = state.controller;

@@ -225,10 +225,10 @@ export function useDrag(options: DragOptions): DragResult {
 
   const onPress = (e: { pointerType: string; target: Element }) => {
     if (e.pointerType !== "keyboard" && e.pointerType !== "virtual") return;
-    startDragging(e.target as HTMLElement);
+    startDragging(e.target as HTMLElement, e.pointerType === "keyboard");
   };
 
-  const startDragging = (target: HTMLElement) => {
+  const startDragging = (target: HTMLElement, keyboard?: boolean) => {
     if (typeof state.options.onDragStart === "function") {
       const rect = target.getBoundingClientRect();
       state.options.onDragStart({ type: "dragstart", x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
@@ -236,6 +236,7 @@ export function useDrag(options: DragOptions): DragResult {
     DragManager.beginDragging(
       {
         element: target,
+        keyboard,
         items: state.options.getItems(),
         allowedDropOperations:
           typeof state.options.getAllowedDropOperations === "function" ? state.options.getAllowedDropOperations() : ["move", "copy", "link"],
