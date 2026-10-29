@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] a56aabd516d7 541311 css c8e36fb6cc6a 1192038
-@rivetjs/ui [server] 0346fabaa39f 481513 css c8e36fb6cc6a 1192038
+@rivetjs/ui [dom] 5f39f390a138 541376 css c8e36fb6cc6a 1192038
+@rivetjs/ui [server] 5b3687e3149e 481570 css c8e36fb6cc6a 1192038
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -101,10 +101,10 @@
 @rivetjs/ui/toggle-button-group [server] 646d9941f4aa 6026 css 12ae0c1a29bc 1181736
 @rivetjs/ui/close-button [dom] 86c3df5d4502 5607 css 12ae0c1a29bc 1181736
 @rivetjs/ui/close-button [server] 43b444b82df9 5400 css 12ae0c1a29bc 1181736
-@rivetjs/ui/avatar [dom] 5d8c31666055 6768 css 12ae0c1a29bc 1181736
-@rivetjs/ui/avatar [server] d7f972488c40 6571 css 12ae0c1a29bc 1181736
-@rivetjs/ui/avatar-group [dom] e579c90d3b31 9430 css 12ae0c1a29bc 1181736
-@rivetjs/ui/avatar-group [server] 252d3c177eb4 8959 css 12ae0c1a29bc 1181736
+@rivetjs/ui/avatar [dom] d5f9ac309909 6832 css 12ae0c1a29bc 1181736
+@rivetjs/ui/avatar [server] d67e3c0c0c63 6627 css 12ae0c1a29bc 1181736
+@rivetjs/ui/avatar-group [dom] f49c0c3abfa3 9494 css 12ae0c1a29bc 1181736
+@rivetjs/ui/avatar-group [server] f0e0a6fef55c 9015 css 12ae0c1a29bc 1181736
 @rivetjs/ui/progress-bar [dom] 6b396e74210a 6342 css 12ae0c1a29bc 1181736
 @rivetjs/ui/progress-bar [server] 713fb6214534 6071 css 12ae0c1a29bc 1181736
 @rivetjs/ui/progress-circle [dom] 9090a88cacb2 6714 css 12ae0c1a29bc 1181736
@@ -341,8 +341,8 @@
 @rivetjs/ui/text-shimmer [server] 0210c855d643 3727 css 91b77d4ecd3a 1993
 @rivetjs/ui/chat-loader [dom] ac40a192934c 7725 css 12ae0c1a29bc 1181736
 @rivetjs/ui/chat-loader [server] f6097f822242 7442 css 12ae0c1a29bc 1181736
-@rivetjs/ui/chat-message [dom] a2f6b7ea7422 9588 css 12ae0c1a29bc 1181736
-@rivetjs/ui/chat-message [server] caff4643acd7 9064 css 12ae0c1a29bc 1181736
+@rivetjs/ui/chat-message [dom] 04e7686fd8f0 9652 css 12ae0c1a29bc 1181736
+@rivetjs/ui/chat-message [server] 66bad0db5a04 9120 css 12ae0c1a29bc 1181736
 @rivetjs/ui/chat-message-actions [dom] 6b5aa8ff0b8c 8415 css 12ae0c1a29bc 1181736
 @rivetjs/ui/chat-message-actions [server] 0a2c74a70ab0 7964 css 12ae0c1a29bc 1181736
 @rivetjs/ui/prompt-suggestion [dom] 6062a84c565e 6463 css 12ae0c1a29bc 1181736

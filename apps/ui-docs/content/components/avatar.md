@@ -11,7 +11,7 @@ related: [components/avatar-group, components/separator, components/badge]
 Notes:
 
 - `class`, not `className`.
-- No Radix `asChild`: parts render fixed elements.
+- No Radix `asChild`: parts render fixed elements; `Avatar.Image` takes `render` for a custom image component instead.
 - An `Avatar.Image` outside an `Avatar` gets a status of its own (Radix throws).
 
 ## Usage
@@ -59,11 +59,7 @@ Additional exported parts: `Avatar.Root`.
 
 ### Custom Image Component
 
-Use `asChild` on `Avatar.Image` to compose with a custom image component. This example uses Next.js `Image` for optimized loading. Pass `src` on `Avatar.Image` so it can track the loading state and show the fallback until the image is ready.
-
-:::warning
-Not yet ported: the original demo passes `asChild` and renders Next.js `<Image>` inside `Avatar.Image`. The Rivet avatar has no `asChild` (and there is no Next.js), so the image renders through `Avatar.Image` itself.
-:::
+Use `render` on `Avatar.Image` to compose with a custom image component (Rivet's counterpart of Radix `asChild`). It receives the image's attributes (`src`, `alt`, `width`, `height` and the slot class) and must render one `<img>` with them. This example uses a small responsive image component built on the `?image` import's variants. Pass `src` on `Avatar.Image` so it can track the loading state and show the fallback until the image is ready.
 
 ::example{id=avatar-custom-image-component}
 
@@ -135,18 +131,18 @@ See the [full module API](/api/rivetjs/ui/avatar/) for every named export and pa
 
 ### Avatar.Image
 
-| Prop          | Type                                                | Default | Description                                                                                |
-| ------------- | --------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
-| `src`         | `string`                                            | -       | Image source URL                                                                           |
-| `srcSet`      | `string`                                            | -       | The image `srcset` attribute for responsive images                                         |
-| `sizes`       | `string`                                            | -       | The image `sizes` attribute for responsive images                                          |
-| `alt`         | `string`                                            | -       | Alternative text for the image                                                             |
-| `asChild`     | `boolean`                                           | `false` | Merge props onto the child element (e.g. `next/image`) instead of rendering a native `img` |
-| `onLoad`      | `(event: SyntheticEvent<HTMLImageElement>) => void` | -       | Callback when the image loads successfully                                                 |
-| `onError`     | `(event: SyntheticEvent<HTMLImageElement>) => void` | -       | Callback when there's an error loading the image                                           |
-| `crossOrigin` | `'anonymous' \| 'use-credentials'`                  | -       | CORS setting for the image request                                                         |
-| `loading`     | `'eager' \| 'lazy'`                                 | -       | Native lazy loading attribute                                                              |
-| `class`       | `string`                                            | -       | Additional CSS classes                                                                     |
+| Prop          | Type                                                | Default | Description                                                                                                   |
+| ------------- | --------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| `src`         | `string`                                            | -       | Image source URL                                                                                              |
+| `srcSet`      | `string`                                            | -       | The image `srcset` attribute for responsive images                                                            |
+| `sizes`       | `string`                                            | -       | The image `sizes` attribute for responsive images                                                             |
+| `alt`         | `string`                                            | -       | Alternative text for the image                                                                                |
+| `render`      | `DOMRenderFunction<"img", undefined>`               | -       | Renders a custom image component instead of the native `img` (receives the image attributes); Radix `asChild` |
+| `onLoad`      | `(event: SyntheticEvent<HTMLImageElement>) => void` | -       | Callback when the image loads successfully                                                                    |
+| `onError`     | `(event: SyntheticEvent<HTMLImageElement>) => void` | -       | Callback when there's an error loading the image                                                              |
+| `crossOrigin` | `'anonymous' \| 'use-credentials'`                  | -       | CORS setting for the image request                                                                            |
+| `loading`     | `'eager' \| 'lazy'`                                 | -       | Native lazy loading attribute                                                                                 |
+| `class`       | `string`                                            | -       | Additional CSS classes                                                                                        |
 
 ### Avatar.Fallback
 

@@ -10,5 +10,11 @@ export const Pic = () => (
   </Avatar>
 );
 
+export const Custom = () => (
+  <Avatar>
+    <Avatar.Image src="/a.png" alt="A" render={(props) => <img {...props} srcSet="/a.png 1x, /a@2x.png 2x" />} />
+  </Avatar>
+);
+
 // @ts-expect-error bad avatar size
 export const BadSize = () => <Avatar size="xl" />;

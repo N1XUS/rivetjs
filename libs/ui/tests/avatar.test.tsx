@@ -111,6 +111,41 @@ test("avatar: image load → <img> appears, fallback removed", async () => {
   r.unmount();
 });
 
+test("avatar: Image render = a custom image component (radix asChild): gets the attributes + slot class once loaded", async () => {
+  FakeImage.instances = [];
+  const seen: Record<string, unknown>[] = [];
+  const r = render(() => (
+    <Avatar>
+      <Avatar.Image
+        src="https://example.test/c.png"
+        alt="C"
+        width={40}
+        height={40}
+        render={(props) => {
+          seen.push(props);
+          return <img {...props} data-custom="yes" srcSet="https://example.test/c.png 1x, https://example.test/c@2x.png 2x" />;
+        }}
+      />
+      <Avatar.Fallback>C</Avatar.Fallback>
+    </Avatar>
+  ));
+  await flush();
+  assert.equal(seen.length, 0);
+  assert.equal(r.container.querySelector("img"), null);
+  last().fire("load");
+  const img = r.container.querySelector("img")!;
+  assert.equal(img.getAttribute("data-custom"), "yes");
+  assert.equal(img.getAttribute("src"), "https://example.test/c.png");
+  assert.equal(img.getAttribute("alt"), "C");
+  assert.equal(img.getAttribute("width"), "40");
+  assert.equal(img.className, "avatar__image");
+  assert.match(img.getAttribute("srcset")!, /c@2x\.png 2x/);
+  assert.equal(seen.length, 1);
+  assert.equal("render" in seen[0]!, false);
+  assert.equal(r.container.querySelector("[data-slot=avatar-fallback]"), null);
+  r.unmount();
+});
+
 test("avatar: image error keeps the fallback, no img", async () => {
   FakeImage.instances = [];
   const r = mount();

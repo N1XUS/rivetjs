@@ -11,6 +11,8 @@
 //   (a `Show`: re-created only when it crosses `max`).
 // - Image: no SSR `<img>` (radix: status `idle` until the client probe loads it); the fallback is the server markup. `src` /
 //   `crossOrigin` / `referrerPolicy` pass through as value or accessor (the primitive re-probes on change).
+// - `Avatar.Image` `asChild` (radix Slot: a custom image component as the child, e.g. Next.js `<Image>`) → `render={(props) =>
+//   <MyImage {...props} />}` (the primitive's `render`, called with the image attributes incl. `src` and the slot class).
 // - Live props: parts read props lazily (`splitLive` = runtime `splitProps`, never a destructure); the context value's fields are
 //   getters over the root's props (+ the group context), parts read it inside their class binding, so a changed `color` / `size` /
 //   `variant` / `class` updates in place.

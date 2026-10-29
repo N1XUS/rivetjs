@@ -16,7 +16,9 @@
 //   the timer effect re-runs when a live `delayMs` changes (upstream effect deps `[delayMs]`);
 // - development only (`#dev`): more than one `Image` under a root warns once (upstream `useImageCount` / `useUpdateImageCount`).
 // Rivet:
-// - `Root` / `Image` / `Fallback` render `span` / `img` / `span`; no `asChild` / `Primitive` / `createContextScope`.
+// - `Root` / `Image` / `Fallback` render `span` / `img` / `span`; no `Primitive` / `createContextScope`. `asChild` (radix `Slot`:
+//   the child element receives the merged props) → `Image` `render` (the ui `DOMRenderProps` contract: `render(props, undefined)`
+//   with the image's attributes incl. `src`; it must return one `<img>`), rendered in place of the `<img>` once `loaded`.
 // - Live props: props are read lazily (`splitLive` = runtime `splitProps`), so a live `src={s()}` / `crossOrigin` /
 //   `referrerPolicy` (read inside the probe effect) re-probes and a live `class` updates in place (React re-renders). They also
 //   accept an accessor (`() => value`; cdk accessor rule).
@@ -30,6 +32,7 @@ import { Provider, Show, clientEffect } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { DEV } from "#dev";
 
+import type { DOMRenderFunction } from "../../utils/dom.tsx";
 import { splitLive } from "../../utils/live.tsx";
 
 type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error";
@@ -84,10 +87,15 @@ type AvatarImageProps = Omit<JSX.IntrinsicElements["img"], "src" | "crossOrigin"
   referrerPolicy?: MaybeAccessor<ReferrerPolicy | undefined>;
   class?: string;
   onLoadingStatusChange?: (status: ImageLoadingStatus) => void;
+  /**
+   * Renders a custom image component instead of the `<img>` (radix `asChild`): it receives the image's attributes (`src`,
+   * `alt`, `class`, …) and must render one `<img>` with them. Called once the image has loaded, like the `<img>`.
+   */
+  render?: DOMRenderFunction<"img", undefined>;
 };
 
 const AvatarImage = (props: AvatarImageProps): JSX.Element => {
-  const [local, imageProps] = splitLive(props, ["src", "onLoadingStatusChange"]);
+  const [local, imageProps] = splitLive(props, ["src", "onLoadingStatusChange", "render"]);
   const context = useContext(AvatarContext);
   const status = context.status ?? signal<ImageLoadingStatus>("idle");
 
@@ -151,7 +159,14 @@ const AvatarImage = (props: AvatarImageProps): JSX.Element => {
     { when: untrack(() => read(local.src) || local.onLoadingStatusChange) ? "idle" : "interaction" },
   );
 
-  return <Show when={() => status() === "loaded"}>{() => <img {...(imageProps as JSX.IntrinsicElements["img"])} src={read(local.src)} />}</Show>;
+  const render = local.render;
+  return (
+    <Show when={() => status() === "loaded"}>
+      {() =>
+        render ? render({ ...imageProps, src: read(local.src) }, undefined) : <img {...(imageProps as JSX.IntrinsicElements["img"])} src={read(local.src)} />
+      }
+    </Show>
+  );
 };
 
 /* -------------------------------------------------------------------------------------------------
