@@ -27,7 +27,7 @@ import { listboxItemVariants } from "../../../styles/src/components/list-box-ite
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * ListBox Item Context
@@ -67,9 +67,7 @@ const ListBoxItemRoot = <T extends object = object>(props: ListBoxItemRootProps<
         };
         return (
           <Provider token={ListBoxItemContext} value={context}>
-            {typeof local.children === "function" && !isSlot(local.children)
-              ? (local.children as (v: ListBoxItemRenderProps) => Content)(values)
-              : (local.children as Content)}
+            {renderChildren(local.children, values)}
           </Provider>
         );
       }}

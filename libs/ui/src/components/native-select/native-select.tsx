@@ -29,13 +29,12 @@ import type { TextFieldProps as TextFieldPrimitiveProps, TextFieldRenderProps } 
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { For, Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { NativeSelectVariants } from "../../../styles/src/components/native-select/index.ts";
 import { nativeSelectVariants } from "../../../styles/src/components/native-select/index.ts";
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-error.tsx";
 import { LabelRoot } from "../label/label.tsx";
@@ -125,10 +124,8 @@ const NativeSelectRoot = (props: NativeSelectRootProps): JSX.Element => {
               {local.description !== undefined && <DescriptionRoot>{local.description}</DescriptionRoot>}
               {local.errorMessage !== undefined && <FieldErrorRoot>{local.errorMessage}</FieldErrorRoot>}
             </>
-          ) : typeof local.children === "function" && !isSlot(local.children) ? (
-            (local.children as (v: TextFieldRenderProps) => Content)(values)
           ) : (
-            (local.children as Content)
+            renderChildren(local.children, values)
           )}
         </Provider>
       )}

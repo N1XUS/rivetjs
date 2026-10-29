@@ -21,8 +21,8 @@
 // - Rivet (identity spec §4.2): `Tabs.List` renders the list container (scroller + scroll buttons) itself, as if wrapped in
 //   `Tabs.ListContainer` (still exported: its props style the container); `container={false}` keeps the thin cdk TabList.
 //   `Tabs.Tab` appends a `Tabs.Indicator` after its children unless one renders inside it (a per-tab flag the explicit
-//   indicator sets while the children render, before the automatic one is decided: `TabBody`, no accessor child, which
-//   stayed a static branch on resumed pages) or `indicator={false}` is set on the Tab or the root. An explicit indicator that
+//   indicator sets while the children render, before the automatic one is decided: `TabBody` binds the children accessor first,
+//   then the automatic indicator's) or `indicator={false}` is set on the Tab or the root. An explicit indicator that
 //   mounts later (`<Show>`, lazy children) sets the flag's `late` signal: the automatic one hides (never two indicators).
 import { SelectionIndicator as SelectionIndicatorPrimitive, SelectionIndicatorContext } from "@rivetjs/cdk/selection-indicator";
 import type { SelectionIndicatorProps as SelectionIndicatorPrimitiveProps } from "@rivetjs/cdk/selection-indicator";
@@ -339,15 +339,18 @@ const TabIndicator = (props: TabIndicatorProps): JSX.Element => {
 const TabBody = (props: { children: unknown; values?: TabRenderProps }): JSX.Element => {
   const context = useContext(TabsContext);
   const flag = useContext(IndicatorFlagContext)!;
-  const content = renderSlot(props.children as Content | ((v?: TabRenderProps) => Content), props.values) as Content;
-  let auto: JSX.Element | null = null;
-  if (!flag.explicit) {
+  const selected = useContext(SelectionIndicatorContext).isSelected;
+  // Two accessors bound in order: the children first (an explicit `Tabs.Indicator` sets the flag while it renders), then the
+  // automatic indicator decided from the flag. The children stay bound to the signals they read (`{label()}`, `{() => label()}`);
+  // before, this body called the slot itself and read them once (UI-BREADCRUMB 2026-10-29).
+  const content = (): Content => renderSlot(props.children as Content | ((v?: TabRenderProps) => Content), props.values) as Content;
+  const auto = (): JSX.Element | null => {
+    if (flag.explicit) return null;
     // Visible while selected and no explicit indicator mounted later (one Tabs.Indicator per tab, never two).
     const late = (flag.late = signal(false));
-    const selected = useContext(SelectionIndicatorContext).isSelected;
     const isSelected = () => !late() && (typeof selected === "function" ? selected() : !!selected);
-    auto = <SelectionIndicatorPrimitive class={slotsOf(context)?.tabIndicator()} data-slot="tabs-indicator" isSelected={isSelected} />;
-  }
+    return <SelectionIndicatorPrimitive class={slotsOf(context)?.tabIndicator()} data-slot="tabs-indicator" isSelected={isSelected} />;
+  };
   return (
     <>
       {content}

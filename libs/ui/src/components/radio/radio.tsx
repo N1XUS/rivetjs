@@ -26,7 +26,7 @@ import { radioVariants } from "../../../styles/src/components/radio/index.ts";
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { DEV } from "#dev";
 
@@ -85,10 +85,8 @@ const RadioRoot = (props: RadioRootProps): JSX.Element => {
                 </RadioContent>
                 {local.description !== undefined && <DescriptionRoot>{local.description}</DescriptionRoot>}
               </>
-            ) : typeof local.children === "function" && !isSlot(local.children) ? (
-              (local.children as (v: RadioFieldRenderProps) => Content)(state)
             ) : (
-              (local.children as Content)
+              renderChildren(local.children, state)
             )}
           </Provider>
         );
@@ -113,9 +111,7 @@ const RadioContent = (props: RadioContentProps): JSX.Element => {
     <RadioButtonPrimitive data-slot="radio-content" {...(rest as object)} class={cls as never}>
       {(state: RadioButtonRenderProps) => (
         <Provider token={LabelContext} value={LABEL_SPAN_CONTEXT}>
-          {typeof local.children === "function" && !isSlot(local.children)
-            ? (local.children as (v: RadioButtonRenderProps) => Content)(state)
-            : (local.children as Content)}
+          {renderChildren(local.children, state)}
         </Provider>
       )}
     </RadioButtonPrimitive>

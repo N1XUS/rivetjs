@@ -26,7 +26,7 @@ import { progressBarVariants } from "../../../styles/src/components/progress-bar
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { renderClass, hasLiveProp, splitLive } from "../../utils/live.tsx";
+import { renderClass, hasLiveProp, splitLive, renderChildren } from "../../utils/live.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * ProgressBar Context
@@ -91,9 +91,7 @@ const ProgressBarRoot = (props: ProgressBarRootProps): JSX.Element => {
         };
         return (
           <Provider token={ProgressBarContext} value={context}>
-            {typeof local.children === "function" && !isSlot(local.children)
-              ? (local.children as (v: ProgressBarRenderProps) => Content)(values)
-              : (local.children as Content)}
+            {renderChildren(local.children, values)}
           </Provider>
         );
       }}

@@ -26,7 +26,7 @@ import { menuItemVariants } from "../../../styles/src/components/menu-item/index
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * Menu Item Context
@@ -66,9 +66,7 @@ const MenuItemRoot = <T extends object = object>(props: MenuItemRootProps<T>): J
         };
         return (
           <Provider token={MenuItemContext} value={context}>
-            {typeof local.children === "function" && !isSlot(local.children)
-              ? (local.children as (v: MenuItemRenderProps) => Content)(values)
-              : (local.children as Content)}
+            {renderChildren(local.children, values)}
           </Provider>
         );
       }}

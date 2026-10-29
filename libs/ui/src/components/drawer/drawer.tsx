@@ -33,7 +33,7 @@ import type { OverlayTriggerState } from "@rivetjs/cdk/state/overlays";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
+import { renderSlot } from "@rivetjs/runtime/slot";
 
 import type { DrawerVariants } from "../../../styles/src/components/drawer/index.ts";
 import { drawerVariants } from "../../../styles/src/components/drawer/index.ts";
@@ -42,7 +42,7 @@ import type { UseOverlayStateReturn } from "../../hooks/use-overlay-state.tsx";
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderChildren, renderClass, splitLive } from "../../utils/live.tsx";
 import { withLabel } from "../../utils/with-label.tsx";
 import { CloseButton } from "../close-button/index.ts";
 import type { CloseButtonRootProps } from "../close-button/index.ts";
@@ -79,9 +79,6 @@ const variantSlots = (variants: { placement?: DrawerPlacement; variant?: DrawerV
 const slotsOf = (context: DrawerContext): DrawerSlots | undefined => (context.inDrawer ? variantSlots({ placement: context.placement }) : undefined);
 
 const ROOT_CONTEXT: DrawerContext = { inDrawer: true, placement: undefined, isDismissable: true };
-
-const renderChildren = (children: unknown, renderProps: ModalRenderProps): Content =>
-  typeof children === "function" && !isSlot(children) ? (children as (v: ModalRenderProps) => Content)(renderProps) : (children as Content);
 
 /* -------------------------------------------------------------------------------------------------
  * Drawer Root

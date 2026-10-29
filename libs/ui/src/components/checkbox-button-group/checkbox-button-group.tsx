@@ -35,7 +35,7 @@ import type { CheckboxButtonGroupVariants } from "../../../styles/src/components
 import { checkboxButtonGroupVariants } from "../../../styles/src/components/checkbox-button-group/index.ts";
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-error.tsx";
 import { LabelRoot } from "../label/label.tsx";
@@ -168,7 +168,7 @@ const CheckboxButtonGroupItem = (props: CheckboxButtonGroupItemProps): JSX.Eleme
         {(state: CheckboxButtonRenderProps) => (
           <Provider token={CheckboxButtonGroupItemContext} value={{ state }}>
             <Provider token={LabelContext} value={LABEL_SPAN_CONTEXT}>
-              {typeof children === "function" && !isSlot(children) ? (children as (v: CheckboxButtonRenderProps) => Content)(state) : (children as Content)}
+              {renderChildren(children, state)}
             </Provider>
           </Provider>
         )}

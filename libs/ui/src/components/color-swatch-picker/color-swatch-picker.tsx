@@ -32,7 +32,7 @@ import { colorProps } from "../../utils/color-value.ts";
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * ColorSwatchPicker Context
@@ -133,9 +133,7 @@ const ColorSwatchPickerItem = (props: ColorSwatchPickerItemProps): JSX.Element =
     >
       {(renderProps: ColorSwatchPickerItemRenderProps) => (
         <Provider token={ColorSwatchPickerItemContext} value={{ state: renderProps }}>
-          {typeof local.children === "function" && !isSlot(local.children)
-            ? (local.children as (v: ColorSwatchPickerItemRenderProps) => Content)(renderProps)
-            : (local.children as Content)}
+          {renderChildren(local.children, renderProps)}
         </Provider>
       )}
     </ColorSwatchPickerItemPrimitive>

@@ -43,7 +43,7 @@ import { checkboxVariants } from "../../../styles/src/components/checkbox/index.
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { CheckboxGroupContext } from "../checkbox-group/context.ts";
 import { nativeProps } from "../../utils/native.ts";
@@ -198,10 +198,8 @@ const CheckboxRoot = (props: CheckboxRootProps): JSX.Element => {
                 </CheckboxContent>
                 {local.description !== undefined && <DescriptionRoot>{local.description}</DescriptionRoot>}
               </>
-            ) : typeof local.children === "function" && !isSlot(local.children) ? (
-              (local.children as (v: CheckboxFieldRenderProps) => Content)(state)
             ) : (
-              (local.children as Content)
+              renderChildren(local.children, state)
             )}
           </Provider>
         );
@@ -245,9 +243,7 @@ const CheckboxContent = (props: CheckboxContentProps): JSX.Element => {
     <CheckboxButtonPrimitive data-slot="checkbox-content" {...(rest as object)} class={cls as never}>
       {(state: CheckboxButtonRenderProps) => (
         <Provider token={LabelContext} value={LABEL_SPAN_CONTEXT}>
-          {typeof local.children === "function" && !isSlot(local.children)
-            ? (local.children as (v: CheckboxButtonRenderProps) => Content)(state)
-            : (local.children as Content)}
+          {renderChildren(local.children, state)}
         </Provider>
       )}
     </CheckboxButtonPrimitive>

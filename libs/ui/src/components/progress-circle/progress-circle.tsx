@@ -24,7 +24,7 @@ import { progressCircleVariants } from "../../../styles/src/components/progress-
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { renderClass, hasLiveProp, splitLive } from "../../utils/live.tsx";
+import { renderClass, hasLiveProp, splitLive, renderChildren } from "../../utils/live.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * ProgressCircle Constants
@@ -97,9 +97,7 @@ const ProgressCircleRoot = (props: ProgressCircleRootProps): JSX.Element => {
         };
         return (
           <Provider token={ProgressCircleContext} value={context}>
-            {typeof local.children === "function" && !isSlot(local.children)
-              ? (local.children as (v: ProgressBarRenderProps) => Content)(values)
-              : (local.children as Content)}
+            {renderChildren(local.children, values)}
           </Provider>
         );
       }}

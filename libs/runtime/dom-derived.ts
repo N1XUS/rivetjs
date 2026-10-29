@@ -720,16 +720,10 @@ function asyncEntries(list: DerivedAsync[] | undefined): void {
 function itemRead(this: ForRow): unknown {
   return this.sig !== null ? this.sig() : _tracking() ? (this.sig = signal(this.value))() : this.value;
 }
-// The list's rows over its server groups (built once; a sole list scans its element's children now).
-function rowsOf(lazy: Lazy): LRow[] {
-  if (lazy.rows) return lazy.rows;
-  const { items, hole } = lazy,
-    props = lazy.props,
-    by = props.by as ((item: unknown, index: number) => unknown) | undefined,
-    indexed = props.children.length > 1;
+// The list's server row groups (a sole list scans its element's children now: claim's scan, deferred).
+function groupsOf(hole: FHole): [Node, Node][] {
   let groups = hole.groups;
   if (!groups) {
-    // A sole list: its element's children are its row groups (claim's scan, deferred to now).
     const ll = kids(hole.sole!);
     groups = [];
     for (let j = 0; j < ll.length;) {
@@ -745,6 +739,16 @@ function rowsOf(lazy: Lazy): LRow[] {
     }
     hole.groups = groups;
   }
+  return groups;
+}
+// The list's rows over its server groups (built once).
+function rowsOf(lazy: Lazy): LRow[] {
+  if (lazy.rows) return lazy.rows;
+  const { items, hole } = lazy,
+    props = lazy.props,
+    by = props.by as ((item: unknown, index: number) => unknown) | undefined,
+    indexed = props.children.length > 1;
+  const groups = groupsOf(hole);
   if (groups.length !== items.length) {
     // The server rows are not the items' (count): the list renders in the browser (its slot's accessor builds the
     // client `_for` without adopted rows).
@@ -1535,9 +1539,24 @@ function describeArg(run: Sampled, a: unknown): WArg | null {
 }
 const sameArg = (x: WArg, y: WArg): boolean =>
   x[0] === y[0] && (x[0] === 0 ? x[1] === y[1] : x[0] === 1 ? x[2] === (y as typeof x)[2] && x[1].join() === (y as typeof x)[1].join() : true);
-// Detached sample runs of a list's first and last rows: a keyed signal they read only through hoisted bindings whose
-// captures every row supplies (row writers) reruns those writers over the lazy rows on each write; any other read wakes
-// the whole list on its first write (every row materialises).
+// Detached sample runs of a list's first and last rows, and of the middle rows of a short list (`SAMPLE_ALL`) whose
+// server markup is shaped unlike both: a keyed signal they read only through hoisted bindings whose captures every row
+// supplies (row writers) reruns those writers over the lazy rows on each write; any other read wakes the whole list on
+// its first write (every row materialises). UI-BREADCRUMB 2026-10-29: rows of one list can differ (a collection of
+// static JSX children: ui `Breadcrumbs.Item` links next to a function-child item). Before, the last row's binding reads
+// were dropped when its bindings differed from the first row's and middle rows were never sampled, so a resumed
+// `<Breadcrumbs.Item>{() => page().group}</Breadcrumbs.Item>` kept the server's text.
+const SAMPLE_ALL = 16;
+// Two server row groups of one tree shape (node types and element names at every depth; no text, no attributes): rows
+// of one template match, a row from another template (a function-child item among links) does not.
+function shaped(a: [Node, Node], b: [Node, Node]): boolean {
+  return sameTree(a[0].nextSibling, a[1], b[0].nextSibling, b[1]);
+}
+function sameTree(x: Node | null, xEnd: Node | null, y: Node | null, yEnd: Node | null): boolean {
+  for (; x !== null && x !== xEnd && y !== null && y !== yEnd; x = x.nextSibling, y = y.nextSibling)
+    if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName || !sameTree(x.firstChild, null, y.firstChild, null)) return false;
+  return (x === null || x === xEnd) && (y === null || y === yEnd);
+}
 function sample(lazy: Lazy): void {
   const n = lazy.items.length;
   if (!n || !lazy.children) return;
@@ -1549,6 +1568,22 @@ function sample(lazy: Lazy): void {
   for (const sig of last.plain) wakeOnWrite(sig, lazy);
   const writers: (Writer | null)[] = [];
   const same = first.fxs.length === last.fxs.length;
+  // Reads no row writer can serve (rows shaped unlike the first): they wake the whole list.
+  const wide = new Set<Keyed>();
+  if (!same) for (const fx of last.fxs) for (const e of fx[2]) wide.add(e);
+  // Middle rows of a short list whose server markup is shaped unlike the first and the last row's (`shaped`): a
+  // homogeneous list samples no more rows.
+  const groups = n > 2 && n <= SAMPLE_ALL && (lazy.hole.groups || lazy.hole.sole) ? groupsOf(lazy.hole) : null;
+  for (let k = 1; groups?.length === n && k < n - 1; k++) {
+    if (shaped(groups[k]!, groups[0]!) || shaped(groups[k]!, groups[n - 1]!)) continue;
+    const row = sampleRow(lazy, k);
+    if (!row) return;
+    for (const sig of row.plain) wakeOnWrite(sig, lazy);
+    for (const e of row.outside) wide.add(e);
+    const like = row.fxs.length === first.fxs.length && row.fxs.every((fx, i) => fx[0] === first.fxs[i]![0]);
+    for (const fx of row.fxs) for (const e of fx[2]) (like ? reads : wide).add(e);
+  }
+  for (const e of wide) reads.add(e);
   for (let i = 0; i < first.fxs.length; i++) {
     const [fn, args, r] = first.fxs[i]!;
     for (const e of r) reads.add(e);
@@ -1567,7 +1602,7 @@ function sample(lazy: Lazy): void {
   }
   let slots = 0;
   for (const e of reads) {
-    let mine: Writer[] | null = same && !first.outside.has(e) && !last.outside.has(e) ? [] : null;
+    let mine: Writer[] | null = same && !first.outside.has(e) && !last.outside.has(e) && !wide.has(e) ? [] : null;
     for (let i = 0; mine && i < first.fxs.length; i++)
       if (first.fxs[i]![2].has(e) || last.fxs[i]![2].has(e)) {
         const w = writers[i];

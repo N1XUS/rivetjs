@@ -29,7 +29,7 @@ import type { RadioButtonGroupVariants } from "../../../styles/src/components/ra
 import { radioButtonGroupVariants } from "../../../styles/src/components/radio-button-group/index.ts";
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-error.tsx";
 import { LabelRoot } from "../label/label.tsx";
@@ -160,7 +160,7 @@ const RadioButtonGroupItem = (props: RadioButtonGroupItemProps): JSX.Element => 
         {(state: RadioButtonRenderProps) => (
           <Provider token={RadioButtonGroupItemContext} value={{ state }}>
             <Provider token={LabelContext} value={LABEL_SPAN_CONTEXT}>
-              {typeof children === "function" && !isSlot(children) ? (children as (v: RadioButtonRenderProps) => Content)(state) : (children as Content)}
+              {renderChildren(children, state)}
             </Provider>
           </Provider>
         )}

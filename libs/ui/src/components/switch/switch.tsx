@@ -29,7 +29,7 @@ import { switchVariants } from "../../../styles/src/components/switch/index.ts";
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { DEV } from "#dev";
 
@@ -192,10 +192,8 @@ const SwitchRoot = (props: SwitchRootProps): JSX.Element => {
                 </SwitchContent>
                 {local.description !== undefined && <DescriptionRoot>{local.description}</DescriptionRoot>}
               </>
-            ) : typeof local.children === "function" && !isSlot(local.children) ? (
-              (local.children as (v: SwitchFieldRenderProps) => Content)(state)
             ) : (
-              (local.children as Content)
+              renderChildren(local.children, state)
             )}
           </Provider>
         );
@@ -238,9 +236,7 @@ const SwitchContent = (props: SwitchContentProps): JSX.Element => {
     <SwitchButtonPrimitive data-slot="switch-content" {...(rest as object)} class={cls as never}>
       {(state: SwitchButtonRenderProps) => (
         <Provider token={LabelContext} value={LABEL_SPAN_CONTEXT}>
-          {typeof local.children === "function" && !isSlot(local.children)
-            ? (local.children as (v: SwitchButtonRenderProps) => Content)(state)
-            : (local.children as Content)}
+          {renderChildren(local.children, state)}
         </Provider>
       )}
     </SwitchButtonPrimitive>

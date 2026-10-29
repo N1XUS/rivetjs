@@ -26,7 +26,7 @@ import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-e
 import { InputRoot } from "../input/input.tsx";
 import { LabelRoot } from "../label/label.tsx";
 import { FormFieldsContext } from "../../utils/form-fields.ts";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 import { DEV } from "#dev";
 import { TextFieldContext, type TextFieldContextValue } from "./textfield-context.ts";
 
@@ -82,10 +82,8 @@ const TextFieldRoot = (props: TextFieldRootProps): JSX.Element => {
                 {local.description !== undefined && <DescriptionRoot>{local.description}</DescriptionRoot>}
                 {(local.errorMessage !== undefined || fields !== undefined) && <FieldErrorRoot>{local.errorMessage}</FieldErrorRoot>}
               </>
-            ) : typeof local.children === "function" && !isSlot(local.children) ? (
-              (local.children as (v: TextFieldRenderProps) => Content)(values)
             ) : (
-              (local.children as Content)
+              renderChildren(local.children, values)
             )}
           </Provider>
         );

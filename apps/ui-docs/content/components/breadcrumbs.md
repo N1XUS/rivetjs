@@ -61,7 +61,7 @@ Additional exported parts: `Breadcrumbs.Root`.
 
 ### Inline Select
 
-A function child replaces an item's link with your own content: here an [InlineSelect](inline-select.md) switches the project without leaving the trail. The child gets `{ isCurrent, isDisabled, separator }`; call `separator()` to keep the chevron after it. The select trigger is the breadcrumb's focusable control (`aria-label="Project"`, Tab order unchanged), the last item stays the current page (`aria-current="page"`).
+A function child replaces an item's link with your own content: here an [InlineSelect](inline-select.md) switches the project without leaving the trail. The child gets `{ isCurrent, isDisabled, separator }`; call `separator()` to keep the chevron after it. Without a link: for a trail item that only shows changing text, write the read as a plain child (`<Breadcrumbs.Item href="#">{page().group}</Breadcrumbs.Item>`), which keeps the link and updates the text. The select trigger is the breadcrumb's focusable control (`aria-label="Project"`, Tab order unchanged), the last item stays the current page (`aria-current="page"`).
 
 ::example{id=breadcrumbs-inline-select}
 

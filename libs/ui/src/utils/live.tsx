@@ -6,7 +6,9 @@
 // takes its static (copy) path. Forward a live prop as a member expression (`value={local.value}`): a getter.
 // A `.tsx` module (server-rewritten, unlike `.ts`): the accessor `accessorIfLive` returns is a compiler-captured resumable
 // symbol (a returned function over `props` / `key`), so a cdk handler or binding closing over it serializes on resume. Generic helpers are `function` declarations (`<T,>` arrows would parse as JSX).
+import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { splitProps } from "@rivetjs/runtime/props";
+import { isSlot } from "@rivetjs/runtime/slot";
 
 /** `true` when any of `keys` is an own getter of `props` (a live prop). Proxied spread props (`{...cond()}`) report data
  *  descriptors and count as static (snapshot, as before live props). */
@@ -36,4 +38,12 @@ export function accessorIfLive<T extends object, K extends keyof T>(props: T, ke
 // @rivet-class-join renderClass(0)
 export function renderClass(c: string | ((values: never) => string), values: unknown): string {
   return typeof c === "function" ? c(values as never) : c;
+}
+
+/** A render-function child (a function that is not a compiler slot) as an accessor that calls it with `values`; other children
+ *  as they are. For content a component renders, e.g. a `Provider` child: a component reads its children once, untracked, so
+ *  an eager `children(values)` there read the signals of the function body once (`<ListBox.Item>{() => label()}</ListBox.Item>`
+ *  kept the first label, UI-BREADCRUMB 2026-10-29). The accessor is bound reactively: it re-runs when a signal its body reads changes. */
+export function renderChildren<V>(children: unknown, values: V): Content {
+  return typeof children === "function" && !isSlot(children) ? () => (children as (v: V) => Content)(values) : (children as Content);
 }

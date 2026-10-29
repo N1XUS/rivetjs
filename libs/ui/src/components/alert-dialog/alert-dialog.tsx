@@ -36,7 +36,7 @@ import { alertDialogVariants } from "../../../styles/src/components/alert-dialog
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
-import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { hasLiveProp, renderClass, splitLive, renderChildren } from "../../utils/live.tsx";
 import { CloseButton } from "../close-button/index.ts";
 import type { CloseButtonRootProps } from "../close-button/index.ts";
 
@@ -192,9 +192,7 @@ const AlertDialogContainer = (props: AlertDialogContainerProps): JSX.Element => 
     <ModalPrimitive class={cls as never} data-placement={placement} data-slot="alert-dialog-container" {...rest}>
       {(renderProps: ModalRenderProps) => (
         <Provider token={AlertDialogContext} value={updated}>
-          {typeof local.children === "function" && !isSlot(local.children)
-            ? (local.children as (v: ModalRenderProps) => Content)(renderProps)
-            : (local.children as Content)}
+          {renderChildren(local.children, renderProps)}
         </Provider>
       )}
     </ModalPrimitive>
