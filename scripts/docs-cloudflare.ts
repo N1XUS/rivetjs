@@ -33,14 +33,17 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     throw new Error("Usage: npm run docs:build:cloudflare -- apps/<docs|cdk-docs|ui-docs>");
   }
   const repo = fileURLToPath(new URL("../", import.meta.url));
-  if (process.platform === "linux") {
+  // Example checks (Chromium) are off by default (2026-10-29: keep the deploy simple and fast; CI's `cold` matrix and
+  // the docs builds gate examples on every push). `DOCS_CHECKS=1` runs them (fills the "What loaded" paragraphs).
+  const checks = process.env.DOCS_CHECKS === "1";
+  if (checks && process.platform === "linux") {
     const { default: chromium, inflate, setupLambdaEnvironment } = await import("@sparticuz/chromium");
     const bin = fileURLToPath(new URL("../bin/", import.meta.resolve("@sparticuz/chromium")));
     // Cloudflare's unprivileged build image has no Chromium system libraries.
     await inflate(join(bin, "al2023.tar.br"));
     setupLambdaEnvironment(join(tmpdir(), "al2023/lib"));
     process.env.DOCS_KIT_CHROMIUM_PATH = await chromium.executablePath();
-  } else {
+  } else if (checks) {
     const install = spawnSync(process.execPath, ["node_modules/playwright/cli.js", "install", "chromium"], { cwd: repo, stdio: "inherit" });
     if (install.error) throw install.error;
     if (install.status !== 0) process.exit(install.status ?? 1);
@@ -50,10 +53,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     DOCS_ORIGIN: "https://rivetjs.severyn.pro",
     CDK_DOCS_ORIGIN: "https://cdk.rivetjs.severyn.pro",
     UI_DOCS_ORIGIN: "https://ui.rivetjs.severyn.pro",
+    // The 3 GB tree budget is a dev-host rule; on the build runner the peak is reported, not enforced.
+    DOCS_KIT_MAX_RSS_MB: process.env.DOCS_KIT_MAX_RSS_MB ?? "0",
   };
-  // Example checks (Chromium) run by default (2026-10-28: every app's `examples/_quarantine.json` is empty, so a red check
-  // is a real regression and blocks the deploy). `DOCS_CHECKS=0` skips them (`--no-checks`: the "What loaded" paragraphs stay empty).
-  const args = ["libs/docs-kit/cli.ts", "build", app, ...(process.env.DOCS_CHECKS === "0" ? ["--no-checks"] : [])];
+  const args = ["libs/docs-kit/cli.ts", "build", app, ...(checks ? [] : ["--no-checks"])];
   const result = spawnSync(process.execPath, args, { cwd: repo, env, stdio: "inherit" });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
