@@ -8,7 +8,7 @@ One local CLI invocation investigates one bounded area of Rivet. It either lands
 
 ## Approach and choices
 
-The user selected autonomous testing rather than a general coding-agent orchestrator. For v1, use the installed Codex CLI, inheriting the user's configured model and authentication; no new SDK, API key, model selection or provider abstraction is needed. The inspected CLI supports workspace-write, JSONL events, a final output schema and an output-message file. The CLI process is a worker; a deterministic Node 24 supervisor controls verification and intake.
+The user selected autonomous testing rather than a general coding-agent orchestrator. For v1, use the installed Codex CLI, defaulting to the user's configured model and authentication; no new SDK, API key or provider abstraction is needed. An explicit harness-only model override was subsequently authorized (see amendment below). The inspected CLI supports workspace-write, JSONL events, a final output schema and an output-message file. The CLI process is a worker; a deterministic Node 24 supervisor controls verification and intake.
 
 An agent running directly in the shared checkout would make evidence and unrelated work harder to protect. Instead, investigate and repair in an independent Git snapshot, then validate and intake a named patch. Full isolated dependency installation is expensive; use a private node_modules layout with third-party dependency links and workspace package links redirected to the snapshot. Do not link the entire root node_modules: Rivet imports must resolve to snapshot libraries. Test this with a deliberately different library value and real module-resolution execution.
 
@@ -19,7 +19,9 @@ Implementation location: `scripts/ai-tester/`, tests under `scripts/tests/ai-tes
 Commands:
 
 ```sh
+node scripts/ai-tester/cli.ts doctor [--model <slug>]
 node scripts/ai-tester/cli.ts run --area reactivity
+node scripts/ai-tester/cli.ts run --area reactivity --model gpt-6-astra --no-commit
 node scripts/ai-tester/cli.ts run --area router
 node scripts/ai-tester/cli.ts run --area resume
 node scripts/ai-tester/cli.ts status [run-id]
@@ -74,3 +76,7 @@ Parallel lanes, provider failover, dashboard, scheduling, exhaustive fuzzing, au
 ## Builder check
 
 A fresh read-only reviewer found no important user questions left before planning. Snapshot resolution, supervisor-owned verification, provider availability and shared-worktree intake have explicit acceptance checks. Implementation details of locking/report validation remain with the builder. The user approved this design with “Ок”; implementation and live verification are tracked in the matching plan. The installed Codex CLI reports version 0.153.4 and an existing ChatGPT login; live inference availability is still untested.
+
+## Authorized provider amendment
+
+After actual inference rejected the configured model, the user explicitly approved selecting a compatible model only for the harness. Optional `--model <slug>` now overrides worker/reviewer/doctor per invocation; omission preserves the configured default and existing authentication. No silent model/provider fallback or global configuration changes. `doctor` performs one bounded read-only inference with strict structured output, completed-turn validation and retained diagnostics before an expensive campaign. Private CLI inspection disables inherited MCP integrations, apps/plugins and parallel agent tools for these invocations. Readiness proves provider access only; live investigation still needs its own executed evidence and supervisor acceptance.

@@ -26,6 +26,12 @@ export function checkScope(area: Area, finding: Finding, changed: string[]) {
     if (path !== "CLAUDE.md" && !AREAS[area].roots.some((root) => (root.endsWith("/") ? path.startsWith(root) : path === root)))
       throw new Error(`Out-of-scope change: ${path}`);
     if (
+      /(?:^|\/)(?:\.(?:gitignore|gitattributes|npmrc|yarnrc(?:\.yml)?|node-version|nvmrc|tool-versions)|\.env(?:\.[^/]+)?|\.codex|\.claude|\.agents)(?:\/|$)/.test(
+        path,
+      )
+    )
+      throw new Error(`Protected change: ${path}`);
+    if (
       /(?:^|\/)(?:node_modules|\.git|\.artifacts|dist)(?:\/|$)|(?:^|\/)(?:(?:package(?:-lock)?|project|nx)\.json|[^/]*\.config\.[^/]+|tsconfig[^/]*\.json|vitest[^/]*\.[^/]+|AGENTS\.md)$|\.(?:rs|wasm)$|(?:known-red|quarantine|baseline|\.min\.)/.test(
         path,
       ) ||

@@ -25,6 +25,22 @@ export function changedPaths(root: string): string[] {
   ];
   return [...new Set(names.flatMap((v) => v.split("\0").filter(Boolean)))].sort();
 }
+/** Check actual tracked bytes, including paths hidden by assume-unchanged/stat cache flags. */
+export function assertSnapshotSource(root: string, base: string): void {
+  if (git(root, ["rev-parse", "HEAD"]) !== base || changedPaths(root).length) throw new Error("No-finding snapshot source or HEAD changed");
+  const entries = git(root, ["ls-tree", "-r", "-z", base])
+    .split("\0")
+    .filter(Boolean)
+    .map((entry) => {
+      const match = /^(100644|100755) blob ([0-9a-f]+)\t(.+)$/.exec(entry);
+      if (!match) throw new Error("Invalid snapshot source inventory");
+      safeFile(root, match[3]!);
+      return { hash: match[2]!, path: match[3]! };
+    });
+  if (!entries.length) throw new Error("Empty snapshot source inventory");
+  const actual = git(root, ["hash-object", "--no-filters", "--stdin-paths"], entries.map((entry) => JSON.stringify(entry.path)).join("\n") + "\n").split("\n");
+  if (actual.length !== entries.length || entries.some((entry, i) => entry.hash !== actual[i])) throw new Error("No-finding snapshot source bytes changed");
+}
 export function safeFile(root: string, path: string, missing = false): string {
   if (
     !path ||

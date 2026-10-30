@@ -2,11 +2,13 @@
 
 One local campaign asks Codex to investigate a bounded area, minimize one supported bug, add a native regression and repair it. The supervisor independently replays RED/GREEN, runs affected gates, requests read-only review and commits only the verified named files. Worker completion alone is not a pass.
 
-Requires existing workspace dependencies, Node 24+, the installed/authenticated Codex CLI and `ps` process inspection. Browser areas also need the repository's Playwright browsers. The user's configured Codex model/authentication are inherited; the harness does not select a model or install tooling.
+Requires existing workspace dependencies, Node 24+, the installed/authenticated Codex CLI and `ps` process inspection. Browser areas also need the repository's Playwright browsers. Model/authentication default to the CLI configuration. Optional `--model <slug>` selects a model only for this harness invocation; it never changes global settings or installs tooling.
 
 From the repository root:
 
 ```sh
+node scripts/ai-tester/cli.ts doctor --model gpt-6-astra
+node scripts/ai-tester/cli.ts run --area reactivity --model gpt-6-astra --no-commit
 node scripts/ai-tester/cli.ts run --area reactivity --no-commit
 node scripts/ai-tester/cli.ts run --area router
 node scripts/ai-tester/cli.ts run --area resume --timeout 10
@@ -54,4 +56,10 @@ The integration tests use real disposable Git repositories, real native Vitest r
 
 ## Provider setup failures
 
-The driver inherits the installed Codex CLI's configured model/authentication. If the worker fails with model_not_found or an account/model compatibility error, inspect the worker log and repair the CLI profile before retrying. Cached model listings do not establish successful inference access. The harness does not silently substitute models or modify global Codex settings. The first actual verification attempt after snapshot startup was repaired encountered this configuration failure; live discovery is not claimed on that evidence. See `docs/design/research/2026-10-30-autonomous-tester-verification.md`.
+Run `doctor [--model <slug>]` before an expensive campaign. It holds the campaign lock, runs one read-only inference in an empty disposable directory and requires an exact structured response plus a completed CLI turn. Its wall budget is 60 seconds and sampled RSS limit 3072 MiB. Exit 0 means provider readiness only; exit 2 means failure and 130 means interrupted. Evidence is retained under `.artifacts/ai-tester/diagnostics/<id>/`.
+
+Private CLI inspection discovers configured MCP server names and verifies per-process overrides disable every server; raw configuration output is never logged. Worker, reviewer and doctor also disable apps, plugins and parallel agent tools. Unsupported or managed configurations that prevent isolation fail closed. Existing CLI authentication is retained.
+
+`model_not_found` requires a compatible explicit `--model` or a user-repaired CLI profile. There is no silent fallback or global setting change. Cached catalogs do not establish inference access. On 2026-10-30 the configured `gpt-6.1-sol` failed with this account; the user authorized a harness-only override, and `doctor --model gpt-6-astra` completed actual inference. See `docs/design/research/2026-10-30-autonomous-tester-verification.md` for separate provider and campaign evidence.
+
+No-finding acceptance checks native assertion records and consistent counts: skipped/todo-only suites cannot pass. Existing mixed suites need at least one actual passing assertion and no failures. The supervisor then checks snapshot HEAD, inventory and every committed source blob against actual bytes, including files hidden by Git index flags. Nested Git/npm/environment/agent configuration remains protected from worker edits.

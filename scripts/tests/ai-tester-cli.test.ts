@@ -38,3 +38,23 @@ test("status reads durable terminal records and rejects traversal", () => {
   assert.equal(readStatus(root).length, 1);
   assert.throws(() => readStatus(root, "../outside"));
 });
+
+test("doctor and campaigns accept only an explicit per-run model override", () => {
+  assert.deepEqual(parseArgs(["doctor"]), { command: "doctor" });
+  assert.deepEqual(parseArgs(["doctor", "--model", "gpt-6-astra"]), { command: "doctor", model: "gpt-6-astra" });
+  assert.deepEqual(parseArgs(["run", "--area", "reactivity", "--model", "gpt-6-astra"]), {
+    command: "run",
+    area: "reactivity",
+    model: "gpt-6-astra",
+    noCommit: false,
+    wallMs: 1800000,
+    rssLimitMB: 3072,
+  });
+  for (const args of [
+    ["doctor", "--model"],
+    ["doctor", "--model", "x --sandbox danger-full-access"],
+    ["doctor", "--model", "a", "--model", "b"],
+    ["run", "--area", "reactivity", "--model", "a\nb"],
+  ])
+    assert.throws(() => parseArgs(args));
+});

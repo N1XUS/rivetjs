@@ -52,33 +52,50 @@ export function schemas(dir: string) {
   );
   return { worker, reviewer };
 }
-export const codex: Agent = ({ role, workspace, output, schema, prompt }) => ({
-  file: "codex",
-  args: [
-    "-c",
-    'approval_policy="never"',
-    "exec",
-    "--sandbox",
-    role === "worker" ? "workspace-write" : "read-only",
-    "--disable",
-    "multi_agent",
-    "-c",
-    "sandbox_workspace_write.writable_roots=[]",
-    "-c",
-    "sandbox_workspace_write.network_access=true",
-    "--json",
-    "--color",
-    "never",
-    "--output-schema",
-    schema,
-    "--output-last-message",
-    output,
-    "-C",
-    workspace,
-    "-",
-  ],
-  stdin: prompt,
-});
+export function checkModel(model: unknown): asserts model is string {
+  if (typeof model !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,127}$/.test(model)) throw new Error("Invalid explicit model name");
+}
+export function codexIsolationArgs(servers: string[] | undefined): string[] {
+  if (
+    !Array.isArray(servers) ||
+    servers.length > 256 ||
+    servers.some((name) => !/^[a-zA-Z0-9_-]{1,128}$/.test(name)) ||
+    new Set(servers).size !== servers.length
+  )
+    throw new Error("Codex MCP capabilities must be inspected before launch");
+  return ["--disable", "apps", "--disable", "plugins", "--disable", "multi_agent", ...servers.flatMap((name) => ["-c", `mcp_servers.${name}.enabled=false`])];
+}
+export const codex: Agent = ({ role, workspace, output, schema, prompt, model, mcpServers }) => {
+  if (model !== undefined) checkModel(model);
+  return {
+    file: "codex",
+    args: [
+      "-c",
+      'approval_policy="never"',
+      ...codexIsolationArgs(mcpServers),
+      "exec",
+      "--ephemeral",
+      "--sandbox",
+      role === "worker" ? "workspace-write" : "read-only",
+      "-c",
+      "sandbox_workspace_write.writable_roots=[]",
+      "-c",
+      "sandbox_workspace_write.network_access=true",
+      "--json",
+      ...(model ? ["--model", model] : []),
+      "--color",
+      "never",
+      "--output-schema",
+      schema,
+      "--output-last-message",
+      output,
+      "-C",
+      workspace,
+      "-",
+    ],
+    stdin: prompt,
+  };
+};
 export function workerPrompt(area: Area, base: string, history: string): string {
   return `You are the autonomous Rivet tester for one bounded campaign, area ${area}, source revision ${base}.
 Investigate existing supported behavior, minimize ONE real counterexample, add a permanent native regression test, then make the smallest fix. If none is found, report no-finding honestly with executed probe evidence. Do not fabricate a defect or fix a documented limitation.

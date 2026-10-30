@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, test } from "vitest";
@@ -28,7 +28,7 @@ if(role==='reviewer'){
  writeFileSync(out,JSON.stringify({verdict:mode==='review-reject'?'reject':'accept',findings:mode==='review-reject'?['not a supported contract']:[]}));process.exit(0);
 }
 put('.artifacts/probe.txt','Executed seeded input clear([1]); actual [1], expected []');
-if(mode==='no-finding') {writeFileSync(out,JSON.stringify({disposition:'no-finding',summary:'No supported counterexample',scenario:'seeded clear scenario',expected:'[]',actual:'[]',changedPaths:[],testPaths:[],reproPaths:[],evidencePaths:['.artifacts/probe.txt'],regression:null}));process.exit(0);}
+if(mode.startsWith('no-finding')) {writeFileSync(out,JSON.stringify({disposition:'no-finding',summary:'No supported counterexample',scenario:'seeded clear scenario',expected:'[]',actual:'[]',changedPaths:[],testPaths:[],reproPaths:[],evidencePaths:['.artifacts/probe.txt'],regression:null}));process.exit(0);}
 if(mode==='missing-result')process.exit(0);
 let body="import assert from 'node:assert/strict';import {test} from 'vitest';import {clear} from '../index.js';test('clears read child',()=>assert.deepEqual(clear([1]),[], 'clears read child'));";
 if(mode==='zero-tests')body="export const nothing=1;";
@@ -54,8 +54,24 @@ function fixture(mode = "ok") {
   put(".gitignore", "node_modules/\n.artifacts/\n");
   put("package.json", JSON.stringify({ type: "module", workspaces: ["libs/*"] }));
   put("libs/reactivity/package.json", JSON.stringify({ name: "@rivetjs/reactivity", type: "module", exports: "./index.js" }));
-  put("libs/reactivity/index.js", mode === "no-finding" ? "export const clear=()=>[];" : "export const clear=(items)=>items;");
-  put("libs/reactivity/tests/control.test.ts", "import {test} from 'vitest';import assert from 'node:assert/strict';test('control',()=>assert.equal(1,1));");
+  put("libs/reactivity/index.js", mode.startsWith("no-finding") ? "export const clear=()=>[];" : "export const clear=(items)=>items;");
+  const control =
+    mode === "no-finding-hidden-source"
+      ? "test('control',()=>{execFileSync('git',['update-index','--assume-unchanged','libs/reactivity/index.js']);writeFileSync('libs/reactivity/index.js','export const clear=()=>[1];');assert.equal(1,1);});"
+      : mode === "no-finding-head-changed"
+        ? "test('control',()=>{execFileSync('git',['commit','--allow-empty','-qm','changed baseline revision'],{stdio:'ignore'});assert.equal(1,1);});"
+        : mode === "no-finding-skipped"
+          ? "test.skip('control',()=>{});"
+          : mode === "no-finding-todo"
+            ? "test.todo('control');"
+            : "test('control',()=>assert.equal(1,1));";
+  put(
+    "libs/reactivity/tests/control.test.ts",
+    "import {test} from 'vitest';import assert from 'node:assert/strict';import {execFileSync} from 'node:child_process';import {writeFileSync} from 'node:fs';" +
+      control,
+  );
+  if (mode === "no-finding-mixed")
+    put("libs/reactivity/tests/skipped.test.ts", "import {test} from 'vitest';test.skip('existing skip',()=>{});test.todo('existing todo');");
   put("vitest.config.ts", "export default {test:{projects:[{test:{name:'reactivity',include:['libs/reactivity/tests/*.test.ts'],environment:'node'}}]}};");
   // Only the external gates boundary is a small fixture; the supervisor still executes and validates plan and result as subprocesses.
   put(
@@ -102,10 +118,34 @@ test("unrelated staged, unstaged and untracked user work survives a verified com
 });
 test("no-commit verifies the same real pipeline and leaves shared source and HEAD untouched", async () => {
   const f = fixture();
-  const result = await runCampaign({ ...f, area: "reactivity", noCommit: true });
+  const models: unknown[] = [];
+  const agent: Agent = (context) => {
+    models.push(context.model);
+    return f.agent(context);
+  };
+  const result = await runCampaign({ ...f, agent, area: "reactivity", model: "gpt-6-astra", noCommit: true });
   assert.equal(result.status, "verified", result.message ?? result.status);
+  assert.deepEqual(models, ["gpt-6-astra", "gpt-6-astra"]);
+  assert.equal(result.model, "gpt-6-astra");
   assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
   assert.equal(readFileSync(join(f.root, "libs/reactivity/index.js"), "utf8"), "export const clear=(items)=>items;");
+});
+test("provider inspection respects the remaining campaign wall budget", async () => {
+  const f = fixture();
+  const bin = join(f.root, ".artifacts/bin");
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(join(bin, "codex"), "#!/usr/bin/env node\nsetTimeout(()=>process.exit(1),5000);");
+  chmodSync(join(bin, "codex"), 0o755);
+  const previous = process.env.PATH;
+  process.env.PATH = bin + ":" + previous;
+  const start = Date.now();
+  try {
+    const result = await runCampaign({ root: f.root, area: "reactivity", wallMs: 100 });
+    assert.equal(result.status, "failed");
+    assert.ok(Date.now() - start < 2000, "inspection must honor the campaign deadline");
+  } finally {
+    process.env.PATH = previous;
+  }
 });
 test("no-finding requires an independently executed nonempty native suite and never commits", async () => {
   const f = fixture("no-finding");
@@ -113,6 +153,19 @@ test("no-finding requires an independently executed nonempty native suite and ne
   assert.equal(result.status, "no-finding", result.message ?? result.status);
   assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
 });
+test("no-finding accepts a native passing suite with existing skips and todos", async () => {
+  const f = fixture("no-finding-mixed");
+  const result = await runCampaign({ ...f, area: "reactivity" });
+  assert.equal(result.status, "no-finding", result.message ?? result.status);
+  assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
+});
+for (const mode of ["no-finding-skipped", "no-finding-todo"])
+  test(`no-finding rejects a native suite with no executed assertions (${mode})`, async () => {
+    const f = fixture(mode);
+    const result = await runCampaign({ ...f, area: "reactivity" });
+    assert.equal(result.status, "failed", JSON.stringify(result));
+    assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
+  });
 for (const mode of [
   "zero-tests",
   "import-error",
@@ -185,5 +238,21 @@ test("assume-unchanged cannot hide actual candidate bytes from intake protection
   const result = await runCampaign({ ...f, area: "reactivity" });
   assert.equal(result.status, "needs-attention");
   assert.equal(readFileSync(join(f.root, path), "utf8"), "private user edits");
+  assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
+});
+
+test("no-finding rejects a baseline that changes its own snapshot HEAD", async () => {
+  const f = fixture("no-finding-head-changed");
+  const result = await runCampaign({ ...f, area: "reactivity" });
+  assert.equal(result.status, "failed", result.message ?? result.status);
+  assert.match(result.message ?? "", /snapshot|source|HEAD/i);
+  assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
+});
+
+test("no-finding rejects baseline source edits hidden with assume-unchanged", async () => {
+  const f = fixture("no-finding-hidden-source");
+  const result = await runCampaign({ ...f, area: "reactivity" });
+  assert.equal(result.status, "failed", result.message ?? result.status);
+  assert.match(result.message ?? "", /snapshot|source/i);
   assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
 });

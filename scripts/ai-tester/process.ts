@@ -30,13 +30,7 @@ function rss(pid: number, groups: Set<number>): number {
   for (const [p, , group] of rows) if (tree.has(p) && tree.has(group)) groups.add(group);
   return rows.reduce((sum, [p, , , memory]) => sum + (tree.has(p) ? memory * 1024 : 0), process.memoryUsage().rss);
 }
-export async function execute(options: Execution): Promise<ProcessResult> {
-  mkdirSync(dirname(options.log), { recursive: true });
-  const log = createWriteStream(options.log, { flags: "wx" });
-  let reason: string | null = null;
-  let peakRssBytes = 0;
-  let bytes = 0;
-  let force: ReturnType<typeof setTimeout> | undefined;
+export function restrictedEnvironment(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
   for (const key of [
     "PATH",
@@ -58,6 +52,16 @@ export async function execute(options: Execution): Promise<ProcessResult> {
   ])
     if (process.env[key] !== undefined) env[key] = process.env[key];
   Object.assign(env, { NODE_OPTIONS: "--max-old-space-size=2048", NX_DAEMON: "false", NX_ISOLATE_PLUGINS: "false", RIVET_HEAVY_SLOTS: "1", NO_COLOR: "1" });
+  return env;
+}
+export async function execute(options: Execution): Promise<ProcessResult> {
+  mkdirSync(dirname(options.log), { recursive: true });
+  const log = createWriteStream(options.log, { flags: "wx" });
+  let reason: string | null = null;
+  let peakRssBytes = 0;
+  let bytes = 0;
+  let force: ReturnType<typeof setTimeout> | undefined;
+  const env = restrictedEnvironment();
   const child = spawn("nice", ["-n", "10", options.file, ...options.args], { cwd: options.cwd, env, detached: true, stdio: ["pipe", "pipe", "pipe"] });
   const groups = new Set<number>(child.pid ? [child.pid] : []);
   const kill = (signal: NodeJS.Signals) => {

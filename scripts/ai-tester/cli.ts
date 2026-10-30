@@ -1,18 +1,31 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkModel } from "./agent.ts";
+import { runDoctor } from "./provider.ts";
 import { AREAS } from "./policy.ts";
 import { runCampaign } from "./run.ts";
 import { safeFile } from "./workspace.ts";
 import type { Area, RunRecord } from "./types.ts";
 const help = `Rivet autonomous tester
-  node scripts/ai-tester/cli.ts run --area reactivity|router|resume [--no-commit] [--timeout minutes<=30] [--rss-limit MiB<=3072]
+  node scripts/ai-tester/cli.ts run --area reactivity|router|resume [--model slug] [--no-commit] [--timeout minutes<=30] [--rss-limit MiB<=3072]
+  node scripts/ai-tester/cli.ts doctor [--model slug]
   node scripts/ai-tester/cli.ts status [run-id]
 One foreground campaign; verified fixes commit by default. No push or deployment.`;
-type Parsed = { command: "run"; area: Area; noCommit: boolean; wallMs: number; rssLimitMB: number } | { command: "status"; id?: string } | { command: "help" };
+type Parsed =
+  | { command: "run"; area: Area; noCommit: boolean; wallMs: number; rssLimitMB: number; model?: string }
+  | { command: "doctor"; model?: string }
+  | { command: "status"; id?: string }
+  | { command: "help" };
 export function parseArgs(args: string[]): Parsed {
   const [command, ...rest] = args;
   if (command === "--help" || command === "-h" || !command) return { command: "help" };
+  if (command === "doctor") {
+    if (!rest.length) return { command };
+    if (rest.length !== 2 || rest[0] !== "--model") throw new Error("Invalid doctor options");
+    checkModel(rest[1]);
+    return { command, model: rest[1] };
+  }
   if (command === "status") {
     if (rest.length > 1 || (rest[0] && !/^[\w-]+$/.test(rest[0]))) throw new Error("Invalid run id");
     return { command, id: rest[0] };
@@ -28,10 +41,13 @@ export function parseArgs(args: string[]): Parsed {
       result.noCommit = true;
       continue;
     }
-    if (!["--area", "--timeout", "--rss-limit"].includes(flag)) throw new Error(`Unknown option ${flag}`);
+    if (!["--area", "--timeout", "--rss-limit", "--model"].includes(flag)) throw new Error(`Unknown option ${flag}`);
     const value = rest[++i];
     if (value === undefined || value.startsWith("--")) throw new Error(`${flag} requires a value`);
-    if (flag === "--area") {
+    if (flag === "--model") {
+      checkModel(value);
+      result.model = value;
+    } else if (flag === "--area") {
       if (!Object.hasOwn(AREAS, value)) throw new Error("Unknown area");
       result.area = value as Area;
     } else {
@@ -78,6 +94,12 @@ async function main() {
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
   try {
+    if (options.command === "doctor") {
+      const result = await runDoctor({ ...options, root, signal: controller.signal });
+      console.log(JSON.stringify(result, null, 2));
+      process.exitCode = result.status === "ready" ? 0 : result.status === "interrupted" ? 130 : 2;
+      return;
+    }
     const result = await runCampaign({ ...options, root, signal: controller.signal });
     console.log(JSON.stringify(result, null, 2));
     process.exitCode = ["committed", "verified", "no-finding"].includes(result.status)

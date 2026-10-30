@@ -29,6 +29,8 @@ export interface AgentContext {
   output: string;
   schema: string;
   prompt: string;
+  model?: string;
+  mcpServers?: string[];
 }
 export type Agent = (context: AgentContext) => Command;
 export interface RunRecord {
@@ -37,6 +39,7 @@ export interface RunRecord {
   base: string;
   status: Status;
   phase: string;
+  model?: string;
   startedAt: string;
   finishedAt?: string;
   message?: string;

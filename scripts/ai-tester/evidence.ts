@@ -22,6 +22,35 @@ export function parseFinding(value: unknown): Finding {
   } else if (v.regression !== null || v.changedPaths.length || v.testPaths.length) throw new Error("Non-finding cannot propose source changes");
   return v as Finding;
 }
+export function checkBaseline(value: unknown, code: number): void {
+  const v = object(value);
+  const counts = [v.numTotalTests, v.numPassedTests, v.numFailedTests, v.numPendingTests, v.numTodoTests];
+  if (
+    code !== 0 ||
+    v.success !== true ||
+    counts.some((n) => !Number.isInteger(n) || n < 0) ||
+    v.numPassedTests === 0 ||
+    v.numFailedTests !== 0 ||
+    v.numTotalTests !== v.numPassedTests + v.numPendingTests + v.numTodoTests ||
+    !Array.isArray(v.testResults) ||
+    !v.testResults.length
+  )
+    throw new Error("No-finding baseline did not execute a passing native suite");
+  const actual = { passed: 0, skipped: 0, todo: 0 };
+  for (const result of v.testResults) {
+    const file = object(result);
+    if (!text(file.name) || file.message !== "" || file.status !== "passed" || !Array.isArray(file.assertionResults))
+      throw new Error("No-finding baseline collection/setup failed");
+    for (const result of file.assertionResults) {
+      const a = object(result);
+      if (!Object.hasOwn(actual, a.status) || !text(a.fullName) || !Array.isArray(a.failureMessages) || a.failureMessages.length)
+        throw new Error("No-finding baseline contains invalid or failing tests");
+      actual[a.status as keyof typeof actual]++;
+    }
+  }
+  if (actual.passed !== v.numPassedTests || actual.skipped !== v.numPendingTests || actual.todo !== v.numTodoTests)
+    throw new Error("No-finding baseline test counts do not match executed results");
+}
 export function checkRegression(value: unknown, r: Regression, code: number, phase: "red" | "green", identity?: string): string {
   const v = object(value);
   if (v.numTotalTests !== 1 || v.numPendingTests !== 0 || v.numTodoTests !== 0 || !Array.isArray(v.testResults) || v.testResults.length !== 1)

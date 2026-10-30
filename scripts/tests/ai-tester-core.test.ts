@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, test } from "vitest";
 import { safeFile, snapshot, git, changedPaths, acquireLock } from "../ai-tester/workspace.ts";
-import { checkRegression, checkGates, parseFinding } from "../ai-tester/evidence.ts";
+import { checkBaseline, checkRegression, checkGates, parseFinding } from "../ai-tester/evidence.ts";
 import { checkScope } from "../ai-tester/policy.ts";
 import type { Area, Finding } from "../ai-tester/types.ts";
 import { execute } from "../ai-tester/process.ts";
@@ -119,6 +119,64 @@ test("zero tests, import/setup failures, unrelated assertions and false RED cann
   assert.throws(() => checkRegression(report("passed"), regression, 0, "red"));
   assert.throws(() => checkRegression(report("failed"), regression, 1, "green", "clears read child"));
   assert.throws(() => checkRegression(report("passed"), regression, 0, "green", "different discovered test"));
+});
+function baselineReport() {
+  const value = report("passed");
+  return {
+    ...value,
+    numTotalTests: 3,
+    numPendingTests: 1,
+    numTodoTests: 1,
+    testResults: [
+      {
+        ...value.testResults[0],
+        assertionResults: [
+          value.testResults[0].assertionResults[0],
+          { fullName: "existing skip", title: "existing skip", status: "skipped", failureMessages: [] },
+          { fullName: "existing todo", title: "existing todo", status: "todo", failureMessages: [] },
+        ],
+      },
+    ],
+  };
+}
+test("no-finding baseline requires executed passing tests while retaining existing skips and todos", () => {
+  assert.doesNotThrow(() => checkBaseline(baselineReport(), 0));
+  const good = baselineReport();
+  const skipped = {
+    ...good,
+    numPassedTests: 0,
+    numPendingTests: 2,
+    testResults: [
+      {
+        ...good.testResults[0],
+        assertionResults: good.testResults[0].assertionResults.map((a) => ({ ...a, status: a.status === "passed" ? "skipped" : a.status })),
+      },
+    ],
+  };
+  const todo = {
+    ...good,
+    numPassedTests: 0,
+    numPendingTests: 0,
+    numTodoTests: 3,
+    testResults: [{ ...good.testResults[0], assertionResults: good.testResults[0].assertionResults.map((a) => ({ ...a, status: "todo" })) }],
+  };
+  for (const value of [
+    skipped,
+    todo,
+    { ...good, success: false },
+    { ...good, numTotalTests: 0 },
+    { ...good, numPassedTests: undefined },
+    { ...good, numPassedTests: "1" },
+    { ...good, numPendingTests: -1 },
+    { ...good, numFailedTests: 1 },
+    { ...good, numTotalTests: 4 },
+    { ...good, testResults: [] },
+    { ...good, testResults: [{ ...good.testResults[0], message: "beforeAll failed" }] },
+    { ...good, testResults: [{ ...good.testResults[0], assertionResults: [] }] },
+    { ...good, testResults: [{ ...good.testResults[0], assertionResults: [{ ...good.testResults[0].assertionResults[0], status: "failed" }] }] },
+  ])
+    assert.throws(() => checkBaseline(value, 0));
+  assert.throws(() => checkBaseline(good, 1));
 });
 test("complete trusted gate plan is required; omitted or failed gates cannot count as success", () => {
   const plan = { gates: [{ id: "format" }, { id: "vitest:reactivity" }] };
@@ -257,4 +315,12 @@ test("snapshot retains tracked files covered by current ignore rules", async () 
   await snapshot(root, git(root, ["rev-parse", "HEAD"]), work);
   assert.equal(readFileSync(join(work, "results/report.json"), "utf8"), '{"historical":true}');
   assert.deepEqual(changedPaths(work), []);
+});
+
+test("worker scope rejects nested tool configuration even beside a valid regression", () => {
+  for (const name of [".npmrc", ".gitattributes", ".gitignore", ".yarnrc.yml", ".node-version", ".env.test"]) {
+    const changed = ["libs/reactivity/" + name, "libs/reactivity/tests/repro.test.ts"].sort();
+    const finding = { changedPaths: changed, testPaths: ["libs/reactivity/tests/repro.test.ts"], regression } as Finding;
+    assert.throws(() => checkScope("reactivity", finding, changed), /Protected change/, name);
+  }
 });

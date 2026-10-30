@@ -2,15 +2,17 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realp
 import { dirname, join } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import type { Agent, Area, RunRecord, Regression } from "./types.ts";
-import { acquireLock, changedPaths, git, safeFile, snapshot } from "./workspace.ts";
-import { checkGates, checkRegression, parseFinding } from "./evidence.ts";
+import { acquireLock, assertSnapshotSource, changedPaths, git, safeFile, snapshot } from "./workspace.ts";
+import { checkBaseline, checkGates, checkRegression, parseFinding } from "./evidence.ts";
 import { execute, type ProcessResult } from "./process.ts";
-import { codex, reviewPrompt, schemas, workerPrompt } from "./agent.ts";
+import { codex, checkModel, reviewPrompt, schemas, workerPrompt } from "./agent.ts";
+import { inspectCodex } from "./provider.ts";
 import { AREAS, checkScope } from "./policy.ts";
 import { assertIntake, Attention, intake, type CandidateFile } from "./intake.ts";
 export interface RunOptions {
   root: string;
   area: Area;
+  model?: string;
   noCommit?: boolean;
   wallMs?: number;
   rssLimitMB?: number;
@@ -22,6 +24,7 @@ const json = (file: string) => JSON.parse(readFileSync(file, "utf8"));
 const same = (a: string[], b: string[]) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
 const literal = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export async function runCampaign(options: RunOptions): Promise<RunRecord> {
+  if (options.model !== undefined) checkModel(options.model);
   const root = realpathSync(options.root);
   const wall = options.wallMs ?? 30 * 60000;
   const rss = options.rssLimitMB ?? 3072;
@@ -36,7 +39,16 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
   const deadline = Date.now() + wall;
   const base = git(root, ["rev-parse", "HEAD"]);
   const originalDirty = changedPaths(root);
-  const record: RunRecord = { id, area: options.area, base, status: "running", phase: "prepare", startedAt: new Date().toISOString(), peakRssBytes: 0 };
+  const record: RunRecord = {
+    id,
+    area: options.area,
+    base,
+    status: "running",
+    phase: "prepare",
+    ...(options.model ? { model: options.model } : {}),
+    startedAt: new Date().toISOString(),
+    peakRssBytes: 0,
+  };
   const persist = () => {
     const temp = join(dir, "run.next.json");
     writeFileSync(temp, JSON.stringify(record, null, 2) + "\n");
@@ -66,6 +78,8 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
     event("prepare");
     writeFileSync(join(dir, "base-tree.txt"), git(root, ["ls-tree", "-r", base]));
     writeFileSync(join(dir, "protected-paths.json"), JSON.stringify(originalDirty, null, 2));
+    const capabilities = options.agent ? undefined : inspectCodex(root, deadline);
+    if (capabilities) writeFileSync(join(dir, "provider-config.json"), JSON.stringify({ ...capabilities, model: options.model ?? null }, null, 2));
     const work = join(dir, "work");
     const workBase = await snapshot(root, base, work);
     const schema = schemas(dir);
@@ -76,7 +90,15 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
     event("investigate");
     const output = join(dir, "worker.json");
     const agent = options.agent ?? codex;
-    const worker = agent({ role: "worker", workspace: work, output, schema: schema.worker, prompt });
+    const worker = agent({
+      role: "worker",
+      workspace: work,
+      output,
+      schema: schema.worker,
+      prompt,
+      model: options.model,
+      mcpServers: capabilities?.mcpServers,
+    });
     await checked(worker.file, worker.args, work, "worker", worker.stdin);
     if (git(work, ["rev-parse", "HEAD"]) !== workBase) throw new Error("Worker changed snapshot HEAD");
     const finding = parseFinding(json(output));
@@ -115,18 +137,8 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
     if (finding.disposition === "no-finding") {
       event("baseline-probe");
       const result = await test(work, null, "baseline");
-      const v = result.value;
-      if (
-        result.code !== 0 ||
-        v.success !== true ||
-        !(v.numTotalTests > 0) ||
-        v.numFailedTests !== 0 ||
-        !Array.isArray(v.testResults) ||
-        !v.testResults.length ||
-        v.testResults.some((f: any) => f.message || f.status !== "passed")
-      )
-        throw new Error("No-finding baseline did not execute a passing native suite");
-      if (changedPaths(work).length) throw new Error("No-finding probe mutated source files");
+      checkBaseline(result.value, result.code);
+      assertSnapshotSource(work, workBase);
       record.status = "no-finding";
       record.message = finding.summary;
     } else {
@@ -181,6 +193,8 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
         workspace: validation,
         output: reviewOutput,
         schema: schema.reviewer,
+        model: options.model,
+        mcpServers: capabilities?.mcpServers,
         prompt: reviewPrompt(options.area, dir),
       });
       await checked(reviewer.file, reviewer.args, validation, "reviewer", reviewer.stdin);

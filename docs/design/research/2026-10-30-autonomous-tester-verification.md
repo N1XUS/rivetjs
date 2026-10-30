@@ -21,8 +21,34 @@ node scripts/ai-tester/cli.ts run --area reactivity --no-commit --timeout 5
 
 Raw records, worker log and proof hashes remain under `.artifacts/ai-tester/<id>/`. The account's local model cache lists the configured slug, but the actual inference failure takes precedence over cached availability. Official [Codex app-server guidance](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server) likewise distinguishes a cached catalog from successful inference access.
 
-The implementation preserves the configured model/authentication and does not silently migrate models, change global Codex configuration, consume a usage reset or retry an unsupported model indefinitely. Live end-to-end AI discovery/repair remains unverified until a compatible CLI profile/model is supplied. The user was asked whether to keep a repaired CLI profile or add an explicit model override. This provider/configuration blocker is separate from the passing deterministic supervisor tests.
+The initial implementation preserved the configured model/authentication without silently migrating models, changing global Codex configuration, consuming a usage reset or retrying indefinitely. At that stage live end-to-end AI discovery/repair remained unverified pending a compatible CLI profile/model. The user was asked about an explicit model override and subsequently authorized it; the follow-up evidence is below. This provider/configuration blocker was separate from the passing deterministic supervisor tests.
 
-## Remaining acceptance
+## Remaining acceptance at initial implementation
 
 A real provider campaign must complete inference and then either return supported executed no-finding evidence plus a passing native baseline, or complete minimized repro, independent RED/GREEN, unchanged affected gates and read-only review. Only then can live discovery/repair be claimed. Existing tests verify that model/process/setup failures cannot become green or committed outcomes.
+
+## Guidance-driven hardening and model authorization
+
+The user subsequently authorized a compatible model override only for the harness. `--model` is explicit, validated and passed to worker/reviewer/doctor; omitted overrides still inherit the CLI model. No global configuration, authentication or provider fallback was changed. Current official [Codex model guidance](https://learn.chatgpt.com/docs/models) lists `gpt-6-astra`; actual completed inference established its availability for this account. Catalog metadata alone was not accepted.
+
+The new bounded readiness command completed on Node24.18.1 with CLI0.153.4:
+
+```sh
+node scripts/ai-tester/cli.ts doctor --model gpt-6-astra
+```
+
+Record: `.artifacts/ai-tester/diagnostics/2026-10-30T20-26-13-011Z-b2b0709a/doctor.json`; status ready, exit0, sampled process-tree peak1033994240B, about10 seconds. This proves one provider turn, not framework correctness or AI bug discovery. A prior configured-model request returned HTTP400 model_not_found; the first1024MiB probe instead stopped for memory and is not classified as model rejection.
+
+### Guidance mapped to executable checks
+
+| Official guidance | Rivet implementation and evidence |
+| --- | --- |
+| [OpenAI harness engineering](https://openai.com/index/harness-engineering/): repository knowledge and mechanical feedback | Existing bounded area briefs, nearest CLAUDE navigation, source revision/coverage journal and supervisor-owned native RED/GREEN/gates remain authoritative. New actual-assertion and source-blob checks prevent false no-finding acceptance. |
+| [Anthropic effective harnesses](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents): incremental progress and executed verification | One candidate per campaign, retained repro/logs and explicit terminal outcomes. Native skipped-only/todo-only fixtures were observed falsely accepted before the fix; now rejected. Legitimate mixed passing suites remain accepted. |
+| [Anthropic long-running app harness design](https://www.anthropic.com/research/harness-design-long-running-apps): separate generation and evaluation; retain components that enforce useful checks | Independent supervisor validation and read-only reviewer retained. No extra planner/provider framework added. Evidence distinguishes scripted supervisor tests, actual provider readiness and live campaign results. |
+| [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode): explicit sandbox and structured output | Ephemeral CLI invocation, role sandbox, strict JSON schema and result validation. Doctor requires exit0, exact readiness result and completed turn within60s/3072MiB. Authentication/network/model/resource failures cannot become ready. |
+| [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp) and [per-invocation configuration](https://learn.chatgpt.com/docs/config-file/config-advanced) | Private CLI metadata inspection extracts only server names/version. Each discovered MCP integration is explicitly disabled and the effective list rechecked; apps/plugins/multi-agent are disabled. A bare empty MCP map did not clear inherited servers in the actual CLI, so it is not used as isolation. Raw metadata can contain credentials and is never logged. |
+
+Additional confirmed gaps: nested Git/npm/environment/agent configuration could pass the old source allowlist, and no-finding baseline code could change its own Git HEAD or hide source changes behind assume-unchanged flags. Native regressions were observed RED before repairs. No-finding now requires original snapshot revision/inventory and matching raw Git blob bytes after actual passing assertions. These checks enforce the existing contract; they do not turn the snapshot into a malicious-code container. Shared dependency convention and cleanup limited to observed process groups remain explicit v1 boundaries.
+
+Hardening verification: Node24.18.1, **123/123 tests in15 files**, full maintained `scripts` project, exit0, 210.45s. Supervisor sampled peak3023437824B (below3072MiB); TypeScript passes. The campaign-inspection deadline regression first failed after5.54s with a100ms wall budget; inspection now receives the campaign's shared deadline and the regression passes. Explicit model propagation is verified through both worker and reviewer. Fresh independent read-only review found no important defects, including the final deadline/model delta. No production framework source, dependency lock or byte baseline changed.
