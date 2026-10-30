@@ -51,3 +51,7 @@ npx vitest run --project scripts --maxWorkers=1
 ```
 
 The integration tests use real disposable Git repositories, real native Vitest regression execution and a scripted subprocess only at the external inference/review boundary. A seeded fix proves acceptance/commit wiring; it is not a claimed AI discovery. Live provider evidence is recorded separately in the implementation plan.
+
+## Provider setup failures
+
+The driver inherits the installed Codex CLI's configured model/authentication. If the worker fails with model_not_found or an account/model compatibility error, inspect the worker log and repair the CLI profile before retrying. Cached model listings do not establish successful inference access. The harness does not silently substitute models or modify global Codex settings. The first actual verification attempt after snapshot startup was repaired encountered this configuration failure; live discovery is not claimed on that evidence. See `docs/design/research/2026-10-30-autonomous-tester-verification.md`.

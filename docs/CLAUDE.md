@@ -37,6 +37,8 @@ Latest night measurement: `benchmarks/2026-10-28-night.md` + `.json` (CX-BENCH, 
 
 ## design/
 
+- `research/2026-10-30-autonomous-tester-verification.md` — 106 native scripts checks and two real CLI attempts: fixed snapshot startup, then actual configured-model rejection; live AI discovery remains unverified.
+
 - `plans/2026-10-30-autonomous-tester.md` — implementation/verification ledger for the approved autonomous testing supervisor and CLI.
 
 - `specs/2026-10-30-autonomous-tester-design.md` — approved autonomous tester: bounded Codex investigation, minimized repro, independently verified regression/fix and safe automatic commit; separate from lane orchestration.

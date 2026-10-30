@@ -14,3 +14,5 @@ Node24 supervisor owns verification and main-checkout intake; Codex worker/revie
 - `cli.ts`: foreground run/status; lower-only time/RSS budgets, SIGINT/SIGTERM cancellation, terminal exit codes. Lock recovery after SIGKILL is manual and must verify owner/evidence.
 
 - Snapshot initialization force-adds only the exact `git ls-tree` path list from the committed base: a committed file may match current ignore rules (e.g. resume-bench/results). This never force-adds untracked user work or changes the shared index.
+
+- Provider model/profile compatibility is established only by completed inference, not the model cache. Preserve the configured model; record unsupported-model failures honestly. Live verification evidence is indexed under docs/design/research/2026-10-30-autonomous-tester-verification.md.
