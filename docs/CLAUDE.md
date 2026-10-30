@@ -37,6 +37,10 @@ Latest night measurement: `benchmarks/2026-10-28-night.md` + `.json` (CX-BENCH, 
 
 ## design/
 
+- `research/2026-10-30-packaged-security-audit.md` — real Linux/Node24 tarball consumer: 61 server/browser, CSP, streamed-error and static-prerender checks, package integrity, investigated harness reds and explicit limits.
+
+- `plans/2026-10-30-packaged-security-audit.md` — isolated Linux/Node 24 npm-tarball audit of the server/browser boundary, canary secrecy, SSR/CSP and streamed errors; fixes require repacking and commits.
+
 - `plans/2026-10-29-stabilization.md` — CI failure inventory and regression-first stabilization checklist; separates verified fixes from remaining cold, fuzz and integration failures.
 - `research/2026-10-29-security-verification.md` — fresh isolated 71-case application security run, 55 framework checks and tested `onRequest` authentication boundary; distinguishes framework defenses, application policy and untested areas.
 - `research/2026-10-29-deep-security-audit.md` — four confirmed cache-isolation defects, fixes and RED/GREEN evidence; reviewed SSR/HTTP/decoder paths and explicit limits.

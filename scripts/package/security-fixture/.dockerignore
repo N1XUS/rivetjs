@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!fixture
+!fixture/**
+!tarballs
+!tarballs/**
+!audit-manifest.json

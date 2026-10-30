@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "plugins": []
+  },
+  "include": ["security.ts", "security-failures.ts"]
+}
