@@ -53,18 +53,45 @@ export function checkBaseline(value: unknown, code: number): void {
 }
 export function checkRegression(value: unknown, r: Regression, code: number, phase: "red" | "green", identity?: string): string {
   const v = object(value);
-  if (v.numTotalTests !== 1 || v.numPendingTests !== 0 || v.numTodoTests !== 0 || !Array.isArray(v.testResults) || v.testResults.length !== 1)
-    throw new Error("Regression must discover and execute exactly one test");
+  if (!Array.isArray(v.testResults) || v.testResults.length !== 1) throw new Error("Regression must discover and execute exactly one test");
   const file = object(v.testResults[0]);
   if (
     typeof file.name !== "string" ||
     !file.name.replaceAll("\\", "/").endsWith("/" + r.file) ||
     file.message ||
     !Array.isArray(file.assertionResults) ||
-    file.assertionResults.length !== 1
+    file.status !== (phase === "red" ? "failed" : "passed")
   )
     throw new Error("Regression collection/setup failed or wrong file");
-  const a = object(file.assertionResults[0]);
+  // Vitest retains unrelated filtered tests as skipped/todo records in a selected file.
+  const assertions = file.assertionResults.map(object);
+  const actual = { passed: 0, failed: 0, skipped: 0, todo: 0 };
+  for (const a of assertions) {
+    if (
+      !text(a.fullName) ||
+      !Object.hasOwn(actual, a.status) ||
+      !Array.isArray(a.failureMessages) ||
+      ((a.status === "skipped" || a.status === "todo") && a.failureMessages.length)
+    )
+      throw new Error("Invalid regression assertion record");
+    actual[a.status as keyof typeof actual]++;
+  }
+  const counts = [v.numTotalTests, v.numPassedTests, v.numFailedTests, v.numPendingTests, v.numTodoTests];
+  const executed = assertions.filter((a: Record<string, any>) => a.status === "passed" || a.status === "failed");
+  const matching = assertions.filter((a: Record<string, any>) => a.fullName === r.testName || a.title === r.testName);
+  if (
+    counts.some((n) => !Number.isInteger(n) || n < 0) ||
+    v.numTotalTests !== assertions.length ||
+    v.numPassedTests !== actual.passed ||
+    v.numFailedTests !== actual.failed ||
+    v.numPendingTests !== actual.skipped ||
+    v.numTodoTests !== actual.todo ||
+    executed.length !== 1 ||
+    matching.length !== 1 ||
+    matching[0] !== executed[0]
+  )
+    throw new Error("Regression must execute exactly one matching test with consistent native counts");
+  const a = executed[0]!;
   if ((a.fullName !== r.testName && a.title !== r.testName) || !text(a.fullName) || (identity && a.fullName !== identity))
     throw new Error("Regression discovered a different test");
   if (phase === "red") {

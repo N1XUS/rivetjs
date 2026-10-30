@@ -108,6 +108,38 @@ test("RED proof accepts a real matching assertion and GREEN preserves the same d
   assert.equal(red, "clears read child");
   assert.equal(checkRegression(report("passed"), regression, 0, "green", red), red);
 });
+test("regression proof permits filtered unrelated tests while requiring one matching executed assertion", () => {
+  const filtered = (status: string) => {
+    const value = report(status);
+    value.numTotalTests = 3;
+    value.numPendingTests = 1;
+    value.numTodoTests = 1;
+    value.testResults[0]!.assertionResults.push(
+      { fullName: "unrelated filtered test", title: "unrelated filtered test", status: "skipped", failureMessages: [] },
+      { fullName: "unrelated todo", title: "unrelated todo", status: "todo", failureMessages: [] },
+    );
+    return value;
+  };
+  const red = checkRegression(filtered("failed"), regression, 1, "red");
+  assert.equal(checkRegression(filtered("passed"), regression, 0, "green", red), red);
+  const skipped = filtered("passed");
+  skipped.numPassedTests = 0;
+  skipped.numPendingTests = 2;
+  skipped.testResults[0]!.assertionResults[0]!.status = "skipped";
+  assert.throws(() => checkRegression(skipped, regression, 0, "green"));
+  const extra = filtered("passed");
+  extra.numPassedTests = 2;
+  extra.numPendingTests = 0;
+  extra.testResults[0]!.assertionResults[1]!.status = "passed";
+  assert.throws(() => checkRegression(extra, regression, 0, "green"));
+  const wrong = filtered("passed");
+  wrong.testResults[0]!.assertionResults[0]!.fullName = "other test";
+  wrong.testResults[0]!.assertionResults[0]!.title = "other test";
+  assert.throws(() => checkRegression(wrong, regression, 0, "green"));
+  const forged = filtered("passed");
+  forged.numPendingTests = 0;
+  assert.throws(() => checkRegression(forged, regression, 0, "green"));
+});
 test("zero tests, import/setup failures, unrelated assertions and false RED cannot validate a fix", () => {
   for (const value of [
     { ...report(), numTotalTests: 0 },

@@ -31,6 +31,7 @@ put('.artifacts/probe.txt','Executed seeded input clear([1]); actual [1], expect
 if(mode.startsWith('no-finding')) {writeFileSync(out,JSON.stringify({disposition:'no-finding',summary:'No supported counterexample',scenario:'seeded clear scenario',expected:'[]',actual:'[]',changedPaths:[],testPaths:[],reproPaths:[],evidencePaths:['.artifacts/probe.txt'],regression:null}));process.exit(0);}
 if(mode==='missing-result')process.exit(0);
 let body="import assert from 'node:assert/strict';import {test} from 'vitest';import {clear} from '../index.js';test('clears read child',()=>assert.deepEqual(clear([1]),[], 'clears read child'));";
+if(mode==='filtered-tests')body+="test('unrelated passing control',()=>{});";
 if(mode==='zero-tests')body="export const nothing=1;";
 if(mode==='import-error')body="import './missing.js';"+body;
 if(mode==='false-red')body="import {test} from 'vitest';test('clears read child',()=>{});";
@@ -152,6 +153,11 @@ test("no-finding requires an independently executed nonempty native suite and ne
   const result = await runCampaign({ ...f, area: "reactivity" });
   assert.equal(result.status, "no-finding", result.message ?? result.status);
   assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
+});
+test("native regression selection accepts filtered tests in an existing suite", async () => {
+  const f = fixture("filtered-tests");
+  const result = await runCampaign({ ...f, area: "reactivity", noCommit: true });
+  assert.equal(result.status, "verified", result.message ?? result.status);
 });
 test("no-finding accepts a native passing suite with existing skips and todos", async () => {
   const f = fixture("no-finding-mixed");

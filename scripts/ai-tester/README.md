@@ -54,6 +54,8 @@ npx vitest run --project scripts --maxWorkers=1
 
 The integration tests use real disposable Git repositories, real native Vitest regression execution and a scripted subprocess only at the external inference/review boundary. A seeded fix proves acceptance/commit wiring; it is not a claimed AI discovery. Live provider evidence is recorded separately in the implementation plan.
 
+Vitest `-t` reports unrelated tests in the selected file as skipped/todo. Regression proof accepts those records only with consistent native totals and exactly one matching executed assertion, retaining the same full identity across RED/GREEN. A skipped selected test, multiple executed tests or setup failure remains invalid.
+
 ## Provider setup failures
 
 Run `doctor [--model <slug>]` before an expensive campaign. It holds the campaign lock, runs one read-only inference in an empty disposable directory and requires an exact structured response plus a completed CLI turn. Its wall budget is 60 seconds and sampled RSS limit 3072 MiB. Exit 0 means provider readiness only; exit 2 means failure and 130 means interrupted. Evidence is retained under `.artifacts/ai-tester/diagnostics/<id>/`.
