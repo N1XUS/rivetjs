@@ -1,6 +1,6 @@
 # Autonomous Rivet tester — v1 design
 
-Status: approved by the user (2026-10-30); implementation verified, live campaign tracked in the plan. The user chose an autonomous tester that finds bugs, minimizes a reproduction, adds a regression test, fixes and commits. This is separate from the draft lane-orchestrator design; that existing draft stays untouched.
+Status: approved by the user (2026-10-30); implementation verified, first live AI finding repaired in1297536ef through recorded human intake after two automation stops. Fully unattended campaign success remains unclaimed. The user chose an autonomous tester that finds bugs, minimizes a reproduction, adds a regression test, fixes and commits. This is separate from the draft lane-orchestrator design; that existing draft stays untouched.
 
 ## Outcome
 

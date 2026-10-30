@@ -60,3 +60,32 @@ User explicitly requested live `reactivity` on `gpt-6-astra`, with repro/regress
 The supervisor independently executed the base regression under Node24 and obtained the recorded behavioral AssertionError. It then stopped with **failed**, exit2, `Regression must discover and execute exactly one test`: native Vitest reported22 collected records, one executed failure and21 unrelated filtered skips. No intake or commit occurred. This was a harness integration bug, not a provider refusal or invalid framework counterexample. The original run/status/hashes remain unchanged.
 
 Two maintained regressions reproduced this selector defect before its repair. Proof validation now checks exactly one matching executed assertion and consistent native totals while allowing unrelated filtered skips/todos. Selected skips, multiple executed tests, mismatched identity and setup/import failures remain rejected. All44 core/run tests and the harness typecheck pass; fresh read-only review found no important defects. Continued verification of the retained AI candidate must preserve this provenance rather than call replay a second AI discovery.
+
+## Verified repair and human intake
+
+Framework commit: **`1297536ef`**, `fix(reactivity): preserve snapshots when merging draft assignments`. Harness hardening: `95ce4ece8`; selected-test proof repair: `6c464ded4`. The actual AI-produced store source and regression test were retained byte-for-byte. Human edits only corrected the nearest test count and recorded/accepted the measured byte hashes.
+
+Minimal supported counterexample (fails before the repair, passes afterward):
+
+```ts
+import assert from "node:assert/strict";
+import { createStore, produce, write } from "@rivetjs/reactivity/store";
+const left = { id: 1, nested: { n: 0 } };
+const right = { id: 2, nested: { n: 0 } };
+const previousNested = right.nested;
+const state = createStore({ left, right });
+write(state, produce(draft => { draft.left = draft.right; }));
+assert.equal(right.nested, previousNested);
+```
+
+Structural merge now copies a container only when substituting a shared child instead of writing into a finalized subtree that may belong to the old snapshot. The permanent `libs/reactivity/tests/store.test.ts` regression covers ordinary/frozen rows, old sibling identity, target subtree sharing and absence of notifications to the untouched sibling.
+
+Continuation `2026-10-30T20-58-38-595Z-f303d1a0`, source `6c464ded4`, replayed only the hashed result of the original live worker; it did not claim a second discovery. Fresh supervisor-controlled Node24 native proof independently failed the base and passed the same regression after repair (one executed test,21 unrelated filters). The automatic continuation then stopped during UI-docs typecheck at sampled3223633920B, just above the unchanged3072MiB cap. Its terminal record remains failed. Human completion ran the identical preparation/typecheck directly with `GOMEMLIMIT=2048MiB`, removing Nx/nested-supervisor overhead; exit0, sampled2875015168B, under the same cap. No diagnostic, assertion or memory threshold was relaxed.
+
+All56 checks in the final baseline-inclusive plan were accounted for by their actual execution records: **55pass,1 accepted size noise** (`/slots` HTML Brotli6922→6923, within existing20B tolerance; not ratcheted). This includes32 project typechecks, all three documentation builds, **362/362 reactivity prod/dev tests**, **64/64 docs tests**, **11/11 UI-docs tests**, frames within ceilings, and **125/125 scripts tests in15 files** (198.62s; sampled3027238912B). Supervisor/final verification used Node24.18.1 on macOS arm64; the worker's standalone login-shell probes recorded Node26.5.1.
+
+Only two measured zero-cost rows changed: `@rivetjs/reactivity/store`10339→10380 minified bytes (+41), hash `dc7b50e18fc7`→`f2d6ef020f15`; its `@rivetjs/runtime/server-derived-store` consumer42622→42664 (+42), hash `b50f2ba15ec7`→`c78712ce4a6d`. All other runtime entries, package hashes and SSR lanes remained unchanged. Full zero-cost was then rerun successfully: runtime/lanes identical, no dev leaks, conditional parity21/21 and compiler oracle176/176. No app-size/frame ceiling or dependency-lock update occurred.
+
+A separate actual read-only `gpt-6-astra` invocation inspected the patch, original repro, native RED/GREEN, provenance and complete gate records. It completed inference with `accept`, findings=[], exit0, sampled1574502400B. Reviewed bytes/inventory were checked again before atomic named-path intake; both unrelated user WIP files were hashed before/after and stayed unchanged. Source/probes/gate logs were retained; four unused generated dist trees were removed afterward.
+
+Evidence: `.artifacts/ai-tester/continuations/e356fac1-acceptance/` contains `provenance.md`, native reports, `gate-plan.json`, validated combined `gates.json` with individual report/log provenance, source hashes/patch, actual reviewer trace/result, resource records, `manual-intake.json` and `cleanup.json`. Earlier automatic failures were not relabeled passing. This establishes a real AI discovery and independently verified repair with explicit human intake; an unattended successful automatic discovery-to-commit campaign is still unverified. No broader security or cross-platform certification is claimed.
