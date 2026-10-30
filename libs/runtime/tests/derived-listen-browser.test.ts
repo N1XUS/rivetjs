@@ -190,7 +190,7 @@ compiled("large page: 1,000 counters in a non-listening root — the first click
         const ms = await page.evaluate(() => (window as unknown as { done: Promise<number> }).done);
         assert.equal(await page.textContent(".inner >> nth=500"), "501");
         const adopted = await page.evaluate(
-          () => [...document.querySelectorAll(".inner")].filter((b) => (b as unknown as { $$click?: unknown }).$$click).length,
+          () => [...document.querySelectorAll(".inner")].filter((b) => (b as unknown as { $rclick?: unknown }).$rclick).length,
         );
         return { ms, adopted };
       },

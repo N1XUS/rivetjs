@@ -31,6 +31,8 @@ export type IslandHead = Record<string, unknown>;
 export interface IslandRender {
   readonly html: string;
   readonly head?: IslandHead;
+  /** Native SSR module identifiers actually rendered (Vite root-relative ids), for precise async child CSS links. */
+  readonly cssModules?: readonly string[];
 }
 
 export interface ServerAdapter<C = unknown> {

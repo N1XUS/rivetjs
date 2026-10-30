@@ -40,6 +40,9 @@ export const PACKAGES = [
   "bridge",
   "bridge-react",
   "bridge-preact",
+  "bridge-solid",
+  "bridge-vue",
+  "bridge-svelte",
   "create-rivet",
   "nx",
 ];
@@ -70,6 +73,13 @@ const PEERS = [
   "@types/react-dom",
   "preact",
   "preact-render-to-string",
+  "solid-js",
+  "vite-plugin-solid",
+  "vue",
+  "@vue/server-renderer",
+  "@vitejs/plugin-vue",
+  "svelte",
+  "@sveltejs/vite-plugin-svelte",
 ];
 /** Starter templates the full run builds (router + compiler + runtime + reactivity + devtools; starter-ui also kit + cdk + ui). */
 export const TEMPLATES = ["starter-minimal", "starter-static", "starter-server", "starter-ui"];
@@ -149,7 +159,7 @@ export function smoke(names: string[], { build = true, keep = false, dist: distR
   });
   if (install.status !== 0) return [...failures, { step: "npm install", detail: install.stderr }];
   for (const peer of PEERS) {
-    const from = join(ROOT, "node_modules", peer);
+    const from = join(ROOT, peer === "solid-js" || peer === "vite-plugin-solid" ? "libs/bridge-solid/node_modules" : "node_modules", peer);
     const to = join(app, "node_modules", peer);
     if (existsSync(from) && !existsSync(to)) {
       mkdirSync(dirname(to), { recursive: true });

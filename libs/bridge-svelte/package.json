@@ -1,0 +1,47 @@
+{
+  "name": "@rivetjs/bridge-svelte",
+  "version": "0.1.0-alpha.2",
+  "license": "MIT",
+  "description": "Svelte 5 islands for Rivet with SSR, hydration, live props and slots.",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./server": {
+      "types": "./server.ts",
+      "default": "./server.ts"
+    },
+    "./client": {
+      "types": "./client.ts",
+      "default": "./client.ts"
+    },
+    "./vite": {
+      "types": "./vite.ts",
+      "default": "./vite.ts"
+    },
+    "./types": {
+      "types": "./types.ts",
+      "default": "./types.ts"
+    }
+  },
+  "peerDependencies": {
+    "@rivetjs/bridge": "0.1.0-alpha.2",
+    "@sveltejs/vite-plugin-svelte": ">=7.3.1 <8",
+    "svelte": ">=5.57.2 <6"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "svelte": "5.57.2"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/bridge-svelte"
+  }
+}

@@ -33,3 +33,5 @@ React 19 adapter for `@rivetjs/bridge` (framework islands). Spec `docs/design/sp
 
 - Tests: `NODE_OPTIONS=--max-old-space-size=1536 npx vitest run --project bridge-react --project bridge-react-browser --maxWorkers=1`.
 - Typecheck: `NX_DAEMON=false npx nx run bridge-react:typecheck --output-style=static --skip-nx-cache`.
+
+- Shared head parsing: `server.ts` re-exports `headOf` from `@rivetjs/bridge/head`; React hoistable parsing remains identical. Native Vue/Svelte head ranges use a separate helper in that entry.

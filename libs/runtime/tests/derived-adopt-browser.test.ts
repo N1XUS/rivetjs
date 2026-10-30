@@ -55,7 +55,7 @@ const tag = (page: Page, selectors: string[]): Promise<void> =>
 const tagged = (page: Page, selectors: string[]): Promise<boolean[]> =>
   page.evaluate((list) => list.map((s, i) => (document.querySelector(s) as unknown as Record<string, number> | null)?.__t === i + 1), selectors);
 const handled = (page: Page, selector: string): Promise<boolean> =>
-  page.evaluate((s) => (document.querySelector(s) as unknown as Record<string, unknown>).$$click !== undefined, selector);
+  page.evaluate((s) => (document.querySelector(s) as unknown as Record<string, unknown>).$rclick !== undefined, selector);
 
 test("dev dispose cancels an adoption waiting for its page ready hook", async () => {
   const served = await files(1, { dev: true });
@@ -179,7 +179,7 @@ test("lazy rows: adopted O(1) without running a row; a row event materialises it
     await tag(page, ["ul li:nth-child(3)", "ul li:nth-child(5)", "ul li:nth-child(3) button"]);
     await page.click("#toggle");
     await page.waitForFunction(() => document.querySelector("#open") !== null);
-    const rows = () => page.evaluate(() => [...document.querySelectorAll(".pick")].map((b) => (b as unknown as Record<string, unknown>).$$click !== undefined));
+    const rows = () => page.evaluate(() => [...document.querySelectorAll(".pick")].map((b) => (b as unknown as Record<string, unknown>).$rclick !== undefined));
     assert.deepEqual(await rows(), [false, false, false, false, false, false], "rows adopted lazily");
     await page.click("ul li:nth-child(3) button");
     const sel = () => page.evaluate(() => [...document.querySelectorAll("li")].map((li) => li.getAttribute("data-sel")).join(""));
@@ -228,7 +228,7 @@ test("lazy rows: a keyed read outside a row writer (a text binding) wakes the wh
   const mark = (source: string) => source.replace("Pick {row().id}", 'Pick {row().id}{selected() === row().id ? "*" : ""}');
   await withPage(await files(6, { edit: mark, server: mark }), async (page) => {
     await page.goto("http://rivet.test/");
-    const rows = () => page.evaluate(() => [...document.querySelectorAll(".pick")].map((b) => (b as unknown as Record<string, unknown>).$$click !== undefined));
+    const rows = () => page.evaluate(() => [...document.querySelectorAll(".pick")].map((b) => (b as unknown as Record<string, unknown>).$rclick !== undefined));
     await page.click("ul li:nth-child(2) button");
     await page.waitForFunction(() => document.querySelector("ul li:nth-child(2)")!.getAttribute("data-sel") === "y");
     assert.deepEqual(await rows(), [true, true, true, true, true, true]);
@@ -247,7 +247,7 @@ test("triggers: a load / idle / visible boundary materialises without input (dat
     assert.ok(served["/"]!.includes('<script type="rivet/boundaries" data-rt="/rt.js" ' + boot + ' data-fo="/rt.js /page.js">'), served["/"]!.slice(-900));
     await withPage(served, async (page, requests) => {
       await page.goto("http://rivet.test/");
-      await page.waitForFunction(() => (document.querySelector("#inc") as unknown as Record<string, unknown>).$$click !== undefined);
+      await page.waitForFunction(() => (document.querySelector("#inc") as unknown as Record<string, unknown>).$rclick !== undefined);
       assert.ok(requests.includes("/page.js"), String(flag));
       // Its wake source (App) materialised first; nothing else ran: rows stay lazy.
       assert.equal(await handled(page, "#dark"), true);
@@ -271,7 +271,7 @@ test("visible-only boot (ZERO ABI-SPLIT): the runtime loads when the boundary sc
     assert.equal(await handled(page, "#inc"), false, "the runtime started before the boundary was visible");
     assert.equal(await page.evaluate(() => typeof (document as unknown as { $rdp?: unknown }).$rdp), "undefined");
     await page.evaluate(() => document.querySelector("#inc")!.scrollIntoView());
-    await page.waitForFunction(() => (document.querySelector("#inc") as unknown as Record<string, unknown>).$$click !== undefined);
+    await page.waitForFunction(() => (document.querySelector("#inc") as unknown as Record<string, unknown>).$rclick !== undefined);
     assert.ok(requests.includes("/page.js"));
     await page.click("#inc");
     await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
@@ -403,7 +403,7 @@ test("adopt cost: materialising the page root is O(spine), not O(rows)", async (
         await rt.m(1);
         const ms = performance.now() - t;
         // Row functions run: none (each row is a lazy key over its server nodes; one detached sample row ran).
-        const rows = [...document.querySelectorAll(".pick")].filter((b) => (b as unknown as Record<string, unknown>).$$click !== undefined).length;
+        const rows = [...document.querySelectorAll(".pick")].filter((b) => (b as unknown as Record<string, unknown>).$rclick !== undefined).length;
         return [ms, rows] as const;
       });
     });

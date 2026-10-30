@@ -44,6 +44,26 @@ export function boot(): void {
   // Strict CSP: the idle prefetch links carry the boot script's nonce (`nonce` reads back from the element).
   const nonce = script.nonce;
   const fetched = new Set<string>();
+  const mounted = new Map<Element, () => void>();
+  let watch: MutationObserver;
+  const retain = (root: Element, dispose: () => void): void => {
+    if (!root.isConnected) return dispose();
+    if (!watch)
+      watch = new MutationObserver(() => {
+        for (const [node, stop] of mounted)
+          if (!node.isConnected) {
+            mounted.delete(node);
+            try {
+              stop();
+            } catch (error) {
+              fail("failed to stop")(error);
+            }
+          }
+        if (!mounted.size) watch.disconnect();
+      });
+    mounted.set(root, dispose);
+    watch.observe(doc.documentElement, { childList: true, subtree: true });
+  };
   for (const [id, url, props, on, prefetch] of records) {
     const root = doc.querySelector('rivet-island[data-ri="' + id + '"]') as HTMLElement | null;
     if (!root) continue;
@@ -61,20 +81,24 @@ export function boot(): void {
       props &&
       idle
         .then(() => import(url))
-        .then(async (mod: { default: unknown; adapter: { hydrate: Function; mount: Function } }) => {
+        .then(async (mod: { default: unknown; adapter: { hydrate: Function; mount: Function; unmount: Function } }) => {
+          if (!root.isConnected) return;
           const adapter = mod.adapter;
+          let handle: unknown;
           if (on == "only") {
             root.replaceChildren();
             root.style.display = "contents";
-            return adapter.mount(root, mod.default, props, {}, ctx);
-          }
-          try {
-            await adapter.hydrate(root, mod.default, props, {}, ctx);
-          } catch {
-            // Hydration mismatch / throw: mount fresh over the server HTML (the driver's recovery).
-            root.replaceChildren();
-            await adapter.mount(root, mod.default, props, {}, ctx);
-          }
+            handle = await adapter.mount(root, mod.default, props, {}, ctx);
+          } else
+            try {
+              handle = await adapter.hydrate(root, mod.default, props, {}, ctx);
+            } catch {
+              // Hydration mismatch / throw: mount fresh over the server HTML (the driver's recovery).
+              if (!root.isConnected) return;
+              root.replaceChildren();
+              handle = await adapter.mount(root, mod.default, props, {}, ctx);
+            }
+          retain(root, () => adapter.unmount(handle));
         }, fail("chunk failed to load"))
         .catch(fail("failed to start"));
     if (on == "interaction") {

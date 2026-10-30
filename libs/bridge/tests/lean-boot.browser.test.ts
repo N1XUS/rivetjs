@@ -5,6 +5,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { BOOT } from "../boot.min.ts";
 import { clicks, counterHtml, log } from "./fake-client.ts";
+import { pending } from "./fixtures/lean-held.ts";
 
 const ISLAND = new URL("./fixtures/lean-island.ts", import.meta.url).href;
 const MISMATCH = new URL("./fixtures/lean-mismatch.ts", import.meta.url).href;
@@ -32,11 +33,12 @@ const serve = (html: string, records: unknown[], nonce?: string) => {
   if (nonce) boot.nonce = nonce;
   document.body.append(data, boot);
 };
-afterEach(() => {
+afterEach(async () => {
   for (const link of ours()) link.remove();
+  document.body.innerHTML = "";
+  await tick();
   log.length = 0;
   clicks.n = clicks.pointerdowns = 0;
-  document.body.innerHTML = "";
   window.scrollTo(0, 0);
 });
 
@@ -232,4 +234,37 @@ test("paint gate fallback: no `paint` entry type, no `supportedEntryTypes`, or n
       document.body.innerHTML = "";
     }
   }
+});
+
+test("lean lifecycle: moved roots stay mounted; removed roots dispose their framework once", async () => {
+  serve(counterHtml("i0", 1), [["i0", ISLAND, { count: 1 }, "load"]]);
+  await until(() => log.some((e) => e.call === "hydrate"));
+  await tick();
+  const root = document.querySelector('[data-ri="i0"]')!;
+  const button = root.querySelector("button")!;
+  const kept = document.createElement("div");
+  document.body.append(kept);
+  kept.append(root);
+  await tick();
+  expect(log.filter((e) => e.call === "unmount")).toHaveLength(0);
+  root.remove();
+  await until(() => log.some((e) => e.call === "unmount"));
+  expect(log.filter((e) => e.call === "unmount")).toHaveLength(1);
+  button.click();
+  expect(clicks.n).toBe(0);
+});
+
+test("lean lifecycle: async hydration settling after root removal disposes immediately", async () => {
+  pending.release = undefined;
+  const url = new URL("./fixtures/lean-held.ts", import.meta.url).href;
+  serve(counterHtml("i0", 1), [["i0", url, { count: 1 }, "load"]]);
+  await until(() => !!pending.release);
+  const root = document.querySelector('[data-ri="i0"]')!;
+  const button = root.querySelector("button")!;
+  root.remove();
+  pending.release!();
+  await until(() => log.some((e) => e.call === "unmount"));
+  expect(log.filter((e) => e.call === "unmount")).toHaveLength(1);
+  button.click();
+  expect(clicks.n).toBe(0);
 });

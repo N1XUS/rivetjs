@@ -1,7 +1,7 @@
-// libs/runtime/dom-v2.ts — event delegation. The handler lives on the node as `el["$$click"]`;
+// libs/runtime/dom-v2.ts — event delegation. The handler lives on the node as `el["$rclick"]`;
 // one listener per type per document walks composedPath(). Note the currentTarget line.
 function dispatch(event: Event): void {
-  const key = "$$" + event.type,
+  const key = "$r" + event.type,
     path = event.composedPath ? event.composedPath() : null;
   let node = (path ? path[0] : event.target) as (Node & Handlers) | null | undefined,
     i = 0,
@@ -29,7 +29,7 @@ function dispatch(event: Event): void {
 
 /** Compiler ABI: a delegated bubbling event handler (`type` is a bubbling event). */
 export function _on(el: Element, type: string, handler: ((event: Event) => unknown) | null | undefined): void {
-  (el as unknown as Handlers)["$$" + type] = checked(handler);
+  (el as unknown as Handlers)["$r" + type] = checked(handler);
   (el as unknown as { $$o: Owner | null }).$$o = getOwner();
   const doc = host.doc();
   if (doc === lastDoc && type === lastType) return;

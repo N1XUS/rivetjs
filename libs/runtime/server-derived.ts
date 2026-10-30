@@ -250,6 +250,8 @@ export interface DerivedRender {
   tailed: boolean;
   /** Streamed `Suspense`s (DERIVED-GAPS 02): their contents render after the shell, before the tail; null: none claimed. */
   held: HeldSuspenses | null;
+  /** Island stylesheet URLs requested in this render. Allocated only by the bridge when its manifest has CSS. */
+  islandStyles?: { seen: Set<string>; pending: string[] };
   /** `_rData`'s payload (or its table encoding) and the objects in it, checked as data this render (`propsData`). */
   verified: unknown[] | null;
   /** `_rData`'s payload until `settle` checks it (the first flush that writes records). */
@@ -404,6 +406,10 @@ export interface ResumeManifest {
   sizes?: Record<string, number>;
   /** Framework island chunk URL per island key (`@rivetjs/bridge` facades: `<module>#<export>`). */
   islands?: Record<string, string>;
+  /** CSS closure per framework island key, including static islands (Vite's own chunk CSS + imported chunks). */
+  islandCss?: Record<string, string[]>;
+  /** Root-relative native module id → CSS closure. Adapters report only the modules their native SSR actually rendered. */
+  moduleCss?: Record<string, string[]>;
   /**
    * Lite resume (ZERO LITE-WIRE): the lite runtime (`@rivetjs/runtime/dom-lite` instance) and, per boundary name with a
    * lite residual, its lite entry. A page whose every record is listed (and that holds nothing else for the browser:
@@ -505,6 +511,46 @@ export const _shellRecorder = (): Recorder | undefined => store.getStore();
 export function _renderNonce(): string | undefined {
   const nonce = store.getStore()?.options.nonce;
   return nonce ? String(nonce).replace(/[^\w+/=-]/g, "") : undefined;
+}
+// Buffered Suspense contents are inert until their template is swapped. Their styles must be written outside it.
+const islandStyleBuffer = new AsyncLocalStorage<boolean>();
+/**
+ * @internal Register one rendered island's CSS synchronously (static islands included). The returned prefix drains
+ * styles before visible markup; a buffered stream patch leaves them queued for its writer, outside the template.
+ * No manifest CSS or no resumable render: no allocation/output. No framework/runtime code is added to the client.
+ */
+export function _renderIslandStyles(key: string, modules?: readonly string[]): ServerValue {
+  const ctx = store.getStore()?.derived;
+  const manifest = ctx?.options?.manifest;
+  const urls = manifest?.islandCss?.[key];
+  if (!ctx || (!urls?.length && (!modules?.length || !manifest?.moduleCss))) return null;
+  let styles = ctx.islandStyles;
+  const add = (entries: readonly string[] | undefined): void => {
+    if (!entries?.length) return;
+    styles ??= ctx.islandStyles ??= { seen: new Set(), pending: [] };
+    for (const url of entries)
+      if (!styles.seen.has(url)) {
+        styles.seen.add(url);
+        styles.pending.push(url);
+      }
+  };
+  add(urls);
+  for (const module of modules ?? []) add(manifest?.moduleCss?.[module]);
+  if (!styles) return null;
+  return () => (islandStyleBuffer.getStore() || segmentStore.getStore() ? null : islandStyleMarkup(ctx));
+}
+function islandStyleLinks(ctx: DerivedRender): string {
+  const styles = ctx.islandStyles;
+  if (!styles?.pending.length) return "";
+  const nonce = ctx.options?.nonce ? ' nonce="' + String(ctx.options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "";
+  let html = "";
+  for (const url of styles.pending) html += '<link rel="stylesheet" href="' + attr(url) + '"' + nonce + ">";
+  styles.pending.length = 0;
+  return html;
+}
+function islandStyleMarkup(ctx: DerivedRender): ServerValue {
+  const html = islandStyleLinks(ctx);
+  return html ? (compiledTemplate([html], []) as unknown as ServerValue) : null;
 }
 // An effect created during a resumable render re-runs in its own request's async context: a write by another, concurrent
 // request (module-level signal) must not run this render's work under that one.
@@ -623,11 +669,14 @@ const frame = (options: Partial<StreamingResumableOptions>): Recorder => {
 // The root tail: the boundaries script + loader, unless the shell cache writes nothing (a replay).
 // Streamed `Suspense`s (DERIVED-GAPS 02) first: the tail then holds what their contents recorded.
 const tailOf = (recorder: Recorder) => (): ServerValue =>
-  recorder.derived.held !== null
-    ? heldContents(recorder.derived, () => derivedTail(recorder.derived))
-    : recorder.options.shell?.tail(recorder)
-      ? null
-      : derivedTail(recorder.derived);
+  [
+    islandStyleMarkup(recorder.derived),
+    recorder.derived.held !== null
+      ? heldContents(recorder.derived, () => derivedTail(recorder.derived))
+      : recorder.options.shell?.tail(recorder)
+        ? null
+        : derivedTail(recorder.derived),
+  ] as ServerValue;
 
 /**
  * A resumable page as a string (`@rivetjs/runtime/server-resume` `resumableToString`): the content, then the derived tail
@@ -1664,7 +1713,7 @@ async function segments(ctx: DerivedRender, writer: { write(chunk: string): unkn
   let expired = false;
   const timer = deadline == null ? null : setTimeout(() => ((expired = true), ctx.wakeup?.()), Math.max(0, deadline));
   const chunk = (a: DerivedAsyncState): string => {
-    let out = ctx.addon ? "" : ((ctx.addon = true), open + DERIVED_STREAM + "</script>");
+    let out = islandStyleLinks(ctx) + (ctx.addon ? "" : ((ctx.addon = true), open + DERIVED_STREAM + "</script>"));
     if (a.state === 1 || a.html !== null) out += '<template data-a="' + a.id + '">' + (a.html ?? "") + "</template>";
     return out + derivedPatch(ctx, a.id) + open + "$rD(" + a.id + ")</script>";
   };
@@ -1817,7 +1866,9 @@ function heldContents(ctx: DerivedRender, rest: () => ServerValue): ServerValue 
     h.done = true;
     let html: string | Promise<string>;
     try {
-      html = renderToString(_scopedRecord(h.owner ?? null, h.value, noop) as unknown as ServerValue, { signal, variant: options?.variant } as never);
+      html = islandStyleBuffer.run(true, () =>
+        renderToString(_scopedRecord(h.owner ?? null, h.value, noop) as unknown as ServerValue, { signal, variant: options?.variant } as never),
+      );
     } catch {
       return step();
     }
@@ -1829,7 +1880,10 @@ function heldContents(ctx: DerivedRender, rest: () => ServerValue): ServerValue 
       h.written = true;
       const swap = held.addon ? "" : ((held.addon = true), "<script" + nonce + ">" + SUSPENSE_SWAP + "</script>");
       return [
-        compiledTemplate([swap + '<template data-s="' + h.id + '">' + text + "</template><script" + nonce + ">$rS(" + h.id + ")</script>"], []),
+        compiledTemplate(
+          [islandStyleLinks(ctx) + swap + '<template data-s="' + h.id + '">' + text + "</template><script" + nonce + ">$rS(" + h.id + ")</script>"],
+          [],
+        ),
         step,
       ] as unknown as ServerValue;
     }) as unknown as ServerValue;

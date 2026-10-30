@@ -50,7 +50,7 @@ for (const engine of ["chromium", "webkit"] as const) {
           await page.waitForFunction(() => document.querySelector("#count")!.textContent === "2", null, { timeout: 3000 });
           assert.equal(await page.evaluate(() => (window as any).__sentinel === document.querySelector("#sentinel")), true, "server node retained");
           assert.equal(
-            await page.evaluate(() => [...document.querySelectorAll(".ordinary")].filter((el) => (el as any).$$click).length),
+            await page.evaluate(() => [...document.querySelectorAll(".ordinary")].filter((el) => (el as any).$rclick).length),
             0,
             "the 1000 ordinary rows stay lazy",
           );

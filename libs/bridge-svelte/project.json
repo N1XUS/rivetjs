@@ -1,0 +1,13 @@
+{
+  "name": "bridge-svelte",
+  "projectType": "library",
+  "targets": {
+    "package": { "executor": "nx:run-commands", "cache": false, "options": { "command": "node scripts/package/build.ts libs/bridge-svelte" } },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project bridge-svelte --project bridge-svelte-browser --passWithNoTests" }
+    },
+    "typecheck": { "executor": "nx:run-commands", "cache": false, "options": { "command": "node scripts/tsc.ts -p libs/bridge-svelte" } }
+  }
+}

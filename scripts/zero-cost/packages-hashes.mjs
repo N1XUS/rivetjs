@@ -19,7 +19,20 @@ const main = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(impor
 const root = main ? process.argv[2] : fileURLToPath(new URL("../../", import.meta.url));
 const { rolldown } = await import(createRequire(root + "/package.json").resolve("rolldown"));
 const { compile } = await import(`${root}/libs/compiler/index.ts`);
-const PACKAGES = ["libs/router", "libs/forms", "libs/i18n", "libs/kit", "libs/ui", "libs/motion", "libs/bridge", "libs/bridge-react", "libs/bridge-preact"];
+const PACKAGES = [
+  "libs/router",
+  "libs/forms",
+  "libs/i18n",
+  "libs/kit",
+  "libs/ui",
+  "libs/motion",
+  "libs/bridge",
+  "libs/bridge-react",
+  "libs/bridge-preact",
+  "libs/bridge-solid",
+  "libs/bridge-vue",
+  "libs/bridge-svelte",
+];
 /** Gated `@rivetjs/cdk` entries: name → file (relative to libs/cdk). */
 const CDK_ENTRIES = [
   ["@rivetjs/cdk/masonry", "masonry/index.tsx"],
@@ -37,13 +50,26 @@ const BUILD_ONLY = new Set([
   "@rivetjs/bridge/vite",
   "@rivetjs/bridge-react/vite",
   "@rivetjs/bridge-preact/vite",
+  "@rivetjs/bridge-solid/vite",
+  "@rivetjs/bridge-vue/vite",
+  "@rivetjs/bridge-svelte/vite",
 ]);
 
 /** Compiles `.tsx` modules for `target`; `seen.tsx` reports whether the graph had one. */
 function rivet(target, seen) {
   return {
     name: "rivet-compile",
-    transform(source, id) {
+    async transform(source, id) {
+      if (id.endsWith(".svelte.ts")) {
+        const { default: ts } = await import(createRequire(root + "/package.json").resolve("typescript"));
+        const compiler = await import(createRequire(root + "/package.json").resolve("svelte/compiler"));
+        const { compileModule } = compiler.default ?? compiler;
+        const js = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ESNext, module: ts.ModuleKind.ESNext } }).outputText;
+        return {
+          code: compileModule(js, { filename: id.replace(/\.ts$/, ".js"), generate: target === "server" ? "server" : "client", dev: false }).js.code,
+          moduleType: "js",
+        };
+      }
       if (!id.endsWith(".tsx")) return null;
       seen.tsx = true;
       const result = compile(source, { target, filename: id });

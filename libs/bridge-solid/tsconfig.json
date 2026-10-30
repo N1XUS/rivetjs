@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "jsxImportSource": "solid-js" },
+  "include": ["*.ts", "*.tsx", "*/**/*.ts", "*/**/*.tsx"],
+  "exclude": ["**/node_modules", "**/dist", "tests/*/.rivet"]
+}

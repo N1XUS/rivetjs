@@ -133,5 +133,12 @@
   "publishConfig": {
     "access": "public",
     "directory": "../../dist/libs/router"
+  },
+  "imports": {
+    "#native-head": {
+      "types": "./shared/head-native.ts",
+      "browser": "./shared/head-native-browser.ts",
+      "default": "./shared/head-native.ts"
+    }
   }
 }

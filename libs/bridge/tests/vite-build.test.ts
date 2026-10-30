@@ -212,11 +212,12 @@ export const mixed = (manifest: never) => resumableToString(() => <Page />, { ma
       assert.ok(!/rivet\/boundaries|\$rdp/.test(code), url + " carries resume runtime code");
     }
     assert.ok(!lean.includes(manifest.runtime) && (!manifest.loader || !lean.includes(manifest.loader)), lean);
-    // Bytes the lean path adds to the HTML: records + the inline boot (< 2,304 B), no boundaries tail / loader.
+    // Bytes the lean path adds to the HTML: records + the inline boot (< 2,688 B), no boundaries tail / loader.
     const tail = lean.slice(lean.indexOf("</main>") + 7);
     // Records (two islands, each with its chunk + merged shared chunk URLs: 2026-10-18 `merge` default 65536 names the
     // shared chunk `rivet-merge-…`, +8 B of URL) + the inline boot.
-    assert.ok(tail.length < 2304, tail.length + " B tail");
+    // Retaining/disposal of foreign roots adds 364 raw / 153 Brotli bytes to the inline boot (1777→2141 raw).
+    assert.ok(tail.length < 2688, tail.length + " B tail");
     // The visible island is a record, loaded only when visible (not preloaded).
     assert.ok(lean.includes(JSON.stringify(manifest.islands!["src/Hooks.fake.js#Badge"])), lean);
     // Mixed route (live prop + callback writing a Rivet signal + a text binding): the page's boundary adopts and

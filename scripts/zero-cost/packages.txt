@@ -1,5 +1,5 @@
 @rivetjs/router 965ee4bafd7e 3340
-@rivetjs/router/server 5f85687a6e1b 31551
+@rivetjs/router/server 17201cb842f4 31456
 @rivetjs/router/route-cache ac0479f82986 19153
 @rivetjs/router/server-only 56e1b0c10087 9
 @rivetjs/router/client [dom] 21dc1faef41c 24498
@@ -23,7 +23,7 @@
 @rivetjs/router/cloudflare c375aa7ccb4c 2973
 @rivetjs/router/bun b65576f8b6bf 6570
 @rivetjs/router/deno 6d09edbada5c 6639
-@rivetjs/router/head d20a9cf3a191 6708
+@rivetjs/router/head 9b4d3018ae4f 7858
 @rivetjs/forms 3b63774e178a 4979
 @rivetjs/forms/array cc6f125f16cd 3810
 @rivetjs/forms/components [dom] 92c319e012bb 2278
@@ -385,21 +385,35 @@
 @rivetjs/motion/static d8008f0665c5 7770
 @rivetjs/motion/reduced-motion 0307d0c23965 284
 @rivetjs/bridge 56e1b0c10087 9
-@rivetjs/bridge/server [dom] 93b3e7384272 7660
-@rivetjs/bridge/server [server] 8b342e80fa39 7656
+@rivetjs/bridge/server [dom] fc6e77ac385f 8179
+@rivetjs/bridge/server [server] be08a2ac9a8c 8175
 @rivetjs/bridge/dom [dom] 4f8941a2e839 4959
 @rivetjs/bridge/dom [server] 54deed63cdf1 4931
 @rivetjs/bridge/client 6682c605112b 2405
 @rivetjs/bridge/intent 8481580cf53b 1022
 @rivetjs/bridge/adapter ca26e8eea25e 184
+@rivetjs/bridge/head 9e1ccc14a28e 3265
+@rivetjs/bridge/head-client 6af2f0c2b7eb 1737
 @rivetjs/bridge-react 56e1b0c10087 9
-@rivetjs/bridge-react/server bb99edb31942 2228
+@rivetjs/bridge-react/server 6505d1368206 1466
 @rivetjs/bridge-react/client dd55fd4a4360 1341
 @rivetjs/bridge-react/types 56e1b0c10087 9
 @rivetjs/bridge-preact 56e1b0c10087 9
 @rivetjs/bridge-preact/server fc1962a61f07 1263
 @rivetjs/bridge-preact/client a8c2cae94ddc 967
 @rivetjs/bridge-preact/types 56e1b0c10087 9
+@rivetjs/bridge-solid 56e1b0c10087 9
+@rivetjs/bridge-solid/server 6fc993f2e1ef 610
+@rivetjs/bridge-solid/client 61deb7a99801 1099
+@rivetjs/bridge-solid/types 56e1b0c10087 9
+@rivetjs/bridge-vue 56e1b0c10087 9
+@rivetjs/bridge-vue/server 034a17e7bede 1443
+@rivetjs/bridge-vue/client 0fb679a3a3a5 2055
+@rivetjs/bridge-vue/types 56e1b0c10087 9
+@rivetjs/bridge-svelte 56e1b0c10087 9
+@rivetjs/bridge-svelte/server 0632e158c63f 1059
+@rivetjs/bridge-svelte/client 4dc4c806fad5 1377
+@rivetjs/bridge-svelte/types 56e1b0c10087 9
 @rivetjs/cdk/masonry [dom] 225194031bf9 89433
 @rivetjs/cdk/masonry [server] 5508dcc21eed 80623
 @rivetjs/cdk/masonry/behaviour 9a3cc9e6aabd 16055

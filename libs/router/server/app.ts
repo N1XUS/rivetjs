@@ -5,6 +5,7 @@ import type { RenderCache, RenderCacheScope } from "@rivetjs/runtime/server-cach
 import type { IncrCache } from "@rivetjs/runtime/server-incr";
 import type { ActionResult, Head, HeadSink, LoaderDeps } from "../shared/data.ts";
 import { headTags, rankMerge, type RankedHead } from "../shared/head.ts";
+import { copyHeadRendering, lateHeadTags } from "../shared/head-native.ts";
 import { nonceCSP, type CSPOptions } from "../shared/csp.ts";
 import { inlineStylesFor, type InlineStyleManifest } from "./inline-styles.ts";
 import type { TrailingSlash } from "../shared/slash.ts";
@@ -206,7 +207,7 @@ export function translateHead<T>(value: T, variant: number): T {
     const next = translateHead(item, variant);
     if (next !== item) (out ??= { ...(value as Record<string, unknown>) })[key] = next;
   }
-  return (out ?? value) as T;
+  return (out ? copyHeadRendering(value as Head, out as Head) : value) as T;
 }
 
 /** Route export levels: layouts outermost first, then the page (undefined entries skipped). */
@@ -247,12 +248,7 @@ function createSink(
       // After the shell: only body-valid tags (links, scripts, styles) still apply, where they render.
       if (head.title !== undefined || head.titleTemplate !== undefined || head.meta?.length || head.html || head.body || head.base)
         late(`${component ?? "A head component"} rendered after the shell (inside a streamed Async boundary): title/meta/html changes are ignored there`);
-      return (
-        headTags(
-          { ...(head.links ? { links: head.links } : {}), ...(head.scripts ? { scripts: head.scripts } : {}), ...(head.styles ? { styles: head.styles } : {}) },
-          { nonce },
-        ) || undefined
-      );
+      return lateHeadTags(head, { nonce }, headTags);
     },
   };
 }

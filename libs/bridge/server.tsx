@@ -5,7 +5,7 @@
 import { Async, type ServerValue } from "@rivetjs/runtime/server";
 import type { ClientWhen } from "@rivetjs/runtime/server";
 import { _markup } from "@rivetjs/runtime/server-markup";
-import { _renderNonce } from "@rivetjs/runtime/server-resume";
+import { _renderNonce, _renderIslandStyles } from "@rivetjs/runtime/server-resume";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { splitProps } from "@rivetjs/runtime/props";
 import { untrack } from "@rivetjs/reactivity";
@@ -59,6 +59,8 @@ function render(props: Record<string, unknown>, def: IslandDef, load?: () => Pro
   ];
   const client = own.client,
     fallback = own.fallback;
+  const styles = _renderIslandStyles(def.id);
+  const withStyles = (value: ServerValue): ServerValue => (styles === null ? value : [styles, value]);
   // Framework props (values) vs slots (Rivet content: `children` → "default", content props by key).
   const values: Record<string, unknown> = {},
     content: Record<string, unknown> = {},
@@ -132,6 +134,7 @@ function render(props: Record<string, unknown>, def: IslandDef, load?: () => Pro
   const written = (out: string | IslandRender): ServerValue => {
     const html = typeof out === "string" ? out : out.html;
     const head = typeof out === "string" ? undefined : out.head;
+    const moduleStyles = typeof out !== "string" && out.cssModules?.length ? _renderIslandStyles(def.id, out.cssModules) : null;
     const { parts, order } = splitSlots(html, Object.values(marks));
     const used = new Set<string>();
     const out_: ServerValue[] = [_markup(parts[0]!)];
@@ -154,18 +157,19 @@ function render(props: Record<string, unknown>, def: IslandDef, load?: () => Pro
       if (def.head) hoisted = def.head(head);
       else if (DEV) console.warn("[rivet:bridge] " + fw + " island " + def.id + ": head entries dropped (no head sink: use @rivetjs/kit)");
     }
-    return hoisted === null ? root(out_) : [hoisted, root(out_)];
+    const value = hoisted === null ? root(out_) : [hoisted, root(out_)];
+    return moduleStyles === null ? value : [moduleStyles, value];
   };
   // `client="only"`: no server render, so no adapter head either; the fallback (Rivet content) stands in until the
   // browser mounts.
-  if (on === "only") return root(fallback ?? null);
+  if (on === "only") return withStyles(root(fallback ?? null));
   // Page-level adapter head (Solid `_$HY`): once per render (per id scope), before its first server-rendered island.
   let pageHead: ServerValue = null;
   if (adapter.head && !islands.heads?.has(fw)) {
     islands.heads?.add(fw);
     pageHead = _markup(adapter.head(ctx));
   }
-  const withHead = (value: ServerValue): ServerValue => (pageHead === null ? value : [pageHead, value]);
+  const withHead = (value: ServerValue): ServerValue => withStyles(pageHead === null ? value : [pageHead, value]);
   let out: string | IslandRender | PromiseLike<string | IslandRender>;
   try {
     out = adapter.render(def.c, values, marks, ctx);

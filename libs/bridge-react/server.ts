@@ -5,7 +5,7 @@
 // rejects (the bridge's island error path). React 19 hoistables become the island's head (kit head fields).
 import { createElement, type ComponentType } from "react";
 import { renderToReadableStream, renderToString } from "react-dom/server";
-import type { IslandContext, IslandHead, IslandRender, ServerAdapter, SlotMark } from "@rivetjs/bridge/adapter";
+import type { IslandContext, IslandRender, ServerAdapter, SlotMark } from "@rivetjs/bridge/adapter";
 import { islandElement } from "./tree.ts";
 import { withSlots } from "./slot.ts";
 
@@ -18,48 +18,8 @@ const SENTINEL = "<rivet-head-end></rivet-head-end>";
 const SUSPENDED = /suspended while responding to synchronous input/;
 const Mark = () => createElement("rivet-head-end");
 
-/** React's own escapes in text / attribute values. */
-const unescape = (value: string) =>
-  value.replace(
-    /&(amp|lt|gt|quot|#x27|#39|nbsp);/g,
-    (_, name: string) => ({ amp: "&", lt: "<", gt: ">", quot: '"', "#x27": "'", "#39": "'", nbsp: " " })[name]!,
-  );
-
-const TAG = /<(title|meta|link|style|script)((?:\s+[\w:-]+(?:="[^"]*")?)*)\s*\/?>(?:([\s\S]*?)<\/\1>)?/y;
-const ATTR = /\s+([\w:-]+)(?:="([^"]*)")?/g;
-const camel = (name: string) => name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
-
-/**
- * The head entries React wrote before the content (its own serialisation of hoistables), as kit head fields; `rest` =
- * markup that is no head field (an async `<script>`): it stays in the island.
- */
-export function headOf(prefix: string): { head: IslandHead | null; rest: string } {
-  const head: { title?: string; meta?: Record<string, string>[]; links?: Record<string, string>[]; styles?: { css: string; key?: string; media?: string }[] } =
-    {};
-  let rest = "";
-  TAG.lastIndex = 0;
-  while (TAG.lastIndex < prefix.length) {
-    const at = TAG.lastIndex;
-    const m = TAG.exec(prefix);
-    if (!m) {
-      rest += prefix.slice(at);
-      break;
-    }
-    const [whole, tag, attrs = "", text = ""] = m;
-    const fields: Record<string, string> = {};
-    let key: string | undefined;
-    for (const [, name, value = ""] of attrs.matchAll(ATTR)) {
-      if (name === "data-href") key = unescape(value);
-      if (!name!.startsWith("data-")) fields[name === "http-equiv" ? "httpEquiv" : camel(name!)] = unescape(value);
-    }
-    if (tag === "title") head.title = unescape(text);
-    else if (tag === "meta") (head.meta ??= []).push(fields);
-    else if (tag === "link") (head.links ??= []).push(fields);
-    else if (tag === "style") (head.styles ??= []).push({ css: text, ...(key ? { key } : {}), ...(fields.media ? { media: fields.media } : {}) });
-    else rest += whole;
-  }
-  return { head: Object.keys(head).length ? (head as IslandHead) : null, rest };
-}
+export { headOf } from "@rivetjs/bridge/head";
+import { headOf } from "@rivetjs/bridge/head";
 
 /** Island HTML (head split off at the sentinel). */
 function finish(html: string): string | IslandRender {

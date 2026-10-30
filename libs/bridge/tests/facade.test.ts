@@ -171,3 +171,11 @@ export { _default as default };
     /^export \{ default \} from "t";[\s\S]*import\.meta\.hot\.accept[\s\S]*__rivetBridgeDev\?\.replace/,
   );
 });
+
+test("server definitions wire the Kit head sink only when its plugin is configured", () => {
+  const entries = [{ name: "default", component: true }];
+  const native = serverDefs("./Card.vue", "Card.vue", "@rivetjs/bridge-vue/server", entries, true);
+  assert.match(native, /import \{ pushHead \} from "@rivetjs\/kit"/);
+  assert.match(native, /head: pushHead/);
+  assert.doesNotMatch(serverDefs("./Card.vue", "Card.vue", "@rivetjs/bridge-vue/server", entries), /pushHead|head:/);
+});

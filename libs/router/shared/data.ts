@@ -45,6 +45,20 @@ export interface Head {
   /** Inline `<style>` blocks (trusted CSS, request nonce; deduped by `key`, else by text). Never managed: client navigation keeps them. */
   styles?: readonly HeadStyle[];
 }
+/**
+ * Server-only rendering extension used by native framework head ranges. Attached through a non-enumerable symbol,
+ * never a Head JSON field: navigation payloads contain only the ordinary normalized fallback fields.
+ */
+export interface HeadRendering {
+  readonly render: () => string;
+  /** Optional native-only lifecycle bootstrap, emitted once for the merged document head. */
+  readonly boot?: () => string;
+  /** Ordinary fields to serialize alongside native HTML (absent on a native-only contribution). */
+  readonly normal?: Head;
+  /** Number of native title authors. Native title conflicts are rejected rather than silently reordered. */
+  readonly titles: number;
+}
+
 /** An inline head `<style>` (component CSS such as `@rivetjs/motion` entrance rules). */
 export interface HeadStyle {
   /** Trusted CSS text (a `</style` sequence is escaped). */

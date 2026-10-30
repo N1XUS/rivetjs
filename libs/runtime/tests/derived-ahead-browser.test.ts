@@ -121,12 +121,12 @@ compiled("LITE-BOOT prime: after the idle fetch-ahead the runtime starts and loa
     await page.goto("http://rivet.test/");
     await page.waitForFunction(() => "$rdp" in document, null, { timeout: 5000 });
     await page.waitForTimeout(200);
-    assert.equal(await page.evaluate(() => "$$click" in document.querySelector("#inner")!), false, "started, nothing adopted");
+    assert.equal(await page.evaluate(() => "$rclick" in document.querySelector("#inner")!), false, "started, nothing adopted");
     assert.ok(!requests.includes("/root.js"), "only the list: " + requests.join(" "));
     await page.evaluate(() =>
       addEventListener("click", () => {
         const w = window as unknown as { live: [boolean, string] };
-        w.live = ["$$click" in document.querySelector("#inner")!, document.querySelector("#inner")!.textContent!];
+        w.live = ["$rclick" in document.querySelector("#inner")!, document.querySelector("#inner")!.textContent!];
       }),
     );
     await page.click("#inner");
@@ -191,11 +191,11 @@ compiled(
       await page.waitForFunction(() => (window as unknown as { __ready?: number }).__ready === 1, null, { timeout: 5000 });
       await page.waitForTimeout(200);
       assert.equal(requests.filter((url) => url === "/page.js").length, 1, "the page module: one request, the modulepreload");
-      assert.equal(await page.evaluate(() => "$$click" in document.querySelector("#count")!), false, "primed, nothing adopted");
+      assert.equal(await page.evaluate(() => "$rclick" in document.querySelector("#count")!), false, "primed, nothing adopted");
       await page.evaluate(() =>
         addEventListener("click", () => {
           const w = window as unknown as { live: boolean };
-          w.live = "$$click" in document.querySelector("#count")!;
+          w.live = "$rclick" in document.querySelector("#count")!;
         }),
       );
       const before = requests.length;

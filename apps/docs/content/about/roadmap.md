@@ -31,7 +31,7 @@ Rivet is experimental. The current npm release is `0.1.0-alpha.1` (the first, `0
 - **Translations.** Compile-time i18n with ICU messages, locale URLs and no message runtime in the browser for static text. See [translating text](../guides/i18n/translating-text.md).
 - **Security.** Strict Content Security Policy with nonces (hashes for static pages) and optional Trusted Types. See [CSP](../guides/security/csp.md).
 - **Motion.** `@rivetjs/motion`: the Motion (motion.dev) API on Rivet signals, with entrances in CSS, exit and layout animations and scroll values. Experimental. See [motion](../guides/motion/index.md).
-- **React and Preact components.** `@rivetjs/bridge-react` and `@rivetjs/bridge-preact` render components of those frameworks as islands: server-rendered into the stream, hydrated by a `client` policy, with live props, callbacks and Rivet content in their slots. Experimental. See [React and Preact components](../guides/components/framework-components.md).
+- **Framework components.** Adapters for React, Preact, Solid, Vue and Svelte render their components as islands: server-rendered into the stream, hydrated by a `client` policy, with live props, callbacks and Rivet content in their slots. Experimental. See [Framework components](../guides/components/framework-components.md).
 
 ### Components
 

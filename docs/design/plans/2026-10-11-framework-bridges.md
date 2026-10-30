@@ -425,57 +425,63 @@ Coordinator rulings 2026-10-12: approach (B) hybrid (render-time decision, exact
 
 **Files:** `libs/bridge-solid/**`, lanes `rivet-bridge-solid` / `astro-solid`; possibly `libs/runtime/dom-v2.ts` (key rename) + krausest numbers.
 
-- [ ] Step 1: Server.
+- [x] Step 1: Server.
   - `renderToString` / `renderToStringAsync` (with Suspense) with `renderId: id`;
   - `head()` returns `generateHydrationScript({ nonce })` once per page;
   - slots via `ssr(holeHtml)`.
-- [ ] Step 2: Client.
+- [x] Step 2: Client.
   - `hydrate(() => createComponent(C, store), root, { renderId })`;
   - `update` = `setStore(reconcile(props))`;
   - `mount` = `render`.
 - [ ] Step 3: Collision. Test a Solid island (delegated `onClick`) inside a Rivet page with delegated handlers: does Rivet's dom-v2 `delegate` run Solid's `$$click`?
   - If yes, A/B: (a) Rivet key → `"$r" + type` (krausest + dom-bench under the bench lock); (b) Solid islands compiled with `delegateEvents: false`.
   - Pick by measurement. (a) touches `libs/runtime/dom-v2.ts` and the compiler emits keys? Check `_on`; if the compiler emits key strings, (a) needs a Rust patch → patch queue.
-- [ ] Step 4: Ownership `*.solid.{tsx,jsx}` + pragma `solid-js`; `vite-plugin-solid` `ssr: true` on the server environment only.
+- [x] Step 4: Ownership `*.solid.{tsx,jsx}` + pragma `solid-js`; `vite-plugin-solid` `ssr: true` on the server environment only.
 - [ ] Tests: T6 list; collision regression test.
 - [ ] Commit `feat(bridge-solid): Solid 1.9 islands (+ delegation key decision)`.
+
+Implementation evidence and exact maintained-suite results: `2026-10-30-remaining-framework-islands.md`. Adapter delivery is implemented; competitor lanes and unrun benchmark/floor-matrix work remain open.
 
 ### Task T10: Vue adapter
 
 **Files:** `libs/bridge-vue/**`, lanes `rivet-bridge-vue` / `astro-vue`.
 
-- [ ] Step 1: Server.
+- [x] Step 1: Server.
   - `createSSRApp({ render: () => h(C, props, slots) })`, `app.config.idPrefix = id`;
   - `setup(app)` option (Pinia, i18n);
   - `renderToString` (Promise → async island);
   - teleports to `head` → head parts.
-- [ ] Step 2: Client.
+- [x] Step 2: Client.
   - `createSSRApp` with a `shallowReactive(props)` root → `mount(root)` hydrates;
   - `update` assigns keys;
   - `mount` = `createApp`;
   - `unmount` = `app.unmount()`.
-- [ ] Step 3: Slots = render functions returning a static `rivet-slot` vnode (`innerHTML: ""`) on both sides; named slots keep their names.
-- [ ] Step 4: `.vue` ownership via `@vitejs/plugin-vue`; SFC scoped CSS goes through the Vite CSS pipeline, linked per island module. Check Rivet's CSS link collection includes island chunk CSS (test: no FOUC on static islands).
+- [x] Step 3: Slots = render functions returning a static `rivet-slot` vnode (`innerHTML: ""`) on both sides; named slots keep their names.
+- [x] Step 4: `.vue` ownership via `@vitejs/plugin-vue`; SFC scoped CSS goes through the Vite CSS pipeline, linked per island module. Check Rivet's CSS link collection includes island chunk CSS (test: no FOUC on static islands).
 - [ ] Tests: T6 list + async component in a `Suspense` segment + Pinia store per island.
 - [ ] Commit `feat(bridge-vue): Vue 3.5 islands`.
+
+Implementation evidence and exact maintained-suite results: `2026-10-30-remaining-framework-islands.md`. Adapter delivery is implemented; competitor lanes and unrun benchmark/floor-matrix work remain open.
 
 ### Task T11: Svelte adapter
 
 **Files:** `libs/bridge-svelte/**`, lanes `rivet-bridge-svelte` / `astro-svelte`.
 
-- [ ] Step 1: Server: `render(C, { props: { ...props, children, $$slots, ...namedSnippets }, idPrefix: id })` → `{ head, body }` (async when thenable); snippets from ONE shared `holes.ts` used on both sides.
-- [ ] Step 2: Client.
+- [x] Step 1: Server: `render(C, { props: { ...props, children, $$slots, ...namedSnippets }, idPrefix: id })` → `{ head, body }` (async when thenable); snippets from ONE shared `holes.ts` used on both sides.
+- [x] Step 2: Client.
   - `hydrate(C, { target: root, props: $state(props) })` (`.svelte.ts` module for runes);
   - `update` assigns / deletes keys;
   - `mount` / `unmount` from `svelte`;
   - `hydration_mismatch` → `mount` fallback with slot nodes preserved.
-- [ ] Step 3: `.svelte` / `.svelte.ts` ownership via `@sveltejs/vite-plugin-svelte` (`compilerOptions.css: "external"` so CSS goes through Vite).
+- [x] Step 3: `.svelte` / `.svelte.ts` ownership via `@sveltejs/vite-plugin-svelte` (`compilerOptions.css: "external"` so CSS goes through Vite).
 - [ ] Tests:
   - T6 list;
   - byte-identical server body vs hydrated DOM for slot holes;
   - forced mismatch recovery keeps a resumable Rivet slot button working;
   - nested React › Svelte › Rivet (spec §3.4 test).
 - [ ] Commit `feat(bridge-svelte): Svelte 5 islands`.
+
+Implementation evidence and exact maintained-suite results: `2026-10-30-remaining-framework-islands.md`. Adapter delivery is implemented; competitor lanes and unrun benchmark/floor-matrix work remain open.
 
 ### Task T12: `persist` across navigations
 

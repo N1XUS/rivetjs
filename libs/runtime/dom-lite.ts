@@ -8,7 +8,7 @@
 // (`derived_lite.rs`: no module binding but a data literal, no component, no context), so its state never meets
 // `@rivetjs/reactivity`. This module carries its own signal + binding core (a few hundred bytes: `Signal` API, Object.is
 // writes, untracked `update`, dynamic dependencies, batched handlers, the first-mouse-click deferred flush of
-// `_dispatch`) and its own delegated listener per type over the same `$$<type>` / `$$o` node fields as `dom-events.ts`.
+// `_dispatch`) and its own delegated listener per type over the same `$r<type>` / `$$o` node fields as `dom-events.ts`.
 // A lite page ships neither the reactivity graph nor the DOM ABI.
 //
 // Module split (RT-DIET): core (`dom-lite-core.ts`: signal / effect / owner lists / delegation / `_lw`) + leaves

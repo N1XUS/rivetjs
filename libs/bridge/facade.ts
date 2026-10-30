@@ -221,11 +221,12 @@ export function facadeSource(target: string, key: string, exports: readonly Isla
 }
 
 /** Island definitions of the server environment: id, framework component, server adapter, chunk key. */
-export function serverDefs(targetSpecifier: string, key: string, adapter: string, exports: readonly IslandExport[]): string {
+export function serverDefs(targetSpecifier: string, key: string, adapter: string, exports: readonly IslandExport[], head = false): string {
   let out = `import * as M from ${js(targetSpecifier)};\nimport { adapter } from ${js(adapter)};\n`;
+  if (head) out += 'import { pushHead } from "@rivetjs/kit";\n';
   for (const { name } of exports.filter((entry) => entry.component && entry.alias === undefined)) {
     const id = key + "#" + name;
-    out += `export const ${name === "default" ? "_default" : name} = { id: ${js(id)}, c: M[${js(name)}], a: adapter, chunk: ${js(id)} };\n`;
+    out += `export const ${name === "default" ? "_default" : name} = { id: ${js(id)}, c: M[${js(name)}], a: adapter, chunk: ${js(id)}${head ? ", head: pushHead" : ""} };\n`;
   }
   if (exports.some((entry) => entry.name === "default" && entry.component && entry.alias === undefined)) out += "export { _default as default };\n";
   return out;

@@ -142,7 +142,7 @@ async function files(page = PAGE): Promise<Record<string, string>> {
   };
 }
 const attached = (page: Page, selector: string): Promise<boolean> =>
-  page.evaluate((s) => (document.querySelector(s) as unknown as Record<string, unknown>).$$click !== undefined, selector);
+  page.evaluate((s) => (document.querySelector(s) as unknown as Record<string, unknown>).$rclick !== undefined, selector);
 
 compiled("browser: an event in one deferred child adopts it alone; a write its wake key names adopts the reader first", async () => {
   await withPage(await files(), async (page) => {
@@ -176,7 +176,7 @@ compiled("browser: deferred children adopt at idle; a count that differs from th
     await page.goto("http://rivet.test/");
     await page.click("#share");
     await page.waitForFunction(() => document.querySelector("#other-shared")!.textContent === "1");
-    await page.waitForFunction(() => (document.querySelector("#list-own") as unknown as Record<string, unknown>).$$click !== undefined);
+    await page.waitForFunction(() => (document.querySelector("#list-own") as unknown as Record<string, unknown>).$rclick !== undefined);
   });
   const served = await files();
   // The server's count for App off by one: List / Other (App's readers) adopt with App.

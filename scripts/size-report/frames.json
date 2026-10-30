@@ -9,7 +9,7 @@
   "files": 2,
   "jsRaw": 94182,
   "jsGz": 33691,
-  "jsBr": 30459,
+  "jsBr": 30531,
   "urls": [
    "/assets/button-lite.js",
    "/assets/derived-runtime.js"
@@ -25,7 +25,7 @@
   "files": 2,
   "jsRaw": 94398,
   "jsGz": 33749,
-  "jsBr": 30632,
+  "jsBr": 30566,
   "urls": [
    "/assets/derived-runtime.js",
    "/assets/index.js"
@@ -40,8 +40,8 @@
   "inlineJsBytes": 6290,
   "files": 13,
   "jsRaw": 210584,
-  "jsGz": 74019,
-  "jsBr": 66553,
+  "jsGz": 74029,
+  "jsBr": 66618,
   "urls": [
    "/assets/chain-of-thought.js",
    "/assets/derived-runtime.js",
@@ -67,8 +67,8 @@
   "inlineJsBytes": 6290,
   "files": 10,
   "jsRaw": 177322,
-  "jsGz": 64600,
-  "jsBr": 58434,
+  "jsGz": 64614,
+  "jsBr": 58515,
   "urls": [
    "/assets/button.js",
    "/assets/chat.js",
@@ -104,8 +104,8 @@
   "inlineJsBytes": 6290,
   "files": 4,
   "jsRaw": 8430,
-  "jsGz": 4307,
-  "jsBr": 3915,
+  "jsGz": 4312,
+  "jsBr": 3919,
   "urls": [
    "/assets/dom-lite.js",
    "/assets/dom-lite-attr.js",
@@ -122,8 +122,8 @@
   "inlineJsBytes": 6290,
   "files": 13,
   "jsRaw": 157575,
-  "jsGz": 57712,
-  "jsBr": 52077,
+  "jsGz": 57731,
+  "jsBr": 52133,
   "urls": [
    "/assets/data-grid.js",
    "/assets/derived-runtime.js",
@@ -149,8 +149,8 @@
   "inlineJsBytes": 6290,
   "files": 19,
   "jsRaw": 220213,
-  "jsGz": 80772,
-  "jsBr": 73022,
+  "jsGz": 80800,
+  "jsBr": 73093,
   "urls": [
    "/assets/button.js",
    "/assets/chat.js",
@@ -182,8 +182,8 @@
   "inlineJsBytes": 6290,
   "files": 7,
   "jsRaw": 152806,
-  "jsGz": 54534,
-  "jsBr": 49403,
+  "jsGz": 54542,
+  "jsBr": 49484,
   "urls": [
    "/assets/derived-runtime.js",
    "/assets/focus-visible.js",
@@ -204,7 +204,7 @@
   "files": 2,
   "jsRaw": 6011,
   "jsGz": 2989,
-  "jsBr": 2714,
+  "jsBr": 2711,
   "urls": [
    "/assets/dom-lite.js",
    "/assets/index.js"
@@ -219,8 +219,8 @@
   "inlineJsBytes": 6290,
   "files": 24,
   "jsRaw": 409930,
-  "jsGz": 143561,
-  "jsBr": 128591,
+  "jsGz": 143599,
+  "jsBr": 128824,
   "urls": [
    "/assets/aria-hide-outside.js",
    "/assets/base.js",
@@ -257,8 +257,8 @@
   "inlineJsBytes": 6290,
   "files": 21,
   "jsRaw": 314829,
-  "jsGz": 107053,
-  "jsBr": 96619,
+  "jsGz": 107081,
+  "jsBr": 96731,
   "urls": [
    "/assets/button.js",
    "/assets/circle-alert.js",
@@ -292,8 +292,8 @@
   "inlineJsBytes": 6559,
   "files": 23,
   "jsRaw": 368103,
-  "jsGz": 122700,
-  "jsBr": 110418,
+  "jsGz": 122732,
+  "jsBr": 110527,
   "urls": [
    "/assets/base.js",
    "/assets/collection-renderer.js",
@@ -329,8 +329,8 @@
   "inlineJsBytes": 6290,
   "files": 5,
   "jsRaw": 9189,
-  "jsGz": 4813,
-  "jsBr": 4345,
+  "jsGz": 4819,
+  "jsBr": 4334,
   "urls": [
    "/assets/dom-lite.js",
    "/assets/dom-lite-attr.js",
@@ -361,8 +361,8 @@
   "inlineJsBytes": 6290,
   "files": 2,
   "jsRaw": 6028,
-  "jsGz": 2998,
-  "jsBr": 2732,
+  "jsGz": 2999,
+  "jsBr": 2734,
   "urls": [
    "/assets/BookCard.js",
    "/assets/dom-lite.js"
@@ -377,8 +377,8 @@
   "inlineJsBytes": 6290,
   "files": 3,
   "jsRaw": 7912,
-  "jsGz": 4043,
-  "jsBr": 3671,
+  "jsGz": 4048,
+  "jsBr": 3703,
   "urls": [
    "/assets/dom-lite.js",
    "/assets/dom-lite-list.js",

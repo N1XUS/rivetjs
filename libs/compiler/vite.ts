@@ -1883,6 +1883,8 @@ function rivetPlugin(
       sizes: Record<string, number> = {},
       deps: Record<string, string[]> = {},
       islands: Record<string, string> = {},
+      islandCss: Record<string, string[]> = {},
+      moduleCss: Record<string, string[]> = {},
       chunks = new Map<string, Rollup.OutputChunk>(),
       sized = new Set<Rollup.OutputChunk>(),
       roots: string[] = [];
@@ -1980,6 +1982,41 @@ function rivetPlugin(
       }
       if (seen.size) deps[base + file] = [...seen].sort().map((name) => base + name);
     }
+    // Framework CSS belongs to every rendered island, even a static one with no hydration record. Preserve Vite's
+    // dependency-first cascade order. The native-module map includes dynamic chunks but links only modules the native
+    // SSR renderer actually reports (Vue SSRContext.modules), never every possible native lazy view on a route.
+    const cssClosures = new Map<string, string[]>();
+    const cssOf = (file: string): string[] => {
+      const known = cssClosures.get(file);
+      if (known) return known;
+      const seen = new Set<string>(),
+        css = new Set<string>();
+      const visit = (name: string): void => {
+        if (seen.has(name)) return;
+        seen.add(name);
+        const chunk = chunks.get(name) as (Rollup.OutputChunk & { viteMetadata?: { importedCss?: Set<string> } }) | undefined;
+        if (!chunk) return;
+        for (const dependency of chunk.imports) visit(dependency);
+        for (const stylesheet of chunk.viteMetadata?.importedCss ?? []) css.add(base + stylesheet);
+      };
+      visit(file);
+      const result = [...css];
+      cssClosures.set(file, result);
+      return result;
+    };
+    for (const [key, url] of Object.entries(islands)) {
+      const css = cssOf(url.slice(base.length));
+      if (css.length) islandCss[key] = css;
+    }
+    if (bridges)
+      for (const chunk of chunks.values()) {
+        const css = cssOf(chunk.fileName);
+        if (!css.length) continue;
+        for (const id of chunk.moduleIds) {
+          const file = id.split("?", 1)[0]!;
+          if (!file.startsWith("\0") && bridges.owner(file)) moduleCss[posix(relative(root, file))] = css;
+        }
+      }
     // ROUTER-PRIME (`resume.ready`): per key, the chunks of the modules the root's `ready` loads + their static closures.
     const readySpec = resume?.ready?.();
     let ready: { root: string; routes: Record<string, string[]> } | undefined;
@@ -2015,6 +2052,8 @@ function rivetPlugin(
       sizes,
       deps,
       ...(Object.keys(islands).length ? { islands } : {}),
+      ...(Object.keys(islandCss).length ? { islandCss } : {}),
+      ...(Object.keys(moduleCss).length ? { moduleCss } : {}),
       ...(builtins ? { builtins } : {}),
       ...(domDataIn && domReader ? { domData: domReader } : {}),
       ...(Object.keys(lazy).length ? { lazy } : {}),

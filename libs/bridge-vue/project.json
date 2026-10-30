@@ -1,0 +1,13 @@
+{
+  "name": "bridge-vue",
+  "projectType": "library",
+  "targets": {
+    "package": { "executor": "nx:run-commands", "cache": false, "options": { "command": "node scripts/package/build.ts libs/bridge-vue" } },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project bridge-vue --project bridge-vue-browser --passWithNoTests" }
+    },
+    "typecheck": { "executor": "nx:run-commands", "cache": false, "options": { "command": "node scripts/tsc.ts -p libs/bridge-vue" } }
+  }
+}

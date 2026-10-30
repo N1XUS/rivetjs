@@ -1,15 +1,15 @@
 ---
-title: React and Preact components
-description: Use React 19 and Preact components in Rivet pages as islands: server-rendered into the stream, hydrated by a client policy, with live props and callbacks.
+title: Framework components
+description: Use React, Preact, Solid, Vue and Svelte islands with server rendering, client policies, live props and resumable Rivet slots.
 template: guide
 status: experimental
 related: [guides/components/browser-only, guides/components/slots, guides/performance/chunks, reference/config]
 ---
 
-A framework bridge lets you use components written for another framework as JSX tags in a Rivet page. The component renders on the server through that framework's own SSR, straight into Rivet's HTML stream, and starts in the browser only when its `client` policy says so. Everything around it stays Rivet: compiled, resumable, and free of JavaScript until someone interacts. After reading this page you can add React or Preact components to a Rivet app, choose when each one loads, pass it live values and callbacks, and put Rivet content inside it.
+A framework bridge lets you use components written for another framework as JSX tags in a Rivet page. The component renders on the server through that framework's own SSR, straight into Rivet's HTML stream, and starts in the browser only when its `client` policy says so. Everything around it stays Rivet: compiled, resumable, and free of JavaScript until someone interacts. After reading this page you can add framework components to a Rivet app, choose when each one loads, pass it live values and callbacks, and put Rivet content inside it.
 
 :::note
-Bridges are experimental. Two adapters exist today: `@rivetjs/bridge-react` (React 19) and `@rivetjs/bridge-preact` (Preact 10.29+ and 11). Solid, Vue and Svelte adapters are planned.
+Bridges are experimental. Adapters support React 19, Preact 10.29+/11, Solid 1.9, Vue 3.5 and Svelte 5.57.2+. Each island has its own framework root; context and stores created in that root stay local to it.
 :::
 
 ## Install
@@ -36,7 +36,75 @@ export default defineConfig({
 });
 ```
 
-Without the file router, `rivet({ bridges: [react()] })` from `@rivetjs/compiler/vite` takes the same list. Bridges work in `server` and `static` mode. `preact()` from `@rivetjs/bridge-preact/vite` works the same way, and both can be in one list.
+Without the file router, `rivet({ bridges: [react()] })` from `@rivetjs/compiler/vite` takes the same list. Bridges work in `server` and `static` mode. `preact()` from `@rivetjs/bridge-preact/vite` works the same way, and all adapters can be in one list.
+
+## Solid, Vue and Svelte
+
+Install the adapter, framework and its native Vite plugin:
+
+```sh
+npm install @rivetjs/bridge @rivetjs/bridge-solid solid-js@^1.9 vite-plugin-solid@^2.11
+npm install @rivetjs/bridge @rivetjs/bridge-vue vue@^3.5 @vitejs/plugin-vue@^6
+npm install @rivetjs/bridge @rivetjs/bridge-svelte svelte@^5.57.2 @sveltejs/vite-plugin-svelte@^7.3.1
+```
+
+Choose the packages you need. Configure their factories together:
+
+```ts title="vite.config.ts"
+import { defineConfig } from "vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+import { solid } from "@rivetjs/bridge-solid/vite";
+import { vue } from "@rivetjs/bridge-vue/vite";
+import { svelte } from "@rivetjs/bridge-svelte/vite";
+
+export default defineConfig({
+  plugins: [rivetRouter({ bridges: [solid(), vue(), svelte()] })],
+});
+```
+
+Import each adapter's `types` once, then import components from their native files:
+
+```tsx
+import "@rivetjs/bridge-solid/types";
+import "@rivetjs/bridge-vue/types";
+import "@rivetjs/bridge-svelte/types";
+import { Counter } from "../components/Counter.solid.tsx";
+import Card from "../components/Card.vue";
+import Chart from "../components/Chart.svelte";
+
+export default function Dashboard() {
+  return <main><Counter client="load" /><Card client="idle" /><Chart client="visible" /></main>;
+}
+```
+
+Solid owns `*.solid.tsx` / `*.solid.jsx`; start its JSX files with `/** @jsxImportSource solid-js */` for TypeScript. Vue owns `.vue`; Svelte owns `.svelte` and rune modules `.svelte.ts` / `.svelte.js`. The adapters add their native compilers; Rivet does not compile the foreign component's markup. Configure the native framework's editor support for SFC imports. Solid 2 is a separate API and is not supported by this adapter. Rivet uses separate event metadata, including for precompiled Solid dependencies.
+
+Vue setup runs once for each app on both server and client. To install plugins or provide dependencies, pass a module path:
+
+```ts
+vue({ setup: "./src/vue-setup.ts" });
+```
+
+```ts title="src/vue-setup.ts"
+import type { App } from "vue";
+export default function setup(app: App) {
+  app.provide("currency", "USD");
+}
+```
+
+Create request-specific state inside this hook rather than sharing it between requests. The programmatic server/client APIs also export `createAdapter({ setup })`.
+
+Vue and Svelte scoped CSS from the island's static dependency graph is linked during server rendering, including static islands without JavaScript. Vue also reports native async SFC modules actually rendered on the server, so their CSS loads without eagerly loading unrelated lazy views. Async island output inside Rivet `Suspense` emits newly discovered stylesheet links before the streamed payload.
+
+For Svelte experimental async SSR, import styled child components statically when they must be styled before JavaScript. CSS used only by a runtime `await import("./Child.svelte")` is outside the static closure and loads with the client import; Svelte exposes no public rendered-module collector.
+
+### Native head ownership
+
+Install `@rivetjs/kit` and add `kit()` from `@rivetjs/kit/vite` to the Vite plugins to collect adapter head output. The router then holds the document head until component head is ready. Without this sink, adapter head output is dropped with a development warning.
+
+Vue `Teleport to="head"` and Svelte `<svelte:head>` keep their native SSR anchors so hydration reuses the original metadata nodes. They must finish before the document head is released: native head discovered after the head hold fails explicitly. Move that metadata into Rivet Kit or resolve the head-producing island before streaming its body.
+
+Use one native title author per document. Its title can replace a lower-priority route/default title; multiple native titles, a competing higher-priority title or a `titleTemplate` fail explicitly. Keep route-wide title composition in Kit. Native head nodes belong to the island. Pages with native head include a small nonce-bearing lifecycle script that removes those nodes when their original island root leaves the document, including static islands and islands that have not hydrated. Roots moved within the document keep their head. Other static islands still need no JavaScript. Vue head hydration uses a guarded Vue 3.5 Teleport cursor contract; rerun adapter tests before upgrading Vue.
 
 ## Which files are React
 
@@ -123,7 +191,7 @@ If you know Astro: `client="visible"` is `client:visible`, written as a normal p
 
 ## Props are live
 
-Pass values, not signals. A prop that reads a signal follows it: each Rivet update re-renders the island once, through React's own `root.render`.
+Pass values, not signals. A prop that reads a signal follows it: each Rivet update re-renders the island once, through the framework's own update mechanism.
 
 ```tsx
 import { signal } from "@rivetjs/reactivity";
@@ -132,7 +200,7 @@ const range = signal("30d");
 <RevenueChart client="idle" data={series(range())} />;
 ```
 
-A static island (no `client`) with a live prop loads nothing until the prop changes. On the first change it hydrates with the old values, so the HTML matches, and then renders the new ones. Passing the signal itself (`count={count}`) passes a function, which React sees as a callback.
+A static island (no `client`) with a live prop loads nothing until the prop changes. On the first change it hydrates with the old values, so the HTML matches, and then renders the new ones. Passing the signal itself (`count={count}`) passes a function, which the framework sees as a callback.
 
 `client`, `preload` and `fallback` are read once and never reach the component.
 
@@ -183,7 +251,7 @@ On other pages, too, every island with plain JSON props starts through that inli
 
 ## Write an adapter
 
-An adapter connects one framework to the bridge. `@rivetjs/bridge/adapter` holds the contract the React and Preact adapters implement; the API may still change while bridges are experimental. An adapter package has three modules:
+An adapter connects one framework to the bridge. `@rivetjs/bridge/adapter` holds the contract the framework adapters implement; the API may still change while bridges are experimental. An adapter package has three modules:
 
 - **A server module** that exports `adapter: ServerAdapter`. `render(component, props, slots, ctx)` returns the island's HTML (a string, `{ html, head }` for hoisted head entries, or a promise). Each `slots[name].html` is the exact empty element to write where Rivet content goes. `ctx.id` is the island id, to use as the framework's id prefix; `ctx.nonce` is the page's CSP nonce. `head(ctx)` (optional) returns markup written once per page before the first island of that framework.
 - **A client module** that exports `adapter: ClientAdapter`, with `hydrate` (start on the server HTML), `mount` (client-only islands, and after a failed hydration), `update(handle, props)` for live props and `unmount(handle)`. When the framework throws the server HTML away, call `islandRecovered(framework, id, error, root)`: it logs `RV2149` with the island id and, in development, shows the error in DevTools.

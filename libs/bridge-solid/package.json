@@ -1,0 +1,52 @@
+{
+  "name": "@rivetjs/bridge-solid",
+  "version": "0.1.0-alpha.2",
+  "license": "MIT",
+  "description": "Solid 1.9 islands for Rivet: server rendering, hydration policies, reactive props and resumable slots.",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./server": {
+      "types": "./server.ts",
+      "default": "./server.ts"
+    },
+    "./client": {
+      "types": "./client.ts",
+      "default": "./client.ts"
+    },
+    "./vite": {
+      "types": "./vite.ts",
+      "default": "./vite.ts"
+    },
+    "./types": {
+      "types": "./types.ts",
+      "default": "./types.ts"
+    }
+  },
+  "peerDependencies": {
+    "@rivetjs/bridge": "0.1.0-alpha.2",
+    "solid-js": ">=1.9.0 <2",
+    "vite-plugin-solid": ">=2.11.0 <3"
+  },
+  "peerDependenciesMeta": {
+    "vite-plugin-solid": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "solid-js": "1.9.15",
+    "vite-plugin-solid": "2.11.14"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/bridge-solid"
+  }
+}

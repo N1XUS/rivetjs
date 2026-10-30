@@ -45,7 +45,7 @@ for (const engine of ["chromium", "webkit"] as const) {
           });
           // Focus wakes adoption without changing the bound signal.
           await page.focus("#wake");
-          await page.waitForFunction(() => !!(document.getElementById("wake") as unknown as { $$click?: unknown }).$$click);
+          await page.waitForFunction(() => !!(document.getElementById("wake") as unknown as { $rclick?: unknown }).$rclick);
           for (const id of ["bound", "spread", "svg"]) {
             assert.equal(
               await page.getAttribute("#" + id, "class"),

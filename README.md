@@ -50,7 +50,7 @@ The example quarantine lists (`examples/_quarantine.json`) of all three sites ar
 | `libs/cdk` | `@rivetjs/cdk`: headless components and utilities, ports of React Aria / React Stately / RAC / Angular CDK |
 | `libs/ui` | `@rivetjs/ui`: styled compound components on cdk (Tailwind v4, one Rivet theme + presets) |
 | `libs/motion` | `@rivetjs/motion`: Motion (motion.dev) on Rivet signals, Presence, layout animations, CSS entrances with no JS |
-| `libs/bridge`, `libs/bridge-react`, `libs/bridge-preact` | `@rivetjs/bridge` + adapters: React 19 / Preact components as server-rendered islands in Rivet pages |
+| `libs/bridge`, `libs/bridge-{react,preact,solid,vue,svelte}` | `@rivetjs/bridge` + adapters: React19, Preact, Solid1.9, Vue3.5 and Svelte5 components as server-rendered islands |
 | `libs/mcp` | `@rivetjs/mcp`: MCP server for AI assistants (docs search, component reference, `check_code`, diagnostics) |
 | `libs/nx` | `@rivetjs/nx` (dev-only): Nx plugin with generators, executors and inferred targets |
 | `libs/devtools` | `@rivetjs/devtools`: dev-server DevTools — component tree, signals, updates, HMR/error log, performance (`Alt+Shift+R`) ([docs](docs/guides/devtools.md)) |

@@ -42,7 +42,7 @@ What to unlearn:
 - **Hooks rules do not apply.** `signal()` and `computed()` can be created anywhere: in a condition, in a module, in a plain function.
 - **No hydration.** React downloads and runs every component in the browser before the page reacts. Rivet loads the code of a handler when you are about to use it.
 
-You do not have to convert everything at once: React 19 and Preact components can stay as they are and run inside Rivet pages as islands. See [React and Preact components](../guides/components/framework-components.md).
+You do not have to convert everything at once: React19, Preact, Solid1.9, Vue3.5 and Svelte5 components can stay in their native framework and run inside Rivet pages as islands. See [Framework components](../guides/components/framework-components.md).
 
 ## From Solid (and SolidStart)
 

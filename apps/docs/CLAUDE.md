@@ -85,3 +85,7 @@ Scheduler component evidence (2026-10-23) is linked from `content/about/benchmar
 - A docs sweep runs content, snippets, llms generation/check, typecheck, one production build, the docs tests, and MCP data generation/check. During a content-only lane, generated error pages and homepage artifacts stay outside the hand-back; report generator drift explicitly. Respect the session's port range over the historical defaults above.
 
 - Deep security follow-up: the caching guide also documents final streamed Response admission and shell locals reflection tracking (2026-10-29).
+
+- Framework-components guide covers all five adapters, native Vite ownership, Vue setup modules, scoped SSR CSS and native head/title ownership limits. Adapter correctness tests are maintained in each bridge package; no new competitor performance claim accompanies these adapters.
+
+- API config indexes solid()/vue()/svelte() and their adapter option types alongside React/Preact; regenerate committed src/generated/api.json with these entries.

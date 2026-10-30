@@ -65,7 +65,7 @@ async function files(
 }
 const counts = (page: Page): Promise<string[]> => page.evaluate(() => [...document.querySelectorAll(".n")].map((p) => p.textContent!));
 const handled = (page: Page): Promise<boolean[]> =>
-  page.evaluate(() => [...document.querySelectorAll(".inc")].map((b) => (b as unknown as Record<string, unknown>).$$click !== undefined));
+  page.evaluate(() => [...document.querySelectorAll(".inc")].map((b) => (b as unknown as Record<string, unknown>).$rclick !== undefined));
 // Count the listeners added to the document (delegation: one per type, whatever the number of boundaries).
 const COUNT_DOC_LISTENERS = () => {
   const add = EventTarget.prototype.addEventListener;
@@ -108,7 +108,7 @@ compiled("LITE-BOOT: primed at idle, the first input adopts and runs inside its 
       w.seen = [];
       addEventListener("click", (e) => {
         const b = document.querySelectorAll(".inc")[1] as unknown as Record<string, unknown>;
-        w.seen.push([e.type, b.$$click !== undefined, document.querySelectorAll(".n")[1]!.textContent!]);
+        w.seen.push([e.type, b.$rclick !== undefined, document.querySelectorAll(".n")[1]!.textContent!]);
       });
     });
   await withPage(site, async (page, requests) => {

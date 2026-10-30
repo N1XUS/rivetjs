@@ -183,3 +183,5 @@ Scheduler final report records real LTR/RTL month/all-day resize preview, commit
 - CX-SOCIAL: the homepage design spec keeps GitHub as a text link by design; brand logos are supported in the ui-docs social-button demo through its local build helper (see `apps/ui-docs/CLAUDE.md`).
 
 - Live-page accessor contract (2026-10-29): the partial-render spec records that server/static live pages receive callable loader data independently of navigate/forms imports; native-link production GETs cover both navigation settings.
+
+- Remaining adapters implementation/evidence: `design/plans/2026-10-30-remaining-framework-islands.md` extends the approved bridges T9–T11. Benchmark lanes are a separate deferred item.

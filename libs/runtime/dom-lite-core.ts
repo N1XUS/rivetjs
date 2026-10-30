@@ -97,7 +97,7 @@ export type On = (el: Element, type: string, fn: ((event: Event) => unknown) | n
 // whose handlers queued work flushes one task later (as reactivity `_dispatch`).
 export function delegate(event: Event, path: EventTarget[] = event.composedPath()): void {
   if (held) flush();
-  const key = "$$" + event.type,
+  const key = "$r" + event.type,
     view = (event as UIEvent).view;
   depth++;
   try {
@@ -140,7 +140,7 @@ export function on(el: Element, type: string, fn: ((event: Event) => unknown) | 
   const d = el.ownerDocument as Document & { $$rvOn?: On },
     full = d.$$rvOn;
   if (full) return full(el, type, fn);
-  (((el as unknown as Record<string, unknown>)["$$" + type] = fn), ((el as unknown as { $$o: null }).$$o = null));
+  (((el as unknown as Record<string, unknown>)["$r" + type] = fn), ((el as unknown as { $$o: null }).$$o = null));
   types.has(type) || (types.add(type), d.addEventListener(type, dispatch));
 }
 

@@ -1,5 +1,5 @@
 // Delegated DOM events (moved out of `dom-v2.ts`, ZERO R4 2026-10-25): one listener per type per document dispatches to
-// handlers stored on the nodes (`$$<type>`), under the owner that bound them. A leaf module so the lite resume runtime
+// handlers stored on the nodes (`$r<type>`), under the owner that bound them. A leaf module so the lite resume runtime
 // (`dom-lite.ts`) and every client render share ONE table (one document listener per type, whatever bound it) without
 // pulling the rest of the DOM ABI into the lite chunk. `dom-v2.ts` re-exports `_on` / `_listen` / `_delegateBelow`.
 import { _dispatch, getOwner, onCleanup } from "@rivetjs/reactivity";
@@ -13,7 +13,7 @@ let lastDoc: Document | null = null,
   lastTypes: Set<string> | null = null,
   lastType = "",
   lastKey = "";
-// `"$$" + type` per delegated type, made once: a fresh concatenation per bind is a new string the keyed store must
+// `"$r" + type` per delegated type, made once: a fresh concatenation per bind is a new string the keyed store must
 // internalize (an element with several delegated types — cdk parts bind 5 — alternates types on every bind).
 const KEYS: Record<string, string> = Object.create(null);
 type Handlers = Record<string, ((event: Event) => unknown) | undefined>;
@@ -61,7 +61,7 @@ export const _delegated = (event: Event): void => void ranTo.set(event, -1);
 function delegate(event: Event, stop: Node | null): boolean {
   const done = ranTo.get(event);
   if (done === -1) return true;
-  const key = "$$" + event.type,
+  const key = "$r" + event.type,
     // The propagation path the browser fixed when the dispatch started (as native listeners see it): a
     // handler that re-renders its node or an ancestor (state flushed after each handler) does not cut
     // the bubbling short. `parentNode` walk only where `composedPath` is missing.
@@ -116,12 +116,12 @@ function checked(handler: unknown): ((event: Event) => unknown) | undefined {
 }
 /** Compiler ABI: a delegated bubbling event handler (`type` is a bubbling event). */
 export function _on(el: Element, type: string, handler: ((event: Event) => unknown) | null | undefined): void {
-  // The last type's key string is reused: a fresh `"$$" + type` per call is a new string the keyed store must
+  // The last type's key string is reused: a fresh `"$r" + type` per call is a new string the keyed store must
   // internalize first (krausest create10k script overhead −8%); other types come from `KEYS`.
   let key = lastKey;
   const same = type === lastType;
   if (!same) {
-    key = KEYS[type] ??= "$$" + type;
+    key = KEYS[type] ??= "$r" + type;
     lastType = type;
     lastKey = key;
   }

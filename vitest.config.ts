@@ -1,6 +1,10 @@
 // Vitest projects: one per library / app test suite (`vitest run --project <name>`; nx `test` targets
 // select theirs). Suites run in forked processes like `node --test` did, without a per-test timeout.
 import { defineConfig, defineProject, type TestProjectConfiguration } from "vitest/config";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import { svelte as sveltePlugin } from "@sveltejs/vite-plugin-svelte";
+import vuePlugin from "@vitejs/plugin-vue";
 import { playwright } from "@vitest/browser-playwright";
 import { nodeConditions, rivetTest } from "./libs/testing/vite.ts";
 
@@ -10,6 +14,44 @@ const node = (name: string, include: string[], test: Record<string, unknown> = {
     plugins: [nodeConditions()],
     test: { name, include, environment: "node", setupFiles: ["libs/testing/node-env.ts"], ...test },
   });
+
+const solidPackage = fileURLToPath(new URL("./libs/bridge-solid/node_modules/solid-js/", import.meta.url));
+const solidModule = createRequire(new URL("./libs/bridge-solid/package.json", import.meta.url))("vite-plugin-solid");
+const solidPlugin = solidModule.default ?? solidModule;
+function foreignProject(name: string, framework: "solid" | "vue" | "svelte", client: boolean): TestProjectConfiguration {
+  const project = (client ? browser : node)(
+    name,
+    [`libs/bridge-${framework}/tests/${client ? "*.browser.test.{ts,tsx}" : "*.test.ts"}`],
+    client ? {} : { exclude: ["**/*.browser.test.*"], ...(framework === "solid" ? { experimental: { viteModuleRunner: true } } : {}) },
+  );
+  const plugins =
+    framework === "solid"
+      ? [solidPlugin({ ssr: true, dev: false, hot: false, include: /\.solid\.[jt]sx$/, solid: { delegateEvents: false } })]
+      : framework === "vue"
+        ? [vuePlugin()]
+        : sveltePlugin({
+            configFile: false,
+            compilerOptions: { css: "external" },
+            dynamicCompileOptions: ({ filename }) => (filename.endsWith("/AsyncBody.svelte") ? { experimental: { async: true } } : undefined),
+          });
+  return defineProject({
+    ...project,
+    plugins: [...plugins, ...(project.plugins ?? [])],
+    ...(framework === "solid"
+      ? {
+          resolve: {
+            alias: [
+              { find: /^solid-js\/web$/, replacement: solidPackage + `web/dist/${client ? "web" : "server"}.js` },
+              { find: /^solid-js\/store$/, replacement: solidPackage + `store/dist/${client ? "store" : "server"}.js` },
+              { find: /^solid-js$/, replacement: solidPackage + `dist/${client ? "solid" : "server"}.js` },
+              { find: /^solid-js\/html$/, replacement: solidPackage + "html/dist/html.js" },
+              { find: /^solid-js\/h$/, replacement: solidPackage + "h/dist/h.js" },
+            ],
+          },
+        }
+      : {}),
+  });
+}
 
 /** The same suite under `--conditions=development` with the recording devtools hook. */
 const dev = (name: string, include: string[], test: Record<string, unknown> = {}): TestProjectConfiguration =>
@@ -79,6 +121,12 @@ export default defineConfig({
       browser("bridge-react-browser", ["libs/bridge-react/tests/*.browser.test.{ts,tsx}"]),
       node("bridge-preact", ["libs/bridge-preact/tests/*.test.ts"], { exclude: ["**/*.browser.test.*"] }),
       browser("bridge-preact-browser", ["libs/bridge-preact/tests/*.browser.test.{ts,tsx}"]),
+      foreignProject("bridge-solid", "solid", false),
+      foreignProject("bridge-solid-browser", "solid", true),
+      foreignProject("bridge-vue", "vue", false),
+      foreignProject("bridge-vue-browser", "vue", true),
+      foreignProject("bridge-svelte", "svelte", false),
+      foreignProject("bridge-svelte-browser", "svelte", true),
       node("devtools", ["libs/devtools/tests/*.test.ts"], { exclude: ["**/*.dev.test.*"] }),
       // Development-build suites (`#dev` → dev-on: e.g. `@rivetjs/bridge/adapter` islandRecovered's hook event).
       dev("devtools-dev", ["libs/devtools/tests/*.dev.test.ts"]),

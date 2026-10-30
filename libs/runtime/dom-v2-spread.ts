@@ -53,7 +53,7 @@ interface SpreadState {
  */
 // Listener keys (`onKeyDownCapture` → type, capture, delegated, store key) parsed once per name, module-wide and
 // bounded like `CHECKED`: a regex exec + lowercase + delegation test per key per element was the top self-time
-// line of cdk form-control mounts (HOTPATH 2026-10-09). `key` = the `_on` expando (`$$type`, delegated) or the
+// line of cdk form-control mounts (HOTPATH 2026-10-09). `key` = the `_on` expando (`$rtype`, delegated) or the
 // direct-listener key (`type` / `type!`).
 interface ListenerKey {
   type: string;
@@ -69,7 +69,7 @@ function listenerOf(name: string): ListenerKey {
     const [, raw, capture] = /^on(.+?)((?<!Pointer)Capture)?$/.exec(name)!;
     const type = raw!.toLowerCase(),
       delegated = !capture && DELEGATED.test(type);
-    listener = { type, capture: !!capture, delegated, key: delegated ? "$$" + type : capture ? type + "!" : type };
+    listener = { type, capture: !!capture, delegated, key: delegated ? "$r" + type : capture ? type + "!" : type };
     if (listenerCount < 512) ((LISTENERS[name] = listener), listenerCount++);
   }
   return listener;

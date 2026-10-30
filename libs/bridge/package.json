@@ -1,7 +1,7 @@
 {
   "name": "@rivetjs/bridge",
   "version": "0.1.0-alpha.2",
-  "description": "Framework bridges for Rivet: components of other frameworks (React, Preact adapters) as islands inside a resumable Rivet page.",
+  "description": "Framework bridges for Rivet: React, Preact, Solid, Vue and Svelte islands inside a resumable page.",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -44,6 +44,14 @@
     "./adapter": {
       "types": "./adapter.ts",
       "default": "./adapter.ts"
+    },
+    "./head": {
+      "types": "./head.ts",
+      "default": "./head.ts"
+    },
+    "./head-client": {
+      "types": "./head-client.ts",
+      "default": "./head-client.ts"
     }
   },
   "peerDependencies": {

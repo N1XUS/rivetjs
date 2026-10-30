@@ -52,7 +52,7 @@ What most frameworks do after server rendering: run every component again in the
 
 ## Island
 
-A component from another framework (React or Preact today; Solid, Vue and Svelte are planned) used inside a Rivet page. Its HTML comes from the server; its framework code loads and starts on its own, for example only when it scrolls into view. See [React and Preact components](../guides/components/framework-components.md).
+A component from another framework (React, Preact, Solid, Vue or Svelte) used inside a Rivet page. Its HTML comes from the server; its framework code loads and starts on its own, for example only when it scrolls into view. See [Framework components](../guides/components/framework-components.md).
 
 ## Layout
 

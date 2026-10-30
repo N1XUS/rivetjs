@@ -26,6 +26,9 @@ export const ORDER = [
   "bridge",
   "bridge-react",
   "bridge-preact",
+  "bridge-solid",
+  "bridge-vue",
+  "bridge-svelte",
   "create-rivet",
   "nx",
 ];

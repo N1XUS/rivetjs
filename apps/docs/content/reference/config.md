@@ -33,7 +33,7 @@ export default defineConfig({
 | `mode` | `"server"` \| `"static"` \| `"csr"` | `"server"` | `server`: render per request. `static`: prerender to files. `csr`: single-page app, no server code allowed. |
 | `resume` | `Partial<RivetResumeOptions>` | route files + app modules | Passed to the compiler. Route files are added to `modules` for you, and `appModules` (default `true`) resumes every app `.tsx`/`.jsx` component file a route imports; `appModules: false` opts out, then list other components in `modules`. |
 | `images` | `ImagesConfig` \| `true` | off | Image imports (`?image`, `?jsx`). Same as `rivet({ images })`. |
-| `bridges` | `BridgeEntry[]` | none | Framework bridges (`react()` from `@rivetjs/bridge-react/vite`, `preact()` from `@rivetjs/bridge-preact/vite`): those components render as islands in the routed pages. Same as `rivet({ bridges })`. Server and static modes only. See [React and Preact components](../guides/components/framework-components.md). |
+| `bridges` | `BridgeEntry[]` | none | Framework bridges (`react()` from `@rivetjs/bridge-react/vite`, `preact()` from `@rivetjs/bridge-preact/vite`, plus `solid()`, `vue()` and `svelte()` from their adapter `/vite` entries): those components render as islands in the routed pages. Same as `rivet({ bridges })`. Server and static modes only. See [Framework components](../guides/components/framework-components.md). |
 | `devtools` | `boolean` | `true` | DevTools on the dev server, if `@rivetjs/devtools` is installed. |
 | `transitions` | `boolean` \| `TransitionOptions` | off | View transitions and pending UI for client navigation. `true` uses the defaults below. |
 | `head` | `"components"` \| `"early"` | `"components"` with `kit()`, else `"early"` | `components`: hold `<head>` until the page rendered, so kit head components apply. `early`: route `head` exports only. Experimental. |
@@ -74,7 +74,7 @@ Also import `@rivetjs/router/transitions.css` in your stylesheet. See [transitio
 | --- | --- | --- | --- |
 | `resume` | `RivetResumeOptions` | off | Modules that compile so they can resume. Without it, nothing resumes. |
 | `images` | `ImagesConfig` \| `true` | off | Adds the image plugin (needs `sharp`). Then `rivet()` returns an array of plugins. |
-| `bridges` | `BridgeEntry[]` | none | Framework bridges (`react()`, `preact()`): React / Preact components as islands. Then `rivet()` returns an array of plugins. See [React and Preact components](../guides/components/framework-components.md). |
+| `bridges` | `BridgeEntry[]` | none | Framework bridges (`react()`, `preact()`): React / Preact components as islands. Then `rivet()` returns an array of plugins. See [Framework components](../guides/components/framework-components.md). |
 | `devtools` | `boolean` | `true` | DevTools on the dev server when installed. Builds never include them. |
 | `css` | `RivetCSSOptions` | see below | `css` blocks and `*.module.*` naming. |
 | `include` | Vite `FilterPattern` | every `.tsx` / `.jsx` outside `node_modules` | Modules the compiler transforms (globs relative to the root, or RegExps). |

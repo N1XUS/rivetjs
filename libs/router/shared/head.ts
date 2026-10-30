@@ -1,6 +1,7 @@
 // Head merging (rank + dedupe keys) and serialization (capo.js order), shared by server and kit.
 import { escapeJSON } from "@rivetjs/runtime/resume-format";
 import { escapeAttribute, escapeText } from "@rivetjs/runtime/escape";
+import { prepareNativeHead, renderNativeHead } from "#native-head";
 import type { Head, HeadLink, HeadMeta, HeadScript, HeadStyle, InlineScript } from "./data.ts";
 
 /** One head contribution: `level` −1 document defaults, layouts 0…n−1, page n; `phase` 0 route export, 1 components. */
@@ -73,6 +74,7 @@ export function rankMerge(entries: readonly RankedHead[]): Head | undefined {
     links: Map<string, HeadLink> | undefined,
     scripts: Map<string, HeadScript> | undefined,
     styles: Map<string, HeadStyle> | undefined;
+  const native = prepareNativeHead?.(sorted);
   for (const { head } of sorted) {
     if (head.title !== undefined) title = head.title;
     if (head.titleTemplate !== undefined) template = head.titleTemplate;
@@ -86,7 +88,7 @@ export function rankMerge(entries: readonly RankedHead[]): Head | undefined {
   }
   if (title !== undefined && template !== undefined) title = template.replace("%s", title);
   // The template stays alongside the final title: client head updates template component titles.
-  return {
+  const merged: Head = {
     ...(title !== undefined ? { title } : {}),
     ...(template !== undefined ? { titleTemplate: template } : {}),
     ...(html ? { html } : {}),
@@ -97,6 +99,7 @@ export function rankMerge(entries: readonly RankedHead[]): Head | undefined {
     ...(scripts?.size ? { scripts: [...scripts.values()] } : {}),
     ...(styles?.size ? { styles: [...styles.values()] } : {}),
   };
+  return native ? native(merged, rankMerge) : merged;
 }
 
 const attr = (name: string, value: string | undefined | boolean) =>
@@ -210,6 +213,8 @@ function inlineTag(script: Extract<HeadScript, { inline: InlineScript }>, nonce:
  * JSON-LD. Charset, viewport and the CSP meta belong to the shell.
  */
 export function headTags(head: Head | undefined, options: HeadTagOptions = {}): string {
+  const native = renderNativeHead?.(head, options, headTags);
+  if (native !== undefined) return native;
   const managed = options.managed;
   const markOf = (entry: object) => (!managed ? "" : typeof managed === "object" && managed.persistent.has(entry) ? ' data-rh="0"' : ' data-rh=""');
   const nonce = options.nonce !== undefined ? ` nonce="${options.nonce.replace(/[^\w+/=-]/g, "")}"` : "";

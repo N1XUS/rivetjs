@@ -114,7 +114,7 @@ async function files(): Promise<Record<string, string>> {
   };
 }
 const attached = (page: Page, selector: string): Promise<boolean> =>
-  page.evaluate((s) => (document.querySelector(s) as unknown as Record<string, unknown>).$$click !== undefined, selector);
+  page.evaluate((s) => (document.querySelector(s) as unknown as Record<string, unknown>).$rclick !== undefined, selector);
 
 compiled("browser: a chrome click adopts the content without reloading its frame, writing its nodes or losing state", async () => {
   await withPage(await files(), async (page) => {

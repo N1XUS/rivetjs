@@ -252,7 +252,15 @@ export function bridgePlugin(entries: BridgeEntry[]): Plugin {
         const facade = facadeOf(FACADE + id.slice(DEF_ID.length) + ".tsx");
         if (!facade) return null;
         const list = await exportsFor(this, facade);
-        return ssr ? serverDefs(targetSpecifier(facade), facade.key, facade.entry.server, list) : clientDefs(facade.key, list);
+        return ssr
+          ? serverDefs(
+              targetSpecifier(facade),
+              facade.key,
+              facade.entry.server,
+              list,
+              config?.plugins.some((plugin) => plugin.name === "vite-plugin-rivet-kit"),
+            )
+          : clientDefs(facade.key, list);
       }
       if (id.startsWith(CLIENT_ID)) {
         // Never loaded on the server (the server only names the loader): an empty stub keeps the client adapter out.
