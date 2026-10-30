@@ -80,3 +80,37 @@ test.each(["GET", "POST"])("layout onRequest protects handlers and loaders, incl
   assert.equal(layoutLoads, method === "GET" ? 1 : 0, "only the unkept document request loads layout data");
   assert.deepEqual(observed, Array(method === "GET" ? 6 : 4).fill("alice"), "validated identity reaches every permitted operation");
 });
+
+test.each([true, false])("layout guard protects a loader or endpoint without handler-owned auth (page=%s)", async (page) => {
+  let calls = 0;
+  const payload = "synthetic-private-payload";
+  const handler = createHandler({
+    routes: [
+      {
+        id: "private",
+        pattern: "/private",
+        page,
+        layouts: [
+          mod({
+            guard(event) {
+              if (event.cookies.get("fixture-session") !== "allowed") throw deny(403);
+            },
+          }),
+        ],
+        server: mod(page ? { load: () => (++calls, payload) } : { onGet: () => (++calls, new Response(payload)) }),
+      },
+    ],
+    render: (input) => Response.json(input.data),
+    renderError: ({ status }) => new Response("Denied", { status }),
+  });
+  for (const cookie of ["", "fixture-session=forged"]) {
+    const denied = await handler(new Request("http://x/private", { headers: { cookie } }));
+    assert.equal(denied.status, 403);
+    assert.ok(!(await denied.text()).includes(payload));
+    assert.equal(calls, 0, "the enclosing guard stops the loader or endpoint handler");
+  }
+  const allowed = await handler(new Request("http://x/private", { headers: { cookie: "fixture-session=allowed" } }));
+  assert.equal(allowed.status, 200);
+  assert.ok((await allowed.text()).includes(payload));
+  assert.equal(calls, 1, "positive control: the guarded route is reachable");
+});

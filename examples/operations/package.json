@@ -1,0 +1,46 @@
+{
+  "name": "rivet-example-operations",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr",
+    "start": "node serve.mjs",
+    "check": "rivet sync && rivet-check && node ../../scripts/tsc.ts -p .",
+    "test": "cd ../.. && vitest run --project examples examples/operations/tests --maxWorkers=1"
+  },
+  "dependencies": {
+    "@rivetjs/reactivity": "0.1.0-alpha.2",
+    "@rivetjs/router": "0.1.0-alpha.2",
+    "@rivetjs/runtime": "0.1.0-alpha.2",
+    "ws": "7.5.13"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "@rivetjs/compiler": "0.1.0-alpha.2",
+    "@rivetjs/devtools": "0.1.0-alpha.2",
+    "@rivetjs/language-core": "0.1.0-alpha.2",
+    "@rivetjs/typescript-plugin": "0.1.0-alpha.2",
+    "@tailwindcss/vite": "4.3.3",
+    "tailwindcss": "4.3.3",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "typescript": "5.9.3",
+    "vite": "8.3.2",
+    "playwright": "1.63.0",
+    "@types/ws": "8.18.2"
+  },
+  "rivetExample": {
+    "name": "operations",
+    "title": "Operations integration fixture",
+    "summary": "Synthetic SQLite-backed sessions, tenant policies, checkout, editing, streams and lifecycle stress tests.",
+    "services": [],
+    "backends": [
+      "node:sqlite"
+    ],
+    "jsBudgetKB": 200
+  }
+}

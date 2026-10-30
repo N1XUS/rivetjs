@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noUncheckedSideEffectImports": false,
+    "jsx": "preserve",
+    "jsxImportSource": "@rivetjs/runtime",
+    "types": ["node"],
+    "plugins": [
+      {
+        "name": "@rivetjs/typescript-plugin"
+      }
+    ]
+  },
+  "include": ["src", "tests", "*.ts", ".rivet/routes.d.ts"]
+}

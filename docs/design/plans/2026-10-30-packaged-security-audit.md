@@ -1,5 +1,7 @@
 # Packaged Rivet server → browser security audit
 
+> Historical fixture relocation (2026-10-30): `adversarial-lab/` was retired after migration to `examples/operations`. Original reports, test runners and evidence are preserved in the [verified archive](../research/archive/2026-10-29-adversarial-lab/README.md). Paths and results below describe the original run.
+
 **Goal:** test freshly built npm tarballs as a real consumer on Linux/Node 24, reproduce and repair supported security defects, and commit verified changes. This executes the user's approved scope in the main checkout; unrelated user work stays untouched.
 
 **Architecture:** build selected packages with the repository packager; record tarball hashes; install into an isolated Linux consumer with Linux-native third-party tooling. No workspace Rivet symlinks, source aliases or repository node_modules may satisfy consumer imports. Production server/static builds and browser observations inspect the emitted artifact. Synthetic secrets and loopback targets only; no publishing.

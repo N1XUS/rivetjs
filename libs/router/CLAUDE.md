@@ -120,3 +120,5 @@ CLI output tests remove inherited `FORCE_COLOR` before setting `NO_COLOR`, so No
 - Deep security source-map canary: `tests/endpoint-split.test.ts` builds with `sourcemap: false` and `true`, scanning browser JS and `.js.map` sources for stripped endpoint handler/private-module markers while retaining a shared constant.
 
 - Cache policy is checked again after a custom stream completes (`route-cache-stream-policy.test.ts`); final private/Set-Cookie/content-type/Vary headers cannot be admitted under an earlier policy. Shell `locals` descriptors/prototype reads are tracked (`shell-cache-reflection.test.ts`), with a keyed locale descriptor control in `shell-cache.test.ts`.
+
+- Auth-boundary tests also retain the retired adversarial fixture's layout-guard contract: an enclosing guard denies a page loader and a plain endpoint before their payload code runs, with forged/absent cookies and an allowed-cookie positive control. Raw page handlers retain their documented earlier order; use onRequest for a common handler/loader boundary.

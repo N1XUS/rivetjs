@@ -37,6 +37,10 @@ Latest night measurement: `benchmarks/2026-10-28-night.md` + `.json` (CX-BENCH, 
 
 ## design/
 
+- `research/2026-10-30-adversarial-migration.md` — retirement coverage ledger: 145 native operations tests, existing framework regressions and preserved historical limits/controls.
+- `plans/2026-10-30-adversarial-migration.md` — migrate useful tests, verify immutable archive, remove temporary lab and commit.
+- `research/archive/2026-10-29-adversarial-lab/README.md` — 202 byte-exact historical source/report/evidence files, hashes and mechanical result inventory.
+
 - `research/2026-10-30-packaged-security-audit.md` — real Linux/Node24 tarball consumer: 61 server/browser, CSP, streamed-error and static-prerender checks, package integrity, investigated harness reds and explicit limits.
 
 - `plans/2026-10-30-packaged-security-audit.md` — isolated Linux/Node 24 npm-tarball audit of the server/browser boundary, canary secrecy, SSR/CSP and streamed errors; fixes require repacking and commits.

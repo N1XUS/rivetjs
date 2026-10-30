@@ -1,0 +1,2948 @@
+{
+  "schemaVersion": 1,
+  "description": "Mechanical inventory of historical JSON assertions; red means stored pass:false, not a current framework defect or an active-CI recommendation. Repeat groups and historical snapshots are counted independently. Raw evidence in archive.tar.gz remains authoritative.",
+  "archiveSha256": "a6596bd33772d26b45da6e556a133185bf256681413f2af54bb0ff57f5451c82",
+  "resultJsonCount": 25,
+  "suites": [
+    {
+      "path": "adversarial-lab/results/browser.json",
+      "assertionCount": 15,
+      "greenCount": 12,
+      "redCount": 3,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "cold-click-batch-and-derived-total",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "store-index-extension-ui-consistency",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "store-truncate-ui-consistency",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "typed-produce-read-then-truncate",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "keyed-reorder-preserves-local-input-and-node",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "nested-conditional-keyed-children",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "filter-conditional-empty-restore",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "resource-race-latest-response-wins",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "resource-error-recovers",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "sse-websocket-and-owner-cleanup",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "controlled-select-textarea-model",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "rich-loader-data-survives-resume",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "live-navigation-preserves-draft-and-refreshes-rows",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/13",
+          "name": "async-load-retracks-source-after-resume",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/14",
+          "name": "error-boundary-catches-binding-and-resets",
+          "status": "green",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/business.json",
+      "assertionCount": 20,
+      "greenCount": 20,
+      "redCount": 0,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "valid-login-and-wrong-password",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "unknown-user-and-sql-injection-login",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "session-generated-and-revoked-server-side",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "expired-session-rejected",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "cross-tenant-ticket-read-hidden",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "cross-tenant-ticket-write-denied",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "viewer-cannot-mutate-ticket",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "optimistic-version-conflict",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "mass-assignment-tenant-and-role-denied",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "cart-computes-prices-from-server-catalog",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "cart-price-tampering-rejected",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "negative-and-fractional-quantities-denied",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "checkout-is-idempotent-and-clears-cart",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/13",
+          "name": "order-cannot-be-read-across-users",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/14",
+          "name": "draft-conflict-does-not-overwrite-text",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/15",
+          "name": "public-article-filter-and-pagination",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/16",
+          "name": "event-feed-is-tenant-scoped",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/17",
+          "name": "upload-traversal-and-active-content-denied",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/18",
+          "name": "attachment-is-tenant-scoped",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        },
+        {
+          "jsonPointer": "/19",
+          "name": "return-path-rejects-controls-and-external-origins",
+          "status": "green",
+          "pass": true,
+          "layer": "application-service"
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/codegen.json",
+      "assertionCount": 2,
+      "greenCount": 2,
+      "redCount": 0,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": false
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/cold-input-investigation.json",
+      "assertionCount": 15,
+      "greenCount": 9,
+      "redCount": 6,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "method=fill; delay=0; round=0",
+          "status": "red",
+          "pass": false,
+          "method": "fill",
+          "delay": 0,
+          "round": 0
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "method=fill; delay=0; round=1",
+          "status": "green",
+          "pass": true,
+          "method": "fill",
+          "delay": 0,
+          "round": 1
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "method=fill; delay=0; round=2",
+          "status": "green",
+          "pass": true,
+          "method": "fill",
+          "delay": 0,
+          "round": 2
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "method=fill; delay=0; round=3",
+          "status": "green",
+          "pass": true,
+          "method": "fill",
+          "delay": 0,
+          "round": 3
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "method=fill; delay=0; round=4",
+          "status": "green",
+          "pass": true,
+          "method": "fill",
+          "delay": 0,
+          "round": 4
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "method=fill; delay=200; round=0",
+          "status": "red",
+          "pass": false,
+          "method": "fill",
+          "delay": 200,
+          "round": 0
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "method=fill; delay=200; round=1",
+          "status": "red",
+          "pass": false,
+          "method": "fill",
+          "delay": 200,
+          "round": 1
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "method=fill; delay=200; round=2",
+          "status": "red",
+          "pass": false,
+          "method": "fill",
+          "delay": 200,
+          "round": 2
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "method=fill; delay=200; round=3",
+          "status": "red",
+          "pass": false,
+          "method": "fill",
+          "delay": 200,
+          "round": 3
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "method=fill; delay=200; round=4",
+          "status": "red",
+          "pass": false,
+          "method": "fill",
+          "delay": 200,
+          "round": 4
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "method=keyboard; delay=200; round=0",
+          "status": "green",
+          "pass": true,
+          "method": "keyboard",
+          "delay": 200,
+          "round": 0
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "method=keyboard; delay=200; round=1",
+          "status": "green",
+          "pass": true,
+          "method": "keyboard",
+          "delay": 200,
+          "round": 1
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "method=keyboard; delay=200; round=2",
+          "status": "green",
+          "pass": true,
+          "method": "keyboard",
+          "delay": 200,
+          "round": 2
+        },
+        {
+          "jsonPointer": "/13",
+          "name": "method=keyboard; delay=200; round=3",
+          "status": "green",
+          "pass": true,
+          "method": "keyboard",
+          "delay": 200,
+          "round": 3
+        },
+        {
+          "jsonPointer": "/14",
+          "name": "method=keyboard; delay=200; round=4",
+          "status": "green",
+          "pass": true,
+          "method": "keyboard",
+          "delay": 200,
+          "round": 4
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/controls.json",
+      "assertionCount": 4,
+      "greenCount": 4,
+      "redCount": 0,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "live-navigation-preserves-draft-and-refreshes-rows",
+          "status": "green",
+          "pass": true,
+          "framework": "next-16/react-19"
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "read-then-truncate-removes-elements",
+          "status": "green",
+          "pass": true,
+          "framework": "react-19-immutable-updater"
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "reactive-async-updates-on-source-change",
+          "status": "green",
+          "pass": true,
+          "framework": "react-19-useEffect"
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "resource-reacts-to-source-change",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/environment.json",
+      "assertionCount": 0,
+      "greenCount": 0,
+      "redCount": 0,
+      "assertions": [],
+      "recordedAt": "2026-10-29T19:01:58.813Z",
+      "recordedHead": "b4bb067dbfb05cbf4320f4e33b7e0ad75efea375"
+    },
+    {
+      "path": "adversarial-lab/results/http.json",
+      "assertionCount": 13,
+      "greenCount": 12,
+      "redCount": 1,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "ssr-dashboard-is-real-html",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "ssr-request-isolation-40-concurrent-users",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "ssr-escapes-attacker-text",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "protected-loader-denies-anonymous",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "enclosing-guard-protects-response-handler",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "enclosing-guard-protects-page-response-handler",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "live-page-SSR-data-contract",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "deferred-SSR-shell-then-content",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "cross-origin-post-rejected",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "same-origin-ajax-cas-conflict",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "sse-delivers-in-order",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "sse-disconnect-disposes-producer",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "progressive-form-without-javascript",
+          "status": "green",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/journeys-initial.json",
+      "assertionCount": 31,
+      "greenCount": 29,
+      "redCount": 2,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "storefront-server-html-and-24-products",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "catalog-query-sort-reload-back-forward",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "catalog-native-filter-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "product-deep-link-and-real-404",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "mobile-storefront-does-not-overflow",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "native-sign-in-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "wrong-password-shows-error-and-no-session",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "httpOnly-session-is-not-readable-by-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "cart-add-quantity-promotion-and-reload",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "cart-two-tabs-detect-conflict-and-reload",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "remove-last-cart-line-renders-empty-state",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "checkout-ajax-and-reload-do-not-duplicate-order",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "checkout-native-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/13",
+          "name": "tenant-inbox-navigation-and-filter",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/14",
+          "name": "ticket-edit-persists-and-two-tab-conflict-keeps-text",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/15",
+          "name": "live-conversation-two-tabs-no-duplicate-message",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/16",
+          "name": "attachment-upload-and-authenticated-download",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/17",
+          "name": "viewer-controls-disabled-and-direct-admin-denied",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/18",
+          "name": "editor-autosaves-and-reloads-from-database",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/19",
+          "name": "editor-conflict-preserves-unsaved-local-story",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/20",
+          "name": "editor-network-failure-and-explicit-retry",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/21",
+          "name": "stored-XSS-draft-payload-0",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/22",
+          "name": "stored-XSS-draft-payload-1",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/23",
+          "name": "stored-XSS-draft-payload-2",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/24",
+          "name": "stored-XSS-draft-payload-3",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/25",
+          "name": "stored-XSS-chat-is-text-after-SSE",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/26",
+          "name": "reflected-XSS-query-does-not-escape-input",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/27",
+          "name": "logout-back-reload-cannot-reopen-private-workspace",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/28",
+          "name": "dispatch-search-pagination-story-and-history",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/29",
+          "name": "public-article-works-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/30",
+          "name": "mobile-workspace-and-editor-do-not-overflow",
+          "status": "red",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/journeys-pre-cold-investigation.json",
+      "assertionCount": 31,
+      "greenCount": 30,
+      "redCount": 1,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "storefront-server-html-and-24-products",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "catalog-query-sort-reload-back-forward",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "catalog-native-filter-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "product-deep-link-and-real-404",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "mobile-storefront-does-not-overflow",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "native-sign-in-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "wrong-password-shows-error-and-no-session",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "httpOnly-session-is-not-readable-by-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "cart-add-quantity-promotion-and-reload",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "cart-two-tabs-detect-conflict-and-reload",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "remove-last-cart-line-renders-empty-state",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "checkout-ajax-and-reload-do-not-duplicate-order",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "checkout-native-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/13",
+          "name": "tenant-inbox-navigation-and-filter",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/14",
+          "name": "ticket-edit-persists-and-two-tab-conflict-keeps-text",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/15",
+          "name": "live-conversation-two-tabs-no-duplicate-message",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/16",
+          "name": "attachment-upload-and-authenticated-download",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/17",
+          "name": "viewer-controls-disabled-and-direct-admin-denied",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/18",
+          "name": "editor-autosaves-and-reloads-from-database",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/19",
+          "name": "editor-conflict-preserves-unsaved-local-story",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/20",
+          "name": "editor-network-failure-and-explicit-retry",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/21",
+          "name": "stored-XSS-draft-payload-0",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/22",
+          "name": "stored-XSS-draft-payload-1",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/23",
+          "name": "stored-XSS-draft-payload-2",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/24",
+          "name": "stored-XSS-draft-payload-3",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/25",
+          "name": "stored-XSS-chat-is-text-after-SSE",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/26",
+          "name": "reflected-XSS-query-does-not-escape-input",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/27",
+          "name": "logout-back-reload-cannot-reopen-private-workspace",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/28",
+          "name": "dispatch-search-pagination-story-and-history",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/29",
+          "name": "public-article-works-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/30",
+          "name": "mobile-workspace-and-editor-do-not-overflow",
+          "status": "green",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/journeys.json",
+      "assertionCount": 31,
+      "greenCount": 30,
+      "redCount": 1,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "storefront-server-html-and-24-products",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "catalog-query-sort-reload-back-forward",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "catalog-native-filter-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "product-deep-link-and-real-404",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "mobile-storefront-does-not-overflow",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "native-sign-in-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "wrong-password-shows-error-and-no-session",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "httpOnly-session-is-not-readable-by-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "cart-add-quantity-promotion-and-reload",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "cart-two-tabs-detect-conflict-and-reload",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "remove-last-cart-line-renders-empty-state",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "checkout-ajax-and-reload-do-not-duplicate-order",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "checkout-native-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/13",
+          "name": "tenant-inbox-navigation-and-filter",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/14",
+          "name": "ticket-edit-persists-and-two-tab-conflict-keeps-text",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/15",
+          "name": "live-conversation-two-tabs-no-duplicate-message",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/16",
+          "name": "attachment-upload-and-authenticated-download",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/17",
+          "name": "viewer-controls-disabled-and-direct-admin-denied",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/18",
+          "name": "editor-autosaves-and-reloads-from-database",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/19",
+          "name": "editor-conflict-preserves-unsaved-local-story",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/20",
+          "name": "editor-network-failure-and-explicit-retry",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/21",
+          "name": "stored-XSS-draft-payload-0",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/22",
+          "name": "stored-XSS-draft-payload-1",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/23",
+          "name": "stored-XSS-draft-payload-2",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/24",
+          "name": "stored-XSS-draft-payload-3",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/25",
+          "name": "stored-XSS-chat-is-text-after-SSE",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/26",
+          "name": "reflected-XSS-query-does-not-escape-input",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/27",
+          "name": "logout-back-reload-cannot-reopen-private-workspace",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/28",
+          "name": "dispatch-search-pagination-story-and-history",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/29",
+          "name": "public-article-works-without-javascript",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/30",
+          "name": "mobile-workspace-and-editor-do-not-overflow",
+          "status": "green",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/phase1/browser.json",
+      "assertionCount": 15,
+      "greenCount": 10,
+      "redCount": 5,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "cold-click-batch-and-derived-total",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "store-index-extension-ui-consistency",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "store-truncate-ui-consistency",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "typed-produce-read-then-truncate",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "keyed-reorder-preserves-local-input-and-node",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "nested-conditional-keyed-children",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "filter-conditional-empty-restore",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "resource-race-latest-response-wins",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "resource-error-recovers",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "sse-websocket-and-owner-cleanup",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "controlled-select-textarea-model",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "rich-loader-data-survives-resume",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "live-navigation-preserves-draft-and-refreshes-rows",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/13",
+          "name": "async-load-retracks-source-after-resume",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/14",
+          "name": "error-boundary-catches-binding-and-resets",
+          "status": "green",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/phase1/codegen.json",
+      "assertionCount": 2,
+      "greenCount": 1,
+      "redCount": 1,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "live-page-must-receive-accessor",
+          "status": "red",
+          "pass": false,
+          "navigate": false
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/phase1/controls.json",
+      "assertionCount": 4,
+      "greenCount": 4,
+      "redCount": 0,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "live-navigation-preserves-draft-and-refreshes-rows",
+          "status": "green",
+          "pass": true,
+          "framework": "next-16/react-19"
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "read-then-truncate-removes-elements",
+          "status": "green",
+          "pass": true,
+          "framework": "react-19-immutable-updater"
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "reactive-async-updates-on-source-change",
+          "status": "green",
+          "pass": true,
+          "framework": "react-19-useEffect"
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "resource-reacts-to-source-change",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/phase1/environment.json",
+      "assertionCount": 0,
+      "greenCount": 0,
+      "redCount": 0,
+      "assertions": [],
+      "recordedAt": "2026-10-29T18:33:57.617Z",
+      "recordedHead": "b4bb067dbfb05cbf4320f4e33b7e0ad75efea375"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/http.json",
+      "assertionCount": 13,
+      "greenCount": 11,
+      "redCount": 2,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "ssr-dashboard-is-real-html",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "ssr-request-isolation-40-concurrent-users",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "ssr-escapes-attacker-text",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "protected-loader-denies-anonymous",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "enclosing-guard-protects-response-handler",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "enclosing-guard-protects-page-response-handler",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "live-page-SSR-data-contract",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "deferred-SSR-shell-then-content",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "cross-origin-post-rejected",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "same-origin-ajax-cas-conflict",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "sse-delivers-in-order",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "sse-disconnect-disposes-producer",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "progressive-form-without-javascript",
+          "status": "green",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/phase1/repeats.json",
+      "assertionCount": 39,
+      "greenCount": 21,
+      "redCount": 18,
+      "assertions": [
+        {
+          "jsonPointer": "/0/results/0",
+          "name": "array-index-extension-updates-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/1",
+          "name": "array-index-extension-updates-length",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/2",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/3",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/4",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/5",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/6",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/7",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/8",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/9",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/10",
+          "name": "batched-diamond-is-consistent",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/1/results/0",
+          "name": "live-page-must-receive-accessor",
+          "status": "red",
+          "pass": false,
+          "navigate": false
+        },
+        {
+          "jsonPointer": "/1/results/1",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": true
+        },
+        {
+          "jsonPointer": "/2/results/0",
+          "name": "array-index-extension-updates-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/1",
+          "name": "array-index-extension-updates-length",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/2",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/3",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/4",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/5",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/6",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/7",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/8",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/9",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/10",
+          "name": "batched-diamond-is-consistent",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/3/results/0",
+          "name": "live-page-must-receive-accessor",
+          "status": "red",
+          "pass": false,
+          "navigate": false
+        },
+        {
+          "jsonPointer": "/3/results/1",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": true
+        },
+        {
+          "jsonPointer": "/4/results/0",
+          "name": "array-index-extension-updates-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/1",
+          "name": "array-index-extension-updates-length",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/2",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/3",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/4",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/5",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/6",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/7",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/8",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/9",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/10",
+          "name": "batched-diamond-is-consistent",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/5/results/0",
+          "name": "live-page-must-receive-accessor",
+          "status": "red",
+          "pass": false,
+          "navigate": false
+        },
+        {
+          "jsonPointer": "/5/results/1",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": true
+        }
+      ],
+      "repeatGroups": [
+        {
+          "jsonPointer": "/0",
+          "round": 1,
+          "test": "state",
+          "exitCode": 1
+        },
+        {
+          "jsonPointer": "/1",
+          "round": 1,
+          "test": "codegen",
+          "exitCode": 1
+        },
+        {
+          "jsonPointer": "/2",
+          "round": 2,
+          "test": "state",
+          "exitCode": 1
+        },
+        {
+          "jsonPointer": "/3",
+          "round": 2,
+          "test": "codegen",
+          "exitCode": 1
+        },
+        {
+          "jsonPointer": "/4",
+          "round": 3,
+          "test": "state",
+          "exitCode": 1
+        },
+        {
+          "jsonPointer": "/5",
+          "round": 3,
+          "test": "codegen",
+          "exitCode": 1
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/phase1/run.json",
+      "assertionCount": 0,
+      "greenCount": 0,
+      "redCount": 0,
+      "assertions": [],
+      "subprocessSteps": [
+        {
+          "label": "check",
+          "code": 0
+        },
+        {
+          "label": "build",
+          "code": 0
+        },
+        {
+          "label": "next-build",
+          "code": 0
+        },
+        {
+          "label": "state",
+          "code": 1
+        },
+        {
+          "label": "codegen",
+          "code": 1
+        },
+        {
+          "label": "http",
+          "code": 1
+        },
+        {
+          "label": "browser",
+          "code": 1
+        },
+        {
+          "label": "controls",
+          "code": 0
+        },
+        {
+          "label": "stress",
+          "code": 0
+        },
+        {
+          "label": "repeat-1-state",
+          "code": 1
+        },
+        {
+          "label": "repeat-1-codegen",
+          "code": 1
+        },
+        {
+          "label": "repeat-2-state",
+          "code": 1
+        },
+        {
+          "label": "repeat-2-codegen",
+          "code": 1
+        },
+        {
+          "label": "repeat-3-state",
+          "code": 1
+        },
+        {
+          "label": "repeat-3-codegen",
+          "code": 1
+        }
+      ],
+      "exitCode": 1
+    },
+    {
+      "path": "adversarial-lab/results/phase1/state.json",
+      "assertionCount": 11,
+      "greenCount": 6,
+      "redCount": 5,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "array-index-extension-updates-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "array-index-extension-updates-length",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "batched-diamond-is-consistent",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/phase1/stress.json",
+      "assertionCount": 4,
+      "greenCount": 4,
+      "redCount": 0,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "2000-rows-50-reorders-and-unsaved-local-state",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "20-transport-mount-unmount-cycles",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "cold-input-with-delayed-javascript-chunks",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "20-resource-supersession-rounds",
+          "status": "green",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/repeats.json",
+      "assertionCount": 39,
+      "greenCount": 30,
+      "redCount": 9,
+      "assertions": [
+        {
+          "jsonPointer": "/0/results/0",
+          "name": "array-index-extension-updates-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/1",
+          "name": "array-index-extension-updates-length",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/2",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/3",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/4",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/5",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/6",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/7",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/8",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/0/results/9",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/0/results/10",
+          "name": "batched-diamond-is-consistent",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/1/results/0",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": false
+        },
+        {
+          "jsonPointer": "/1/results/1",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": true
+        },
+        {
+          "jsonPointer": "/2/results/0",
+          "name": "array-index-extension-updates-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/1",
+          "name": "array-index-extension-updates-length",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/2",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/3",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/4",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/5",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/6",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/7",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/8",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/2/results/9",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2/results/10",
+          "name": "batched-diamond-is-consistent",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/3/results/0",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": false
+        },
+        {
+          "jsonPointer": "/3/results/1",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": true
+        },
+        {
+          "jsonPointer": "/4/results/0",
+          "name": "array-index-extension-updates-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/1",
+          "name": "array-index-extension-updates-length",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/2",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/3",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/4",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/5",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/6",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/7",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/8",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/4/results/9",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4/results/10",
+          "name": "batched-diamond-is-consistent",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/5/results/0",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": false
+        },
+        {
+          "jsonPointer": "/5/results/1",
+          "name": "live-page-must-receive-accessor",
+          "status": "green",
+          "pass": true,
+          "navigate": true
+        }
+      ],
+      "repeatGroups": [
+        {
+          "jsonPointer": "/0",
+          "round": 1,
+          "test": "state",
+          "exitCode": 1
+        },
+        {
+          "jsonPointer": "/1",
+          "round": 1,
+          "test": "codegen",
+          "exitCode": 0
+        },
+        {
+          "jsonPointer": "/2",
+          "round": 2,
+          "test": "state",
+          "exitCode": 1
+        },
+        {
+          "jsonPointer": "/3",
+          "round": 2,
+          "test": "codegen",
+          "exitCode": 0
+        },
+        {
+          "jsonPointer": "/4",
+          "round": 3,
+          "test": "state",
+          "exitCode": 1
+        },
+        {
+          "jsonPointer": "/5",
+          "round": 3,
+          "test": "codegen",
+          "exitCode": 0
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/review-red.json",
+      "assertionCount": 4,
+      "greenCount": 0,
+      "redCount": 4,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "private-cache:/store",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "private-cache:/store/cart",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "private-cache:/sign-in",
+          "status": "red",
+          "pass": false
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "app-return-path-control-characters",
+          "status": "red",
+          "pass": false
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/run.json",
+      "assertionCount": 0,
+      "greenCount": 0,
+      "redCount": 0,
+      "assertions": [],
+      "subprocessSteps": [
+        {
+          "label": "check",
+          "code": 0
+        },
+        {
+          "label": "build",
+          "code": 0
+        },
+        {
+          "label": "next-build",
+          "code": 1
+        },
+        {
+          "label": "next-build-retry",
+          "code": 0
+        },
+        {
+          "label": "business",
+          "code": 0
+        },
+        {
+          "label": "security",
+          "code": 0
+        },
+        {
+          "label": "journeys",
+          "code": 1
+        },
+        {
+          "label": "state",
+          "code": 1
+        },
+        {
+          "label": "codegen",
+          "code": 0
+        },
+        {
+          "label": "http",
+          "code": 1
+        },
+        {
+          "label": "browser",
+          "code": 1
+        },
+        {
+          "label": "controls",
+          "code": 0
+        },
+        {
+          "label": "stress",
+          "code": 0
+        },
+        {
+          "label": "repeat-1-state",
+          "code": 1
+        },
+        {
+          "label": "repeat-1-codegen",
+          "code": 0
+        },
+        {
+          "label": "repeat-2-state",
+          "code": 1
+        },
+        {
+          "label": "repeat-2-codegen",
+          "code": 0
+        },
+        {
+          "label": "repeat-3-state",
+          "code": 1
+        },
+        {
+          "label": "repeat-3-codegen",
+          "code": 0
+        }
+      ],
+      "exitCode": 1
+    },
+    {
+      "path": "adversarial-lab/results/security.json",
+      "assertionCount": 71,
+      "greenCount": 71,
+      "redCount": 0,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "anonymous-denied:/desk",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "anonymous-denied:/desk/editor",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "anonymous-denied:/desk/admin",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "anonymous-denied:/desk/api/tickets/alpha-1",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "anonymous-denied:/desk/api/draft",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "anonymous-denied:/desk/api/events",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "anonymous-denied:/store/api/cart",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "login-session-cookie-flags",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-cookie+app-policy"
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "forged-session-rejected",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "session-not-accepted-from-query-string",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "wrong-password-and-unknown-user-same-failure",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/11",
+          "name": "sql-injection-login-rejected",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/12",
+          "name": "session-rotation-invalidates-previous-cookie",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-cookie"
+        },
+        {
+          "jsonPointer": "/13",
+          "name": "own-tenant-ticket-visible",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/14",
+          "name": "cross-tenant-ticket-IDOR-read",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/15",
+          "name": "cross-tenant-ticket-IDOR-write",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/16",
+          "name": "viewer-reads-ticket",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/17",
+          "name": "viewer-cannot-patch-ticket",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/18",
+          "name": "viewer-cannot-post-message",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/19",
+          "name": "viewer-cannot-write-draft",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/20",
+          "name": "agent-cannot-open-admin-page",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard+app-policy"
+        },
+        {
+          "jsonPointer": "/21",
+          "name": "admin-can-open-admin-page",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard+app-policy"
+        },
+        {
+          "jsonPointer": "/22",
+          "name": "mass-assignment-role-and-tenant-rejected",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/23",
+          "name": "data-endpoint-cannot-skip-auth:/desk?_rivet=data",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/24",
+          "name": "data-endpoint-cannot-skip-auth:/desk/editor?_rivet=data&_rivet_keep=/desk",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/25",
+          "name": "data-endpoint-cannot-skip-auth:/desk/admin?_rivet=data&_rivet_keep=/desk",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/26",
+          "name": "kept-layout-data-cannot-skip-role-guard",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-guard"
+        },
+        {
+          "jsonPointer": "/27",
+          "name": "private-no-store:/desk",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-header+app-policy"
+        },
+        {
+          "jsonPointer": "/28",
+          "name": "private-no-store:/desk?_rivet=data",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-header+app-policy"
+        },
+        {
+          "jsonPointer": "/29",
+          "name": "private-no-store:/desk/api/tickets/alpha-1",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-header+app-policy"
+        },
+        {
+          "jsonPointer": "/30",
+          "name": "private-no-store:/desk/api/draft",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-header+app-policy"
+        },
+        {
+          "jsonPointer": "/31",
+          "name": "private-no-store:/store",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-header+app-policy"
+        },
+        {
+          "jsonPointer": "/32",
+          "name": "private-no-store:/store/cart",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-header+app-policy"
+        },
+        {
+          "jsonPointer": "/33",
+          "name": "private-no-store:/sign-in",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-header+app-policy"
+        },
+        {
+          "jsonPointer": "/34",
+          "name": "csrf-cross-origin:https://attacker.invalid",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-CSRF"
+        },
+        {
+          "jsonPointer": "/35",
+          "name": "csrf-cross-origin:null",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-CSRF"
+        },
+        {
+          "jsonPointer": "/36",
+          "name": "csrf-cross-origin:http://127.0.0.1:1",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-CSRF"
+        },
+        {
+          "jsonPointer": "/37",
+          "name": "csrf-fetch-metadata-cross-site",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-CSRF"
+        },
+        {
+          "jsonPointer": "/38",
+          "name": "csrf-form-without-origin-or-metadata",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-CSRF"
+        },
+        {
+          "jsonPointer": "/39",
+          "name": "csrf-does-not-trust-forwarded-host",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-CSRF"
+        },
+        {
+          "jsonPointer": "/40",
+          "name": "same-origin-message-write-works",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-CSRF"
+        },
+        {
+          "jsonPointer": "/41",
+          "name": "malformed-json-returns-400",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/42",
+          "name": "oversized-request-body-returns-413",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-body-limit"
+        },
+        {
+          "jsonPointer": "/43",
+          "name": "unsupported-http-method-returns-405",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-router"
+        },
+        {
+          "jsonPointer": "/44",
+          "name": "logout-cannot-be-triggered-by-GET",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-router"
+        },
+        {
+          "jsonPointer": "/45",
+          "name": "external-return-path-blocked",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-action"
+        },
+        {
+          "jsonPointer": "/46",
+          "name": "unsafe-return-path-normalized:\"/\\t/attacker.invalid\"",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-safeRedirect"
+        },
+        {
+          "jsonPointer": "/47",
+          "name": "unsafe-return-path-normalized:\"/\\n/attacker.invalid\"",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-safeRedirect"
+        },
+        {
+          "jsonPointer": "/48",
+          "name": "unsafe-return-path-normalized:\"/\\\\attacker.invalid\"",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-safeRedirect"
+        },
+        {
+          "jsonPointer": "/49",
+          "name": "unsafe-return-path-normalized:\"https://attacker.invalid\"",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-safeRedirect"
+        },
+        {
+          "jsonPointer": "/50",
+          "name": "server-password-hash-not-in-browser-assets",
+          "status": "green",
+          "pass": true,
+          "layer": "framework-server-split"
+        },
+        {
+          "jsonPointer": "/51",
+          "name": "safe-text-attachment-upload",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/52",
+          "name": "cross-tenant-attachment-IDOR",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/53",
+          "name": "attachment-download-is-not-inline-html",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-header"
+        },
+        {
+          "jsonPointer": "/54",
+          "name": "active-or-header-injection-upload-denied:text/html",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/55",
+          "name": "active-or-header-injection-upload-denied:image/svg+xml",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/56",
+          "name": "active-or-header-injection-upload-denied:text/plain",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/57",
+          "name": "application-upload-size-limit",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/58",
+          "name": "client-price-and-total-tampering-rejected",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/59",
+          "name": "cross-user-cart-isolation",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/60",
+          "name": "parallel-idempotent-checkout-creates-one-order",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/61",
+          "name": "parallel-last-stock-checkout-cannot-oversell",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy"
+        },
+        {
+          "jsonPointer": "/62",
+          "name": "SSE-tenant-isolation-with-live-foreign-marker",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-stream"
+        },
+        {
+          "jsonPointer": "/63",
+          "name": "SSE-logout-revocation",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-stream"
+        },
+        {
+          "jsonPointer": "/64",
+          "name": "logout-revokes-captured-session-token",
+          "status": "green",
+          "pass": true,
+          "layer": "app-policy+framework-cookie"
+        },
+        {
+          "jsonPointer": "/65",
+          "name": "websocket-anonymous-handshake-denied",
+          "status": "green",
+          "pass": true,
+          "layer": "app-upgrade-policy"
+        },
+        {
+          "jsonPointer": "/66",
+          "name": "websocket-forged-cookie-denied",
+          "status": "green",
+          "pass": true,
+          "layer": "app-upgrade-policy"
+        },
+        {
+          "jsonPointer": "/67",
+          "name": "websocket-cross-site-hijack-denied",
+          "status": "green",
+          "pass": true,
+          "layer": "app-upgrade-policy"
+        },
+        {
+          "jsonPointer": "/68",
+          "name": "websocket-missing-origin-denied",
+          "status": "green",
+          "pass": true,
+          "layer": "app-upgrade-policy"
+        },
+        {
+          "jsonPointer": "/69",
+          "name": "websocket-events-remain-within-tenant",
+          "status": "green",
+          "pass": true,
+          "layer": "app-upgrade-policy"
+        },
+        {
+          "jsonPointer": "/70",
+          "name": "websocket-closed-after-session-revoked",
+          "status": "green",
+          "pass": true,
+          "layer": "app-upgrade-policy"
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/state.json",
+      "assertionCount": 11,
+      "greenCount": 8,
+      "redCount": 3,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "array-index-extension-updates-length",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "array-index-extension-updates-length",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "red",
+          "pass": false,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "array-length-truncation-invalidates-index",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/4",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/5",
+          "name": "array-truncate-draft-does-not-resurrect-read-child",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/6",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/7",
+          "name": "reconcile-preserves-trailing-array-holes-length",
+          "status": "red",
+          "pass": false,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/8",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        },
+        {
+          "jsonPointer": "/9",
+          "name": "nested-path-invalidation-positive-control",
+          "status": "green",
+          "pass": true,
+          "framework": "solid-1.9"
+        },
+        {
+          "jsonPointer": "/10",
+          "name": "batched-diamond-is-consistent",
+          "status": "green",
+          "pass": true,
+          "framework": "rivet"
+        }
+      ]
+    },
+    {
+      "path": "adversarial-lab/results/stress.json",
+      "assertionCount": 4,
+      "greenCount": 4,
+      "redCount": 0,
+      "assertions": [
+        {
+          "jsonPointer": "/0",
+          "name": "2000-rows-50-reorders-and-unsaved-local-state",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/1",
+          "name": "20-transport-mount-unmount-cycles",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/2",
+          "name": "cold-input-with-delayed-javascript-chunks",
+          "status": "green",
+          "pass": true
+        },
+        {
+          "jsonPointer": "/3",
+          "name": "20-resource-supersession-rounds",
+          "status": "green",
+          "pass": true
+        }
+      ]
+    }
+  ]
+}

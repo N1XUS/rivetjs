@@ -1,5 +1,7 @@
 # Rivet deep security audit — 2026-10-29
 
+> Historical fixture relocation (2026-10-30): `adversarial-lab/` was retired after migration to `examples/operations`. Original reports, test runners and evidence are preserved in the [verified archive](archive/2026-10-29-adversarial-lab/README.md). Paths and results below describe the original run.
+
 This source-driven follow-up established and repaired **four framework cache-isolation defects** beyond the earlier security suites. Every finding has a failing synthetic regression before its fix; all targets are local. Existing application audit results were preserved. This is a bounded audit of the current workspace, not a certification of an npm release or of production deployment settings.
 
 ## Confirmed findings and fixes

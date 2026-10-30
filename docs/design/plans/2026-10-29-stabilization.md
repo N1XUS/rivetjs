@@ -1,5 +1,7 @@
 # Stabilization: first verified baseline
 
+> Historical fixture relocation (2026-10-30): `adversarial-lab/` was retired after migration to `examples/operations`. Original reports, test runners and evidence are preserved in the [verified archive](../research/archive/2026-10-29-adversarial-lab/README.md). Paths and results below describe the original run.
+
 > Execution: systematic root-cause investigation and regression-first fixes in the main checkout. Independent UI, CDK and CLI investigations use separate agents; browser suites are serialized. No new features or API changes are part of this work.
 
 **Goal:** turn the failures from CI run [40906895437](https://github.com/N1XUS/rivetjs/actions/runs/40906895437) into reproduced, classified cases; fix existing behavior without hiding failures behind warm-up, exclusions or larger timeouts.

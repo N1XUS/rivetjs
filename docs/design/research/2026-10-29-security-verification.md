@@ -1,5 +1,7 @@
 # Local security verification — 2026-10-29
 
+> Historical fixture relocation (2026-10-30): `adversarial-lab/` was retired after migration to `examples/operations`. Original reports, test runners and evidence are preserved in the [verified archive](archive/2026-10-29-adversarial-lab/README.md). Paths and results below describe the original run.
+
 Scope: the owned Rivet workspace and synthetic local fixtures. This is evidence for particular defenses, not a security certification or a production penetration test. No production systems or external targets were assessed.
 
 ## Fresh results

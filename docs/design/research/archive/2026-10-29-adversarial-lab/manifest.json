@@ -1,0 +1,1124 @@
+{
+  "schemaVersion": 1,
+  "archive": "archive.tar.gz",
+  "archiveSha256": "a6596bd33772d26b45da6e556a133185bf256681413f2af54bb0ff57f5451c82",
+  "archiveBytes": 4476776,
+  "sourceRoot": "adversarial-lab",
+  "sourceHeadAtArchival": "f64eb1c392ffa0283db8a4c0a6f3ce1f0c082c52",
+  "sourceState": "Exact working-tree bytes; sourceHeadAtArchival alone does not reproduce uncommitted fixture changes. Original run-specific HEAD and dirty-source provenance remain in archived results/environment.json and results/phase1/environment.json.",
+  "fileCount": 202,
+  "uncompressedFileBytes": 6235063,
+  "categories": {
+    "(root)": {
+      "fileCount": 16,
+      "bytes": 125490
+    },
+    ".agents": {
+      "fileCount": 17,
+      "bytes": 62527
+    },
+    ".claude": {
+      "fileCount": 17,
+      "bytes": 62527
+    },
+    ".cursor": {
+      "fileCount": 7,
+      "bytes": 23631
+    },
+    ".github": {
+      "fileCount": 1,
+      "bytes": 3345
+    },
+    "controls": {
+      "fileCount": 7,
+      "bytes": 2434
+    },
+    "results": {
+      "fileCount": 78,
+      "bytes": 5797510
+    },
+    "src": {
+      "fileCount": 50,
+      "bytes": 86385
+    },
+    "tests": {
+      "fileCount": 9,
+      "bytes": 71214
+    }
+  },
+  "deterministicMetadata": {
+    "tarFormat": "ustar",
+    "memberOrder": "lexicographic POSIX paths",
+    "memberMode": "0644",
+    "uid": 0,
+    "gid": 0,
+    "uname": "",
+    "gname": "",
+    "mtime": 0,
+    "gzipMtime": 0,
+    "gzipOriginalFilename": "",
+    "gzipCompressionLevel": 9
+  },
+  "verification": {
+    "decompressedMembersMatchManifest": true,
+    "decompressedBytesMatchOriginalWorkingTree": true,
+    "allIncludedOriginalFilesVerified": 202,
+    "secondCompressionByteIdentical": true
+  },
+  "exclusions": [
+    {
+      "path": "adversarial-lab/.artifacts",
+      "reason": "generated dependencies/build/runtime/cache directory",
+      "fileCount": 13,
+      "bytes": 4211835,
+      "symlinkCount": 0
+    },
+    {
+      "path": "adversarial-lab/.rivet",
+      "reason": "generated dependencies/build/runtime/cache directory",
+      "fileCount": 7,
+      "bytes": 49750,
+      "symlinkCount": 0
+    },
+    {
+      "path": "adversarial-lab/dist",
+      "reason": "generated dependencies/build/runtime/cache directory",
+      "fileCount": 123,
+      "bytes": 518496,
+      "symlinkCount": 0
+    },
+    {
+      "path": "adversarial-lab/.DS_Store",
+      "reason": "generated OS metadata or database/cache",
+      "fileCount": 1,
+      "bytes": 6148,
+      "symlinkCount": 0
+    },
+    {
+      "path": "adversarial-lab/controls/next/.next",
+      "reason": "generated dependencies/build/runtime/cache directory",
+      "fileCount": 144,
+      "bytes": 80143234,
+      "symlinkCount": 0
+    },
+    {
+      "path": "adversarial-lab/controls/next/node_modules",
+      "reason": "generated dependencies/build/runtime/cache directory",
+      "fileCount": 0,
+      "bytes": 0,
+      "symlinkCount": 1
+    }
+  ],
+  "files": [
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-add-route/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-add-route/SKILL.md",
+      "bytes": 2823,
+      "sha256": "c3e247562d7511082900a790e4ed0a080de8acbeeb9e03c957d5d456ba0b4166"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-add-ui-page/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-add-ui-page/SKILL.md",
+      "bytes": 2476,
+      "sha256": "45108597b7abd582728469b80b831ebd4fd0c1b76ebe6f91f9fc4e2fb547e3d2"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-fix-resumability-error/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-fix-resumability-error/SKILL.md",
+      "bytes": 2894,
+      "sha256": "ea5c4affad94ed94b851ee8454e49395feb1f649de9a17af836475b0d82e7149"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-form-in-drawer/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-form-in-drawer/SKILL.md",
+      "bytes": 3563,
+      "sha256": "0625e9546d618ac6574c75e9bfeaf7cf9bc65868a211545add6d44ab1556a1c6"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-port-react-component/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-port-react-component/SKILL.md",
+      "bytes": 4737,
+      "sha256": "4d08ca946ca41915d0bd2ec3d1987d04fd944c536ba84d9c7f37a0812f6026bb"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-ui-design/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-ui-design/SKILL.md",
+      "bytes": 3893,
+      "sha256": "9f29a4ca94450c316b068cbe38667511b73830a36bffcd9f85c86bbbd97ec8ae"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-ui-design/references/component-composition.md",
+      "bytes": 7906,
+      "sha256": "8f085d8af10c3b6a7a050159f38409d580779ef1c575e0b561355249ab99b3ab"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-ui-design/references/interactions.md",
+      "bytes": 6124,
+      "sha256": "5759ab621675986d55cbbed03a83f9dbe27c0aecfd18d31c092cdae731993e8f"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-ui-design/references/rivet-implementation.md",
+      "bytes": 7307,
+      "sha256": "db287672401397a2b81525a4a60bb54a6fee3fe73e9add470ccdea1647acc48f"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-ui-design/references/structure-and-layout.md",
+      "bytes": 6329,
+      "sha256": "024e874034e8208604add6acbfb24ec498d68d86da0bfcb02ffafb708d651e6e"
+    },
+    {
+      "path": "adversarial-lab/.agents/skills/rivet-ui-design/references/visual-foundations.md",
+      "bytes": 8055,
+      "sha256": "eedced35c77b2fbecb7e90268107d7da7bc4841056e34342ff8dbefadf159890"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-add-route/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-add-route/SKILL.md",
+      "bytes": 2823,
+      "sha256": "c3e247562d7511082900a790e4ed0a080de8acbeeb9e03c957d5d456ba0b4166"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-add-ui-page/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-add-ui-page/SKILL.md",
+      "bytes": 2476,
+      "sha256": "45108597b7abd582728469b80b831ebd4fd0c1b76ebe6f91f9fc4e2fb547e3d2"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-fix-resumability-error/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-fix-resumability-error/SKILL.md",
+      "bytes": 2894,
+      "sha256": "ea5c4affad94ed94b851ee8454e49395feb1f649de9a17af836475b0d82e7149"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-form-in-drawer/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-form-in-drawer/SKILL.md",
+      "bytes": 3563,
+      "sha256": "0625e9546d618ac6574c75e9bfeaf7cf9bc65868a211545add6d44ab1556a1c6"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-port-react-component/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-port-react-component/SKILL.md",
+      "bytes": 4737,
+      "sha256": "4d08ca946ca41915d0bd2ec3d1987d04fd944c536ba84d9c7f37a0812f6026bb"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-ui-design/LICENSE.txt",
+      "bytes": 1070,
+      "sha256": "2230cfed23531f3df0d3d0a262ab21f36e6d3d7c5ec910d85a258135d91b3261"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-ui-design/SKILL.md",
+      "bytes": 3893,
+      "sha256": "9f29a4ca94450c316b068cbe38667511b73830a36bffcd9f85c86bbbd97ec8ae"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-ui-design/references/component-composition.md",
+      "bytes": 7906,
+      "sha256": "8f085d8af10c3b6a7a050159f38409d580779ef1c575e0b561355249ab99b3ab"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-ui-design/references/interactions.md",
+      "bytes": 6124,
+      "sha256": "5759ab621675986d55cbbed03a83f9dbe27c0aecfd18d31c092cdae731993e8f"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-ui-design/references/rivet-implementation.md",
+      "bytes": 7307,
+      "sha256": "db287672401397a2b81525a4a60bb54a6fee3fe73e9add470ccdea1647acc48f"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-ui-design/references/structure-and-layout.md",
+      "bytes": 6329,
+      "sha256": "024e874034e8208604add6acbfb24ec498d68d86da0bfcb02ffafb708d651e6e"
+    },
+    {
+      "path": "adversarial-lab/.claude/skills/rivet-ui-design/references/visual-foundations.md",
+      "bytes": 8055,
+      "sha256": "eedced35c77b2fbecb7e90268107d7da7bc4841056e34342ff8dbefadf159890"
+    },
+    {
+      "path": "adversarial-lab/.cursor/rules/rivet-add-route.mdc",
+      "bytes": 2827,
+      "sha256": "1fe808e165887f3cf655baee9b9f112fd1b7ea7c33d3671f877d4e6018353ab1"
+    },
+    {
+      "path": "adversarial-lab/.cursor/rules/rivet-add-ui-page.mdc",
+      "bytes": 2478,
+      "sha256": "9e68d2e26769af6948734eff7fba745b60c8a7c4317c9e6a52e78538a8f1b255"
+    },
+    {
+      "path": "adversarial-lab/.cursor/rules/rivet-fix-resumability-error.mdc",
+      "bytes": 2885,
+      "sha256": "05a4823408332dc21e58516af9b1258c9da73c2bb950f4bfcf25e8f74f53a39d"
+    },
+    {
+      "path": "adversarial-lab/.cursor/rules/rivet-form-in-drawer.mdc",
+      "bytes": 3564,
+      "sha256": "3e518a99641dc58d563f15edfcfca50bfe7b6536458f031a14938a2f6e71f807"
+    },
+    {
+      "path": "adversarial-lab/.cursor/rules/rivet-port-react-component.mdc",
+      "bytes": 4730,
+      "sha256": "9af57e67e7a1f54b7518dad09ecf6372e03ed51cc09384f6942f58618fc5a825"
+    },
+    {
+      "path": "adversarial-lab/.cursor/rules/rivet-ui-design.mdc",
+      "bytes": 3711,
+      "sha256": "04b48ff687d966b2c24bfaead3942fa3b361b4e1dd3077ad968ec33388aa9b87"
+    },
+    {
+      "path": "adversarial-lab/.cursor/rules/rivet.mdc",
+      "bytes": 3436,
+      "sha256": "66cfeb7d088d58ca92673903daa3a658d71d97aa5a259c4e591f683d5368756d"
+    },
+    {
+      "path": "adversarial-lab/.dockerignore",
+      "bytes": 70,
+      "sha256": "1f15d890dfe6a490a189b62f4cad82b973e78d3f5c0d7c95c5c2293f9e5c96e5"
+    },
+    {
+      "path": "adversarial-lab/.github/copilot-instructions.md",
+      "bytes": 3345,
+      "sha256": "232b8a302a5c099a665be7963ac9b7c4c7b76f8c215791309851602c4839f0fc"
+    },
+    {
+      "path": "adversarial-lab/.gitignore",
+      "bytes": 52,
+      "sha256": "20deea15ec03f36f29aa443be0b249a18c7aae4aaeaa6265345145e96673e903"
+    },
+    {
+      "path": "adversarial-lab/AGENTS.md",
+      "bytes": 34691,
+      "sha256": "b65c050b62af54b28cf4962b09dfdbca12924e397c2dea699f048580a6b72be3"
+    },
+    {
+      "path": "adversarial-lab/CLAUDE.md",
+      "bytes": 35477,
+      "sha256": "4b9fe67e14f0082353d43bb55c0e2fcc6106e1967b3e4e5dd1eb282aae3179fd"
+    },
+    {
+      "path": "adversarial-lab/Dockerfile",
+      "bytes": 598,
+      "sha256": "47d5b1145ba274f665dcc12c92ff09c072b2f22dc86995a6c866983eb37747cc"
+    },
+    {
+      "path": "adversarial-lab/LAB-NOTES.md",
+      "bytes": 1195,
+      "sha256": "16489228928f3ab842c84eb50be6330b8df6ab8b2711c81ebd87549b194a364c"
+    },
+    {
+      "path": "adversarial-lab/PLAN.md",
+      "bytes": 2318,
+      "sha256": "392df6bf2483b088ca4334adbf50ad76db02f7be128920750f424743ad797e6b"
+    },
+    {
+      "path": "adversarial-lab/README.md",
+      "bytes": 2457,
+      "sha256": "e701e806f194ae612e86d80b89b5182ab78390b01555bba4657780681843876c"
+    },
+    {
+      "path": "adversarial-lab/REAL-SITES-PLAN.md",
+      "bytes": 2153,
+      "sha256": "eaf6ab424f83123a222ae6135596ccb2f989e59da9e73450375018edf7b36cf8"
+    },
+    {
+      "path": "adversarial-lab/REPORT.phase1.uk.md",
+      "bytes": 16344,
+      "sha256": "8b5179be268f056ffa1f572898992af913989eeb906debecca9c906d5134486e"
+    },
+    {
+      "path": "adversarial-lab/REPORT.uk.md",
+      "bytes": 16013,
+      "sha256": "b782171cff1b9ed7f5ba1207785b15f43612f5f8c8b2e1ff404be10c974f786d"
+    },
+    {
+      "path": "adversarial-lab/controls/next/app/async/page.jsx",
+      "bytes": 674,
+      "sha256": "a489692139b74a0399e791a18a3bcc18cd93a2d288393c84f48c8aa7f837b83f"
+    },
+    {
+      "path": "adversarial-lab/controls/next/app/layout.jsx",
+      "bytes": 128,
+      "sha256": "a8a3efeeb5f6e39bca6af189335c4c8b3f7590f57f7f73bde746f4f67a3722cd"
+    },
+    {
+      "path": "adversarial-lab/controls/next/app/live.jsx",
+      "bytes": 444,
+      "sha256": "e7c024cb55cc8144b26de4101f87a6b121b20eb3bf9bacda4cc1731345e9d3f4"
+    },
+    {
+      "path": "adversarial-lab/controls/next/app/page.jsx",
+      "bytes": 218,
+      "sha256": "df632eaf69ec6eff3a83c53ca1ae5011939bb6b548fa5e7f126ef8f4a24338a1"
+    },
+    {
+      "path": "adversarial-lab/controls/next/app/state/page.jsx",
+      "bytes": 700,
+      "sha256": "1f577b6d8d348ebad08324bccee26d881777715f4657a3991654324d2b67405c"
+    },
+    {
+      "path": "adversarial-lab/controls/next/next.config.mjs",
+      "bytes": 88,
+      "sha256": "96d781f410421341bc7a12e72d9bad810d0c434efcb3873af9511317bea84111"
+    },
+    {
+      "path": "adversarial-lab/controls/next/package.json",
+      "bytes": 182,
+      "sha256": "1fbfaf75acc0e4730689f6d28595fbad5346b216358e8b8387258dde45072022"
+    },
+    {
+      "path": "adversarial-lab/package.json",
+      "bytes": 1312,
+      "sha256": "4a9b28d9d4d94d7b2399523bb149b415695b012eeaedbaa929ad833e07c8f0fd"
+    },
+    {
+      "path": "adversarial-lab/results/async-load-retracks-source-after-resume.png",
+      "bytes": 22248,
+      "sha256": "3d2c5badf562596cd618ee41bf11adeb4417b882f595e6df7015f69f8483acb8"
+    },
+    {
+      "path": "adversarial-lab/results/audit.log",
+      "bytes": 716,
+      "sha256": "d7a74edf691c8b11b06cf35ca37578647d6c760800321ca91e5eee826c4a5a97"
+    },
+    {
+      "path": "adversarial-lab/results/browser.json",
+      "bytes": 13280,
+      "sha256": "99452ee0a284c49c43f64d5ec8a51f8a5ab792dc47d4a090f97720ca05086b6a"
+    },
+    {
+      "path": "adversarial-lab/results/browser.log",
+      "bytes": 1388,
+      "sha256": "3603c6915b9959e9da90f6af458c1016c83d0577cffca7b6231476a3ff4f471b"
+    },
+    {
+      "path": "adversarial-lab/results/build.log",
+      "bytes": 9637,
+      "sha256": "4057bf086ac2823c32b8b144029fbeb6851667334cf2974f1188a4b3372e8c8c"
+    },
+    {
+      "path": "adversarial-lab/results/business-red.log",
+      "bytes": 1171,
+      "sha256": "8ef1903ad655b1567e171267999f468b50f4cf7be7db1a1c292567146f632188"
+    },
+    {
+      "path": "adversarial-lab/results/business.json",
+      "bytes": 2248,
+      "sha256": "c6cdddb63f07ce3dd9f61576551c09183000dd4fc5211348679fefe545e826b7"
+    },
+    {
+      "path": "adversarial-lab/results/business.log",
+      "bytes": 806,
+      "sha256": "4bc97376e2b0db7f14c6990f4b552cd68dc6698929e1951d348845b05080a9a9"
+    },
+    {
+      "path": "adversarial-lab/results/check.log",
+      "bytes": 431,
+      "sha256": "942938c04a9ff4bf2f4ef1167f3effc2795183214dffecd8ff9314ba922325c9"
+    },
+    {
+      "path": "adversarial-lab/results/codegen.json",
+      "bytes": 303,
+      "sha256": "2c1e610ef1387dde4c50049a8e259c41ba10dd058ff6fd46f01ad7e546dc98be"
+    },
+    {
+      "path": "adversarial-lab/results/codegen.log",
+      "bytes": 77,
+      "sha256": "cdafba9a8ca9e04e5df8a16ed3ef38d713053d5125e2aeb7cb024ca1931ade39"
+    },
+    {
+      "path": "adversarial-lab/results/cold-input-investigation.json",
+      "bytes": 27306,
+      "sha256": "d7dfe280079135dc3583759803619b7d5dc385de9bffa4c0cc9f20601f7af811"
+    },
+    {
+      "path": "adversarial-lab/results/controls.json",
+      "bytes": 755,
+      "sha256": "828f23ca6ec0647eb6f00fd04644de810c01ac41da200e7017eb463793b2cf6d"
+    },
+    {
+      "path": "adversarial-lab/results/controls.log",
+      "bytes": 253,
+      "sha256": "415548bc189a652d554fd820270a9fd04afeb2bfa8d71261079f1288542c1851"
+    },
+    {
+      "path": "adversarial-lab/results/environment.json",
+      "bytes": 4865,
+      "sha256": "cb7fbcbc9531a39a5b5f3be614dc45420b8116c457b1c668ca1cc7bde0540a4e"
+    },
+    {
+      "path": "adversarial-lab/results/format-review.log",
+      "bytes": 272,
+      "sha256": "7e8474800f3e1f404ddd419ef8a101425f7ff7b1adfb1f31fb17b062f1879124"
+    },
+    {
+      "path": "adversarial-lab/results/format.log",
+      "bytes": 1874,
+      "sha256": "cdbc83ce4d93eed112033150f50839306e903fb66b9b80972e98d122eac65191"
+    },
+    {
+      "path": "adversarial-lab/results/generated-navigate-false.txt",
+      "bytes": 17135,
+      "sha256": "d05c29a9e2f392cccd4d49fcfd47b51c877749394d43419f75dd07f5ca441b82"
+    },
+    {
+      "path": "adversarial-lab/results/generated-navigate-true.txt",
+      "bytes": 17360,
+      "sha256": "1386c5b639a2235cc7a57657f5b627cc4849d338d7fc9e0f630998cc61d37973"
+    },
+    {
+      "path": "adversarial-lab/results/http.json",
+      "bytes": 1941,
+      "sha256": "1689cc332dadaa0c16ea2f150ce010a9075941d28eeabb7f5b2eb64dcd60a4a4"
+    },
+    {
+      "path": "adversarial-lab/results/http.log",
+      "bytes": 567,
+      "sha256": "908c7e418bb14843dd2875d52e9f0f4a6e9c4d8bab2fd896e7db14d683c4ffe9"
+    },
+    {
+      "path": "adversarial-lab/results/journeys-initial.json",
+      "bytes": 6888,
+      "sha256": "ed5ea635d04242daaab050e2475ec4b60e2c7f895f972d4096b31b14a2b4dca6"
+    },
+    {
+      "path": "adversarial-lab/results/journeys-pre-cold-investigation.json",
+      "bytes": 6393,
+      "sha256": "49395360b8a7d01a65b34ef59d51a6ba0d385035841814aa60147d7615bade39"
+    },
+    {
+      "path": "adversarial-lab/results/journeys.json",
+      "bytes": 6393,
+      "sha256": "49395360b8a7d01a65b34ef59d51a6ba0d385035841814aa60147d7615bade39"
+    },
+    {
+      "path": "adversarial-lab/results/journeys.log",
+      "bytes": 1394,
+      "sha256": "00b700abf56739aab1f743e1aa2e6e669e21f604612eb09207cae3aac54d76fd"
+    },
+    {
+      "path": "adversarial-lab/results/live-navigation-preserves-draft-and-refreshes-rows.png",
+      "bytes": 7999,
+      "sha256": "864f9cafe5bb4640ae3c0ee35cbcc2ad23a4d06753b961acac80c00a151d7b7f"
+    },
+    {
+      "path": "adversarial-lab/results/next-build-retry.log",
+      "bytes": 978,
+      "sha256": "5ba9e7da95cfc745f1288142ea6ea23832a5c7ea50e969fde978233c45d9a84c"
+    },
+    {
+      "path": "adversarial-lab/results/next-build.log",
+      "bytes": 1717,
+      "sha256": "ba824bfdd77215b41844d53e5cba3774bedb5b77f000c044bd1f5945eb0d7787"
+    },
+    {
+      "path": "adversarial-lab/results/next-server.log",
+      "bytes": 152,
+      "sha256": "fa83ec80c0f50b1c3a87949ea2901cc1b6160bd948b54daf38c4c1f9e94b76ae"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/async-load-retracks-source-after-resume.png",
+      "bytes": 22247,
+      "sha256": "825961b98724db360b7bc154199769091e5e9c701cbfdfd643e3c64eb28b240e"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/audit.log",
+      "bytes": 564,
+      "sha256": "89fd33278ee2419aafca95781a90ad1e4a4245d928d657a92ab2c1dec512c0a6"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/browser.json",
+      "bytes": 17724,
+      "sha256": "1295b28717534131d5697a4150659cc7eaf7caed91cfb4e803ab16a8d93be979"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/codegen.json",
+      "bytes": 305,
+      "sha256": "45a7c0e0a3e9c7fa070dee0a90c285b115cc842a81a2de9cc7b81ba772c0434b"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/controls.json",
+      "bytes": 755,
+      "sha256": "828f23ca6ec0647eb6f00fd04644de810c01ac41da200e7017eb463793b2cf6d"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/environment.json",
+      "bytes": 3736,
+      "sha256": "56bce8ff2b0fe555f3f1ae38370e35f221bc6b345e9ef499f08bef12845fcf06"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/generated-navigate-false.txt",
+      "bytes": 13994,
+      "sha256": "e2e9f3b0f93663a13a629d23da8d7e724ef3c2f632d42f19e9136bb77ca48f33"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/generated-navigate-true.txt",
+      "bytes": 14860,
+      "sha256": "c37f4c2512cda6066299015b9360b14d8ee5c583b36aad1b768d968d0af9b96a"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/http.json",
+      "bytes": 12251,
+      "sha256": "9a1d01547becf218b1cddb58d0491e0c860bba0dbf5b9068b158b1732dc4f37a"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/live-navigation-preserves-draft-and-refreshes-rows.png",
+      "bytes": 7999,
+      "sha256": "864f9cafe5bb4640ae3c0ee35cbcc2ad23a4d06753b961acac80c00a151d7b7f"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/repeats.json",
+      "bytes": 11660,
+      "sha256": "f667057f334e7051e781aa8cee803e672b49650fcf6097172d1a17f69fd69a01"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/run.json",
+      "bytes": 1061,
+      "sha256": "35c5736106a822ca38b620ea395049b12275ec2cfa888db1a3ab31ef9d7f4851"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/server.log",
+      "bytes": 2517,
+      "sha256": "e4d584d5197be320a27fe241c4b213508486bb486442458adeb4aeab65b84993"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/state.json",
+      "bytes": 2861,
+      "sha256": "355db00ba882d18421467e1782742b98854e97a5d52c4a7f6d6113dc86e600e8"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/store-index-extension-ui-consistency.png",
+      "bytes": 811775,
+      "sha256": "4676f6b6b4c5393d177915d7df9a53368888daf7bd4ebc6e047910f784a8cdf7"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/store-truncate-ui-consistency.png",
+      "bytes": 811776,
+      "sha256": "2d5d6cca9256a5a15c720ab7baf206c44b059ea98e6f1b69635e7d237cb4bfca"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/stress.json",
+      "bytes": 1105,
+      "sha256": "2711bba5e1c7ac9c6d8fead3366a4e361dd21a31bd349d06940d3af78460fb46"
+    },
+    {
+      "path": "adversarial-lab/results/phase1/typed-produce-read-then-truncate.png",
+      "bytes": 811791,
+      "sha256": "1ab3636dd9e4991bcc25dc72ee0def10312959a4dd8fec5d49e2672e07440062"
+    },
+    {
+      "path": "adversarial-lab/results/real-build.log",
+      "bytes": 9560,
+      "sha256": "06c2c71c03fe5a4a152f08f70724a8b7e6b56b9f59f555801e8ed505a89c20b6"
+    },
+    {
+      "path": "adversarial-lab/results/real-check.log",
+      "bytes": 431,
+      "sha256": "00187b0ae835ce01805295e63254120a5fc30655af9be0bdae31f839e7e55274"
+    },
+    {
+      "path": "adversarial-lab/results/repeat-1-codegen.log",
+      "bytes": 77,
+      "sha256": "cdafba9a8ca9e04e5df8a16ed3ef38d713053d5125e2aeb7cb024ca1931ade39"
+    },
+    {
+      "path": "adversarial-lab/results/repeat-1-state.log",
+      "bytes": 766,
+      "sha256": "03eaf13c6dc996f153b43a2b2ed213e510457982ae7c7904f70be35f889cffc8"
+    },
+    {
+      "path": "adversarial-lab/results/repeat-2-codegen.log",
+      "bytes": 77,
+      "sha256": "cdafba9a8ca9e04e5df8a16ed3ef38d713053d5125e2aeb7cb024ca1931ade39"
+    },
+    {
+      "path": "adversarial-lab/results/repeat-2-state.log",
+      "bytes": 766,
+      "sha256": "03eaf13c6dc996f153b43a2b2ed213e510457982ae7c7904f70be35f889cffc8"
+    },
+    {
+      "path": "adversarial-lab/results/repeat-3-codegen.log",
+      "bytes": 77,
+      "sha256": "cdafba9a8ca9e04e5df8a16ed3ef38d713053d5125e2aeb7cb024ca1931ade39"
+    },
+    {
+      "path": "adversarial-lab/results/repeat-3-state.log",
+      "bytes": 766,
+      "sha256": "03eaf13c6dc996f153b43a2b2ed213e510457982ae7c7904f70be35f889cffc8"
+    },
+    {
+      "path": "adversarial-lab/results/repeats.json",
+      "bytes": 11180,
+      "sha256": "0a54e3be6ab9ceee896a2972fb2b3789e2445bb7693daa83c0ca575a4a36d9d0"
+    },
+    {
+      "path": "adversarial-lab/results/review-format.log",
+      "bytes": 3308,
+      "sha256": "5e555e6ad248f4b945c4d980526d66d758b6bb07d62c0c3ae134bd4764d89116"
+    },
+    {
+      "path": "adversarial-lab/results/review-red.json",
+      "bytes": 490,
+      "sha256": "0b3b0eaaf53d83ecdd362c271bbe159b8f62512a2fa955dabbf34b6e543cd41e"
+    },
+    {
+      "path": "adversarial-lab/results/run.json",
+      "bytes": 1293,
+      "sha256": "12af419b2f952f14961ea0d71c44b1bf98f0ce70d2f2e6bdfbe5ebdc6910aff2"
+    },
+    {
+      "path": "adversarial-lab/results/security.json",
+      "bytes": 11704,
+      "sha256": "64eda50285af36f41d51892f9375497540da0713861042af54a65cb87249b129"
+    },
+    {
+      "path": "adversarial-lab/results/security.log",
+      "bytes": 2940,
+      "sha256": "61b7d1536e2acacd2d8c4310a242b02efb2548b1c20fee7d1c2f663cfc813cb4"
+    },
+    {
+      "path": "adversarial-lab/results/server.log",
+      "bytes": 35,
+      "sha256": "73465303ef1660693736a47584939a7b8936f4050a79064fc308a61c0f0928cb"
+    },
+    {
+      "path": "adversarial-lab/results/sites-format.log",
+      "bytes": 2884,
+      "sha256": "3796b45d0616ac01e7b51e6821f0b0be51395daf9b0fe7267de53f858f354f76"
+    },
+    {
+      "path": "adversarial-lab/results/sites-runner-format.log",
+      "bytes": 221,
+      "sha256": "561dc404d770cf2d05aa2f546523f8db05229d915127b7bba20f3d2affd30da7"
+    },
+    {
+      "path": "adversarial-lab/results/sites-server.log",
+      "bytes": 35,
+      "sha256": "06eb13c011b4053184c41fdb3c4ad1ab6634ae1c6491061b49cbf75ce56b2155"
+    },
+    {
+      "path": "adversarial-lab/results/sites/casework.png",
+      "bytes": 60164,
+      "sha256": "fc91cb078f0b5a776ddc2f4d4c08a43e70e8e9d194651cfa162b2fbc0a18fbca"
+    },
+    {
+      "path": "adversarial-lab/results/sites/dispatch.png",
+      "bytes": 68526,
+      "sha256": "aa5a0f2e8877c64575f51509c76c00f50edd1f03abc7313a01f78d01606fd607"
+    },
+    {
+      "path": "adversarial-lab/results/sites/editor-autosaves-and-reloads-from-database.png",
+      "bytes": 70231,
+      "sha256": "41055417e92c369323bd6b9572d1cfd2644150fe1ca93b919628a0378488968b"
+    },
+    {
+      "path": "adversarial-lab/results/sites/editor-network-failure-and-explicit-retry.png",
+      "bytes": 45963,
+      "sha256": "5d3b180d2205a98884c7141eb3e02935bf0637f6ac5e436ad69beb984b3dfc46"
+    },
+    {
+      "path": "adversarial-lab/results/sites/mobile-workspace-and-editor-do-not-overflow.png",
+      "bytes": 35943,
+      "sha256": "9c6932bcdc8906562a65f7adda2046082c736f29492e59586220c8418e60855a"
+    },
+    {
+      "path": "adversarial-lab/results/sites/storefront.png",
+      "bytes": 56790,
+      "sha256": "93e542ded7fe8299833af0d1aaf72c2a571128d284260e8672bf1d3b1cc0854f"
+    },
+    {
+      "path": "adversarial-lab/results/state.json",
+      "bytes": 2711,
+      "sha256": "de519477cd478315a5c2c1a413803fa19553635040654a6baa0cd3ec1c91b6f3"
+    },
+    {
+      "path": "adversarial-lab/results/state.log",
+      "bytes": 766,
+      "sha256": "03eaf13c6dc996f153b43a2b2ed213e510457982ae7c7904f70be35f889cffc8"
+    },
+    {
+      "path": "adversarial-lab/results/store-index-extension-ui-consistency.png",
+      "bytes": 945605,
+      "sha256": "41397059140aa5a6a78361368e76ec92f2235387dbca08e3a4e749f339c69c9c"
+    },
+    {
+      "path": "adversarial-lab/results/store-truncate-ui-consistency.png",
+      "bytes": 945603,
+      "sha256": "a75bcfe4808e62e3715a760e34ce3fdf930b24a53d6a7e45ec0dc60e904b81da"
+    },
+    {
+      "path": "adversarial-lab/results/stress.json",
+      "bytes": 1105,
+      "sha256": "2711bba5e1c7ac9c6d8fead3366a4e361dd21a31bd349d06940d3af78460fb46"
+    },
+    {
+      "path": "adversarial-lab/results/stress.log",
+      "bytes": 174,
+      "sha256": "06e49cc078f9d774509c413e8dba1ab41c29f77d416423bb2fd9922a1a7cb46c"
+    },
+    {
+      "path": "adversarial-lab/results/typed-produce-read-then-truncate.png",
+      "bytes": 811791,
+      "sha256": "1ab3636dd9e4991bcc25dc72ee0def10312959a4dd8fec5d49e2672e07440062"
+    },
+    {
+      "path": "adversarial-lab/run.mjs",
+      "bytes": 9255,
+      "sha256": "e8b91fc2eda58036952b02eb6ea40250a3abcdc7af3cb112e93745296ab08748"
+    },
+    {
+      "path": "adversarial-lab/serve.js",
+      "bytes": 2498,
+      "sha256": "4d83bb3cbb3ea319b15d387c6bbd5ec83f3c965d7bd5647f9a95d1f62f7cd493"
+    },
+    {
+      "path": "adversarial-lab/src/backend.server.ts",
+      "bytes": 616,
+      "sha256": "e2e234ed3b321cc670d8e0c4ee314f12ddc0007bd70fc5a5b0eafa4b2e9ab6f4"
+    },
+    {
+      "path": "adversarial-lab/src/components/IncidentRow.tsx",
+      "bytes": 1165,
+      "sha256": "1362ced9f324a9b83cc7a5a20a235d782471e240bd599cc371eedab4661e663a"
+    },
+    {
+      "path": "adversarial-lab/src/components/Search.tsx",
+      "bytes": 1131,
+      "sha256": "01b2955935aa34e3aceff5cb6015b834f7697905b8483439a7328c69b949b19a"
+    },
+    {
+      "path": "adversarial-lab/src/components/Transports.tsx",
+      "bytes": 993,
+      "sha256": "5bcafe00b2f8f16e901cf5552b7dc28863e8d56531904ffd7fd09ec8e2544d29"
+    },
+    {
+      "path": "adversarial-lab/src/document.ts",
+      "bytes": 846,
+      "sha256": "c44666fce3b2bf1f27faad79f53e4e26238ce47228ff1c5daf0d17f1aed9bba5"
+    },
+    {
+      "path": "adversarial-lab/src/model.ts",
+      "bytes": 476,
+      "sha256": "6d81c9656e24411e4c4eaee563b4eb8cc5776bc4a039dd71514cd3a11aec0b5a"
+    },
+    {
+      "path": "adversarial-lab/src/probes.ts",
+      "bytes": 633,
+      "sha256": "d6ce50c2d9eefdb5926a4589fc5238861d8573d9e53770ee18afd65b9025547d"
+    },
+    {
+      "path": "adversarial-lab/src/routes/api/events.ts",
+      "bytes": 1369,
+      "sha256": "944de56c500b0f471f30dab86126567538764e15e1b80e228eefa063390fb86a"
+    },
+    {
+      "path": "adversarial-lab/src/routes/api/search.ts",
+      "bytes": 737,
+      "sha256": "35695130227bed343624bdc2f6775d651df1e90d6800e7c3333bfa24b1eccbcf"
+    },
+    {
+      "path": "adversarial-lab/src/routes/api/stats.ts",
+      "bytes": 154,
+      "sha256": "440430bfb87361354db6f5cbf44c057850ca5005956e7d6c26ebdfce0dcdd041"
+    },
+    {
+      "path": "adversarial-lab/src/routes/api/tasks.ts",
+      "bytes": 621,
+      "sha256": "d63063a3ce633c5e5b8e622a5f4dee1648ba9b4ce34bfed31d9e8bc729716b80"
+    },
+    {
+      "path": "adversarial-lab/src/routes/async.tsx",
+      "bytes": 1042,
+      "sha256": "b22ab8e2499a5b9d627f717b4060f19c64250d14aee9d978e4b1e889630e4fcd"
+    },
+    {
+      "path": "adversarial-lab/src/routes/auth/logout.ts",
+      "bytes": 226,
+      "sha256": "dd115624b093dad6e81f94ccf2c6aae909c3c051ae91ef4883549c31182e8903"
+    },
+    {
+      "path": "adversarial-lab/src/routes/auth/session.ts",
+      "bytes": 600,
+      "sha256": "890d79b5bdda24257e06ef2357418f7ac97bcdd3120d287b4ef31a283d956119"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/_layout.tsx",
+      "bytes": 1423,
+      "sha256": "16091d17a032ab110290adb0e635610558beafe21e213c356f99c5af93e41637"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/admin.tsx",
+      "bytes": 616,
+      "sha256": "f075679b75baf6d7f2a858734a137880a4ca38a4ba182ae081bf9b5ccf0398cd"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/api/draft.ts",
+      "bytes": 398,
+      "sha256": "7a77d4ecd1101e477ab5aed1fd45f21f9dc98c3327dc8a242ef8f9bd80146076"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/api/events.ts",
+      "bytes": 1574,
+      "sha256": "77db293827682122f89ad8552e41d5c94ed26a51397551c99ad1b490d3c514c5"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/api/files.ts",
+      "bytes": 549,
+      "sha256": "acff2cba6c9e76755e2ade4b7b505d9d4aa4bd809f0a04ef07f75484db26f1ba"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/api/files/[id].ts",
+      "bytes": 653,
+      "sha256": "cdf52fe46264d3a8b3e957c69788c885a1128ef40691a05345918c061e08ddc5"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/api/messages/[id].ts",
+      "bytes": 514,
+      "sha256": "e4f487eea944bfd1349db0fed34aa7e563d860ad8e96884077f84819391550da"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/api/tickets/[id].ts",
+      "bytes": 544,
+      "sha256": "25957c861f1d63b56a89aa371e57a76a90455d9dea8bcd4f8553fe2a4f9e9916"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/editor.tsx",
+      "bytes": 3368,
+      "sha256": "50efc6ac3a098c54699f8d21162f0c1b3d059cb950959ba977f736244aaa1404"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/index.tsx",
+      "bytes": 1877,
+      "sha256": "be7bbc91f80431610e128a7b36ff9893362e404a531bfa7ef0ebde68e5c7f80a"
+    },
+    {
+      "path": "adversarial-lab/src/routes/desk/tickets/[id].tsx",
+      "bytes": 5496,
+      "sha256": "ec7757976900950af7115a39020c6606c57777812899ec238faef88c3584ecba"
+    },
+    {
+      "path": "adversarial-lab/src/routes/dispatch/[slug].tsx",
+      "bytes": 966,
+      "sha256": "bcada24edc2e3e21e72b9545eb3aeae7c60e07f3b26c1a94654af41d580eeda2"
+    },
+    {
+      "path": "adversarial-lab/src/routes/dispatch/index.tsx",
+      "bytes": 2933,
+      "sha256": "cde2ef71ddbcb3a05e61f26fc4ff99cae00a71858bb6565cb97b703be6b19151"
+    },
+    {
+      "path": "adversarial-lab/src/routes/errors.tsx",
+      "bytes": 1017,
+      "sha256": "6d832da2494532c5f0301df0221b226fd246ee2742912ee413e16b88193135d5"
+    },
+    {
+      "path": "adversarial-lab/src/routes/identity.tsx",
+      "bytes": 449,
+      "sha256": "1ac9c92e621f06b9fba776ee078644e687cebd05ea12b21be2654a10d4e2fd33"
+    },
+    {
+      "path": "adversarial-lab/src/routes/index.tsx",
+      "bytes": 5315,
+      "sha256": "082d24fd0a778ac7c71726fb19d78590a87551c84873aa51e6d9b09eae0424a8"
+    },
+    {
+      "path": "adversarial-lab/src/routes/live.tsx",
+      "bytes": 892,
+      "sha256": "06f64c65b6c70215a833abf9a6a91dee69b6ba06cd74db8c86038bba7fff814d"
+    },
+    {
+      "path": "adversarial-lab/src/routes/private/_layout.tsx",
+      "bytes": 382,
+      "sha256": "098d67f8dd362ea07c7c60c006f9ca801bc9c511edf3a00caabeaea63a40a6bf"
+    },
+    {
+      "path": "adversarial-lab/src/routes/private/export.ts",
+      "bytes": 206,
+      "sha256": "49f44c9e81b0faa45b770c046aedd36a85a92a2456a16f10fe18d5a0057cf7e6"
+    },
+    {
+      "path": "adversarial-lab/src/routes/private/index.tsx",
+      "bytes": 234,
+      "sha256": "89e0db9f5112b34c8d2bb0c664dd4ec6665cf14434421868b606bb7a61a94e11"
+    },
+    {
+      "path": "adversarial-lab/src/routes/private/report.tsx",
+      "bytes": 196,
+      "sha256": "a0a5cefd9f686bac7b2307f782196653362829b2e48c53f9d98d60f7946e6c37"
+    },
+    {
+      "path": "adversarial-lab/src/routes/rich.tsx",
+      "bytes": 700,
+      "sha256": "c5d0b52b0d49c082ff4c6cd62bce16b136e834bab16a69b5d29839b2169e3bf4"
+    },
+    {
+      "path": "adversarial-lab/src/routes/sign-in.tsx",
+      "bytes": 2536,
+      "sha256": "a5ce0f79168f9424af54e6fa0737ca5a77e34a370ed21f5835c53747477f9cd6"
+    },
+    {
+      "path": "adversarial-lab/src/routes/store/api/cart.ts",
+      "bytes": 392,
+      "sha256": "31299ae261e1195a2d43c72f221ab0ec31a1542b831932dbd2ea00d135ed0296"
+    },
+    {
+      "path": "adversarial-lab/src/routes/store/api/checkout.ts",
+      "bytes": 300,
+      "sha256": "016fa3baaa4b5976bbeafde72df3670e8c8e776de8796f7f04c299effb0c4137"
+    },
+    {
+      "path": "adversarial-lab/src/routes/store/api/orders/[id].ts",
+      "bytes": 397,
+      "sha256": "8a545f4a9a2f2e1b2784e6f0e98835c645ace3bad2575435384530b97dab47db"
+    },
+    {
+      "path": "adversarial-lab/src/routes/store/cart.tsx",
+      "bytes": 5674,
+      "sha256": "35a5811da1b4526f357f4b21cd587e0d7b33c358c8ab89c2b75aa0219914acda"
+    },
+    {
+      "path": "adversarial-lab/src/routes/store/index.tsx",
+      "bytes": 4449,
+      "sha256": "96291ea4efd476ed637f6e09249fae6040ecaf2139e53ccb41707b3a9a7a1db4"
+    },
+    {
+      "path": "adversarial-lab/src/routes/store/orders/[id].tsx",
+      "bytes": 1221,
+      "sha256": "1495113eb28e62cab7a567fa78af009a92afa95ed0038adcdb0314fd8317202c"
+    },
+    {
+      "path": "adversarial-lab/src/routes/store/products/[sku].tsx",
+      "bytes": 1107,
+      "sha256": "91e0186068b159a616fa704ad31d939b4b3fde3b27253320422a039843554958"
+    },
+    {
+      "path": "adversarial-lab/src/routes/stream.tsx",
+      "bytes": 540,
+      "sha256": "997e372e0d46a4452d803438651bb03716735d1631a4c063553c6803e34e6431"
+    },
+    {
+      "path": "adversarial-lab/src/sites/SiteNav.tsx",
+      "bytes": 473,
+      "sha256": "f1fe57fd5278c7a94267e3035a8c6cfb9b87d7d48a9fa7df4a59e1ff7d1596fa"
+    },
+    {
+      "path": "adversarial-lab/src/sites/client.ts",
+      "bytes": 581,
+      "sha256": "591a2df9a85797eb81a3ae14096eb014d6cdf6f00196852eee1ee7dd25a52873"
+    },
+    {
+      "path": "adversarial-lab/src/sites/http.server.ts",
+      "bytes": 1511,
+      "sha256": "8e1cd65b5425891705d82f0a4774bfabec1f8066b13e23ea4c73a856bb874c40"
+    },
+    {
+      "path": "adversarial-lab/src/sites/service.server.ts",
+      "bytes": 16661,
+      "sha256": "d0a692e515fb3b61975a3af7157f0450a73d06c7169ab31c89ba28a6627b2afa"
+    },
+    {
+      "path": "adversarial-lab/src/styles.css",
+      "bytes": 9632,
+      "sha256": "c8fcb788143a3ac62acdbf674e75096a3a1d92ea3cca8148ff9efd2aa295d439"
+    },
+    {
+      "path": "adversarial-lab/tests/browser.mjs",
+      "bytes": 7331,
+      "sha256": "c5a4e43ccf722934613bb702b9b42b971ba0238867283a2e8de295312aea23a1"
+    },
+    {
+      "path": "adversarial-lab/tests/business.mjs",
+      "bytes": 5793,
+      "sha256": "c1d6fdbf9076bdb7df219fe42eccd5c1fdcc92416bbfbf9ac66f3defca670d78"
+    },
+    {
+      "path": "adversarial-lab/tests/codegen.mjs",
+      "bytes": 1074,
+      "sha256": "e93fee7a2152425412592e4b7d2a9395c2399743c2618c4c95476d004955325b"
+    },
+    {
+      "path": "adversarial-lab/tests/controls.mjs",
+      "bytes": 2860,
+      "sha256": "65d38030b3975efe4d8bbe06dede0b303ac623f7eb13c96fec407e74a5b25264"
+    },
+    {
+      "path": "adversarial-lab/tests/http.mjs",
+      "bytes": 5916,
+      "sha256": "481a54cce94a4ff9d0144ec0fb2c41805e3444363296114477eb4182b0352ae2"
+    },
+    {
+      "path": "adversarial-lab/tests/journeys.mjs",
+      "bytes": 19939,
+      "sha256": "acd9b2dce8d28c31f6c3f0969eaeaec346cec9e88ead46b9bc8ea776de038082"
+    },
+    {
+      "path": "adversarial-lab/tests/security.mjs",
+      "bytes": 19710,
+      "sha256": "268442f95cbfd2e22a55c94d8e143b6710b0448b310c727d417fd0bd37eed68d"
+    },
+    {
+      "path": "adversarial-lab/tests/state.mjs",
+      "bytes": 4451,
+      "sha256": "7643e2690b25753a6784239ed6dc4590a1a09200e816bab0e74c32eacd6258c6"
+    },
+    {
+      "path": "adversarial-lab/tests/stress.mjs",
+      "bytes": 4140,
+      "sha256": "3958607c47c48885b2cbc2e6ebfde58a723895b37eaa3e818ff9f5de0e31ba3b"
+    },
+    {
+      "path": "adversarial-lab/tsconfig.json",
+      "bytes": 688,
+      "sha256": "6cd8334552e0396f91f5bb0ff25ca9bbd99e1ebd054abb8f0ed9dae8bcbc5329"
+    },
+    {
+      "path": "adversarial-lab/vite.config.ts",
+      "bytes": 369,
+      "sha256": "69dd80dd1bc9884b02f25c62493e6e8aedfc1d41e5e3ecb521974e892f111f6a"
+    }
+  ]
+}
