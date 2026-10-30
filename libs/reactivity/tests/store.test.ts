@@ -157,6 +157,45 @@ test("produce mutates a copy; reconcile keeps identity of equal subtrees", () =>
   assert.equal(read(store), before);
 });
 
+test("produce: assigning a sibling draft preserves the previous snapshot", () => {
+  for (const frozen of [false, true]) {
+    const left = { id: 1, nested: { n: 0 } };
+    const right = { id: 2, nested: { n: 0 } };
+    const originalNested = right.nested;
+    const initial = { left, right };
+    if (frozen) {
+      Object.freeze(left);
+      Object.freeze(right);
+    }
+    const store = createStore(initial);
+    let runs = 0;
+    const root = createRoot(() =>
+      effect(() => {
+        read(store, "right.nested");
+        runs++;
+      }),
+    );
+    try {
+      write(
+        store,
+        produce((draft) => {
+          draft.left = draft.right;
+        }),
+      );
+      assert.equal(right.nested, originalNested, "produce draft assignment must preserve the previous sibling subtree");
+      assert.deepEqual(read(store), { left: { id: 2, nested: { n: 0 } }, right: { id: 2, nested: { n: 0 } } });
+      assert.equal(initial.left, left);
+      assert.equal(initial.left.id, 1);
+      assert.equal(read(store, "right"), right);
+      assert.equal(read(store, "right.nested"), originalNested);
+      assert.equal(read(store, "left.nested"), left.nested, "equal written subtrees retain the previous target identity");
+      assert.equal(runs, 1, "the untouched sibling must not notify its reader");
+    } finally {
+      root.dispose();
+    }
+  }
+});
+
 test("computed reads track paths; writes inside a computed are rejected", () => {
   const store = createStore(initial());
   const open = computed(() => read(store, "todos").filter((todo) => !todo.done).length);

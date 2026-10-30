@@ -182,13 +182,18 @@ function merge(previous: unknown, next: unknown): unknown {
   const prototype = Object.getPrototypeOf(next);
   if (!array && prototype !== Object.prototype && prototype !== null) return next;
   const keys = Object.keys(next);
+  let result = next;
   let same = keys.length === Object.keys(previous).length && (!array || (next as unknown[]).length === (previous as unknown[]).length);
   for (const key of keys) {
     const merged = merge(childOf(previous, key), (next as Record<string, unknown>)[key]);
     if (!Object.is(merged, childOf(previous, key)) || !Object.hasOwn(previous, key)) same = false;
-    (next as Record<string, unknown>)[key] = merged;
+    // A finalized draft can be an existing snapshot subtree. Never merge into it in place.
+    if (!Object.is(merged, (next as Record<string, unknown>)[key])) {
+      if (result === next) result = shallow(next);
+      (result as Record<string, unknown>)[key] = merged;
+    }
   }
-  return same ? previous : next;
+  return same ? previous : result;
 }
 
 // `produce` drafts: copy-on-write proxies over plain objects and arrays. A draft copies its container

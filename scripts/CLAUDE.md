@@ -121,3 +121,5 @@ Scheduler final baselines: UI compiled CSS +34 bytes / +5 Brotli; standalone dem
 - `package/security-failures.ts` checks the built audit image rejects a stale manifest and exits on a missing Chromium binary. Expected infrastructure exit 2 is distinct from a Docker timeout; the probe force-kills only its own named disposable container on timeout. Browser acquisition in the fixture is inside server-owned cleanup blocks.
 
 - Remaining islands (2026-10-30): release order, tarball smoke, CI shards and own-code hashes include bridge-solid/vue/svelte. Smoke links Solid 1.9 from its adapter-local toolchain (root Solid2 is for benchmarks). Own-code hashes compile Svelte rune modules with the native compiler after TypeScript stripping; third-party framework code remains external.
+
+- Store snapshot immutability (2026-10-30): `zero-cost/runtime.txt` pins only the measured `@rivetjs/reactivity/store` change10339→10380 B (+41) and its `@rivetjs/runtime/server-derived-store` consumer42622→42664 B (+42). Other runtime entries, package hashes and SSR lanes stay unchanged. Standard app size `/slots` HTML Brotli +1 B is existing tolerance noise and is not ratcheted.
