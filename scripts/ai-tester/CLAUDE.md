@@ -12,3 +12,5 @@ Node24 supervisor owns verification and main-checkout intake; Codex worker/revie
 - `run.ts`: durable lifecycle/coverage journal, fixed source/dirty inventory, independent base/fixed native test execution, trusted complete gates, patch review, final candidate hash/source checks and intake. Stage new validation tests before gates so git-ls-files JSX coverage sees them.
 - `intake.ts`: separate staged/unstaged dirty union, actual-byte/index-blob and HEAD checks, exclusive Git index lock, temporary indexes, explicit-parent commit-tree + compare-and-swap update-ref. Synchronize only candidate index entries and rollback only owned unchanged bytes if pre-commit intake fails.
 - `cli.ts`: foreground run/status; lower-only time/RSS budgets, SIGINT/SIGTERM cancellation, terminal exit codes. Lock recovery after SIGKILL is manual and must verify owner/evidence.
+
+- Snapshot initialization force-adds only the exact `git ls-tree` path list from the committed base: a committed file may match current ignore rules (e.g. resume-bench/results). This never force-adds untracked user work or changes the shared index.

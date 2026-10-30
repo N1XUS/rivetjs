@@ -132,7 +132,7 @@ export async function snapshot(source: string, base: string, target: string): Pr
   git(target, ["config", "user.name", "Rivet AI tester"]);
   git(target, ["config", "user.email", "rivet-ai-tester@example.invalid"]);
   const paths = git(source, ["ls-tree", "-r", "--name-only", "-z", base]);
-  git(target, ["--literal-pathspecs", "add", "--pathspec-from-file=-", "--pathspec-file-nul"], paths);
+  git(target, ["--literal-pathspecs", "add", "--force", "--pathspec-from-file=-", "--pathspec-file-nul"], paths);
   git(target, ["commit", "-qm", "snapshot base"]);
   dependencies(resolve(source), resolve(target));
   return git(target, ["rev-parse", "HEAD"]);

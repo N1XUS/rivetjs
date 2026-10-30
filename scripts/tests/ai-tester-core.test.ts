@@ -246,3 +246,15 @@ test("gate and build configuration cannot be changed through an otherwise allowe
     assert.throws(() => checkScope(area, finding, [path, file]), { name: "Error" }, path);
   }
 });
+
+test("snapshot retains tracked files covered by current ignore rules", async () => {
+  const root = repo("tracked-ignored");
+  save(root, ".gitignore", "results/\nnode_modules/\n");
+  save(root, "results/report.json", '{"historical":true}');
+  git(root, ["add", "--force", "--", ".gitignore", "results/report.json"]);
+  git(root, ["commit", "-qm", "tracked ignored evidence"]);
+  const work = join(temp, "tracked-ignored-snapshot");
+  await snapshot(root, git(root, ["rev-parse", "HEAD"]), work);
+  assert.equal(readFileSync(join(work, "results/report.json"), "utf8"), '{"historical":true}');
+  assert.deepEqual(changedPaths(work), []);
+});
