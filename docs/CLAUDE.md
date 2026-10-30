@@ -37,7 +37,9 @@ Latest night measurement: `benchmarks/2026-10-28-night.md` + `.json` (CX-BENCH, 
 
 ## design/
 
-- `specs/2026-10-30-autonomous-tester-design.md` — draft autonomous tester: bounded Codex investigation, minimized repro, independently verified regression/fix and safe automatic commit; separate from lane orchestration.
+- `plans/2026-10-30-autonomous-tester.md` — implementation/verification ledger for the approved autonomous testing supervisor and CLI.
+
+- `specs/2026-10-30-autonomous-tester-design.md` — approved autonomous tester: bounded Codex investigation, minimized repro, independently verified regression/fix and safe automatic commit; separate from lane orchestration.
 
 - `research/2026-10-30-adversarial-migration.md` — retirement coverage ledger: 145 native operations tests, existing framework regressions and preserved historical limits/controls.
 - `plans/2026-10-30-adversarial-migration.md` — migrate useful tests, verify immutable archive, remove temporary lab and commit.

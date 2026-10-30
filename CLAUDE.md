@@ -44,7 +44,7 @@ Rivet = compiled, resumable JSX framework: SSR-first streaming server output, fi
 | `apps/island-bench` | Framework-islands benchmark: same page (1000-row list + React counter `load` / picker `idle` / chart `visible` + static island) in Rivet + `@rivetjs/bridge-react` / Astro + React / Next / Rivet native, + Preact pair (`@rivetjs/bridge-preact` vs Astro + Preact); server CPU, TTFB, RSS, browser bytes + JS before input, input-to-paint, hydration CPU, CLS; `report.ts` → `docs/benchmarks/2026-10-12-islands.md`. |
 | `examples/` | Runnable apps: `operations` (synthetic integration/security/journey suites), `sqlite-local`, `paginated-list` (URL state + live navigation), `forms-in-overlays` (drawer/modal CRUD + live page/layout); backend plan `docs/design/plans/2026-10-12-backend-examples.md`. Vitest project + CI job `examples` (Chromium for browser flows). See `examples/CLAUDE.md`. |
 | `apps/vscode` | VS Code extension (TS plugin + Rivet: Doctor). |
-| `scripts/` | Gates and generators: zero-cost check, size report, gen-events, gen-row-wasm, check-tsx-projects, format check. |
+| `scripts/` | Gates, autonomous tester (`scripts/ai-tester`: bounded investigation → independent repro/RED-GREEN/gates/review → verified local commit), and generators: zero-cost, size, gen-events, gen-row-wasm, check-tsx-projects, format. |
 | `templates/` | Starter templates (static/server/ui/minimal) copied by create-rivet, used by docs examples, StackBlitz, size report. |
 | `docs/` | Internal docs: `guides/`, `design/` (specs, plans, research), `benchmarks/`. Index in `docs/CLAUDE.md`. |
 

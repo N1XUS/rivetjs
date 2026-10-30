@@ -1,6 +1,6 @@
 # Autonomous Rivet tester — v1 design
 
-Status: concrete design for user approval (2026-10-30). The user chose an autonomous tester that finds bugs, minimizes a reproduction, adds a regression test, fixes and commits. This is separate from the draft lane-orchestrator design; that existing draft stays untouched.
+Status: approved by the user (2026-10-30); implementation verified, live campaign tracked in the plan. The user chose an autonomous tester that finds bugs, minimizes a reproduction, adds a regression test, fixes and commits. This is separate from the draft lane-orchestrator design; that existing draft stays untouched.
 
 ## Outcome
 
@@ -73,4 +73,4 @@ Parallel lanes, provider failover, dashboard, scheduling, exhaustive fuzzing, au
 
 ## Builder check
 
-A fresh read-only reviewer found no important user questions left before planning. Snapshot resolution, supervisor-owned verification, provider availability and shared-worktree intake have explicit acceptance checks. Implementation details of locking/report validation remain with the builder. This design has not yet been approved or implemented. The installed Codex CLI reports version 0.153.4 and an existing ChatGPT login; live inference availability is still untested.
+A fresh read-only reviewer found no important user questions left before planning. Snapshot resolution, supervisor-owned verification, provider availability and shared-worktree intake have explicit acceptance checks. Implementation details of locking/report validation remain with the builder. The user approved this design with “Ок”; implementation and live verification are tracked in the matching plan. The installed Codex CLI reports version 0.153.4 and an existing ChatGPT login; live inference availability is still untested.
