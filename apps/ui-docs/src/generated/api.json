@@ -242447,8 +242447,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 56,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L56"
+    "line": 57,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L57"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownComponents/"
   },
@@ -242484,8 +242484,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 43,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L43"
+    "line": 44,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L44"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownElementProps/"
   },
@@ -244203,8 +244203,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 668,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L668"
+    "line": 669,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L669"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownProps/"
   },
@@ -244233,8 +244233,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 684,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L684"
+    "line": 685,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L685"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownRoot/"
   },
@@ -308045,8 +308045,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 439,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L439"
+    "line": 345,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L345"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptSegment/"
   },
@@ -308082,8 +308082,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 424,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L424"
+    "line": 330,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L330"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTextSegment/"
   },
@@ -308199,8 +308199,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 430,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L430"
+    "line": 336,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L336"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTokenSegment/"
   },
@@ -308221,8 +308221,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 442,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L442"
+    "line": 348,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L348"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTokenValue/"
   },

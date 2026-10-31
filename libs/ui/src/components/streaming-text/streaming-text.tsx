@@ -1,5 +1,5 @@
 // Rivet-authored: smoothly paced text, independent of transport chunk boundaries.
-import { followText, textGraphemes } from "@rivetjs/cdk/chat";
+import { followText, textGraphemes } from "@rivetjs/cdk/chat/text-reveal";
 import { signal, untrack } from "@rivetjs/reactivity";
 import { clientEffect, For } from "@rivetjs/runtime/dom";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";

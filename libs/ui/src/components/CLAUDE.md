@@ -202,3 +202,5 @@ Ports of HeroUI v3.2.6 `packages/react/src/components/<name>/` (Apache-2.0, © 2
 - CX-VPICK: `list-box/` checks the CDK hidden collection scope before entering its lazy virtualized branch. Closed picker collection builds register the complete collection synchronously; visible lists use the existing lazy wrapper. Select / ComboBox / Autocomplete opt in on their child ListBox, with no additional picker API.
 
 StreamingText (2026-10-31): `streaming-text/{streaming-text.tsx,index.ts}` = inline grapheme reveal over CDK followText; content/isStreaming accessors + speed. Keep the raw source read in the characters/Markdown rows binding: source writes wake the interaction effect on resumed pages. Markdown liveText now renders character slots and shares followText, including formatted inline code.
+
+- Markdown/StreamingText use the isolated CDK `chat/text-reveal` subpath. Importing pacing through the shared `chat` module coalesces its code into prompt-input/chat-attachment frame chunks; preserve this dependency boundary (UI `chat-payload.test.ts`).

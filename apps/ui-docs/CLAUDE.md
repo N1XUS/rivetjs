@@ -143,3 +143,5 @@ None open since UI-SLIDER 2026-10-29 (`avatar-custom-image-component` uses `Avat
 Streaming text (2026-10-31): AI navigation/page/API entry `streaming-text` + `streaming-text-basic` demo. Shared CDK pacing is default in Markdown; its example and AI chat manifests select markdown__character. ChainOfThought streaming labels and agent-trace details use StreamingText. Steps enter with opacity only, without height-zero expansion.
 
 Stateful reasoning labels use a lazy Content slot (`label={() => <StreamingText ... />}`), so the text boundary is created inside the step label during SSR and cold adoption; eager JSX in a label prop creates it before the step owner. The first-click example manifest covers this composition.
+
+- Streaming payload isolation (2026-10-31): pacing moved to CDK `chat/text-reveal`; the generated API source links track the relocated chat/Markdown line offsets. The prompt-input-basic and chat-attachment-basic frame JS values return to their existing ceilings; no frame baseline was raised.

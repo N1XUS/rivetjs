@@ -23,7 +23,8 @@
 //   default `class`, the node's attributes and `children` (already rendered, live while streaming) and returns the element
 //   that replaces the default one; elements are still built from the AST (never innerHTML). Tight list-item paragraphs have
 //   no `<p>`, so `p` is not called for them. Style-only overrides: the `markdown__*` classes.
-import { followHeight, followText, textGraphemes } from "@rivetjs/cdk/chat";
+import { followHeight } from "@rivetjs/cdk/chat";
+import { followText, textGraphemes } from "@rivetjs/cdk/chat/text-reveal";
 import { closeOpenMarks, parseMarkdown, splitBlocks } from "@rivetjs/cdk/markdown";
 import type { MarkdownBlock, MarkdownInline, MarkdownListItem } from "@rivetjs/cdk/markdown";
 import { clientEffect, For, ref as createRef, Show } from "@rivetjs/runtime/dom";

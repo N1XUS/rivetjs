@@ -13,7 +13,8 @@ Rivet-authored headless chat behaviour (no React Aria / Angular CDK counterpart;
   - smooth growth: `followHeight(el, active, { maxSpeed = 240, smoothing = 90 })` → disposer: while `active()`, pins `el`'s height (`overflow: clip`) and eases it toward the content height one rAF step per frame (exponential ease-out, time constant `smoothing` ms, each step ≤ `maxSpeed` px/s: no frame jumps > 4 px at 60 fps; shrinks too); MutationObserver wakes the loop, it sleeps when settled; after `active()` turns false it settles then releases height / overflow. Content height = the contents' Range box + last child's bottom margin + padding / border (NOT `scrollHeight`: under `overflow: clip` it stops at the pinned height). No-op under reduced motion / without MutationObserver
 
 ## Layout
-- `index.tsx` whole module (`.tsx`: the `./*` export maps to `<name>/index.tsx`; closures of `.ts` modules never resume)
+- `index.tsx`: composer/files/scroll/height helpers; character pacing is re-exported from `text-reveal/index.tsx`. Both use `.tsx` so browser closures can resume.
+- `@rivetjs/cdk/chat/text-reveal` → `text-reveal/index.tsx`: isolated `followText`, `textGraphemes`, `TextRevealOptions`. Streaming consumers import this subpath directly; unrelated composer/attachment entry closures must not inherit pacing code through a shared chat chunk.
 - tests: `tests/chat.test.ts` (happy-dom), `tests/chat-tokens.test.ts` (token model)
 - consumers: `@rivetjs/ui` `prompt-input` (keys, autosize) + `prompt-input-tokens` (token model), `chat-conversation` (scroll sync / button), `chat-attachment` (drop / pick), `markdown` (`followHeight` while streaming); ui-docs `ai-*` / `markdown-streaming` examples (`simulateStream` with `jitter`)
 

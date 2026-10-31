@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 3e880f980b5c 563802 css 3921cb8be00d 1216915
-@rivetjs/ui [server] 07b1d66e6f09 501639 css 3921cb8be00d 1216915
+@rivetjs/ui [dom] 20226b863197 563845 css 3921cb8be00d 1216915
+@rivetjs/ui [server] 2f72e98d774f 501682 css 3921cb8be00d 1216915
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -339,8 +339,8 @@
 @rivetjs/ui/kanban [server] b7bf9920b08f 23527 css dab667a5ed02 1206613
 @rivetjs/ui/text-shimmer [dom] d93e9446d0b1 3789 css 91b77d4ecd3a 1993
 @rivetjs/ui/text-shimmer [server] 22ba6e5dd0c2 3757 css 91b77d4ecd3a 1993
-@rivetjs/ui/streaming-text [dom] 63666e55019c 4452 css dab667a5ed02 1206613
-@rivetjs/ui/streaming-text [server] a66af191cdcc 4519 css dab667a5ed02 1206613
+@rivetjs/ui/streaming-text [dom] f2765f2504e6 4464 css dab667a5ed02 1206613
+@rivetjs/ui/streaming-text [server] aba7e9381205 4531 css dab667a5ed02 1206613
 @rivetjs/ui/chat-loader [dom] d5c8bc861e63 7725 css dab667a5ed02 1206613
 @rivetjs/ui/chat-loader [server] f6097f822242 7442 css dab667a5ed02 1206613
 @rivetjs/ui/chat-message [dom] 31413dd8957b 9682 css dab667a5ed02 1206613
@@ -353,8 +353,8 @@
 @rivetjs/ui/chat-list-view [server] 4e89a872d19f 5465 css dab667a5ed02 1206613
 @rivetjs/ui/code-block [dom] 6241ee3ce4a0 9766 css dab667a5ed02 1206613
 @rivetjs/ui/code-block [server] c560ec1d8ad7 9043 css dab667a5ed02 1206613
-@rivetjs/ui/markdown [dom] a24020dd30a8 23851 css dab667a5ed02 1206613
-@rivetjs/ui/markdown [server] bfcfca9f12e3 21445 css dab667a5ed02 1206613
+@rivetjs/ui/markdown [dom] e04a00064b9c 23894 css dab667a5ed02 1206613
+@rivetjs/ui/markdown [server] cd77b5224e7d 21488 css dab667a5ed02 1206613
 @rivetjs/ui/chain-of-thought [dom] b1c47df346cd 10703 css dab667a5ed02 1206613
 @rivetjs/ui/chain-of-thought [server] c6ba2de91c43 9289 css dab667a5ed02 1206613
 @rivetjs/ui/chat-source [dom] 9250e2a0fa9a 15893 css dab667a5ed02 1206613
