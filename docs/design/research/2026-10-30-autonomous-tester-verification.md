@@ -144,3 +144,32 @@ Only four runtime zero-cost rows changed: server-resume 59515→59609 B, its dom
 A separate actual read-only `gpt-6-astra` review accepted the exact nine-path candidate with no findings (exit 0, sampled 1493647360 B). Whole-source attestation and reviewed hashes were rechecked before atomic named-path intake. Both unrelated user WIP hashes stayed unchanged. This is a live AI discovery followed by independently verified manual completion; fully unattended discovery-to-commit success remains unverified.
 
 Local evidence: `.artifacts/ai-tester/continuations/f78726f6-acceptance/` retains provenance, original proof copies, the exact candidate patch/hashes, native reports, original 54 and complete 55-check plans/results, the repeated size/zero-cost deltas, real reviewer trace/result, resource records and atomic intake metadata. The original campaign directory remains intact. No dependency lock, global provider setting, push, release or deployment changed.
+
+## Live reactivity campaign: embedded drafts in a read new container (2026-10-31)
+
+Framework/regression/pins commit: **bd24e7899**. Actual live `gpt-6-astra` campaign `2026-10-31T16-54-17-382Z-8b6b7feb` investigated source `a9a18b905`. Fresh doctor `2026-10-31T16-54-00-732Z-9c75bc74` completed inference with that invocation-local model. No global provider changes or scripted discovery replay occurred.
+
+The worker found a supported typed `produce` defect:
+
+```ts
+write(store, produce(draft => {
+  draft.target = { nested: draft.source };
+  void draft.target;
+}));
+```
+
+Reading the new container creates a cached child draft. Its unmodified result still contains the embedded `draft.source`, but finalization previously skipped that written value after processing the cached child. The saved state therefore held a revoked Proxy instead of readable data. Finalization now processes every written value before structural merge; the implementation changes one logic line and adds an explanatory comment.
+
+The [maintained regression](../../../libs/reactivity/tests/store.test.ts) pins the precise trigger, finalized nested identity and reads, unchanged source identity and previous-snapshot immutability. Independent native RED executed one failing behavioral assertion, with 22 unrelated filtered records; identical GREEN executed one passing assertion. The final test uses a boolean identity comparison so the reporter does not inspect a revoked Proxy. Earlier worker reporter-obscured RED and an ambient-type setup failure remain in its journal and are excluded from accepted evidence. The three original AI source/test/owner-doc files were retained byte-for-byte.
+
+The worker's baseline passed 362 tests. Full independent affected suites passed **182/182 production and 182/182 development**, including the new regression in both modes. Supplemental executed probes cover 800 typed reference-model operations (store updates, views, reconcile, batch/computed diamonds, deletion/recreation, snapshot checks and owner disposal), and eight object/array wrapper combinations with new/existing targets, varied reads, edited source and frozen snapshot inputs. Strict library and probe typechecks passed. No browser result is inferred from these Node tests.
+
+The original automatic campaign remains **failed**, `memory-limit`: sampled 3221864448 B while running UI-docs typecheck, slightly above the unchanged 3072 MiB cap. It retained the proposal and independent RED/GREEN before that stop. Trusted-root completion checked the exact raw source inventory, then ran the identical committed UI-docs preparation and native checker without Nx wrapper residency: exit 0, sampled **2898935808 B**, 93.58 s for the checker. All diagnostics and the committed single-checker argument were preserved. Every other 54 affected gates was rerun, with actual outer peak **3064610816 B**, no resource stop. This demonstrates a completed direct check, not a general guarantee that every Nx-wrapped run fits the cap.
+
+Final baseline-inclusive evidence accounts for **56 checks: 55 pass, 1 accepted size noise**. It includes all **32 project typechecks**, three production documentation builds, docs **64/64**, UI-docs **11/11**, maintained scripts **135/135 in 15 files**, strict frame ceilings, complete content/snippet/LLM/MCP checks, zero-cost and format. The direct UI-docs command and each final report override have explicit provenance; there is no missing or invented gate. Existing HTML Brotli noise (+2/+4 B) stays within the unchanged 20 B tolerance and was not ratcheted. No known-red exception is needed in this completed plan.
+
+Only two measured runtime pins changed, each **−24 minified bytes**: `@rivetjs/reactivity/store` 10380→10356 B (`f2d6ef020f15`→`a3dfdbe62868`), and `@rivetjs/runtime/server-derived-store` 42664→42640 B (`c78712ce4a6d`→`5e9f3d0f3515`). Package/lane hashes and every app/frame size baseline remain unchanged. Strict zero-cost recheck completed: runtime/lanes identical, no development leaks across 265 entries, condition parity 21/21 and compiler oracle 176/176. Tests, skips, diagnostics, timeouts, resource caps and comparison tolerances were not weakened.
+
+A fresh actual read-only `gpt-6-astra` review accepted the exact five-path candidate with no findings (exit 0, sampled 1437007872 B). Full raw-source and reviewed-candidate hashes, main HEAD and unrelated WIP bytes were rechecked before atomic named-path intake. The final scripts process peaked at 2984820736 B. Environment: Node 24.18.1 on macOS arm64; this does not establish Linux or browser parity.
+
+Evidence remains local in `.artifacts/ai-tester/continuations/8b6b7feb-acceptance/`: provenance, original proof copies, actual 54-gate report plus direct UI-docs results, complete 56-check plan/result, native scripts JSON, exact patches/hashes, measured two-row baseline delta, strict final recheck, actual reviewer trace and atomic intake metadata. Original campaign records remain untouched. This is a live discovery and independently verified repair with explicit manual completion; unattended automatic discovery-to-commit success remains unverified. No dependency lock, global provider setting, push, release or deployment changed.
