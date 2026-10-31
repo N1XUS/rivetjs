@@ -27,6 +27,21 @@ Files: `scripts/ai-tester/workspace.ts`, `run.ts`, `scripts/tests/ai-tester-core
 - [x] Persist a binary Git patch from supervisor-owned blob/index data before tests, with original executable modes and exact source receipts. No candidate writes into the RED tree while preparing evidence.
 - [x] Prove retained patch round trip (binary/new/executable/space-containing paths), then run maintained scripts/types/format, independent review, update docs and commit.
 
+## Task 1b — native compiler memory headroom
+
+Ruling: both the prior reactivity campaign and the new router campaign hit the same3072MiB cap during UI-docs typecheck. The native checker default2304MiB heap leaves insufficient room for compiler non-heap, Nx/Node wrappers and the supervisor. Keep the RSS limit and diagnostic checks unchanged; set a smaller inherited Go heap goal, not automatic retries or a larger cap.
+
+- [x] Demonstrate the missing inherited native-heap budget at the real subprocess environment boundary, including a smaller caller budget and inherited `GOMEMLIMIT=off`.
+- [x] Give Go at most60% of the tree budget (rounded down to64MiB, positive minimum); retain the existing process-tree monitor as authority because Go's heap limit is soft.
+- [x] Re-run the identical failed UI-docs gate with the full wrapper chain under3072MiB, then verify maintained tests/types/format, independent review and commit. Do not relabel earlier failed campaigns.
+
+## Task 1c — required consumer coverage
+
+Ruling: `libs/router/CLAUDE.md` explicitly requires forms tests after handler changes, but the real36-gate router plan omitted them. Mechanically add that required consumer suite for `libs/router/server/handler.ts`; keep unrelated client-only changes scoped and avoid duplicate gates.
+
+- [x] Native planner regression: handler selects forms, client-only does not, combined handler/forms edits select it once.
+- [x] Implement only this stronger selection, verify maintained planner/full scripts checks, document and review with the resource policy before commit.
+
 ## Task 2 — live framework variation
 
 - [ ] Run bounded live `router` on explicitly authorized `gpt-6-astra`; focus on request lifecycle, serialization and navigation contracts beyond prior coverage.
@@ -40,3 +55,5 @@ Files: `scripts/ai-tester/workspace.ts`, `run.ts`, `scripts/tests/ai-tester-core
 - Whole-source checks permit only explicit overlays: regression/fixtures during RED, complete named candidate during GREEN/gates/review. This checks source bytes, revision and inventory; it does not claim malicious-code/container isolation or new coverage of hidden mode-only changes.
 - The worker brief now explains snapshot HEAD vs upstream source and provides the supervisor's Node path. Parent resource enforcement remains authoritative when sandbox process inspection is unavailable; no new permissions or retries.
 - Verification: Node24.18.1,63/63 maintained harness cases; full scripts132/132 in15 files,242.46s, exit0, sampled peak3044687872B under3072MiB. Harness typecheck and changed-file format4/4 pass. Fresh read-only review found no important defects. Only the scripts/format gates are affected; no production library source, lock or accepted byte baseline changed. Durable evidence: `.artifacts/ai-tester/maintenance/2026-10-31-evidence-integrity/`.
+- Live router d48c1980 independently confirmed cookie/cache policy RED/GREEN and retained its patch before the same UI-docs memory stop. The full-wrapper UI-docs gate then passed with1792MiB native heap goal, unchanged3072MiB RSS cap and all diagnostics (outer sampled3198468096B; typecheck1m43s). This is a recorded revalidation after a policy fix, not automatic retry or a guarantee that every future workload fits.
+- Task1b/1c verification: native heap boundary case failed before implementation; forms-consumer planner case failed before selection repair. Focused core/planner30/30 and full scripts134/134 in15 files,257.83s, exit0, sampled3041689600B pass under the same cap. Independent resource/planner review found no important defects. No existing gates or thresholds were removed. Fresh whole-supervisor verification of the retained router candidate follows the commit.

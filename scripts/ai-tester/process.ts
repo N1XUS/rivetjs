@@ -30,7 +30,7 @@ function rss(pid: number, groups: Set<number>): number {
   for (const [p, , group] of rows) if (tree.has(p) && tree.has(group)) groups.add(group);
   return rows.reduce((sum, [p, , , memory]) => sum + (tree.has(p) ? memory * 1024 : 0), process.memoryUsage().rss);
 }
-export function restrictedEnvironment(): NodeJS.ProcessEnv {
+export function restrictedEnvironment(rssLimitMB = 3072): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
   for (const key of [
     "PATH",
@@ -51,7 +51,20 @@ export function restrictedEnvironment(): NodeJS.ProcessEnv {
     "RIVET_HEAVY_SLOTS_DIR",
   ])
     if (process.env[key] !== undefined) env[key] = process.env[key];
-  Object.assign(env, { NODE_OPTIONS: "--max-old-space-size=2048", NX_DAEMON: "false", NX_ISOLATE_PLUGINS: "false", RIVET_HEAVY_SLOTS: "1", NO_COLOR: "1" });
+  // Go's heap goal must leave room for compiler non-heap, Node/Nx wrappers and the supervisor.
+  // It is a soft target; the sampled process-tree RSS guard remains authoritative.
+  const mib = 1024 * 1024,
+    quantum = 64 * mib;
+  const available = Math.max(1, Math.floor(rssLimitMB * mib * 0.6));
+  const native = available >= quantum ? Math.floor(available / quantum) * quantum : available;
+  Object.assign(env, {
+    GOMEMLIMIT: native % mib === 0 ? `${native / mib}MiB` : `${native}B`,
+    NODE_OPTIONS: "--max-old-space-size=2048",
+    NX_DAEMON: "false",
+    NX_ISOLATE_PLUGINS: "false",
+    RIVET_HEAVY_SLOTS: "1",
+    NO_COLOR: "1",
+  });
   return env;
 }
 export async function execute(options: Execution): Promise<ProcessResult> {
@@ -61,7 +74,7 @@ export async function execute(options: Execution): Promise<ProcessResult> {
   let peakRssBytes = 0;
   let bytes = 0;
   let force: ReturnType<typeof setTimeout> | undefined;
-  const env = restrictedEnvironment();
+  const env = restrictedEnvironment(options.rssLimitMB);
   const child = spawn("nice", ["-n", "10", options.file, ...options.args], { cwd: options.cwd, env, detached: true, stdio: ["pipe", "pipe", "pipe"] });
   const groups = new Set<number>(child.pid ? [child.pid] : []);
   const kill = (signal: NodeJS.Signals) => {

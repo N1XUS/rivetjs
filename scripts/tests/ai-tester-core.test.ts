@@ -256,6 +256,33 @@ test("memory budget violation fails before the command can finish successfully",
   assert.equal(result.reason, "memory-limit");
   assert.notEqual(result.code, 0);
 });
+test("native compiler heap leaves tree-budget headroom and ignores unbounded inherited settings", async () => {
+  const previous = process.env.GOMEMLIMIT;
+  process.env.GOMEMLIMIT = "off";
+  try {
+    for (const budget of [3072, 1024]) {
+      const log = join(temp, `native-heap-${budget}.log`);
+      const result = await execute({
+        file: process.execPath,
+        args: ["-e", "process.stdout.write(JSON.stringify({go:process.env.GOMEMLIMIT}))"],
+        cwd: temp,
+        log,
+        deadline: Date.now() + 5000,
+        rssLimitMB: budget,
+      });
+      assert.equal(result.code, 0);
+      assert.equal(result.reason, null);
+      const value = JSON.parse(readFileSync(log, "utf8"));
+      assert.equal(typeof value.go, "string", "native compiler must receive an explicit bounded heap target");
+      const match = /^([1-9][0-9]*)MiB$/.exec(value.go);
+      assert.ok(match, "native compiler heap must be expressed in MiB");
+      assert.ok(Number(match[1]) <= budget * 0.6, "reserve at least 40% for compiler non-heap and Node/Nx wrappers");
+    }
+  } finally {
+    if (previous === undefined) delete process.env.GOMEMLIMIT;
+    else process.env.GOMEMLIMIT = previous;
+  }
+});
 
 test("timeout also closes a detached server started by an owned child", async () => {
   const log = join(temp, "detached.log");

@@ -24,6 +24,8 @@ Default `run` commits accepted repairs locally. `--no-commit` performs the same 
 
 The default whole-run wall budget is 30 minutes; `--timeout` can lower it. Sampled process-tree RSS (including the supervisor) is capped at 3072 MiB; `--rss-limit` can lower it. Subprocesses run with nice10, a restricted environment, a 2048 MiB V8 limit and one heavy child at a time. The monitor samples after 100 ms and every 500 ms, and fails closed when `ps` is unavailable. TERM/KILL cleanup covers observed owned process groups, including detached gate servers. It is not an OS/container memory isolation guarantee.
 
+Native Go tools receive an explicit soft heap goal derived from at most60% of the subprocess tree budget, rounded down in64MiB steps (default `GOMEMLIMIT=1792MiB`; tiny budgets use bytes). This reserves room for compiler non-heap and Node/Nx/supervisor overhead instead of inheriting an unbounded goal or using the checker's standalone2304MiB default. The actual3072MiB cap and diagnostics are unchanged; the supervisor still stops a workload that exceeds it. No automatic resource-limit retry occurs.
+
 ## Evidence and outcomes
 
 `.artifacts/ai-tester/<run-id>/` contains the source revision/inventory, protected dirty paths, prompt, worker/reviewer logs/results, copied repro/probe evidence, native RED/GREEN JSON, gate plan/report, candidate and proof-file SHA-256 hashes/patch, run status and append-only events. Logs are capped at 50 MiB each; copied evidence at 10 MiB per file. A coverage JSONL journal records scenario, source revision and outcome for future investigations; it does not edit agent policy.

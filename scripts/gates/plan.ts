@@ -182,7 +182,11 @@ export function plan(options: PlanOptions): Gate[] {
   // 3. vitest per project (nx `test` target's --project list); suites reading built output run after their build.
   // ui-docs:test does not depend on its build (CI builds in its own job), but tests/home.test.ts reads the built site.
   const buildFirst = (name: string) => name === "ui-docs" || (byName.get(name)?.targets.test?.dependsOn.includes("build") ?? false);
-  const testedProjects = [...new Set([...tested, ...docsApps.filter((app) => app !== "cdk-docs")])].filter((name) => byName.get(name)?.targets.test).sort();
+  // Forms tests import the handler directly (router/CLAUDE.md); touched-only selection must retain that consumer.
+  const handlerConsumers = files.includes("libs/router/server/handler.ts") ? ["forms"] : [];
+  const testedProjects = [...new Set([...tested, ...handlerConsumers, ...docsApps.filter((app) => app !== "cdk-docs")])]
+    .filter((name) => byName.get(name)?.targets.test)
+    .sort();
   const plain = testedProjects.filter((name) => !buildFirst(name));
   const afterBuild = testedProjects.filter(buildFirst);
   const vitest = (name: string, requires: string[]) => {

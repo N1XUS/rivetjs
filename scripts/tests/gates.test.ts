@@ -85,6 +85,13 @@ test("a router change: typecheck of dependents, vitest only of the touched proje
   assert.equal(gates.find((g) => g.id === "vitest:router")!.env?.NODE_OPTIONS, "--max-old-space-size=2048");
   assert.equal(new Set(list).size, list.length, "ids unique");
 });
+test("router handler changes include the forms suites that directly import it", () => {
+  const projects = [...PROJECTS, P("forms", "libs/forms", ["router"], { test: t("vitest run --project forms") })];
+  const planned = (files: string[]) => ids(plan({ ...base, projects, files }));
+  assert.ok(planned(["libs/router/server/handler.ts"]).includes("vitest:forms"), "handler changes must verify their forms consumers");
+  assert.equal(planned(["libs/router/client/navigation.ts"]).includes("vitest:forms"), false);
+  assert.equal(planned(["libs/router/server/handler.ts", "libs/forms/tests/server.test.ts"]).filter((id) => id === "vitest:forms").length, 1);
+});
 
 test("ssr-bench suites run after its build and before zero-cost (which wipes apps/ssr-bench/dist); --tests affected widens vitest", () => {
   const gates = plan({ ...base, files: ["apps/ssr-bench/adapters/react.ts"] });
