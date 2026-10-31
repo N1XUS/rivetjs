@@ -168,18 +168,12 @@
   }
 
   .chain-of-thought[data-streaming="true"] .chain-of-thought__step {
-    interpolate-size: allow-keywords;
     animation: chain-of-thought-step-in var(--motion-enter-duration) var(--motion-enter-ease) both;
-    overflow: clip;
   }
 
   @keyframes chain-of-thought-step-in {
     from {
       opacity: 0;
-      filter: blur(2px);
-      height: 0;
-      padding-bottom: 0;
-      translate: 0 4px;
     }
   }
 
@@ -198,10 +192,6 @@
 @keyframes chain-of-thought-step-in {
     from {
       opacity: 0;
-      filter: blur(2px);
-      height: 0;
-      padding-bottom: 0;
-      translate: 0 4px;
     }
   }
 @keyframes chain-of-thought-spin {

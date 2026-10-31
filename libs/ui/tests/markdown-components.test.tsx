@@ -38,6 +38,7 @@ const SOURCE = [
 test("markdown components: overrides replace elements, others keep defaults", () => {
   const r = render(() => (
     <Markdown
+      streamingSpeed={0}
       content={SOURCE}
       components={{
         h1: (p) => (
@@ -112,7 +113,7 @@ test("markdown components: overrides replace elements, others keep defaults", ()
 });
 
 test("markdown components: no map = unchanged defaults", () => {
-  const r = render(() => <Markdown content={"# T\n\n[x](https://a.b) `c`"} components={{}} />);
+  const r = render(() => <Markdown streamingSpeed={0} content={"# T\n\n[x](https://a.b) `c`"} components={{}} />);
   assert.ok(r.container.querySelector("h1.markdown__heading"));
   assert.ok(r.container.querySelector("a.markdown__link"));
   assert.ok(r.container.querySelector("code.markdown__inline-code"));
@@ -124,6 +125,7 @@ test("markdown components: streaming keeps finished blocks and the live tail ren
   const streaming = signal(true);
   const r = render(() => (
     <Markdown
+      streamingSpeed={0}
       content={() => text()}
       isStreaming={() => streaming()}
       components={{
@@ -167,6 +169,7 @@ test("markdown components: streaming open fence goes through `pre` with a live c
   const text = signal("```js\nlet a");
   const r = render(() => (
     <Markdown
+      streamingSpeed={0}
       content={() => text()}
       isStreaming
       components={{

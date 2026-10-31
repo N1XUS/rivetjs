@@ -25313,6 +25313,28 @@
   }
 }
 @layer components {
+  .streaming-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .streaming-text__character[data-new] {
+    animation: streaming-text-in var(--motion-enter-duration) var(--motion-enter-ease) both;
+  }
+
+  @keyframes streaming-text-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .streaming-text__character[data-new] {
+      animation: none;
+    }
+  }
+}
+@layer components {
   .chat-loader {
     align-items: flex-start;
     gap: calc(var(--spacing, .25rem) * 3);
@@ -26402,31 +26424,28 @@
     }
   }
 
-  .markdown__word {
-    animation: markdown-word-in var(--motion-enter-duration) var(--motion-enter-ease) both;
+  .markdown__character {
+    animation: markdown-character-in var(--motion-enter-duration) var(--motion-enter-ease) both;
   }
 
   .markdown__live {
     animation: markdown-block-in var(--motion-enter-duration) var(--motion-enter-ease) both;
   }
 
-  @keyframes markdown-word-in {
+  @keyframes markdown-character-in {
     from {
       opacity: 0;
-      filter: blur(3px);
     }
   }
 
   @keyframes markdown-block-in {
     from {
       opacity: 0;
-      filter: blur(2px);
-      translate: 0 4px;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .markdown__caret, .markdown__word, .markdown__live {
+    .markdown__caret, .markdown__character, .markdown__live {
       animation: none;
     }
   }
@@ -26598,18 +26617,12 @@
   }
 
   .chain-of-thought[data-streaming="true"] .chain-of-thought__step {
-    interpolate-size: allow-keywords;
     animation: chain-of-thought-step-in var(--motion-enter-duration) var(--motion-enter-ease) both;
-    overflow: clip;
   }
 
   @keyframes chain-of-thought-step-in {
     from {
       opacity: 0;
-      filter: blur(2px);
-      height: 0;
-      padding-bottom: 0;
-      translate: 0 4px;
     }
   }
 
@@ -29204,6 +29217,11 @@
       background-position: 0 0;
     }
   }
+@keyframes streaming-text-in {
+    from {
+      opacity: 0;
+    }
+  }
 @keyframes chat-loader-bounce {
     0%, 60%, 100% {
       opacity: .35;
@@ -29237,26 +29255,19 @@
       scale: 1;
     }
   }
-@keyframes markdown-word-in {
+@keyframes markdown-character-in {
     from {
       opacity: 0;
-      filter: blur(3px);
     }
   }
 @keyframes markdown-block-in {
     from {
       opacity: 0;
-      filter: blur(2px);
-      translate: 0 4px;
     }
   }
 @keyframes chain-of-thought-step-in {
     from {
       opacity: 0;
-      filter: blur(2px);
-      height: 0;
-      padding-bottom: 0;
-      translate: 0 4px;
     }
   }
 @keyframes chain-of-thought-spin {

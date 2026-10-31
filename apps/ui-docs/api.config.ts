@@ -846,6 +846,12 @@ export const entries: ApiEntryConfig[] = [
       "Tabs: ListContainer (scroll shadow + scroll buttons), List, Tab, Indicator (SelectionIndicator), Separator and Panel on the cdk Tabs / TabList / Tab / TabPanel (primary / secondary, align).",
   },
   {
+    entry: "@rivetjs/ui/streaming-text",
+    file: "ui/src/components/streaming-text/index.ts",
+    runsOn: "both",
+    summary: "StreamingText: frame-paced grapheme reveal, subtle opacity, natural inline flow; content, isStreaming and speed.",
+  },
+  {
     entry: "@rivetjs/ui/text-shimmer",
     file: "ui/src/components/text-shimmer/index.ts",
     runsOn: "both",

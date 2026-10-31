@@ -192,6 +192,7 @@ export const groups: NavGroup[] = [
       "components/markdown",
       "components/prompt-input",
       "components/prompt-suggestion",
+      "components/streaming-text",
       "components/text-shimmer",
     ],
   },

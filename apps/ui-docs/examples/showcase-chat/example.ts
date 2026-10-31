@@ -3,7 +3,7 @@ import { defineExample } from "@rivetjs/docs-kit/define.ts";
 export default defineExample({
   title: "Showcase: AI chat",
   summary:
-    "An assistant chat built on the AI components: a contained, resizable conversation list and a responsive details panel, a thread with tool calls, sources and streamed Markdown answers (a shimmering pending line, words fading in), copy and feedback actions, suggestion pills and a composer with attachments and Stop. Answers are canned; no model is called.",
+    "An assistant chat built on the AI components: a contained, resizable conversation list and a responsive details panel, a thread with tool calls, sources and streamed Markdown answers (a shimmering pending line, letters flowing in), copy and feedback actions, suggestion pills and a composer with attachments and Stop. Answers are canned; no model is called.",
   tags: ["showcase", "chat-conversation", "chat-message", "prompt-input", "chat-list-view", "chat-tool", "markdown", "status"],
   status: "experimental",
   frame: { height: 880, width: "full" },
@@ -37,7 +37,7 @@ export default defineExample({
     { click: "#suggest-0" },
     { expect: ["#chat-log", "Summarise last week's sales"] },
     { matches: "#chat-log .text-shimmer" },
-    { matches: "#chat-log [data-streaming=true] .markdown__word" },
+    { matches: "#chat-log [data-streaming=true] .markdown__character" },
     { expect: ["#chat-log", "214 orders and $11,940"] },
     { absent: "#chat-log [data-streaming]" },
     { fill: ["#chat-input", "Which products should I discount?"] },

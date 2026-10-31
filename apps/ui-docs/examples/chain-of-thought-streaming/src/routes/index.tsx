@@ -3,6 +3,7 @@ import { signal } from "@rivetjs/reactivity";
 import { For } from "@rivetjs/runtime/dom";
 import { Button } from "@rivetjs/ui/button";
 import { ChainOfThought } from "@rivetjs/ui/chain-of-thought";
+import { StreamingText } from "@rivetjs/ui/streaming-text";
 
 export const head = { title: "ChainOfThought: Streaming" };
 
@@ -12,16 +13,21 @@ const STEPS = ["Search train times", "Compare ticket prices", "Check the weekend
 export function Streaming() {
   const shown = signal(1);
   const running = signal(false);
-  const run = () => {
+  const currentText = signal("");
+  const run = async () => {
     if (running()) return;
     shown.set(0);
+    currentText.set("");
     running.set(true);
-    const tick = () => {
-      shown.set(shown() + 1);
-      if (shown() < STEPS.length) setTimeout(tick, 500);
-      else running.set(false);
-    };
-    setTimeout(tick, 500);
+    for (let i = 0; i < STEPS.length; i++) {
+      currentText.set("");
+      shown.set(i + 1);
+      // Mount an empty label first; this models the first chunk of a new agent step arriving.
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      currentText.set(STEPS[i]!);
+      await new Promise((resolve) => setTimeout(resolve, 470));
+    }
+    running.set(false);
   };
   return (
     <div class="flex w-96 flex-col items-start gap-4">
@@ -33,7 +39,11 @@ export function Streaming() {
         <ChainOfThought.Content>
           <ChainOfThought.Steps>
             <For each={() => STEPS.slice(0, shown())} by={(label: string) => label}>
-              {(label: () => string) => <ChainOfThought.Step label={label()} />}
+              {(label: () => string, index: () => number) => (
+                <ChainOfThought.Step
+                  label={() => <StreamingText content={() => (running() && index() === shown() - 1 ? currentText() : label())} isStreaming={() => running()} />}
+                />
+              )}
             </For>
           </ChainOfThought.Steps>
         </ChainOfThought.Content>

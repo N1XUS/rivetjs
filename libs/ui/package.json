@@ -612,6 +612,10 @@
       "types": "./src/components/text-shimmer/index.ts",
       "default": "./src/components/text-shimmer/index.ts"
     },
+    "./streaming-text": {
+      "types": "./src/components/streaming-text/index.ts",
+      "default": "./src/components/streaming-text/index.ts"
+    },
     "./chat-loader": {
       "types": "./src/components/chat-loader/index.ts",
       "default": "./src/components/chat-loader/index.ts"

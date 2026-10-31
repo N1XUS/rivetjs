@@ -2,6 +2,7 @@
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
 import { ChainOfThought } from "@rivetjs/ui/chain-of-thought";
+import { StreamingText } from "@rivetjs/ui/streaming-text";
 import { FileText, Globe, Search } from "lucide";
 
 export const head = { title: "ChainOfThought: Agent trace streaming" };
@@ -52,7 +53,7 @@ export function AgentTraceStreaming() {
                 icon={step.icon}
                 status={i < done() ? "complete" : i === done() ? "active" : "pending"}
               >
-                {i < done() ? step.detail : null}
+                <StreamingText content={() => (i < done() ? step.detail : "")} isStreaming={running} />
               </ChainOfThought.Step>
             ))}
           </ChainOfThought.Steps>

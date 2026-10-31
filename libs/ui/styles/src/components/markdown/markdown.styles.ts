@@ -29,7 +29,7 @@ export const markdownVariants = tv({
     tableWrapper: "markdown__table-wrapper",
     tail: "markdown__tail",
     taskCheckbox: "markdown__task-checkbox",
-    word: "markdown__word",
+    character: "markdown__character",
   },
 });
 

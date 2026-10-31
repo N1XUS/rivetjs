@@ -217,6 +217,7 @@
  * AI (Rivet-authored, TWEAKS.md)
  * ------------------------------------------------------------------------------------------------ */
 @import "./text-shimmer.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./streaming-text.css"; /* Rivet-authored */
 @import "./chat-loader.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./chat-message.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./chat-message-actions.css"; /* Rivet-authored (TWEAKS.md) */

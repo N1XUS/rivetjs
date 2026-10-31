@@ -2,7 +2,7 @@ import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
   title: "ChainOfThought: Streaming",
-  summary: "Steps arrive one by one from a local timer while the trigger label shimmers (`isStreaming`).",
+  summary: "Steps arrive in the document flow; StreamingText reveals each label letter by letter while the trigger shimmers.",
   tags: ["chain-of-thought"],
   status: "experimental",
   frame: { height: 400 },

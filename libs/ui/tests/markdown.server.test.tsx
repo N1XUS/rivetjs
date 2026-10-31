@@ -47,7 +47,10 @@ test("markdown SSR: string child + streaming repair and caret", async () => {
   assert.match(streaming, /data-streaming="true"/);
   // Live tail: finished blocks render whole, the streaming block renders word spans (the browser fades them in).
   assert.match(streaming, /<p class="markdown__paragraph">Done\.<\/p>/);
-  assert.match(streaming, /<strong class="markdown__strong"><span><span class="markdown__word">bol<\/span><\/span><\/strong><span class="markdown__caret"/);
+  assert.match(
+    streaming,
+    /<strong class="markdown__strong"><span><span class="markdown__character">b<\/span><span class="markdown__character">o<\/span><span class="markdown__character">l<\/span><\/span><\/strong><span class="markdown__caret"/,
+  );
   assert.doesNotMatch(streaming, /\*\*/);
   assert.equal(streaming.match(/markdown__caret/g)?.length, 1);
 });

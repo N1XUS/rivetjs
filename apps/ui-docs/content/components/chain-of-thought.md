@@ -3,7 +3,7 @@ title: ChainOfThought
 description: "Collapsible reasoning or agent trace: a summary trigger over a list of steps, with a shimmer while it streams."
 template: reference
 status: experimental
-related: [components/chat-tool, components/text-shimmer, components/disclosure]
+related: [components/chat-tool, components/text-shimmer, components/disclosure, components/streaming-text]
 ---
 
 `ChainOfThought` shows the reasoning or the actions behind an answer without crowding it: a trigger with a summary ("Thought for 4 seconds") opens a list of steps. It is the ui [Disclosure](/components/disclosure/) (`defaultExpanded`, `isExpanded`, `onExpandedChange`), so it opens with the keyboard and animates like every disclosure.
@@ -35,7 +35,7 @@ Additional exported parts: `ChainOfThought.Root`.
 
 ### Streaming
 
-`isStreaming` (value or accessor) sets `data-streaming`: the trigger label shimmers ([TextShimmer](/components/text-shimmer/)). Steps rendered from a signal list arrive in place; while streaming each new step expands in (height and fade, instant under reduced motion).
+`isStreaming` (value or accessor) sets `data-streaming`: the trigger label shimmers ([TextShimmer](/components/text-shimmer/)). Steps rendered from a signal list arrive in place; new steps fade in without expanding their height. The demo uses [StreamingText](/components/streaming-text/) to reveal each label letter by letter (immediate under reduced motion).
 
 ::example{id=chain-of-thought-streaming}
 

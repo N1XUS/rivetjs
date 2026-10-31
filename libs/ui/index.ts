@@ -250,6 +250,7 @@ export * from "./src/components/kanban/index.ts";
 
 // Rivet additions (no HeroUI OSS counterpart; feature sets inspired by HeroUI Pro's public AI docs; independent implementations): AI chat components.
 export * from "./src/components/text-shimmer/index.ts";
+export * from "./src/components/streaming-text/index.ts";
 export * from "./src/components/chat-loader/index.ts";
 export * from "./src/components/chat-message/index.ts";
 export * from "./src/components/chat-message-actions/index.ts";

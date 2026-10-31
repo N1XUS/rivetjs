@@ -9,9 +9,9 @@
 // - `isStreaming` (value or accessor): the last block gets `closeOpenMarks` (no raw `**` flashing) and a soft caret
 //   (`showCaret`, default true). Fenced code renders `CodeBlock` (header with the language + copy button).
 // - Live tail (streaming): the block being written is one persistent row (key `<index>:~`) rendered by keyed `For`s all
-//   the way down (blocks → inline nodes → words, keyed by position), so a new chunk appends word `<span>`s and existing
-//   nodes stay (no re-render per chunk); new words / blocks fade + un-blur in (CSS, `.markdown__word` / `.markdown__live`,
-//   reduced motion: none). An open code fence streams as plain words in the code block frame and is highlighted once it
+//   the way down (blocks → inline nodes → graphemes, keyed by position), so a new chunk appends character `<span>`s and existing
+//   nodes stay (no re-render per chunk); new characters / blocks fade in (CSS, `.markdown__character` / `.markdown__live`,
+//   reduced motion: none). An open code fence streams as plain characters in the code block frame and is highlighted once it
 //   closes (the row then re-renders as a finished block, static: no animation).
 // - Smooth growth: a streaming Markdown created in the browser (the live turn appears on submit) follows its content
 //   height with `followHeight` (`@rivetjs/cdk/chat`, a `clientEffect` on a root `ref()`, disposed with the Markdown):
@@ -23,11 +23,11 @@
 //   default `class`, the node's attributes and `children` (already rendered, live while streaming) and returns the element
 //   that replaces the default one; elements are still built from the AST (never innerHTML). Tight list-item paragraphs have
 //   no `<p>`, so `p` is not called for them. Style-only overrides: the `markdown__*` classes.
-import { followHeight } from "@rivetjs/cdk/chat";
+import { followHeight, followText, textGraphemes } from "@rivetjs/cdk/chat";
 import { closeOpenMarks, parseMarkdown, splitBlocks } from "@rivetjs/cdk/markdown";
 import type { MarkdownBlock, MarkdownInline, MarkdownListItem } from "@rivetjs/cdk/markdown";
 import { clientEffect, For, ref as createRef, Show } from "@rivetjs/runtime/dom";
-import { computed, untrack } from "@rivetjs/reactivity";
+import { computed, signal, untrack } from "@rivetjs/reactivity";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import { markdownVariants } from "../../../styles/src/components/markdown/index.ts";
@@ -414,17 +414,15 @@ function renderBlocks(blocks: readonly MarkdownBlock[], tail: boolean, tight = f
  * Live tail (streaming): keyed all the way down so appended text only adds nodes
  * -----------------------------------------------------------------------------------------------*/
 
-const words = (text: string): string[] => text.match(/\s*\S+\s*|\s+/g) ?? [];
-
 /**
- * Word spans of a growing text: keyed by position, so a chunk appends spans and a growing last word updates in place.
+ * Grapheme spans of growing text, keyed by position so each new letter fades independently and existing nodes stay.
  * Wrapped in one `<span>`: a list row that is a single element is cheaper to reconcile than a row of anchors (no
  * start / end Text nodes, no range walk per list update; the runtime keeps either kind's nodes in place).
  */
 const liveText = (text: () => string): Node => (
   <span>
-    <For each={() => words(text())} by={(_word: string, index: number) => index}>
-      {(word: () => string) => <span class={SLOTS.word()}>{word()}</span>}
+    <For each={() => textGraphemes(text())} by={(_character: string, index: number) => index}>
+      {(character: () => string) => <span class={SLOTS.character()}>{character()}</span>}
     </For>
   </span>
 );
@@ -473,8 +471,8 @@ function liveInlineNode(node: () => MarkdownInline, cx?: MarkdownComponents): No
       return custom(
         cx,
         "code",
-        () => ({ class: `${SLOTS.inlineCode()} ${SLOTS.word()}`, children: (node() as { value: string }).value }),
-        () => <code class={`${SLOTS.inlineCode()} ${SLOTS.word()}`}>{(node() as { value: string }).value}</code>,
+        () => ({ class: SLOTS.inlineCode(), children: liveText(() => (node() as { value: string }).value) }),
+        () => <code class={SLOTS.inlineCode()}>{liveText(() => (node() as { value: string }).value)}</code>,
       );
     case "br":
       return custom(
@@ -674,6 +672,8 @@ interface MarkdownProps extends Omit<JSX.IntrinsicElements["div"], "class" | "ch
   children?: string;
   /** The response is still streaming: repair open marks in the last block and show the caret. Value or accessor. */
   isStreaming?: boolean | (() => boolean);
+  /** Graphemes per second, with bounded catch-up for bursts; 0 displays chunks immediately. @default 80 */
+  streamingSpeed?: number;
   /** Caret after the streamed text while `isStreaming`. @default true */
   showCaret?: boolean;
   /** Per-node-type element overrides (`h1`, `p`, `a`, `code`, `pre`, …): see `MarkdownComponents`. Read once at creation. */
@@ -682,18 +682,29 @@ interface MarkdownProps extends Omit<JSX.IntrinsicElements["div"], "class" | "ch
 }
 
 const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class", "children", "content", "isStreaming", "showCaret", "components"]);
+  const [local, rest] = splitLive(props, ["class", "children", "content", "isStreaming", "streamingSpeed", "showCaret", "components"]);
   const source = (): string => {
     const value = local.content ?? local.children;
     const text = typeof value === "function" ? (value as () => unknown)() : value;
     return typeof text === "string" ? text : "";
   };
-  const streaming = (): boolean => {
+  const inputStreaming = (): boolean => {
     const value = local.isStreaming;
     return (typeof value === "function" ? value() : value) === true;
   };
+  const canStream = typeof local.content === "function" || local.isStreaming !== undefined;
+  const displayed = canStream ? signal(untrack(source)) : undefined;
+  const revealing = canStream ? signal(false) : undefined;
+  const speed = local.streamingSpeed;
+  if (displayed && revealing)
+    clientEffect(
+      () => untrack(() => followText(source, displayed, { isStreaming: inputStreaming, speed, onRevealingChange: (value) => revealing.set(value) })),
+      { when: "interaction" },
+    );
+  const streaming = (): boolean => inputStreaming() || revealing?.() === true;
   const rows = (): MarkdownRow[] => {
-    const blocks = splitBlocks(source());
+    const raw = source();
+    const blocks = splitBlocks(displayed ? displayed() : raw);
     const live = streaming();
     return blocks.map((raw, index) => {
       const tail = live && index === blocks.length - 1;
@@ -702,9 +713,8 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
   };
   const caretOn = local.showCaret !== false;
   const cx = local.components;
-  const isStreaming = local.isStreaming;
-  // Streaming accessor only: the root follows its content height while streaming (disposed with the Markdown).
-  const follow = typeof isStreaming === "function" ? createRef<HTMLDivElement>() : undefined;
+  // Streaming sources: follow content height until both the input and the character queue finish.
+  const follow = canStream ? createRef<HTMLDivElement>() : undefined;
   if (follow)
     // Content writes wake the Markdown (its rows read them), which runs this effect: no trigger (CEFF 2026-10-28).
     clientEffect(

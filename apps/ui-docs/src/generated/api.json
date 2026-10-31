@@ -3232,6 +3232,20 @@
    ]
   },
   {
+   "entry": "@rivetjs/ui/streaming-text",
+   "summary": "StreamingText: frame-paced grapheme reveal, subtle opacity, natural inline flow; content, isStreaming and speed.",
+   "runsOn": "both",
+   "href": "/api/rivetjs/ui/streaming-text/",
+   "symbols": [
+    "StreamingText",
+    "StreamingText",
+    "StreamingTextProps",
+    "StreamingTextRoot",
+    "StreamingTextVariants",
+    "streamingTextVariants"
+   ]
+  },
+  {
    "entry": "@rivetjs/ui/text-shimmer",
    "summary": "TextShimmer (Rivet addition): a GPU-composited light sweep over a short status label; currentColor, isActive, reduced motion = solid text.",
    "runsOn": "both",
@@ -244148,6 +244162,14 @@
      "optional": true
     },
     {
+     "name": "streamingSpeed",
+     "kind": "property",
+     "signature": "streamingSpeed?: number",
+     "doc": "Graphemes per second, with bounded catch-up for bursts; 0 displays chunks immediately.",
+     "optional": true,
+     "default": "80"
+    },
+    {
      "name": "style",
      "kind": "property",
      "signature": "style?: StyleObject",
@@ -244181,8 +244203,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 670,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L670"
+    "line": 668,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L668"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownProps/"
   },
@@ -244246,7 +244268,7 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "const markdownVariants: TVReturnType<{ [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; blockquote: …; caret: …; codeBlock: …; del: …; em: …; heading: …; hr: …; image: …; inlineCode: …; link: …; list: …; listItem: …; live: …; paragraph: …; strong: …; table: …; tableWrapper: …; tail: …; taskCheckbox: …; word: … }, undefined> } } | { [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; blockquote: …; caret: …; codeBlock: …; del: …; em: …; heading: …; hr: …; image: …; inlineCode: …; link: …; list: …; listItem: …; live: …; paragraph: …; strong: …; table: …; tableWrapper: …; tail: …; taskCheckbox: …; word: … }, undefined> } } | {}, { base: string; blockquote: string; caret: string; codeBlock: string; del: string; em: string; heading: string; hr: string; image: string; inlineCode: string; link: string; list: string; listItem: string; live: string; paragraph: string; strong: string; table: string; tableWrapper: string; tail: string; taskCheckbox: string; word: string }, undefined, { [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; blockquote: …; caret: …; codeBlock: …; del: …; em: …; heading: …; hr: …; image: …; inlineCode: …; link: …; list: …; listItem: …; live: …; paragraph: …; strong: …; table: …; tableWrapper: …; tail: …; taskCheckbox: …; word: … }, undefined> } } | {}, { base: string; blockquote: string; caret: string; codeBlock: string; del: string; em: string; heading: string; hr: string; image: string; inlineCode: string; link: string; list: string; listItem: string; live: string; paragraph: string; strong: string; table: string; tableWrapper: string; tail: string; taskCheckbox: string; word: string }, TVReturnTypeLike<unknown, { base: string; blockquote: string; caret: string; codeBlock: string; del: string; em: string; heading: string; hr: string; image: string; inlineCode: string; link: string; list: string; listItem: string; live: string; paragraph: string; strong: string; table: string; tableWrapper: string; tail: string; taskCheckbox: string; word: string }>>"
+    "const markdownVariants: TVReturnType<{ [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; blockquote: …; caret: …; character: …; codeBlock: …; del: …; em: …; heading: …; hr: …; image: …; inlineCode: …; link: …; list: …; listItem: …; live: …; paragraph: …; strong: …; table: …; tableWrapper: …; tail: …; taskCheckbox: … }, undefined> } } | { [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; blockquote: …; caret: …; character: …; codeBlock: …; del: …; em: …; heading: …; hr: …; image: …; inlineCode: …; link: …; list: …; listItem: …; live: …; paragraph: …; strong: …; table: …; tableWrapper: …; tail: …; taskCheckbox: … }, undefined> } } | {}, { base: string; blockquote: string; caret: string; character: string; codeBlock: string; del: string; em: string; heading: string; hr: string; image: string; inlineCode: string; link: string; list: string; listItem: string; live: string; paragraph: string; strong: string; table: string; tableWrapper: string; tail: string; taskCheckbox: string }, undefined, { [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; blockquote: …; caret: …; character: …; codeBlock: …; del: …; em: …; heading: …; hr: …; image: …; inlineCode: …; link: …; list: …; listItem: …; live: …; paragraph: …; strong: …; table: …; tableWrapper: …; tail: …; taskCheckbox: … }, undefined> } } | {}, { base: string; blockquote: string; caret: string; character: string; codeBlock: string; del: string; em: string; heading: string; hr: string; image: string; inlineCode: string; link: string; list: string; listItem: string; live: string; paragraph: string; strong: string; table: string; tableWrapper: string; tail: string; taskCheckbox: string }, TVReturnTypeLike<unknown, { base: string; blockquote: string; caret: string; character: string; codeBlock: string; del: string; em: string; heading: string; hr: string; image: string; inlineCode: string; link: string; list: string; listItem: string; live: string; paragraph: string; strong: string; table: string; tableWrapper: string; tail: string; taskCheckbox: string }>>"
    ],
    "params": [],
    "members": [],
@@ -308023,8 +308045,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 343,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L343"
+    "line": 439,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L439"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptSegment/"
   },
@@ -308060,8 +308082,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 328,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L328"
+    "line": 424,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L424"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTextSegment/"
   },
@@ -308177,8 +308199,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 334,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L334"
+    "line": 430,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L430"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTokenSegment/"
   },
@@ -308199,8 +308221,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 346,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L346"
+    "line": 442,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L442"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTokenValue/"
   },
@@ -394679,6 +394701,1837 @@
     "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/stepper/stepper.tsx#L82"
    },
    "href": "/api/rivetjs/ui/stepper/useStepperStep/"
+  },
+  {
+   "key": "@rivetjs/ui/streaming-text#StreamingText",
+   "entry": "@rivetjs/ui/streaming-text",
+   "name": "StreamingText",
+   "kind": "type",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "type StreamingText = unknown"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "Props",
+     "kind": "property",
+     "signature": "Props: StreamingTextProps",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "RootProps",
+     "kind": "property",
+     "signature": "RootProps: StreamingTextProps",
+     "doc": "",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/streaming-text/index.ts",
+    "line": 4,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/streaming-text/index.ts#L4"
+   },
+   "href": "/api/rivetjs/ui/streaming-text/StreamingText/"
+  },
+  {
+   "key": "@rivetjs/ui/streaming-text#StreamingText",
+   "entry": "@rivetjs/ui/streaming-text",
+   "name": "StreamingText",
+   "kind": "variable",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "const StreamingText: (props: StreamingTextProps) => CompiledElement & { Root: (props: StreamingTextProps) => CompiledElement }"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/streaming-text/index.ts",
+    "line": 4,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/streaming-text/index.ts#L4"
+   },
+   "href": "/api/rivetjs/ui/streaming-text/StreamingText/"
+  },
+  {
+   "key": "@rivetjs/ui/streaming-text#StreamingTextProps",
+   "entry": "@rivetjs/ui/streaming-text",
+   "name": "StreamingTextProps",
+   "kind": "interface",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "interface StreamingTextProps extends Omit<JSX.IntrinsicElements[\"span\"], \"class\" | \"children\" | \"content\">"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "accessKey",
+     "kind": "property",
+     "signature": "accessKey?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "autoCapitalize",
+     "kind": "property",
+     "signature": "autoCapitalize?: \"none\" | \"off\" | \"on\" | \"sentences\" | \"words\" | \"characters\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "class",
+     "kind": "property",
+     "signature": "class?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "className",
+     "kind": "property",
+     "signature": "className?: ClassValue",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "content",
+     "kind": "property",
+     "signature": "content: string | (() => string)",
+     "doc": "Text to display; append to a signal/accessor while generating. Initial text renders in full.",
+     "optional": false
+    },
+    {
+     "name": "contentEditable",
+     "kind": "property",
+     "signature": "contentEditable?: boolean | \"true\" | \"false\" | \"plaintext-only\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "dir",
+     "kind": "property",
+     "signature": "dir?: \"auto\" | \"ltr\" | \"rtl\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "draggable",
+     "kind": "property",
+     "signature": "draggable?: boolean | \"true\" | \"false\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "enterKeyHint",
+     "kind": "property",
+     "signature": "enterKeyHint?: \"search\" | \"enter\" | \"done\" | \"go\" | \"next\" | \"previous\" | \"send\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "hidden",
+     "kind": "property",
+     "signature": "hidden?: boolean | \"until-found\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "id",
+     "kind": "property",
+     "signature": "id?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "inert",
+     "kind": "property",
+     "signature": "inert?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "inputMode",
+     "kind": "property",
+     "signature": "inputMode?: \"search\" | \"text\" | \"none\" | \"decimal\" | \"numeric\" | \"tel\" | \"email\" | \"url\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "isStreaming",
+     "kind": "property",
+     "signature": "isStreaming?: boolean | (() => boolean)",
+     "doc": "Input is still arriving. Pending letters finish revealing after this turns false.",
+     "optional": true,
+     "default": "false"
+    },
+    {
+     "name": "itemId",
+     "kind": "property",
+     "signature": "itemId?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "itemProp",
+     "kind": "property",
+     "signature": "itemProp?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "itemRef",
+     "kind": "property",
+     "signature": "itemRef?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "itemScope",
+     "kind": "property",
+     "signature": "itemScope?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "itemType",
+     "kind": "property",
+     "signature": "itemType?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "lang",
+     "kind": "property",
+     "signature": "lang?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "nonce",
+     "kind": "property",
+     "signature": "nonce?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAbort",
+     "kind": "property",
+     "signature": "onAbort?: Handler<HTMLSpanElement, UIEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAbortCapture",
+     "kind": "property",
+     "signature": "onAbortCapture?: Handler<HTMLSpanElement, UIEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationCancel",
+     "kind": "property",
+     "signature": "onAnimationCancel?: Handler<HTMLSpanElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationCancelCapture",
+     "kind": "property",
+     "signature": "onAnimationCancelCapture?: Handler<HTMLSpanElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationEnd",
+     "kind": "property",
+     "signature": "onAnimationEnd?: Handler<HTMLSpanElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationEndCapture",
+     "kind": "property",
+     "signature": "onAnimationEndCapture?: Handler<HTMLSpanElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationIteration",
+     "kind": "property",
+     "signature": "onAnimationIteration?: Handler<HTMLSpanElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationIterationCapture",
+     "kind": "property",
+     "signature": "onAnimationIterationCapture?: Handler<HTMLSpanElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationStart",
+     "kind": "property",
+     "signature": "onAnimationStart?: Handler<HTMLSpanElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationStartCapture",
+     "kind": "property",
+     "signature": "onAnimationStartCapture?: Handler<HTMLSpanElement, AnimationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAuxClick",
+     "kind": "property",
+     "signature": "onAuxClick?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAuxClickCapture",
+     "kind": "property",
+     "signature": "onAuxClickCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeInput",
+     "kind": "property",
+     "signature": "onBeforeInput?: Handler<HTMLSpanElement, InputEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeInputCapture",
+     "kind": "property",
+     "signature": "onBeforeInputCapture?: Handler<HTMLSpanElement, InputEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeMatch",
+     "kind": "property",
+     "signature": "onBeforeMatch?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeMatchCapture",
+     "kind": "property",
+     "signature": "onBeforeMatchCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeToggle",
+     "kind": "property",
+     "signature": "onBeforeToggle?: Handler<HTMLSpanElement, ToggleEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBeforeToggleCapture",
+     "kind": "property",
+     "signature": "onBeforeToggleCapture?: Handler<HTMLSpanElement, ToggleEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBlur",
+     "kind": "property",
+     "signature": "onBlur?: Handler<HTMLSpanElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onBlurCapture",
+     "kind": "property",
+     "signature": "onBlurCapture?: Handler<HTMLSpanElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCancel",
+     "kind": "property",
+     "signature": "onCancel?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCancelCapture",
+     "kind": "property",
+     "signature": "onCancelCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCanPlay",
+     "kind": "property",
+     "signature": "onCanPlay?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCanPlayCapture",
+     "kind": "property",
+     "signature": "onCanPlayCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCanPlayThrough",
+     "kind": "property",
+     "signature": "onCanPlayThrough?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCanPlayThroughCapture",
+     "kind": "property",
+     "signature": "onCanPlayThroughCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onChange",
+     "kind": "property",
+     "signature": "onChange?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onChangeCapture",
+     "kind": "property",
+     "signature": "onChangeCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClick",
+     "kind": "property",
+     "signature": "onClick?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClickCapture",
+     "kind": "property",
+     "signature": "onClickCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClose",
+     "kind": "property",
+     "signature": "onClose?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCloseCapture",
+     "kind": "property",
+     "signature": "onCloseCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionEnd",
+     "kind": "property",
+     "signature": "onCompositionEnd?: Handler<HTMLSpanElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionEndCapture",
+     "kind": "property",
+     "signature": "onCompositionEndCapture?: Handler<HTMLSpanElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionStart",
+     "kind": "property",
+     "signature": "onCompositionStart?: Handler<HTMLSpanElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionStartCapture",
+     "kind": "property",
+     "signature": "onCompositionStartCapture?: Handler<HTMLSpanElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionUpdate",
+     "kind": "property",
+     "signature": "onCompositionUpdate?: Handler<HTMLSpanElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCompositionUpdateCapture",
+     "kind": "property",
+     "signature": "onCompositionUpdateCapture?: Handler<HTMLSpanElement, CompositionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextLost",
+     "kind": "property",
+     "signature": "onContextLost?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextLostCapture",
+     "kind": "property",
+     "signature": "onContextLostCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextMenu",
+     "kind": "property",
+     "signature": "onContextMenu?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextMenuCapture",
+     "kind": "property",
+     "signature": "onContextMenuCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextRestored",
+     "kind": "property",
+     "signature": "onContextRestored?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextRestoredCapture",
+     "kind": "property",
+     "signature": "onContextRestoredCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCopy",
+     "kind": "property",
+     "signature": "onCopy?: Handler<HTMLSpanElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCopyCapture",
+     "kind": "property",
+     "signature": "onCopyCapture?: Handler<HTMLSpanElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCueChange",
+     "kind": "property",
+     "signature": "onCueChange?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCueChangeCapture",
+     "kind": "property",
+     "signature": "onCueChangeCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCut",
+     "kind": "property",
+     "signature": "onCut?: Handler<HTMLSpanElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCutCapture",
+     "kind": "property",
+     "signature": "onCutCapture?: Handler<HTMLSpanElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDblClick",
+     "kind": "property",
+     "signature": "onDblClick?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDblClickCapture",
+     "kind": "property",
+     "signature": "onDblClickCapture?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDrag",
+     "kind": "property",
+     "signature": "onDrag?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragCapture",
+     "kind": "property",
+     "signature": "onDragCapture?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragEnd",
+     "kind": "property",
+     "signature": "onDragEnd?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragEndCapture",
+     "kind": "property",
+     "signature": "onDragEndCapture?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragEnter",
+     "kind": "property",
+     "signature": "onDragEnter?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragEnterCapture",
+     "kind": "property",
+     "signature": "onDragEnterCapture?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragLeave",
+     "kind": "property",
+     "signature": "onDragLeave?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragLeaveCapture",
+     "kind": "property",
+     "signature": "onDragLeaveCapture?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragOver",
+     "kind": "property",
+     "signature": "onDragOver?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragOverCapture",
+     "kind": "property",
+     "signature": "onDragOverCapture?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragStart",
+     "kind": "property",
+     "signature": "onDragStart?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDragStartCapture",
+     "kind": "property",
+     "signature": "onDragStartCapture?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDrop",
+     "kind": "property",
+     "signature": "onDrop?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDropCapture",
+     "kind": "property",
+     "signature": "onDropCapture?: Handler<HTMLSpanElement, DragEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDurationChange",
+     "kind": "property",
+     "signature": "onDurationChange?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDurationChangeCapture",
+     "kind": "property",
+     "signature": "onDurationChangeCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEmptied",
+     "kind": "property",
+     "signature": "onEmptied?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEmptiedCapture",
+     "kind": "property",
+     "signature": "onEmptiedCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEnded",
+     "kind": "property",
+     "signature": "onEnded?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEndedCapture",
+     "kind": "property",
+     "signature": "onEndedCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onError",
+     "kind": "property",
+     "signature": "onError?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onErrorCapture",
+     "kind": "property",
+     "signature": "onErrorCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocus",
+     "kind": "property",
+     "signature": "onFocus?: Handler<HTMLSpanElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusCapture",
+     "kind": "property",
+     "signature": "onFocusCapture?: Handler<HTMLSpanElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusIn",
+     "kind": "property",
+     "signature": "onFocusIn?: Handler<HTMLSpanElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusInCapture",
+     "kind": "property",
+     "signature": "onFocusInCapture?: Handler<HTMLSpanElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusOut",
+     "kind": "property",
+     "signature": "onFocusOut?: Handler<HTMLSpanElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusOutCapture",
+     "kind": "property",
+     "signature": "onFocusOutCapture?: Handler<HTMLSpanElement, FocusEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFormData",
+     "kind": "property",
+     "signature": "onFormData?: Handler<HTMLSpanElement, FormDataEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFormDataCapture",
+     "kind": "property",
+     "signature": "onFormDataCapture?: Handler<HTMLSpanElement, FormDataEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFullscreenChange",
+     "kind": "property",
+     "signature": "onFullscreenChange?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFullscreenChangeCapture",
+     "kind": "property",
+     "signature": "onFullscreenChangeCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFullscreenError",
+     "kind": "property",
+     "signature": "onFullscreenError?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFullscreenErrorCapture",
+     "kind": "property",
+     "signature": "onFullscreenErrorCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onGotPointerCapture",
+     "kind": "property",
+     "signature": "onGotPointerCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onGotPointerCaptureCapture",
+     "kind": "property",
+     "signature": "onGotPointerCaptureCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onInput",
+     "kind": "property",
+     "signature": "onInput?: Handler<HTMLSpanElement, InputEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onInputCapture",
+     "kind": "property",
+     "signature": "onInputCapture?: Handler<HTMLSpanElement, InputEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onInvalid",
+     "kind": "property",
+     "signature": "onInvalid?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onInvalidCapture",
+     "kind": "property",
+     "signature": "onInvalidCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyDown",
+     "kind": "property",
+     "signature": "onKeyDown?: Handler<HTMLSpanElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyDownCapture",
+     "kind": "property",
+     "signature": "onKeyDownCapture?: Handler<HTMLSpanElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyPress",
+     "kind": "property",
+     "signature": "onKeyPress?: Handler<HTMLSpanElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyPressCapture",
+     "kind": "property",
+     "signature": "onKeyPressCapture?: Handler<HTMLSpanElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyUp",
+     "kind": "property",
+     "signature": "onKeyUp?: Handler<HTMLSpanElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyUpCapture",
+     "kind": "property",
+     "signature": "onKeyUpCapture?: Handler<HTMLSpanElement, KeyboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoad",
+     "kind": "property",
+     "signature": "onLoad?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadCapture",
+     "kind": "property",
+     "signature": "onLoadCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadedData",
+     "kind": "property",
+     "signature": "onLoadedData?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadedDataCapture",
+     "kind": "property",
+     "signature": "onLoadedDataCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadedMetadata",
+     "kind": "property",
+     "signature": "onLoadedMetadata?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadedMetadataCapture",
+     "kind": "property",
+     "signature": "onLoadedMetadataCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadStart",
+     "kind": "property",
+     "signature": "onLoadStart?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLoadStartCapture",
+     "kind": "property",
+     "signature": "onLoadStartCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLostPointerCapture",
+     "kind": "property",
+     "signature": "onLostPointerCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLostPointerCaptureCapture",
+     "kind": "property",
+     "signature": "onLostPointerCaptureCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseDown",
+     "kind": "property",
+     "signature": "onMouseDown?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseDownCapture",
+     "kind": "property",
+     "signature": "onMouseDownCapture?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseEnter",
+     "kind": "property",
+     "signature": "onMouseEnter?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseEnterCapture",
+     "kind": "property",
+     "signature": "onMouseEnterCapture?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseLeave",
+     "kind": "property",
+     "signature": "onMouseLeave?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseLeaveCapture",
+     "kind": "property",
+     "signature": "onMouseLeaveCapture?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseMove",
+     "kind": "property",
+     "signature": "onMouseMove?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseMoveCapture",
+     "kind": "property",
+     "signature": "onMouseMoveCapture?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOut",
+     "kind": "property",
+     "signature": "onMouseOut?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOutCapture",
+     "kind": "property",
+     "signature": "onMouseOutCapture?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOver",
+     "kind": "property",
+     "signature": "onMouseOver?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOverCapture",
+     "kind": "property",
+     "signature": "onMouseOverCapture?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseUp",
+     "kind": "property",
+     "signature": "onMouseUp?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseUpCapture",
+     "kind": "property",
+     "signature": "onMouseUpCapture?: Handler<HTMLSpanElement, MouseEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPaste",
+     "kind": "property",
+     "signature": "onPaste?: Handler<HTMLSpanElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPasteCapture",
+     "kind": "property",
+     "signature": "onPasteCapture?: Handler<HTMLSpanElement, ClipboardEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPause",
+     "kind": "property",
+     "signature": "onPause?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPauseCapture",
+     "kind": "property",
+     "signature": "onPauseCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPlay",
+     "kind": "property",
+     "signature": "onPlay?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPlayCapture",
+     "kind": "property",
+     "signature": "onPlayCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPlaying",
+     "kind": "property",
+     "signature": "onPlaying?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPlayingCapture",
+     "kind": "property",
+     "signature": "onPlayingCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerCancel",
+     "kind": "property",
+     "signature": "onPointerCancel?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerCancelCapture",
+     "kind": "property",
+     "signature": "onPointerCancelCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerDown",
+     "kind": "property",
+     "signature": "onPointerDown?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerDownCapture",
+     "kind": "property",
+     "signature": "onPointerDownCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerEnter",
+     "kind": "property",
+     "signature": "onPointerEnter?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerEnterCapture",
+     "kind": "property",
+     "signature": "onPointerEnterCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerLeave",
+     "kind": "property",
+     "signature": "onPointerLeave?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerLeaveCapture",
+     "kind": "property",
+     "signature": "onPointerLeaveCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerMove",
+     "kind": "property",
+     "signature": "onPointerMove?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerMoveCapture",
+     "kind": "property",
+     "signature": "onPointerMoveCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOut",
+     "kind": "property",
+     "signature": "onPointerOut?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOutCapture",
+     "kind": "property",
+     "signature": "onPointerOutCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOver",
+     "kind": "property",
+     "signature": "onPointerOver?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOverCapture",
+     "kind": "property",
+     "signature": "onPointerOverCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerRawUpdate",
+     "kind": "property",
+     "signature": "onPointerRawUpdate?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerRawUpdateCapture",
+     "kind": "property",
+     "signature": "onPointerRawUpdateCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerUp",
+     "kind": "property",
+     "signature": "onPointerUp?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerUpCapture",
+     "kind": "property",
+     "signature": "onPointerUpCapture?: Handler<HTMLSpanElement, PointerEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onProgress",
+     "kind": "property",
+     "signature": "onProgress?: Handler<HTMLSpanElement, ProgressEvent<EventTarget>>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onProgressCapture",
+     "kind": "property",
+     "signature": "onProgressCapture?: Handler<HTMLSpanElement, ProgressEvent<EventTarget>>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onRateChange",
+     "kind": "property",
+     "signature": "onRateChange?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onRateChangeCapture",
+     "kind": "property",
+     "signature": "onRateChangeCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onReset",
+     "kind": "property",
+     "signature": "onReset?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onResetCapture",
+     "kind": "property",
+     "signature": "onResetCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onResize",
+     "kind": "property",
+     "signature": "onResize?: Handler<HTMLSpanElement, UIEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onResizeCapture",
+     "kind": "property",
+     "signature": "onResizeCapture?: Handler<HTMLSpanElement, UIEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScroll",
+     "kind": "property",
+     "signature": "onScroll?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScrollCapture",
+     "kind": "property",
+     "signature": "onScrollCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScrollEnd",
+     "kind": "property",
+     "signature": "onScrollEnd?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScrollEndCapture",
+     "kind": "property",
+     "signature": "onScrollEndCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSecurityPolicyViolation",
+     "kind": "property",
+     "signature": "onSecurityPolicyViolation?: Handler<HTMLSpanElement, SecurityPolicyViolationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSecurityPolicyViolationCapture",
+     "kind": "property",
+     "signature": "onSecurityPolicyViolationCapture?: Handler<HTMLSpanElement, SecurityPolicyViolationEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSeeked",
+     "kind": "property",
+     "signature": "onSeeked?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSeekedCapture",
+     "kind": "property",
+     "signature": "onSeekedCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSeeking",
+     "kind": "property",
+     "signature": "onSeeking?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSeekingCapture",
+     "kind": "property",
+     "signature": "onSeekingCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelect",
+     "kind": "property",
+     "signature": "onSelect?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectCapture",
+     "kind": "property",
+     "signature": "onSelectCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectionChange",
+     "kind": "property",
+     "signature": "onSelectionChange?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectionChangeCapture",
+     "kind": "property",
+     "signature": "onSelectionChangeCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectStart",
+     "kind": "property",
+     "signature": "onSelectStart?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSelectStartCapture",
+     "kind": "property",
+     "signature": "onSelectStartCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSlotChange",
+     "kind": "property",
+     "signature": "onSlotChange?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSlotChangeCapture",
+     "kind": "property",
+     "signature": "onSlotChangeCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onStalled",
+     "kind": "property",
+     "signature": "onStalled?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onStalledCapture",
+     "kind": "property",
+     "signature": "onStalledCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSubmit",
+     "kind": "property",
+     "signature": "onSubmit?: Handler<HTMLSpanElement, SubmitEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSubmitCapture",
+     "kind": "property",
+     "signature": "onSubmitCapture?: Handler<HTMLSpanElement, SubmitEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSuspend",
+     "kind": "property",
+     "signature": "onSuspend?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSuspendCapture",
+     "kind": "property",
+     "signature": "onSuspendCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTimeUpdate",
+     "kind": "property",
+     "signature": "onTimeUpdate?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTimeUpdateCapture",
+     "kind": "property",
+     "signature": "onTimeUpdateCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onToggle",
+     "kind": "property",
+     "signature": "onToggle?: Handler<HTMLSpanElement, ToggleEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onToggleCapture",
+     "kind": "property",
+     "signature": "onToggleCapture?: Handler<HTMLSpanElement, ToggleEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchCancel",
+     "kind": "property",
+     "signature": "onTouchCancel?: Handler<HTMLSpanElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchCancelCapture",
+     "kind": "property",
+     "signature": "onTouchCancelCapture?: Handler<HTMLSpanElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchEnd",
+     "kind": "property",
+     "signature": "onTouchEnd?: Handler<HTMLSpanElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchEndCapture",
+     "kind": "property",
+     "signature": "onTouchEndCapture?: Handler<HTMLSpanElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchMove",
+     "kind": "property",
+     "signature": "onTouchMove?: Handler<HTMLSpanElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchMoveCapture",
+     "kind": "property",
+     "signature": "onTouchMoveCapture?: Handler<HTMLSpanElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchStart",
+     "kind": "property",
+     "signature": "onTouchStart?: Handler<HTMLSpanElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchStartCapture",
+     "kind": "property",
+     "signature": "onTouchStartCapture?: Handler<HTMLSpanElement, TouchEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionCancel",
+     "kind": "property",
+     "signature": "onTransitionCancel?: Handler<HTMLSpanElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionCancelCapture",
+     "kind": "property",
+     "signature": "onTransitionCancelCapture?: Handler<HTMLSpanElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionEnd",
+     "kind": "property",
+     "signature": "onTransitionEnd?: Handler<HTMLSpanElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionEndCapture",
+     "kind": "property",
+     "signature": "onTransitionEndCapture?: Handler<HTMLSpanElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionRun",
+     "kind": "property",
+     "signature": "onTransitionRun?: Handler<HTMLSpanElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionRunCapture",
+     "kind": "property",
+     "signature": "onTransitionRunCapture?: Handler<HTMLSpanElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionStart",
+     "kind": "property",
+     "signature": "onTransitionStart?: Handler<HTMLSpanElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionStartCapture",
+     "kind": "property",
+     "signature": "onTransitionStartCapture?: Handler<HTMLSpanElement, TransitionEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onVolumeChange",
+     "kind": "property",
+     "signature": "onVolumeChange?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onVolumeChangeCapture",
+     "kind": "property",
+     "signature": "onVolumeChangeCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWaiting",
+     "kind": "property",
+     "signature": "onWaiting?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWaitingCapture",
+     "kind": "property",
+     "signature": "onWaitingCapture?: Handler<HTMLSpanElement, Event>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWheel",
+     "kind": "property",
+     "signature": "onWheel?: Handler<HTMLSpanElement, WheelEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWheelCapture",
+     "kind": "property",
+     "signature": "onWheelCapture?: Handler<HTMLSpanElement, WheelEvent>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "popover",
+     "kind": "property",
+     "signature": "popover?: boolean | \"auto\" | \"manual\" | \"hint\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "preload",
+     "kind": "property",
+     "signature": "preload?: \"eager\" | \"idle\" | \"visible\" | \"intent\" | \"interaction\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "r:slot",
+     "kind": "property",
+     "signature": "r:slot?: string",
+     "doc": "Usage side of a named slot: this element becomes the parent component's `name` slot content.",
+     "optional": true
+    },
+    {
+     "name": "ref",
+     "kind": "property",
+     "signature": "ref?: RefProp<HTMLSpanElement>",
+     "doc": "A `ref()` object or a callback receiving the native element once it exists in the browser; never set / called on the server.",
+     "optional": true
+    },
+    {
+     "name": "role",
+     "kind": "property",
+     "signature": "role?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "slot",
+     "kind": "property",
+     "signature": "slot?: string",
+     "doc": "Native (shadow DOM) slot assignment; Rivet slot content uses `r:slot`.",
+     "optional": true
+    },
+    {
+     "name": "speed",
+     "kind": "property",
+     "signature": "speed?: number",
+     "doc": "Graphemes per second, automatically faster for large bursts. 0 displays immediately.",
+     "optional": true,
+     "default": "80"
+    },
+    {
+     "name": "spellCheck",
+     "kind": "property",
+     "signature": "spellCheck?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "style",
+     "kind": "property",
+     "signature": "style?: StyleObject",
+     "doc": "A style object (`{ color: c, \"--x\": v }`); style strings are compile errors.",
+     "optional": true
+    },
+    {
+     "name": "tabIndex",
+     "kind": "property",
+     "signature": "tabIndex?: number",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "title",
+     "kind": "property",
+     "signature": "title?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "translate",
+     "kind": "property",
+     "signature": "translate?: \"yes\" | \"no\"",
+     "doc": "",
+     "optional": true
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/streaming-text/streaming-text.tsx",
+    "line": 12,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/streaming-text/streaming-text.tsx#L12"
+   },
+   "href": "/api/rivetjs/ui/streaming-text/StreamingTextProps/"
+  },
+  {
+   "key": "@rivetjs/ui/streaming-text#StreamingTextRoot",
+   "entry": "@rivetjs/ui/streaming-text",
+   "name": "StreamingTextRoot",
+   "kind": "function",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "function StreamingTextRoot(props: StreamingTextProps): CompiledElement"
+   ],
+   "params": [
+    {
+     "name": "props",
+     "type": "StreamingTextProps",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "CompiledElement",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/streaming-text/streaming-text.tsx",
+    "line": 22,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/streaming-text/streaming-text.tsx#L22"
+   },
+   "href": "/api/rivetjs/ui/streaming-text/StreamingTextRoot/"
+  },
+  {
+   "key": "@rivetjs/ui/streaming-text#StreamingTextVariants",
+   "entry": "@rivetjs/ui/streaming-text",
+   "name": "StreamingTextVariants",
+   "kind": "type",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "type StreamingTextVariants = VariantProps<typeof streamingTextVariants>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/styles/src/components/streaming-text/streaming-text.styles.ts",
+    "line": 12,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/streaming-text/streaming-text.styles.ts#L12"
+   },
+   "href": "/api/rivetjs/ui/streaming-text/StreamingTextVariants-type/"
+  },
+  {
+   "key": "@rivetjs/ui/streaming-text#streamingTextVariants",
+   "entry": "@rivetjs/ui/streaming-text",
+   "name": "streamingTextVariants",
+   "kind": "variable",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "const streamingTextVariants: TVReturnType<{ [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; character: … }, undefined> } } | { [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; character: … }, undefined> } } | {}, { base: string; character: string }, undefined, { [key: string]: { [key: string]: ClassNameValue | SlotsClassValue<{ base: …; character: … }, undefined> } } | {}, { base: string; character: string }, TVReturnTypeLike<unknown, { base: string; character: string }>>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/styles/src/components/streaming-text/streaming-text.styles.ts",
+    "line": 6,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/streaming-text/streaming-text.styles.ts#L6"
+   },
+   "href": "/api/rivetjs/ui/streaming-text/streamingTextVariants/"
   },
   {
    "key": "@rivetjs/ui/surface#Surface",

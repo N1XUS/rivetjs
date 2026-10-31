@@ -21,3 +21,5 @@ Rivet-authored headless chat behaviour (no React Aria / Angular CDK counterpart;
 - Stick-to-bottom itself is CSS (`flex-direction: column-reverse` scroller starts and stays at the bottom); these helpers only measure for the jump button.
 - No network: `simulateStream` is a timer; real apps pass a `fetch` body to `streamText`.
 - `followHeight` runs only in the browser (callers start it from a `clientEffect`, never at resume); a flex container's children need `flex-shrink: 0` or the pinned height squeezes them.
+
+Character pacing (2026-10-31): `followText(source, target, {isStreaming, speed=80, onRevealingChange})` returns a disposer. Frame queue catches up within 240ms, drains after input ends, resets on replacement, cancels on disposal; reduced motion (including live changes) and speed=0 are immediate. `textGraphemes` uses Intl.Segmenter; an incoming trailing high surrogate is held. UI callers install from interaction clientEffect. Tests: `tests/chat-text-reveal.test.ts`.

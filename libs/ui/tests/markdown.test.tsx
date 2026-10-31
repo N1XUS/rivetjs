@@ -21,7 +21,7 @@ test("markdown: exports + variants", () => {
 test("markdown: streaming keeps finished blocks", async () => {
   const text = signal("# Plan\n\nFirst **bo");
   const streaming = signal(true);
-  const r = render(() => <Markdown content={() => text()} isStreaming={() => streaming()} />);
+  const r = render(() => <Markdown streamingSpeed={0} content={() => text()} isStreaming={() => streaming()} />);
   const root = r.container.querySelector("[data-slot=markdown]")!;
   assert.equal(root.getAttribute("data-streaming"), "true");
   const heading = root.querySelector("h1")!;
@@ -42,7 +42,7 @@ test("markdown: streaming keeps finished blocks", async () => {
 });
 
 test("markdown: safety + code blocks", () => {
-  const r = render(() => <Markdown content={"[x](javascript:alert(1)) <img src=x onerror=alert(1)>\n\n```py\nprint(1)\n```"} />);
+  const r = render(() => <Markdown streamingSpeed={0} content={"[x](javascript:alert(1)) <img src=x onerror=alert(1)>\n\n```py\nprint(1)\n```"} />);
   assert.equal(r.container.querySelector("a"), null);
   assert.equal(r.container.querySelector("img"), null);
   assert.match(r.container.textContent!, /<img src=x onerror=alert\(1\)>/);
@@ -54,11 +54,11 @@ test("markdown: safety + code blocks", () => {
 test("markdown: live tail appends words, existing nodes kept", async () => {
   const text = signal("Resumable pages");
   const streaming = signal(true);
-  const r = render(() => <Markdown content={() => text()} isStreaming={() => streaming()} />);
+  const r = render(() => <Markdown streamingSpeed={0} content={() => text()} isStreaming={() => streaming()} />);
   const root = r.container.querySelector("[data-slot=markdown]")!;
   const paragraph = root.querySelector("p")!;
   assert.equal(paragraph.classList.contains("markdown__live"), true);
-  const firstWords = [...root.querySelectorAll(".markdown__word")];
+  const firstWords = [...root.querySelectorAll(".markdown__character")];
   assert.equal(firstWords.map((w) => w.textContent).join(""), "Resumable pages");
   const removed: Node[] = [];
   const observer = new MutationObserver((records) => records.forEach((record) => removed.push(...record.removedNodes)));
@@ -71,23 +71,23 @@ test("markdown: live tail appends words, existing nodes kept", async () => {
   // Booleans / strings only: a failing assert on DOM nodes would deep-inspect the whole happy-dom graph.
   assert.equal(removed.map((node) => `${node.nodeName}:${node.textContent}`).join("|"), "");
   assert.equal(root.querySelector("p") === paragraph, true);
-  assert.equal(root.querySelectorAll(".markdown__word")[0] === firstWords[0], true);
+  assert.equal(root.querySelectorAll(".markdown__character")[0] === firstWords[0], true);
   assert.equal(paragraph.querySelector("strong")!.textContent, "hydration");
   assert.match(paragraph.textContent!, /^Resumable pages skip hydration entirely/);
   assert.equal(paragraph.querySelector(".markdown__caret") !== null, true);
   streaming.set(false);
   await flush();
   assert.equal(root.querySelector(".markdown__caret") === null, true);
-  assert.equal(root.querySelector(".markdown__word") === null, true);
+  assert.equal(root.querySelector(".markdown__character") === null, true);
   assert.equal(root.querySelector("p")!.textContent, "Resumable pages skip hydration entirely");
   r.unmount();
 });
 
 test("markdown: open fence streams as words, highlighted when closed", async () => {
   const text = signal("Intro\n\n```ts\nconst a");
-  const r = render(() => <Markdown content={() => text()} isStreaming={() => true} />);
+  const r = render(() => <Markdown streamingSpeed={0} content={() => text()} isStreaming={() => true} />);
   const root = r.container.querySelector("[data-slot=markdown]")!;
-  assert.equal(root.querySelector(".code-block[data-streaming=true] .markdown__word") !== null, true);
+  assert.equal(root.querySelector(".code-block[data-streaming=true] .markdown__character") !== null, true);
   assert.equal(root.querySelector(".code-block__token--keyword") === null, true);
   text.set("Intro\n\n```ts\nconst a = 1;");
   await flush();

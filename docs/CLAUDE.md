@@ -191,3 +191,5 @@ Scheduler final report records real LTR/RTL month/all-day resize preview, commit
 - Live-page accessor contract (2026-10-29): the partial-render spec records that server/static live pages receive callable loader data independently of navigate/forms imports; native-link production GETs cover both navigation settings.
 
 - Remaining adapters implementation/evidence: `design/plans/2026-10-30-remaining-framework-islands.md` extends the approved bridges T9–T11. Benchmark lanes are a separate deferred item.
+
+Streaming text (2026-10-31): `design/specs/2026-10-31-streaming-text-design.md` and `design/plans/2026-10-31-streaming-text.md` record the approved character-streaming direction, shared queue, SSR/reduced-motion constraints and checks.

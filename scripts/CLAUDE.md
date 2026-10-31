@@ -126,3 +126,5 @@ Scheduler final baselines: UI compiled CSS +34 bytes / +5 Brotli; standalone dem
 - Remaining islands (2026-10-30): release order, tarball smoke, CI shards and own-code hashes include bridge-solid/vue/svelte. Smoke links Solid 1.9 from its adapter-local toolchain (root Solid2 is for benchmarks). Own-code hashes compile Svelte rune modules with the native compiler after TypeScript stripping; third-party framework code remains external.
 
 - Store snapshot immutability (2026-10-30): `zero-cost/runtime.txt` pins only the measured `@rivetjs/reactivity/store` change10339→10380 B (+41) and its `@rivetjs/runtime/server-derived-store` consumer42622→42664 B (+42). Other runtime entries, package hashes and SSR lanes stay unchanged. Standard app size `/slots` HTML Brotli +1 B is existing tolerance noise and is not ratcheted.
+
+Streaming text (2026-10-31): package baselines add UI StreamingText (DOM 4452 B / server 4519 B), Markdown pacing (+248 / +255 B), and the root export (+1239 / +1295 B). The shared UI CSS graph gains 387 B for character opacity and removal of block/step movement. Other UI JavaScript entries and all non-UI entries stay byte-identical.

@@ -153,3 +153,5 @@ export * from "./chat-attachment/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./prompt-input/index.ts"; // Rivet-authored (TWEAKS.md)
 
 export * from "./scheduler/index.ts";
+
+export * from "./streaming-text/index.ts";

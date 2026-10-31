@@ -163,32 +163,29 @@
 }
 
 /* Live tail: each new word and each new block fades + un-blurs in (only nodes the stream creates have these classes). */
-.markdown__word {
-  animation: markdown-word-in var(--motion-enter-duration) var(--motion-enter-ease) both;
+.markdown__character {
+  animation: markdown-character-in var(--motion-enter-duration) var(--motion-enter-ease) both;
 }
 
 .markdown__live {
   animation: markdown-block-in var(--motion-enter-duration) var(--motion-enter-ease) both;
 }
 
-@keyframes markdown-word-in {
+@keyframes markdown-character-in {
   from {
     opacity: 0;
-    filter: blur(3px);
   }
 }
 
 @keyframes markdown-block-in {
   from {
     opacity: 0;
-    translate: 0 4px;
-    filter: blur(2px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .markdown__caret,
-  .markdown__word,
+  .markdown__character,
   .markdown__live {
     animation: none;
   }
