@@ -44,9 +44,9 @@ Ruling: `libs/router/CLAUDE.md` explicitly requires forms tests after handler ch
 
 ## Task 2 — live framework variation
 
-- [ ] Run bounded live `router` on explicitly authorized `gpt-6-astra`; focus on request lifecycle, serialization and navigation contracts beyond prior coverage.
-- [ ] If supported defect: minimize repro, native regression, smallest repair, independent proof/gates/review and commit. If none: preserve actual probes plus independently passing native baseline. Do not manufacture a finding.
-- [ ] Record true automatic/manual outcomes and any remaining limits, clean only owned inactive generated builds, commit evidence index.
+- [x] Run bounded live `router` on explicitly authorized `gpt-6-astra`; focus on request lifecycle, serialization and navigation contracts beyond prior coverage.
+- [x] If supported defect: minimize repro, native regression, smallest repair, independent proof/gates/review and commit. If none: preserve actual probes plus independently passing native baseline. Do not manufacture a finding.
+- [x] Record true automatic/manual outcomes and any remaining limits, clean only owned inactive generated builds, commit evidence index.
 
 ## Ledger — 2026-10-31
 
@@ -59,3 +59,5 @@ Ruling: `libs/router/CLAUDE.md` explicitly requires forms tests after handler ch
 - Task1b/1c verification: native heap boundary case failed before implementation; forms-consumer planner case failed before selection repair. Focused core/planner30/30 and full scripts134/134 in15 files,257.83s, exit0, sampled3041689600B pass under the same cap. Independent resource/planner review found no important defects. No existing gates or thresholds were removed. Fresh whole-supervisor verification of the retained router candidate follows the commit.
 - Follow-up evidence: whole-supervisor continuation60a0f11e onf47d393d5 again hit the unchanged cap during UI-docs (sampled3244163072B). Its independent RED/GREEN and early patch remain intact. Ruling: the isolated full-wrapper pass did not prove adequate headroom with the full supervisor resident. Two further RED checks demonstrated omitted supervisor residency in allocation and missing command-envelope traces. Reserve the measured parent RSS before the60% Go goal, record it separately from child output, and refuse already exhausted launches; do not increase the RSS limit or relabel failed records.
 - Parent-reservation verification:65/65 harness cases, full scripts135/135 in15 files,239.68s, exit0, sampled3173793792B under3072MiB; harness types and read-only review pass. Evidence: `.artifacts/ai-tester/maintenance/2026-10-31-parent-reserve/`. Continue the retained router finding through explicit human-supervised validation; do not describe a scripted candidate replay as another AI discovery or a failed automatic campaign as successful.
+
+- Final router intake: d74a648ec. Original live discovery independently reproduced cookie/cache RED/GREEN; all 38 checks were accounted for and read-only review accepted on 4d9dc80f2, then HEAD-move protection correctly refused intake. The fresh 2ddcf5114 integration preserved concurrent StreamingText docs/package baseline rows and completed 38 checks ({"pass":36,"known-red":1,"noise":1}), router 441 / forms 73 / docs 64 / UI-docs 11 / scripts 135, raw-source/hash checks and actual read-only Astra review before atomic intake. Original automatic/resource failures stay failed. Only measured server bundle baselines changed; final evidence and cleanup records live in the integration-2dd directory. Fully unattended intake remains unverified.

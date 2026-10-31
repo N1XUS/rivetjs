@@ -193,3 +193,5 @@ Scheduler final report records real LTR/RTL month/all-day resize preview, commit
 - Remaining adapters implementation/evidence: `design/plans/2026-10-30-remaining-framework-islands.md` extends the approved bridges T9–T11. Benchmark lanes are a separate deferred item.
 
 Streaming text (2026-10-31): `design/specs/2026-10-31-streaming-text-design.md` and `design/plans/2026-10-31-streaming-text.md` record the approved character-streaming direction, shared queue, SSR/reduced-motion constraints and checks.
+
+- Autonomous router repair landed in d74a648ec: error-layout cookie privacy, native regression and serial router/forms gates. The verification report distinguishes original failed campaigns, a correct moved-HEAD refusal protecting concurrent StreamingText work, fresh combined-source verification and controlled intake; no unattended-success claim.
