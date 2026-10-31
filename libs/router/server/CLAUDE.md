@@ -73,6 +73,7 @@ Web-standard request pipeline: route match → CSRF → request handlers → gua
 - `trailingSlash` has no `AppOptions` field: the handler reads `TRAILING_SLASH` (rewritten in the app's server bundle by `build/vite.ts`); a plain `createHandler` outside Vite ignores. Tests: `tests/trailing-slash.test.ts` (per-policy copy of `server/` + `shared/`).
 - `RequestEvent.depends()` records only inside loaders (per-loader event view: `LoaderEvent` class, getters read through to the request's event, `depends` a getter returning this loader's recorder so destructuring works, layouts note `url` / `request` reads; replaced `Object.create(event, descriptors)`, ~0.6 µs + garbage per loader); no-op elsewhere. Assigning a `RequestEvent` member on a loader's view throws (getters only); other properties are its own.
 - Kept layout loaders don't run, but their `onRequest(…)`/`on<Method>`/guards/`headers` always do (security).
+- Error responses finalize cookie cache privacy after awaiting fallback layout loaders: cookies set there remove `public` / `s-maxage` and add `private`, preserving other directives. JSON errors do not run those fallback loaders. Regression: `tests/error-layout-cache.test.ts`.
 - `ServerModule` keys are kinds (wrapper names); no legacy names (`GET`… removed 2026-10-20). Old apps: `rivet migrate server-exports`.
 
 ## Commands

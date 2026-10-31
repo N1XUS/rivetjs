@@ -515,9 +515,10 @@ export function createHandler(options: AppOptions): AppHandler {
     // Set by `event.cookies`: the response gets `privateCache` once its headers are final.
     let setsCookie = false;
     const fail = async (status: number, message: string): Promise<Response> => {
+      // Error-page layout loaders can set cookies or replace the cache policy too.
+      const layouts = !wantsJSON && options.renderError && guarded ? await errorLayouts() : [];
       if (setsCookie) privateCache(headers);
       if (wantsJSON) return reply({ error: { status, message } }, status, headers, url.origin);
-      const layouts = options.renderError && guarded ? await errorLayouts() : [];
       const input: ErrorInput = {
         request,
         url,

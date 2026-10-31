@@ -193,7 +193,8 @@ export function plan(options: PlanOptions): Gate[] {
     for (const v of vitestProjects(byName.get(name)!))
       add({
         id: `vitest:${v}`,
-        command: `npx vitest run --project ${v} --maxWorkers=2`,
+        // Forms/router browser fixtures build concurrently per worker; two exceeded the 3 GiB tree budget.
+        command: `npx vitest run --project ${v} --maxWorkers=${v === "forms" || v === "router" ? 1 : 2}`,
         heavy: true,
         kind: "vitest",
         env: VITEST_ENV,

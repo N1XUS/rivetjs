@@ -81,7 +81,7 @@ test("a router change: typecheck of dependents, vitest only of the touched proje
   before(gates, "vitest:router", "build:docs");
   before(gates, "build:ui-docs", "frames");
   assert.equal(list.at(-1), "format");
-  assert.match(gates.find((g) => g.id === "vitest:router")!.command, /--project router --maxWorkers=2$/);
+  assert.match(gates.find((g) => g.id === "vitest:router")!.command, /--project router --maxWorkers=1$/);
   assert.equal(gates.find((g) => g.id === "vitest:router")!.env?.NODE_OPTIONS, "--max-old-space-size=2048");
   assert.equal(new Set(list).size, list.length, "ids unique");
 });
@@ -89,6 +89,9 @@ test("router handler changes include the forms suites that directly import it", 
   const projects = [...PROJECTS, P("forms", "libs/forms", ["router"], { test: t("vitest run --project forms") })];
   const planned = (files: string[]) => ids(plan({ ...base, projects, files }));
   assert.ok(planned(["libs/router/server/handler.ts"]).includes("vitest:forms"), "handler changes must verify their forms consumers");
+  const forms = plan({ ...base, projects, files: ["libs/router/server/handler.ts"] }).find((gate) => gate.id === "vitest:forms")!;
+  assert.match(forms.command, /--maxWorkers=1$/, "forms production builds must run sequentially within the RSS cap");
+  assert.match(plan({ ...base, files: ["libs/reactivity/index.ts"] }).find((gate) => gate.id === "vitest:reactivity")!.command, /--maxWorkers=2$/);
   assert.equal(planned(["libs/router/client/navigation.ts"]).includes("vitest:forms"), false);
   assert.equal(planned(["libs/router/server/handler.ts", "libs/forms/tests/server.test.ts"]).filter((id) => id === "vitest:forms").length, 1);
 });
