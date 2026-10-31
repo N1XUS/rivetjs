@@ -107,3 +107,20 @@ Size result: **noise**, 2 value(s) within ±20 B. Details and completed comparis
 A fresh actual read-only gpt-6-astra review accepted the integrated exact patch with no findings (exit 0, sampled 1486471168 B). Complete raw-source/inventory and reviewed-candidate hashes were checked again before atomic named-path intake; unrelated user WIP stayed unchanged. Local evidence: .artifacts/ai-tester/continuations/d48c1980-final/ and its integration-2dd/ subdirectory (provenance, native reports, complete gate plan/results, retained patches, actual reviewer traces, resource records, refused and successful intake records). Cleanup removes only listed owned inactive generated dist trees; source/probes/logs and original terminal records remain.
 
 This proves a real AI discovery and independently verified repair with explicit controlled completion. A fully unattended discovery-to-commit campaign is still unverified; soft Go heap goals are not RSS guarantees or automatic-retry permission. No global provider settings, dependency locks, deployment, release or broader security certification changed.
+
+## UI frame payload closure (2026-10-31)
+
+Commit **2c36897ae** closes the pre-existing frame red recorded above. Adding character pacing to the shared CDK chat module had grown its common browser chunk from 6333 to 7391 raw bytes. Markdown and StreamingText now import the isolated `chat/text-reveal` module directly; the original chat API still re-exports the same functions/types. The pacing implementation body is byte-identical after relocation.
+
+| Frame | Before raw → fixed | Before Brotli → fixed |
+| --- | --- | --- |
+| prompt-input-basic | 221271 → 220213 (−1058) | 73494 → 73093 (−401) |
+| chat-attachment-basic | 178380 → 177322 (−1058) | 58909 → 58515 (−394) |
+
+The complete strict frame gate passes with **no frame/size ceiling changes**. The permanent UI `chat-payload.test.ts` builds a composer entry alongside real StreamingText with strict entry signatures and gates its static JS closure at 2 KiB. Correct RED measured 10174 bytes; GREEN passes. The first fixture accidentally used application-entry export pruning and is excluded from evidence; `red-strict.log` is the genuine payload failure.
+
+Verification on Node 24.18.1/macOS arm64: full native CDK **3258 pass, 2 skip**, cdk-dev **43/43**, UI **1444/1444**, docs **64/64**, UI-docs **11/11**; **eight impacted production/browser cases**, all eight affected typechecks, three production docs builds, content/snippet/LLM/MCP checks and formatting. Full unrelated CDK/browser/component and UI/component matrices were outside this scoped check; the production cases cover StreamingText/Markdown, AI chat and prompt queue reorder. Existing baseline utilities also pass 9/9. Independent read-only source/data review found no important defects.
+
+Only six measured UI own-code DOM/server hash rows changed: root barrel/Markdown +43 bytes and StreamingText +12 bytes due to the external import specifiers. All CSS hashes/bytes, other package entries and runtime/lane baselines remain unchanged. The complete zero-cost recheck passes: no dev leaks (265 entries), condition parity 21/21 and compiler corpus 176/176. Full size comparison reports only two existing HTML values within the unchanged 20 B noise allowance. Regenerated API JSON changes only eight source line/URL pairs. Historical failed campaign/control records are preserved rather than relabeled passing.
+
+Local evidence: `.artifacts/streaming-text-payload/` retains RED/GREEN, strict frame measurements, behavior/gate logs and resource records, implementation equivalence hash, bounded six-row producer/delta and commit metadata. This is a user-requested fix of the separately reproduced UI regression, not another claimed AI discovery or unattended harness success.
