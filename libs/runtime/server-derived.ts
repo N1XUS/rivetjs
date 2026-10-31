@@ -1717,6 +1717,10 @@ async function segments(ctx: DerivedRender, writer: { write(chunk: string): unkn
     if (a.state === 1 || a.html !== null) out += '<template data-a="' + a.id + '">' + (a.html ?? "") + "</template>";
     return out + derivedPatch(ctx, a.id) + open + "$rD(" + a.id + ")</script>";
   };
+  // An unfinished load may never settle after the request closes. Wake the segment wait so its
+  // abort check releases the detached Async owners without depending on that load.
+  const aborted = () => ctx.wakeup?.();
+  signal?.addEventListener("abort", aborted, { once: true });
   try {
     for (;;) {
       if (signal?.aborted) return;
@@ -1736,6 +1740,7 @@ async function segments(ctx: DerivedRender, writer: { write(chunk: string): unkn
       await new Promise<void>((resolve) => (ctx.wakeup = resolve));
     }
   } finally {
+    signal?.removeEventListener("abort", aborted);
     if (timer) clearTimeout(timer);
     release(ctx);
   }

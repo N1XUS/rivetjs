@@ -15,11 +15,11 @@
 @rivetjs/runtime/router/dom 3263ac61f5c3 18219
 @rivetjs/runtime/router/dom [resumed] b4370b66d989 18642
 @rivetjs/runtime/router/server db8a514727c4 8288
-@rivetjs/runtime/server-resume c0ae7f43c82e 59515
-@rivetjs/runtime/server-resume [domData] 037db396fd5d 65410
+@rivetjs/runtime/server-resume 1364560b0b07 59609
+@rivetjs/runtime/server-resume [domData] f2e39fddc021 65504
 @rivetjs/runtime/server-shell 6942450692e4 38208
-@rivetjs/runtime/server-derived 34050ef54afd 81042
-@rivetjs/runtime/server-derived [domData] e172c852f9dd 86942
+@rivetjs/runtime/server-derived 14347c134ffb 81136
+@rivetjs/runtime/server-derived [domData] c70b4feb28e9 87036
 @rivetjs/runtime/derived-eager 5a4e71203299 235
 @rivetjs/runtime/server-derived-reactivity fe56bf80636e 48834
 @rivetjs/runtime/server-derived-store c78712ce4a6d 42664
