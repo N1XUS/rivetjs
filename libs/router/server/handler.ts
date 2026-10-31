@@ -794,11 +794,11 @@ export function createHandler(options: AppOptions): AppHandler {
           // enhanced submit gets the page's fresh loader data with the redirect (no second data request).
           if (wantsJSON && request.headers.has("x-rivet-revalidate") && isRedirect(failure) && backHere(failure.location!, url)) {
             if (!headers.has("cache-control")) headers.set("cache-control", "no-store");
-            if (setsCookie) privateCache(headers);
             url.search = "";
             phase = "loader";
             const fresh = await Promise.all(modules.map((module, i) => module?.load?.(loaderEvent(i, false))));
             const head = await options.head?.(route, fresh, { params: found.params, url, locals });
+            if (setsCookie) privateCache(headers);
             return reply({ redirect: failure.location, status: failure.status, data: fresh, ...(head ? { head } : {}), ...depsOf() }, 200, headers, url.origin);
           }
           throw failure;
@@ -811,7 +811,6 @@ export function createHandler(options: AppOptions): AppHandler {
         url.search = "";
         if (wantsJSON) {
           if (!headers.has("cache-control")) headers.set("cache-control", "no-store");
-          if (setsCookie) privateCache(headers);
           // Single flight: an enhanced form submit that succeeded gets the page's fresh loader data
           // (the client revalidates from it). Failures changed nothing; other JSON posts (field checks,
           // autosave drafts) do not ask for it.
@@ -819,8 +818,10 @@ export function createHandler(options: AppOptions): AppHandler {
             phase = "loader";
             const fresh = await Promise.all(modules.map((module, i) => module?.load?.(loaderEvent(i, false))));
             const head = await options.head?.(route, fresh, { params: found.params, url, locals });
+            if (setsCookie) privateCache(headers);
             return reply({ action: performed, data: fresh, ...(head ? { head } : {}), ...depsOf() }, status, headers, url.origin);
           }
+          if (setsCookie) privateCache(headers);
           return reply({ action: performed }, status, headers, url.origin);
         }
       }
