@@ -196,6 +196,23 @@ test("produce: assigning a sibling draft preserves the previous snapshot", () =>
   }
 });
 
+test("produce: reading a new container finalizes its embedded drafts", () => {
+  type State = { source: { n: number }; target?: { nested: { n: number } } };
+  const initial: State = { source: { n: 1 } };
+  const store = createStore(initial);
+  write(
+    store,
+    produce((draft) => {
+      draft.target = { nested: draft.source };
+      void draft.target;
+    }),
+  );
+  assert.ok(read(store, "target.nested") === initial.source, "reading a newly assigned container must finalize its embedded draft");
+  assert.equal(read(store, "target.nested.n"), 1);
+  assert.equal(read(store, "source"), initial.source, "the untouched source retains its identity");
+  assert.deepEqual(initial, { source: { n: 1 } }, "the previous snapshot remains unchanged");
+});
+
 test("computed reads track paths; writes inside a computed are rejected", () => {
   const store = createStore(initial());
   const open = computed(() => read(store, "todos").filter((todo) => !todo.done).length);

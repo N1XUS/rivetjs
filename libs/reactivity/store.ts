@@ -320,7 +320,8 @@ function finalize(value: unknown): unknown {
         continue;
       }
       // Written values merge with the previous value: equal subtrees keep its identity.
-      const next = draft.children?.has(key) ? into[key] : finalize(into[key]);
+      // A cached child can return a new, unmodified container that still holds embedded drafts.
+      const next = finalize(into[key]);
       const merged = had ? merge(from[key], next) : next;
       into[key] = merged;
       if (!had || !Object.is(merged, from[key])) changed = true;

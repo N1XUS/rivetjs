@@ -1,5 +1,7 @@
 # @rivetjs/reactivity
 
+- Store draft finalization (2026-10-31): written containers are finalized even after a cached child draft returns them. Reading a newly assigned object containing another draft must not leave a revoked proxy in the committed data; `tests/store.test.ts` pins finalized identity, nested reads and previous-snapshot immutability.
+
 - Store snapshot immutability (2026-10-30): structural merge copies a container before substituting shared children. Assigning a sibling draft (or moving array rows) cannot mutate a previous snapshot, including frozen rows; `tests/store.test.ts` covers sibling identity, equal target subtree sharing, and unchanged sibling readers.
 
 - Stabilization (2026-10-29): `produce` reads check the current copy before returning a cached child draft, and finalization ignores children removed by array-length writes. Array key removal and sparse lengths participate in structural sharing, so truncation/regrowth cannot restore deleted elements. `tests/store.test.ts` covers read/edited/detached drafts, descriptor truncation, in-recipe reads, sparse lengths, immutability, reactive notification and untouched subtree identity. Typed `StorePath` still does not expose array `length` as a read/write path.
