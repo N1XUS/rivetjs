@@ -8,7 +8,7 @@ import { safeFile, snapshot, git, changedPaths, acquireLock } from "../ai-tester
 import { checkBaseline, checkRegression, checkGates, parseFinding } from "../ai-tester/evidence.ts";
 import { checkScope } from "../ai-tester/policy.ts";
 import type { Area, Finding } from "../ai-tester/types.ts";
-import { execute } from "../ai-tester/process.ts";
+import { execute, restrictedEnvironment } from "../ai-tester/process.ts";
 
 const temp = mkdtempSync(join(tmpdir(), "rivet-ai-core-"));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
@@ -277,11 +277,24 @@ test("native compiler heap leaves tree-budget headroom and ignores unbounded inh
       const match = /^([1-9][0-9]*)MiB$/.exec(value.go);
       assert.ok(match, "native compiler heap must be expressed in MiB");
       assert.ok(Number(match[1]) <= budget * 0.6, "reserve at least 40% for compiler non-heap and Node/Nx wrappers");
+      const resources = JSON.parse(readFileSync(log + ".resources.json", "utf8"));
+      assert.ok(resources.supervisorRssBytesAtStart > 0);
+      assert.equal(resources.GOMEMLIMIT, value.go);
+      assert.ok(
+        Number(match[1]) <= (budget - resources.supervisorRssBytesAtStart / (1024 * 1024)) * 0.6,
+        "native heap must account for the already resident supervisor",
+      );
     }
   } finally {
     if (previous === undefined) delete process.env.GOMEMLIMIT;
     else process.env.GOMEMLIMIT = previous;
   }
+});
+test("native heap allocation subtracts resident supervisor memory from the tree budget", () => {
+  const mib = 1024 * 1024;
+  const goal = (parent: number) => Number.parseInt(restrictedEnvironment(3072, parent).GOMEMLIMIT!);
+  assert.ok(goal(1024 * mib) <= (3072 - 1024) * 0.6, "supervisor memory is part of the same RSS cap");
+  assert.ok(goal(1024 * mib) < goal(0));
 });
 
 test("timeout also closes a detached server started by an owned child", async () => {

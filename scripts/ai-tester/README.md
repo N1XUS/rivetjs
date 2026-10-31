@@ -24,7 +24,7 @@ Default `run` commits accepted repairs locally. `--no-commit` performs the same 
 
 The default whole-run wall budget is 30 minutes; `--timeout` can lower it. Sampled process-tree RSS (including the supervisor) is capped at 3072 MiB; `--rss-limit` can lower it. Subprocesses run with nice10, a restricted environment, a 2048 MiB V8 limit and one heavy child at a time. The monitor samples after 100 ms and every 500 ms, and fails closed when `ps` is unavailable. TERM/KILL cleanup covers observed owned process groups, including detached gate servers. It is not an OS/container memory isolation guarantee.
 
-Native Go tools receive an explicit soft heap goal derived from at most60% of the subprocess tree budget, rounded down in64MiB steps (default `GOMEMLIMIT=1792MiB`; tiny budgets use bytes). This reserves room for compiler non-heap and Node/Nx/supervisor overhead instead of inheriting an unbounded goal or using the checker's standalone2304MiB default. The actual3072MiB cap and diagnostics are unchanged; the supervisor still stops a workload that exceeds it. No automatic resource-limit retry occurs.
+Native Go tools receive an explicit soft heap goal after reserving the supervisor's measured RSS: at most60% of the remaining tree budget, rounded down in64MiB steps (at most `GOMEMLIMIT=1792MiB` under the default cap; tiny budgets use bytes). This leaves compiler non-heap and Node/Nx headroom instead of using the checker's standalone2304MiB default. Each command's `<log>.resources.json` records the limit, parent residency and inherited Go/V8 goals without adding lines to its stdout. An exhausted starting budget does not launch a child. The actual3072MiB cap and diagnostics are unchanged; no automatic resource-limit retry occurs.
 
 ## Evidence and outcomes
 

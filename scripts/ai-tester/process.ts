@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { createWriteStream, mkdirSync } from "node:fs";
+import { createWriteStream, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Command } from "./types.ts";
 export interface Execution extends Command {
@@ -30,7 +30,9 @@ function rss(pid: number, groups: Set<number>): number {
   for (const [p, , group] of rows) if (tree.has(p) && tree.has(group)) groups.add(group);
   return rows.reduce((sum, [p, , , memory]) => sum + (tree.has(p) ? memory * 1024 : 0), process.memoryUsage().rss);
 }
-export function restrictedEnvironment(rssLimitMB = 3072): NodeJS.ProcessEnv {
+export function restrictedEnvironment(rssLimitMB = 3072, supervisorRssBytes = process.memoryUsage().rss): NodeJS.ProcessEnv {
+  if (!Number.isFinite(rssLimitMB) || rssLimitMB <= 0 || !Number.isFinite(supervisorRssBytes) || supervisorRssBytes < 0)
+    throw new Error("Invalid process resource envelope");
   const env: NodeJS.ProcessEnv = {};
   for (const key of [
     "PATH",
@@ -55,7 +57,7 @@ export function restrictedEnvironment(rssLimitMB = 3072): NodeJS.ProcessEnv {
   // It is a soft target; the sampled process-tree RSS guard remains authoritative.
   const mib = 1024 * 1024,
     quantum = 64 * mib;
-  const available = Math.max(1, Math.floor(rssLimitMB * mib * 0.6));
+  const available = Math.max(1, Math.floor(Math.max(0, rssLimitMB * mib - supervisorRssBytes) * 0.6));
   const native = available >= quantum ? Math.floor(available / quantum) * quantum : available;
   Object.assign(env, {
     GOMEMLIMIT: native % mib === 0 ? `${native / mib}MiB` : `${native}B`,
@@ -69,12 +71,26 @@ export function restrictedEnvironment(rssLimitMB = 3072): NodeJS.ProcessEnv {
 }
 export async function execute(options: Execution): Promise<ProcessResult> {
   mkdirSync(dirname(options.log), { recursive: true });
+  const supervisorRssBytesAtStart = process.memoryUsage().rss;
+  const env = restrictedEnvironment(options.rssLimitMB, supervisorRssBytesAtStart);
+  writeFileSync(
+    options.log + ".resources.json",
+    JSON.stringify(
+      { rssLimitBytes: options.rssLimitMB * 1024 * 1024, supervisorRssBytesAtStart, GOMEMLIMIT: env.GOMEMLIMIT, NODE_OPTIONS: env.NODE_OPTIONS },
+      null,
+      2,
+    ) + "\n",
+    { flag: "wx" },
+  );
   const log = createWriteStream(options.log, { flags: "wx" });
   let reason: string | null = null;
-  let peakRssBytes = 0;
+  let peakRssBytes = supervisorRssBytesAtStart;
   let bytes = 0;
   let force: ReturnType<typeof setTimeout> | undefined;
-  const env = restrictedEnvironment(options.rssLimitMB);
+  if (options.signal?.aborted || supervisorRssBytesAtStart > options.rssLimitMB * 1024 * 1024) {
+    await new Promise<void>((done) => log.end(done));
+    return { code: 1, reason: options.signal?.aborted ? "interrupted" : "memory-limit", peakRssBytes };
+  }
   const child = spawn("nice", ["-n", "10", options.file, ...options.args], { cwd: options.cwd, env, detached: true, stdio: ["pipe", "pipe", "pipe"] });
   const groups = new Set<number>(child.pid ? [child.pid] : []);
   const kill = (signal: NodeJS.Signals) => {
