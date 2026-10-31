@@ -28,6 +28,8 @@ The default whole-run wall budget is 30 minutes; `--timeout` can lower it. Sampl
 
 `.artifacts/ai-tester/<run-id>/` contains the source revision/inventory, protected dirty paths, prompt, worker/reviewer logs/results, copied repro/probe evidence, native RED/GREEN JSON, gate plan/report, candidate and proof-file SHA-256 hashes/patch, run status and append-only events. Logs are capped at 50 MiB each; copied evidence at 10 MiB per file. A coverage JSONL journal records scenario, source revision and outcome for future investigations; it does not edit agent policy.
 
+Once an in-scope finding reaches a fresh validation snapshot, `candidate.patch` and `paths.json` are retained before native RED/GREEN or heavy gates. They describe an unverified proposal until the terminal acceptance checks pass. Patch serialization uses a separate index and raw blobs, preserving binary/non-UTF8 data, existing executable modes and trailing whitespace; it ignores display-only Git diff preferences. This permits human handoff after a failed proof or resource limit without rediscovering the candidate.
+
 | Terminal status   | Meaning                                                                                                       | CLI exit |
 | ----------------- | ------------------------------------------------------------------------------------------------------------- | -------: |
 | `committed`       | Supervisor verified/reviewed and committed the repair; SHA in run.json                                        |        0 |
@@ -55,6 +57,8 @@ npx vitest run --project scripts --maxWorkers=1
 The integration tests use real disposable Git repositories, real native Vitest regression execution and a scripted subprocess only at the external inference/review boundary. A seeded fix proves acceptance/commit wiring; it is not a claimed AI discovery. Live provider evidence is recorded separately in the implementation plan.
 
 Vitest `-t` reports unrelated tests in the selected file as skipped/todo. Regression proof accepts those records only with consistent native totals and exactly one matching executed assertion, retaining the same full identity across RED/GREEN. A skipped selected test, multiple executed tests or setup failure remains invalid.
+
+Source verification covers every original tracked blob, not just changed-path metadata or named candidate files. RED permits only the declared test/fixture overlay; GREEN, gates and review must retain the exact complete candidate over the unchanged base. Hidden writes to another tracked source file are rejected even when Git index flags conceal them. These checks do not provide malicious-code/container isolation.
 
 ## Provider setup failures
 

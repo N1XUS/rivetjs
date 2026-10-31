@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, test } from "vitest";
@@ -25,6 +25,7 @@ if(role==='reviewer'){
  if(mode==='head-moved'){writeFileSync(join(main,'other.txt'),'new commit');run(['add','other.txt']);run(['commit','-qm','other actor']);}
  if(mode==='dirty-candidate')writeFileSync(join(main,'libs/reactivity/index.js'),'user changed it');
  if(mode==='mutating-review')put('libs/reactivity/index.js',"export const clear=()=>['tampered'];");
+ if(mode==='hidden-review-source'){execFileSync('git',['update-index','--assume-unchanged','libs/reactivity/neighbor.js'],{cwd:work});put('libs/reactivity/neighbor.js',"export const marker='tampered';");}
  writeFileSync(out,JSON.stringify({verdict:mode==='review-reject'?'reject':'accept',findings:mode==='review-reject'?['not a supported contract']:[]}));process.exit(0);
 }
 put('.artifacts/probe.txt','Executed seeded input clear([1]); actual [1], expected []');
@@ -32,14 +33,16 @@ if(mode.startsWith('no-finding')) {writeFileSync(out,JSON.stringify({disposition
 if(mode==='missing-result')process.exit(0);
 let body="import assert from 'node:assert/strict';import {test} from 'vitest';import {clear} from '../index.js';test('clears read child',()=>assert.deepEqual(clear([1]),[], 'clears read child'));";
 if(mode==='filtered-tests')body+="test('unrelated passing control',()=>{});";
+if(mode==='red-hidden-source'||mode==='green-hidden-source')body="import assert from 'node:assert/strict';import {test} from 'vitest';import {clear} from '../index.js';import {execFileSync} from 'node:child_process';import {writeFileSync} from 'node:fs';test('clears read child',()=>{if(clear([1]).length"+(mode==='red-hidden-source'?'!==0':'===0')+"){execFileSync('git',['update-index','--assume-unchanged','libs/reactivity/neighbor.js']);writeFileSync('libs/reactivity/neighbor.js','export const marker=2;');}assert.deepEqual(clear([1]),[], 'clears read child');});";
 if(mode==='zero-tests')body="export const nothing=1;";
 if(mode==='import-error')body="import './missing.js';"+body;
-if(mode==='false-red')body="import {test} from 'vitest';test('clears read child',()=>{});";
+if(mode==='false-red'||mode==='binary-patch-failure')body="import {test} from 'vitest';test('clears read child',()=>{});";
 put('libs/reactivity/tests/repro.test.ts',body);
 if(mode!=='still-red')put('libs/reactivity/index.js',"export const clear=()=>[];");
 if(mode==='out-of-scope')put('scripts/gates/run.ts','process.exit(0)');
 const paths=['libs/reactivity/index.js','libs/reactivity/tests/repro.test.ts'];if(mode==='still-red')paths.shift();if(mode==='out-of-scope')paths.push('scripts/gates/run.ts');
-writeFileSync(out,JSON.stringify({disposition:'finding',summary:'clear preserves removed elements',scenario:'clear([1])',expected:'[]',actual:'[1]',changedPaths:paths,testPaths:['libs/reactivity/tests/repro.test.ts'],reproPaths:['libs/reactivity/tests/repro.test.ts'],evidencePaths:[mode==='traversal'?'../outside':'.artifacts/probe.txt'],regression:{project:'reactivity',file:'libs/reactivity/tests/repro.test.ts',testName:'clears read child',assertion:'clears read child'}}));
+const tests=['libs/reactivity/tests/repro.test.ts'];if(mode==='binary-patch-failure'){const binary='libs/reactivity/tests/data with spaces.bin',text='libs/reactivity/tests/trailing.txt',raw='libs/reactivity/tests/invalid.txt';put(binary,Buffer.from([0,255,13,10,0,42]));put(raw,Buffer.from([255,254,10]));put(text,['new','','',''].join(String.fromCharCode(10)));paths.push(binary,text,raw);tests.push(binary,text,raw);}
+writeFileSync(out,JSON.stringify({disposition:'finding',summary:'clear preserves removed elements',scenario:'clear([1])',expected:'[]',actual:'[1]',changedPaths:paths,testPaths:tests,reproPaths:['libs/reactivity/tests/repro.test.ts'],evidencePaths:[mode==='traversal'?'../outside':'.artifacts/probe.txt'],regression:{project:'reactivity',file:'libs/reactivity/tests/repro.test.ts',testName:'clears read child',assertion:'clears read child'}}));
 `,
 );
 function fixture(mode = "ok") {
@@ -56,6 +59,11 @@ function fixture(mode = "ok") {
   put("package.json", JSON.stringify({ type: "module", workspaces: ["libs/*"] }));
   put("libs/reactivity/package.json", JSON.stringify({ name: "@rivetjs/reactivity", type: "module", exports: "./index.js" }));
   put("libs/reactivity/index.js", mode.startsWith("no-finding") ? "export const clear=()=>[];" : "export const clear=(items)=>items;");
+  put("libs/reactivity/neighbor.js", "export const marker='base';");
+  if (mode === "binary-patch-failure") {
+    chmodSync(join(root, "libs/reactivity/index.js"), 0o755);
+    put("libs/reactivity/tests/trailing.txt", "old\n\n\n");
+  }
   const control =
     mode === "no-finding-hidden-source"
       ? "test('control',()=>{execFileSync('git',['update-index','--assume-unchanged','libs/reactivity/index.js']);writeFileSync('libs/reactivity/index.js','export const clear=()=>[1];');assert.equal(1,1);});"
@@ -77,7 +85,7 @@ function fixture(mode = "ok") {
   // Only the external gates boundary is a small fixture; the supervisor still executes and validates plan and result as subprocesses.
   put(
     "scripts/gates/run.ts",
-    `import {writeFileSync} from 'node:fs'; const a=process.argv.slice(2);const out=a[a.indexOf('--json')+1];writeFileSync(out,JSON.stringify({gates:${mode === "missing-gate" ? "a.includes('--list')?[{id:'test',status:'skipped',exitCode:null}]:[]" : "[{id:'test',status:a.includes('--list')?'skipped':'pass',exitCode:a.includes('--list')?null:0}]"}}));`,
+    `import {writeFileSync} from 'node:fs'; const a=process.argv.slice(2);const out=a[a.indexOf('--json')+1];writeFileSync(out,JSON.stringify({gates:${mode === "missing-gate" ? "a.includes('--list')?[{id:'test',status:'skipped',exitCode:null}]:[]" : mode === "gate-failure" ? "[{id:'test',status:a.includes('--list')?'skipped':'fail',exitCode:a.includes('--list')?null:1}]" : "[{id:'test',status:a.includes('--list')?'skipped':'pass',exitCode:a.includes('--list')?null:0}]"}}));if(!a.includes('--list')&&${JSON.stringify(mode)}==='gate-failure')process.exit(1);`,
   );
   git(root, ["add", "--", ".gitignore", "package.json", "libs", "vitest.config.ts", "scripts"]);
   git(root, ["commit", "-qm", "base"]);
@@ -159,6 +167,67 @@ test("native regression selection accepts filtered tests in an existing suite", 
   const result = await runCampaign({ ...f, area: "reactivity", noCommit: true });
   assert.equal(result.status, "verified", result.message ?? result.status);
 });
+for (const mode of ["red-hidden-source", "green-hidden-source", "hidden-review-source"])
+  test(`verification rejects hidden non-candidate source mutation (${mode})`, async () => {
+    const f = fixture(mode);
+    const result = await runCampaign({ ...f, area: "reactivity" });
+    assert.equal(result.status, mode === "red-hidden-source" ? "failed" : "needs-attention", result.message ?? result.status);
+    assert.match(result.message ?? "", /source|snapshot|candidate|bytes/i);
+    assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
+    assert.equal(readFileSync(join(f.root, "libs/reactivity/neighbor.js"), "utf8"), "export const marker='base';");
+  });
+for (const mode of ["false-red", "gate-failure"])
+  test(`failed verification retains a proposed patch before intake (${mode})`, async () => {
+    const f = fixture(mode);
+    const result = await runCampaign({ ...f, area: "reactivity" });
+    assert.equal(result.status, "failed");
+    const dir = join(f.root, ".artifacts/ai-tester", result.id);
+    assert.ok(existsSync(join(dir, "candidate.patch")), "proposed patch must survive failed verification");
+    const patch = readFileSync(join(dir, "candidate.patch"));
+    assert.ok(patch.includes("export const clear=()=>[];"));
+    assert.equal(result.hashes?.["proof:candidate.patch"], createHash("sha256").update(patch).digest("hex"));
+    assert.deepEqual(JSON.parse(readFileSync(join(dir, "paths.json"), "utf8")), ["libs/reactivity/index.js", "libs/reactivity/tests/repro.test.ts"]);
+    assert.equal(git(f.root, ["rev-parse", "HEAD"]), f.base);
+  });
+for (const preferences of [false, true])
+  test(`retained patch preserves binary files, modes and whitespace (custom diff preferences: ${preferences})`, async () => {
+    const f = fixture("binary-patch-failure");
+    const index = git(f.root, ["ls-files", "--stage"]);
+    const result = await (async () => {
+      const overrides: NodeJS.ProcessEnv = preferences
+        ? {
+            GIT_CONFIG_COUNT: "3",
+            GIT_CONFIG_KEY_0: "color.ui",
+            GIT_CONFIG_VALUE_0: "always",
+            GIT_CONFIG_KEY_1: "diff.noprefix",
+            GIT_CONFIG_VALUE_1: "true",
+            GIT_CONFIG_KEY_2: "diff.outputIndicatorNew",
+            GIT_CONFIG_VALUE_2: ">",
+          }
+        : {};
+      const previous = new Map(Object.keys(overrides).map((key) => [key, process.env[key]]));
+      Object.assign(process.env, overrides);
+      try {
+        return await runCampaign({ ...f, area: "reactivity" });
+      } finally {
+        for (const [key, value] of previous) {
+          if (value === undefined) delete process.env[key];
+          else process.env[key] = value;
+        }
+      }
+    })();
+    assert.equal(result.status, "failed");
+    assert.equal(git(f.root, ["ls-files", "--stage"]), index);
+    const patch = join(f.root, ".artifacts/ai-tester", result.id, "candidate.patch");
+    assert.ok(existsSync(patch), "binary proposal must survive invalid RED");
+    git(f.root, ["apply", "--check", "--binary", patch]);
+    git(f.root, ["apply", "--binary", patch]);
+    assert.deepEqual(readFileSync(join(f.root, "libs/reactivity/tests/data with spaces.bin")), Buffer.from([0, 255, 13, 10, 0, 42]));
+    assert.deepEqual(readFileSync(join(f.root, "libs/reactivity/tests/invalid.txt")), Buffer.from([255, 254, 10]));
+    assert.equal(readFileSync(join(f.root, "libs/reactivity/tests/trailing.txt"), "utf8"), "new\n\n\n");
+    assert.ok(statSync(join(f.root, "libs/reactivity/index.js")).mode & 0o100);
+    assert.equal(git(f.root, ["ls-files", "--stage"]), index);
+  });
 test("no-finding accepts a native passing suite with existing skips and todos", async () => {
   const f = fixture("no-finding-mixed");
   const result = await runCampaign({ ...f, area: "reactivity" });

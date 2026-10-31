@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realp
 import { dirname, join } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import type { Agent, Area, RunRecord, Regression } from "./types.ts";
-import { acquireLock, assertSnapshotSource, changedPaths, git, safeFile, snapshot } from "./workspace.ts";
+import { acquireLock, assertSnapshotSource, candidatePatch, changedPaths, git, safeFile, snapshot } from "./workspace.ts";
 import { checkBaseline, checkGates, checkRegression, parseFinding } from "./evidence.ts";
 import { execute, type ProcessResult } from "./process.ts";
 import { codex, checkModel, reviewPrompt, schemas, workerPrompt } from "./agent.ts";
@@ -21,7 +21,6 @@ export interface RunOptions {
 }
 const hash = (data: Buffer | string) => createHash("sha256").update(data).digest("hex");
 const json = (file: string) => JSON.parse(readFileSync(file, "utf8"));
-const same = (a: string[], b: string[]) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
 const literal = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export async function runCampaign(options: RunOptions): Promise<RunRecord> {
   if (options.model !== undefined) checkModel(options.model);
@@ -142,10 +141,12 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
       record.status = "no-finding";
       record.message = finding.summary;
     } else {
-      assertIntake(root, base, paths, originalDirty);
       event("reproduce");
       const validation = join(dir, "validation");
       const validationBase = await snapshot(root, base, validation);
+      writeFileSync(join(dir, "candidate.patch"), candidatePatch(validation, validationBase, files, join(dir, "patch-index")));
+      writeFileSync(join(dir, "paths.json"), JSON.stringify(paths, null, 2));
+      assertIntake(root, base, paths, originalDirty);
       for (const path of finding.testPaths) {
         if (!path.includes("/tests/")) throw new Error("Base overlay may contain only tests/fixtures");
         const file = files.find((f) => f.path === path)!;
@@ -155,6 +156,11 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
       }
       const regression = finding.regression!;
       const red = await test(validation, regression, "red");
+      assertSnapshotSource(
+        validation,
+        validationBase,
+        files.filter((file) => finding.testPaths.includes(file.path)),
+      );
       const identity = checkRegression(red.value, regression, red.code, "red");
       event("repair-proof");
       for (const file of files) {
@@ -165,10 +171,11 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
       const green = await test(validation, regression, "green");
       checkRegression(green.value, regression, green.code, "green", identity);
       const verifyCandidate = () => {
-        if (!same(changedPaths(validation), paths) || git(validation, ["rev-parse", "HEAD"]) !== validationBase)
-          throw new Attention("Validation source inventory changed");
-        for (const file of files)
-          if (!readFileSync(safeFile(validation, file.path)).equals(file.data)) throw new Attention(`Verified candidate changed: ${file.path}`);
+        try {
+          assertSnapshotSource(validation, validationBase, files);
+        } catch (error) {
+          throw new Attention(`Verified candidate source changed: ${error instanceof Error ? error.message : String(error)}`);
+        }
       };
       verifyCandidate();
       git(validation, ["--literal-pathspecs", "add", "--pathspec-from-file=-", "--pathspec-file-nul"], paths.join("\0") + "\0");
@@ -180,12 +187,6 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
       await checked(process.execPath, [...common, "--json", gates], validation, "gates");
       checkGates(json(plan), json(gates));
       verifyCandidate();
-      const index = join(dir, "patch-index");
-      const env = { GIT_INDEX_FILE: index };
-      git(validation, ["read-tree", "HEAD"], undefined, env);
-      git(validation, ["--literal-pathspecs", "add", "--pathspec-from-file=-", "--pathspec-file-nul"], paths.join("\0") + "\0", env);
-      writeFileSync(join(dir, "candidate.patch"), git(validation, ["diff", "--cached", "--binary", "HEAD"], undefined, env) + "\n");
-      writeFileSync(join(dir, "paths.json"), JSON.stringify(paths, null, 2));
       event("review");
       const reviewOutput = join(dir, "reviewer.json");
       const reviewer = agent({

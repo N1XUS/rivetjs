@@ -3,7 +3,7 @@ import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, re
 import { dirname, isAbsolute, join, posix, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 
-export function git(root: string, args: string[], input?: string, extraEnv: NodeJS.ProcessEnv = {}): string {
+function gitBytes(root: string, args: string[], input?: string | Buffer, extraEnv: NodeJS.ProcessEnv = {}): Buffer {
   const env = { ...process.env };
   delete env.GIT_INDEX_FILE;
   delete env.GIT_DIR;
@@ -12,10 +12,12 @@ export function git(root: string, args: string[], input?: string, extraEnv: Node
     cwd: root,
     env: { ...env, ...extraEnv },
     input,
-    encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
     stdio: ["pipe", "pipe", "pipe"],
-  }).trimEnd();
+  });
+}
+export function git(root: string, args: string[], input?: string | Buffer, extraEnv: NodeJS.ProcessEnv = {}): string {
+  return gitBytes(root, args, input, extraEnv).toString("utf8").trimEnd();
 }
 export function changedPaths(root: string): string[] {
   const names = [
@@ -26,20 +28,62 @@ export function changedPaths(root: string): string[] {
   return [...new Set(names.flatMap((v) => v.split("\0").filter(Boolean)))].sort();
 }
 /** Check actual tracked bytes, including paths hidden by assume-unchanged/stat cache flags. */
-export function assertSnapshotSource(root: string, base: string): void {
-  if (git(root, ["rev-parse", "HEAD"]) !== base || changedPaths(root).length) throw new Error("No-finding snapshot source or HEAD changed");
-  const entries = git(root, ["ls-tree", "-r", "-z", base])
-    .split("\0")
-    .filter(Boolean)
-    .map((entry) => {
-      const match = /^(100644|100755) blob ([0-9a-f]+)\t(.+)$/.exec(entry);
-      if (!match) throw new Error("Invalid snapshot source inventory");
-      safeFile(root, match[3]!);
-      return { hash: match[2]!, path: match[3]! };
-    });
-  if (!entries.length) throw new Error("Empty snapshot source inventory");
-  const actual = git(root, ["hash-object", "--no-filters", "--stdin-paths"], entries.map((entry) => JSON.stringify(entry.path)).join("\n") + "\n").split("\n");
-  if (actual.length !== entries.length || entries.some((entry, i) => entry.hash !== actual[i])) throw new Error("No-finding snapshot source bytes changed");
+export function assertSnapshotSource(root: string, base: string, overlays: readonly { path: string; data: Buffer }[] = []): void {
+  const names = overlays.map((file) => file.path).sort();
+  if (new Set(names).size !== names.length || git(root, ["rev-parse", "HEAD"]) !== base || JSON.stringify(changedPaths(root)) !== JSON.stringify(names))
+    throw new Error("Snapshot source inventory or HEAD changed");
+  const entries = new Map(
+    git(root, ["ls-tree", "-r", "-z", base])
+      .split("\0")
+      .filter(Boolean)
+      .map((entry) => {
+        const match = /^(100644|100755) blob ([0-9a-f]+)\t(.+)$/.exec(entry);
+        if (!match) throw new Error("Invalid snapshot source inventory");
+        safeFile(root, match[3]!);
+        return [match[3]!, match[2]!] as const;
+      }),
+  );
+  if (!entries.size) throw new Error("Empty snapshot source inventory");
+  for (const file of overlays) {
+    safeFile(root, file.path);
+    entries.set(file.path, git(root, ["hash-object", "--no-filters", "--stdin"], file.data));
+  }
+  const paths = [...entries.keys()];
+  const actual = git(root, ["hash-object", "--no-filters", "--stdin-paths"], paths.map((path) => JSON.stringify(path)).join("\n") + "\n").split("\n");
+  if (actual.length !== paths.length || paths.some((path, i) => entries.get(path) !== actual[i])) throw new Error("Snapshot source bytes changed");
+}
+/** Serialize exact proposed blobs in a private index, without writing candidate bytes into the proof tree. */
+export function candidatePatch(root: string, base: string, files: readonly { path: string; data: Buffer }[], index: string): Buffer {
+  const env = { GIT_INDEX_FILE: index };
+  git(root, ["read-tree", base], undefined, env);
+  const entries = files.map((file) => {
+    safeFile(root, file.path, true);
+    const entry = git(root, ["--literal-pathspecs", "ls-tree", "-z", base, "--", file.path]);
+    const mode = entry ? /^(100644|100755) blob /.exec(entry)?.[1] : "100644";
+    if (!mode) throw new Error("Invalid proposed source mode");
+    const blob = git(root, ["hash-object", "--no-filters", "-w", "--stdin"], file.data);
+    return `${mode} ${blob}\t${file.path}\0`;
+  });
+  git(root, ["update-index", "-z", "--index-info"], entries.join(""), env);
+  return gitBytes(
+    root,
+    [
+      "diff",
+      "--cached",
+      "--binary",
+      "--no-ext-diff",
+      "--no-textconv",
+      "--no-color",
+      "--src-prefix=a/",
+      "--dst-prefix=b/",
+      "--output-indicator-new=+",
+      "--output-indicator-old=-",
+      "--output-indicator-context= ",
+      base,
+    ],
+    undefined,
+    env,
+  );
 }
 export function safeFile(root: string, path: string, missing = false): string {
   if (
