@@ -147,6 +147,23 @@ test("overlays (extension point, e.g. a deploy target): files over the template,
   assert.equal(JSON.parse(readFileSync(join(target, "package.json"), "utf8")).scripts.deploy, "node deploy.js");
 });
 
+test("an overlay that throws: a folder createProject made is removed; a folder that existed keeps a valid manifest", () => {
+  const boom = {
+    name: "boom",
+    edit: () => {
+      throw new Error("overlay edit failed");
+    },
+  };
+  const fresh = join(scratch, "projects", "half-written");
+  assert.throws(() => createProject({ dir: fresh, template: "minimal", overlays: [boom] }), /overlay edit failed/);
+  assert.equal(existsSync(fresh), false, "no half-written project left behind");
+  const kept = join(scratch, "projects", "existing");
+  mkdirSync(kept, { recursive: true });
+  assert.throws(() => createProject({ dir: kept, template: "minimal", overlays: [boom] }), /overlay edit failed/);
+  // The user's folder stays; its package.json is the rewritten one (no template `experimental` placeholder specs).
+  assert.doesNotMatch(readFileSync(join(kept, "package.json"), "utf8"), /"experimental"/);
+});
+
 test("bundle: templates copied for the package, .gitignore shipped as _gitignore and renamed back on create", () => {
   const out = join(scratch, "bundle");
   const files = bundleTemplates(out);

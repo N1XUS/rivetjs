@@ -5,7 +5,7 @@
 // Templates: the published package ships them in `templates/` (copied from the repository's `templates/` at
 // package time by `bundle.ts`); inside the repository they are read from `templates/` directly.
 import { spawn, spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -197,22 +197,32 @@ export function createProject(options: CreateOptions): { dir: string; name: stri
   if (!existsSync(join(source, "package.json"))) throw new Error(`Template files missing: ${source}`);
   const dir = resolve(options.dir);
   const name = options.name ?? toPackageName(basename(dir));
+  const created = !existsSync(dir);
   mkdirSync(dir, { recursive: true });
-  const files = new Set(copyTemplateDir(source, dir));
-  let pkg = rewriteManifest(
-    JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as PackageJson,
-    name,
-    options.rivetVersion ?? versionRange(ownVersion()),
-  );
-  for (const overlay of options.overlays ?? []) {
-    if (overlay.dir) for (const file of copyTemplateDir(overlay.dir, dir)) files.add(file);
-    if (overlay.manifest) pkg = overlay.manifest(pkg);
-    const edited = overlay.edit?.(dir);
-    for (const file of edited?.written ?? []) files.add(file);
-    for (const file of edited?.removed ?? []) files.delete(file);
+  try {
+    const files = new Set(copyTemplateDir(source, dir));
+    const write = (manifest: PackageJson) => writeFileSync(join(dir, "package.json"), JSON.stringify(manifest, null, 2) + "\n");
+    let pkg = rewriteManifest(
+      JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as PackageJson,
+      name,
+      options.rivetVersion ?? versionRange(ownVersion()),
+    );
+    // The rewritten manifest first: a throwing overlay never leaves the template's own dependency specs behind.
+    write(pkg);
+    for (const overlay of options.overlays ?? []) {
+      if (overlay.dir) for (const file of copyTemplateDir(overlay.dir, dir)) files.add(file);
+      if (overlay.manifest) pkg = overlay.manifest(pkg);
+      const edited = overlay.edit?.(dir);
+      for (const file of edited?.written ?? []) files.add(file);
+      for (const file of edited?.removed ?? []) files.delete(file);
+    }
+    write(pkg);
+    return { dir, name, files: [...files].sort() };
+  } catch (error) {
+    // A folder this call made goes again (no half-written project to trip the next run); a user's folder stays.
+    if (created) rmSync(dir, { recursive: true, force: true });
+    throw error;
   }
-  writeFileSync(join(dir, "package.json"), JSON.stringify(pkg, null, 2) + "\n");
-  return { dir, name, files: [...files].sort() };
 }
 
 /** `<pm> install` in `dir`; asynchronous so the CLI can report progress. */

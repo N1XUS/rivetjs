@@ -26,7 +26,7 @@
 
 - Templates: single source of truth is the repo's `templates/`; never copy them into this folder. New template = `templates/<dir>` + `TEMPLATES` row + `scripts/package/create-e2e.ts` `E2E_TEMPLATES` + `scripts/package/smoke.ts` `TEMPLATES` + docs (`apps/docs/content/start/quick-start.md`, `templates/README.md`).
 - Version: every `@rivetjs/*` dep of a created project = this package's version (single-version releases, `scripts/release/`); `--rivet-version` overrides.
-- Extension point: `createProject({ overlays: [{ name, dir?: overlayDir("<x>"), manifest?, edit? }] })` — files over the template, then a `package.json` edit, then in-place file edits. `--deploy` is the first user (`deploy.ts`, edits only); static overlay files would go in `templates/_<name>/` (bundled automatically, none yet).
+- Extension point: `createProject({ overlays: [{ name, dir?: overlayDir("<x>"), manifest?, edit? }] })` — files over the template, then a `package.json` edit, then in-place file edits (the rewritten manifest is written before the overlays; a throw removes a folder `createProject` created, a pre-existing one stays). `--deploy` is the first user (`deploy.ts`, edits only); static overlay files would go in `templates/_<name>/` (bundled automatically, none yet).
 - No runtime dependencies (installs in a second with `npm create`).
 
 ## Starter examples
