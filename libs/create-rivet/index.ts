@@ -89,8 +89,8 @@ export function isEmptyDir(dir: string): boolean {
   return readdirSync(dir).every((entry) => entry === ".git" || entry === ".DS_Store");
 }
 
-/** Template paths never copied: build output, installs, generated route types, StackBlitz config. */
-export const SKIP = /(^|[/\\])(node_modules|dist|\.rivet|\.stackblitzrc)([/\\]|$)/;
+/** Template paths never copied: build output, installs, generated route types, StackBlitz config, OS folder metadata. */
+export const SKIP = /(^|[/\\])(node_modules|dist|\.rivet|\.stackblitzrc|\.DS_Store|Thumbs\.db)([/\\]|$)/;
 /** npm never packs `.gitignore` files: the bundled templates carry them as `_gitignore`. */
 export const RENAMES: Readonly<Record<string, string>> = { _gitignore: ".gitignore" };
 

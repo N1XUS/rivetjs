@@ -18,6 +18,7 @@ import {
   ownVersion,
   rewriteManifest,
   TEMPLATES,
+  templateFiles,
   templatesRoot,
   toPackageName,
   validatePackageName,
@@ -341,4 +342,18 @@ test("deploy on a static template: adapter + gitignore, preview script kept for 
   createProject({ dir: target, template: "static", overlays: [deployOverlay("vercel")] });
   assert.match(readFileSync(join(target, "vite.config.ts"), "utf8"), /rivetRouter\(\{ adapter: "vercel", mode: "static", styles/);
   assert.equal(JSON.parse(readFileSync(join(target, "package.json"), "utf8")).scripts.preview, "node serve.js");
+});
+
+test("templateFiles skips OS folder metadata (.DS_Store, Thumbs.db) at any depth", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rivet-skip-"));
+  try {
+    mkdirSync(join(dir, "src"));
+    for (const file of ["package.json", ".DS_Store", "src/.DS_Store", "src/Thumbs.db", "src/app.tsx"]) writeFileSync(join(dir, file), "x");
+    assert.deepEqual(
+      templateFiles(dir).map((file) => file.path),
+      ["package.json", "src/app.tsx"],
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
