@@ -291,6 +291,15 @@ test("the disk cache key covers the whole import closure: past its walk cap the 
   assert.match(await bundle("deep-use.ts"), /"a\+b"/, "an edit past the cap is not served from a stale cache entry");
 });
 
+test("a unary operator over a definition reference stays a runtime call (no build failure)", async () => {
+  await writeFile(
+    join(root, "unary.ts"),
+    `import { button } from "./styles.ts";\nimport { cn } from "tailwind-variants";\nexport const u = cn(!button, "px-2");\n`,
+  );
+  const code = await bundle("unary.ts");
+  assert.match(code, /!button/);
+});
+
 test("annotations", () => {
   assert.deepEqual(
     [

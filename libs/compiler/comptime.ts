@@ -605,9 +605,10 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
         const arg = await specOf(info, node.argument as Node, host, seen);
         if (arg === NOT) return NOT;
         if (node.operator === "void") return { "\0": "u" };
-        const value = decode(arg, () => {
-          throw new Error("ref");
-        });
+        // A definition / call reference (`!button`) has no build-time value here: the call stays at runtime.
+        let ref = false;
+        const value = decode(arg, () => ((ref = true), null));
+        if (ref) return NOT;
         if (node.operator === "-" && (typeof value === "number" || typeof value === "bigint")) return encodeConst(-(value as number));
         if (node.operator === "+" && typeof value === "number") return encodeConst(value);
         if (node.operator === "!" && (value === null || typeof value !== "object")) return !value;
