@@ -635,6 +635,8 @@ export function withRouteRules(
   const fixed = options.origin === undefined ? undefined : new URL(options.origin).origin;
   const resolve = compileRules(rules, fixed !== undefined);
   const store = new Store(options.maxBytes ?? 32 * 1024 * 1024, options.maxEntries ?? 5000, base);
+  // Dead refs (handlers recreated by tests / dev reloads, no `revalidate()` to prune them) go when the set grows.
+  if (stores.size >= 32) for (const ref of stores) if (!ref.deref()) stores.delete(ref);
   stores.add(new WeakRef(store));
   // Keys of client-chosen input are stored on their second miss (`secondMiss`: attacker-chosen query strings,
   // hosts, header values never evict pages).
@@ -997,15 +999,15 @@ export function withRouteRules(
       personal.delete(key);
     }
     const flight = flights.get(key);
-    let admit = false;
     if (flight) {
       const filled = await flight;
       // The response may have taught this rule new Vary names while we waited. Only the matching representation
       // can be shared; another variant renders for its own request and is admitted under the expanded key later.
       if (filled && filled.key === keyOf(cache, origin, path, search, header)) return serve(filled, request, "HIT");
-    } else if (request.method === "GET" && (!(admit = secondMiss(cache, search, header)) || doorkeeper.has(key))) {
-      return (await start(key, origin, path, search, cache, resolved, request, context)).response;
-    } else if (admit) {
+    } else if (request.method === "GET") {
+      // Client-chosen keys are stored on their second miss (the doorkeeper remembers the first).
+      if (!secondMiss(cache, search, header) || doorkeeper.has(key))
+        return (await start(key, origin, path, search, cache, resolved, request, context)).response;
       if (doorkeeper.size >= 10_000) doorkeeper.clear();
       doorkeeper.add(key);
     }

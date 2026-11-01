@@ -921,8 +921,12 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       const routesPath = resolve(root, routesDir);
       const regenerate = async (file: string) => (resolve(file).startsWith(routesPath + sep) ? refresh() : false);
       closed = false;
+      // A burst of file events: everything after the running scan shares one queued scan (not one rescan per event).
+      let queued: Promise<boolean> | null = null;
       const refresh = (): Promise<boolean> => {
-        const run = regenerations.then(async () => {
+        if (queued) return queued;
+        const run = (queued = regenerations.then(async () => {
+          queued = null;
           if (closed) return false;
           const { changed, table: next } = await generateRoutes(root, codegen);
           table = next;
@@ -932,7 +936,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
           if (changed) reachDirty = true;
           if (changed && !closed) server.ws.send({ type: "full-reload" });
           return changed;
-        });
+        }));
         regenerations = run.catch(() => {});
         return run;
       };
@@ -959,7 +963,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
           const run = reachRun.then(async () => {
             if (!closed && (await analyze())) await refresh();
           });
-          reachRun = run.catch(() => {});
+          // A failed run stays dirty: the next page request analyzes again (else RV3011 and the routes stay stale until an edit).
+          reachRun = run.catch(() => void (reachDirty = true));
           await run;
         }
         if (!reach?.problems.length) return [];

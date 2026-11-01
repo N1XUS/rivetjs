@@ -706,14 +706,19 @@ async function refresh(router: Navigator, state: Layouts, table: LayoutTable, ur
     result = await routeData(work, { url }, router, "server", keep ? keep + "," + KEEP_PAGE : KEEP_PAGE);
   } catch {
     // A failed loader: the page level reruns as well and renders the route's error view.
-    waiting.splice(waiting.indexOf(done), 1);
+    unwait(done);
     _invalidating(url, plan.drop);
     return rerun(router, url, done);
   }
   if (current || key(new URL(location.href)) !== key(url)) return;
   _refreshed(state, table, url, result);
-  waiting.splice(waiting.indexOf(done), 1);
+  unwait(done);
   done();
+}
+/** Drop one waiter; already resolved by a commit (`indexOf` -1: `splice(-1, 1)` would drop an unrelated last waiter): nothing. */
+function unwait(done: () => void): void {
+  const at = waiting.indexOf(done);
+  if (at >= 0) waiting.splice(at, 1);
 }
 // Same page, fresh data: no transition, scroll or focus move; the focused control (by id) keeps focus.
 function revalidated(apply: () => void): void {

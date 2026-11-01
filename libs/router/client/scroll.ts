@@ -6,6 +6,19 @@ let seq = 0;
 // Scroll key of the entry the page shows; unknown until the first client navigation.
 let shown: number | undefined;
 let manual = false;
+let saves = 0;
+/** Saved positions kept per tab: the oldest go first (keys grow with time; one entry per visited history entry otherwise). */
+const MAX_SAVED = 500;
+function pruneSaved(): void {
+  const keys: number[] = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const name = sessionStorage.key(i)!;
+    if (name.startsWith(SCROLL)) keys.push(Number(name.slice(SCROLL.length)));
+  }
+  if (keys.length <= MAX_SAVED) return;
+  keys.sort((a, b) => a - b);
+  for (let i = 0; i < keys.length - MAX_SAVED; i++) sessionStorage.removeItem(SCROLL + keys[i]);
+}
 
 /** Key the current history entry (merged into its state) and make it the shown one. */
 export function enter(i: number): void {
@@ -31,6 +44,8 @@ export function leave(here: boolean, i: number): void {
   if (here && shown === undefined) enter(i);
   if (shown === undefined) return;
   try {
+    // Scanned every 50 saves (and on this tab's first, after a reload), never per navigation.
+    if (saves++ % 50 === 0) pruneSaved();
     sessionStorage.setItem(SCROLL + shown, JSON.stringify([scrollX, scrollY]));
   } catch {
     /* Storage may be unavailable (private mode); scroll restoration degrades to top. */

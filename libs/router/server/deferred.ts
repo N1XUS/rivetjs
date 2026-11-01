@@ -59,9 +59,7 @@ const lateCookies = (cookies: Cookies): Cookies => ({
 export function lateEvent(event: RequestEvent): RequestEvent {
   return new Proxy(event, {
     get(target, key) {
-      if (key === "setHeader") return late("set headers");
-      if (key === "setHeaders") return late("set headers");
-      if (key === "appendHeader") return late("set headers");
+      if (key === "setHeader" || key === "setHeaders" || key === "appendHeader") return late("set headers");
       if (key === "cookies") return lateCookies(target.cookies);
       const value = Reflect.get(target, key, target);
       return value;

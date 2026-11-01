@@ -157,7 +157,15 @@ export async function analyzeReach(options: ReachOptions): Promise<Reach> {
   const resolved = new Map<string, string | undefined>();
   const resolveCached = async (spec: string, importer: string) => {
     const key = importer + "\0" + spec;
-    if (!resolved.has(key)) resolved.set(key, await options.resolve(spec, importer).catch(() => undefined));
+    if (!resolved.has(key))
+      resolved.set(
+        key,
+        await options.resolve(spec, importer).catch((error: unknown) => {
+          // A resolver that throws (not "not found": that is undefined) drops this edge: RV3011 cannot see past it.
+          console.warn(`[rivet] server reach: resolving "${spec}" from ${importer} failed, its imports are not checked: ${(error as Error).message}`);
+          return undefined;
+        }),
+      );
     return resolved.get(key);
   };
   const scannable = (id: string) => isAbsolute(id) && !id.includes("?") && !id.includes("\0") && SCANNED.test(id) && !id.split(sep).includes("node_modules");

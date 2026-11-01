@@ -320,3 +320,22 @@ test("hashCSP in Chromium: the page's own script and same-origin imports run; in
     await browser.close();
   }
 });
+
+// FIX2 (r3-errors#3, #4): a failing `_data.json` answer was written into the site; a failing not-found render skipped 404.html silently.
+test("prerender: a data answer other than 200 and a 5xx not-found render fail the build; a 200 catch-all still skips 404.html", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rivet-static-"));
+  try {
+    const routes: AppRoute[] = [{ id: "index", pattern: "/", page: true, layouts: [] }];
+    const answer = (data: number, missing: number) => async (request: Request) => {
+      const url = new URL(request.url);
+      if (url.pathname !== "/") return new Response("x", { status: missing });
+      if (url.search) return new Response('{"reload":true}', { status: data });
+      return new Response('<script type="rivet/boundaries">{}</script>', { headers: { "content-type": "text/html" } });
+    };
+    await assert.rejects(prerender({ handler: answer(500, 404), routes, outDir: dir }), /data returned 500/);
+    await assert.rejects(prerender({ handler: answer(200, 500), routes, outDir: dir }), /not-found page returned 500/);
+    await prerender({ handler: answer(200, 200), routes, outDir: dir });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

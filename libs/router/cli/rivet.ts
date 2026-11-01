@@ -157,7 +157,7 @@ export async function main(argv: string[]): Promise<number> {
           renamed: report.renamed,
           skipped,
           errors: 0,
-          warnings: report.skipped.length,
+          warnings: skipped.length,
         }),
       );
     else if (!quiet) {
@@ -165,7 +165,7 @@ export async function main(argv: string[]): Promise<number> {
       for (const line of skipped)
         console.error(`warning: skipped ${line}\n  fix: Update this export manually; use rivet migrate server-exports --dry-run to review.`);
       console.log(`${dry ? "would change" : "changed"} ${report.changes.size} file(s)`);
-      console.log(summary(0, report.skipped.length));
+      console.log(summary(0, skipped.length));
     }
     return 0;
   } catch (error) {

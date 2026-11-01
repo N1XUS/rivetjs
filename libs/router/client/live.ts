@@ -159,9 +159,13 @@ async function refresh(
       result = await routeData({ signal: new AbortController().signal, get: <T>() => null as T }, { url }, router, live.m, keep);
     } catch {
       // A failed loader: the page re-renders with the route's error view (a search navigation: its Router commit).
-      if (!search) return _perform(router, { url, invalidate: true, done }, state, table);
-      if (n === live.n) search();
-      return;
+      if (search) {
+        if (n === live.n) search();
+        return;
+      }
+      // A newer refresh or a navigation decides what shows: this stale failure must not replace it with the error view.
+      if (n !== live.n || _current()) return done();
+      return _perform(router, { url, invalidate: true, done }, state, table);
     }
   // A newer refresh, or a navigation that started meanwhile, wins (a search navigation: the one in flight is its own).
   const nav = _current();

@@ -276,12 +276,22 @@ async function renderPages(options: PrerenderOptions, update: (detail: string) =
   }
   const missing = await render(base + "/__rivet_not_found__", false);
   if (missing.status === 404) await write(join(resolve(outDir), "404.html"), await html(missing, "404.html"));
+  else {
+    await missing.body?.cancel();
+    // A catch-all answering 200 has no not-found page to write; a failing not-found render must not ship silently.
+    if (missing.status >= 500)
+      throw new Error(`Prerender of the not-found page returned ${missing.status}. Fix the root layout's guard / loader, then rebuild.`);
+  }
   // `_data.json` serves client navigation only: none when no page resumes (zero-JS sites: links load documents)
   // and no CSR shell route navigates. (Per page they stay: any resumed page's router may navigate to any route.)
   if (resumes || report.fallback.length)
     for (const path of written) {
       const url = slashPath(path, trailingSlash);
       const data = await render(url, true);
+      if (data.status !== 200) {
+        await data.body?.cancel();
+        throw new Error(`Prerender ${url} data returned ${data.status}. Fix the route loader (it passed for the page), then rebuild.`);
+      }
       const body = new Uint8Array(await data.arrayBuffer());
       const text = origin === PLACEHOLDER ? new TextDecoder().decode(body) : "";
       if (placeholder(text)) throw new Error(ambiguous(url, "_data.json", text));

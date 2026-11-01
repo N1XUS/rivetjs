@@ -37,7 +37,8 @@ function onBeforeUnload(event: BeforeUnloadEvent): void {
 }
 // Set while `history.go` walks back to the guarded entry: that popstate is ours, not a navigation.
 let restoring = false;
-let last: Event | null = null, lastBlocked = false;
+let last: Event | null = null,
+  lastBlocked = false;
 /**
  * @internal Back/forward guard. The router's popstate listeners (runtime router, router client) ask
  * first, so the answer is kept per event: true when the router must ignore this popstate (a guard
@@ -45,13 +46,17 @@ let last: Event | null = null, lastBlocked = false;
  * history entry index (`history.state.i`).
  */
 export function _popBlocked(event: Event, committed: string, index: number): boolean {
-  if (event !== last) (last = event), (lastBlocked = blocked(committed, index));
+  if (event !== last) ((last = event), (lastBlocked = blocked(committed, index)));
   return lastBlocked;
 }
 function blocked(committed: string, index: number): boolean {
-  if (restoring) return !(restoring = false);
+  if (restoring) {
+    restoring = false;
+    return true;
+  }
   if (!leaveGuards.size) return false;
-  const from = new URL(committed), to = new URL(location.href);
+  const from = new URL(committed),
+    to = new URL(location.href);
   // Same page, another fragment: not leaving (fragment links are not guarded either).
   if (from.pathname === to.pathname && from.search === to.search) return false;
   const delta = index - ((history.state as { i?: number } | null)?.i ?? 0);

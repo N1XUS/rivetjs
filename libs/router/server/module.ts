@@ -54,7 +54,8 @@ export function serverExports(module: Record<string, unknown> | undefined, file 
     const value = module[name];
     const kind = kindOf(value);
     if (kind === undefined) {
-      const wrapper = MAGIC[name] ?? (server ? LEGACY[name] : undefined);
+      // Own keys only: an export named `constructor` / `toString` is not a magic name.
+      const wrapper = Object.hasOwn(MAGIC, name) ? MAGIC[name] : server && Object.hasOwn(LEGACY, name) ? LEGACY[name] : undefined;
       if (wrapper !== undefined && value !== undefined)
         throw new Error(
           `${file}: \`${name}\` is not a server export: wrap it — \`export const x = ${wrapper}(…)\` (\`${wrapper}\` is exported by @rivetjs/router)`,

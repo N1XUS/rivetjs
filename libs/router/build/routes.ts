@@ -101,9 +101,12 @@ export function routeTable(files: readonly string[], exports: ReadonlyMap<string
   // `live` (a page flag `_serverExportsOf` reports with them) is not a server export.
   const isInline = (page: string | undefined) => (page ? (exports.get(page)?.some((name) => name !== "live") ?? false) : false);
   const isLive = (page: string) => exports.get(page)?.includes("live") ?? false;
+  // Page files by extension-less name (first in `set` order wins, as a scan would): `special` runs per folder per file.
+  const pages = new Map<string, string>();
+  for (const file of set) if (PAGE.test(file) && !pages.has(file.replace(PAGE, ""))) pages.set(file.replace(PAGE, ""), file);
   const special = (folder: string, name: string): RouteModule | undefined => {
     const base = (folder ? folder + "/" : "") + name;
-    const page = [...set].find((file) => PAGE.test(file) && file.replace(PAGE, "") === base);
+    const page = pages.get(base);
     const server = servers.get(base);
     return page || server ? { ...(page ? { page } : {}), ...(server ? { server } : {}), ...(isInline(page) ? { inline: true } : {}) } : undefined;
   };

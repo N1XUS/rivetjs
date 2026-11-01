@@ -32,10 +32,12 @@ let installed = false;
 export function install(options: TransitionOptions = {}): void {
   if (installed || typeof document === "undefined") return;
   installed = true;
-  const doc = document as TransitionDocument, html = doc.documentElement;
-  let anchor: HTMLAnchorElement | undefined, nav: NavigationInfo | null = null, running: ViewTransition | null = null;
-  const state = (shown: boolean) =>
-    nav ? { state: "loading" as const, location: nav.to, from: nav.from, type: nav.type, shown } : { ...IDLE };
+  const doc = document as TransitionDocument,
+    html = doc.documentElement;
+  let anchor: HTMLAnchorElement | undefined,
+    nav: NavigationInfo | null = null,
+    running: ViewTransition | null = null;
+  const state = (shown: boolean) => (nav ? { state: "loading" as const, location: nav.to, from: nav.from, type: nav.type, shown } : { ...IDLE });
   const timing = indicator(
     options.pending?.delay ?? 200,
     options.pending?.minDuration ?? 300,
@@ -49,16 +51,19 @@ export function install(options: TransitionOptions = {}): void {
     },
   );
   // Clicked link: `data-rivet-pending` (+ `<Link pending>` classes) until the commit.
+  let marked: string[] = [];
   const mark = (next: HTMLAnchorElement | undefined) => {
     if (anchor === next) return;
     if (anchor) {
       anchor.removeAttribute(PENDING);
-      anchor.classList.remove(...classes(anchor));
+      anchor.classList.remove(...marked);
     }
     anchor = next;
     if (anchor) {
       anchor.setAttribute(PENDING, "");
-      anchor.classList.add(...classes(anchor));
+      // Read once: the classes removed at the commit are the ones added here.
+      marked = classes(anchor);
+      anchor.classList.add(...marked);
     }
   };
   const start = (next: NavigationInfo) => {
@@ -84,7 +89,12 @@ export function install(options: TransitionOptions = {}): void {
     const types = transitionTypes(info);
     const reduced = options.reducedMotion !== "allow" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     const animate =
-      !!types && options.viewTransitions !== false && typeof doc.startViewTransition === "function" && !reduced && doc.visibilityState === "visible" && !info.visual;
+      !!types &&
+      options.viewTransitions !== false &&
+      typeof doc.startViewTransition === "function" &&
+      !reduced &&
+      doc.visibilityState === "visible" &&
+      !info.visual;
     // Superseded (a newer navigation started): `apply` discards; leave that navigation's state alone.
     const current = () => nav === info || nav === null;
     const host = doc.querySelector<HTMLElement>(ROUTES);
@@ -96,7 +106,9 @@ export function install(options: TransitionOptions = {}): void {
       if (group && "viewTransitionClass" in element.style) (element.style as unknown as { viewTransitionClass: string }).viewTransitionClass = group;
       named.push(element);
     };
-    let shared: string[] = [], incoming = new Map<string, HTMLElement | null>(), transition: ViewTransition | null = null;
+    let shared: string[] = [],
+      incoming = new Map<string, HTMLElement | null>(),
+      transition: ViewTransition | null = null;
     const update = () => {
       if (!current()) return apply();
       try {
