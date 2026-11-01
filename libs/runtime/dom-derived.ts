@@ -1781,10 +1781,13 @@ function materialiseRow(row: LRow): void {
 }
 
 // The opening comment of record `id` (`<!--b<id>-->`): one walk over the page's comments in document order, resumed
-// where it stopped (DERIVED-C: a top-level root opener is found at once, not after the whole page's comments).
+// where it stopped (DERIVED-C: a top-level root opener is found at once, not after the whole page's comments). A parked
+// comment app code detached since (a Show swap, a removed row) restarts the walk from the root: `nextNode()` from a
+// detached node never climbs back to the root (null: every later first lookup would miss).
 function opener(id: number): Node | undefined {
   openers ??= [new Map(), doc!.createTreeWalker(doc!.body ?? doc!, 128)];
   const [found, walk] = openers;
+  if (!found.has(id) && !walk.currentNode.isConnected) walk.currentNode = walk.root;
   for (let n = found.has(id) ? null : walk.nextNode(); n !== null; n = found.has(id) ? null : walk.nextNode())
     if (B_OPEN.test((n as Comment).data)) found.set(+(n as Comment).data.slice(1), n);
   return found.get(id);
