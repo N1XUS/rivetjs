@@ -216,6 +216,7 @@ Returns `{ pages: string[], fallback: string[], dictionaries? }`.
 | `reusePort` | `boolean` | `false` | Bind with `SO_REUSEPORT` so several processes share the port (Linux, FreeBSD; needs a fixed `port`). |
 | `origin` | `string` | none | Fixed public origin for request URLs, for servers behind a proxy. |
 | `trustProxy` | `boolean` \| `number` \| `(address, hop) => boolean` | `false` | Which proxy hops to trust for `X-Forwarded-For` / `-Proto` / `-Host`. |
+| `allowedHosts` | `string[]` | any host | Host names the server answers for; other hosts get `421`. A leading `.` matches subdomains. Guards private-network and `localhost` servers against DNS rebinding. |
 | `idleMemory` | `boolean` | `true` | Return heap memory to the OS when the server goes idle after traffic. |
 | `grace` | `number` (ms) | `10000` | Time to finish open requests (and `onClose`) on close. |
 | `ready` | `() => boolean \| Promise<boolean>` | none | Dependency readiness: `/readyz` answers `503 starting` until it returns true (answer kept 1 s; a throw = not ready). |

@@ -208,6 +208,15 @@ export interface ServeOptions {
    */
   trustProxy?: boolean | number | ((address: string, hop: number) => boolean);
   /**
+   * Host names this server answers for (unset: any well-formed `Host`). A request whose host — `Host`, or with
+   * `trustProxy` the trusted `X-Forwarded-Host` — is not listed gets `421 Misdirected Request` before any
+   * handler runs; checked even when `origin` is fixed. An entry starting with `.` also matches every subdomain
+   * (`".shop.example"`); ports are ignored; compared case-insensitively. Set it for servers reachable on a
+   * private network or `localhost`: a DNS-rebinding page (`evil.example` resolved to this server) otherwise
+   * sends `Host: evil.example` with a matching `Origin`, passes the cross-site check and reads the answers.
+   */
+  allowedHosts?: readonly string[];
+  /**
    * Return memory to the OS when the server goes idle after traffic (default true on Node). V8's memory
    * reducer never runs in a process without embedder (cppgc) allocations, so a heap grown by a spike
    * stays resident for ~100 s; after 1 s without requests the adapter makes one tiny embedder allocation
@@ -793,18 +802,27 @@ export function createListener(options: ServeOptions): {
   const hops = trust === true ? 1 : typeof trust === "number" && trust > 0 ? Math.floor(trust) : 0;
   const trusting = hops > 0 || typeof trust === "function";
   /** Comma-separated header values, all occurrences, in order. */
-  const list = (value: string | string[] | undefined): string[] =>
-    value === undefined
-      ? []
-      : (Array.isArray(value) ? value.join(",") : value)
-          .split(",")
-          .map((part) => part.trim())
-          .filter(Boolean);
+  const list = (value: string | string[] | undefined): string[] => {
+    if (value === undefined) return [];
+    const joined = Array.isArray(value) ? value.join(",") : value;
+    // One value (the common single-proxy case): no split / map / filter arrays.
+    if (!joined.includes(",")) {
+      const one = joined.trim();
+      return one ? [one] : [];
+    }
+    const out: string[] = [];
+    for (const part of joined.split(",")) {
+      const trimmed = part.trim();
+      if (trimmed) out.push(trimmed);
+    }
+    return out;
+  };
   /** Trusted hops and the client address: `X-Forwarded-For` entries then the peer, read from the right. */
   const forwarded = (req: IncomingMessage): { trusted: number; address: string | undefined } => {
     const peer = req.socket.remoteAddress;
     if (!trusting) return { trusted: 0, address: peer };
-    const chain = [...list(req.headers["x-forwarded-for"]), ...(peer ? [peer] : [])];
+    const chain = list(req.headers["x-forwarded-for"]);
+    if (peer) chain.push(peer);
     if (typeof trust !== "function") return { trusted: hops, address: chain[Math.max(0, chain.length - 1 - hops)] };
     let hop = 0;
     while (hop < chain.length && trust(chain[chain.length - 1 - hop]!, hop)) hop++;
@@ -816,6 +834,19 @@ export function createListener(options: ServeOptions): {
     const values = list(value);
     return values[Math.max(0, values.length - trusted)];
   };
+  const allowed = options.allowedHosts?.map((host) => host.toLowerCase()) ?? null;
+  /** `host` (with or without port, maybe `[v6]`) is one of `allowedHosts`. */
+  const hostAllowed = (host: string | undefined): boolean => {
+    if (host === undefined) return false;
+    const name = (host.startsWith("[") ? host.slice(0, host.indexOf("]") + 1) : host.split(":", 1)[0]!).toLowerCase().replace(/\.$/, "");
+    for (const entry of allowed!) {
+      if (entry.startsWith(".") ? name === entry.slice(1) || name.endsWith(entry) : name === entry) return true;
+    }
+    return false;
+  };
+  /** The request's host as this server sees it: `Host`, or the trusted `X-Forwarded-Host`. */
+  const hostOf = (req: IncomingMessage, trusted: number): string | undefined =>
+    (trusted > 0 ? hopValue(req.headers["x-forwarded-host"], trusted) : undefined) ?? req.headers.host;
   /** Public origin of a request: the fixed `origin`, else (trusted) forwarded headers, else the socket's; null: malformed host (400). */
   const originOf = (req: IncomingMessage, trusted: number): string | null => {
     if (fixedOrigin) return fixedOrigin;
@@ -1207,12 +1238,25 @@ export function createListener(options: ServeOptions): {
   const reject = (res: ServerResponse, status: number, message: string) =>
     void res.writeHead(status, { ...base, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", Connection: "close" }).end(message);
   const listener = (req: IncomingMessage, res: ServerResponse) => {
-    const via = forwarded(req);
+    let via: { trusted: number; address: string | undefined };
+    try {
+      // A `trustProxy` callback runs here, before the per-request guard below: its throw must not end the process.
+      via = forwarded(req);
+    } catch (error) {
+      try {
+        onError(error);
+      } catch (failure) {
+        console.error(failure);
+      }
+      return reject(res, 500, "Internal Server Error");
+    }
+    if (allowed && !hostAllowed(hostOf(req, via.trusted))) return reject(res, 421, "Misdirected Request: host not allowed");
     const origin = originOf(req, via.trusted);
     if (origin === null) return reject(res, 400, "Bad Request: malformed Host");
     const target = pathOf(req.url ?? "/", origin);
     if (target === null) return reject(res, 400, "Bad Request: request target");
-    const pathname = target.split("?", 1)[0]!;
+    const query = target.indexOf("?");
+    const pathname = query === -1 ? target : target.slice(0, query);
     if (pathname === live) {
       res.writeHead(200, { ...base, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }).end("ok");
       return;

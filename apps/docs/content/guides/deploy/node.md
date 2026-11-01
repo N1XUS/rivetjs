@@ -142,6 +142,7 @@ In a container with a CPU limit, set `workers` to that limit: `"auto"` may count
 | `locales` | | i18n: one browser build per language, see [Translating text](../i18n/translating-text.md#build-one-app-per-language) |
 | `origin` | | Fixed public origin, such as `"https://shop.example"`. Set it behind a proxy (see below) |
 | `trustProxy` | `false` | `true` (one proxy), a number of proxies, or `(address, hop) => boolean`: take the origin from `X-Forwarded-Proto` / `X-Forwarded-Host` and the client address from `X-Forwarded-For`, at the outermost trusted proxy |
+| `allowedHosts` | any host | Host names the server answers for, such as `["shop.example", ".shop.example"]` (a leading `.` matches subdomains). Other hosts get `421 Misdirected Request` |
 | `idleMemory` | `true` | Return heap memory to the OS when the server is idle after traffic. `false` turns it off. See [Memory when idle](#memory-when-idle) |
 | `preload` | none | `{ ahead, lean }`: `ahead` = when component code downloads before the first interaction (`"idle"` default, `"load"`, `"intent"`); `lean: true` downloads none before the first interaction, a function gets the request URL. See [Preloading](../performance/preloading.md#change-the-timing) |
 | `maxBody` | 1 MiB, multipart 10 MiB | Request body limit for `POST`/`PUT`/`PATCH`/`DELETE`: bytes, or `{ default, multipart }`. Larger bodies get `413` |
@@ -192,6 +193,7 @@ The handler gets `context` with the response's CSP `nonce`, the client `address`
 Most hosts put a proxy or load balancer in front of Node:
 
 - **Set the public origin.** Behind a proxy that ends TLS, Node sees `http://` and an internal host, so the [cross-site check](../routing/actions-and-forms.md#cross-site-protection) rejects every form post with `403`. Pass `origin: "https://shop.example"`, or `trustProxy: true` if the proxy sets `X-Forwarded-Proto` and `X-Forwarded-Host`. Turn on `trustProxy` only behind a proxy that sets these headers: otherwise clients can fake them.
+- **Pin the host names.** Without `allowedHosts` the server answers any `Host`. On a private network or `localhost` that allows DNS rebinding: a page on `evil.example`, re-pointed to your server's address, sends `Host: evil.example` with a matching `Origin`, passes the cross-site check and reads the answers. Pass `allowedHosts: ["shop.example"]`; behind `trustProxy` it checks the forwarded host.
 - **Client address.** Loaders, actions, guards and handlers read the visitor's IP address as `event.platform.clientAddress`: the socket address, or with `trustProxy` the `X-Forwarded-For` entry that the outermost trusted proxy appended. Entries to the left of it come from the client and are never used. Behind two proxies (a CDN, then a load balancer) pass `trustProxy: 2`. Use it for rate limits or logs.
 
 - Point health checks at `/readyz`, so traffic stops before the process exits.

@@ -394,3 +394,39 @@ test("maxBody: the size-limited request copy keeps the node adapter's disconnect
     await server.close();
   }
 });
+
+test("node adapter: allowedHosts answers 421 for other hosts (DNS rebinding); a throwing trustProxy predicate is a 500, not a crash", async () => {
+  const handler = createHandler({
+    routes: [{ id: "f", pattern: "/f", page: true, layouts: [], server: mod({ actions: { save: () => "ok" } }) }],
+    render: page,
+    onError: () => {},
+  });
+  const form = { "content-type": "application/x-www-form-urlencoded" };
+  const pinned = await serve({ handler: handler as Handler, port: 0, allowedHosts: ["localhost", ".shop.example"] });
+  try {
+    const port = new URL(pinned.url).port;
+    // The rebinding page: its own name as Host and a matching Origin pass the cross-site check without allowedHosts.
+    const rebound = await rawPost(pinned.url, { ...form, host: "evil.example:" + port, origin: "http://evil.example:" + port }, "a=1");
+    assert.equal(rebound.status, 421);
+    assert.equal((await rawPost(pinned.url, { ...form, host: "localhost:" + port, origin: "http://localhost:" + port }, "a=1")).status, 200);
+    assert.equal((await rawPost(pinned.url, { ...form, host: "EU.Shop.Example", origin: "http://eu.shop.example" }, "a=1")).status, 200);
+    assert.equal((await rawPost(pinned.url, { ...form, host: "shop.example.", origin: "http://shop.example." }, "a=1")).status, 200);
+    assert.equal((await rawPost(pinned.url, { ...form, host: "evilshop.example", origin: "http://evilshop.example" }, "a=1")).status, 421);
+  } finally {
+    await pinned.close();
+  }
+  const errors: unknown[] = [];
+  const throwing = await serve({
+    handler: handler as Handler,
+    port: 0,
+    onError: (error) => errors.push(error),
+    trustProxy: (address) => (address === "6.6.6.6" ? (undefined as unknown as string).startsWith("x") : true),
+  });
+  try {
+    const host = new URL(throwing.url).host;
+    assert.equal((await rawPost(throwing.url, { ...form, host, "x-forwarded-for": "6.6.6.6" }, "a=1")).status, 500);
+    assert.equal(errors.length, 1);
+  } finally {
+    await throwing.close();
+  }
+});
