@@ -73,17 +73,10 @@ test("a failed computed caches its error: no recompute until a source changes", 
     return s();
   });
   assert.throws(c, /odd 1/);
+  // Later reads rethrow the cached failure (the same error object) without re-running.
   let first: unknown;
-  try {
-    c();
-  } catch (error) {
-    first = error;
-  }
-  try {
-    c();
-  } catch (error) {
-    assert.equal(error, first);
-  }
+  assert.throws(c, (error) => ((first = error), true));
+  assert.throws(c, (error) => error === first);
   assert.equal(runs, 1);
   s.set(2);
   assert.equal(c(), 2);
