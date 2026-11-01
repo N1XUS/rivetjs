@@ -48,6 +48,24 @@ test("causes: only writes the run depends on (directly or through computeds), no
   assert.deepEqual(await names(second), ["b"], "a's write did not re-run Second");
 });
 
+test("causes: a source shared by two computeds (a diamond) does not hide the second computed's other sources", async () => {
+  let owner!: object;
+  const s = named(r.signal(0), "s"),
+    t = named(r.signal(0), "t");
+  r.createRoot(() => {
+    owner = r.getOwner()!;
+    const left = r.computed(() => s() + 1);
+    const right = r.computed(() => s() + t());
+    r.effect(() => void (left() + right()));
+    hook.emit("comp.mount", { owner, fn: function Diamond() {}, props: {} });
+  });
+  await Promise.resolve();
+  s.set(1);
+  t.set(1);
+  const causes = (await model.owner(model.id(owner)))!.lastUpdate?.causes.map((c) => displayName(c.signal, { scoped: false }));
+  assert.deepEqual(causes, ["s", "t"]);
+});
+
 test("self time: a computed's run inside an effect's run is not counted twice", async () => {
   const perf = new Perf({
     componentAt: () => null,

@@ -375,7 +375,9 @@ export class Model {
       const seen = new Set<object>();
       const walk = (at: DebugView): void => {
         for (const source of at.sources()) {
-          if (found.size === wanted.size || seen.size >= MAX_WALK || seen.has(source.ref)) return;
+          if (found.size === wanted.size || seen.size >= MAX_WALK) return;
+          // Already visited through another path (a diamond): its sources are walked, the siblings still need it.
+          if (seen.has(source.ref)) continue;
           seen.add(source.ref);
           if (source.kind === "signal") {
             if (wanted.has(source.ref)) found.add(source.ref);
