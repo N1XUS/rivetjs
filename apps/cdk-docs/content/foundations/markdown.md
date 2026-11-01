@@ -57,3 +57,5 @@ Keep the original source separately from the repaired preview. Repair is for inc
 The parser creates no DOM, keyboard behavior, ARIA attributes or classes. Render nodes as semantic headings, lists, links and tables, and preserve image alt text. Render code and raw HTML as text rather than inserting them with `innerHTML`.
 
 Raw HTML is text. Reference links, footnotes, indented code blocks and HTML blocks are outside this parser's supported Markdown subset. URL filtering rejects unsafe schemes; it does not restrict which HTTP hosts a link or image may reference.
+
+Parsing is linear in the input, so untrusted text such as model output can be parsed on the server. Block quotes and lists nest at most 32 levels deep, and links and emphasis also nest at most 32 levels; anything nested deeper is kept as plain text.

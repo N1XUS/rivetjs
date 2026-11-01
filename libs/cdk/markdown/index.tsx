@@ -200,7 +200,20 @@ const splitRow = (line: string): string[] => {
   return cells;
 };
 
-function parseLines(lines: string[]): MarkdownBlock[] {
+/**
+ * Deepest block quote / list nesting (and, separately, link / emphasis nesting) parsed as structure. Content nested deeper
+ * stays as plain paragraph / text, so untrusted text (`"> ".repeat(1e5)`) cannot overflow the stack, during SSR included.
+ */
+const MAX_NESTING = 32;
+
+function parseLines(lines: string[], depth = 0): MarkdownBlock[] {
+  if (depth >= MAX_NESTING) {
+    const raw = lines
+      .map((l) => l.replace(/^[ \t]+/, ""))
+      .join("\n")
+      .trim();
+    return raw ? [{ type: "paragraph", children: parseInline(raw) }] : [];
+  }
   const out: MarkdownBlock[] = [];
   let i = 0;
   while (i < lines.length) {
@@ -254,12 +267,12 @@ function parseLines(lines: string[]): MarkdownBlock[] {
         else break;
         i++;
       }
-      out.push({ type: "blockquote", children: parseLines(body) });
+      out.push({ type: "blockquote", children: parseLines(body, depth + 1) });
       continue;
     }
     // List
     if (ITEM.test(line)) {
-      i = parseList(lines, i, out);
+      i = parseList(lines, i, out, depth);
       continue;
     }
     // Table: header row + delimiter row
@@ -308,7 +321,7 @@ function parseLines(lines: string[]): MarkdownBlock[] {
 }
 
 /** Parse the list starting at `lines[start]`; pushes it to `out`, returns the next line index. */
-function parseList(lines: string[], start: number, out: MarkdownBlock[]): number {
+function parseList(lines: string[], start: number, out: MarkdownBlock[], depth: number): number {
   const first = ITEM.exec(lines[start]!)!;
   const ordered = /^\d/.test(first[2]!);
   const delimiter = ordered ? first[2]!.slice(-1) : first[2]!;
@@ -362,7 +375,7 @@ function parseList(lines: string[], start: number, out: MarkdownBlock[]): number
       checked = task[1] !== " ";
       body[0] = body[0]!.slice(task[0].length);
     }
-    items.push({ checked, children: parseLines(body) });
+    items.push({ checked, children: parseLines(body, depth + 1) });
     if (sawBlank && (i >= lines.length || !ITEM.test(lines[i]!))) break;
   }
   out.push({ type: "list", ordered, start: ordered ? parseInt(first[2]!, 10) : 1, tight, items });
@@ -386,9 +399,15 @@ export function safeUrl(url: string): string | undefined {
   return ["http", "https", "mailto", "tel"].includes(scheme[1]!) ? trimmed : undefined;
 }
 
-/** Index of the `]` closing the bracket opened at `open` (nested brackets, code spans and escapes skipped), or -1. */
-function closingBracket(src: string, open: number): number {
-  let depth = 0;
+/**
+ * Index of the `]` closing the bracket opened at `open` (nested brackets, code spans and escapes skipped), or -1.
+ * `known` caches every bracket a scan passes (a scan reaching `[` at q continues exactly like a scan started at q), so the
+ * brackets of one string cost one pass in all instead of one pass each (`"[".repeat(n)` was quadratic).
+ */
+function closingBracket(src: string, open: number, known: Map<number, number>): number {
+  const cached = known.get(open);
+  if (cached !== undefined) return cached;
+  const pending: number[] = [];
   for (let i = open; i < src.length; i++) {
     const ch = src[i];
     if (ch === "\\") i++;
@@ -396,27 +415,77 @@ function closingBracket(src: string, open: number): number {
       const run = /^`+/.exec(src.slice(i))![0];
       const end = src.indexOf(run, i + run.length);
       if (end > 0) i = end + run.length - 1;
-    } else if (ch === "[") depth++;
-    else if (ch === "]" && --depth === 0) return i;
+    } else if (ch === "[") {
+      const match = i === open ? undefined : known.get(i);
+      if (match === undefined) pending.push(i);
+      else if (match < 0) break;
+      else i = match;
+    } else if (ch === "]" && pending.length) {
+      const at = pending.pop()!;
+      known.set(at, i);
+      if (at === open) return i;
+    }
   }
+  for (const at of pending) known.set(at, -1);
   return -1;
 }
 
-/** `(href "title")` at `src[at]`: `[end, href, title]` or `undefined`. */
+const LINK_SPACE = /\s*/y;
+const LINK_ANGLE = /<[^>\n]*>/y;
+const LINK_PLAIN = /(?:[^\s()\\]|\\.|\((?:[^\s()\\]|\\.)*\))*/y;
+const LINK_TAIL = /(?:\s+("[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/y;
+const LINK_TITLE = /("[^"]*"|'[^']*'|\([^)]*\))\s*\)/y;
+
+const sticky = (re: RegExp, src: string, at: number): RegExpExecArray | null => {
+  re.lastIndex = at;
+  return re.exec(src);
+};
+
+/**
+ * `(href "title")` at `src[at]`: `[end, href, title]` or `undefined`. Same matches as the single pattern
+ * `\(\s*(<…>|plain)(?:\s+(title))?\s*\)`, tried step by step: that pattern's adjacent `\s*` / `\s+` runs backtracked
+ * quadratically on a long whitespace run (`"[a](" + " ".repeat(n)`).
+ */
 function linkDestination(src: string, at: number): [number, string, string | undefined] | undefined {
   if (src[at] !== "(") return undefined;
-  const m = /^\(\s*(<[^>\n]*>|(?:[^\s()\\]|\\.|\((?:[^\s()\\]|\\.)*\))*)(?:\s+("[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/.exec(src.slice(at));
-  if (!m) return undefined;
-  let href = m[1]!;
+  const space = sticky(LINK_SPACE, src, at + 1)![0].length;
+  const from = at + 1 + space;
+  let href: string | undefined;
+  let title: string | undefined;
+  let end = -1;
+  for (const dest of [LINK_ANGLE, LINK_PLAIN]) {
+    const d = sticky(dest, src, from);
+    const tail = d && sticky(LINK_TAIL, src, from + d[0].length);
+    if (d && tail) {
+      href = d[0];
+      title = tail[1];
+      end = from + d[0].length + tail[0].length;
+      break;
+    }
+  }
+  // An empty destination before a title: `( "title")`.
+  const tail = end < 0 && space ? sticky(LINK_TITLE, src, from) : null;
+  if (tail) {
+    href = "";
+    title = tail[1];
+    end = from + tail[0].length;
+  }
+  if (href === undefined) return undefined;
   if (href.startsWith("<")) href = href.slice(1, -1);
   href = href.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
-  const title = m[2] ? m[2].slice(1, -1) : undefined;
-  return [at + m[0].length, href, title];
+  return [end, href, title === undefined ? undefined : title.slice(1, -1)];
 }
 
-/** Find the closing delimiter run `delim` for an opener ending at `from` (right-flanking, not escaped, not in code). */
-function closingDelimiter(src: string, from: number, delim: string): number {
-  for (let i = from; i < src.length; i++) {
+/**
+ * Find the closing delimiter run `delim` for an opener ending at `from` (right-flanking, not escaped, not in code).
+ * `dead` marks, per delimiter, the positions a failed scan passed: a later scan reaching one of them can only fail too
+ * (2 = a failed scan's own start, which it skipped as a candidate), so unclosed openers (`"*a ".repeat(n)`) stay linear.
+ */
+function closingDelimiter(src: string, from: number, delim: string, dead: Map<string, Uint8Array>): number {
+  let failed = dead.get(delim);
+  if (failed?.[from]) return -1;
+  scan: for (let i = from; i < src.length; i++) {
+    if (failed?.[i] === 1 && i > from) break;
     const ch = src[i];
     if (ch === "\\") {
       i++;
@@ -434,22 +503,56 @@ function closingDelimiter(src: string, from: number, delim: string): number {
       const before = src[i - 1];
       const after = src[i + delim.length];
       // Right-flanking: not preceded by whitespace; a single `*` / `_` must not be part of a longer run.
-      if (before === undefined || /\s/.test(before)) continue;
-      if (delim.length === 1 && (src[i + 1] === delim || before === delim)) continue;
-      if (delim[0] === "_" && after !== undefined && WORD.test(after)) continue;
-      if (i === from) continue;
+      if (before === undefined || /\s/.test(before)) continue scan;
+      if (delim.length === 1 && (src[i + 1] === delim || before === delim)) continue scan;
+      if (delim[0] === "_" && after !== undefined && WORD.test(after)) continue scan;
+      if (i === from) continue scan;
       return i;
+    }
+  }
+  // No closer: walk the same positions again (escapes and code spans skipped alike) and mark them.
+  if (!failed) dead.set(delim, (failed = new Uint8Array(src.length + 1)));
+  for (let i = from; i < src.length; i++) {
+    if (failed[i] === 1 && i > from) break;
+    failed[i] = i === from ? 2 : 1;
+    const ch = src[i];
+    if (ch === "\\") i++;
+    else if (ch === "`") {
+      const run = /^`+/.exec(src.slice(i))![0];
+      const end = src.indexOf(run, i + run.length);
+      if (end > 0) i = end + run.length - 1;
     }
   }
   return -1;
 }
 
+/** `text` without its trailing spaces. */
+const trimSpaces = (text: string): string => {
+  let end = text.length;
+  while (end > 0 && text.charCodeAt(end - 1) === 32) end--;
+  return end === text.length ? text : text.slice(0, end);
+};
+
 /** Parse inline Markdown into nodes. */
 export function parseInline(src: string): MarkdownInline[] {
+  return inline(src, 0);
+}
+
+function inline(src: string, depth: number): MarkdownInline[] {
+  // Nested deeper than MAX_NESTING (`"[".repeat(n) + "](u)".repeat(n)`): the rest is text.
+  if (depth >= MAX_NESTING) return src ? [{ type: "text", value: src }] : [];
   const out: MarkdownInline[] = [];
+  // Scan caches, created on first use.
+  let brackets: Map<number, number> | undefined;
+  let dead: Map<string, Uint8Array> | undefined;
+  // `lines` holds the finished lines of the current text run, `text` only the current line: a hard-break check per line
+  // end then reads one line, not the whole paragraph (a regex over the growing run was quadratic).
+  let lines = "";
   let text = "";
   const pushText = () => {
-    if (text) out.push({ type: "text", value: text });
+    const value = lines + text;
+    if (value) out.push({ type: "text", value });
+    lines = "";
     text = "";
   };
   let i = 0;
@@ -457,13 +560,13 @@ export function parseInline(src: string): MarkdownInline[] {
     const ch = src[i]!;
     // Hard break: two+ spaces or a backslash before a newline.
     if (ch === "\n") {
-      if (/ {2,}$/.test(text) || text.endsWith("\\")) {
-        text = text.replace(/ {2,}$|\\$/, "");
+      if (text.endsWith("  ") || text.endsWith("\\")) {
+        text = text.endsWith("  ") ? trimSpaces(text) : text.slice(0, -1);
         pushText();
         out.push({ type: "br" });
       } else {
-        text = text.replace(/ +$/, "");
-        text += "\n";
+        lines += trimSpaces(text) + "\n";
+        text = "";
       }
       i++;
       continue;
@@ -491,12 +594,12 @@ export function parseInline(src: string): MarkdownInline[] {
     }
     // Image / link
     if (ch === "!" && src[i + 1] === "[") {
-      const close = closingBracket(src, i + 1);
+      const close = closingBracket(src, i + 1, (brackets ??= new Map()));
       const dest = close > 0 ? linkDestination(src, close + 1) : undefined;
       if (dest) {
         const url = safeUrl(dest[1]);
         pushText();
-        const alt = textOf(parseInline(src.slice(i + 2, close)));
+        const alt = textOf(inline(src.slice(i + 2, close), depth + 1));
         if (url !== undefined) out.push({ type: "image", src: url, alt, title: dest[2] });
         else out.push({ type: "text", value: alt });
         i = dest[0];
@@ -504,11 +607,11 @@ export function parseInline(src: string): MarkdownInline[] {
       }
     }
     if (ch === "[") {
-      const close = closingBracket(src, i);
+      const close = closingBracket(src, i, (brackets ??= new Map()));
       const dest = close > 0 ? linkDestination(src, close + 1) : undefined;
       if (dest) {
         pushText();
-        const children = parseInline(src.slice(i + 1, close));
+        const children = inline(src.slice(i + 1, close), depth + 1);
         const url = safeUrl(dest[1]);
         if (url !== undefined) out.push({ type: "link", href: url, title: dest[2], children });
         else out.push(...children);
@@ -562,12 +665,12 @@ export function parseInline(src: string): MarkdownInline[] {
                 : [[ch, "em"]];
         let matched = false;
         for (const [delim, type] of tries) {
-          const end = closingDelimiter(src, i + delim.length, delim);
+          const end = closingDelimiter(src, i + delim.length, delim, (dead ??= new Map()));
           if (end < 0) continue;
           pushText();
           const inner = src.slice(i + delim.length, end);
-          if (delim.length === 3) out.push({ type: "strong", children: [{ type: "em", children: parseInline(inner) }] });
-          else out.push({ type, children: parseInline(inner) });
+          if (delim.length === 3) out.push({ type: "strong", children: [{ type: "em", children: inline(inner, depth + 1) }] });
+          else out.push({ type, children: inline(inner, depth + 1) });
           i = end + delim.length;
           matched = true;
           break;
