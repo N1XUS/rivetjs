@@ -379,7 +379,10 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
     const type = response.headers.get("content-type") ?? "";
     const body = response.body;
     // Experimental transport: brotli / gzip only (`negotiate(…, false)` never picks zstd).
-    const picked = compress && body && !response.headers.has("content-encoding") && COMPRESSIBLE.test(type) ? negotiate(accept, false) : null;
+    const picked =
+      compress && body && !response.headers.has("content-encoding") && COMPRESSIBLE.test(type) && !/^text\/event-stream/i.test(type)
+        ? negotiate(accept, false)
+        : null;
     const encoding: Encoding = picked === "zstd" ? null : picked;
     const vary = () => (headers.vary = response.headers.has("vary") ? response.headers.get("vary") + ", Accept-Encoding" : "Accept-Encoding");
     if (!body || method === "HEAD") {

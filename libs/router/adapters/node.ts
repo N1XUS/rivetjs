@@ -1074,7 +1074,9 @@ export function createListener(options: ServeOptions): {
     if (cookies.length) headers["set-cookie"] = cookies;
     const type = response.headers.get("content-type") ?? "";
     const body = response.body;
-    const compressible = compress && body && !response.headers.has("content-encoding") && COMPRESSIBLE.test(type);
+    // Server-Sent Events stay uncompressed: each event must leave at once, and a streaming codec per open connection
+    // costs memory (brotli / zstd state) for a few bytes saved per event.
+    const compressible = compress && body && !response.headers.has("content-encoding") && COMPRESSIBLE.test(type) && !/^text\/event-stream/i.test(type);
     const work = compressible ? dictionaryWork(req, pathname) : null;
     const encoding: Coding | null = work?.use ? "dcz" : compressible ? negotiate(req.headers["accept-encoding"], withZstd) : null;
     const vary = work

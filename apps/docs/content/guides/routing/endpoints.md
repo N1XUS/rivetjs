@@ -141,6 +141,32 @@ export const GET = onGet(async () => {
 const escapeXml = (text: string) => text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 ```
 
+## Stream events (Server-Sent Events)
+
+An endpoint can keep its response open and push events to the page. `eventStream(event, producer)` from `@rivetjs/router/sse` builds that `Response`:
+
+```ts title="src/routes/events.ts"
+import type { RequestEvent } from "@rivetjs/router";
+import { eventStream } from "@rivetjs/router/sse";
+import { onGet } from "@rivetjs/router";
+import { prices } from "../prices.server.ts";
+
+export const GET = onGet((event: RequestEvent) =>
+  eventStream(event, (send) => {
+    // `prices.subscribe` returns its unsubscribe function: it is the cleanup.
+    return prices.subscribe((price) => send(price, { event: "price", id: price.version }));
+  }),
+);
+```
+
+- `send(data, { event, id })` writes one event. A string goes as is (one `data:` line per line), anything else as JSON.
+- The function you return runs once: when the visitor leaves (the request's `signal` aborts), after you call `close()` (the second argument), or when an `async` producer rejects.
+- Options: `heartbeat` (a comment every 15 s by default, so proxies keep idle connections open; `false` turns it off), `retry` (the browser's reconnect delay in ms), `headers`.
+- Slow clients: `send` returns `false` once 64 KiB (`highWaterMark`) wait for the client. Await `ready()` (the third argument) before you send more.
+- The Node server sends each event at once and never compresses `text/event-stream` responses.
+
+On the page, `liveSource(url, { initial, parse })` from `@rivetjs/router/live-source` keeps a value current from such a URL. Open it from a `clientEffect`; the effect's cleanup closes the connection when the page goes away. See the [live updates recipe](/recipes/live-updates.md).
+
 ## Endpoints need a server
 
 Static sites (`mode: "static"`) do not build endpoints: the build only writes pages. Client-only apps (`mode: "csr"`) have no server code at all. Use the default server mode for endpoints.

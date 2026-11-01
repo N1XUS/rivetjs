@@ -23,6 +23,8 @@ export const entries: ApiEntryConfig[] = [
   { entry: "@rivetjs/router/navigation", file: "router/client/navigation.ts", runsOn: "browser", summary: "Navigation state (idle, loading, submitting) as a signal-backed value." },
   { entry: "@rivetjs/router/search", file: "router/client/search.ts", runsOn: "both", summary: "Search params state: the browser signal and the resumable SearchParams context (useSearchParams())." },
   { entry: "@rivetjs/router/transitions", file: "router/client/transitions.ts", runsOn: "browser", summary: "Route transitions: animated changes between pages and a pending indicator." },
+  { entry: "@rivetjs/router/sse", file: "router/sse.ts", runsOn: "server", summary: "Server-Sent Events response for endpoints (eventStream): framing, heartbeat, backpressure, cleanup on disconnect." },
+  { entry: "@rivetjs/router/live-source", file: "router/client/live-source.ts", runsOn: "both", summary: "A signal-backed value kept current by a Server-Sent Events URL (liveSource)." },
   { entry: "@rivetjs/router/prefetch", file: "router/shared/prefetch.ts", runsOn: "both", summary: "Document prefetch: speculation rules and fallback for links that load a document; whenActivated for prerendered pages." },
   { entry: "@rivetjs/router/server", file: "router/server/index.ts", runsOn: "server", summary: "Request handler, page rendering, document shell helpers and CSP." },
   { entry: "@rivetjs/router/node", file: "router/adapters/node.ts", runsOn: "server", summary: "Node.js HTTP adapter: serve a production build." },

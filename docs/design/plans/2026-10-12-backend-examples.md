@@ -149,8 +149,8 @@ H="bash $S/heavy.sh"
 
 **Files:** `libs/router/sse.ts`, `libs/router/client/live-source.ts`, exports, tests, CLAUDE.md, `apps/docs/content/recipes/live-updates.md` + `apps/docs/examples/live-updates/src/routes/events.ts` (migrate to the helper), `guides/routing/endpoints.md`.
 
-- [ ] `eventStream(event, (send, close) => cleanup, { heartbeat, retry })`: abort-safe, backpressure-aware (`desiredSize`), `id` / `event` fields, cleanup exactly once.
-- [ ] `liveSource(url, { parse })` → signal; opens in `clientEffect`, closes on route leave; resumable usage documented.
+- [x] `eventStream(event, (send, close, ready) => cleanup, { heartbeat, retry, highWaterMark, headers })`: abort-safe, backpressure-aware (`desiredSize`, `ready()`), `id` / `event` fields, cleanup exactly once; node / uws adapters never compress `text/event-stream` (BE-SSE 2026-11-01).
+- [x] `liveSource(url, { initial, parse })` → accessor (+ `status()`, `open()`); the page writes `clientEffect(source.open)` (an imported hook's own `clientEffect` is no change source for the facts walk, so the page would not resume), closes on route leave; resumable usage documented (BE-SSE 2026-11-01).
 - Gates: G-ROUTER, G-ZERO, G-SIZE, G-DOCS (docs example build), G-AI.
 
 ### T9 — Spike: pg-boss over PGlite

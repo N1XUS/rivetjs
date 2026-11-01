@@ -39,6 +39,14 @@
       "types": "./client/leave.ts",
       "default": "./client/leave.ts"
     },
+    "./live-source": {
+      "types": "./client/live-source.ts",
+      "default": "./client/live-source.ts"
+    },
+    "./sse": {
+      "types": "./sse.ts",
+      "default": "./sse.ts"
+    },
     "./navigation": {
       "types": "./client/navigation.ts",
       "default": "./client/navigation.ts"
