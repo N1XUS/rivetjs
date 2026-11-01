@@ -13,7 +13,7 @@ RAC Tree family + RA useTree/useTreeItem + Angular CDK TreeKeyManager/tree contr
 | `dnd.tsx` | Drag and drop (RAC Tree.tsx dnd parts): `treeDnd(hooks, …)` (Tree body: collection hooks, `TreeDropTargetDelegate` over `ListDropTargetDelegate`, keyboard delegate getter, expand on drop activate / expansion keys while targeting a row, providers, root indicator, `renderRow`), `treeItemDnd` (TreeItem body: draggable item, `drag` button slot props, visually hidden "drop on" row + expand button), `TreeDropIndicatorWrapper`, `RootDropIndicator`. |
 | `drop-target-delegate.ts` | RAC `TreeDropTargetDelegate` (pointer targets with nesting levels). |
 | `navigation-context.tsx` | NavigationTree internals used by TreeItem: `InternalNavigationTreeContext`, item link / state contexts, route lookup helpers. |
-| `tree-key-manager.ts`, `control.ts`, `cdk-index.ts` | Angular CDK TreeKeyManager, Flat/NestedTreeControl. |
+| `tree-key-manager.ts`, `control.ts`, `cdk-index.ts` | Angular CDK TreeKeyManager, Flat/NestedTreeControl (Rivet: expand / collapse of many nodes goes through `expansionModel.bulk`, no argument spreads — 300k nodes threw RangeError; `NestedTreeControl.expandAll` builds one array instead of a copy per root; FIX-CDK 2026-11-01, `tests/tree-control-large.test.ts`). |
 
 ## Invariants / gotchas
 - TreeItem render values (`isSelected`, `isFocused`, `isDisabled`, `selectionMode`, `selectionBehavior`) and the Tree root `selectionMode` are `computed` over `view()`: `view()` notifies on every expand, and DOM v2 fragment children are reactive (`_scoped`) — an unmemoized `selectionMode() === …` ternary re-created the row Checkbox on expand (V2-FIX R4). Other collections reading `view()` in render props may need the same

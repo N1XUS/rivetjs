@@ -119,16 +119,23 @@ export abstract class BaseTreeControl<T, K = T> implements TreeControl<T, K> {
 
   /** Expands a subtree rooted at given data node recursively. */
   expandDescendants(dataNode: T): void {
-    const toBeProcessed = [dataNode];
-    toBeProcessed.push(...this.getDescendants(dataNode));
-    this.expansionModel.select(...toBeProcessed.map((value) => this._trackByValue(value)));
+    this.expansionModel.bulk.select(this._subtreeKeys(dataNode));
   }
 
   /** Collapses a subtree rooted at given data node recursively. */
   collapseDescendants(dataNode: T): void {
-    const toBeProcessed = [dataNode];
-    toBeProcessed.push(...this.getDescendants(dataNode));
-    this.expansionModel.deselect(...toBeProcessed.map((value) => this._trackByValue(value)));
+    this.expansionModel.bulk.deselect(this._subtreeKeys(dataNode));
+  }
+
+  /**
+   * Keys of `dataNode` + its descendants. Rivet: no argument spreads (`push(...)`, `select(...)`) — a few hundred
+   * thousand nodes exceed the engine's argument limit (RangeError); `SelectionModel.bulk` takes the array.
+   */
+  protected _subtreeKeys(dataNode: T): K[] {
+    const descendants = this.getDescendants(dataNode);
+    const keys: K[] = [this._trackByValue(dataNode)];
+    for (const node of descendants) keys.push(this._trackByValue(node));
+    return keys;
   }
 
   protected _trackByValue(value: T | K): K {
@@ -177,7 +184,7 @@ export class FlatTreeControl<T, K = T> extends BaseTreeControl<T, K> {
 
   /** Expands all data nodes in the tree (`dataNodes` must be all flattened data nodes). */
   expandAll(): void {
-    this.expansionModel.select(...this.dataNodes.map((node) => this._trackByValue(node)));
+    this.expansionModel.bulk.select(this.dataNodes.map((node) => this._trackByValue(node)));
   }
 }
 
@@ -209,8 +216,13 @@ export class NestedTreeControl<T, K = T> extends BaseTreeControl<T, K> {
   /** Expands all dataNodes in the tree (`dataNodes` must be all root level data nodes). */
   expandAll(): void {
     this.expansionModel.clear();
-    const allNodes = this.dataNodes.reduce((accumulator: T[], dataNode) => [...accumulator, ...this.getDescendants(dataNode), dataNode], []);
-    this.expansionModel.select(...allNodes.map((node) => this._trackByValue(node)));
+    // Same order as upstream's `reduce` (descendants, then the node); one array, no copies per root, no spread.
+    const keys: K[] = [];
+    for (const dataNode of this.dataNodes) {
+      for (const node of this.getDescendants(dataNode)) keys.push(this._trackByValue(node));
+      keys.push(this._trackByValue(dataNode));
+    }
+    this.expansionModel.bulk.select(keys);
   }
 
   /** Gets a list of descendant dataNodes of a subtree rooted at given data node recursively. */
