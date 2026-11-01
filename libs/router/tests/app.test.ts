@@ -5,7 +5,7 @@ import { steps } from "@rivetjs/testing/steps";
 import assert from "node:assert/strict";
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { build, createServer } from "vite";
+import { build, createLogger, createServer } from "vite";
 import { chromium } from "playwright";
 import { start } from "../adapters/node.ts";
 import { bare, nodeEnv, withNodeEnv } from "./vite-env.ts";
@@ -72,12 +72,21 @@ test("dev middleware renders pages, data, guards, nearest 404 and errors", async
 test("dev: a source that starts using navigate() / useParams() regenerates the App with them", async () => {
   const restoreEnv = nodeEnv("development");
   const root = await copyFixture();
-  const server = await createServer({ root, configFile: root + "vite.config.ts", logLevel: "silent", server: { port: 0 } });
+  // Silent, but kept for the failure message: route regeneration errors, watcher errors (CI-RED 2026-11-01: red on every
+  // Linux CI run, green on macOS; the cause was not visible with logLevel "silent").
+  const logged: string[] = [];
+  const logger = createLogger("silent");
+  logger.error = (message) => void logged.push("error: " + message);
+  logger.warn = (message) => void logged.push("warn: " + message);
+  const server = await createServer({ root, configFile: root + "vite.config.ts", customLogger: logger, logLevel: "silent", server: { port: 0 } });
   await server.listen();
+  const seen: string[] = [];
+  server.watcher.on("all", (event, file) => void seen.push(`${event} ${file.slice(root.length - 1)}`));
+  server.watcher.on("error", (error) => void logged.push("watcher: " + String(error)));
   const app = () => readFile(root + ".rivet/app.tsx", "utf8");
   const until = async (check: (source: string) => boolean) => {
     for (const started = Date.now(); Date.now() - started < 10_000; await new Promise((done) => setTimeout(done, 50))) if (check(await app())) return;
-    assert.fail("app.tsx not regenerated:\n" + (await app()));
+    assert.fail(`app.tsx not regenerated; watcher events: ${JSON.stringify(seen)}; logged: ${JSON.stringify(logged)}\n` + (await app()));
   };
   try {
     assert.doesNotMatch(await app(), /rivet:go|RouteParamsContext/);
