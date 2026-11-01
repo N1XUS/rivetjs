@@ -34,9 +34,23 @@ function run(e: Eff): void {
     observer = previous;
   }
 }
+// Errors of one dispatch / flush (reactivity's rule): the first is rethrown once the rest ran, later ones are reported.
+const raise = (errors: unknown[]): void => {
+  for (let i = 1; i < errors.length; i++) (globalThis.reportError || console.error)(errors[i]);
+  if (errors.length) throw errors[0];
+};
 function flush(): void {
   held = false;
-  for (const e of pending) (pending.delete(e), run(e));
+  const errors: unknown[] = [];
+  // A throwing binding does not leave the other queued bindings stale.
+  for (const e of pending)
+    try {
+      pending.delete(e);
+      run(e);
+    } catch (error) {
+      errors.push(error);
+    }
+  raise(errors);
 }
 export const effect = (f: () => void): void => {
   const e: Eff = { f, d: new Set() };
@@ -98,14 +112,20 @@ export type On = (el: Element, type: string, fn: ((event: Event) => unknown) | n
 export function delegate(event: Event, path: EventTarget[] = event.composedPath()): void {
   if (held) flush();
   const key = "$r" + event.type,
-    view = (event as UIEvent).view;
+    view = (event as UIEvent).view,
+    errors: unknown[] = [];
   depth++;
   try {
     for (const node of path) {
       const handler = (node as unknown as Record<string, ((event: Event) => unknown) | undefined>)[key];
       if (handler) {
         Object.defineProperty(event, "currentTarget", { configurable: true, value: node });
-        handler.call(node, event);
+        // A throwing handler does not cut the path short (native dispatch: reported, the others run).
+        try {
+          handler.call(node, event);
+        } catch (error) {
+          errors.push(error);
+        }
         if (event.cancelBubble) {
           event.stopImmediatePropagation();
           break;
@@ -115,18 +135,24 @@ export function delegate(event: Event, path: EventTarget[] = event.composedPath(
   } finally {
     depth--;
     delete (event as { currentTarget?: unknown }).currentTarget;
-    if (pending.size)
-      if (event.isTrusted && event.type == "click" && (event as PointerEvent).pointerType == "mouse" && view && !settled.has(view)) {
-        settled.add(view);
-        held = true;
-        if (!port) {
-          const channel = new MessageChannel();
-          channel.port1.onmessage = () => held && flush();
-          port = channel.port2;
-        }
-        port.postMessage(0);
-      } else flush();
   }
+  if (pending.size)
+    if (event.isTrusted && event.type == "click" && (event as PointerEvent).pointerType == "mouse" && view && !settled.has(view)) {
+      settled.add(view);
+      held = true;
+      if (!port) {
+        const channel = new MessageChannel();
+        channel.port1.onmessage = () => held && flush();
+        port = channel.port2;
+      }
+      port.postMessage(0);
+    } else
+      try {
+        flush();
+      } catch (error) {
+        errors.push(error);
+      }
+  raise(errors);
 }
 // The default a replay dispatches (`dom-lite.ts` `replay`: the loader's `requestSubmit()`, a link's re-dispatched click)
 // reaches native listeners and the browser, not the handlers that ran on the held event (RESUME-FIX A1).
