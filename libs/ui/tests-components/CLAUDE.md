@@ -167,3 +167,7 @@ Scheduler final-review coverage: `scheduler-lane-geometry.ts` drives real Chromi
 Streaming text (2026-10-31): `/streaming-text` + `streaming-text.test.ts` verify no idle boot, complete initial SSR text, partial words from the first cold burst, drain after input ends, reset/replay, reduced-motion instant updates and no animations.
 
 Markdown motion regression (2026-10-31): the streaming-text production story verifies an actively streaming, nonempty Markdown has no inline height and no overflow clip, and a nonzero layout box. This catches the showcase’s accordion-style clipping while preserving the letter-streaming and reduced-motion checks.
+
+Text animation parity (2026-11-01): streaming-text.test.ts feeds both components the same source and pauses their glyph animations at 100ms. It compares keyframes, duration, easing, fill and opacity, and asserts Markdown has no animated/faded paragraph ancestor. Existing cold-start, replay, natural-height and reduced-motion coverage remains.
+
+Streaming completion/caret (2026-11-01): parity coverage preserves the exact glyph node after input ends, so its paused 100ms animation still matches StreamingText. Caret coverage checks thin vertical geometry, a >=1s period and intermediate opacity between bright/dim states; reduced-motion coverage checks it is hidden.

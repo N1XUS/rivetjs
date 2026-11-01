@@ -58,7 +58,7 @@ export function AiChat() {
     await new Promise((resolve) => setTimeout(resolve, 700));
     status.set("streaming");
     // Natural cadence: bursts of one to a few words, uneven delays, a longer pause after a sentence.
-    await streamText(live, simulateStream(answer, { interval: 45, wordsPerChunk: 2, jitter: 0.7, signal: abort.signal }), { signal: abort.signal });
+    await streamText(live, simulateStream(answer, { interval: 180, wordsPerChunk: 4, jitter: 0.6, signal: abort.signal }), { signal: abort.signal });
     turns.set(turns().map((turn) => (turn.id === reply ? { ...turn, text: live(), live: false } : turn)));
     status.set("ready");
   };

@@ -1,11 +1,12 @@
 // Rivet-authored: smoothly paced text, independent of transport chunk boundaries.
-import { followText, textGraphemes } from "@rivetjs/cdk/chat/text-reveal";
+import { followText } from "@rivetjs/cdk/chat/text-reveal";
 import { signal, untrack } from "@rivetjs/reactivity";
-import { clientEffect, For } from "@rivetjs/runtime/dom";
+import { clientEffect } from "@rivetjs/runtime/dom";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 import { streamingTextVariants } from "../../../styles/src/components/streaming-text/index.ts";
 import { composeSlotClassName } from "../../utils/compose.tsx";
 import { splitLive } from "../../utils/live.tsx";
+import { StreamingTextRun } from "./text-run.tsx";
 
 const SLOTS = streamingTextVariants();
 
@@ -35,20 +36,18 @@ const StreamingTextRoot = (props: StreamingTextProps): JSX.Element => {
   clientEffect(() => untrack(() => followText(source, displayed, { isStreaming: streaming, speed, onRevealingChange: (value) => revealing.set(value) })), {
     when: "interaction",
   });
-  const characters = (): string[] => {
-    // Keep the source dependency: a content write wakes a server-rendered boundary and installs its follower.
-    source();
-    return textGraphemes(displayed());
-  };
   return (
-    <span class={composeSlotClassName(SLOTS.base, local.class)} data-slot="streaming-text" data-revealing={() => revealing() || undefined} {...rest}>
-      <For each={characters} by={(_character: string, index: number) => index}>
-        {(character: () => string) => (
-          <span class={SLOTS.character()} data-new={untrack(revealing) ? "true" : undefined}>
-            {character()}
-          </span>
-        )}
-      </For>
+    <span
+      class={composeSlotClassName(SLOTS.base, local.class)}
+      data-slot="streaming-text"
+      data-revealing={() => {
+        // Keep the source dependency on this boundary: a content write wakes its pacing effect after resume.
+        source();
+        return revealing() || undefined;
+      }}
+      {...rest}
+    >
+      <StreamingTextRun content={displayed} isRevealing={revealing} />
     </span>
   );
 };

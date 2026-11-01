@@ -147,3 +147,7 @@ Stateful reasoning labels use a lazy Content slot (`label={() => <StreamingText 
 - Streaming payload isolation (2026-10-31): pacing moved to CDK `chat/text-reveal`; the generated API source links track the relocated chat/Markdown line offsets. The prompt-input-basic and chat-attachment-basic frame JS values return to their existing ceilings; no frame baseline was raised.
 
 AI chat showcase motion (2026-10-31): Markdown’s clipped height follower delayed visible letters and expanded the answer like an accordion. Markdown now keeps natural height and uses only character pacing for the reveal. The showcase manifest checks no inline height mask while generation is still active; formatted answers, tool calls and the conversation flow stay in place.
+
+Markdown/StreamingText parity (2026-11-01): Markdown uses StreamingTextRun and streaming-text.css for live characters, with no additional block fade. showcase-chat, ai-chat and markdown-streaming use the StreamingText demo’s same transport simulation (180ms, four words/chunk, jitter 0.6) so source cadence does not make identical animations look different. No added response stage or user-facing format switch.
+
+Markdown caret (2026-11-01): optional showCaret now paints a softly blinking vertical line rather than the old pulsing circle. Completed generated blocks retain their character nodes so the final fades finish 1:1 with StreamingText.

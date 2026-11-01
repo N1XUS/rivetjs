@@ -5,12 +5,12 @@
 // - Parser = `@rivetjs/cdk/markdown` (safe plain-data AST): elements are built from the AST, never from HTML strings, so
 //   raw HTML in a response stays text and unsafe link / image URLs (`javascript:` …) are dropped (`safeUrl`).
 // - Source: `content` (a string or an accessor: streaming) or a string child. Each top-level block (`splitBlocks`) is a
-//   keyed `For` row (key = index + block text): finished blocks keep their DOM while tokens arrive.
+//   keyed `For` row: completed initial blocks use index + text; generated blocks retain their live character DOM.
 // - `isStreaming` (value or accessor): the last block gets `closeOpenMarks` (no raw `**` flashing) and a soft caret
 //   (`showCaret`, default true). Fenced code renders `CodeBlock` (header with the language + copy button).
 // - Live tail (streaming): the block being written is one persistent row (key `<index>:~`) rendered by keyed `For`s all
 //   the way down (blocks → inline nodes → graphemes, keyed by position), so a new chunk appends character `<span>`s and existing
-//   nodes stay (no re-render per chunk); new characters / blocks fade in (CSS, `.markdown__character` / `.markdown__live`,
+//   nodes stay (no re-render per chunk); new characters use StreamingText’s fade (CSS, `.streaming-text__character[data-new]`,
 //   reduced motion: none). An open code fence streams as plain characters in the code block frame and is highlighted once it
 //   closes (the row then re-renders as a finished block, static: no animation).
 // - Natural flow: the root keeps its content height. A separate clipped height animation would hide arriving letters
@@ -22,7 +22,7 @@
 //   default `class`, the node's attributes and `children` (already rendered, live while streaming) and returns the element
 //   that replaces the default one; elements are still built from the AST (never innerHTML). Tight list-item paragraphs have
 //   no `<p>`, so `p` is not called for them. Style-only overrides: the `markdown__*` classes.
-import { followText, textGraphemes } from "@rivetjs/cdk/chat/text-reveal";
+import { followText } from "@rivetjs/cdk/chat/text-reveal";
 import { closeOpenMarks, parseMarkdown, splitBlocks } from "@rivetjs/cdk/markdown";
 import type { MarkdownBlock, MarkdownInline, MarkdownListItem } from "@rivetjs/cdk/markdown";
 import { clientEffect, For, Show } from "@rivetjs/runtime/dom";
@@ -32,6 +32,7 @@ import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { markdownVariants } from "../../../styles/src/components/markdown/index.ts";
 import { composeSlotClassName } from "../../utils/compose.tsx";
 import { splitLive } from "../../utils/live.tsx";
+import { StreamingTextRun } from "../streaming-text/text-run.tsx";
 import { CodeBlockCode, CodeBlockCopyButton, CodeBlockHeader, CodeBlockLanguage, CodeBlockRoot } from "../code-block/code-block.tsx";
 
 const SLOTS = markdownVariants();
@@ -413,30 +414,22 @@ function renderBlocks(blocks: readonly MarkdownBlock[], tail: boolean, tight = f
  * Live tail (streaming): keyed all the way down so appended text only adds nodes
  * -----------------------------------------------------------------------------------------------*/
 
-/**
- * Grapheme spans of growing text, keyed by position so each new letter fades independently and existing nodes stay.
- * Wrapped in one `<span>`: a list row that is a single element is cheaper to reconcile than a row of anchors (no
- * start / end Text nodes, no range walk per list update; the runtime keeps either kind's nodes in place).
- */
-const liveText = (text: () => string): Node => (
-  <span>
-    <For each={() => textGraphemes(text())} by={(_character: string, index: number) => index}>
-      {(character: () => string) => <span class={SLOTS.character()}>{character()}</span>}
-    </For>
-  </span>
+/** Use the same character component and animation as StreamingText; pacing is already applied to the source. */
+const liveText = (text: () => string, animate: () => boolean): Node => (
+  <StreamingTextRun content={text} isRevealing={animate} characterClass={SLOTS.character()} />
 );
 
-const inlineKey = (node: MarkdownInline, index: number): string => `${index}:${node.type}`;
+const inlineKey = (node: MarkdownInline, index: number): string => `${index}:${node.type}${node.type === "image" ? JSON.stringify(node) : ""}`;
 
-function liveInline(nodes: () => readonly MarkdownInline[], cx?: MarkdownComponents): Node {
+function liveInline(nodes: () => readonly MarkdownInline[], animate: () => boolean, cx?: MarkdownComponents): Node {
   return (
     <For each={nodes} by={inlineKey}>
-      {(node: () => MarkdownInline) => liveInlineNode(node, cx)}
+      {(node: () => MarkdownInline) => liveInlineNode(node, animate, cx)}
     </For>
   );
 }
 
-function liveInlineNode(node: () => MarkdownInline, cx?: MarkdownComponents): Node {
+function liveInlineNode(node: () => MarkdownInline, animate: () => boolean, cx?: MarkdownComponents): Node {
   const first = node();
   const children = (): readonly MarkdownInline[] => {
     const n = node();
@@ -444,34 +437,34 @@ function liveInlineNode(node: () => MarkdownInline, cx?: MarkdownComponents): No
   };
   switch (first.type) {
     case "text":
-      return liveText(() => (node() as { value: string }).value);
+      return liveText(() => (node() as { value: string }).value, animate);
     case "strong":
       return custom(
         cx,
         "strong",
-        () => ({ class: SLOTS.strong(), children: liveInline(children, cx) }),
-        () => <strong class={SLOTS.strong()}>{liveInline(children, cx)}</strong>,
+        () => ({ class: SLOTS.strong(), children: liveInline(children, animate, cx) }),
+        () => <strong class={SLOTS.strong()}>{liveInline(children, animate, cx)}</strong>,
       );
     case "em":
       return custom(
         cx,
         "em",
-        () => ({ class: SLOTS.em(), children: liveInline(children, cx) }),
-        () => <em class={SLOTS.em()}>{liveInline(children, cx)}</em>,
+        () => ({ class: SLOTS.em(), children: liveInline(children, animate, cx) }),
+        () => <em class={SLOTS.em()}>{liveInline(children, animate, cx)}</em>,
       );
     case "del":
       return custom(
         cx,
         "del",
-        () => ({ class: SLOTS.del(), children: liveInline(children, cx) }),
-        () => <del class={SLOTS.del()}>{liveInline(children, cx)}</del>,
+        () => ({ class: SLOTS.del(), children: liveInline(children, animate, cx) }),
+        () => <del class={SLOTS.del()}>{liveInline(children, animate, cx)}</del>,
       );
     case "code":
       return custom(
         cx,
         "code",
-        () => ({ class: SLOTS.inlineCode(), children: liveText(() => (node() as { value: string }).value) }),
-        () => <code class={SLOTS.inlineCode()}>{liveText(() => (node() as { value: string }).value)}</code>,
+        () => ({ class: SLOTS.inlineCode(), children: liveText(() => (node() as { value: string }).value, animate) }),
+        () => <code class={SLOTS.inlineCode()}>{liveText(() => (node() as { value: string }).value, animate)}</code>,
       );
     case "br":
       return custom(
@@ -489,13 +482,22 @@ function liveInlineNode(node: () => MarkdownInline, cx?: MarkdownComponents): No
           get href() {
             return (node() as { href: string }).href;
           },
+          get title() {
+            return (node() as { title?: string }).title;
+          },
           target: "_blank",
           rel: "noopener noreferrer",
-          children: liveInline(children, cx),
+          children: liveInline(children, animate, cx),
         }),
         () => (
-          <a class={SLOTS.link()} href={(node() as { href: string }).href} target="_blank" rel="noopener noreferrer">
-            {liveInline(children, cx)}
+          <a
+            class={SLOTS.link()}
+            href={(node() as { href: string }).href}
+            title={(node() as { title?: string }).title}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {liveInline(children, animate, cx)}
           </a>
         ),
       );
@@ -509,9 +511,7 @@ const blockKind = (block: MarkdownBlock): string =>
   block.type === "heading"
     ? `h${block.level}`
     : block.type === "list"
-      ? block.ordered
-        ? "ol"
-        : "ul"
+      ? `${block.ordered ? `ol:${block.start}` : "ul"}:${block.tight}`
       : block.type === "code"
         ? block.closed
           ? "code"
@@ -520,15 +520,20 @@ const blockKind = (block: MarkdownBlock): string =>
 
 const liveCaret = (on: () => boolean): Node => <Show when={on}>{caret()}</Show>;
 
-function liveBlocks(blocks: () => readonly MarkdownBlock[], caretOn: () => boolean, tight = false, cx?: MarkdownComponents): Node {
+function liveBlocks(blocks: () => readonly MarkdownBlock[], caretOn: () => boolean, animate: () => boolean, tight = false, cx?: MarkdownComponents): Node {
   return (
-    <For each={blocks} by={(block: MarkdownBlock, index: number) => `${index}:${blockKind(block)}`}>
-      {(block: () => MarkdownBlock, index: () => number) => liveBlock(block, () => caretOn() && index() === blocks().length - 1, tight, cx)}
+    <For
+      each={blocks}
+      by={(block: MarkdownBlock, index: number) =>
+        `${index}:${blockKind(block)}${block.type === "table" || (block.type === "code" && block.closed) ? JSON.stringify(block) : ""}`
+      }
+    >
+      {(block: () => MarkdownBlock, index: () => number) => liveBlock(block, () => caretOn() && index() === blocks().length - 1, animate, tight, cx)}
     </For>
   );
 }
 
-function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: boolean, cx?: MarkdownComponents): Node {
+function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, animate: () => boolean, tight: boolean, cx?: MarkdownComponents): Node {
   const first = block();
   const inline = (): readonly MarkdownInline[] => {
     const b = block();
@@ -541,23 +546,23 @@ function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: bo
       if (tight)
         return (
           <span>
-            {liveInline(inline, cx)}
+            {liveInline(inline, animate, cx)}
             {liveCaret(caretOn)}
           </span>
         );
       return custom(
         cx,
         "p",
-        () => ({ class: `${SLOTS.paragraph()} ${live}`, children: [liveInline(inline, cx), liveCaret(caretOn)] }),
+        () => ({ class: `${SLOTS.paragraph()} ${live}`, children: [liveInline(inline, animate, cx), liveCaret(caretOn)] }),
         () => (
           <p class={`${SLOTS.paragraph()} ${live}`}>
-            {liveInline(inline, cx)}
+            {liveInline(inline, animate, cx)}
             {liveCaret(caretOn)}
           </p>
         ),
       );
     case "heading":
-      return heading(first.level, [liveInline(inline, cx), liveCaret(caretOn)], true, cx);
+      return heading(first.level, [liveInline(inline, animate, cx), liveCaret(caretOn)], true, cx);
     case "blockquote": {
       const quoted = (): Node =>
         liveBlocks(
@@ -566,6 +571,7 @@ function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: bo
             return b.type === "blockquote" ? b.children : [];
           },
           caretOn,
+          animate,
           false,
           cx,
         );
@@ -585,18 +591,55 @@ function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: bo
       const rows = (
         <For each={items} by={(_item: MarkdownListItem, index: number) => index}>
           {(item: () => MarkdownListItem, index: () => number) => {
+            const task = (): "true" | undefined => (item().checked !== undefined ? "true" : undefined);
+            const box = (
+              <Show when={() => item().checked !== undefined}>
+                {() =>
+                  custom(
+                    cx,
+                    "input",
+                    () => ({
+                      class: SLOTS.taskCheckbox(),
+                      type: "checkbox",
+                      get checked() {
+                        return item().checked === true;
+                      },
+                      disabled: true,
+                      get "aria-label"() {
+                        return item().checked ? "Done" : "To do";
+                      },
+                    }),
+                    () => (
+                      <input class={SLOTS.taskCheckbox()} type="checkbox" checked={item().checked} disabled aria-label={item().checked ? "Done" : "To do"} />
+                    ),
+                  )
+                }
+              </Show>
+            );
             const content = (): Node =>
               liveBlocks(
                 () => item().children,
                 () => caretOn() && index() === items().length - 1,
+                animate,
                 tightList,
                 cx,
               );
             return custom(
               cx,
               "li",
-              () => ({ class: `${SLOTS.listItem()} ${live}`, children: content() }),
-              () => <li class={`${SLOTS.listItem()} ${live}`}>{content()}</li>,
+              () => ({
+                class: `${SLOTS.listItem()} ${live}`,
+                get "data-task"() {
+                  return task();
+                },
+                children: [box, content()],
+              }),
+              () => (
+                <li class={`${SLOTS.listItem()} ${live}`} data-task={task()}>
+                  {box}
+                  {content()}
+                </li>
+              ),
             );
           }}
         </For>
@@ -615,8 +658,18 @@ function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: bo
         : custom(
             cx,
             "ul",
-            () => ({ class: SLOTS.list(), children: rows }),
-            () => <ul class={SLOTS.list()}>{rows}</ul>,
+            () => ({
+              class: SLOTS.list(),
+              get "data-task"() {
+                return items().some((item) => item.checked !== undefined) ? ("true" as const) : undefined;
+              },
+              children: rows,
+            }),
+            () => (
+              <ul class={SLOTS.list()} data-task={items().some((item) => item.checked !== undefined) ? "true" : undefined}>
+                {rows}
+              </ul>
+            ),
           );
     }
     case "code":
@@ -644,7 +697,7 @@ function liveBlock(block: () => MarkdownBlock, caretOn: () => boolean, tight: bo
               </CodeBlockHeader>
               <div class="code-block__code" data-slot="code-block-code">
                 <pre class="code-block__pre">
-                  <code>{liveText(code)}</code>
+                  <code>{liveText(code, animate)}</code>
                 </pre>
               </div>
             </CodeBlockRoot>
@@ -662,6 +715,7 @@ interface MarkdownRow {
   key: string;
   raw: string;
   tail: boolean;
+  last: boolean;
 }
 
 interface MarkdownProps extends Omit<JSX.IntrinsicElements["div"], "class" | "children" | "content"> {
@@ -694,10 +748,28 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
   const canStream = typeof local.content === "function" || local.isStreaming !== undefined;
   const displayed = canStream ? signal(untrack(source)) : undefined;
   const revealing = canStream ? signal(false) : undefined;
+  // Once text has animated, keep those character nodes through block completion and stream end, just like
+  // StreamingText. Replacing them with static text would cut their in-flight CSS fades short.
+  const liveFrom = canStream ? signal(-1) : undefined;
   const speed = local.streamingSpeed;
-  if (displayed && revealing)
+  if (displayed && revealing && liveFrom)
     clientEffect(
-      () => untrack(() => followText(source, displayed, { isStreaming: inputStreaming, speed, onRevealingChange: (value) => revealing.set(value) })),
+      () =>
+        untrack(() =>
+          followText(source, displayed, {
+            isStreaming: inputStreaming,
+            speed,
+            onRevealingChange: (value) => {
+              if (value) {
+                const start = Math.max(0, splitBlocks(untrack(displayed)).length - 1);
+                const previous = untrack(liveFrom);
+                // Establish existing glyphs before enabling motion, so prior text never reanimates.
+                liveFrom.set(previous < 0 ? start : Math.min(previous, start));
+              }
+              revealing.set(value);
+            },
+          }),
+        ),
       { when: "interaction" },
     );
   const streaming = (): boolean => inputStreaming() || revealing?.() === true;
@@ -705,9 +777,11 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
     const raw = source();
     const blocks = splitBlocks(displayed ? displayed() : raw);
     const live = streaming();
+    const retained = liveFrom?.() ?? -1;
     return blocks.map((raw, index) => {
-      const tail = live && index === blocks.length - 1;
-      return { key: tail ? `${index}:~` : `${index}:${raw}`, raw, tail };
+      const last = index === blocks.length - 1;
+      const tail = (live && last) || (retained >= 0 && index >= retained);
+      return { key: tail ? `${index}:~` : `${index}:${raw}`, raw, tail, last };
     });
   };
   const caretOn = local.showCaret !== false;
@@ -724,8 +798,18 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
             return nodes.length === 1 ? nodes[0]! : <div class={SLOTS.tail()}>{nodes}</div>;
           }
           // The tail row persists while it grows: its blocks are reactive (keyed) over the repaired text.
-          const blocks = computed(() => parseMarkdown(closeOpenMarks(row().raw)));
-          return <div class={SLOTS.tail()}>{liveBlocks(blocks, () => caretOn, false, cx)}</div>;
+          const blocks = computed(() => parseMarkdown(row().last && streaming() ? closeOpenMarks(row().raw) : row().raw));
+          return (
+            <div class={SLOTS.tail()}>
+              {liveBlocks(
+                blocks,
+                () => caretOn && streaming() && row().last,
+                () => revealing?.() === true,
+                false,
+                cx,
+              )}
+            </div>
+          );
         }}
       </For>
     </div>

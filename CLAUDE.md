@@ -124,3 +124,5 @@ Operations integration coverage (2026-10-30): `examples/operations/` replaces th
 Streaming text (2026-10-31): CDK chat `followText` paces appended graphemes, shared by UI `StreamingText` and Markdown (`streamingSpeed`). Source writes wake interaction effects; static server text stays complete with no idle boot. Reasoning rows fade rather than expand from height zero.
 
 Streaming motion correction (2026-10-31): Markdown now uses natural content height while letters reveal. Its separate followHeight mask could keep a live showcase response at zero height and uncover already-faded words like an accordion. Character pacing/caret remain; production browser coverage checks live text has no pinned height or overflow clip.
+
+Markdown/StreamingText animation parity (2026-11-01): both now use the internal StreamingTextRun component, the streaming-text__character[data-new] selector and the same keyframe. Markdown has no separate character/block animation; initial server text stays still. Production parity coverage compares keyframes, duration, easing, fill and opacity at a matched time. The three AI/Markdown demos use the same simulated chunk cadence as StreamingText.

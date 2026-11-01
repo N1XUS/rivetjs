@@ -24,7 +24,7 @@ Fill the source signal with `streamText(text, response.body)` from `@rivetjs/cdk
 
 `speed` defaults to 80 visible characters per second. Large bursts accelerate to catch up within 240ms. Set `speed={0}` for immediate updates. A hidden tab catches up on its next frame; no frames run when the queue is empty. Unmounting cancels the queue.
 
-For formatted model answers, [Markdown](/components/markdown/) uses the same pacing automatically and exposes `streamingSpeed`.
+For formatted model answers, [Markdown](/components/markdown/) uses the same internal character renderer, pacing and animation styles automatically and exposes `streamingSpeed`.
 
 ## API Reference
 

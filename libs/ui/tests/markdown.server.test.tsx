@@ -45,12 +45,13 @@ test("markdown SSR: string child + streaming repair and caret", async () => {
   assert.match(child, /<p class="markdown__paragraph">Hello <em class="markdown__em">there<\/em><\/p>/);
   const streaming = await renderToString(() => <Markdown content={"Done.\n\nPartial **bol"} isStreaming />);
   assert.match(streaming, /data-streaming="true"/);
-  // Live tail: finished blocks render whole, the streaming block renders word spans (the browser fades them in).
+  // Finished blocks render whole; live inline text uses StreamingText's character renderer.
   assert.match(streaming, /<p class="markdown__paragraph">Done\.<\/p>/);
-  assert.match(
-    streaming,
-    /<strong class="markdown__strong"><span><span class="markdown__character">b<\/span><span class="markdown__character">o<\/span><span class="markdown__character">l<\/span><\/span><\/strong><span class="markdown__caret"/,
-  );
+  const bold = /<strong class="markdown__strong">([\s\S]*?)<\/strong>/.exec(streaming)![1]!;
+  assert.equal(bold.replace(/<[^>]+>/g, ""), "bol");
+  assert.match(bold, /data-slot="streaming-text-run"/);
+  assert.equal(bold.match(/streaming-text__character/g)?.length, 3);
+  assert.doesNotMatch(streaming, /data-new/);
   assert.doesNotMatch(streaming, /\*\*/);
   assert.equal(streaming.match(/markdown__caret/g)?.length, 1);
 });

@@ -54,6 +54,7 @@ test("streaming text: reduced motion renders the complete burst immediately", as
   assert.equal(await page.locator("#plain[data-revealing]").count(), 0);
   assert.equal(await page.locator("#formatted").textContent(), "Hello world");
   assert.equal(await page.locator("#plain").evaluate((root) => root.getAnimations({ subtree: true }).length), 0);
+  assert.equal(await page.locator("#formatted .markdown__caret").evaluate((el) => getComputedStyle(el).opacity), "0");
   assert.deepEqual(seen.errors, []);
   await page.close();
 });
@@ -73,5 +74,77 @@ test("markdown: streamed letters stay in natural flow without a height reveal", 
   assert.notEqual(content.overflow, "clip");
   assert.ok(content.box > 0);
   assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
+test("markdown: character motion exactly matches StreamingText without an additional paragraph animation", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  await page.goto(s.origin + "/streaming-text");
+  await page.click("#burst");
+  await page.waitForSelector("#plain .streaming-text__character");
+  await page.waitForSelector("#formatted .markdown__character");
+  const motion = await page.evaluate(() => {
+    const plain = document.querySelector("#plain .streaming-text__character")!;
+    const markdown = document.querySelector("#formatted .markdown__character")!;
+    const sample = (el: Element) => {
+      const animation = el.getAnimations()[0];
+      animation?.pause();
+      if (animation) animation.currentTime = 100;
+      const css = getComputedStyle(el);
+      return {
+        name: css.animationName,
+        duration: css.animationDuration,
+        easing: css.animationTimingFunction,
+        fill: css.animationFillMode,
+        opacity: css.opacity,
+        keyframes: (animation?.effect as KeyframeEffect | null)?.getKeyframes(),
+      };
+    };
+    const ancestors = [];
+    for (let el = markdown.parentElement; el; el = el.parentElement) {
+      const css = getComputedStyle(el);
+      ancestors.push({ animation: css.animationName, opacity: css.opacity });
+      if (el.id === "formatted") break;
+    }
+    return { plain: sample(plain), markdown: sample(markdown), ancestors };
+  });
+  assert.deepEqual(motion.markdown, motion.plain);
+  assert.ok(motion.plain.keyframes?.length);
+  assert.equal(
+    motion.ancestors.every((node) => node.animation === "none" && node.opacity === "1"),
+    true,
+    JSON.stringify(motion.ancestors),
+  );
+  const glyph = await page.locator("#formatted .markdown__character").first().elementHandle();
+  await page.click("#finish");
+  await page.waitForFunction(() => document.querySelector("#formatted")?.getAttribute("data-streaming") !== "true");
+  assert.equal(await glyph!.evaluate((el) => el.isConnected), true, "completion must preserve the same animated character");
+  assert.equal(await glyph!.evaluate((el) => getComputedStyle(el).animationName), motion.plain.name);
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
+test("markdown: streaming caret is a thin vertical line with a continuous opacity blink", async () => {
+  const page = await s.browser.newPage();
+  await page.goto(s.origin + "/streaming-text");
+  await page.click("#burst");
+  await page.waitForSelector("#formatted .markdown__caret");
+  const caret = await page.locator("#formatted .markdown__caret").evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const animation = el.getAnimations()[0]!;
+    const duration = Number(animation.effect!.getTiming().duration);
+    animation.pause();
+    const opacity = (time: number) => {
+      animation.currentTime = time;
+      return Number(getComputedStyle(el).opacity);
+    };
+    return { width: box.width, height: box.height, duration, high: opacity(0), middle: opacity(duration / 4), low: opacity(duration / 2) };
+  });
+  assert.ok(caret.width <= 2 && caret.height >= caret.width * 5, JSON.stringify(caret));
+  assert.ok(caret.duration >= 1000);
+  assert.ok(caret.low < caret.middle && caret.middle < caret.high, "the blink must fade through intermediate opacity instead of switching abruptly");
+  await page.click("#finish");
+  await page.waitForFunction(() => !document.querySelector("#formatted .markdown__caret"));
   await page.close();
 });

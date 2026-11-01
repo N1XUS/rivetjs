@@ -206,3 +206,9 @@ StreamingText (2026-10-31): `streaming-text/{streaming-text.tsx,index.ts}` = inl
 - Markdown/StreamingText use the isolated CDK `chat/text-reveal` subpath. Importing pacing through the shared `chat` module coalesces its code into prompt-input/chat-attachment frame chunks; preserve this dependency boundary (UI `chat-payload.test.ts`).
 
 Markdown natural flow (2026-10-31): character pacing is the only text reveal. The root no longer pins height or clips overflow; this avoids masking letters until their opacity entrance has finished in the bottom-pinned showcase conversation. Keep the raw source dependency in rows for cold wake.
+
+Shared text renderer (2026-11-01): StreamingTextRun is internal (not re-exported from the package barrel); it owns grapheme rows and samples isRevealing untracked at row creation. StreamingText and Markdown both instantiate it. Markdown passes its root reveal state through live block/inline recursion and adds only the markdown__character styling hook. StreamingText retains a raw source read on its root data-revealing binding to wake its pacing effect after cold resume.
+
+Retained Markdown rows preserve glyph nodes after completion. Atomic tables/closed code and images include their AST snapshot in the inner key so later cells/content still update; list keys include tightness/start for structural changes. Live task lists render reactive checkboxes and data-task hooks rather than relying on a final static rebuild.
+
+Markdown retains animated rows from its first queued block onward (liveFrom signal), so completion never replaces fading glyphs. row.last gates mark repair and the single caret. A reveal starts by establishing preexisting glyphs before enabling their animation flag. No extra animation timers or duplicate pacing.

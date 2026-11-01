@@ -242447,8 +242447,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 55,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L55"
+    "line": 56,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L56"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownComponents/"
   },
@@ -242484,8 +242484,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 42,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L42"
+    "line": 43,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L43"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownElementProps/"
   },
@@ -244203,8 +244203,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 667,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L667"
+    "line": 721,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L721"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownProps/"
   },
@@ -244233,8 +244233,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 683,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L683"
+    "line": 737,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L737"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownRoot/"
   },
@@ -244255,8 +244255,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/styles/src/components/markdown/markdown.styles.ts",
-    "line": 36,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/markdown/markdown.styles.ts#L36"
+    "line": 37,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/markdown/markdown.styles.ts#L37"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownVariants-type/"
   },
@@ -244277,8 +244277,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/styles/src/components/markdown/markdown.styles.ts",
-    "line": 10,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/markdown/markdown.styles.ts#L10"
+    "line": 11,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/markdown/markdown.styles.ts#L11"
    },
    "href": "/api/rivetjs/ui/markdown/markdownVariants/"
   },
@@ -396454,8 +396454,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/streaming-text/streaming-text.tsx",
-    "line": 12,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/streaming-text/streaming-text.tsx#L12"
+    "line": 13,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/streaming-text/streaming-text.tsx#L13"
    },
    "href": "/api/rivetjs/ui/streaming-text/StreamingTextProps/"
   },
@@ -396484,8 +396484,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/streaming-text/streaming-text.tsx",
-    "line": 22,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/streaming-text/streaming-text.tsx#L22"
+    "line": 23,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/streaming-text/streaming-text.tsx#L23"
    },
    "href": "/api/rivetjs/ui/streaming-text/StreamingTextRoot/"
   },

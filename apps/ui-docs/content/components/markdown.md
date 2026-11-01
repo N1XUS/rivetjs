@@ -30,9 +30,9 @@ Additional exported parts: `Markdown.Root`.
 
 ### Streaming
 
-Pass accessors as `content` and `isStreaming`. A frame queue reveals incoming chunks character by character, independently of network chunk boundaries. New letters fade in subtly; existing text stays in place and paragraphs, list items and code follow the document flow. Emoji and combining marks stay together. The default rate is 80 visible characters per second, accelerating for large bursts to catch up within 240ms; `streamingSpeed={0}` displays chunks immediately.
+Pass accessors as `content` and `isStreaming`. A frame queue reveals incoming chunks character by character, independently of network chunk boundaries. Live text is rendered by the same character component and stylesheet as [StreamingText](/components/streaming-text/): identical keyframes, timing and easing, with no extra paragraph fade. Existing text stays in place and paragraphs, list items and code follow the document flow. Emoji and combining marks stay together. The default rate is 80 visible characters per second, accelerating for large bursts to catch up within 240ms; `streamingSpeed={0}` displays chunks immediately.
 
-Finished blocks keep their DOM nodes. While streaming, open marks in the last block (`**`, `__`, `~~`, a backtick) are closed for display and a soft caret follows the displayed text. The root uses its natural height: arriving letters are immediately in view, with no clipped container or accordion-style height animation. Pending letters finish revealing after `isStreaming` becomes false, then the caret disappears. An open code fence streams as plain characters and is highlighted once it closes. Fenced code renders as a [CodeBlock](/components/code-block/). Reduced motion displays input immediately, with no fades.
+Finished blocks keep their DOM nodes. While streaming, open marks in the last block (`**`, `__`, `~~`, a backtick) are closed for display and a thin vertical caret softly fades in and out after the displayed text. The root uses its natural height: arriving letters are immediately in view, with no clipped container or accordion-style height animation. Pending letters finish revealing after `isStreaming` becomes false, then the caret disappears. Character nodes remain in place so their final fade finishes without snapping to full opacity. An open code fence streams as plain characters and is highlighted once it closes. Fenced code renders as a [CodeBlock](/components/code-block/). Reduced motion displays input immediately, with no fades or blinking caret.
 
 ::example{id=markdown-streaming}
 
@@ -72,7 +72,7 @@ The component’s parts emit these additional `data-slot` values: `markdown-care
 | `markdown__caret`                                            | streaming caret                                |
 | `markdown__tail`                                             | streaming blocks wrapper (`display: contents`) |
 | `markdown__live`                                             | a block entering while streaming               |
-| `markdown__character`                                        | a streamed visible character (fades in)        |
+| `markdown__character`                                        | a streamed visible character (also `streaming-text__character`; shared fade)        |
 
 ## API Reference
 

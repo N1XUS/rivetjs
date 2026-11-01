@@ -28,7 +28,7 @@ const EXCEPTIONS: { reason: string; uses: Record<string, string[]> }[] = [
       "chat-loader": ["1.2s", "0.15s", "0.3s", "1.4s"],
       "chat-tool": ["1s"],
       "progress-circle": ["1s"],
-      markdown: ["1.1s"],
+      markdown: ["1.4s"],
       "prompt-input": ["1s"],
       "progress-bar": ["1.5s"],
       "text-shimmer": ["2.2s"],

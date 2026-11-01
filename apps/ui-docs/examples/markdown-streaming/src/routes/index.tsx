@@ -37,7 +37,7 @@ export function Streaming() {
           run.set(run() + 1);
           await new Promise((resolve) => setTimeout(resolve, 700));
           phase.set("streaming");
-          await streamText(text, simulateStream(REPLY, { interval: 45, wordsPerChunk: 2, jitter: 0.7 }));
+          await streamText(text, simulateStream(REPLY, { interval: 180, wordsPerChunk: 4, jitter: 0.6 }));
           phase.set("done");
         }}
       >

@@ -258,76 +258,40 @@
   }
 
   .markdown__caret {
-    --tw-translate-y: -.05em;
-    width: .55em;
-    height: .55em;
-    translate: var(--tw-translate-x) var(--tw-translate-y);
-    vertical-align: middle;
-    opacity: .6;
-    animation: markdown-caret-pulse 1.1s var(--ease-out, ease-out) infinite;
+    vertical-align: -.12em;
+    width: 1px;
+    height: 1em;
+    animation: markdown-caret-blink 1.4s var(--ease-out, ease-out) infinite;
     background-color: currentColor;
-    border-radius: 3.40282e38px;
+    border-radius: 1px;
     margin-inline-start: var(--spacing, .25rem);
     display: inline-block;
   }
 
-  @keyframes markdown-caret-pulse {
+  @keyframes markdown-caret-blink {
     0%, 100% {
-      opacity: .25;
-      scale: .8;
+      opacity: .6;
     }
 
     50% {
-      opacity: .7;
-      scale: 1;
-    }
-  }
-
-  .markdown__character {
-    animation: markdown-character-in var(--motion-enter-duration) var(--motion-enter-ease) both;
-  }
-
-  .markdown__live {
-    animation: markdown-block-in var(--motion-enter-duration) var(--motion-enter-ease) both;
-  }
-
-  @keyframes markdown-character-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes markdown-block-in {
-    from {
-      opacity: 0;
+      opacity: .08;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .markdown__caret, .markdown__character, .markdown__live {
+    .markdown__caret {
+      opacity: 0;
       animation: none;
     }
   }
 }
-@keyframes markdown-caret-pulse {
+@keyframes markdown-caret-blink {
     0%, 100% {
-      opacity: .25;
-      scale: .8;
+      opacity: .6;
     }
 
     50% {
-      opacity: .7;
-      scale: 1;
-    }
-  }
-@keyframes markdown-character-in {
-    from {
-      opacity: 0;
-    }
-  }
-@keyframes markdown-block-in {
-    from {
-      opacity: 0;
+      opacity: .08;
     }
   }
 @property --tw-leading {

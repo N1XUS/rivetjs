@@ -342,7 +342,7 @@ export default function ChatShowcase() {
     await new Promise((resolve) => setTimeout(resolve, 700));
     if (!abort.signal.aborted) {
       status.set("streaming");
-      await streamText(live, simulateStream(answer, { interval: 40, wordsPerChunk: 2, jitter: 0.6, signal: abort.signal }), { signal: abort.signal });
+      await streamText(live, simulateStream(answer, { interval: 180, wordsPerChunk: 4, jitter: 0.6, signal: abort.signal }), { signal: abort.signal });
     }
     turns.set(turns().map((turn) => (turn.id === id + 1 ? { ...turn, text: live() || "Stopped.", live: false } : turn)));
     status.set("ready");

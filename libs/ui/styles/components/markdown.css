@@ -144,49 +144,32 @@
   @apply my-0;
 }
 
-/* Streaming caret: a soft pulsing dot after the last word (removed when the stream ends). */
+/* Streaming caret: a thin vertical line, with a slow opacity-only blink (removed when the stream ends). */
 .markdown__caret {
-  @apply ms-1 inline-block size-[0.55em] translate-y-[-0.05em] rounded-full bg-current align-middle opacity-60;
-  animation: markdown-caret-pulse 1.1s var(--ease-out, ease-out) infinite;
+  @apply ms-1 inline-block bg-current;
+  width: 1px;
+  height: 1em;
+  vertical-align: -0.12em;
+  border-radius: 1px;
+  animation: markdown-caret-blink 1.4s var(--ease-out, ease-out) infinite;
 }
 
-@keyframes markdown-caret-pulse {
+@keyframes markdown-caret-blink {
   0%,
   100% {
-    opacity: 0.25;
-    scale: 0.8;
+    opacity: 0.6;
   }
   50% {
-    opacity: 0.7;
-    scale: 1;
+    opacity: 0.08;
   }
 }
 
-/* Live tail: new characters and blocks fade in without a clipped height reveal. */
-.markdown__character {
-  animation: markdown-character-in var(--motion-enter-duration) var(--motion-enter-ease) both;
-}
-
-.markdown__live {
-  animation: markdown-block-in var(--motion-enter-duration) var(--motion-enter-ease) both;
-}
-
-@keyframes markdown-character-in {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes markdown-block-in {
-  from {
-    opacity: 0;
-  }
-}
+/* Live text uses StreamingText's character renderer and stylesheet. No additional block animation: multiplying
+ * paragraph opacity with character opacity would make the same text fade differently from StreamingText. */
 
 @media (prefers-reduced-motion: reduce) {
-  .markdown__caret,
-  .markdown__character,
-  .markdown__live {
+  .markdown__caret {
     animation: none;
+    opacity: 0;
   }
 }

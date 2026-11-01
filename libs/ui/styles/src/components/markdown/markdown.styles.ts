@@ -1,6 +1,7 @@
 // Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no markdown renderer). Feature set inspired by
 // HeroUI Pro's public Markdown docs; independent implementation on HeroUI tokens.
 // Rivet: the stylesheets of the classes these slots compose (TWEAKS.md TW-122), in components/index.css order.
+import "../../../out/streaming-text.css";
 import "../../../out/code-block.css";
 import "../../../out/markdown.css";
 import type {VariantProps} from "tailwind-variants";
