@@ -276,6 +276,9 @@ export function startChipResize<T>(state: SchedulerState<T>, press: PointerEvent
     if (before) props.forEach((name, i) => (before[i] ? chip.style.setProperty(name, before[i]!) : chip.style.removeProperty(name)));
   };
   let originX = 0;
+  // Direction read once per gesture: `getComputedStyle` after the previous move's `setProperty` forced a style
+  // recalc on every pointermove.
+  let rtl = false;
   let baseSpan = 1;
   let baseTop = 0;
   let baseHeight = 0;
@@ -304,7 +307,7 @@ export function startChipResize<T>(state: SchedulerState<T>, press: PointerEvent
   };
   const previewLane = (x: number) => {
     if (!cellWidth) return null;
-    const travel = isRtl(chip) ? originX - x : x - originX;
+    const travel = rtl ? originX - x : x - originX;
     const steps = Math.round(travel / cellWidth);
     if (edge === "end") {
       const span = Math.max(1, baseSpan + steps);
@@ -335,6 +338,7 @@ export function startChipResize<T>(state: SchedulerState<T>, press: PointerEvent
           ? null
           : (chip.closest(".rv-SchedulerTimeGrid-column")?.querySelector(".rv-SchedulerTimeGrid-slots")?.getBoundingClientRect() ?? null);
         cellWidth = lane ? (owner?.getBoundingClientRect().width ?? 0) : 0;
+        rtl = lane && isRtl(chip);
         axis = axisOf(state);
         snap = untrack(() => schedulerSnap(state));
         pending = null;
