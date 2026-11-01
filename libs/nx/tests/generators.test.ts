@@ -219,7 +219,12 @@ describe("library", () => {
     await libraryGenerator(tree, { directory: "libs/ui-kit", subpaths: "button, Date Picker", skipInstall: true });
     expect(filesUnder(tree, "libs/ui-kit")).toMatchSnapshot();
     const pkg = readJson(tree, "libs/ui-kit/package.json");
-    expect(pkg).toMatchSnapshot();
+    // `@rivetjs/*` follow this package's version (asserted here); the snapshot keeps a placeholder so a release bump
+    // does not invalidate it.
+    expect(pkg.devDependencies["@rivetjs/testing"]).toBe(RIVET_NX_VERSION);
+    expect(pkg.peerDependencies["@rivetjs/reactivity"]).toBe(RIVET_NX_VERSION);
+    expect(pkg.peerDependencies["@rivetjs/runtime"]).toBe(RIVET_NX_VERSION);
+    expect(JSON.parse(JSON.stringify(pkg).replaceAll(`"${RIVET_NX_VERSION}"`, '"<rivet version>"'))).toMatchSnapshot();
     expect(read(tree, "libs/ui-kit/src/date-picker/DatePicker.tsx")).toMatchSnapshot();
     expect(readJson(tree, "libs/ui-kit/project.json").targets).toEqual({});
   });
