@@ -241,6 +241,8 @@ const EMPTY = "\0rivet-router-empty";
 const DOCUMENT_PAGE = "\0rivet-document-page:";
 /** Browser stand-in of a server-only module imported only from document routes' graphs (`serverOnlyStub`). */
 const STAND_IN = "\0rivet-server-only:";
+/** `@rivetjs/router/env` reads secrets: server-only like the `server-only` marker (browser import = build error / document route). */
+const ENV_MODULE = "@rivetjs/router/env";
 /** The file behind a module id (virtual compiler parts `\0rivet-resume-part:/abs/file.tsx?…` included), no query. */
 const fileOf = (id: string): string => (id.startsWith("\0") ? id.slice(id.indexOf(":") + 1) : id).split("?")[0]!;
 
@@ -527,7 +529,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     reachRun: Promise<unknown> = Promise.resolve(),
     resolvedConfig: ResolvedConfig | null = null,
     resolver: ReturnType<ResolvedConfig["createResolver"]> | null = null,
-    patterns: ServerOnlyPattern[] = [...serverOnly.modules],
+    patterns: ServerOnlyPattern[] = [ENV_MODULE, ...serverOnly.modules],
     building = false;
   // Document routes' page files (absolute → routes-relative), client builds.
   let documentPages = new Map<string, string>();
@@ -737,7 +739,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       resolvedConfig = config;
       resolver = null;
       building = config.command === "build";
-      patterns = [...serverOnly.modules, ...declaredServerOnly(config.plugins)];
+      patterns = [ENV_MODULE, ...serverOnly.modules, ...declaredServerOnly(config.plugins)];
       if (mode === "csr") return;
       if (await analyze()) await generateRoutes(root, codegen);
     },

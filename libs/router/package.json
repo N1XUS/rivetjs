@@ -26,6 +26,10 @@
       "types": "./server-only.ts",
       "default": "./server-only.ts"
     },
+    "./env": {
+      "types": "./env.ts",
+      "default": "./env.ts"
+    },
     "./client": {
       "types": "./client/index.ts",
       "development": "./client/dev.ts",

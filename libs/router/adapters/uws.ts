@@ -17,6 +17,7 @@ import { nonce } from "../shared/nonce.ts";
 import { baseHeaders, type BaseHeaders } from "./base-headers.ts";
 import { DIRECT_BODY, type BodySink, type DirectBody } from "../server/body.ts";
 import { negotiate, type Handler, type RequestContext } from "./node.ts";
+import { closeHook, readinessOf } from "./lifecycle.ts";
 
 /** The subset of uWebSockets.js this adapter uses (its own typings are not a dependency). */
 interface UwsResponse {
@@ -68,6 +69,10 @@ export interface UwsServeOptions {
   headers?: BaseHeaders;
   /** Milliseconds to drain in-flight requests on close (default 10000). */
   grace?: number;
+  /** Dependency readiness for `/readyz` (503 `starting` until true; cached 1 s), as `serve({ ready })` in `node.ts`. */
+  ready?: () => boolean | Promise<boolean>;
+  /** After drain on `close()`, bounded by `grace` (a throw or timeout rejects `close()`), as `serve({ onClose })` in `node.ts`. */
+  onClose?: () => Promise<void>;
   onError?: (error: unknown, request?: Request) => void;
 }
 export interface UwsServing {
@@ -171,6 +176,7 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
   for (const [name, value] of Object.entries(baseHeaders(options.headers))) base[name.toLowerCase()] = value;
   const fixedOrigin = options.origin ? new URL(options.origin).origin : null;
   const files = options.client ? indexFiles(options.client) : null;
+  const readiness = options.ready ? readinessOf(options.ready, onError) : null;
   let draining = false,
     inflight = 0,
     wake: (() => void) | null = null;
@@ -463,7 +469,15 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
       origin = "http://" + (host || "localhost");
     }
     if (pathname === "/healthz") return (plain(ex, 200, "ok"), finished(ex));
-    if (pathname === "/readyz") return (plain(ex, draining ? 503 : 200, draining ? "draining" : "ready"), finished(ex));
+    if (pathname === "/readyz") {
+      const answer = (ok: boolean) => {
+        const state = draining ? "draining" : ok ? "ready" : "starting";
+        plain(ex, state === "ready" ? 200 : 503, state);
+        finished(ex);
+      };
+      const known = !readiness || draining ? true : readiness.known();
+      return known !== undefined ? answer(known) : void readiness!.check().then(answer);
+    }
     if (files && (method === "GET" || method === "HEAD") && (!prefix || pathname.startsWith(prefix + "/"))) {
       let key: string | null = null;
       try {
@@ -535,11 +549,14 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
     url: `http://${options.host ?? "127.0.0.1"}:${port}`,
     close: () =>
       (closing ??= (async () => {
+        const budget = options.grace ?? 10_000,
+          deadline = performance.now() + budget;
         draining = true;
         uws.us_listen_socket_close(listenSocket);
-        const grace = new Promise<void>((done) => setTimeout(done, options.grace ?? 10_000).unref());
+        const grace = new Promise<void>((done) => setTimeout(done, budget).unref());
         await Promise.race([inflight === 0 ? Promise.resolve() : new Promise<void>((done) => (wake = done)), grace]);
         app.close?.();
+        if (options.onClose) await closeHook(options.onClose, deadline, budget);
       })()),
   };
 }

@@ -43,6 +43,7 @@ Secrets and database clients go in modules whose name ends in `.server.ts`, such
 
 - files named `*.server.*` (`db.server.ts`, `report.server.tsx`);
 - modules that `import "@rivetjs/router/server-only"`;
+- `@rivetjs/router/env` ([environment variables](#environment-variables)) and modules that import it;
 - modules you list in the router option `serverOnly`, by id or pattern. Use it for virtual modules and generated data:
 
 ```ts title="vite.config.ts"
@@ -98,20 +99,42 @@ const user = await db.user(id);
 return { name: user.name, avatar: user.avatarUrl };
 ```
 
-## Secrets and environment variables
+## Environment variables
 
-Read secrets in `.server.ts` files, from `process.env`:
+Read settings and secrets once, at start, with `defineEnv` from `@rivetjs/router/env`. Give it a [Standard Schema](https://standardschema.dev) per variable (Zod, Valibot, ArkType, …) and it returns a typed, frozen object:
+
+```ts title="src/env.server.ts"
+import { defineEnv } from "@rivetjs/router/env";
+import { z } from "zod";
+
+export const env = defineEnv({
+  DATABASE_URL: z.string().url(),
+  PAYMENT_API_KEY: z.string().min(32),
+  PORT: z.coerce.number().int().default(3000),
+});
+```
 
 ```ts title="src/lib/payments.server.ts"
-const key = process.env.PAYMENT_API_KEY;
-if (!key) throw new Error("PAYMENT_API_KEY is not set");
+import { env } from "../env.server.ts";
 
 export async function charge(amount: number) {
-  // ...uses key
+  // ...uses env.PAYMENT_API_KEY
 }
 ```
 
-Vite puts variables with the `VITE_` prefix into browser code through `import.meta.env`. Never give a secret this prefix.
+- **Fails fast.** `defineEnv` runs when the module first loads, so a missing or invalid variable stops the server at start, not on the first request that needs it. The error lists every bad variable with the schema's messages, never the values:
+
+  ```txt
+  EnvError: [rivet:env] invalid environment variables:
+    DATABASE_URL: Required
+    PAYMENT_API_KEY: String must contain at least 32 character(s)
+  ```
+
+- **Only what you declare.** The result has exactly the keys of the schema (`env.PORT` is a `number` here); other variables in `process.env` are not copied. One schema for the whole environment works too: `defineEnv(z.object({ … }))` returns that schema's output.
+- **Server-only.** `@rivetjs/router/env` counts as a server-only module, like `@rivetjs/router/server-only`: a browser import of it (or of a module that imports it) gets the [build checks](#what-the-build-checks) above. Keep the definition in a `*.server.ts` file anyway, so the file name says it.
+- **Any source.** The second argument replaces `process.env`: `defineEnv(schema, { PORT: "4000" })` in tests, or a platform's bindings. Schemas must validate synchronously.
+
+Vite puts variables with the `VITE_` prefix into browser code through `import.meta.env`. Never give a secret this prefix; `defineEnv` never reads `import.meta.env`.
 
 ## Static sites
 

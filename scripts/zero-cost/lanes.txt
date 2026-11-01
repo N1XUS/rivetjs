@@ -26,8 +26,8 @@ react-static.mjs 11b9bccdc5fd
 rivet-compiled.mjs e3d993861c11
 rivet-for.mjs 4bf9d19ba5ba
 rivet-router-bunserve.mjs 7b05a3dfaed1
-rivet-router-uws.mjs ae44b0212a21
-rivet-router.mjs 764f4a288a25
+rivet-router-uws.mjs 2573e628c66f
+rivet-router.mjs 0830c3207814
 rivet-router/client/.vite/rivet-resume.json e56270a6c5e5
 rivet-router/client/assets/_layout-CyqiAmkY.js 754e5e62e1ee
 rivet-router/client/assets/_layout-VCxgTn-M.js f9ed86dc2e38

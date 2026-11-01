@@ -56,6 +56,8 @@ export default function Billing({ data }: PageProps<typeof loader>) {
 
 The page's `load(…)` may import the `.server.ts` module: the compiler removes `load(…)`, and the imports only it uses, from the browser build. Keep the component off that module too: a component that uses it makes the page a document route (every link to it loads a whole document).
 
+With more than a couple of variables, validate them all at start with `defineEnv` from `@rivetjs/router/env`: one error lists every missing or invalid key, and the result is typed. See [Environment variables](../guides/security/server-only-code.md#environment-variables).
+
 ## Don't
 
 ```tsx title="src/routes/billing.tsx" avoid

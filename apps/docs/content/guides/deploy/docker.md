@@ -78,14 +78,14 @@ Pass secrets as environment variables when the container starts, not in the Dock
 docker run -p 3000:3000 -e DATABASE_URL="postgres://…" my-app
 ```
 
-Read them in `*.server.ts` files with `process.env`. See [Server-only code](../security/server-only-code.md).
+Read them in `*.server.ts` files, validated once at start with `defineEnv` from `@rivetjs/router/env`: a missing or invalid variable stops the container with one error that names every bad key. See [Environment variables](../security/server-only-code.md#environment-variables).
 
 ## Health checks
 
 The server answers two paths without touching your app:
 
 - `/healthz`: `200 ok` while the process runs. Use it for "is it alive?" checks.
-- `/readyz`: `200 ready`, or `503 draining` during shutdown. Use it for "may it receive traffic?" checks.
+- `/readyz`: `200 ready`, `503 starting` until your `start({ ready })` check passes (database connected, migrations applied), or `503 draining` during shutdown. Use it for "may it receive traffic?" checks. See [Readiness and cleanup](node.md#readiness-and-cleanup).
 
 A Docker health check needs a command inside the container. The slim Node image has no `curl`, so use Node itself:
 
@@ -99,7 +99,7 @@ If your app has routes at these paths, move the checks (`start({ health: { live:
 
 ## Clean shutdown
 
-`docker stop` sends `SIGTERM`. `closeOnSignals` then stops new connections, lets running requests finish for up to 10 seconds, and exits. Docker also waits 10 seconds by default before it kills the container. Give Docker a little more time than `grace`, for example `docker stop -t 15`, and raise both together.
+`docker stop` sends `SIGTERM`. `closeOnSignals` then stops new connections, lets running requests finish for up to 10 seconds, runs your `start({ onClose })` hook (close database pools, stop consumers) within the same 10 seconds, and exits: code `0`, or `1` when the hook failed. Docker also waits 10 seconds by default before it kills the container. Give Docker a little more time than `grace`, for example `docker stop -t 15`, and raise both together.
 
 `CMD ["node", "serve.js"]` runs Node as the main process, so it receives the signal. Starting it through `npm start` or a shell script can swallow the signal.
 

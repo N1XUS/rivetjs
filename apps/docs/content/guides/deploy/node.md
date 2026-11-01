@@ -63,7 +63,7 @@ The default host `127.0.0.1` accepts only local connections. In a container or o
 - **Compression dictionaries.** Chrome and Edge can keep a [compression dictionary](../routing/headers-and-caching.md#compression-dictionaries) of the site, so later pages and navigation data arrive as differences against it (`dcz`). A static build brings its dictionaries; a server-rendered app gets one with `dictionary: { samples: ["/", "/docs/intro"] }`.
 - **Streaming.** A page that is complete right away goes out in one piece. A large page sends its first part (the document head) as soon as the status and headers are final, and the rest when it is rendered. A page that still waits for data streams, and each piece is sent at once. See [Streaming](../performance/streaming.md).
 - **Security headers.** Every response gets `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. `headers: { "Referrer-Policy": "no-referrer" }` replaces one, `headers: { "Referrer-Policy": null }` removes it; a response that sets the header itself keeps its own value. HTML pages get a strict [Content Security Policy](../security/csp.md) with a new nonce per request.
-- **Health checks.** `/healthz` answers `ok`. `/readyz` answers `ready`, or `503 draining` while the server shuts down. Both are answered before your app, so a route of your own at those paths never runs: move them with `health: { live: "/_live", ready: "/_ready" }`, turn one off with `false` (`health: { ready: false }`), or both with `health: false`.
+- **Health checks.** `/healthz` answers `ok`. `/readyz` answers `ready`, `503 starting` until your [`ready` check](#readiness-and-cleanup) passes, or `503 draining` while the server shuts down. Both are answered before your app, so a route of your own at those paths never runs: move them with `health: { live: "/_live", ready: "/_ready" }`, turn one off with `false` (`health: { ready: false }`), or both with `health: false`.
 - **Timeouts.** Requests time out after 30 seconds, headers after 15 seconds; idle keep-alive connections close after 5 seconds.
 - **Client disconnects.** When a visitor leaves, the request's `AbortSignal` fires and rendering stops.
 - **Memory after traffic spikes.** When the server goes quiet after a spike, it lets V8 give the grown heap back to the OS within about 15 seconds. See [Memory when idle](#memory-when-idle).
@@ -74,9 +74,34 @@ The default host `127.0.0.1` accepts only local connections. In a container or o
 
 1. stops accepting new connections, and `/readyz` reports `draining`,
 2. waits for running requests to finish, up to the `grace` time (default 10 seconds),
-3. closes the remaining connections and exits the process.
+3. closes the remaining connections,
+4. runs your `onClose` hook, if you gave one (see below),
+5. exits the process: code `0`, or `1` when `onClose` threw or did not finish within `grace`.
 
-You can also call `await serving.close()` yourself, for example in tests.
+You can also call `await serving.close()` yourself, for example in tests. It rejects when `onClose` fails.
+
+## Readiness and cleanup
+
+A server is often up before it can answer: the database pool connects, migrations run, a cache warms. And on shutdown, open pools and consumers should close after the last request. Two options cover both:
+
+```ts title="serve.ts"
+import { closeOnSignals, start } from "@rivetjs/router/node";
+import { db } from "./src/server/db.server.ts";
+
+const serving = await start({
+  dist: "dist",
+  // `/readyz` answers `503 starting` until this returns true.
+  ready: async () => (await db.ping()) === "ok",
+  // Runs after the last request finished, inside `grace`.
+  onClose: () => db.end(),
+});
+closeOnSignals(serving);
+```
+
+- `ready` is asked when a probe calls `/readyz`, at most once per second: the answer is kept for one second, and probes that arrive while it runs share the same call. It may return a boolean or a promise of one. A throw counts as "not ready" and goes to `onError`. Your app is served either way: only the readiness answer waits.
+- `onClose` runs once, after the server stopped accepting connections and the running requests finished. Its time counts against `grace` (measured from the start of the shutdown): past it, `close()` rejects and `closeOnSignals` exits with code `1`.
+- With `workers`, each worker runs its own `ready` and `onClose`; the primary runs neither.
+- Without them, `/readyz` only reports whether the server is shutting down.
 
 ## Use every core
 
@@ -107,7 +132,9 @@ In a container with a CPU limit, set `workers` to that limit: `"auto"` may count
 | `stream` | off | `{ deadline?: number }` turns on [streaming](../performance/streaming.md) |
 | `compress` | `true` | zstd / Brotli / gzip compression; `{ zstd?: boolean \| number, br?: number, gzip?: number, precompress?: boolean }`: brotli-only (`zstd: false`), levels of dynamic responses (defaults zstd 3 / 1 at 256 KB, Brotli 4, gzip 6), no on-disk copies of assets |
 | `dictionary` | the build's | [Compression dictionaries](../routing/headers-and-caching.md#compression-dictionaries): `{ samples: string[], max? }` builds one at start from sample pages; `false` turns them off |
-| `grace` | `10000` | Milliseconds to finish running requests on close |
+| `grace` | `10000` | Milliseconds to finish running requests on close (and `onClose`) |
+| `ready` | | `() => boolean \| Promise<boolean>`: `/readyz` answers `503 starting` until it returns true (asked at most once per second). See [Readiness and cleanup](#readiness-and-cleanup) |
+| `onClose` | | `() => Promise<void>`: runs on close after running requests finished, within `grace` |
 | `headers` | | Extra headers on every response. Replaces a default of the same name (any letter case), `null` removes it; a response's own header wins |
 | `health` | `/healthz`, `/readyz` | `{ live?, ready? }`: other paths, `false` for one; `false` turns both off |
 | `immutable` | `/assets/` | `(pathname) => boolean`: which files are cached forever |

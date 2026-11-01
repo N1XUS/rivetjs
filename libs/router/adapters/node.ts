@@ -49,6 +49,7 @@ import { normalizeBase } from "../shared/base.ts";
 import { nonce } from "../shared/nonce.ts";
 import { DATA_PARAM } from "../shared/data.ts";
 import { DIRECT_BODY, type BodySink, type DirectBody } from "../server/body.ts";
+import { closeHook, readinessOf } from "./lifecycle.ts";
 import { idleMemory, idleMemorySupported } from "./idle-memory.ts";
 import type { CachedPage, CacheLookup } from "../server/route-cache.ts";
 
@@ -165,10 +166,23 @@ export interface ServeOptions {
   /**
    * Health endpoints answered by the adapter itself, after the Host check and before static files and the app:
    * `live` (default `/healthz`: 200 `ok` while the process serves) and `ready` (default `/readyz`: 200 `ready`, 503
-   * `draining` once `close()` started). A path of your own moves one, `false` turns it off (the app gets the path);
-   * `health: false` turns both off.
+   * `starting` while the `ready` hook says false, 503 `draining` once `close()` started). A path of your own moves one,
+   * `false` turns it off (the app gets the path); `health: false` turns both off.
    */
   health?: false | { live?: string | false; ready?: string | false };
+  /**
+   * Dependency readiness for the `ready` health endpoint (`/readyz`): until it returns true the endpoint answers 503
+   * `starting` (database connected, migrations applied, caches warm…). Asked at most once per second (the answer is
+   * cached for 1 s, concurrent probes share one call); a throw counts as not ready and goes to `onError`. Unset:
+   * `/readyz` is "not draining" only.
+   */
+  ready?: () => boolean | Promise<boolean>;
+  /**
+   * Runs once on `close()` after the server stopped accepting and in-flight requests drained: close database pools,
+   * stop consumers, flush logs. Bounded by `grace` (counted from the start of `close()`): past it, or when the hook
+   * throws, `close()` rejects (`closeOnSignals` then exits 1, else 0).
+   */
+  onClose?: () => Promise<void>;
   /** Log unexpected failures (default console.error); app failures get `info` (`digest`, `phase`, `route`). */
   onError?: (error: unknown, request?: Request, info?: ErrorInfo) => void;
   /**
@@ -794,6 +808,7 @@ export function createListener(options: ServeOptions): {
     inflight = 0,
     wake: (() => void) | null = null;
   const memory = options.idleMemory !== false && idleMemorySupported() ? idleMemory(() => inflight) : null;
+  const readiness = options.ready ? readinessOf(options.ready, onError) : null;
   const cache = new Map<string, Buffer>(); // compressed static bodies by path|etag|encoding
   const pending = new Map<string, Promise<Buffer>>(); // compressions in flight by the same key: N concurrent first requests compress once
   const index = client && options.static !== "fs" ? indexFiles(client) : null;
@@ -1176,8 +1191,15 @@ export function createListener(options: ServeOptions): {
       return;
     }
     if (pathname === ready) {
-      res.writeHead(draining ? 503 : 200, { ...base, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
-      res.end(draining ? "draining" : "ready");
+      const answer = (ok: boolean) => {
+        if (res.destroyed) return;
+        const state = draining ? "draining" : ok ? "ready" : "starting";
+        res.writeHead(state === "ready" ? 200 : 503, { ...base, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }).end(state);
+      };
+      if (!readiness || draining) return answer(true);
+      const known = readiness.known();
+      if (known !== undefined) return answer(known);
+      void readiness.check().then(answer);
       return;
     }
     inflight++;
@@ -1297,24 +1319,33 @@ export async function serve(options: ServeOptions): Promise<ServerServing> {
     url: `http://${host}:${address.port}`,
     close: () =>
       (closing ??= (async () => {
+        const budget = options.grace ?? 10_000,
+          deadline = performance.now() + budget;
         drain();
         const stopped = new Promise<void>((done) => server.close(() => done()));
         server.closeIdleConnections();
-        const grace = new Promise<void>((done) => setTimeout(done, options.grace ?? 10_000).unref());
+        const grace = new Promise<void>((done) => setTimeout(done, budget).unref());
         await Promise.race([idle(), grace]);
         for (const socket of sockets) socket.destroy();
         await stopped;
+        if (options.onClose) await closeHook(options.onClose, deadline, budget);
       })()),
   };
 }
 
-/** Close on SIGTERM/SIGINT once; exits the process after draining. */
+/**
+ * Close on SIGTERM/SIGINT once: drain, run `onClose`, then exit the process — 0, or 1 when closing failed (an `onClose`
+ * error or timeout, logged with console.error).
+ */
 export function closeOnSignals(serving: Serving, signals: NodeJS.Signals[] = ["SIGTERM", "SIGINT"]): void {
   const stop = () => {
     for (const signal of signals) process.off(signal, stop);
     serving.close().then(
       () => process.exit(0),
-      () => process.exit(1),
+      (error: unknown) => {
+        console.error(error);
+        process.exit(1);
+      },
     );
   };
   for (const signal of signals) process.once(signal, stop);

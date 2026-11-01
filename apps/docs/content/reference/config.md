@@ -215,9 +215,11 @@ Returns `{ pages: string[], fallback: string[], dictionaries? }`.
 | `origin` | `string` | none | Fixed public origin for request URLs, for servers behind a proxy. |
 | `trustProxy` | `boolean` \| `number` \| `(address, hop) => boolean` | `false` | Which proxy hops to trust for `X-Forwarded-For` / `-Proto` / `-Host`. |
 | `idleMemory` | `boolean` | `true` | Return heap memory to the OS when the server goes idle after traffic. |
-| `grace` | `number` (ms) | `10000` | Time to finish open requests on close. |
+| `grace` | `number` (ms) | `10000` | Time to finish open requests (and `onClose`) on close. |
+| `ready` | `() => boolean \| Promise<boolean>` | none | Dependency readiness: `/readyz` answers `503 starting` until it returns true (answer kept 1 s; a throw = not ready). |
+| `onClose` | `() => Promise<void>` | none | Runs once on close, after running requests finished, within `grace`; a throw or timeout rejects `close()`. |
 | `onError` | `(error, request?) => void` | `console.error` | Unexpected failures. |
 | `headers` | `Record<string, string \| null>` | `nosniff` + referrer policy | Extra headers on every response; a name of a default replaces it (any case), `null` removes it. |
 | `health` | `false` \| `{ live?: string \| false, ready?: string \| false }` | `/healthz`, `/readyz` | Health paths answered before the app; other paths, `false` for one, `false` for both. |
 
-Returns `{ server, url, close() }`. `closeOnSignals(serving)` closes it on `SIGINT` / `SIGTERM`.
+Returns `{ server, url, close() }`. `closeOnSignals(serving)` closes it on `SIGINT` / `SIGTERM` and exits with code `0`, or `1` when `onClose` failed.
