@@ -455,3 +455,42 @@ test("redirect() to an unparseable absolute target is a reported 500, like anoth
   assert.equal(response.status, 500);
   assert.match(String(errors[0]), /another origin/);
 });
+
+test("maxBody: a chunked body without Content-Length answers 413 over the node adapter", async () => {
+  let reached = false;
+  const handler = app(
+    [
+      {
+        id: "api/upload",
+        pattern: "/api/upload",
+        page: false,
+        layouts: [],
+        server: mod({
+          onPost: async (e) => {
+            await e.request.arrayBuffer();
+            reached = true;
+            return new Response("ok");
+          },
+        }),
+      },
+    ],
+    { maxBody: 1000 },
+  );
+  const server = await serve({ handler: handler as Handler, port: 0 });
+  try {
+    const url = new URL("/api/upload", server.url);
+    const status = await new Promise<number>((resolve, reject) => {
+      const out = httpRequest(url, { method: "POST", headers: { "content-type": "application/json", "transfer-encoding": "chunked" } }, (res) => {
+        res.resume();
+        resolve(res.statusCode!);
+      });
+      out.on("error", reject);
+      for (let i = 0; i < 4; i++) out.write("x".repeat(500));
+      out.end();
+    });
+    assert.equal(status, 413);
+    assert.equal(reached, false);
+  } finally {
+    await server.close();
+  }
+});
