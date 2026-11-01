@@ -9,6 +9,7 @@ import type { BuildManifests } from "./assemble.ts";
 import { createFetch, type FetchOptions } from "./fetch.ts";
 import { staticFiles } from "./files.ts";
 import { immutableOf, listenOptions, type ServerTargetOptions } from "./server-target.ts";
+import { baseHeaders } from "./base-headers.ts";
 
 interface DenoServeInfo {
   readonly remoteAddr: { readonly hostname?: string };
@@ -35,15 +36,20 @@ export function start(entry: GeneratedEntry, build: BuildManifests, options: Den
   if (!Deno) throw new Error('rivetRouter({ adapter: "deno" }): dist/server/deno.js runs under Deno (deno run -A dist/server/deno.js)');
   const { client, port, hostname, signals, ...fetchOptions } = options;
   const base = entry.base ?? "";
-  const lookup = client ? staticFiles(typeof client === "string" ? client : fileURLToPath(client), base, immutableOf(base, build)) : () => null;
+  const lookup = client
+    ? staticFiles(typeof client === "string" ? client : fileURLToPath(client), base, immutableOf(base, build), baseHeaders(fetchOptions.headers))
+    : () => null;
   const app = createFetch(entry, build, { address: (_request, _env, info) => (info as DenoServeInfo).remoteAddr.hostname, ...fetchOptions });
   const server = Deno.serve(
     { ...listenOptions({ port, hostname }), onListen: ({ hostname, port }) => console.log(`Listening on http://${hostname}:${port}/`) },
     async (request, info) => {
       if (request.method === "GET" || request.method === "HEAD") {
         const file = lookup(request, new URL(request.url).pathname);
-        if (file === 304) return new Response(null, { status: 304 });
-        if (file) return new Response(request.method === "HEAD" ? null : (await Deno.open(file.path)).readable, { headers: file.headers });
+        if (file)
+          return new Response(request.method === "HEAD" || !file.path ? null : (await Deno.open(file.path)).readable, {
+            status: file.path ? 200 : 304,
+            headers: file.headers,
+          });
       }
       return app.fetch(request, undefined, info);
     },

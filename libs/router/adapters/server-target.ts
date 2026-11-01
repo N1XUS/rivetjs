@@ -15,7 +15,8 @@ export interface ServerTargetOptions {
 const env = (name: string): string | undefined => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.[name];
 
 export function listenOptions({ port, hostname }: Pick<ServerTargetOptions, "port" | "hostname">): { port: number; hostname: string } {
-  return { port: port ?? Number(env("PORT") ?? 3000), hostname: hostname ?? env("HOST") ?? "0.0.0.0" };
+  // `||`: an empty `PORT=` / `HOST=` (a blank line in an env file) is unset, not port 0 (random) / hostname "".
+  return { port: port ?? Number(env("PORT") || 3000), hostname: hostname ?? (env("HOST") || "0.0.0.0") };
 }
 
 /** URL prefixes of hashed files: each client build's `assets/` (one per locale with i18n). */

@@ -304,7 +304,7 @@ test("Bun / Deno static index: siblings picked by q (q=0 excludes, `*` covers un
     const lookup = staticFiles(dir, "", [join(dir, "assets")]);
     const pick = (accept: string, name = "a-1.css") => {
       const found = lookup(new Request("http://x/assets/" + name, { headers: { "accept-encoding": accept } }), "/assets/" + name);
-      assert.ok(found && found !== 304);
+      assert.ok(found?.path);
       return [found.headers["Content-Encoding"], found.path.slice(found.path.lastIndexOf("."))];
     };
     assert.deepEqual(pick(CHROME), ["zstd", ".zst"]);

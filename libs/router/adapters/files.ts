@@ -31,8 +31,9 @@ const MIME: Record<string, string> = {
 };
 
 export interface StaticFile {
-  /** Absolute file path to send (the precompressed sibling when `encoding` is set). */
-  readonly path: string;
+  /** Absolute file path to send (the precompressed sibling when `encoding` is set); null: a `304 Not Modified`. */
+  readonly path: string | null;
+  /** The base headers (`headers` option: nosniff + referrer policy by default), then the file's own (a 304 keeps its validators). */
   readonly headers: Record<string, string>;
 }
 interface Indexed {
@@ -59,8 +60,10 @@ export function acceptWeights(header: string): Map<string, number> {
     accepted = new Map();
     for (const part of header.toLowerCase().split(",")) {
       const [name, ...params] = part.trim().split(";");
-      const q = params.map((p) => /^\s*q=([\d.]+)\s*$/.exec(p)).find(Boolean);
-      accepted.set(name!.trim(), q ? Number(q[1]) : 1);
+      // RFC 9110 qvalue: 0 … 1, three decimals at most. A malformed one (`q=1.2.3`, `q=.`, `q=1.5`) excludes the coding:
+      // NaN compared false everywhere (silently never picked) and `q=1.5` outranked every `q=1`.
+      const q = params.map((p) => /^\s*q=(\S*)\s*$/.exec(p)).find(Boolean);
+      accepted.set(name!.trim(), !q ? 1 : /^(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(q[1]!) ? Number(q[1]) : 0);
     }
     if (weights.size < 64) weights.set(header, accepted);
   }
@@ -90,8 +93,13 @@ export function negotiate(header: string | null | undefined, zstd = true): Encod
 const negotiated = new Map<string, Encoding>(),
   negotiatedNoZstd = new Map<string, Encoding>();
 
-/** Index `client` (served under `base`); returns the per-request lookup. */
-export function staticFiles(client: string, base: string, immutable: readonly string[]): (request: Request, pathname: string) => StaticFile | 304 | null {
+/** Index `client` (served under `base`); returns the per-request lookup. `extra`: headers on every answer (`baseHeaders`). */
+export function staticFiles(
+  client: string,
+  base: string,
+  immutable: readonly string[],
+  extra: Readonly<Record<string, string>> = {},
+): (request: Request, pathname: string) => StaticFile | null {
   const files = new Map<string, Indexed>();
   let root: string;
   try {
@@ -136,16 +144,21 @@ export function staticFiles(client: string, base: string, immutable: readonly st
     if (decoded.includes("\0")) return null;
     const file = files.get(decoded);
     if (!file) return null;
-    const match = request.headers.get("if-none-match");
-    if (match && match.split(",").some((tag) => tag.trim() === "*" || tag.trim().replace(/^W\//, "") === file.etag.slice(2))) return 304;
     const headers: Record<string, string> = {
+      ...extra,
       "Content-Type": file.type,
       "Cache-Control": file.immutable ? "public, max-age=31536000, immutable" : "no-cache",
       ETag: file.etag,
       "Last-Modified": file.modified,
     };
-    if (file.zst || file.br || file.gz) {
-      headers.Vary = "Accept-Encoding";
+    if (file.zst || file.br || file.gz) headers.Vary = "Accept-Encoding";
+    // A 304 carries the validators, Cache-Control and Vary a 200 would (RFC 9110 15.4.5), as the node adapter's.
+    const match = request.headers.get("if-none-match");
+    if (match && match.split(",").some((tag) => tag.trim() === "*" || tag.trim().replace(/^W\//, "") === file.etag.slice(2))) {
+      delete headers["Content-Type"];
+      return { path: null, headers };
+    }
+    if (headers.Vary) {
       // The best-weighted coding among the siblings that exist (`q=0` excludes; a tie: zstd, then br).
       const accepted = acceptWeights(request.headers.get("accept-encoding") ?? "");
       let path: string | undefined,

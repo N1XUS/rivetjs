@@ -10,6 +10,7 @@ import type { BuildManifests } from "./assemble.ts";
 import { createFetch, type FetchOptions } from "./fetch.ts";
 import { staticFiles } from "./files.ts";
 import { immutableOf, listenOptions, type ServerTargetOptions } from "./server-target.ts";
+import { baseHeaders } from "./base-headers.ts";
 
 interface BunServer {
   readonly port: number;
@@ -31,7 +32,9 @@ export function start(entry: GeneratedEntry, build: BuildManifests, options: Bun
   if (!Bun) throw new Error('rivetRouter({ adapter: "bun" }): dist/server/bun.js runs under Bun (bun dist/server/bun.js)');
   const { client, port, hostname, signals, ...fetchOptions } = options;
   const base = entry.base ?? "";
-  const lookup = client ? staticFiles(typeof client === "string" ? client : fileURLToPath(client), base, immutableOf(base, build)) : () => null;
+  const lookup = client
+    ? staticFiles(typeof client === "string" ? client : fileURLToPath(client), base, immutableOf(base, build), baseHeaders(fetchOptions.headers))
+    : () => null;
   const app = createFetch(entry, build, { address: (request, _env, server) => (server as BunServer).requestIP(request)?.address, ...fetchOptions });
   const listen = listenOptions({ port, hostname });
   const server = Bun.serve({
@@ -39,8 +42,8 @@ export function start(entry: GeneratedEntry, build: BuildManifests, options: Bun
     fetch(request, server) {
       if (request.method === "GET" || request.method === "HEAD") {
         const file = lookup(request, new URL(request.url).pathname);
-        if (file === 304) return new Response(null, { status: 304 });
-        if (file) return new Response(request.method === "HEAD" ? null : Bun.file(file.path), { headers: file.headers });
+        if (file)
+          return new Response(request.method === "HEAD" || !file.path ? null : Bun.file(file.path), { status: file.path ? 200 : 304, headers: file.headers });
       }
       return app.fetch(request, undefined, server);
     },

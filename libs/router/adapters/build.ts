@@ -31,7 +31,21 @@ export interface LoadBuildOptions {
 export async function readManifests(dist: string, options: LoadBuildOptions = {}): Promise<BuildManifests> {
   const { locales, base = "" } = options;
   const root = resolve(dist);
-  const read = async <T>(path: string): Promise<T> => JSON.parse(await readFile(resolve(root, path), "utf8")) as T;
+  const read = async <T>(path: string): Promise<T> => {
+    const file = resolve(root, path);
+    const text = await readFile(file, "utf8");
+    try {
+      return JSON.parse(text) as T;
+    } catch (error) {
+      throw new Error(`readManifests: ${file} is not valid JSON (an interrupted build?): ${(error as Error).message}`, { cause: error });
+    }
+  };
+  /** An optional manifest: undefined only when the build wrote none (ENOENT); unreadable / truncated ones throw. */
+  const optional = <T>(path: string): Promise<T | undefined> =>
+    read<T>(path).catch((error: unknown) => {
+      if ((error as { code?: string }).code === "ENOENT") return undefined;
+      throw error;
+    });
   const dirs = locales?.length
     ? locales.map((locale) => ({ dir: "client/" + locale + "/", base: base + "/" + locale + "/" }))
     : [{ dir: "client/", base: base + "/" }];
@@ -45,9 +59,9 @@ export async function readManifests(dist: string, options: LoadBuildOptions = {}
     }),
   );
   // Per-route CSS (route modules' stylesheets), when the client build wrote any.
-  const routeStyles = await read<Record<string, string[]>>(dirs[0]!.dir + ".vite/rivet-route-css.json").catch(() => undefined);
+  const routeStyles = await optional<Record<string, string[]>>(dirs[0]!.dir + ".vite/rivet-route-css.json");
   // Small stylesheets written inline (`rivetRouter({ inlineStylesheets })`), when the client build wrote any.
-  const inlineStyles = await read<InlineStyleManifest>(dirs[0]!.dir + ".vite/rivet-inline-css.json").catch(() => undefined);
+  const inlineStyles = await optional<InlineStyleManifest>(dirs[0]!.dir + ".vite/rivet-inline-css.json");
   return { clients, ...(locales?.length ? { locales } : {}), ...(routeStyles ? { routeStyles } : {}), ...(inlineStyles ? { inlineStyles } : {}) };
 }
 

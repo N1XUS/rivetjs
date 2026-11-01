@@ -116,7 +116,12 @@ export function createFetch(entry: GeneratedEntry, build: BuildManifests, option
         return finish(response, head);
       } catch (error) {
         if (request.signal.aborted) throw error;
-        onError(error, request);
+        // A throwing reporter must not reject the fetch handler (the platform's opaque 500 instead of this one).
+        try {
+          onError(error, request);
+        } catch (failure) {
+          console.error(failure);
+        }
         return finish(
           new Response("Internal Server Error", { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } }),
           head,

@@ -7,6 +7,7 @@ import { afterAll, test } from "vitest";
 import { steps } from "@rivetjs/testing/steps";
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { cp, lstat, mkdtemp, readFile, readdir, readlink, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -440,6 +441,64 @@ test(
       const module = await load<{ start(options?: object): unknown }>(dist + "server/", "deno.js");
       assert.throws(() => module.start(), /runs under Deno/);
     });
+
+    // FIX2 (r3-testgaps#9, router#3): Bun / Deno wiring driven in node through fake runtime globals (`serve` captures the
+    // handler): static files carry the base headers and a 304 keeps its validators, the app answers the rest.
+    for (const runtime of ["bun", "deno"] as const)
+      await t.test(`${runtime}: fake runtime global: static files with base headers, 304 validators, the app`, async () => {
+        await target(runtime, {}, true);
+        let fetchHandler!: (request: Request) => Promise<Response>;
+        const fake =
+          runtime === "bun"
+            ? {
+                serve: (options: { fetch(request: Request, server: unknown): Promise<Response> }) => {
+                  const server = {
+                    port: 1,
+                    hostname: "127.0.0.1",
+                    url: new URL("http://127.0.0.1:1/"),
+                    requestIP: () => ({ address: "203.0.113.9" }),
+                    stop: () => {},
+                  };
+                  fetchHandler = (request) => Promise.resolve(options.fetch(request, server));
+                  return server;
+                },
+                file: (path: string) => new Blob([readFileSync(path)]),
+              }
+            : {
+                serve: (_options: unknown, handler: (request: Request, info: unknown) => Promise<Response>) => {
+                  fetchHandler = (request) => handler(request, { remoteAddr: { hostname: "203.0.113.9" } });
+                  return { finished: Promise.resolve(), shutdown: async () => {} };
+                },
+                open: async (path: string) => ({ readable: new Blob([readFileSync(path)]).stream() }),
+                addSignalListener: () => {},
+                exit: () => undefined as never,
+              };
+        const key = runtime === "bun" ? "Bun" : "Deno";
+        const log = console.log;
+        (globalThis as Record<string, unknown>)[key] = fake;
+        console.log = () => {};
+        try {
+          const module = await load<{ start(options?: object): unknown }>(dist + "server/", `${runtime}.js`);
+          module.start({ client: dist + "client/", signals: false });
+          const robots = await fetchHandler(new Request("http://127.0.0.1/robots.txt"));
+          assert.equal(robots.status, 200);
+          assert.equal(await robots.text(), "User-agent: *\n");
+          assert.equal(robots.headers.get("x-content-type-options"), "nosniff");
+          assert.equal(robots.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+          const etag = robots.headers.get("etag")!;
+          const unchanged = await fetchHandler(new Request("http://127.0.0.1/robots.txt", { headers: { "if-none-match": etag } }));
+          assert.equal(unchanged.status, 304);
+          assert.equal(unchanged.headers.get("etag"), etag);
+          assert.equal(unchanged.headers.get("cache-control"), "no-cache");
+          assert.equal((await fetchHandler(new Request("http://127.0.0.1/.vite/manifest.json"))).status, 404);
+          const page = await fetchHandler(new Request("http://127.0.0.1/"));
+          assert.equal(page.status, 200);
+          assert.match(await page.text(), /<p id="platform">address<\/p>/);
+        } finally {
+          delete (globalThis as Record<string, unknown>)[key];
+          console.log = log;
+        }
+      });
   }),
 );
 

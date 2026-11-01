@@ -112,7 +112,8 @@ const runtimes = {
 export function adapterOptions(adapter: AdapterName | AdapterOptions | undefined): AdapterOptions | undefined {
   if (adapter === undefined) return undefined;
   const options = typeof adapter === "string" ? ({ name: adapter } as AdapterOptions) : adapter;
-  if (!(options.name in ENTRY_FILE)) throw new Error(`rivetRouter: unknown adapter "${String(options.name)}" (${Object.keys(ENTRY_FILE).join(", ")})`);
+  if (!Object.hasOwn(ENTRY_FILE, options.name))
+    throw new Error(`rivetRouter: unknown adapter "${String(options.name)}" (${Object.keys(ENTRY_FILE).join(", ")})`);
   if (options.name === "vercel" && options.isr && options.runtime === "edge") throw new Error('rivetRouter: adapter "vercel": isr needs runtime "nodejs"');
   return options;
 }
@@ -179,7 +180,12 @@ export function targetEntryPlugin(options: AdapterOptions, context: TargetContex
       const { locales } = options;
       const defaults = Object.fromEntries(Object.entries(options).filter(([key]) => !BUILD_ONLY.has(key)));
       const manifests = await readManifests(resolve(outDir, ".."), { ...(locales?.length ? { locales } : {}), base }).catch((error: unknown) => {
-        throw new Error(`rivetRouter({ adapter: "${options.name}" }): build the client first (vite build, then vite build --ssr): ${(error as Error).message}`);
+        // "Build the client first" only when a manifest is missing; a malformed / unreadable one keeps its own message.
+        const missing = (error as { code?: string }).code === "ENOENT";
+        throw new Error(
+          `rivetRouter({ adapter: "${options.name}" }): ${missing ? "build the client first (vite build, then vite build --ssr)" : "cannot read the client build"}: ${(error as Error).message}`,
+          { cause: error },
+        );
       });
       const json = (value: unknown) => `JSON.parse(${JSON.stringify(JSON.stringify(value))})`;
       const runtime = runtimeOf(options);

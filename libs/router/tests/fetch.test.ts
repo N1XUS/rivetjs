@@ -178,6 +178,25 @@ test("createFetch: fixed origin, serveAssets hook, errors, base headers", async 
   assert.equal(failed.status, 500);
   assert.equal(await failed.text(), "Internal Server Error");
   assert.equal(errors.length, 1);
+  // FIX2 (r3-errors#11): a throwing reporter does not reject the handler (the 500 still ships, no-store).
+  const loud = createFetch(
+    entry as never,
+    { clients: [{ base: "/", manifest: { runtime: "/r.js", symbols: {} }, vite: {} }] },
+    {
+      onError: () => {
+        throw new Error("reporter down");
+      },
+    },
+  );
+  const error = console.error;
+  console.error = () => {};
+  try {
+    const answer = await loud.fetch(new Request("http://internal/boom"));
+    assert.equal(answer.status, 500);
+    assert.equal(answer.headers.get("cache-control"), "no-store");
+  } finally {
+    console.error = error;
+  }
 });
 
 function hasBun(): boolean {
