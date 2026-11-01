@@ -40,43 +40,58 @@ const completedIndices = (wizard: WizardDefinition<any>, draft: WizardDraft | un
 /** Router actions for every step, keyed by step name: `export const forms = actions(wizardAction(...))`. */
 export function wizardAction<S extends readonly FormDefinition<any>[]>(wizard: WizardDefinition<S>, drafts: DraftStore<WizardDraft>, options: WizardOptions<S>): Record<string, (event: RequestEvent) => Promise<unknown>> {
   const out: Record<string, (event: RequestEvent) => Promise<unknown>> = {};
+  // Drafts whose last step is running in this process: a second last-step submit (double click, retry) while the first
+  // one's `onComplete` runs answers 409 instead of completing again (it would load the first one's save and pass every
+  // check). Across processes `onComplete` must still be idempotent per draft id.
+  const completing = new Set<string>();
+  const last = wizard.steps.length - 1;
   wizard.steps.forEach((definition: FormDefinition<any>, index: number) => {
     out[definition.name] = action(
       definition,
       async (value, event, context) => {
         const id = draftFrom(event, context.data) ?? crypto.randomUUID();
-        const loaded = await drafts.load(id, event);
-        const done = completedIndices(wizard, loaded?.value);
-        const url = pageUrl(event);
-        // No skipping: an earlier step without saved output sends the user back to it.
-        const reachable = clampStep(wizard, index, done);
-        if (reachable < index) return redirect(stepHref(wizard, url, reachable, { param: options.param, draft: id }));
-        const steps = { ...loaded?.value.steps, [definition.name]: value };
-        const completed = [...new Set([...(loaded?.value.completed ?? []), definition.name])];
-        const saved = await drafts.save(id, { steps, completed }, loaded ? { version: loaded.version } : {}, event);
-        if (!saved.ok) return invalid({}, { key: "errors.conflict" }, 409);
-        if (index < wizard.steps.length - 1) {
-          await options.onStep?.(definition.name, value, event, { draft: id });
-          return redirect(stepHref(wizard, url, index + 1, { param: options.param, draft: id }));
+        if (index < last) return step(value, event, id);
+        if (completing.has(id)) return invalid({}, { key: "errors.conflict" }, 409);
+        completing.add(id);
+        try {
+          return await step(value, event, id);
+        } finally {
+          completing.delete(id);
         }
-        const merged: Record<string, unknown> = {};
-        for (const step of wizard.steps as readonly FormDefinition<any>[]) Object.assign(merged, steps[step.name] as object);
-        let final: unknown = merged;
-        if (wizard.final) {
-          const result = await wizard.final["~standard"].validate(merged);
-          if (result.issues) {
-            const map = mapSchemaIssues(result.issues);
-            const form: Issue[] = [...map.form, ...Object.values(map.fields).flat()];
-            return invalid({}, form);
-          }
-          final = result.value;
-        }
-        const answer = await options.onComplete(final as WizardValue<S>, event, { draft: id });
-        await drafts.delete(id, event);
-        return answer;
       },
       options.action,
     );
+    const step = async (value: unknown, event: RequestEvent, id: string): Promise<unknown> => {
+      const loaded = await drafts.load(id, event);
+      const done = completedIndices(wizard, loaded?.value);
+      const url = pageUrl(event);
+      // No skipping: an earlier step without saved output sends the user back to it.
+      const reachable = clampStep(wizard, index, done);
+      if (reachable < index) return redirect(stepHref(wizard, url, reachable, { param: options.param, draft: id }));
+      const steps = { ...loaded?.value.steps, [definition.name]: value };
+      const completed = [...new Set([...(loaded?.value.completed ?? []), definition.name])];
+      const saved = await drafts.save(id, { steps, completed }, loaded ? { version: loaded.version } : {}, event);
+      if (!saved.ok) return invalid({}, { key: "errors.conflict" }, 409);
+      if (index < wizard.steps.length - 1) {
+        await options.onStep?.(definition.name, value, event, { draft: id });
+        return redirect(stepHref(wizard, url, index + 1, { param: options.param, draft: id }));
+      }
+      const merged: Record<string, unknown> = {};
+      for (const step of wizard.steps as readonly FormDefinition<any>[]) Object.assign(merged, steps[step.name] as object);
+      let final: unknown = merged;
+      if (wizard.final) {
+        const result = await wizard.final["~standard"].validate(merged);
+        if (result.issues) {
+          const map = mapSchemaIssues(result.issues);
+          const form: Issue[] = [...map.form, ...Object.values(map.fields).flat()];
+          return invalid({}, form);
+        }
+        final = result.value;
+      }
+      const answer = await options.onComplete(final as WizardValue<S>, event, { draft: id });
+      await drafts.delete(id, event);
+      return answer;
+    };
   });
   return out;
 }

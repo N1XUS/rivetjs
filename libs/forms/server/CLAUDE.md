@@ -13,7 +13,7 @@ Server half of forms: form definitions → router actions (convention-agnostic `
 
 - `action.ts` — `action(def, fn, options)`, `invalid`, `parse`, `readForm` (bounded body), CSRF modes, echo, remote field checks.
 - `intents.ts` — `parseIntent` / `applyIntent`: `insert|remove|move|swap:<path>[:…]` applied to echoed raw values (internal; used by `action.ts`).
-- `wizard.ts` — `wizardAction` (one action per step → `DraftStore`, redirect to next step; last step merges, checks `final`, `onComplete`, deletes draft), `loadWizard` (inside `load(…)`), `draftFrom` (`_draft` field / `?draft=`).
+- `wizard.ts` — `wizardAction` (one action per step → `DraftStore`, redirect to next step; last step merges, checks `final`, `onComplete`, deletes draft; a last-step submit for a draft whose completion runs in this process answers 409 `errors.conflict` (`completing` set, FIX-CORE 2026-11-01; across processes `onComplete` must be idempotent per draft), test `tests/wizard.test.ts`), `loadWizard` (inside `load(…)`), `draftFrom` (`_draft` field / `?draft=`).
 - `draft.ts` — `draftAction(drafts)`: merges raw autosave patch; 409 + `{ conflict, version, value }` on stale version.
 - `redirect.ts` — re-export of `@rivetjs/router` `safeRedirect` (open-redirect guard).
 - `browser.ts` — throwing browser stub.

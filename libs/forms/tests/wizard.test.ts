@@ -100,3 +100,43 @@ test("server wizard: step outputs saved, redirects, skip guard, final schema, co
   assert.deepEqual(completed, { email: "a@b.co", city: "Kyiv", agree: true });
   assert.equal(drafts.map.has(draft), false);
 });
+
+// FIX-CORE (2026-11-01): a second last-step submit (double click, retry) while `onComplete` still runs loaded the
+// post-save version, saved again and completed the wizard a second time (two orders).
+test("server wizard: a last-step submit while completion runs does not complete twice", async () => {
+  const drafts = memoryDrafts();
+  let completions = 0;
+  let release!: () => void;
+  const gate = new Promise<void>((done) => (release = done));
+  const actions = wizardAction(onboarding, drafts, {
+    onComplete: async () => {
+      completions++;
+      await gate;
+      return redirect("/welcome");
+    },
+  });
+  const server: ServerModule = { actions };
+  const routes: AppRoute[] = [{ id: "w", pattern: "/w", page: true, layouts: [], server: () => Promise.resolve(server) }];
+  const page = (input: RenderInput) => new Response(JSON.stringify({ action: input.action }), { status: input.status });
+  const handler = createHandler({ routes, render: page, renderError: ({ status }) => new Response(String(status), { status }), onError: () => {} });
+  const post = (name: string, fields: Record<string, string>) =>
+    handler(new Request(`http://x/w?/${name}`, { method: "POST", body: new URLSearchParams(fields), headers: { origin: "http://x" } }));
+  const first = await post("account", { email: "a@b.co" });
+  const draft = new URL(first.headers.get("location")!, "http://x").searchParams.get("draft")!;
+  await post("address", { city: "Kyiv", _draft: draft });
+  const one = post("confirm", { agree: "on", _draft: draft });
+  // Let the first request reach `onComplete`.
+  for (let i = 0; i < 50 && completions === 0; i++) await new Promise((done) => setTimeout(done, 1));
+  const second = post("confirm", { agree: "on", _draft: draft });
+  // Let the second request run as far as it gets before the first completes.
+  for (let i = 0; i < 20; i++) await new Promise((done) => setTimeout(done, 1));
+  release();
+  const [a, b] = await Promise.all([one, second]);
+  assert.equal(a.status, 303);
+  assert.equal(b.status, 409);
+  assert.equal(completions, 1);
+  // Once completed, the draft is gone: a late retry starts over.
+  const late = await post("confirm", { agree: "on", _draft: draft });
+  assert.equal(new URL(late.headers.get("location")!, "http://x").searchParams.get("step"), "account");
+  assert.equal(completions, 1);
+});

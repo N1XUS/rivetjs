@@ -178,7 +178,7 @@ Others: `touched`, `dirty`, `issues`, `issueText`, `validating` (an async check 
 
 ## More building blocks
 
-Each lives in its own entry, so you only pay for what you import. Server helpers such as `wizardAction(...)` return the whole actions object (`export const forms = actions(wizardAction(...))`); call `loadWizard(...)` inside `load(…)`.
+Each lives in its own entry, so you only pay for what you import. Server helpers such as `wizardAction(...)` return the whole actions object (`export const forms = actions(wizardAction(...))`); call `loadWizard(...)` inside `load(…)`. A second submit of a wizard's last step while its `onComplete` is still running (a double click, a retry) gets a 409 conflict instead of completing again; with several server processes, make `onComplete` idempotent per draft id.
 
 | Entry | For |
 | --- | --- |
