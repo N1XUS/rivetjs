@@ -44,13 +44,19 @@ export function applyIssues(def: FormDefinition<any>, store: FormStore<any>, map
   // Field checks for paths that now fail the schema are moot.
   for (const path in map.fields) state.checks.delete(path);
   const everything = all || showsAll(def, store);
-  const paths = new Set([...Object.keys(map.fields), ...Object.keys(previous), ...Object.keys(store.f)]);
-  for (const path of paths) {
-    if (!everything && !isArmed(store, path)) continue;
-    if (!store.f[path] && !map.fields[path]) continue;
+  const write = (path: string): void => {
+    if (!everything && !isArmed(store, path)) return;
+    const field = store.f[path];
+    if (!field && !map.fields[path]) return;
+    // Nothing to show and nothing shown (most fields on a keystroke after a submit): no issue list to build.
+    if (!map.fields[path] && !state.checks.get(path)?.length && untrack(field!) === undefined) return;
     if (all && map.fields[path]) arm(store, path);
     writeIssues(store, path, combined(store, path));
-  }
+  };
+  // The new issues' paths, then the previous ones', then the bound fields' (each once, in that order).
+  for (const path in map.fields) write(path);
+  for (const path in previous) if (!Object.hasOwn(map.fields, path)) write(path);
+  for (const path in store.f) if (!Object.hasOwn(map.fields, path) && !Object.hasOwn(previous, path)) write(path);
   if (all || hasBit(store, SUBMITTED)) writeFormIssues(store, map.form);
 }
 
