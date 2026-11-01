@@ -17,7 +17,7 @@
 // 0 = off), --graph <nx graph json> (skip `nx graph`), --logs <dir>.
 // Exit status: 0 when no gate is a new red (known reds and noise are reported, not failing), 1 otherwise, 2 usage.
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { classify, baselineDelta, restoreQwikLines, timeRss, type KnownRed, type Status, type Verdict } from "./classify.ts";
@@ -55,7 +55,7 @@ export function parseArgs(argv: string[]): Options {
     rssLimitMB: 3072,
     sizeTolerance: 20,
     timeoutMin: 120,
-    slots: Number(process.env.RIVET_HEAVY_SLOTS ?? 3),
+    slots: Number(process.env.RIVET_HEAVY_SLOTS || 3), // empty = the default, not 0 (0 = no semaphore)
   };
   const list = (value: string) =>
     value
@@ -141,7 +141,8 @@ const git = (...args: string[]) => execFileSync("git", args, { cwd: root, encodi
 /** git diff <base> (working tree, staged + unstaged, deletions incl.) + untracked files, minus the regenerated API file. */
 export function changedFiles(base: string): string[] {
   const lines = (text: string) => text.split("\n").filter(Boolean);
-  const files = new Set([...lines(git("diff", "--name-only", base)), ...lines(git("ls-files", "--others", "--exclude-standard"))]);
+  // `--no-renames`: a rename lists its old path too (the project that lost the file is affected).
+  const files = new Set([...lines(git("diff", "--name-only", "--no-renames", base)), ...lines(git("ls-files", "--others", "--exclude-standard"))]);
   return [...files].filter((file) => !IGNORED_FILES.has(file)).sort();
 }
 
@@ -312,13 +313,26 @@ async function acquireSlot(count: number, onWait: () => void): Promise<() => voi
   for (;;) {
     for (let i = 0; i < count; i++) {
       const slot = join(dir, `slot-${i}`);
+      // The slot appears with its pid file in place (prepared aside, renamed in: fails while held), so a process that
+      // dies mid-acquire never leaves a slot without an owner nobody can reclaim.
+      const mine = `${slot}.${process.pid}.tmp`;
       try {
-        mkdirSync(slot);
-        writeFileSync(join(slot, "pid"), String(process.pid));
+        mkdirSync(mine, { recursive: true });
+        writeFileSync(join(mine, "pid"), String(process.pid));
+        renameSync(mine, slot);
         return () => rmSync(slot, { recursive: true, force: true });
       } catch {
-        const pid = Number(existsSync(join(slot, "pid")) ? readFileSync(join(slot, "pid"), "utf8") : NaN);
-        if (Number.isFinite(pid) && !alive(pid)) rmSync(slot, { recursive: true, force: true });
+        rmSync(mine, { recursive: true, force: true });
+        let pid = NaN,
+          age = 0;
+        try {
+          pid = Number(readFileSync(join(slot, "pid"), "utf8"));
+        } catch {
+          // No pid file: a slot of an older runner that died between mkdir and the pid write (reclaimed once it is old),
+          // or one being released right now (gone: nothing to do).
+          age = existsSync(slot) ? Date.now() - statSync(slot).mtimeMs : 0;
+        }
+        if (Number.isFinite(pid) ? !alive(pid) : age > 60_000) rmSync(slot, { recursive: true, force: true });
       }
     }
     if (!warned) (onWait(), (warned = true));
