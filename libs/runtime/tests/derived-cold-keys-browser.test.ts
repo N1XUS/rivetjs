@@ -235,3 +235,81 @@ compiled("cold keys after a press queued while the runtime runs follow the focus
     { delays: { "/cells.js": cold } },
   );
 });
+
+// CI-RED-B 2026-11-01: a cold touch tap queued while the runtime runs (here an earlier boundary's click booted it; on
+// CI a hover intent at the headless cursor) — the browser's compatibility mousedown comes after pointerup and its
+// native focus move is undone as it lands. The replayed touch pointerdown's handler focuses (RA usePress on touch
+// press start: cdk Menu items); the replayed mousedown then found focus on its target and "put it back" to where it
+// was at dispatch (the body), so the next held-free key went to the body (ui-docs menu-standalone chromium/touch).
+const TAPS = `export function Taps() {
+  const move = (e: KeyboardEvent) => {
+    if (e.key !== "ArrowDown") return;
+    e.preventDefault();
+    ((e.currentTarget as HTMLElement).nextElementSibling as HTMLElement | null)?.focus();
+  };
+  return (
+    <div id="taps">
+      {[0, 1, 2].map((i) => (
+        <span id={"t" + i} tabIndex={-1} onPointerDown={(e) => (e.currentTarget as HTMLElement).focus()} onKeyDown={move}>
+          {i}
+        </span>
+      ))}
+    </div>
+  );
+}
+`;
+
+compiled("a cold touch tap queued while the runtime runs keeps the focus its replayed pointerdown handler moved", async () => {
+  const one = (source: string, name: string) => {
+    const resume3 = { module: `src/${name.toLowerCase()}.tsx`, boundaries: [name], independent: [name] };
+    const server = compile(source, { target: "server", filename: `${name}.tsx`, resume: resume3 } as never);
+    const dom = compile(source, { target: "dom", filename: `${name}.tsx`, resume: resume3 } as never);
+    assert.deepEqual(server.diagnostics, []);
+    assert.deepEqual(dom.diagnostics, []);
+    return { server, dom };
+  };
+  const taps = one(TAPS, "Taps"),
+    other = one(OTHER, "Other");
+  const { Taps } = await importServer<{ Taps: () => ServerValue }>(taps.server.code);
+  const { Other } = await importServer<{ Other: () => ServerValue }>(other.server.code);
+  const symbols = { "src/taps.tsx#Taps": "/taps.js", "src/other.tsx#Other": "/other.js" };
+  const html = (await derivedToString(() => [Other(), Taps()] as never, {
+    manifest: { hash: "t", runtime: "/rt.js", symbols },
+    preload: { lean: true },
+  } as never)) as string;
+  let release!: () => void;
+  const cold = new Promise<void>((resolve) => (release = resolve));
+  const served = {
+    ...DERIVED_BUILD,
+    "/": "<!doctype html><html><body>" + html + "</body></html>",
+    "/rt.js": 'export { default } from "/dom-derived.ts";',
+    "/taps.js": rewrite(taps.dom.code),
+    "/other.js": rewrite(other.dom.code),
+  };
+  await withPage(
+    served,
+    async (page) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto("http://rivet.test/");
+      await page.click("#other");
+      await page.waitForFunction(() => document.querySelector("#other")!.textContent === "1");
+      // A real touch tap (pointer events of type touch, then the compatibility mouse events and click).
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
+      const box = (await page.locator("#t0").boundingBox())!;
+      const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      release();
+      await page.waitForFunction(() => document.activeElement?.id === "t0", undefined, { timeout: 5000 });
+      // Every held event replayed: focus stays on the tapped cell and the next key moves on from it.
+      await page.waitForTimeout(100);
+      assert.equal(await page.evaluate(() => document.activeElement?.id), "t0");
+      await page.keyboard.press("ArrowDown");
+      assert.equal(await page.evaluate(() => document.activeElement?.id), "t1");
+      assert.deepEqual(errors, []);
+    },
+    { delays: { "/taps.js": cold } },
+  );
+});

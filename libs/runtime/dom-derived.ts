@@ -2400,7 +2400,9 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     }
     return;
   }
-  if (press && !(pair && type === "mousedown") && doc!.activeElement === (press[0] ?? doc!.body)) {
+  // Not for a hidden press: its native move was undone as it landed, so focus on its target now is a replayed handler's
+  // (a touch tap's compatibility mousedown after the pointerdown handler focused: cdk Menu items, CI-RED-B 2026-11-01).
+  if (press && !hid && !(pair && type === "mousedown") && doc!.activeElement === (press[0] ?? doc!.body)) {
     let was = state[2] as HTMLElement | null,
       ts = event.timeStamp,
       u: [Element | null, number, number] | undefined;
