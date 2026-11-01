@@ -65,6 +65,16 @@ describe("stepper state", () => {
     expect(stepperSelectedIndex(state)).toBe(2);
   });
 
+  // Rivet: unmounting the whole stepper unregisters every step; that must not write the caller's two-way signal
+  // (upstream destroys the component, nothing observes its `steps.changes`).
+  it("removing every step (stepper unmount) keeps a two-way selectedIndex signal", async () => {
+    const selected = signal(2);
+    const { state, items } = setup({ selectedIndex: selected });
+    for (const step of items) unregisterStep(state, step);
+    await Promise.resolve();
+    expect(selected()).toBe(2);
+  });
+
   it("marks the step interacted when moving away; completed = interacted + valid", () => {
     const valid = signal(false);
     const { state, items } = setup({}, [{ stepControl: { valid } }, {}]);

@@ -216,13 +216,16 @@ export function registerStep(state: StepperState, step: StepItemState): void {
  * microtask, as upstream's `QueryList.changes` fires once the change settled: a step whose unit is disposed and created
  * again in the same task (a resumed page's adopt run retrying its probe, REDS-UI 2026-10-28: a display-only
  * `defaultStep={1}` stepper fell back to step 0 on the first interaction) re-registers before it, so nothing moves.
+ * No step left = the stepper is being unmounted (every step unregisters in one task): nothing to clamp to, and a
+ * two-way `selectedIndex` signal is the caller's state (upstream's subscription ends with the component; the per-step
+ * microtasks walked such a signal down to 0).
  */
 export function unregisterStep(state: StepperState, step: StepItemState): void {
   state.steps.set(untrack(state.steps).filter((s) => s !== step));
   queueMicrotask(() => {
     const count = untrack(state.steps).length,
       selected = untrack(() => controlledValue(state.selected));
-    if (selected >= count && selected > 0) {
+    if (count > 0 && selected >= count && selected > 0) {
       if (!state.selected.isControlled || state.selected.isSignal) state.selected.value.set(Math.max(selected - 1, 0));
     }
   });
