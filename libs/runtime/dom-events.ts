@@ -70,7 +70,9 @@ function delegate(event: Event, stop: Node | null): boolean {
   let i = done ?? 0,
     node = (path ? path[i] : event.target) as (Node & Handlers) | null | undefined,
     emulated = false,
-    stopped = false;
+    stopped = false,
+    failed = false,
+    failure: unknown;
   while (node) {
     if ((node as Node) === stop) {
       ranTo.set(event, i);
@@ -88,8 +90,17 @@ function delegate(event: Event, stop: Node | null): boolean {
       // accessor closure would be pinned by V8's map descriptors and retain the event path.
       Object.defineProperty(event, "currentTarget", { configurable: true, value: target });
       emulated = true;
-      // Under the owner that bound it (context lookups); skipped once that owner is disposed.
-      _dispatch((target as unknown as { $$o: Owner | null }).$$o, handler, target, event);
+      // Under the owner that bound it (context lookups); skipped once that owner is disposed. A throwing handler
+      // does not cut the path short (native dispatch reports a listener's error and runs the others): the first
+      // error is rethrown after the walk (the browser reports it from this listener), later ones are reported.
+      try {
+        _dispatch((target as unknown as { $$o: Owner | null }).$$o, handler, target, event);
+      } catch (error) {
+        if (!failed) {
+          failed = true;
+          failure = error;
+        } else (globalThis.reportError || console.error)(error);
+      }
       // Propagation stopped below the document: natively no document / window listener would run, so the
       // ones registered after this dispatcher (react-aria-style global pointerup listeners) are skipped too.
       if (event.cancelBubble) {
@@ -106,6 +117,7 @@ function delegate(event: Event, stop: Node | null): boolean {
   if (stop && !node) ranTo.set(event, i);
   // Later document / window listeners see the real currentTarget (the document) again.
   if (emulated) delete (event as unknown as { currentTarget?: unknown }).currentTarget;
+  if (failed) throw failure;
   return stopped;
 }
 /** A handler value: a function, or undefined for null / undefined (anything else throws). */
