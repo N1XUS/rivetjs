@@ -12,10 +12,21 @@ import type { Issue } from "./types.ts";
 
 const isReply = (value: unknown): value is FormReply => typeof value === "object" && value !== null && typeof (value as FormReply).ok === "boolean";
 
+// After the server accepted the action: a failing follow-up (redirect navigation, revalidation) is reported, not shown
+// as a network failure — the action ran, a resubmit would run it again.
+async function after(work: () => Promise<void>): Promise<true> {
+  try {
+    await work();
+  } catch (error) {
+    (globalThis.reportError || console.error)(error);
+  }
+  return true;
+}
+
 /**
  * Send the validated form (`def.submit`: through it instead); a second submit aborts the first.
- * Resolves `true` once the server accepted it (after the page revalidated / the redirect was served),
- * `false` for issues, failures and aborted submits.
+ * Resolves `true` once the server accepted it (after the page revalidated / the redirect was served; a
+ * failing follow-up is reported, the submit still succeeded), `false` for issues, failures and aborted submits.
  */
 export async function send(
   def: FormDefinition<any>,
@@ -38,7 +49,7 @@ export async function send(
     // The action may have changed what loaders return: drop route data warmed meanwhile.
     clearPrefetch();
     if (controller.signal.aborted) return false;
-    if (answer.redirect !== undefined) return (await follow(answer.redirect, answer), true);
+    if (answer.redirect !== undefined) return await after(() => follow(answer.redirect!, answer));
     if (answer.error) {
       const failure: Issue = {
         key: status >= 500 ? "errors.server" : "errors.request",
@@ -62,8 +73,10 @@ export async function send(
     // Same page, changed server state: fresh data from the answer (else one data request) — a live
     // page updates in place, others re-render.
     if (fresh)
-      await invalidate(
-        answer.data ? { data: answer.data, ...(answer.head ? { head: answer.head } : {}), ...(answer.deps ? { deps: answer.deps } : {}) } : undefined,
+      await after(() =>
+        invalidate(
+          answer.data ? { data: answer.data, ...(answer.head ? { head: answer.head } : {}), ...(answer.deps ? { deps: answer.deps } : {}) } : undefined,
+        ),
       );
     return true;
   } catch (error) {
