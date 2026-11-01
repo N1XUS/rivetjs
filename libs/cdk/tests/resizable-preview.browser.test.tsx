@@ -9,7 +9,18 @@ afterEach(() => cleanup());
 const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 const byId = (id: string) => document.getElementById(id) as HTMLElement;
 const pointer = (target: EventTarget, type: string, x: number, y: number) =>
-  target.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, bubbles: true, cancelable: true, pointerId: 1, pointerType: "mouse", button: 0, buttons: type === "pointerup" ? 0 : 1 }));
+  target.dispatchEvent(
+    new PointerEvent(type, {
+      clientX: x,
+      clientY: y,
+      bubbles: true,
+      cancelable: true,
+      pointerId: 1,
+      pointerType: "mouse",
+      button: 0,
+      buttons: type === "pointerup" ? 0 : 1,
+    }),
+  );
 
 describe("resize preview", () => {
   it("moves the existing preview node while dragging (offset-only changes)", async () => {
@@ -18,7 +29,7 @@ describe("resize preview", () => {
       <div style={{ width: "1000px", height: "200px" }}>
         <Group id="g" resizePreviewMode="separator">
           <Panel id="a" defaultSize="30%" />
-          <Separator id="s1" preview={() => (previewRenders++, <div class="line" />)} />
+          <Separator id="s1" preview={() => (previewRenders++, (<div class="line" />))} />
           <Panel id="b" defaultSize="40%" />
           <Separator id="s2" />
           <Panel id="c" />
