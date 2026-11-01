@@ -96362,8 +96362,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 168,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L168"
+    "line": 179,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L179"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourceIcon/"
   },
@@ -96407,8 +96407,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 160,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L160"
+    "line": 171,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L171"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourceIconProps/"
   },
@@ -96437,8 +96437,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 213,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L213"
+    "line": 224,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L224"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcePreview/"
   },
@@ -96475,8 +96475,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 207,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L207"
+    "line": 218,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L218"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcePreviewProps/"
   },
@@ -96505,8 +96505,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 71,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L71"
+    "line": 82,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L82"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourceRoot/"
   },
@@ -96587,8 +96587,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 53,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L53"
+    "line": 64,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L64"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourceRootProps/"
   },
@@ -96617,8 +96617,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 197,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L197"
+    "line": 208,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L208"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourceTitle/"
   },
@@ -96654,8 +96654,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 192,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L192"
+    "line": 203,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L203"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourceTitleProps/"
   },
@@ -96684,8 +96684,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 115,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L115"
+    "line": 126,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L126"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourceTrigger/"
   },
@@ -98409,8 +98409,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 109,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L109"
+    "line": 120,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L120"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourceTriggerProps/"
   },
@@ -98570,8 +98570,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 275,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L275"
+    "line": 286,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L286"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesContent/"
   },
@@ -98607,8 +98607,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 270,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L270"
+    "line": 281,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L281"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesContentProps/"
   },
@@ -98637,8 +98637,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 303,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L303"
+    "line": 314,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L314"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesFavicons/"
   },
@@ -98682,8 +98682,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 295,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L295"
+    "line": 306,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L306"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesFaviconsProps/"
   },
@@ -98712,8 +98712,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 286,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L286"
+    "line": 297,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L297"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesList/"
   },
@@ -98734,8 +98734,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 284,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L284"
+    "line": 295,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L295"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesListProps/"
   },
@@ -98764,8 +98764,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 241,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L241"
+    "line": 252,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L252"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesRoot/"
   },
@@ -99396,8 +99396,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 237,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L237"
+    "line": 248,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L248"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesRootProps/"
   },
@@ -99426,8 +99426,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 258,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L258"
+    "line": 269,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L269"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesTrigger/"
   },
@@ -99471,8 +99471,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-source/chat-source.tsx",
-    "line": 250,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L250"
+    "line": 261,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-source/chat-source.tsx#L261"
    },
    "href": "/api/rivetjs/ui/chat-source/ChatSourcesTriggerProps/"
   },
@@ -235228,8 +235228,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/lightbox/fullscreen/index.tsx",
-    "line": 69,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/lightbox/fullscreen/index.tsx#L69"
+    "line": 86,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/lightbox/fullscreen/index.tsx#L86"
    },
    "href": "/api/rivetjs/ui/lightbox/LightboxFullscreenProps/"
   },
@@ -308045,8 +308045,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 345,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L345"
+    "line": 352,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L352"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptSegment/"
   },
@@ -308082,8 +308082,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 330,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L330"
+    "line": 337,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L337"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTextSegment/"
   },
@@ -308199,8 +308199,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 336,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L336"
+    "line": 343,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L343"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTokenSegment/"
   },
@@ -308221,8 +308221,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 348,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L348"
+    "line": 355,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L355"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTokenValue/"
   },
@@ -336162,7 +336162,7 @@
    "name": "cookieStorage",
    "kind": "function",
    "summary": "Rivet addition (upstream documents it as an example): a cookie `LayoutStorage`.",
-   "remarks": "Rivet addition (upstream documents it as an example): a cookie `LayoutStorage`. Pass the request's `Cookie` header\n(or a cookie map) on the server so the stored layout is server-rendered; in the browser it reads `document.cookie`.",
+   "remarks": "Rivet addition (upstream documents it as an example): a cookie `LayoutStorage`. Pass the request's `Cookie` header\n(or a cookie map) on the server so the stored layout is server-rendered; in the browser it reads `document.cookie`.\nA malformed value (a raw `%` from another writer) reads as `null`: no stored layout.",
    "signatures": [
     "function cookieStorage(source?: string | { get: (name: string) => string | undefined } | null, options?: { maxAge?: number; path?: string }): LayoutStorage & { readonly ssr: true }"
    ],
@@ -336187,8 +336187,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/resizable/index.tsx",
-    "line": 779,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L779"
+    "line": 789,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L789"
    },
    "href": "/api/rivetjs/ui/resizable/cookieStorage/"
   },
