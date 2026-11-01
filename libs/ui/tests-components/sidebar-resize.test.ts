@@ -31,11 +31,14 @@ const gapWidth = (page: Page) => page.locator('[data-slot="sidebar-gap"]').evalu
 const settled = (page: Page) => page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
 const text = (page: Page, sel: string) => page.locator(sel).textContent();
 
-async function drag(page: Page, toX: number, opts: { hold?: (page: Page) => Promise<void> } = {}): Promise<void> {
+async function drag(page: Page, toX: number, opts: { hold?: (page: Page) => Promise<void>; codeBlocked?: boolean } = {}): Promise<void> {
   const h = (await page.locator(HANDLE).boundingBox())!;
   await page.mouse.move(h.x + h.width / 2, h.y + 200);
   await page.mouse.down();
   await page.mouse.move(toX, h.y + 200, { steps: 6 });
+  // The first press is cold: the loader holds it until the handle's chunk ran, then replays it with the queued moves.
+  // Wait (still held) for the live drag instead of racing the boot (2-vCPU CI runners lose that race).
+  if (!opts.codeBlocked) await page.waitForFunction((sel) => document.querySelector(sel)?.getAttribute("data-dragging") === "true", HANDLE);
   if (opts.hold) await opts.hold(page);
   await page.mouse.up();
 }
@@ -97,7 +100,7 @@ for (const input of ["mouse", "touch"] as const)
     });
     try {
       await page.goto(s.origin + "/sidebar-resize", { waitUntil: "domcontentloaded" });
-      if (input === "mouse") await drag(page, 330);
+      if (input === "mouse") await drag(page, 330, { codeBlocked: true });
       else {
         const h = (await page.locator(HANDLE).boundingBox())!;
         const x = h.x + h.width / 2;
