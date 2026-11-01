@@ -42,39 +42,91 @@ const hidden = (el: Element, root: Element): boolean => {
  */
 export function domCollection(root: Element): Collection {
   const nodes: Node[] = [];
+  // Index among the top-level nodes (sections + section-less items), counted as they come (was a filter per node).
+  let topIndex = 0;
   const sections = new Map<Element, Node & { childNodes: Node[] }>();
-  const owner = (el: Element) => el.parentElement?.closest(`[${COLLECTION_ATTR}]`) ?? null;
-  const rootId = root.getAttribute(COLLECTION_ATTR);
-  const isOwn = (el: Element) => {
-    const o = owner(el);
-    return o === root || (rootId != null && o?.getAttribute(COLLECTION_ATTR) === rootId);
-  };
+  const isOwn = ownerTest(root);
   for (const el of root.querySelectorAll("[data-key]")) {
     if (!isOwn(el) || hidden(el, root)) continue;
     const key = domKey(el)!;
     if (el.hasAttribute("data-section")) {
       const section = makeNode("section", key, null, el.getAttribute("aria-label") ?? "", {}, []);
       sections.set(el, section as Node & { childNodes: Node[] });
-      section.index = nodes.filter((n) => n.parentKey == null).length;
+      section.index = topIndex++;
       nodes.push(section);
       continue;
     }
     const sectionEl = el.parentElement?.closest("[data-section]");
     const parent = sectionEl && root.contains(sectionEl) ? sections.get(sectionEl) : undefined;
-    const props: NodeProps = { isDisabled: el.getAttribute("aria-disabled") === "true" || el.hasAttribute("data-disabled") };
-    if (el.localName === "a" && el.hasAttribute("href")) {
-      props.href = el.getAttribute("href")!;
-      for (const name of ["target", "rel", "download"] as const) if (el.hasAttribute(name)) props[name] = el.getAttribute(name)!;
-    }
-    const text = el.getAttribute("data-text") ?? el.textContent?.trim() ?? "";
-    const node = makeNode("item", key, parent?.key ?? null, text, props, []);
+    const node: Node = new DomItemNode(key, parent?.key ?? null, itemProps(el), el);
     if (parent) {
       node.index = parent.childNodes.length;
       parent.childNodes.push(node);
-    } else node.index = nodes.filter((n) => n.parentKey == null).length;
+    } else node.index = topIndex++;
     nodes.push(node);
   }
   return new FlatCollection(nodes);
+}
+
+/**
+ * The one-item slice of `domCollection(root)` for `item` (same node: key, section parent, props, text; empty when
+ * `domCollection` would skip it). For handlers that only read / focus the item under the pointer (hover): building
+ * the whole collection per `pointerover` was O(items) DOM work per item entered.
+ */
+export function domItemCollection(root: Element, item: Element): Collection {
+  const isOwn = ownerTest(root);
+  if (item.hasAttribute("data-section") || !isOwn(item) || hidden(item, root)) return new FlatCollection([]);
+  const sectionEl = item.parentElement?.closest("[data-section]");
+  const parentKey =
+    sectionEl && root.contains(sectionEl) && isOwn(sectionEl) && !hidden(sectionEl, root) && sectionEl.hasAttribute("data-key") ? domKey(sectionEl)! : null;
+  return new FlatCollection([new DomItemNode(domKey(item)!, parentKey, itemProps(item), item)]);
+}
+
+/** Whether a `[data-key]` element belongs to `root`'s collection (its nearest collection root is `root` or a twin id). */
+function ownerTest(root: Element): (el: Element) => boolean {
+  const rootId = root.getAttribute(COLLECTION_ATTR);
+  return (el) => {
+    const o = el.parentElement?.closest(`[${COLLECTION_ATTR}]`) ?? null;
+    return o === root || (rootId != null && o?.getAttribute(COLLECTION_ATTR) === rootId);
+  };
+}
+
+function itemProps(el: Element): NodeProps {
+  const props: NodeProps = { isDisabled: el.getAttribute("aria-disabled") === "true" || el.hasAttribute("data-disabled") };
+  if (el.localName === "a" && el.hasAttribute("href")) {
+    props.href = el.getAttribute("href")!;
+    for (const name of ["target", "rel", "download"] as const) if (el.hasAttribute(name)) props[name] = el.getAttribute(name)!;
+  }
+  return props;
+}
+
+/**
+ * An item node over its element: same fields as `makeNode("item", …)`, the text read on first use (typeahead /
+ * announcements) through a prototype getter — `textContent` of every item was most of a per-event build.
+ */
+class DomItemNode implements Node {
+  readonly type = "item" as const;
+  index = 0;
+  readonly level: number;
+  readonly hasChildNodes = false;
+  readonly childNodes: Node[] = [];
+  prevKey?: Key | undefined;
+  nextKey?: Key | undefined;
+  readonly key: Key;
+  readonly parentKey: Key | null;
+  readonly props: NodeProps;
+  private readonly el: Element;
+  private _text: string | undefined = undefined;
+  constructor(key: Key, parentKey: Key | null, props: NodeProps, el: Element) {
+    this.key = key;
+    this.parentKey = parentKey;
+    this.props = props;
+    this.el = el;
+    this.level = parentKey == null ? 0 : 1;
+  }
+  get textValue(): string {
+    return (this._text ??= this.el.getAttribute("data-text") ?? this.el.textContent?.trim() ?? "");
+  }
 }
 
 /** Collection over nodes in document order (sections followed by their items). */

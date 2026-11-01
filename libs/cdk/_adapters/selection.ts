@@ -10,7 +10,7 @@ import { untrack } from "@rivetjs/reactivity";
 import { direction as dirOf } from "@rivetjs/cdk/bidi";
 import { isMac, isCtrlKeyPressed } from "@rivetjs/cdk/platform";
 import { tabbables, isTabbable } from "@rivetjs/cdk/a11y";
-import { GroupSelectionManager, SelectionManager, domCollection } from "./selection-manager.ts";
+import { GroupSelectionManager, SelectionManager, domCollection, domItemCollection } from "./selection-manager.ts";
 import {
   COLLECTION_ATTR,
   ListKeyboardDelegate,
@@ -113,6 +113,13 @@ export interface ItemPressHooks {
 /** Selection manager over the rendered collection under `root` (a virtualized collection: its built collection). */
 export const managerOf = (list: MultipleSelectionState, root: HTMLElement): SelectionManager =>
   new SelectionManager((list as SelectableCollection).virtual?.collection() ?? domCollection(root), list);
+
+/**
+ * Manager over just `item` (its `domItemCollection`) for handlers that read / focus only the item under the pointer
+ * (hover: `isDisabled`, `setFocusedKey`); a virtualized collection keeps its built collection.
+ */
+export const itemManagerOf = (list: MultipleSelectionState, root: HTMLElement, item: Element): SelectionManager =>
+  (list as SelectableCollection).virtual ? managerOf(list, root) : new SelectionManager(domItemCollection(root, item), list);
 
 /** Keyboard delegate of `root` (useSelectableList's default `ListKeyboardDelegate`). */
 export function delegateOf(list: SelectableCollection, root: HTMLElement, manager: SelectionManager): KeyboardDelegate {
@@ -688,7 +695,7 @@ export function collectionPointerOver(list: SelectableCollection, e: Ev<PointerE
   if (!list.options.shouldFocusOnHover || e.pointerType === "touch") return;
   const item = itemOf(root, e.target);
   if (!item) return;
-  const manager = managerOf(list, root);
+  const manager = itemManagerOf(list, root, item);
   const key = domKey(item)!;
   if (manager.isDisabled(key) || isFocusVisible()) return;
   const previous = manager.focusedKey;

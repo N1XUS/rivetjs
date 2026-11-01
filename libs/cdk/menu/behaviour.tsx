@@ -39,6 +39,7 @@ import {
   collectionPointerUp,
   collectionScroll,
   itemOf,
+  itemManagerOf,
   managerOf,
   delegateOf,
   groupManager,
@@ -518,7 +519,8 @@ function hoverItem(state: MenuState, root: HTMLElement, item: HTMLElement | null
   if (!item) return;
   const key = domKey(item);
   if (key == null) return;
-  const manager = managerOf(state, root);
+  // The hovered item only (`isDisabled` + `setFocusedKey`): no whole-menu DOM collection per item entered.
+  const manager = itemManagerOf(state, root, item);
   if (manager.isDisabled(key)) return;
   itemAttr(state, item, "hovered", true);
   // Hovering over an already expanded sub dialog trigger should keep focus in the dialog.
