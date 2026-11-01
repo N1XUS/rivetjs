@@ -152,6 +152,7 @@ const input = decodeFormData(body, {
 ```
 
 - Unlisted fields stay strings. Empty strings are omitted by default; `emptyAs: "string"` keeps them.
+- The reserved fields `_form`, `_intent`, `_csrf`, `_draft`, `_step` and `_version` are skipped and do not count toward `limits.fields`. An empty file input (no file chosen) decodes as `undefined`.
 - `coerce` accepts `"string"`, `"number"`, `"boolean"`, `"array"`, `"file"`, `"date"` and `"json"`. A `$` segment matches an array index, such as `"items.$.quantity"`.
 - Repeated scalar names keep the last value. Use `[]` or `"array"` coercion to collect several values.
 - Invalid number, date and JSON strings stay strings so a schema can report the error. Missing boolean and array fields default to `false` and `[]` when configured in `coerce`.

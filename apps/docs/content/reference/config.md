@@ -136,6 +136,7 @@ Per-import directives (`?width=320&layout=fixed&image`): `layout`, `width`, `hei
 | Option | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `fonts.display` | `string` | `"swap"` | Default `font-display` of `?font` imports. |
+| `fonts.cacheDir` | `string` | `"node_modules/.rivet/fonts"` | Download cache of Google Fonts `?font` imports, relative to the Vite root. A warm cache needs no network. |
 
 See [kit](../ui/kit.md).
 

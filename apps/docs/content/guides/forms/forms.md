@@ -36,6 +36,10 @@ The schema can come from any library that supports [Standard Schema](https://sta
 
 `validateOn` says when a field is first checked: `"submit"` (default), `"blur"` (when the user leaves the field), `"input"` or `"change"`. Once a field shows a problem, it is checked again on every input, so the message goes away as soon as the value is fixed.
 
+Problems normally show once a field was touched or the form was submitted. `showIssues: "always"` shows them as soon as they exist. After a failed submit the first invalid field gets focus; `focusOnInvalid: false` turns that off.
+
+Field names starting with `_` that Rivet uses itself (`_form`, `_intent`, `_csrf`, `_draft`, `_step`, `_version`) never reach the schema: don't give your own fields these names.
+
 ## Handle it on the server
 
 Wrap your action with `action()` from `@rivetjs/forms/server`, and export it from the page file as `actions(…)`:
@@ -58,7 +62,7 @@ The compiler removes `actions(…)` from the browser build, and `@rivetjs/forms/
 
 1. rejects posts from other sites, also when the browser sends neither `Origin` nor `Sec-Fetch-Site` (in production);
 2. refuses wrong content types (`415`) and too-large bodies (`413`; 1 MiB for normal forms, 10 MiB for file uploads);
-3. checks the values with the schema. On failure it answers `400` with the problems and the values the user typed (except passwords and files).
+3. checks the values with the schema. On failure it answers `400` with the problems and the values the user typed (except passwords, secrets and files; add more paths with `echo: { exclude: ["card.number"] }` in `defineForm`).
 
 Your function can also reject the input itself, for example when an email is already taken: return `invalid({ email: "This email is already registered" })`. `invalid` comes from the same module as `action`:
 
