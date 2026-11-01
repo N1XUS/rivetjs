@@ -732,8 +732,14 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
       const hash = createHash("sha256");
       hash.update(JSON.stringify(recipe));
       const files = new Set<string>();
+      // A closure past the walk's caps would be a partial key (an edit beyond it reused a stale result): no cache then.
+      let capped = false;
       const add = (file: string, depth: number) => {
-        if (files.has(file) || files.size > 400 || depth > 40) return;
+        if (files.has(file)) return;
+        if (files.size > 400 || depth > 40) {
+          capped = true;
+          return;
+        }
         files.add(file);
         let text = "";
         try {
@@ -769,6 +775,7 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
       };
       walkRecipe(recipe);
       if (paths) for (const file of [paths.helper, paths.tailwindVariants]) add(file, 0);
+      if (capped) return null;
       // The evaluator's own code (its proofs and encodings) is part of the key.
       hash.update(EVALUATOR_SOURCE);
       return join(cacheDir, "comptime", hash.digest("hex").slice(0, 32) + ".json");

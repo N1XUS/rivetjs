@@ -275,6 +275,22 @@ test("comptime: false keeps every call; the disk cache holds the evaluated resul
   assert.equal(await bundle("core.ts"), await bundle("core.ts"));
 });
 
+test("the disk cache key covers the whole import closure: past its walk cap the result is not cached", async () => {
+  // A 45-module chain (past the key walk's depth cap) ends in the constant the evaluated function reads.
+  const chain = 45;
+  const link = (i: number, sep: string) =>
+    writeFile(join(root, `deep${i}.ts`), i === chain ? `export const SEP = "${sep}";\n` : `export { SEP } from "./deep${i + 1}.ts";\n`);
+  for (let i = 0; i <= chain; i++) await link(i, "-");
+  await writeFile(
+    join(root, "deep.ts"),
+    `import { SEP } from "./deep0.ts";\n/** @comptime */\nexport function deep(...parts: string[]): string { return parts.join(SEP); }\n`,
+  );
+  await writeFile(join(root, "deep-use.ts"), `import { deep } from "./deep.ts";\nexport const v = deep("a", "b");\n`);
+  assert.match(await bundle("deep-use.ts"), /"a-b"/);
+  await link(chain, "+");
+  assert.match(await bundle("deep-use.ts"), /"a\+b"/, "an edit past the cap is not served from a stale cache entry");
+});
+
 test("annotations", () => {
   assert.deepEqual(
     [
