@@ -92,6 +92,49 @@ test("chat: simulateStream + streamText", async () => {
   assert.deepEqual(chunks2, []);
 });
 
+test("chat: streamText cancels a ReadableStream source it stops reading early (pre-aborted signal, throwing chunk callback)", async () => {
+  const source = () => {
+    const state = { cancelled: false };
+    const stream = new ReadableStream<string>({
+      pull(c) {
+        c.enqueue("x");
+      },
+      cancel() {
+        state.cancelled = true;
+      },
+    });
+    return { stream, state };
+  };
+  const pre = source();
+  const abort = new AbortController();
+  abort.abort();
+  assert.equal(await chat.streamText(signal(""), pre.stream, { signal: abort.signal }), "");
+  assert.equal(pre.state.cancelled, true, "pre-aborted: the source (e.g. a fetch body) is cancelled");
+  const thrown = source();
+  await assert.rejects(
+    chat.streamText(signal(""), thrown.stream, {
+      onChunk: () => {
+        throw new Error("chunk");
+      },
+    }),
+    /chunk/,
+  );
+  assert.equal(thrown.state.cancelled, true, "a throwing callback cancels the source");
+  // A source read to its end is not cancelled.
+  const ended = { cancelled: false };
+  const finite = new ReadableStream<string>({
+    start(c) {
+      c.enqueue("a");
+      c.close();
+    },
+    cancel() {
+      ended.cancelled = true;
+    },
+  });
+  assert.equal(await chat.streamText(signal(""), finite), "a");
+  assert.equal(ended.cancelled, false);
+});
+
 test("chat: simulateStream jitter varies chunk sizes, keeps the text", async () => {
   const text = "One two three four five. Six seven eight nine ten eleven twelve.";
   let seed = 7;

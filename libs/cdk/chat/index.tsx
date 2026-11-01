@@ -154,14 +154,21 @@ export async function streamText(target: Signal<string>, source: TextSource, opt
     const reader = (source as ReadableStream<string | Uint8Array>).getReader();
     const stop = () => void reader.cancel().catch(() => {});
     abort?.addEventListener("abort", stop, { once: true });
+    let ended = false;
     try {
       while (!abort?.aborted) {
         const { value, done } = await reader.read();
-        if (done) break;
+        if (done) {
+          ended = true;
+          break;
+        }
         append(value);
       }
     } finally {
       abort?.removeEventListener("abort", stop);
+      // Stopped before the end (a signal aborted before the first read, a throwing `onChunk`): cancel the source,
+      // e.g. a `fetch` body, so its connection closes (the abort listener never fires for a pre-aborted signal).
+      if (!ended) stop();
       reader.releaseLock();
     }
   } else {
