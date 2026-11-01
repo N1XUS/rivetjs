@@ -4,7 +4,7 @@
 // Leaf of `collections.ts` (BIG-UI-2 2026-10-27): the selection manager and the DOM collection are built inside menu /
 // listbox handlers only (`_adapters/selection.ts`). Out of `collections.ts`, a module every Select / ComboBox / Menu
 // page loads for its list state and keyboard delegate, they ship only with their importers.
-import { untrack } from "@rivetjs/reactivity";
+import { batch, untrack } from "@rivetjs/reactivity";
 import { ALL_SELECTED, IN_SELECTION, isSelectionEmpty, selectionOf } from "../selection/keyed.ts";
 import { domKey } from "../collections/dom.ts";
 import {
@@ -172,8 +172,13 @@ export class SelectionManager {
   }
   setFocusedKey(key: Key | null, childFocusStrategy: FocusStrategy = "first"): void {
     if (key == null || this.collection.getItem(key)) {
-      this.state.focusedKey.set(key == null ? null : (this.collection.getItem(key)?.key ?? key));
-      this.state.childFocusStrategy.set(childFocusStrategy);
+      const focused = key == null ? null : (this.collection.getItem(key)?.key ?? key);
+      // One batch, strategy first (react-stately; `selection/state.ts` setFocusedKey): an effect never sees the new
+      // key with the previous child focus strategy.
+      batch(() => {
+        this.state.childFocusStrategy.set(childFocusStrategy);
+        this.state.focusedKey.set(focused);
+      });
     }
   }
   private get raw(): Selection {

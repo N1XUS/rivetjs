@@ -13,7 +13,7 @@
 //   (R2 symbol) fires on every committed change like React's controlled callback.
 // - The manager is created per event (`new SelectionManager(collection, state)`); in bindings use
 //   `isKeySelected(state, key)` (no collection needed).
-import { signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { batch, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import {
   compareNodeOrder,
   getChildNodes,
@@ -126,8 +126,11 @@ export function setSelectedKeys(state: MultipleSelectionState, keys: Selection |
 
 /** Focus setters (react-stately FocusState). */
 export function setFocusedKey(state: MultipleSelectionState, key: Key | null, childFocusStrategy: FocusStrategy = "first"): void {
-  state.focusedKey.set(key);
-  state.childFocusStrategy.set(childFocusStrategy);
+  // One batch, strategy first (react-stately): an effect never sees the new key with the previous strategy.
+  batch(() => {
+    state.childFocusStrategy.set(childFocusStrategy);
+    state.focusedKey.set(key);
+  });
 }
 
 /**
