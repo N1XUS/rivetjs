@@ -476,7 +476,7 @@ export const currentPreview = (): { active: boolean; orientation: Orientation } 
 
 function mountPreviews(state: GroupState, group: RegisteredResizeAxis): () => void {
   let previews: ResizePreview[] = [];
-  const nodes = new Map<string, { node: HTMLElement; dispose: () => void }>();
+  const nodes = new Map<string, { node: HTMLElement; dispose: () => void; preview: ResizePreview }>();
   const update = (interaction: InteractionState) => {
     const next =
       interaction.state === "active"
@@ -488,11 +488,27 @@ function mountPreviews(state: GroupState, group: RegisteredResizeAxis): () => vo
     for (const preview of next) {
       keep.add(preview.key);
       const existing = nodes.get(preview.key);
+      if (existing?.preview === preview) continue;
+      // Rivet: a drag step changes only `offset` (`updateActiveHitRegion` copies the preview with the new offset):
+      // move the node. Upstream re-renders every preview per step — the user `preview()` and, without one, a full
+      // computed-style clone of the separator. Same `offset` on a new object = a re-render request
+      // (`notifySeparatorPreviewChanged`).
+      if (
+        existing &&
+        existing.preview.offset !== preview.offset &&
+        existing.preview.active === preview.active &&
+        existing.preview.rect === preview.rect &&
+        existing.preview.separator === preview.separator
+      ) {
+        existing.node.style.transform = previewTransform(group, preview.offset);
+        existing.preview = preview;
+        continue;
+      }
       if (existing) existing.dispose();
       const created = renderPreview(state, group, preview);
       if (existing) existing.node.replaceWith(created.node);
       else group.element.appendChild(created.node);
-      nodes.set(preview.key, created);
+      nodes.set(preview.key, { ...created, preview });
     }
     nodes.forEach((entry, key) => {
       if (!keep.has(key)) {
@@ -589,11 +605,13 @@ function renderClone(separator: RegisteredSeparator, document: Document): HTMLEl
   return wrapper;
 }
 
+const previewTransform = (group: RegisteredResizeAxis, offset: number): string =>
+  group.orientation === "horizontal" ? `translateX(${offset}px)` : `translateY(${offset}px)`;
+
 /** Upstream `ResizePreview`. */
 function renderPreview(state: GroupState, group: RegisteredResizeAxis, preview: ResizePreview): { node: HTMLElement; dispose: () => void } {
   const document = group.element.ownerDocument;
   const { offset, rect, separator } = preview;
-  const horizontal = group.orientation === "horizontal";
   const node = document.createElement("div");
   node.setAttribute("aria-hidden", "true");
   node.setAttribute("data-resize-preview", "");
@@ -604,7 +622,7 @@ function renderPreview(state: GroupState, group: RegisteredResizeAxis, preview: 
     pointerEvents: "none",
     position: "absolute",
     top: rect.top + "px",
-    transform: horizontal ? `translateX(${offset}px)` : `translateY(${offset}px)`,
+    transform: previewTransform(group, offset),
     width: rect.width + "px",
   });
   let dispose = () => {};
