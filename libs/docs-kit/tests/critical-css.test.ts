@@ -132,6 +132,10 @@ test("inlineCritical: one inline style + deferred links + noscript; restoreLinks
   // No head stylesheets → unchanged.
   const bare = '<!doctype html><html lang="en"><head></head><body></body></html>';
   assert.equal(await inlineCritical(bare, async () => parseSheet("")), bare);
+  // No `</head>` → unchanged (not stamped as inlined with nothing inlined).
+  const open = html.replace("</head>", "");
+  assert.equal(criticalSkip(open), "no </head>");
+  assert.equal(await inlineCritical(open, async (href) => parseSheet(sheets[href]!)), open);
 });
 
 test("guards: no activation script → links kept; attribute order free; links with other attributes stay blocking", async () => {

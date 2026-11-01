@@ -419,7 +419,9 @@ export function restoreLinks(html: string): string {
 export function criticalSkip(html: string): string | undefined {
   if (CRITICAL.test(html)) return undefined;
   if (!html.startsWith("<!doctype html><html ")) return "no <!doctype html><html> start";
-  const head = html.slice(0, html.indexOf("</head>") + 1 || html.length);
+  const end = html.indexOf("</head>");
+  if (end < 0) return "no </head>";
+  const head = html.slice(0, end + 1);
   if (![...head.matchAll(HEAD_LINK)].some((m) => stylesheetHref(m[1]!))) return "no plain head stylesheet link";
   if (!html.includes(DEFER_ACTIVATOR)) return `no activation script (${DEFER_ACTIVATOR})`;
   return undefined;
