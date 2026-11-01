@@ -309,7 +309,7 @@ export async function buildApi(root: string): Promise<ApiModel> {
   if (!project) throw new Error("api: TypeDoc failed to convert the entry points");
   const json = typedoc.serializer.projectToObject(project, repo as Parameters<typeof typedoc.serializer.projectToObject>[1]);
   const model = normalize(json);
-  model.symbols.sort((a, b) => (a.key < b.key ? -1 : 1));
+  model.symbols.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)); // equal keys (merged declarations) keep their order
   await writeFile(resolve(root, "src/generated/api.json"), JSON.stringify(model, null, 1) + "\n");
   return model;
 }

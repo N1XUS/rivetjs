@@ -183,7 +183,8 @@ export function mountGlow(root: HTMLElement): () => void {
     if (reduced) draw(0);
   });
   resize.observe(root);
-  const seen = new IntersectionObserver((entries) => loop.setVisible(entries.some((e) => e.isIntersecting)));
+  // One delivery may hold several changes of the one target (enter, then leave on a fast scroll): the last one is current.
+  const seen = new IntersectionObserver((entries) => loop.setVisible(entries.at(-1)!.isIntersecting));
   seen.observe(root);
   const onVisibility = () => loop.setHidden(document.visibilityState === "hidden");
   document.addEventListener("visibilitychange", onVisibility);

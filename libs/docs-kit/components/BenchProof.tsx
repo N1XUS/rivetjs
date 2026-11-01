@@ -26,7 +26,7 @@ export function BenchProof({ metrics, name = "bench-proof" }: { metrics: ProofMe
       </fieldset>
       {metrics.map((metric) => {
         const points = sorted(metric.points, metric.better);
-        const max = Math.max(...points.map(valueOf));
+        const max = Math.max(...points.map(valueOf)) || 1; // all zero: empty bars, not `--p: NaN`
         return (
           <div class="bench-proof-panel" data-metric={metric.id} data-verdict={metric.verdict}>
             <p class="bench-proof-headline">{metric.headline}</p>
