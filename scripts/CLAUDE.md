@@ -139,3 +139,5 @@ Streaming text (2026-10-31): package baselines add UI StreamingText (DOM 4452 B 
 - Store draft finalization (2026-10-31): accept only measured reactivity/store and runtime/server-derived-store runtime hash/size rows for the cached new-container fix. Package/lane hashes and app/frame size ceilings remain unchanged. Native RED/GREEN, complete affected gates and actual Astra review are indexed in the autonomous tester verification report.
 
 - Enhanced-action cookie privacy (2026-10-31): accept only the measured router/server package row (+8 minified bytes), its SSR entry hash, and twice-identical serverJS pairs for 28 apps. All other package/runtime hashes and every client/HTML/CSS/state/frame/other-lane ceiling remain unchanged. Independent native proof and actual Astra review are indexed in the autonomous tester verification report.
+
+Markdown natural-flow correction (2026-10-31): package hashes update only UI root/Markdown JavaScript after removing the clipped height follower. CSS hashes and every other entry are identical. Production geometry checks ensure characters are visible during generation, without an accordion-style height reveal.

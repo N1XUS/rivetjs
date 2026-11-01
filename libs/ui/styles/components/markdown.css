@@ -17,7 +17,7 @@
   display: contents;
 }
 
-/* Blocks keep their size while the streaming root's height is pinned for its smooth growth (no flex shrinking). */
+/* Blocks keep their natural size within the Markdown flex column. */
 .markdown > *,
 .markdown__tail > * {
   @apply shrink-0;
@@ -162,7 +162,7 @@
   }
 }
 
-/* Live tail: each new word and each new block fades + un-blurs in (only nodes the stream creates have these classes). */
+/* Live tail: new characters and blocks fade in without a clipped height reveal. */
 .markdown__character {
   animation: markdown-character-in var(--motion-enter-duration) var(--motion-enter-ease) both;
 }

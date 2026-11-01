@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 20226b863197 563845 css 3921cb8be00d 1216915
-@rivetjs/ui [server] 2f72e98d774f 501682 css 3921cb8be00d 1216915
+@rivetjs/ui [dom] bcd241fee94f 563731 css 3921cb8be00d 1216915
+@rivetjs/ui [server] bdb9eca659ab 501570 css 3921cb8be00d 1216915
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -353,8 +353,8 @@
 @rivetjs/ui/chat-list-view [server] 4e89a872d19f 5465 css dab667a5ed02 1206613
 @rivetjs/ui/code-block [dom] 6241ee3ce4a0 9766 css dab667a5ed02 1206613
 @rivetjs/ui/code-block [server] c560ec1d8ad7 9043 css dab667a5ed02 1206613
-@rivetjs/ui/markdown [dom] e04a00064b9c 23894 css dab667a5ed02 1206613
-@rivetjs/ui/markdown [server] cd77b5224e7d 21488 css dab667a5ed02 1206613
+@rivetjs/ui/markdown [dom] 724d13b8f9d8 23727 css dab667a5ed02 1206613
+@rivetjs/ui/markdown [server] 2c18edce1e33 21316 css dab667a5ed02 1206613
 @rivetjs/ui/chain-of-thought [dom] b1c47df346cd 10703 css dab667a5ed02 1206613
 @rivetjs/ui/chain-of-thought [server] c6ba2de91c43 9289 css dab667a5ed02 1206613
 @rivetjs/ui/chat-source [dom] 9250e2a0fa9a 15893 css dab667a5ed02 1206613

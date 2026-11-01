@@ -78,3 +78,5 @@ Scheduler final review: lane chips consume `--rv-scheduler-lane-shift` through l
 - CX-VLB (TW-182): `.list-box[data-ui-virtualized="true"]` removes padding, enables scrolling and fits items to the fixed layout row (default 36 px, from min-h-9). The caller supplies viewport height; ordinary list styles are unchanged.
 
 Streaming text (2026-10-31, TW-191): `streaming-text.css` and tv/out entries add inline character opacity (new characters only; initial server characters have no data-new). Markdown uses markdown__character, opacity-only block/character entrances; ChainOfThought steps fade without height/padding/translate/blur animation. All use role entrance tokens and reduced-motion opt-outs.
+
+Markdown natural flow (2026-10-31): the root no longer receives a JavaScript height/overflow mask. Character opacity rules stay unchanged; blocks keep natural size in the flex column. This fixes the chat showcase’s accordion-like reveal without changing CSS timing.

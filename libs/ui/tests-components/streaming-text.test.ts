@@ -57,3 +57,21 @@ test("streaming text: reduced motion renders the complete burst immediately", as
   assert.deepEqual(seen.errors, []);
   await page.close();
 });
+
+test("markdown: streamed letters stay in natural flow without a height reveal", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  await page.goto(s.origin + "/streaming-text");
+  await page.click("#burst");
+  await page.waitForSelector("#formatted .markdown__character");
+  const content = await page.locator("#formatted").evaluate((root) => {
+    const el = root as HTMLElement;
+    return { height: el.style.height, overflow: getComputedStyle(el).overflow, box: el.getBoundingClientRect().height, streaming: el.dataset.streaming };
+  });
+  assert.equal(content.streaming, "true");
+  assert.equal(content.height, "", "a pinned height hides arriving letters behind an accordion-like reveal");
+  assert.notEqual(content.overflow, "clip");
+  assert.ok(content.box > 0);
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});

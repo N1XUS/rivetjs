@@ -32,7 +32,7 @@ Additional exported parts: `Markdown.Root`.
 
 Pass accessors as `content` and `isStreaming`. A frame queue reveals incoming chunks character by character, independently of network chunk boundaries. New letters fade in subtly; existing text stays in place and paragraphs, list items and code follow the document flow. Emoji and combining marks stay together. The default rate is 80 visible characters per second, accelerating for large bursts to catch up within 240ms; `streamingSpeed={0}` displays chunks immediately.
 
-Finished blocks keep their DOM nodes. While streaming, open marks in the last block (`**`, `__`, `~~`, a backtick) are closed for display, a soft caret follows the displayed text, and the root grows smoothly (`followHeight` from `@rivetjs/cdk/chat`). Pending letters finish revealing after `isStreaming` becomes false, then the caret disappears. An open code fence streams as plain characters and is highlighted once it closes. Fenced code renders as a [CodeBlock](/components/code-block/). Reduced motion displays input immediately, with no fades or height easing.
+Finished blocks keep their DOM nodes. While streaming, open marks in the last block (`**`, `__`, `~~`, a backtick) are closed for display and a soft caret follows the displayed text. The root uses its natural height: arriving letters are immediately in view, with no clipped container or accordion-style height animation. Pending letters finish revealing after `isStreaming` becomes false, then the caret disappears. An open code fence streams as plain characters and is highlighted once it closes. Fenced code renders as a [CodeBlock](/components/code-block/). Reduced motion displays input immediately, with no fades.
 
 ::example{id=markdown-streaming}
 

@@ -122,3 +122,5 @@ Operations integration coverage (2026-10-30): `examples/operations/` replaces th
 - Remaining islands (2026-10-30): `libs/bridge-solid`, `libs/bridge-vue`, `libs/bridge-svelte` implement native SSR/hydration, live props, slots and Vite ownership. Solid targets 1.9, Vue 3.5, Svelte 5.57.2+. Shared native-head ranges and per-island SSR CSS live in bridge/router/runtime/compiler; public guide documents their boundaries.
 
 Streaming text (2026-10-31): CDK chat `followText` paces appended graphemes, shared by UI `StreamingText` and Markdown (`streamingSpeed`). Source writes wake interaction effects; static server text stays complete with no idle boot. Reasoning rows fade rather than expand from height zero.
+
+Streaming motion correction (2026-10-31): Markdown now uses natural content height while letters reveal. Its separate followHeight mask could keep a live showcase response at zero height and uncover already-faded words like an accordion. Character pacing/caret remain; production browser coverage checks live text has no pinned height or overflow clip.

@@ -43,7 +43,7 @@ export function Streaming() {
       >
         Stream a reply
       </Button>
-      {/* Created in the browser on the first run (keyed by the run): the live Markdown animates its growth. */}
+      {/* A fresh streaming response for each run; its letters reveal in natural document flow. */}
       <Show keyed when={run()}>
         {() => (
           <div class="w-full">

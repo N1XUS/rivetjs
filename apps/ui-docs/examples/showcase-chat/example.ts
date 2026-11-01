@@ -38,6 +38,8 @@ export default defineExample({
     { expect: ["#chat-log", "Summarise last week's sales"] },
     { matches: "#chat-log .text-shimmer" },
     { matches: "#chat-log [data-streaming=true] .markdown__character" },
+    { attr: ["#chat-log [data-slot=markdown][data-streaming=true]", "style", null] },
+    { attr: ["#chat-log [data-slot=markdown][data-streaming=true]", "data-streaming", "true"] },
     { expect: ["#chat-log", "214 orders and $11,940"] },
     { absent: "#chat-log [data-streaming]" },
     { fill: ["#chat-input", "Which products should I discount?"] },

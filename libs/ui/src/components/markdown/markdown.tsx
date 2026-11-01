@@ -13,21 +13,19 @@
 //   nodes stay (no re-render per chunk); new characters / blocks fade in (CSS, `.markdown__character` / `.markdown__live`,
 //   reduced motion: none). An open code fence streams as plain characters in the code block frame and is highlighted once it
 //   closes (the row then re-renders as a finished block, static: no animation).
-// - Smooth growth: a streaming Markdown created in the browser (the live turn appears on submit) follows its content
-//   height with `followHeight` (`@rivetjs/cdk/chat`, a `clientEffect` on a root `ref()`, disposed with the Markdown):
-//   no line / block jumps. Only when `isStreaming` is an accessor; on a resumed page the effect waits for its trigger
-//   (nothing boots at load). A ref callback would not resume (server render error).
+// - Natural flow: the root keeps its content height. A separate clipped height animation would hide arriving letters
+//   until they have already faded in, making an inline stream look like an accordion opening. Character pacing alone
+//   controls the reveal, including inside a bottom-pinned ChatConversation.
 // - `components` (scoped from public docs of commercial UI kits): per-node-type override map, keys = HTML tag names
 //   (`h1`-`h6`, `p`, `blockquote`, `ul`, `ol`, `li`, `hr`, `a`, `img`, `strong`, `em`, `del`, `code` (inline), `pre` (fenced
 //   block: `{ code, language, closed }`), `table`, `th`, `td`, `br`, `input` (task checkbox)). A component is called with the
 //   default `class`, the node's attributes and `children` (already rendered, live while streaming) and returns the element
 //   that replaces the default one; elements are still built from the AST (never innerHTML). Tight list-item paragraphs have
 //   no `<p>`, so `p` is not called for them. Style-only overrides: the `markdown__*` classes.
-import { followHeight } from "@rivetjs/cdk/chat";
 import { followText, textGraphemes } from "@rivetjs/cdk/chat/text-reveal";
 import { closeOpenMarks, parseMarkdown, splitBlocks } from "@rivetjs/cdk/markdown";
 import type { MarkdownBlock, MarkdownInline, MarkdownListItem } from "@rivetjs/cdk/markdown";
-import { clientEffect, For, ref as createRef, Show } from "@rivetjs/runtime/dom";
+import { clientEffect, For, Show } from "@rivetjs/runtime/dom";
 import { computed, signal, untrack } from "@rivetjs/reactivity";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 
@@ -714,25 +712,8 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
   };
   const caretOn = local.showCaret !== false;
   const cx = local.components;
-  // Streaming sources: follow content height until both the input and the character queue finish.
-  const follow = canStream ? createRef<HTMLDivElement>() : undefined;
-  if (follow)
-    // Content writes wake the Markdown (its rows read them), which runs this effect: no trigger (CEFF 2026-10-28).
-    clientEffect(
-      () => {
-        const el = follow();
-        if (el) return untrack(() => followHeight(el, streaming));
-      },
-      { when: "interaction" },
-    );
   return (
-    <div
-      class={composeSlotClassName(SLOTS.base, local.class)}
-      data-slot="markdown"
-      data-streaming={() => (streaming() ? "true" : undefined)}
-      ref={follow}
-      {...rest}
-    >
+    <div class={composeSlotClassName(SLOTS.base, local.class)} data-slot="markdown" data-streaming={() => (streaming() ? "true" : undefined)} {...rest}>
       <For each={rows} by={(row: MarkdownRow) => row.key}>
         {(row: () => MarkdownRow) => {
           const { raw, tail } = row();

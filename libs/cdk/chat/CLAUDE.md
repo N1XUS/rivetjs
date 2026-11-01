@@ -16,7 +16,7 @@ Rivet-authored headless chat behaviour (no React Aria / Angular CDK counterpart;
 - `index.tsx`: composer/files/scroll/height helpers; character pacing is re-exported from `text-reveal/index.tsx`. Both use `.tsx` so browser closures can resume.
 - `@rivetjs/cdk/chat/text-reveal` → `text-reveal/index.tsx`: isolated `followText`, `textGraphemes`, `TextRevealOptions`. Streaming consumers import this subpath directly; unrelated composer/attachment entry closures must not inherit pacing code through a shared chat chunk.
 - tests: `tests/chat.test.ts` (happy-dom), `tests/chat-tokens.test.ts` (token model)
-- consumers: `@rivetjs/ui` `prompt-input` (keys, autosize) + `prompt-input-tokens` (token model), `chat-conversation` (scroll sync / button), `chat-attachment` (drop / pick), `markdown` (`followHeight` while streaming); ui-docs `ai-*` / `markdown-streaming` examples (`simulateStream` with `jitter`)
+- consumers: `@rivetjs/ui` `prompt-input` (keys, autosize) + `prompt-input-tokens` (token model), `chat-conversation` (scroll sync / button), `chat-attachment` (drop / pick), `markdown` (character pacing from `chat/text-reveal`; no height mask); ui-docs `ai-*` / `markdown-streaming` examples (`simulateStream` with `jitter`)
 
 ## Invariants
 - Stick-to-bottom itself is CSS (`flex-direction: column-reverse` scroller starts and stays at the bottom); these helpers only measure for the jump button.
