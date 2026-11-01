@@ -99,6 +99,7 @@ describe("createNodes", () => {
       .projects!["apps/site"]!;
     expect(Object.keys(project.targets!)).toEqual(["bundle", "serve", "preview", "test", "check", "typecheck"]);
     expect(project.targets!["preview"]!.dependsOn).toEqual(["bundle"]);
+    expect(project.targets!["bundle"]!.dependsOn).toEqual(["^bundle"]);
     expect(project.targets!["bundle"]!.inputs!.slice(0, 2)).toEqual(["production", "^production"]);
   });
 });

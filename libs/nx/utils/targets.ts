@@ -66,7 +66,7 @@ export function rivetTargets(facts: ProjectFacts, options?: RivetPluginOptions, 
       executor: "@rivetjs/nx:build",
       options: buildOptions,
       cache: true,
-      dependsOn: ["^build"],
+      dependsOn: ["^" + names.buildTargetName],
       inputs: [...source, ...NOT_SOURCES],
       outputs: ["{projectRoot}/dist", ...deployOutputs(facts.adapter)],
       metadata: tech(
