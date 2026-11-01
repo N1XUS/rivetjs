@@ -1,5 +1,5 @@
-// Diagnostic code registry (codes.json) ↔ emitters: every code the compiler (rust/src), the Vite plugin (vite.ts) or the language
-// service (libs/language-core) can emit is registered, compile output carries codes + severities, and
+// Diagnostic code registry (codes.json) ↔ emitters: every code the compiler (rust/src), the Vite plugin (vite.ts), the language
+// service (libs/language-core) or the framework bridges (libs/bridge*: runtime messages) can emit is registered, compile output carries codes + severities, and
 // the Vite plugin reports them ([RVnnnn] prefix, pluginCode, docs url).
 import { test } from "vitest";
 import assert from "node:assert/strict";
@@ -24,7 +24,15 @@ test("every code the compiler or language service emits is registered", () => {
   const viteText = readFileSync(join(here, "vite.ts"), "utf8");
   const vite = new Set([...emitted([viteText]), ...[...viteText.matchAll(/\[(RV\d{4})\]/g)].map((m) => m[1]!)]);
   assert.ok(vite.has("RV2145"), "vite.ts emits RV2145");
-  for (const code of [...compiler, ...language, ...vite]) assert.ok(codeInfo(code), `${code} is emitted but not registered in codes.json`);
+  // Framework bridges: codes inside runtime message strings (`"[rivet:bridge] RV2144 … failed to render"`).
+  const bridges = new Set(
+    readdirSync(join(here, ".."))
+      .filter((name) => /^bridge(-|$)/.test(name))
+      .flatMap((name) => sources(join(here, "..", name), /\.tsx?$/))
+      .flatMap((text) => [...text.matchAll(/\b(RV\d{4})\b/g)].map((m) => m[1]!)),
+  );
+  assert.ok(bridges.has("RV2149"), "the bridges emit RV2149");
+  for (const code of [...compiler, ...language, ...vite, ...bridges]) assert.ok(codeInfo(code), `${code} is emitted but not registered in codes.json`);
   // Compiler diagnostics fail the build, except the compile warnings (T10 fix 2: `warnings`, never suppressing code).
   const warnings = new Set(["RV2104"]);
   for (const code of compiler) assert.equal(codeInfo(code)!.severity, warnings.has(code) ? "warning" : "error", code);

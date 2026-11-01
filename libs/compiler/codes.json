@@ -320,6 +320,12 @@
       "docs": "https://rivetjs.severyn.pro/errors/RV2108"
     },
     {
+      "code": "RV2144",
+      "severity": "error",
+      "title": "A framework island failed to render on the server and has no fallback (server render)",
+      "docs": "https://rivetjs.severyn.pro/errors/RV2144"
+    },
+    {
       "code": "RV2145",
       "severity": "error",
       "title": "A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build)",

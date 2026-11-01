@@ -312,6 +312,14 @@
       "note": "Vite builds (dev keeps every runtime call). `rivet({ comptime })` evaluates calls of allowlisted functions (tailwind-variants `tv` / `cn` / `cx`) and functions annotated `@comptime` / `@comptime tv` whose arguments are compile-time constants, in Node at build time; the evaluator traps time, randomness, locale and environment reads (during the call and while the callee's modules load), evaluates value calls twice, and proves a tv table against the real library for every enumerated combination. Any failure refuses that call or definition: it stays a runtime call, with this warning once per site."
     },
     {
+      "code": "RV2144",
+      "messages": ["[rivet:bridge] RV2144 {framework} island {id} failed to render: {message}"],
+      "fix": "Fix the error the island's component threw during its server render (the message and `cause` name it), or give the island a `fallback` prop: its server HTML then stands in for the failed island and the page renders.",
+      "avoid": "// Chart.react.tsx: reads a browser global during render\nexport function Chart() { return <canvas width={window.innerWidth} />; }",
+      "prefer": "// page.tsx: server HTML when the island cannot render\n<Chart client=\"visible\" fallback={<p>Loading chart…</p>} />",
+      "note": "Server render (`@rivetjs/bridge`). The framework adapter threw while rendering the island (component error, a slot hole the framework dropped or duplicated, an unsupported framework version such as RV2150). With a `fallback` prop the fallback renders instead; without one the error goes to the nearest error boundary (route error view)."
+    },
+    {
       "code": "RV2145",
       "messages": [
         "{file} matches both the Rivet compiler and {framework}({ include }) — pick one owner",
