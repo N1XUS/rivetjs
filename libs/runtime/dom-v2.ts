@@ -388,7 +388,9 @@ function hasAccessor(value: readonly unknown[]): boolean {
 }
 
 function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null): void {
-  // Everything but scalars / nullish (nodes, fragments, arrays) becomes one flat node list.
+  // Scalars / nullish (every text update of a mixed-content `_insert`): nothing to evaluate — no closure, no `within`.
+  if (value === null || (typeof value !== "object" && typeof value !== "function")) return place(parent, value, null, null, slot, marker);
+  // Everything else (nodes, fragments, arrays) becomes one flat node list.
   let nodes: Node[] | null = null,
     lists: unknown[] | null = null;
   let inner: unknown = null;
@@ -416,6 +418,10 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
   // Follow the marker, not `parent`: content first bound in a detached fragment (an `Output`, a row) moves with its
   // anchors, and an inner update must insert where the marker is now (`tests/dom-v2-children-browser.test.ts` movedParent).
   if (read !== null) return nested(marker === null ? () => parent : () => marker.parentNode as Parent, read, slot, marker);
+  place(parent, value, nodes, lists, slot, marker);
+}
+// Show an evaluated value in `slot`: a scalar as one text node, else its flattened `nodes` (`lists`: the lists they took).
+function place(parent: Parent, value: unknown, nodes: Node[] | null, lists: unknown[] | null, slot: Slot, marker: Node | null): void {
   // Unwrap a derived lazy snapshot once, before replacement can mutate its DOM range.
   let current = DERIVED && Array.isArray(slot.current) && _adoption.snapshot ? _adoption.snapshot(slot.current) : slot.current;
   // The lists this slot flattened last: their live nodes now (a ranged row re-rendered since; NULL-SLOT).
