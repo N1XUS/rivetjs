@@ -65,7 +65,7 @@ The default host `127.0.0.1` accepts only local connections. In a container or o
 - **Security headers.** Every response gets `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. `headers: { "Referrer-Policy": "no-referrer" }` replaces one, `headers: { "Referrer-Policy": null }` removes it; a response that sets the header itself keeps its own value. HTML pages get a strict [Content Security Policy](../security/csp.md) with a new nonce per request.
 - **Health checks.** `/healthz` answers `ok`. `/readyz` answers `ready`, `503 starting` until your [`ready` check](#readiness-and-cleanup) passes, or `503 draining` while the server shuts down. Both are answered before your app, so a route of your own at those paths never runs: move them with `health: { live: "/_live", ready: "/_ready" }`, turn one off with `false` (`health: { ready: false }`), or both with `health: false`.
 - **Timeouts.** Requests time out after 30 seconds, headers after 15 seconds; idle keep-alive connections close after 5 seconds.
-- **Client disconnects.** When a visitor leaves, the request's `AbortSignal` fires and rendering stops.
+- **Client disconnects.** When a visitor leaves, the request's `AbortSignal` fires and rendering stops. `request.clone()` shares that signal. A new `Request` built from it (`new Request(request, …)`, `fetch(request)`) gets a signal of its own, so pass `signal: request.signal` to forward the disconnect.
 - **Memory after traffic spikes.** When the server goes quiet after a spike, it lets V8 give the grown heap back to the OS within about 15 seconds. See [Memory when idle](#memory-when-idle).
 
 ## Shut down cleanly

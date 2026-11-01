@@ -111,6 +111,38 @@ for (const mode of ["index", "fs"] as const)
     );
   });
 
+test("request.signal aborts when the client goes away; clones share it; the Request is a web Request", async () => {
+  let seen: { request: Request; clone: Request } | undefined;
+  let aborted!: () => void;
+  const gone = new Promise<void>((done) => (aborted = done));
+  await withServer(
+    (request) =>
+      new Promise<Response>((done) => {
+        const clone = request.clone();
+        seen = { request, clone };
+        request.signal.addEventListener("abort", () => {
+          aborted();
+          done(new Response("late"));
+        });
+      }),
+    async (url) => {
+      const { hostname, port } = new URL(url);
+      const client = httpRequest({ hostname, port, path: "/wait", method: "GET" });
+      client.on("error", () => {});
+      client.end();
+      while (!seen) await new Promise((r) => setTimeout(r, 5));
+      assert.equal(seen.request.signal.aborted, false);
+      client.destroy();
+      await gone;
+      assert.ok(seen.request instanceof Request);
+      assert.equal(seen.request.signal.aborted, true);
+      assert.equal(seen.clone.signal.aborted, true);
+      assert.equal(new URL(seen.request.url).pathname, "/wait");
+      assert.equal(seen.request.method, "GET");
+    },
+  );
+});
+
 test("static index: precompressed siblings found at start are served", async () => {
   const dir = await mkdtemp(join(tmpdir(), "rivet-node-"));
   const source = "body{color:red}".repeat(100);

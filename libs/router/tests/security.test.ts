@@ -357,3 +357,40 @@ test("node adapter: forwarded headers ignored by default; trustProxy hops / pred
     await fixed.close();
   }
 });
+
+test("maxBody: the size-limited request copy keeps the node adapter's disconnect signal", async () => {
+  let started!: () => void;
+  const running = new Promise<void>((done) => (started = done));
+  let aborted!: (value: boolean) => void;
+  const gone = new Promise<boolean>((done) => (aborted = done));
+  const handler = app(
+    [
+      {
+        id: "api/slow",
+        pattern: "/api/slow",
+        page: false,
+        layouts: [],
+        server: mod({
+          onPost: (e) =>
+            new Promise<Response>((done) => {
+              e.request.signal.addEventListener("abort", () => (aborted(e.request.signal.aborted), done(new Response("late"))));
+              started();
+            }),
+        }),
+      },
+    ],
+    { maxBody: 1000 },
+  );
+  const server = await serve({ handler: handler as Handler, port: 0 });
+  try {
+    const { hostname, port } = new URL(server.url);
+    const client = httpRequest({ hostname, port, path: "/api/slow", method: "POST", headers: { "content-type": "application/json" } });
+    client.on("error", () => {});
+    client.write("{}");
+    await running;
+    client.destroy();
+    assert.equal(await gone, true);
+  } finally {
+    await server.close();
+  }
+});

@@ -673,6 +673,33 @@ function pathOf(target: string, origin: string): string | null {
   return url.origin === origin && !url.username && !url.password ? url.pathname + url.search : null;
 }
 
+/**
+ * The adapter's web Request: `signal` is the adapter's own disconnect signal instead of a `RequestInit.signal`
+ * (SSR-RSS 2026-11-01). Given `init.signal`, Node's Request (undici) makes its signal follow it through a WeakRef
+ * + FinalizationRegistry entry per request; those are only cleared by a full GC, so every request's Request,
+ * controllers and signals were promoted out of the young generation (measured: Docker 1 CPU / 512 MiB, ssr-bench
+ * `/resume` 100 rows c10: promoted bytes per request 18.2 -> 15.8 KB, peak memory 188 -> 153 MiB, CPU/page flat;
+ * `docs/benchmarks/2026-10-29-ssr-rss.md`). `clone()` keeps the signal. Not followed: a Request built from this one
+ * (`new Request(request)` / `fetch(request)`) gets a signal of its own that never aborts; pass
+ * `{ signal: request.signal }` to forward the disconnect (as `limitBody` does).
+ */
+class NodeRequest extends Request {
+  readonly #abort: AbortSignal;
+  constructor(url: string, init: RequestInit, signal: AbortSignal) {
+    super(url, init);
+    this.#abort = signal;
+  }
+  override get signal(): AbortSignal {
+    return this.#abort;
+  }
+  override clone(): Request {
+    // undici builds the copy as a plain Request: pin the same signal on it.
+    const copy = super.clone();
+    Object.defineProperty(copy, "signal", { value: this.#abort });
+    return copy;
+  }
+}
+
 /** Convert a Node request into a web Request whose signal aborts when the client goes away. */
 function toRequest(req: IncomingMessage, res: ServerResponse, url: string): { request: Request; abort: () => void } {
   const controller = new AbortController();
@@ -692,12 +719,12 @@ function toRequest(req: IncomingMessage, res: ServerResponse, url: string): { re
   }
   const method = req.method ?? "GET";
   const body = method === "GET" || method === "HEAD" ? null : (Readable.toWeb(req) as ReadableStream<Uint8Array>);
-  const init: RequestInit & { duplex?: "half" } = { method, headers, signal: controller.signal };
+  const init: RequestInit & { duplex?: "half" } = { method, headers };
   if (body) {
     init.body = body;
     init.duplex = "half";
   }
-  return { request: new Request(url, init), abort };
+  return { request: new NodeRequest(url, init, controller.signal), abort };
 }
 
 /**

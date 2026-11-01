@@ -1,5 +1,5 @@
 @rivetjs/router 965ee4bafd7e 3340
-@rivetjs/router/server 1215e96756fc 31482
+@rivetjs/router/server a8fc07ea583a 31498
 @rivetjs/router/route-cache ac0479f82986 19153
 @rivetjs/router/server-only 56e1b0c10087 9
 @rivetjs/router/env 13d077a34a5e 1062
@@ -16,11 +16,11 @@
 @rivetjs/router/prefetch 2dd2266b0574 3033
 @rivetjs/router/link [dom] 1cc41172ae12 2292
 @rivetjs/router/link [server] d4342bebcbab 1945
-@rivetjs/router/node a0fdde9f6149 28296
+@rivetjs/router/node 1eafe7f9dc1f 28473
 @rivetjs/router/fetch ed8585ab505c 2894
 @rivetjs/router/static 65ec065faa07 14581
 @rivetjs/router/csr bc5dafbcc9ff 407
-@rivetjs/router/vercel a8bce39bfeac 23888
+@rivetjs/router/vercel 27cb0c414782 24065
 @rivetjs/router/vercel-edge 483b4c379695 2998
 @rivetjs/router/netlify 015a6c83a34f 3110
 @rivetjs/router/cloudflare c375aa7ccb4c 2973

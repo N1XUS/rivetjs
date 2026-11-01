@@ -52,5 +52,6 @@ export function limitBody(request: Request, limit: BodyLimit | undefined, state:
       },
     }),
   );
-  return new Request(request, { body, duplex: "half" } as RequestInit);
+  // `signal`: a Request built from another follows its internal signal, not an overridden `signal` (node adapter).
+  return new Request(request, { body, duplex: "half", signal: request.signal } as RequestInit);
 }
