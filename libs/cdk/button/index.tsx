@@ -165,16 +165,16 @@ function unwatchPending(el: Element): void {
 
 // RA usePress `isDisabled` effect: an accessor `isDisabled` turning true while pressed cancels the press. Rivet
 // watches only from press start (zero cost at render); the watcher ends at the next run after the press is over.
+// The first run cancels too: a press never starts on a disabled button, so `isDisabled` true there means the press
+// start itself disabled it (NumberField decrement reaching its limit: the spin must not keep stepping).
 const disabledWatchers = new WeakMap<Element, () => void>();
 function watchDisabled(el: Element, press: PressOptions, isDisabled: MaybeAccessor<boolean | undefined>): void {
   if (typeof isDisabled !== "function" || !isPressedNow(el)) return;
   disabledWatchers.get(el)?.();
   const root = runWithOwner(null, () =>
     createRoot((dispose) => {
-      let first = true;
       effect(() => {
         const disabled = !!read(isDisabled);
-        if (first) return void (first = false);
         untrack(() => {
           if (disabled && isPressedNow(el)) cancelPress(press, el);
           if (disabled || !isPressedNow(el)) queueMicrotask(() => unwatchDisabled(el, dispose));

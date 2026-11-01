@@ -559,9 +559,8 @@ describe("NumberField", () => {
       vi.useRealTimers();
     });
 
-    // Skipped: needs RA usePress `isDisabled` effect (cancel a press when the button turns disabled) in Button
-    // (`cancelPress` exists in interactions/press.tsx, Button does not call it) — Button lane, open question.
-    it.skip("stops spinning if the associated button is disabled", async () => {
+    // RA usePress `isDisabled` effect: Button cancels its active press when it turns disabled (`cancelPress`).
+    it("stops spinning if the associated button is disabled", async () => {
       const value = signal<number | null>(4);
       const { getByRole } = renderField(() => (
         <NumberField value={value}>
