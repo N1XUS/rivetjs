@@ -28,7 +28,7 @@ export default defineConfig({
 
 Every same-origin link that loads a document is now prefetched on intent. For one link only, set the `prefetch` prop instead. The router notices the prop in your sources and turns the feature on.
 
-When the client router is active on the page (an interactive page, or every page with `clientRouter: true`; see [when the router is active](../guides/routing/links-and-navigation.md#when-the-router-is-active)), a link to one of your app's pages is handled by it, and it already loads the next page's data and code on hover. A link whose path matches none of your page routes (a page served by another app on the same origin, a static file, an endpoint) loads a whole document on click; the router finds these links itself, so they need no `reload`. Those links, and links you mark with `reload`, take `prefetch`:
+When the client router is active on the page (an interactive page, or every page with `clientRouter: true`; see [when the router is active](../guides/routing/links-and-navigation.md#when-the-router-is-active)), a link to one of your app's pages is handled by it. The router can load such a page's data and code on hover, without a document request: mark the link with `prefetch="intent"`, or turn it on for every routed link with `rivetRouter({ intentPrefetch: true })` (off by default, see [prefetching on hover](../guides/routing/links-and-navigation.md#prefetching-on-hover)). A link whose path matches none of your page routes (a page served by another app on the same origin, a static file, an endpoint) loads a whole document on click; the router finds these links itself, so they need no `reload`. Those links, and links you mark with `reload`, take `prefetch`:
 
 ```tsx
 import { Link } from "@rivetjs/router/link";
@@ -46,7 +46,7 @@ A link opts out with `prefetch="none"`.
 
 Only links whose click loads a document:
 
-- Where the client router is active, it handles links to its pages itself: it loads the next page's data and code on hover and swaps the page without a document load. Those links keep doing that, and the browser does not fetch their documents too. Links whose path matches no page route, and links with `reload` (`data-rivet-reload`) or `rel="external"`, load documents, so they take part. The page carries a pattern of your route paths for this, in the rules and in the fallback.
+- Where the client router is active, it handles links to its pages itself: it swaps the page without a document load (and loads its data and code on hover when the link is marked `prefetch="intent"` or `intentPrefetch` is on). The browser does not fetch their documents. Links whose path matches no page route, and links with `reload` (`data-rivet-reload`) or `rel="external"`, load documents, so they take part. The page carries a pattern of your route paths for this, in the rules and in the fallback.
 - Where client routing is omitted, every marked link takes part. A single fixed page path qualifies only without live pages, programmatic navigation or enhanced forms, reactive search params, active-link tracking, or nested layout levels; see [when the router is active](../guides/routing/links-and-navigation.md#when-the-router-is-active).
 
 Skipped: links to other origins, the current page, `download` links, links with a `target` other than `_self`. Links to your endpoints load a document on click but are not prefetched (the route pattern includes them, so a download or a request with side effects never starts on hover); mark one `reload` to prefetch it.

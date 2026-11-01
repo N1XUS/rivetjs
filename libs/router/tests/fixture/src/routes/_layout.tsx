@@ -9,7 +9,7 @@ export default function Layout({ data, children }: LayoutProps<{ site: string; p
   return (
     <div id="shell">
       <nav>
-        <a href="/">Home</a> <a href="/items/1">First</a> <a href="/items/2">Second</a> <a href="/private">Private</a>{" "}
+        <a href="/">Home</a> <a href="/items/1" data-rivet-prefetch="intent">First</a> <a href="/items/2" data-rivet-prefetch="intent">Second</a> <a href="/private">Private</a>{" "}
         <a href="/long">Long</a> <a href="/missing">Missing</a> <a href="/broken">Broken</a>
       </nav>
       <p id="site">{data().site}</p>

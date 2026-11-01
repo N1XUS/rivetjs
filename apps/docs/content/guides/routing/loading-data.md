@@ -78,7 +78,7 @@ In a server app (the default `mode: "server"`):
 
 1. **First visit:** the server runs all guards, then the loaders of every layout and of the page, at the same time. Then it renders the HTML. [Deferred loaders](#deferred-loaders) start at the same time, but the HTML does not wait for them.
 2. **Client navigation:** when the user clicks a link, the browser asks the server for the next page's data. The server runs the same guards and loaders and answers with data instead of HTML. Guards always run on the server, also here.
-3. **Hover or focus on a link:** the router starts fetching the data early and reuses it if the click follows within 5 seconds.
+3. **Hover or focus on a link marked `prefetch="intent"`** (or any link with `rivetRouter({ intentPrefetch: true })`): the router starts fetching the data early and reuses it if the click follows within 5 seconds. Unmarked links load nothing before the click ([prefetching on hover](./links-and-navigation.md#prefetching-on-hover)).
 
 Layout loaders whose data the browser already has are skipped when you navigate between pages under the same layout. See [layouts](./layouts.md).
 

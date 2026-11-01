@@ -87,7 +87,7 @@ const result = actionResult("customer");
 const open = signal(data().creating || (result?.status ?? 0) >= 400);
 ```
 
-With JavaScript, the link's click handler calls `event.preventDefault()` and opens the drawer in place. Add `data-rivet-prefetch="none"` to the link, so hovering it does not load the `?new` data for nothing. If you let the link navigate instead, the page stays and `data().creating` becomes `true`: read it where you need it, for example in the drawer's `isOpen`.
+With JavaScript, the link's click handler calls `event.preventDefault()` and opens the drawer in place. Hovering the link loads nothing: the router prefetches only links you mark with `prefetch="intent"`. With `rivetRouter({ intentPrefetch: true })`, add `data-rivet-prefetch="none"` to the link, so hovering it does not load the `?new` data for nothing. If you let the link navigate instead, the page stays and `data().creating` becomes `true`: read it where you need it, for example in the drawer's `isOpen`.
 
 ## When the action redirects
 

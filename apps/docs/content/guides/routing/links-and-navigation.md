@@ -55,7 +55,8 @@ import { Link } from "@rivetjs/router/link";
 
 <Link to="/">Home</Link>;
 <Link to={`/items/${item.id}`} pending="opacity-60">{item.title}</Link>;
-<Link to="/settings" replace prefetch="none">Settings</Link>;
+<Link to="/settings" replace>Settings</Link>;
+<Link to="/pricing" prefetch="intent">Pricing</Link>;
 <a href="/export.csv" download>Download CSV</a>;
 <Link to="/account" reload>Account</Link>;
 ```
@@ -63,7 +64,8 @@ import { Link } from "@rivetjs/router/link";
 | Prop | Effect | Same as on `<a>` |
 | --- | --- | --- |
 | `to` | Target page, typed as `LinkHref`. | `href` |
-| `prefetch="none"` | Load data and code only on click, not on hover. | `data-rivet-prefetch="none"` |
+| `prefetch="intent"` | Load the page's data and code on hover or focus, before the click. | `data-rivet-prefetch="intent"` |
+| `prefetch="none"` | Load data and code only on click, also with `rivetRouter({ intentPrefetch: true })`. | `data-rivet-prefetch="none"` |
 | `prefetch="document"` / `"prerender"` | For a link that loads a document (a path no page route matches, or `reload`): the browser fetches (or prerenders) the page before the click. | `data-rivet-prefetch="document"` |
 | `replace` | Replace the current history entry instead of adding one. | `data-rivet-replace` |
 | `reload` | Full page load, no client navigation, even when the path matches a page. | `data-rivet-reload` |
@@ -118,7 +120,15 @@ If rendering the new page throws after the URL changed (a bug in the page, a mod
 
 ## Prefetching on hover
 
-When the pointer moves over a link, or the link gets keyboard focus, the router starts loading that page's code and data. A click within 5 seconds reuses the data, so the page often appears at once. Turn this off for one link with `prefetch="none"` (`data-rivet-prefetch="none"`), for example for links whose loader is expensive.
+By default the router loads nothing before the click. Hovering or focusing a link only starts the router itself, so the click does not wait for it. Each prefetch runs the page's loaders on your server and keeps the answer in the browser's memory, and most hovered links are never clicked, so prefetching is opt-in.
+
+Mark the links worth it with `prefetch="intent"` (`data-rivet-prefetch="intent"`). When the pointer moves over such a link, or the link gets keyboard focus, the router starts loading that page's code and data. A click within 5 seconds reuses the data, so the page often appears at once. The router notices the mark in your sources: an app with no marked link ships no prefetch code.
+
+```ts title="vite.config.ts"
+rivetRouter({ intentPrefetch: true });
+```
+
+`intentPrefetch: true` prefetches every link the router handles; `prefetch="none"` (`data-rivet-prefetch="none"`) then opts one out, for example a link whose loader is expensive or a pagination link a user hovers past. `intentPrefetch: false` ignores the marks.
 
 Links that load a whole document (a path no page route matches, `reload`, or every link in an app with one page) can be prefetched too, by the browser: `prefetch="document"` fetches the next page's HTML on hover, `prefetch="prerender"` renders it in the background. Set a default for the whole app with `rivetRouter({ prefetch: "document" })`. See [instant page transitions](../../recipes/instant-page-transitions.md).
 

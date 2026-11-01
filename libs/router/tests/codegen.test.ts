@@ -56,8 +56,11 @@ test("app.tsx: lazy pages, static layouts, nearest 404 by static folder (groups 
     /const CHAINS: readonly \(readonly number\[\]\)\[\] = \[\[0\]\];\nconst NEST: LayoutTable = \{ ids: \["\/"\], [^\n]*, routes: PATHS\.map\(\(path\) => \[path, CHAINS\[0\]!\]\) \};/,
   );
   assert.ok(!paths.includes("/api/health"));
-  // The table has a layout loader: data requests name the layouts the client keeps.
-  assert.match(app, /prefetchModule\(url, modules\);\n {4}prefetchData\(url, "server", _keepIds\(nest, NEST, url\)\);/);
+  // The table has a layout loader: data requests name the layouts the client keeps (intent prefetch opted in).
+  assert.match(
+    generate(table, { routesDir: "src/routes", intentPrefetch: "all" }).files["app.tsx"]!,
+    /prefetchModule\(url, modules\);\n {4}prefetchData\(url, "server", _keepIds\(nest, NEST, url\)\);/,
+  );
   assert.match(app, /import (Layout\d+)\$ from "\.\.\/src\/routes\/_layout\.tsx";\nconst \1: \(props: LayoutProps\) => unknown = \1\$;/);
   // `docs/_404` covers /docs/…; `(shop)/_404` sits at the root URL (groups add no segment) and
   // `users/[id]/_404` under a param: neither is a prefix entry for unmatched URLs.
@@ -108,8 +111,10 @@ test("static mode reads _data.json; CSR mode emits a client entry and resumes no
     /import\.meta\.hot\n\s+\? \(\) =>\n\s+catchError\(view, \(error\) => \{\n\s+_devError\(error\);\n\s+throw error;/,
   );
   assert.match(csr.files["app.tsx"]!, /routeData\(work, match, router, "none"\)/);
-  assert.doesNotMatch(csr.files["app.tsx"]!, /prefetchData\(/);
-  assert.match(csr.files["app.tsx"]!, /prefetchModule\(url, modules\);/);
+  assert.doesNotMatch(csr.files["app.tsx"]!, /prefetchData\(|prefetchModule\(/);
+  const csrIntent = generate(routeTable(["index.tsx", "about.tsx"]), { routesDir: "src/routes", mode: "csr", intentPrefetch: "all" }).files["app.tsx"]!;
+  assert.doesNotMatch(csrIntent, /prefetchData\(/);
+  assert.match(csrIntent, /prefetchModule\(url, modules\);/);
   assert.deepEqual(csr.resumeModules, []);
   // A root layout without a loader always renders, error views included.
   const plain = generate(routeTable(["_layout.tsx", "index.tsx"]), { routesDir: "src/routes" }).files["app.tsx"]!;
@@ -237,7 +242,18 @@ test("app.tsx: one commit per navigation (data + page chunk), swap/hold, prefetc
   assert.doesNotMatch(bare, /_layouts|_landed|_keepIds|NEST/);
   assert.doesNotMatch(app, /settle\(/);
   assert.match(app, /<Router router=\{\(import\.meta\.env\.SSR && _rEager\(\), router\)\} routes=\{routes\} swap=\{adoptSwap\} hold=\{heldRoutes\} notFound=/);
-  assert.match(app, /if \(!anchor \|\| anchor\.getAttribute\("data-rivet-prefetch"\) === "none"\) return;/);
+  // ROUTER-INTENT: no intent prefetch by default — the intent handler only boots the router (no prefetch code, no
+  // anchor lookup); `intentPrefetch: "all"` prefetches every routable link but `none`, `"marked"` only `intent` marks.
+  assert.doesNotMatch(app, /prefetchData|prefetchModule|routableAnchor|data-rivet-prefetch/);
+  assert.match(bare, /const intent = \(\) => \{\n {2}\};/);
+  const all = generate(table, { routesDir: "src/routes", intentPrefetch: "all" }).files["app.tsx"]!;
+  assert.match(all, /if \(!anchor \|\| anchor\.getAttribute\("data-rivet-prefetch"\) === "none"\) return;/);
+  const marked = generate(table, { routesDir: "src/routes", intentPrefetch: "marked" }).files["app.tsx"]!;
+  assert.match(
+    marked,
+    /if \(anchor\?\.getAttribute\("data-rivet-prefetch"\) !== "intent"\) return;\n {4}const url = new URL\(anchor\.href\);\n {4}prefetchModule\(url, modules\);/,
+  );
+  assert.match(marked, /, prefetchData, prefetchModule, loadModule, routableAnchor, /);
   // Z1: router listeners load on interaction (no eager chunk, no boot at idle); the nested App arms its
   // level sync from the first navigation entry point instead of a load effect.
   assert.match(app, /clientEvent\(window, "popstate", \(event: PopStateEvent\) => notePopstate\(event\), \{ preload: "intent", standalone: false \}\);/);
@@ -425,7 +441,7 @@ test("codegen forms: router handlers install the router brand first; apps withou
   const forms = generate(table, { routesDir: "src/routes", forms: true }).files["app.tsx"]!;
   assert.match(forms, /, _brand, _go \} from "@rivetjs\/router\/client";/);
   assert.match(forms, /clientEvent\(document, "click", \(event: MouseEvent\) => \(_brand\(_go\), interceptClick\(event, router, modules\)\)/);
-  assert.match(forms, /const intent = \(event: Event\) => \{\n    _brand\(_go\);/);
+  assert.match(forms, /const intent = \(\) => \{\n    _brand\(_go\);/);
   assert.match(forms, /clientEvent\(window, "popstate", \(event: PopStateEvent\) => \(_brand\(_go\), notePopstate\(event\)\)/);
   assert.match(forms, /clientEvent\(document, "rivet:go", \(\) => \(_brand\(_go\), _serve\(router\)\)/, "forms imply navigate");
   assert.match(forms, /data-rivet-go/);
@@ -509,6 +525,7 @@ test("csr: route loads apply the route head in the browser (`_csrHead`); server 
 
 test("layout buckets preserve complete generated output order for optional routes and failure views", () => {
   const table = routeTable(["_layout.tsx", "a/_layout.tsx", "a/_404.tsx", "a/[[id]].tsx", "b/_layout.tsx", "b/_error.tsx", "b/index.tsx", "c.tsx"]);
-  const output = generate(table, { routesDir: "src/routes", navigate: true, params: true, transitions: true });
+  // `intentPrefetch: "all"` = the output before ROUTER-INTENT (byte-identical).
+  const output = generate(table, { routesDir: "src/routes", navigate: true, params: true, transitions: true, intentPrefetch: "all" });
   assert.equal(createHash("sha256").update(JSON.stringify(output)).digest("hex"), "7540c78e3ff7588a88156b43d3ef6f6a3548f14764284ef4b543befe8f69169a");
 });

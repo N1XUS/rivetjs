@@ -178,6 +178,15 @@ export interface RivetRouterOptions {
   /** The app renders `<Link active>`: active links are re-marked after client navigation. Default: detected (`routerUsage`). */
   activeLinks?: boolean;
   /**
+   * Router intent prefetch: hovering / focusing a link the client router handles loads the target's route data
+   * (its loaders run on the server) and page chunk ahead of the click. Off by default (CPU, memory and server
+   * work for links never clicked): link intent only boots the router. `true`: every routable link
+   * (`<Link prefetch="none">` / `data-rivet-prefetch="none"` opts one out). Default: only links marked
+   * `<Link prefetch="intent">` / `data-rivet-prefetch="intent"` (detected, `routerUsage`; none found: no prefetch
+   * code ships). `false`: off, marks ignored. Document prefetch is separate (`prefetch`).
+   */
+  intentPrefetch?: boolean;
+  /**
    * Document prefetch for navigations that load a document (`@rivetjs/router/prefetch`): every page's
    * head gets Speculation Rules (Chromium) + a ~1 kB inline intent fallback. `"document"` / `"prerender"`:
    * also the default for every same-origin link without its own `prefetch` / `data-rivet-prefetch`
@@ -275,6 +284,8 @@ export interface RouterUsage {
   activeLinks: boolean;
   /** `prefetch="document"` / `"prerender"` (`<Link>` prop or `data-rivet-prefetch` attribute). */
   prefetch: boolean;
+  /** `prefetch="intent"` (`<Link>` prop or `data-rivet-prefetch` attribute): router intent prefetch for marked links. */
+  intentLinks: boolean;
 }
 const FEATURES: readonly (readonly [keyof RouterUsage, RegExp])[] = [
   ["searchParams", /\b(?:useSearchParams|SearchParams)\b/],
@@ -282,14 +293,28 @@ const FEATURES: readonly (readonly [keyof RouterUsage, RegExp])[] = [
   ["params", /\buseParams\b/],
   ["activeLinks", /<Link\b[^>]*?\sactive\b/],
   ["prefetch", /\bprefetch\s*=\s*\{?\s*["'](?:document|prerender)["']/],
+  ["intentLinks", /\bprefetch\s*=\s*\{?\s*["']intent["']/],
 ];
-/** Every `RouterUsage` flag (FEATURES + `forms`). */
-const USAGE: readonly (keyof RouterUsage)[] = [...FEATURES.map(([name]) => name), "forms"];
-const none = (): RouterUsage => ({ searchParams: false, navigate: false, forms: false, params: false, activeLinks: false, prefetch: false });
+/** `RouterUsage` flags that are codegen options of the same name (FEATURES + `forms`; `intentLinks` maps to `intentPrefetch`). */
+const USAGE: readonly Exclude<keyof RouterUsage, "intentLinks">[] = [...FEATURES.flatMap(([name]) => (name === "intentLinks" ? [] : [name])), "forms"];
+const none = (): RouterUsage => ({
+  searchParams: false,
+  navigate: false,
+  forms: false,
+  params: false,
+  activeLinks: false,
+  prefetch: false,
+  intentLinks: false,
+});
+/** Codegen `intentPrefetch` from the option and the detected marks: `true` all links, `false` none, absent marked links when any. */
+const intentOf = (option: boolean | undefined, marked: boolean): "all" | "marked" | undefined =>
+  option === true ? "all" : option === false || !marked ? undefined : "marked";
 /** Features one source text uses: names in a file importing `@rivetjs/router` (`URLSearchParams` does not count). */
 function featuresOf(text: string, into: RouterUsage): void {
   // Forms (enhanced submits follow redirects / revalidate through the router): `@rivetjs/forms`, or ui's `Form`.
   if (text.includes("@rivetjs/forms") || (text.includes("@rivetjs/ui") && /\bForm\b/.test(text))) into.forms = into.navigate = true;
+  // A plain `<a data-rivet-prefetch="intent">` needs no router import.
+  if (/data-rivet-prefetch\s*=\s*\{?\s*["']intent["']/.test(text)) into.intentLinks = true;
   if (!text.includes("@rivetjs/router")) return;
   for (const [name, pattern] of FEATURES) if (pattern.test(text)) into[name] = true;
 }
@@ -360,7 +385,7 @@ export async function generateRoutes(
     | "prefetchPaths"
     | "routeRules"
     | "clientRouter"
-  > & { head?: "components" | undefined; documents?: readonly string[] } = {},
+  > & { head?: "components" | undefined; documents?: readonly string[]; intentPrefetch?: CodegenOptions["intentPrefetch"] } = {},
 ) {
   const routesDir = posix(options.routes ?? "src/routes");
   const outDir = posix(options.outDir ?? ".rivet");
@@ -382,6 +407,7 @@ export async function generateRoutes(
     ...(options.prefetch ? { prefetch: options.prefetch } : {}),
     ...(options.prefetchEagerness ? { prefetchEagerness: options.prefetchEagerness } : {}),
     ...(options.prefetchPaths === false ? { prefetchPaths: false } : {}),
+    ...(options.intentPrefetch ? { intentPrefetch: options.intentPrefetch } : {}),
     ...(options.trailingSlash && options.trailingSlash !== "ignore" ? { trailingSlash: options.trailingSlash } : {}),
     ...(options.routeRules && Object.keys(options.routeRules).length ? { routeRules: options.routeRules } : {}),
     ...(options.clientRouter !== undefined ? { clientRouter: options.clientRouter } : {}),
@@ -474,6 +500,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         : typeof value === "object" && value !== null && Object.getPrototypeOf(value) === Object.prototype && Object.values(value).every(json));
     if (!json(options.routeRules)) throw new Error("rivetRouter: routeRules must be JSON data (numbers, strings, booleans; use isr: true for no expiry)");
   }
+  if (options.intentPrefetch !== undefined && typeof options.intentPrefetch !== "boolean")
+    throw new Error(`rivetRouter: intentPrefetch must be a boolean (got ${JSON.stringify(options.intentPrefetch)})`);
   if (options.prefetch !== undefined && typeof options.prefetch !== "boolean" && options.prefetch !== "document" && options.prefetch !== "prerender")
     throw new Error(`rivetRouter: prefetch must be a boolean, "document" or "prerender" (got ${JSON.stringify(options.prefetch)})`);
   if (options.prefetchEagerness !== undefined && !["conservative", "moderate", "eager"].includes(options.prefetchEagerness))
@@ -688,6 +716,9 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       if (head === "components" && mode !== "csr") codegen.head = "components";
       const usage = await routerUsage(root, { exclude: [config.build?.outDir ?? "dist", outDir] });
       for (const name of USAGE) (codegen as Record<keyof RouterUsage, unknown>)[name] = options[name] ?? usage[name];
+      const intent = intentOf(options.intentPrefetch, usage.intentLinks);
+      if (intent) codegen.intentPrefetch = intent;
+      else delete codegen.intentPrefetch;
       const generated = await generateRoutes(root, codegen);
       const { resumeModules } = generated;
       table = generated.table;
@@ -956,8 +987,11 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         const found = none();
         featuresOf(await readFile(file, "utf8").catch(() => ""), found);
         const added = USAGE.filter((name) => found[name] && !codegen[name] && options[name] === undefined);
-        if (!added.length) return false;
+        // A first `prefetch="intent"` mark turns marked-link intent prefetch on (never off again, like the flags above).
+        const marks = found.intentLinks && !codegen.intentPrefetch && options.intentPrefetch === undefined;
+        if (!added.length && !marks) return false;
         for (const name of added) codegen[name] = true;
+        if (marks) codegen.intentPrefetch = "marked";
         await refresh();
         return true;
       };

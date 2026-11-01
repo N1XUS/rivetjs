@@ -8,7 +8,7 @@ export default function Layout({ children }: LayoutProps) {
         <a href="/" id="home">
           Home
         </a>
-        <a href="/items/1" id="item">
+        <a href="/items/1" id="item" data-rivet-prefetch="intent">
           Item 1
         </a>
         <a href="/items/3/" id="slash">

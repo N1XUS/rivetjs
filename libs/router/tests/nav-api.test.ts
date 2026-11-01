@@ -20,7 +20,7 @@ const configFile = root + "vite.config.ts";
 
 test("codegen: the App serves navigate() requests; routes provide params; the server provides search params when used", () => {
   const table = routeTable(["index.tsx", "items/[id].tsx"]);
-  const files = generate(table, { routesDir: "src/routes", searchParams: true, navigate: true, params: true }).files;
+  const files = generate(table, { routesDir: "src/routes", searchParams: true, navigate: true, params: true, intentPrefetch: "all" }).files;
   const app = files["app.tsx"]!;
   assert.match(app, /clientEvent\(document, "rivet:go", \(\) => _serve\(router\), \{ preload: "intent", standalone: false \}\);/);
   assert.match(app, /prefetchModule\(url, modules\);\n {4}prefetchData\(url, "server"/);
@@ -58,7 +58,7 @@ test("codegen: the App serves navigate() requests; routes provide params; the se
 
 test("routerUsage: features named in sources importing the router (or forms), linked packages included", async () => {
   const dir = await mkdtemp(join(tmpdir(), "rivet-usage-"));
-  const none = { searchParams: false, navigate: false, forms: false, params: false, activeLinks: false, prefetch: false };
+  const none = { searchParams: false, navigate: false, forms: false, params: false, activeLinks: false, prefetch: false, intentLinks: false };
   try {
     await mkdir(join(dir, "app/src/routes"), { recursive: true });
     await mkdir(join(dir, "app/node_modules/published"), { recursive: true });

@@ -298,6 +298,11 @@ test(
       });
 
       await t.test("guards run on the server during client navigation: redirect replaces the entry", async () => {
+        // ROUTER-INTENT: intent prefetch is opt-in — First / Second carry `data-rivet-prefetch="intent"`, an unmarked
+        // link loads nothing on hover.
+        await nav("Private").hover();
+        await page.waitForTimeout(300);
+        assert.ok(!data.includes("/private"), data.join());
         await nav("Private").click();
         await page.waitForURL(/\/login\?next=\/private$/);
         await page.waitForFunction(() => document.querySelector("h1")?.textContent === "Sign in");

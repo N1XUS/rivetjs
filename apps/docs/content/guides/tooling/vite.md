@@ -47,7 +47,7 @@ Options of `rivetRouter`:
 | `outDir` | `".rivet"` | Folder for generated code |
 | `adapter` | node only | Deploy target: `"vercel"`, `"netlify"`, `"cloudflare"`, `"bun"`, `"deno"` or `"fetch"`. See [Deploy](../deploy/overview.md) |
 
-All options, including `base`, `trailingSlash`, `transitions` and `prefetch`, are in the [config reference](../../reference/config.md#rivetrouter).
+All options, including `base`, `trailingSlash`, `transitions`, `intentPrefetch` and `prefetch`, are in the [config reference](../../reference/config.md#rivetrouter).
 
 The plugin writes generated files (route table, entries, route types) into `.rivet/`. Add it to `.gitignore`.
 

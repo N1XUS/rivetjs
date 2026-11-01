@@ -30,3 +30,26 @@ test("routerUsage skips build output (dist, dist-<lane>, outDir) and entries tha
     await rm(app, { recursive: true, force: true });
   }
 });
+
+test('routerUsage: intent prefetch marks (`<Link prefetch="intent">`, `data-rivet-prefetch="intent"`) turn on marked-link prefetch', async () => {
+  const app = await mkdtemp(join(tmpdir(), "rivet-usage-"));
+  try {
+    await mkdir(join(app, "src/routes"), { recursive: true });
+    await writeFile(
+      join(app, "src/routes/index.tsx"),
+      `import { Link } from "@rivetjs/router/link";\nexport default () => <Link to="/" prefetch="none">x</Link>;\n`,
+    );
+    assert.equal((await routerUsage(app)).intentLinks, false, "none / document marks are not intent marks");
+    // A plain anchor needs no router import.
+    await writeFile(join(app, "src/routes/a.tsx"), `export default () => <a href="/b" data-rivet-prefetch="intent">b</a>;\n`);
+    assert.equal((await routerUsage(app)).intentLinks, true);
+    await rm(join(app, "src/routes/a.tsx"));
+    await writeFile(
+      join(app, "src/routes/b.tsx"),
+      `import { Link } from "@rivetjs/router/link";\nexport default () => <Link to="/" prefetch={"intent"}>x</Link>;\n`,
+    );
+    assert.equal((await routerUsage(app)).intentLinks, true);
+  } finally {
+    await rm(app, { recursive: true, force: true });
+  }
+});

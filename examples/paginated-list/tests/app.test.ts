@@ -91,9 +91,11 @@ test("cold pagination, history and search update the live list without a documen
     page.setDefaultTimeout(10_000);
     const errors: string[] = [];
     const documents: string[] = [];
+    const data: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("request", (request) => {
       if (request.resourceType() === "document") documents.push(request.url());
+      if (new URL(request.url()).searchParams.get("_rivet") === "data") data.push(request.url());
     });
     await page.goto(base);
     await page.evaluate(() => document.querySelector("main")!.setAttribute("data-kept", "yes"));
@@ -104,7 +106,12 @@ test("cold pagination, history and search update the live list without a documen
     await page.waitForFunction(() => document.querySelector("#summary")?.textContent === "Showing 1–10 of 240");
     await page.goForward();
     await page.waitForFunction(() => document.querySelector("#summary")?.textContent === "Showing 11–20 of 240");
-    await page.getByRole("navigation", { name: "Rows per page" }).getByRole("link", { name: "20", exact: true }).click();
+    // Hovering a page-size link loads nothing (router intent prefetch is opt-in): its data comes with the click.
+    const per20 = page.getByRole("navigation", { name: "Rows per page" }).getByRole("link", { name: "20", exact: true });
+    await per20.hover();
+    await page.waitForTimeout(300);
+    assert.ok(!data.some((url) => url.includes("per=20")), data.join());
+    await per20.click();
     await page.waitForFunction(() => document.querySelector("#summary")?.textContent === "Showing 1–20 of 240");
     await page.locator("#q").fill("engine");
     await page.getByRole("button", { name: "Search", exact: true }).click();
@@ -112,6 +119,10 @@ test("cold pagination, history and search update the live list without a documen
     assert.equal(new URL(page.url()).search, "?q=engine&per=20");
     assert.equal(await page.locator("#rows tr").count(), 12);
     assert.equal(await page.locator("main").getAttribute("data-kept"), "yes");
+    assert.ok(
+      data.some((url) => url.includes("per=20")),
+      data.join(),
+    );
     assert.deepEqual(documents, [base + "/"]);
     assert.deepEqual(errors, []);
   } finally {

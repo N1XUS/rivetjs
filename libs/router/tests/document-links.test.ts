@@ -98,6 +98,7 @@ test(
         }
         await page.waitForTimeout(200);
         assert.deepEqual(data, []);
+        // A page link marked `data-rivet-prefetch="intent"` (router intent prefetch is opt-in) does.
         await page.hover("#item");
         await page.waitForTimeout(100);
         assert.deepEqual(data, ["/items/1"]);

@@ -85,10 +85,11 @@ export default function Contacts({ data }: LivePageProps<typeof loader>) {
       <div class="flex items-center gap-2">
         <h1 class="me-auto text-2xl font-semibold">Contacts</h1>
         {/* A link without JavaScript (`render` = an `a` with the Button's look); with it, the click opens the drawer in
-            place. `data-rivet-prefetch="none"`: hovering it does not load the `?new` data for nothing. */}
+            place. Hovering it loads nothing (router intent prefetch is opt-in; with `intentPrefetch: true` these links
+            would need `data-rivet-prefetch="none"`). */}
         <Button
           id="new"
-          render={(props) => <a {...(props as object)} type={undefined} href="?new" data-rivet-prefetch="none" />}
+          render={(props) => <a {...(props as object)} type={undefined} href="?new" />}
           onClick={(event: MouseEvent) => {
             if (!plainClick(event)) return;
             event.preventDefault();
@@ -119,7 +120,7 @@ export default function Contacts({ data }: LivePageProps<typeof loader>) {
                   size="sm"
                   variant="tertiary"
                   aria-label={`Edit ${contact().name}`}
-                  render={(props) => <a {...(props as object)} type={undefined} href={`?edit=${contact().id}`} data-rivet-prefetch="none" />}
+                  render={(props) => <a {...(props as object)} type={undefined} href={`?edit=${contact().id}`} />}
                   onClick={(event: MouseEvent) => {
                     if (!plainClick(event)) return;
                     event.preventDefault();
@@ -133,7 +134,7 @@ export default function Contacts({ data }: LivePageProps<typeof loader>) {
                   size="sm"
                   variant="danger-soft"
                   aria-label={`Delete ${contact().name}`}
-                  render={(props) => <a {...(props as object)} type={undefined} href={`?delete=${contact().id}`} data-rivet-prefetch="none" />}
+                  render={(props) => <a {...(props as object)} type={undefined} href={`?delete=${contact().id}`} />}
                   onClick={(event: MouseEvent) => {
                     if (!plainClick(event)) return;
                     event.preventDefault();

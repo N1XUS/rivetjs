@@ -60,6 +60,13 @@ export interface CodegenOptions {
   prefetchEagerness?: PrefetchEagerness;
   /** `false`: no route-path RegExp in the prefetch rules (only reload / external links take part). */
   prefetchPaths?: boolean;
+  /**
+   * Router intent prefetch (link hover / focus loads the target's data + page chunk ahead of the click). Absent (the
+   * default): none — intent only boots the router; no prefetch code ships. `"marked"`: links marked
+   * `data-rivet-prefetch="intent"` (`<Link prefetch="intent">`) only. `"all"`: every routable link but
+   * `data-rivet-prefetch="none"` ones (`rivetRouter({ intentPrefetch: true })`).
+   */
+  intentPrefetch?: "all" | "marked";
   /** `"never"` / `"always"`: the server entry exports the policy (page requests in the other form answer 308). */
   trailingSlash?: TrailingSlash;
   /** `rivetRouter({ routeRules })`: the server entry exports them (JSON data). */
@@ -288,6 +295,8 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const go = options.navigate === true || forms;
   const params = options.params === true;
   const active = options.activeLinks === true;
+  // ROUTER-INTENT: intent prefetch is opt-in (`all` / `marked`); off, the intent handler only boots / arms the router.
+  const intentPrefetch = options.intentPrefetch === "all" || options.intentPrefetch === "marked" ? options.intentPrefetch : null;
   const slash = options.trailingSlash === "never" || options.trailingSlash === "always" ? options.trailingSlash : null;
   const swap = options.announce === false ? "swapRouteQuiet" : "swapRoute";
   // Server / static modes: the derived resume model (the only one).
@@ -558,7 +567,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
         ]
       : [`import type { BrowserRouter } from "@rivetjs/runtime/router/dom";`]),
-    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${single || mode === "csr" ? "" : "_onStopped, "}${liveImports}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""} } from "@rivetjs/router/client";`,
+    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${single || mode === "csr" ? "" : "_onStopped, "}${liveImports}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single || !intentPrefetch ? "" : "prefetchData, "}${single || !intentPrefetch ? "" : "prefetchModule, "}loadModule${single || !(intentPrefetch || transitions) ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""} } from "@rivetjs/router/client";`,
     `import { ${derived ? "HttpError, " : ""}isHttpError } from "@rivetjs/router";`,
     "",
     "// Route modules as this file renders them (strict-safe whatever props they declare): data comes",
@@ -700,13 +709,13 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     ...(single
       ? [
           "  // One static page route and no navigate()/search params: nothing to route to in the browser, so no",
-          "  // click interception / intent prefetch / popstate listener (links load documents; the runtime stays",
+          "  // click interception / intent listener / popstate listener (links load documents; the runtime stays",
           "  // unloaded until an interaction needs it).",
         ]
       : [
           // Z1: nothing of the router loads at idle. `preload: "intent"` listeners don't boot a resumed page: the
           // loader holds the first root-relative link click, loads this chunk and replays the click (intent on a
-          // link prefetches it); the listeners attach whenever the runtime starts.
+          // link boots it; it prefetches only with `intentPrefetch`); the listeners attach whenever the runtime starts.
           ...(live.length
             ? [
                 "  // The shown live page's data signal: same-URL revalidations refresh it in place.",
@@ -723,7 +732,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
             : []),
           // URLs no page route matches (endpoints, files, other apps on the origin) are not intercepted: documents.
           // ROUTER-LAZY: `match` — clicks / intent outside links (a signal handler's button, plain text) never load
-          // this chunk; live pages also watch forms (hover / focus / press inside one warms the page data readers).
+          // this chunk.
           `  clientEvent(document, "click", (event: MouseEvent) => ${armed("interceptClick(event, router, modules)")}, { preload: "intent", match: "a"${lone} });`,
           // A link's own handler that stops propagation (a cdk Link's press) hides the click from the bubbling listener
           // above on a resumed page (a cold click's replay runs it first; a live one runs in the derived runtime's delegated
@@ -734,16 +743,24 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
             : [
                 `  clientEvent(document, "click", (event: MouseEvent) => _onStopped(event, () => ${armed("interceptClick(event, router, modules)")}), { capture: true, preload: "intent", match: "a"${lone} });`,
               ]),
-          `  const intent = (event: Event) => {`,
+          // ROUTER-INTENT: the intent listeners stay without prefetch (the loader boots the router on link intent, Z1);
+          // prefetch of the target's data + page chunk only with `intentPrefetch` (`all`: unless `none`; `marked`: `intent`).
+          `  const intent = (${intentPrefetch || transitions ? "event: Event" : ""}) => {`,
           ...(forms ? [`    _brand(_go);`] : []),
           // Z1: the loader boots the router on link intent; the nested-layout / active-link effects arm then.
           ...(nested || active ? [`    arm();`] : []),
-          `    const anchor = routableAnchor(event, modules);`,
+          ...(intentPrefetch || transitions ? [`    const anchor = routableAnchor(event, modules);`] : []),
           ...(transitions ? [`    if (anchor) transitions();`] : []),
-          `    if (!anchor || anchor.getAttribute("data-rivet-prefetch") === "none") return;`,
-          `    const url = new URL(anchor.href);`,
-          `    prefetchModule(url, modules);`,
-          ...(mode === "csr" ? [] : [`    prefetchData(url, ${source}${keeps ? ", _keepIds(nest, NEST, url)" : ""});`]),
+          ...(intentPrefetch
+            ? [
+                intentPrefetch === "all"
+                  ? `    if (!anchor || anchor.getAttribute("data-rivet-prefetch") === "none") return;`
+                  : `    if (anchor?.getAttribute("data-rivet-prefetch") !== "intent") return;`,
+                `    const url = new URL(anchor.href);`,
+                `    prefetchModule(url, modules);`,
+                ...(mode === "csr" ? [] : [`    prefetchData(url, ${source}${keeps ? ", _keepIds(nest, NEST, url)" : ""});`]),
+              ]
+            : []),
           `  };`,
           `  clientEvent(document, "pointerover", intent, { passive: true, preload: "intent", match: "a"${lone} });`,
           `  clientEvent(document, "focusin", intent, { preload: "intent", match: "a"${lone} });`,

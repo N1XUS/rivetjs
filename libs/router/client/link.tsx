@@ -20,12 +20,14 @@ export interface LinkProps extends Omit<Anchor, "href" | "children" | "aria-curr
    */
   transition?: string | readonly string[] | false;
   /**
-   * `"intent"` (default): the client router loads data and page chunk on hover/focus. `"none"`: nothing
-   * before the click. `"document"` / `"prerender"`: when the click is a document load (`reload`, or an
-   * app without client routing), the browser fetches (or prerenders) the page ahead — Speculation Rules,
-   * else `<link rel=prefetch>` / `fetch` on intent; links the client router handles keep `"intent"`
-   * behaviour. Unset: `rivetRouter({ prefetch })`'s default, else `"intent"`; an explicit `"intent"` keeps the
-   * router's prefetch only (no document prefetch from the app default).
+   * Unset (default): nothing loads before the click — link intent only boots the router — unless the app turns
+   * router intent prefetch on (`rivetRouter({ intentPrefetch: true })`). `"intent"`: the client router loads this
+   * link's route data (its loaders run on the server) and page chunk on hover / focus (detected at build time; costs
+   * the server work and memory even when the link is never clicked). `"none"`: nothing before the click, also with
+   * `intentPrefetch: true`. `"document"` / `"prerender"`: when the click is a document load (`reload`, or an app
+   * without client routing), the browser fetches (or prerenders) the page ahead — Speculation Rules, else
+   * `<link rel=prefetch>` / `fetch` on intent; on links the client router handles they act as unset.
+   * Unset also takes `rivetRouter({ prefetch })`'s document default; an explicit `"intent"` / `"none"` opts out of it.
    */
   prefetch?: "intent" | "none" | "document" | "prerender";
   /** Classes set on the link while its navigation is pending (with `data-rivet-pending`). Needs `transitions`. */
