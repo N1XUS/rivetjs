@@ -26,7 +26,7 @@ export interface BodyLimits {
   urlencoded?: number;
   /** Max multipart body bytes (default 10 MiB). */
   multipart?: number;
-  /** Max bytes per uploaded file (default: the multipart limit). */
+  /** Max bytes per uploaded file (default: no separate check; the `multipart` limit bounds the whole body). */
   file?: number;
 }
 /** Options of `action()`: CSRF check, body limits and decoding. */

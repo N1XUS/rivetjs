@@ -20,7 +20,11 @@ export interface BackendIssue {
  * Map a backend error to issues. `known`: field paths or patterns (`items.$.sku`) the form renders;
  * paths outside it (and missing or unparsable paths) become form-level issues (`path: ""`).
  */
-export function mapIssues<E>(error: E, unwrap: (error: E) => readonly BackendIssue[] | null | undefined, options: { known?: readonly string[] } = {}): MappedIssue[] {
+export function mapIssues<E>(
+  error: E,
+  unwrap: (error: E) => readonly BackendIssue[] | null | undefined,
+  options: { known?: readonly string[] } = {},
+): MappedIssue[] {
   const out: MappedIssue[] = [];
   for (const entry of unwrap(error) ?? []) {
     const key = entry.key ?? entry.message ?? "errors.unknown";
@@ -36,7 +40,14 @@ const normalize = (path: string): string => canonicalName(path) ?? "";
 /** JSON Pointer (RFC 6901: `/items/0/sku`, `~1` = `/`, `~0` = `~`) → `items.0.sku`. */
 export function fromPointer(pointer: string): string {
   if (pointer === "" || pointer === "/") return "";
-  const body = pointer.startsWith("#") ? decodeURIComponent(pointer.slice(1)) : pointer;
+  let body = pointer;
+  if (pointer.startsWith("#")) {
+    try {
+      body = decodeURIComponent(pointer.slice(1));
+    } catch {
+      return ""; // A malformed `#%` fragment from a backend: unparsable, like every other input here.
+    }
+  }
   if (!body.startsWith("/")) return "";
   return body
     .slice(1)

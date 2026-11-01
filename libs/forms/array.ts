@@ -55,11 +55,14 @@ export const rows = <T, P extends FieldArrayPath<T>>(form: Form<T>, path: P): nu
 function reorder(store: FormStore<any>, name: string, order: number[]): void {
   const current = untrack(keySignal(store, name));
   const prefix = name + ".";
+  // old row index → new: once per call (a 1000-row array remaps every path of every record kind).
+  const moved = new Map<number, number>();
+  for (let to = order.length - 1; to >= 0; to--) moved.set(order[to]!, to);
   const remap = (path: string): string | null => {
     const rest = path.slice(prefix.length);
     const dot = rest.indexOf(".");
     const index = Number(dot < 0 ? rest : rest.slice(0, dot));
-    const next = order.indexOf(index);
+    const next = moved.get(index) ?? -1;
     return next < 0 ? null : prefix + next + (dot < 0 ? "" : rest.slice(dot));
   };
   const under = (path: string) => path.startsWith(prefix) && isIndex(path.slice(prefix.length).split(".")[0]!);
@@ -83,7 +86,13 @@ function reorder(store: FormStore<any>, name: string, order: number[]): void {
     }
   }
   const state = runtime(store);
-  state.armed = new Set([...state.armed].flatMap((path) => (under(path) ? (remap(path) ? [remap(path)!] : []) : [path])));
+  state.armed = new Set(
+    [...state.armed].flatMap((path) => {
+      if (!under(path)) return [path];
+      const target = remap(path);
+      return target ? [target] : [];
+    }),
+  );
   for (const path of [...state.checks.keys()]) if (under(path)) state.checks.delete(path);
   for (const path of Object.keys(state.schema)) if (under(path)) delete state.schema[path];
   store.u.update((n) => n + 1);
@@ -134,7 +143,11 @@ export function swap<T, P extends FieldArrayPath<T>>(form: Form<T>, path: P, a: 
 }
 /** Replace all rows with `length` fresh empty rows (records under the array cleared). */
 export function replace<T, P extends FieldArrayPath<T>>(form: Form<T>, path: P, length: number): void {
-  reorder(storeOf(form), absolute(form, path), Array.from({ length }, () => -1));
+  reorder(
+    storeOf(form),
+    absolute(form, path),
+    Array.from({ length }, () => -1),
+  );
 }
 
 function focusRow(store: FormStore<any>, name: string, index: number): void {
@@ -143,10 +156,12 @@ function focusRow(store: FormStore<any>, name: string, index: number): void {
   setTimeout(() => {
     const element = elementOf(store);
     const prefix = `${name}.${index}.`;
-    const control = element && Array.from(controlsOf(element)).find((el) => {
-      const field = (el as HTMLInputElement).name;
-      return field === `${name}.${index}` || field?.startsWith(prefix);
-    });
+    const control =
+      element &&
+      Array.from(controlsOf(element)).find((el) => {
+        const field = (el as HTMLInputElement).name;
+        return field === `${name}.${index}` || field?.startsWith(prefix);
+      });
     (control as HTMLElement | undefined)?.focus();
   });
 }

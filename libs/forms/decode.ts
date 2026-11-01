@@ -94,7 +94,8 @@ export function decodeFormData(entries: Iterable<[string, FormDataEntryValue]>, 
     if (append) segments.pop();
     if (!segments.length) throw new FormDecodeError(`Invalid form field name "${rawName.slice(0, 64)}"`);
     if (segments.length > limits.depth) throw new FormDecodeError(`Form field nested too deep (max ${limits.depth})`);
-    for (const segment of segments) if (isIndex(segment) && Number(segment) > limits.index) throw new FormDecodeError(`Form array index too large (max ${limits.index})`);
+    for (const segment of segments)
+      if (isIndex(segment) && Number(segment) > limits.index) throw new FormDecodeError(`Form array index too large (max ${limits.index})`);
     const name = joinPath(segments);
     const kind = byPattern(coerce, name);
     const item = coerceOne(value as Entry, kind === "array" ? undefined : kind, options.emptyAs);
@@ -171,7 +172,10 @@ function fill(container: unknown, segments: string[], at: number, empty: () => u
 }
 
 /** Raw submitted values by canonical name (strings; repeated names → arrays), for echoing back. */
-export function rawValues(entries: Iterable<[string, FormDataEntryValue]>, keep: (name: string, value: FormDataEntryValue) => boolean): Record<string, string | string[]> {
+export function rawValues(
+  entries: Iterable<[string, FormDataEntryValue]>,
+  keep: (name: string, value: FormDataEntryValue) => boolean,
+): Record<string, string | string[]> {
   const out: Record<string, string | string[]> = {};
   for (const [rawName, value] of entries) {
     if (META_FIELDS.has(rawName) || typeof value !== "string") continue;
@@ -183,7 +187,8 @@ export function rawValues(entries: Iterable<[string, FormDataEntryValue]>, keep:
     if (!keep(name, value)) continue;
     const existing = out[name];
     if (existing === undefined) out[name] = append ? [value] : value;
-    else out[name] = Array.isArray(existing) ? [...existing, value] : [existing, value];
+    else if (Array.isArray(existing)) existing.push(value);
+    else out[name] = [existing, value];
   }
   return out;
 }

@@ -54,6 +54,7 @@ test("mapIssues(): unwrap → field issues, unknown paths → form-level; pointe
   ]);
   assert.deepEqual(issueRecord(mapped)[""], [{ key: "errors.internal", message: "Bad id" }, { key: "errors.global" }]);
   assert.equal(fromPointer("/a~1b/0/c~0d"), "a/b.0.c~d");
+  assert.equal(fromPointer("#%"), "", "a malformed fragment maps to the form level instead of throwing");
   assert.equal(fromBracketPath("items[0].sku"), "items.0.sku");
   assert.equal(fromBracketPath('user["name"]'), "user.name");
   assert.equal(fromBracketPath("a[__proto__]"), "");
