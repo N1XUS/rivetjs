@@ -52,7 +52,7 @@ export function measureFrame(html, assets) {
     } else {
       stateBytes += Buffer.byteLength(body);
       if (type === "rivet/boundaries") {
-        const tail = JSON.parse(body.replace(/\\u003c/g, "<"));
+        const tail = JSON.parse(body); // `\u003c` is a JSON escape: no unescaping (it broke an escaped backslash before `u003c`)
         records += tailRecords(tail);
         for (const url of tailUrls(tail, full)) urls.add(url);
       }

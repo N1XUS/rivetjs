@@ -204,6 +204,11 @@ if (check) {
     if (JSON.stringify(c) !== JSON.stringify(pinned.components[n])) diffs.push(`${n}: ${JSON.stringify(pinned.components[n])} → ${JSON.stringify(c)}`);
   for (const [n, p] of Object.entries(result.pages))
     if (JSON.stringify(p) !== JSON.stringify(pinned.pages[n])) diffs.push(`page ${n}: ${JSON.stringify(pinned.pages[n])} → ${JSON.stringify(p)}`);
+  // Pinned entries a full run no longer measures (a removed component / page) are a change too.
+  if (!only)
+    for (const n of Object.keys(pinned.components)) if (!(n in result.components)) diffs.push(`${n}: ${JSON.stringify(pinned.components[n])} → removed`);
+  if (!only && !args.includes("--no-pages"))
+    for (const n of Object.keys(pinned.pages)) if (!(n in result.pages)) diffs.push(`page ${n}: ${JSON.stringify(pinned.pages[n])} → removed`);
   if (diffs.length) {
     console.error("ui-components: bytes changed:\n  " + diffs.join("\n  "));
     process.exit(1);
