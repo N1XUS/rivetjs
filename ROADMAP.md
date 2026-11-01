@@ -1,6 +1,6 @@
 # Rivet roadmap
 
-Living plan, updated 2026-10-29 (previous: 2026-10-12). Status: **done** · **in progress** · **planned** · **idea** · **dropped**. Dates = when decided. Internal design records: [`docs/CLAUDE.md`](docs/CLAUDE.md) (index of specs, plans, research, benchmarks).
+Living plan, updated 2026-11-01 (previous: 2026-10-29). Status: **done** · **in progress** · **planned** · **idea** · **dropped**. Dates = when decided. Internal design records: [`docs/CLAUDE.md`](docs/CLAUDE.md) (index of specs, plans, research, benchmarks).
 
 ## 0. North star
 
@@ -11,22 +11,21 @@ Living plan, updated 2026-10-29 (previous: 2026-10-12). Status: **done** · **in
 - **Adoption**: a framework + ui kit people pick for apps, admin tools, AI apps, content sites (mobile apps later); docs, homepage, `npm create rivet@latest`, AI tooling (MCP, skills, llms.txt).
 - **Where we stand (2026-10-28 SSR comparison)**: static Rivet wins every metric except HTML bytes (5000 rows c1: 367 req/s vs Razor 84, Solid 1 static 129); the resumable lane no longer loses on CPU or p99. Losses: peak memory vs Qwik 1 (×1.67), HTML bytes vs Solid's hydratable output, krausest bytes vs Solid.
 
-## 1. Now (week of 2026-10-26)
+## 1. Now (week of 2026-11-01)
 
 | Item | Status | Links / notes |
 | --- | --- | --- |
-| Peak SSR memory vs Qwik (the last SSR metric we lose) | in progress — SSR-MEM 2026-10-29: 1000 rows 837 → 729 KB/page, RSS 318 → 302 MiB, no leak (peak = V8 garbage high-water); SSR-MEM-2 2026-10-29: router handler fixed allocation 12.9 → 10.7 KB/req, `/resume` 100 rows 160 → 154 KB/req and 165 → 155 µs; peak RSS unchanged (warm-up spike, V8 page pool); next: a design aimed at peak RSS ([`2026-10-29-ssr-mem-2`](docs/benchmarks/2026-10-29-ssr-mem-2.md)) | [2026-10-28 SSR comparison](docs/benchmarks/2026-10-28-ssr-comparison.md) |
+| Peak SSR memory vs Qwik (the last SSR metric we lose) | in progress — SSR-MEM 2026-10-29: 1000 rows 837 → 729 KB/page, RSS 318 → 302 MiB, no leak (peak = V8 garbage high-water); SSR-MEM-2 2026-10-29: router handler fixed allocation 12.9 → 10.7 KB/req, `/resume` 100 rows 160 → 154 KB/req and 165 → 155 µs; peak RSS unchanged (warm-up spike, V8 page pool); next: SSR-RSS lane (2026-11-01, running) aimed at peak RSS ([`2026-10-29-ssr-mem-2`](docs/benchmarks/2026-10-29-ssr-mem-2.md)) | [2026-10-28 SSR comparison](docs/benchmarks/2026-10-28-ssr-comparison.md) |
 | First input on router pages | done 2026-10-29 (ROUTER-PRIME): the idle prime runs `Root.ready`; first click slow 4G 181 → 14–18 ms, fast 31 → 15 ms, 0 requests after the click (cost: +1 eager request on nested-layout pages) | [router-prime](docs/benchmarks/2026-10-29-router-prime.md) |
-| GitHub CI | repository public since 2026-10-29: Actions run again; first green run pending | `.github/workflows/ci.yml` |
-| Lane harness (launch / watch / retry / intake for agent lanes) | designed — spec uncommitted, two questions open | `docs/design/specs/2026-10-28-lane-harness-design.md` |
-| Framework bridges: Vue / Svelte / Solid adapters | planned — React 19 (T6) + Preact (T8) adapters, server protocol, client driver, Vite integration, islands-only lean client done; Vue / Svelte / Solid bytes measured only | [spec](docs/design/specs/2026-10-11-framework-bridges-design.md) · `libs/bridge/CLAUDE.md` |
+| GitHub CI green on `main` | red — repository public since 2026-10-29, no green run yet; run 2026-11-01: 10 failing jobs (cold matrix touch / WebKit reds in combobox / autocomplete / menu examples, ui `sidebar-resize`, router dev App regeneration, nx generator snapshot, docs home CLS, playground server, docs-kit token cache, examples, size, cdk); CI-RED lane next | `.github/workflows/ci.yml` |
+| Lane harness (launch / watch / retry / intake for agent lanes) | designed — spec uncommitted, two questions open; the autonomous tester (`scripts/ai-tester`: investigation → independent repro / RED-GREEN / gates / review → verified local commit) landed 2026-10-30 | `docs/design/specs/2026-10-28-lane-harness-design.md` · `scripts/CLAUDE.md` |
+| Backend recipes: runnable `examples/` apps tested without Docker in CI + router helpers + docs section — **high priority** | in progress — done: `sqlite-local` (E1), `operations` suite, `paginated-list`, `forms-in-overlays`; running 2026-11-01: `defineEnv` (T2) + node `ready` / `onClose` hooks (T4), `@rivetjs/router/sse` `eventStream` + `liveSource` (T8), `auth-sessions` (E3 on `node:sqlite`, no OAuth). Postgres / Redis / pg-boss / Kafka / gRPC / S3 examples (T6, T7, T9–T13, T16) need new pinned dependencies (lockfile refresh with network) | [spec](docs/design/specs/2026-10-12-backend-examples-design.md) · [plan](docs/design/plans/2026-10-12-backend-examples.md) · `examples/CLAUDE.md` |
 | Codebase regroup: runtime into directories, then split `compile.rs` | planned | — |
 
 ## 2. Next
 
 | Item | Status | Links / notes |
 | --- | --- | --- |
-| Backend recipes (db / queues / Kafka / gRPC / Docker / workers): 10 runnable `examples/` apps tested without Docker in CI + router helpers (server entries, lifecycle hooks, env, SSE) + docs section — **high priority** | planned — design done (2026-10-12) | [spec](docs/design/specs/2026-10-12-backend-examples-design.md) · [plan](docs/design/plans/2026-10-12-backend-examples.md) |
 | AI streaming adapter: `createChat` over AI SDK UI-message stream / OpenAI-compatible SSE → signals, wired to the chat components + router actions | planned (P0 in the Pro research) | [research](docs/design/research/2026-10-12-pro-components.md) |
 | Floor-first, remaining: op-stream writer in Node (X2), native template sequences (X2′), native host only if X2 < 2× (X4) | planned — X1 + dictionary transport (X3) + origin zstd done 2026-10-22 | [research](docs/design/research/2026-10-18-floor-first.md) · [dictionary transport](docs/benchmarks/2026-10-22-dictionary-transport.md) |
 | Editorial rerun ("dynamic at static cost") after STATIC-ZERO, route cache and dictionary transport | planned | [editorial](docs/benchmarks/2026-10-11-editorial.md) |
@@ -54,6 +53,11 @@ Living plan, updated 2026-10-29 (previous: 2026-10-12). Status: **done** · **in
 
 | Item | Landed | Links / notes |
 | --- | --- | --- |
+| Forms: controls named after form members (`id`, `action`, `elements`, `reset`, `noValidate`, …) no longer shadow the form's own properties (ownership, submit URL, focus, reset, enhanced submit) | 2026-11-01 | `libs/forms/CLAUDE.md` |
+| AI text streaming: character pacing (`followText`) shared by `StreamingText` and Markdown, one keyframe, natural height | 2026-10-31 … 11-01 | `libs/ui/CLAUDE.md` |
+| Framework bridges: Solid 1.9, Vue 3.5, Svelte 5 islands (native SSR / hydration, live props, slots, head, scoped CSS, Vite ownership) | 2026-10-30 | `libs/bridge-solid`, `libs/bridge-vue`, `libs/bridge-svelte` CLAUDE.md |
+| Examples: `paginated-list` (URL state + live navigation), `forms-in-overlays` (drawer / modal / alert-dialog CRUD on a live page); `operations` integration / security / journey suites (145 cases) replace the adversarial lab | 2026-10-29 … 10-30 | `examples/CLAUDE.md` |
+| Router: no cross-visitor page-cache data or cookie leaks (route cache, error layouts, action revalidation) | 2026-10-29 … 10-31 | `libs/router/CLAUDE.md` |
 | Release `0.1.0-alpha.2` on `latest`: all 20 packages with npm provenance (`npm create rivet@latest` picks it up) | 2026-10-29 | `CHANGELOG.md` · `scripts/CLAUDE.md` "Release" |
 | FileTree sections (`FileTree.Section` / `.Header`) and PromptInput queue drag reorder (`@rivetjs/ui/prompt-input-queue-reorder`) | 2026-10-29 | `libs/ui/CLAUDE.md` |
 | Derived client: the only resume model (M6 cut, serialized runtime / lowering / options deleted); parity: bridges, forms progressive enhancement, streamed `Suspense`, non-JSON `resource` values, `intent` cold presses | 2026-10-22 … 10-28 | [research](docs/design/research/2026-10-18-beyond-resume-hydration.md) · [`resumability.md`](docs/guides/resumability.md) |
