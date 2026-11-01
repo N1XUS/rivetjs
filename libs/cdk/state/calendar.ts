@@ -518,9 +518,24 @@ export function effectiveMax(state: AnyCalendarState): DateValue | null {
   return minDate(max, availableRange(state)?.end) ?? null;
 }
 
+/**
+ * `effectiveMin` + `effectiveMax` + `availableRange` from ONE available-range walk (same reads). Each walk calls
+ * `isDateUnavailable` up to a visible duration per side; per-cell predicates called it 3-5 times per cell (a
+ * 42-cell range pass with an anchor: ~9600 `isDateUnavailable` calls). Plain function, no memo: a binding still
+ * tracks every signal the walk reads.
+ */
+function bounds(state: AnyCalendarState): { min: DateValue | null; max: DateValue | null; range: { start?: CalendarDate; end?: CalendarDate } | null } {
+  const min = minValueOf(state),
+    max = maxValueOf(state);
+  if (state.mode !== "range") return { min, max, range: null };
+  const range = availableRange(state);
+  return { min: maxDate(min, range?.start) ?? null, max: minDate(max, range?.end) ?? null, range };
+}
+
 /** The currently focused date (constrained to min / max). Reads `focused` (+ `anchor`). */
 export function focusedDate(state: AnyCalendarState): CalendarDate {
-  return constrainValue(readDate(state, state.focused()), effectiveMin(state), effectiveMax(state));
+  const { min, max } = bounds(state);
+  return constrainValue(readDate(state, state.focused()), min, max);
 }
 
 function endFor(state: StateBase, start: CalendarDate): CalendarDate {
@@ -534,8 +549,7 @@ function endFor(state: StateBase, start: CalendarDate): CalendarDate {
 function correctedStart(state: AnyCalendarState): CalendarDate {
   const start = readDate(state, state.start());
   const focused = focusedDate(state);
-  const min = effectiveMin(state),
-    max = effectiveMax(state);
+  const { min, max } = bounds(state);
   if (focused.compare(start) < 0) return alignEnd(focused, state.visibleDuration, state.locale, min, max);
   if (focused.compare(endFor(state, start)) > 0) return alignStart(focused, state.visibleDuration, state.locale, min, max);
   return start;
@@ -906,9 +920,9 @@ export function focusNearestAvailableDate(state: AnyCalendarState, anchor: Calen
 
 /** Whether the date is outside min / max (range: also outside the available range). */
 export function isInvalidDate(state: AnyCalendarState, date: CalendarDate): boolean {
-  const invalid = isInvalid(date, effectiveMin(state), effectiveMax(state));
+  const { min, max, range } = bounds(state);
+  const invalid = isInvalid(date, min, max);
   if (state.mode !== "range") return invalid;
-  const range = availableRange(state);
   return invalid || isInvalid(date, range?.start, range?.end);
 }
 
@@ -932,7 +946,8 @@ export function isCellFocused(state: AnyCalendarState, date: CalendarDate): bool
 export function isCellDisabled(state: AnyCalendarState, date: CalendarDate): boolean {
   const range = visibleRange(state);
   // The range calendar's base cells use the base `isInvalid` (min / max narrowed by the anchor).
-  const invalid = isInvalid(date, effectiveMin(state), effectiveMax(state));
+  const { min, max } = bounds(state);
+  const invalid = isInvalid(date, min, max);
   return isCalendarDisabled(state) || date.compare(range.start) < 0 || date.compare(range.end) > 0 || invalid;
 }
 
