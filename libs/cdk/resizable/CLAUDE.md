@@ -16,7 +16,7 @@
 - `Panel`: `id`, `defaultSize`, `minSize`, `maxSize`, `collapsible`, `collapsedSize`, `collapsedThreshold`, `groupResizeBehavior`, `disabled`, `onResize(size, id, prevSize)`, `panelRef`; sizes = number (px) / `"30%"` / `"200px"` / `"2rem"` / `"10vw"` …; unitless string = %.
 - `Separator`: `id`, `disabled`, `disableDoubleClick`, `preview` (function), `class` / `style`; `data-separator` = `inactive` / `hover` / `active` / `focus` / `disabled`; `aria-valuenow` etc. after mount. Must be a direct child of its Group.
 - `useDefaultLayout({ id, storage?, panelIds?, debounceSaveMs?, onlySaveAfterUserInteractions? })` → `{ defaultLayout: accessor, onLayoutChange, onLayoutChanged }`; key `react-resizable-panels:<id>` (upstream). Storage default = `localStorage` (client only, `@rivetjs/cdk/storage` `webStorage`). Reads / writes go through `readStorage` / `writeStorage` (COLD-FIX-B 2026-10-27): a throwing storage (iOS private mode `QuotaExceededError`, blocked cookies) keeps the layout in memory, no `console.error` (upstream logs one per failed save).
-- `cookieStorage(cookieHeader | cookieMap)` (Rivet): server-readable storage (`ssr: true`) → server renders the stored layout, no client restore effect.
+- `cookieStorage(cookieHeader | cookieMap)` (Rivet): server-readable storage (`ssr: true`) → server renders the stored layout, no client restore effect. A malformed cookie value reads as `null` (no layout; was a `URIError` during SSR, FIX-CDK 2026-11-01).
 
 ## Rivet rulings (2026-10-08)
 

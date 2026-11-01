@@ -772,9 +772,19 @@ export function useDefaultLayout(options: UseDefaultLayoutOptions): {
   };
 }
 
+/** A stored cookie value, or `null` when another writer left it malformed (a raw `%` threw `URIError` during SSR). */
+const decodeCookie = (value: string): string | null => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Rivet addition (upstream documents it as an example): a cookie `LayoutStorage`. Pass the request's `Cookie` header
  * (or a cookie map) on the server so the stored layout is server-rendered; in the browser it reads `document.cookie`.
+ * A malformed value (a raw `%` from another writer) reads as `null`: no stored layout.
  */
 export function cookieStorage(
   source?: string | { get(name: string): string | undefined } | null,
@@ -789,12 +799,12 @@ export function cookieStorage(
     getItem: (key: string) => {
       const name = encodeURIComponent(key);
       const fromMap = map?.get(name) ?? map?.get(key);
-      if (fromMap != null) return decodeURIComponent(fromMap);
+      if (fromMap != null) return decodeCookie(fromMap);
       const doc = (globalThis as { document?: Document }).document;
       const cookies = doc ? doc.cookie : (header ?? "");
       for (const cookie of cookies.split(";")) {
         const [cookieName, ...value] = cookie.trim().split("=");
-        if (cookieName === name || cookieName === key) return decodeURIComponent(value.join("="));
+        if (cookieName === name || cookieName === key) return decodeCookie(value.join("="));
       }
       return null;
     },
