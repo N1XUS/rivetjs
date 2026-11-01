@@ -36,17 +36,17 @@ const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => r
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Two slots (A at x=0, 100px wide; B at x=200, 160px wide), each with a SharedElement named "x". */
-function twoSlots(className = "se") {
+function twoSlots(className = "se", name = "x") {
   css();
   const selected = signal<"a" | "b" | null>("a");
   const { container } = render(() => (
     <SharedElementTransition>
       <div class="row">
         <div class="slot" id="a">
-          <SharedElement name="x" class={className} isVisible={() => selected() === "a"} />
+          <SharedElement name={name} class={className} isVisible={() => selected() === "a"} />
         </div>
         <div class="slot wide" id="b">
-          <SharedElement name="x" class={className} isVisible={() => selected() === "b"} />
+          <SharedElement name={name} class={className} isVisible={() => selected() === "b"} />
         </div>
       </div>
     </SharedElementTransition>
@@ -96,6 +96,20 @@ describe("SharedElement", () => {
     expect(running).toEqual(["translate", "width"]);
     await wait(260);
     expect(b.getBoundingClientRect().left).toBeCloseTo(to.left, 0);
+  });
+
+  it.each(["constructor", "__proto__"])("a name of an Object.prototype member (%s) has no snapshot until one is taken", async (name) => {
+    // The scope is a plain object (resume data): `scope.constructor` is inherited (it read as a snapshot and threw),
+    // `scope.__proto__ = snapshot` set the prototype (the move never found its snapshot).
+    const { selected, el } = twoSlots("se", name);
+    await microtasks();
+    expect(el("a")!.getAttribute("data-entering")).toBe("true");
+    await frame();
+    selected.set("b");
+    await microtasks();
+    expect(el("a")).toBeNull();
+    expect(el("b")!.hasAttribute("data-entering")).toBe(false);
+    expect(el("b")!.style.translate).not.toBe("");
   });
 
   it("transition-property none: no snapshot, the next instance enters", async () => {

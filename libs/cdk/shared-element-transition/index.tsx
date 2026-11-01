@@ -71,6 +71,10 @@ function schedule(scope: SharedElementScope, phase: 0 | 1 | 2, task: () => void)
   queue[phase]!.push(task);
 }
 
+// The scope is a plain object (resume data), so `Object.prototype` names (`constructor`, `toString`) are inherited, not
+// snapshots: read own properties only (upstream RAC reads `scope.current[name]` and has the same gap).
+const snapshotOf = (scope: SharedElementScope, name: string) => (Object.hasOwn(scope, name) ? scope[name] : undefined);
+
 const styleOf = (element: HTMLElement) => element.style as unknown as Record<string, string>;
 
 /** On hide / unmount: the rect and computed values of the transitioning properties (RAC effect cleanup). */
@@ -79,10 +83,16 @@ function takeSnapshot(scope: SharedElementScope, name: string, element: HTMLElem
     const style = getComputedStyle(element);
     if (style.transitionProperty !== "none") {
       const transitionProperty = style.transitionProperty.split(/\s*,\s*/);
-      scope[name] = {
-        rect: element.getBoundingClientRect(),
-        style: transitionProperty.map((p) => [p, (style as unknown as Record<string, string>)[p]!]),
-      };
+      // defineProperty: `scope.__proto__ = …` would set the prototype instead of storing a snapshot.
+      Object.defineProperty(scope, name, {
+        value: {
+          rect: element.getBoundingClientRect(),
+          style: transitionProperty.map((p) => [p, (style as unknown as Record<string, string>)[p]!]),
+        },
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     }
   }
 }
@@ -127,7 +137,7 @@ export function SharedElement(props: SharedElementProps) {
           schedule(scope, 1, () => {
             if (current !== run) return;
             const el = element();
-            const prevSnapshot = scope[name];
+            const prevSnapshot = snapshotOf(scope, name);
             if (el && prevSnapshot) {
               // Element is transitioning from a previous instance.
               state.set("visible");
@@ -172,7 +182,7 @@ export function SharedElement(props: SharedElementProps) {
             const el = element();
             if (!el) return;
             // After every consumer ran: a snapshot still there was not taken by a new instance, so exit.
-            if (scope[name]) {
+            if (snapshotOf(scope, name)) {
               delete scope[name];
               state.set("exiting");
               Promise.all(el.getAnimations().map((a) => a.finished))

@@ -17,6 +17,7 @@ RAC `SharedElementTransition` / `SharedElement`: elements that animate between p
 
 ## Rules / invariants
 - Behaviour per change of `isVisible` (RAC layout effect): cleanup = snapshot when the element was rendered (connected, no `data-exiting`, `transition-property` != `none`: rect + computed values); visible + snapshot → previous values inline (`translate` = rect delta), cancel animations those writes started, restore next frame; visible, no snapshot → `data-entering="true"` one frame; hidden → after consumers ran, unconsumed snapshot → `data-exiting="true"` until `getAnimations()` finish, then unmounted; consumed → unmounted. Unmount also snapshots
+- Snapshot keys: own properties only (`snapshotOf` = `Object.hasOwn`), written with `defineProperty`: names like `constructor` / `toString` / `__proto__` are snapshots, not `Object.prototype` members (the scope stays a plain object for resume; FIX-CDK 2026-11-01, upstream RAC has the same gap)
 - Ordering: per scope ONE microtask runs phase 0 (snapshots) → 1 (consumers) → 2 (exit checks), so effect order between instances never matters (React: all cleanups before all setups). Tasks of a superseded effect run are dropped (`run` counter)
 - Resume: no JS before the first change; state starts from `isVisible`. Show keyed per instance (never adopts the server element)
 - Server: no effect, no `data-entering` / `data-exiting`; client detection `typeof requestAnimationFrame === "function"` (compiler rejects `window` / `document` reads in component code)
