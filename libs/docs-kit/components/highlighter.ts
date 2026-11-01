@@ -140,12 +140,17 @@ export interface Token {
   cls: string;
 }
 
-/** Tokens per line of `text` (grammar loaded); shared by the browser (`highlightPre`) and the build (`loadTokenizer`). */
-function tokensOf(highlighter: HighlighterCore, text: string, lang: Lang): Token[][] {
+/**
+ * Tokens per line of `text` (grammar loaded); shared by the browser (`highlightPre`) and the build (`loadTokenizer`).
+ * `timeLimit`: Shiki's per-line `tokenizeTimeLimit` (ms; a line past it stays plain from there). The browser keeps
+ * Shiki's 500 ms guard; the build passes 0 (no limit): its tokens must not depend on host speed, they go into the
+ * persistent token store (a cold CI runner left first lines plain, CI-RED 2026-11-01).
+ */
+function tokensOf(highlighter: HighlighterCore, text: string, lang: Lang, timeLimit?: number): Token[][] {
   const lightFg = highlighter.getTheme(THEMES.light).fg;
   const darkFg = highlighter.getTheme(THEMES.dark).fg;
   const fg = { light: lightFg, dark: darkFg };
-  return highlighter.codeToTokensWithThemes(text, { lang: IDS[lang], themes: THEMES }).map((tokenLine) =>
+  return highlighter.codeToTokensWithThemes(text, { lang: IDS[lang], themes: THEMES, tokenizeTimeLimit: timeLimit }).map((tokenLine) =>
     tokenLine.map((token) => {
       const light = token.variants.light!,
         dark = token.variants.dark!;
@@ -163,7 +168,7 @@ export async function loadTokenizer(langs: readonly Lang[]): Promise<(text: stri
   for (const lang of langs) await grammar(highlighter, lang);
   return (text, name) => {
     const lang = langOf(name);
-    return lang && langs.includes(lang) ? tokensOf(highlighter, text, lang) : undefined;
+    return lang && langs.includes(lang) ? tokensOf(highlighter, text, lang, 0) : undefined;
   };
 }
 

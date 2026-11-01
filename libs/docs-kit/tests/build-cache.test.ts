@@ -4,7 +4,7 @@ import { strict as assert } from "node:assert";
 import { mkdir, mkdtemp, readdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, beforeAll, test } from "vitest";
+import { afterAll, beforeAll, test, vi } from "vitest";
 import { buildCache, buildCacheRoot, digest } from "../tools/build-cache.ts";
 import { DEFER_ACTIVATOR, inlineCriticalPages } from "../tools/critical-css.ts";
 import { cachedTokenize, pageTokenizer } from "../tools/highlight-pages.ts";
@@ -71,6 +71,21 @@ test("cachedTokenize: tokens from the store equal fresh ones; unknown languages 
   assert.equal(cachedTokenize(counted, cache)("x", "nope"), tokenize("x", "nope"));
   assert.equal(cachedTokenize(counted, cache)("x", "nope"), tokenize("x", "nope"));
   assert.equal(calls, 2);
+});
+
+test("build tokens do not depend on host speed: a line slower than Shiki's time limit is still fully coloured", async () => {
+  // CI-RED 2026-11-01: on a cold 2-vCPU runner the first line took > 500 ms (Shiki's default `tokenizeTimeLimit`), was
+  // left plain, and the plain tokens went into the persistent store. Every `Date.now()` here advances 1 s.
+  const tokenize = await pageTokenizer();
+  const code = "const a = 1;\nexport function f() {\n  return a;\n}";
+  const fresh = tokenize(code, "ts");
+  let now = Date.now();
+  const clock = vi.spyOn(Date, "now").mockImplementation(() => (now += 1000));
+  try {
+    assert.deepEqual(tokenize(code, "ts"), fresh);
+  } finally {
+    clock.mockRestore();
+  }
 });
 
 const SHELL = `<script>for(var l of document.querySelectorAll('${DEFER_ACTIVATOR}'))l.rel="stylesheet"</script>`;
