@@ -195,7 +195,17 @@ async function run(page, step) {
     await page.waitForFunction(([s, t]) => document.querySelector(s)?.textContent?.includes(t) ?? false, step.expect, { timeout: 5000 });
 }
 
-const stable = (text) => text.replace(/127\.0\.0\.1:\d+/g, "127.0.0.1:4173");
+// Wall-clock times rendered into a page (playground `/slots` `renderedAt`, docs example resume-demo's build time) change
+// every run, and their digits alone moved the HTML's brotli size by up to 48 B (CI-RED 2026-11-01: `/slots` +6, resume-demo
+// `/` +16 over a same-commit baseline): each date-time is measured as one fixed instant in its own format.
+const FIXED_DIGITS = "20260101000000"; // 2026-01-01 00:00:00, fractional seconds 0
+const stable = (text) =>
+  text
+    .replace(/127\.0\.0\.1:\d+/g, "127.0.0.1:4173")
+    .replace(/\b\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d(?:\.\d+)?Z?/g, (time) => {
+      let digit = 0;
+      return time.replace(/\d/g, () => FIXED_DIGITS[digit++] ?? "0");
+    });
 
 /** Load one route in Chromium and measure it. */
 async function measure(browser, url, client, route, sizes, saveAs) {
