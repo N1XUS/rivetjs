@@ -64,7 +64,12 @@ export async function serveSwappable(dir: string, port: number, host = "127.0.0.
         if (--inflight === 0) idle?.();
       });
       listener(req, res);
-    })();
+    })().catch((error: unknown) => {
+      // A synchronous throw of the listener: answer, do not end the preview process with an unhandled rejection.
+      console.error("[docs-kit] serve:", error);
+      if (!res.headersSent) res.writeHead(500).end();
+      else res.destroy();
+    });
   });
   const sockets = new Set<Socket>();
   server.on("connection", (socket) => {
