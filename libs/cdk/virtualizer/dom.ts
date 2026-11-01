@@ -230,6 +230,15 @@ export function createScrollView(element: HTMLElement, options: ScrollViewOption
     // No reentrancy: a resize observer firing from the relayout this causes would loop.
     if (isUpdatingSize) return;
     isUpdatingSize = true;
+    // `finally`: a throwing listener (`onVisibleRectChange` / `onSizeChange`) must not leave the flag set, which
+    // dropped every later size update of this scroller.
+    try {
+      measure();
+    } finally {
+      isUpdatingSize = false;
+    }
+  };
+  const measure = () => {
     const clientWidth = element.clientWidth;
     const clientHeight = element.clientHeight;
     const viewportWidth = window.innerWidth;
@@ -248,7 +257,6 @@ export function createScrollView(element: HTMLElement, options: ScrollViewOption
         options.onSizeChange?.(state.size);
       }
     }
-    isUpdatingSize = false;
   };
 
   // Border-box observation: content-box would loop when scrollbars appear or disappear.
