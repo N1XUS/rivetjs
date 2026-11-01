@@ -2,7 +2,8 @@
 // `@rivetjs/kit/icon` and `Check` imported from `lucide` becomes the inline `<svg>` the component would render, so
 // it compiles to one static template (client: a clone, server: one pre-escaped chunk; no component call, no
 // resume state). Applied by the Vite plugin to the source before every compile (both targets see the same text,
-// so resume symbol ids agree). Only constant, simple props are rewritten; anything else keeps the component call.
+// so resume symbol ids agree). Root props must be constant and simple, except class: its expression stays a native
+// binding over static shapes. Explicit aria-hidden="true" repeats the default. Other dynamic props keep the component.
 // Output bytes equal `Icon`'s (`libs/compiler/tests/static-icons.test.ts` checks every lucide icon).
 import { parseSync } from "vite";
 
@@ -115,13 +116,14 @@ function declares(node: Node): boolean {
   }
 }
 
-/** `<svg …>…</svg>` for one `<Icon …/>`, or null when a prop is not a rewritable constant. */
+/** `<svg …>…</svg>` for one proven `<Icon …/>`; class alone may remain a live native expression. */
 function inline(element: Node, lucide: Map<string, string>, exports: Record<string, unknown>, source: string): string | null {
   let icon: IconNode | null = null,
     size: string | number = 24,
     stroke: string | number = 2,
     color = "currentColor",
-    absolute = false;
+    absolute = false,
+    liveClass = "";
   const extra: [string, string][] = [];
   const seen = new Set<string>();
   for (const attribute of (element.openingElement as Node).attributes as Node[]) {
@@ -147,6 +149,14 @@ function inline(element: Node, lucide: Map<string, string>, exports: Record<stri
     } else if (name === "color") {
       if (typeof value !== "string") return null;
       color = value;
+    } else if (name === "aria-hidden" && value === "true") {
+      // Already a lucide default. Keeping another attribute would duplicate it in the native template.
+    } else if (name === "class" && value === undefined && (attribute.value as Node | null)?.type === "JSXExpressionContainer") {
+      const node = attribute.value as Node;
+      if ((node.expression as Node).type === "JSXEmptyExpression") return null;
+      // Preserve the expression verbatim: it remains one native class binding, never evaluated by this pass.
+      liveClass = source.slice(node.start, node.end);
+      extra.push([name, ""]);
     } else if (name === "class" || name.startsWith("data-")) {
       if (typeof value !== "string" || !NAME.test(name)) return null;
       extra.push([name, value]);
@@ -182,8 +192,10 @@ function inline(element: Node, lucide: Map<string, string>, exports: Record<stri
   }
   if (attributes.some(([, v]) => !PLAIN.test(v))) return null;
   // Same line count as the element it replaces: later diagnostics / source map lines stay put.
-  const lines = "\n".repeat((source.slice(element.start, element.end).match(/\n/g) ?? []).length);
-  return "<svg " + attributes.map(([k, v]) => k + '="' + v + '"').join(" ") + lines + ">" + shapes + "</svg>";
+  const lines = "\n".repeat((source.slice(element.start, element.end).match(/\n/g) ?? []).length - (liveClass.match(/\n/g) ?? []).length);
+  return (
+    "<svg " + attributes.map(([k, v]) => (k === "class" && liveClass ? "class=" + liveClass : k + '="' + v + '"')).join(" ") + lines + ">" + shapes + "</svg>"
+  );
 }
 
 /** A JSX attribute's constant value: bare (true), a string, or `{literal}`; undefined otherwise. */

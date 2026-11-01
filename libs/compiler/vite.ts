@@ -247,8 +247,8 @@ export interface RivetOptions {
   exclude?: FilterPattern;
   /**
    * Compile-time icons (default true): `<Icon icon={Check} size={16} class="x" />` (`Icon` from
-   * `@rivetjs/kit/icon`, `Check` imported from `lucide`, constant props only) compiles as the inline
-   * `<svg>` it renders — same markup, one static template, no component call. `false` keeps every call.
+   * `@rivetjs/kit/icon`, `Check` imported from `lucide`, constant root props, optionally live class) compiles as the inline
+   * `<svg>` it renders — same markup, static shapes plus an optional class binding, no component call. `false` keeps every call.
    */
   staticIcons?: boolean;
   /**

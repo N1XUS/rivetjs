@@ -48,20 +48,26 @@ test("every lucide icon × constant prop sets: inline svg, same server bytes as 
   }
 });
 
-test("only constant simple props on an imported lucide binding are rewritten", async () => {
+test("only proven root props on an imported lucide binding are rewritten", async () => {
   const cases: [string, boolean][] = [
     ['<Icon icon={Check} size={16} class="x" />', true],
     ['<Icon icon={Check} title="Done" />', false], // accessible name: component
     ['<Icon icon={Check} aria-label="Done" />', false],
     ["<Icon icon={Check} size={n} />", false], // not a constant
     ["<Icon icon={Check} {...rest} />", false],
+    ['<Icon icon={Check} class={cls} aria-hidden="true" />', true],
+    ['<Icon icon={Check} class={cls} aria-hidden="false" />', false],
+    ["<Icon icon={Check} class={cls} data-live={n} />", false],
+    ['<Icon icon={Check} class={cls} title="Name" />', false],
+    ["<Icon icon={Check} class={cls} onClick={() => {}} />", false],
+    ['<Icon icon={Check} class={cls} class="duplicate" />', false],
     ['<Icon icon={Check} style={{ color: "red" }} />', false],
     ['<Icon icon={Check} class="a&amp;b" />', false], // entity: JSX decoding is the compiler's
     ["<Icon icon={Other} />", false], // not a lucide import
     ["<Icon icon={Check}></Icon>", true],
   ];
   for (const [element, rewritten] of cases) {
-    const source = `import { Icon } from ${KIT};\nimport { Check } from "lucide";\nconst Other = Check, n = 3, rest = {};\nexport const A = () => ${element};\n`;
+    const source = `import { Icon } from ${KIT};\nimport { Check } from "lucide";\nconst Other = Check, n = 3, cls = "x", rest = {};\nexport const A = () => ${element};\n`;
     const out = staticIcons(source, "a.tsx", load);
     assert.equal(!out.includes("<Icon "), rewritten, element);
   }
@@ -110,5 +116,33 @@ test("Vite plugin: both targets inline icons (lucide from the importer's resolut
     assert.match(plugin()(ssr), /M20 6 9 17l-5-5/);
     assert.match(plugin({ staticIcons: false })(ssr), /Icon/);
     assert.doesNotMatch(plugin({ staticIcons: false })(ssr), /M20 6 9 17l-5-5/);
+  }
+});
+
+test("a static glyph with a live class keeps native SVG and matching server output", async () => {
+  for (const value of ["active", "", null, undefined, 0, 17, 42n, false, true, ["array", "tokens"], { selected: true, absent: false }, '<>&"😀']) {
+    const source = page(["Check"], '<Icon icon={Check} size={16} class={classes()} aria-hidden="true" data-slot="icon" />').replace(
+      "export function Page",
+      "const classes = () => (" + (typeof value === "bigint" ? value + "n" : (JSON.stringify(value) ?? "undefined")) + ");\nexport function Page",
+    );
+    const rewritten = staticIcons(source, "page.tsx", load);
+    assert.doesNotMatch(rewritten.slice(rewritten.indexOf("export function")), /<Icon /, "live class retains the runtime Icon component");
+    assert.match(rewritten, /class=\{classes\(\)\}/, "class expression remains a native attribute");
+    assert.equal(rewritten.split("\n").length, source.split("\n").length);
+    assert.equal(await render(rewritten), await render(source), String(value));
+  }
+});
+
+test("a live icon class preserves multiline offsets and server evaluation order", async () => {
+  for (const extra of ["", ' aria-hidden="true" data-slot="icon"']) {
+    const source = page(
+      ["Check"],
+      '<span>{mark("before")}</span><Icon icon={Check} class={\n /* 😀 */ mark("class")\n}' +
+        extra +
+        ' /><span>{mark("after")}</span><output>{trace.join("|")}</output>',
+    ).replace("export function Page", "const trace: string[] = []; const mark = (s: string) => (trace.push(s), s);\nexport function Page");
+    const rewritten = staticIcons(source, "page.tsx", load);
+    assert.equal(rewritten.split("\n").length, source.split("\n").length);
+    assert.equal(await render(rewritten), await render(source), extra);
   }
 });

@@ -235,7 +235,7 @@ import { ArrowRight, LoaderCircle } from "lucide";
 - The icon is hidden from screen readers unless you give it a `title` or `aria-label`.
 - It renders the same on the server, in the browser and after resume. An icon with fixed props costs no resume state.
 - Each icon's shapes are built once and reused: the browser clones them, the server writes one cached chunk. Treat lucide icon arrays as constants; to draw another icon, pass another array.
-- In Vite builds, an `Icon` whose `icon` is a lucide import and whose other props are constants (`size`, `color`, `strokeWidth`, `absoluteStrokeWidth`, `class`, `data-*`) compiles into the SVG markup itself, so no component runs. The markup is the same. `rivet({ staticIcons: false })` (or `rivetRouter({ staticIcons: false })` in file-routed apps) turns this off.
+- In Vite builds, an `Icon` whose `icon` is a lucide import and whose root props are constants (`size`, `color`, `strokeWidth`, `absoluteStrokeWidth`, `data-*`) compiles into the SVG markup itself, so no component runs. A `class` expression may stay live: the shapes remain static and the SVG class updates through a native binding. Explicit `aria-hidden="true"` is also supported. Other live root props, spreads, handlers and accessible-name props keep `Icon`. The markup is the same. `rivet({ staticIcons: false })` (or `rivetRouter({ staticIcons: false })` in file-routed apps) turns this off.
 
 ## Strict CSP and Trusted Types
 

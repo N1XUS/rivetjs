@@ -89,3 +89,5 @@ Scheduler component evidence (2026-10-23) is linked from `content/about/benchmar
 - Framework-components guide covers all five adapters, native Vite ownership, Vue setup modules, scoped SSR CSS and native head/title ownership limits. Adapter correctness tests are maintained in each bridge package; no new competitor performance claim accompanies these adapters.
 
 - API config indexes solid()/vue()/svelte() and their adapter option types alongside React/Preact; regenerate committed src/generated/api.json with these entries.
+
+- Icon compilation (2026-11-01): Kit/config docs describe a fixed imported lucide glyph with a live class as native SVG plus one class binding. Other live root props and named-icon/accessibility forms stay on the component path; staticIcons:false remains the opt-out.

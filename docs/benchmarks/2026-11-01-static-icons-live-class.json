@@ -1,0 +1,1073 @@
+{
+  "base": "ab5ee94cad89f7ced0835dae0743f00c90244d65",
+  "approach": "Static imported lucide glyph + live native class; no expression evaluation at build time",
+  "node": "v24.18.1",
+  "network": {
+    "protocol": "3 rotating A/B repetitions; cold contexts, production immutable hashed-asset cache, Brotli11; initial navigation networkidle; after scroll and native touch/keyboard DOM assertions require500ms of unchanged local JS ledger within15s; non-JS iframe traffic does not define the measurement boundary; local JS body transfer recorded by server; external origins recorded separately; no request interception/cache disabling; timings not compared",
+    "rows": [
+      {
+        "scenario": "button",
+        "A": {
+          "rawUnique": {
+            "median": 173072,
+            "min": 173072,
+            "max": 173072
+          },
+          "transferredBody": {
+            "median": 61754,
+            "min": 61754,
+            "max": 61754
+          },
+          "requests": {
+            "median": 37,
+            "min": 37,
+            "max": 37
+          },
+          "uniqueFiles": {
+            "median": 37,
+            "min": 37,
+            "max": 37
+          }
+        },
+        "B": {
+          "rawUnique": {
+            "median": 167698,
+            "min": 167698,
+            "max": 167698
+          },
+          "transferredBody": {
+            "median": 59623,
+            "min": 59623,
+            "max": 59623
+          },
+          "requests": {
+            "median": 35,
+            "min": 35,
+            "max": 35
+          },
+          "uniqueFiles": {
+            "median": 35,
+            "min": 35,
+            "max": 35
+          }
+        }
+      },
+      {
+        "scenario": "prompt-input",
+        "A": {
+          "rawUnique": {
+            "median": 282044,
+            "min": 282044,
+            "max": 282044
+          },
+          "transferredBody": {
+            "median": 102724,
+            "min": 102724,
+            "max": 102724
+          },
+          "requests": {
+            "median": 80,
+            "min": 80,
+            "max": 80
+          },
+          "uniqueFiles": {
+            "median": 80,
+            "min": 80,
+            "max": 80
+          }
+        },
+        "B": {
+          "rawUnique": {
+            "median": 282461,
+            "min": 282461,
+            "max": 282461
+          },
+          "transferredBody": {
+            "median": 102345,
+            "min": 102345,
+            "max": 102345
+          },
+          "requests": {
+            "median": 77,
+            "min": 77,
+            "max": 77
+          },
+          "uniqueFiles": {
+            "median": 77,
+            "min": 77,
+            "max": 77
+          }
+        }
+      },
+      {
+        "scenario": "tabs",
+        "A": {
+          "rawUnique": {
+            "median": 237306,
+            "min": 237306,
+            "max": 237306
+          },
+          "transferredBody": {
+            "median": 82184,
+            "min": 82184,
+            "max": 82184
+          },
+          "requests": {
+            "median": 48,
+            "min": 48,
+            "max": 48
+          },
+          "uniqueFiles": {
+            "median": 48,
+            "min": 48,
+            "max": 48
+          }
+        },
+        "B": {
+          "rawUnique": {
+            "median": 237306,
+            "min": 237306,
+            "max": 237306
+          },
+          "transferredBody": {
+            "median": 82184,
+            "min": 82184,
+            "max": 82184
+          },
+          "requests": {
+            "median": 48,
+            "min": 48,
+            "max": 48
+          },
+          "uniqueFiles": {
+            "median": 48,
+            "min": 48,
+            "max": 48
+          }
+        }
+      },
+      {
+        "scenario": "modal",
+        "A": {
+          "rawUnique": {
+            "median": 304835,
+            "min": 304835,
+            "max": 304835
+          },
+          "transferredBody": {
+            "median": 112491,
+            "min": 112491,
+            "max": 112491
+          },
+          "requests": {
+            "median": 96,
+            "min": 96,
+            "max": 96
+          },
+          "uniqueFiles": {
+            "median": 96,
+            "min": 96,
+            "max": 96
+          }
+        },
+        "B": {
+          "rawUnique": {
+            "median": 304835,
+            "min": 304835,
+            "max": 304835
+          },
+          "transferredBody": {
+            "median": 112491,
+            "min": 112491,
+            "max": 112491
+          },
+          "requests": {
+            "median": 96,
+            "min": 96,
+            "max": 96
+          },
+          "uniqueFiles": {
+            "median": 96,
+            "min": 96,
+            "max": 96
+          }
+        }
+      }
+    ],
+    "repetitions": 3,
+    "interactions": 24,
+    "load1": {
+      "min": 4.466796875,
+      "max": 5.09814453125
+    }
+  },
+  "frames": [
+    {
+      "id": "tutorial-02",
+      "A": {
+        "site": "docs",
+        "html": 3369,
+        "holes": 0,
+        "records": 0,
+        "stateBytes": 0,
+        "inlineJsBytes": 2323,
+        "files": 0,
+        "jsRaw": 0,
+        "jsGz": 0,
+        "jsBr": 0,
+        "urls": []
+      },
+      "B": {
+        "site": "docs",
+        "html": 3369,
+        "holes": 0,
+        "records": 0,
+        "stateBytes": 0,
+        "inlineJsBytes": 2323,
+        "files": 0,
+        "jsRaw": 0,
+        "jsGz": 0,
+        "jsBr": 0,
+        "urls": []
+      }
+    },
+    {
+      "id": "resume-demo",
+      "A": {
+        "site": "docs",
+        "html": 7452,
+        "holes": 2,
+        "records": 1,
+        "stateBytes": 162,
+        "inlineJsBytes": 6290,
+        "files": 2,
+        "jsRaw": 6011,
+        "jsGz": 2986,
+        "jsBr": 2714,
+        "urls": [
+          "/assets/dom-lite.js",
+          "/assets/index.js"
+        ]
+      },
+      "B": {
+        "site": "docs",
+        "html": 7452,
+        "holes": 2,
+        "records": 1,
+        "stateBytes": 162,
+        "inlineJsBytes": 6290,
+        "files": 2,
+        "jsRaw": 6011,
+        "jsGz": 2986,
+        "jsBr": 2714,
+        "urls": [
+          "/assets/dom-lite.js",
+          "/assets/index.js"
+        ]
+      }
+    },
+    {
+      "id": "tutorial-03",
+      "A": {
+        "site": "docs",
+        "html": 8306,
+        "holes": 3,
+        "records": 3,
+        "stateBytes": 173,
+        "inlineJsBytes": 6290,
+        "files": 2,
+        "jsRaw": 6028,
+        "jsGz": 2995,
+        "jsBr": 2729,
+        "urls": [
+          "/assets/BookCard.js",
+          "/assets/dom-lite.js"
+        ]
+      },
+      "B": {
+        "site": "docs",
+        "html": 8306,
+        "holes": 3,
+        "records": 3,
+        "stateBytes": 173,
+        "inlineJsBytes": 6290,
+        "files": 2,
+        "jsRaw": 6028,
+        "jsGz": 2995,
+        "jsBr": 2729,
+        "urls": [
+          "/assets/BookCard.js",
+          "/assets/dom-lite.js"
+        ]
+      }
+    },
+    {
+      "id": "tutorial-04",
+      "A": {
+        "site": "docs",
+        "html": 8578,
+        "holes": 3,
+        "records": 1,
+        "stateBytes": 343,
+        "inlineJsBytes": 6290,
+        "files": 3,
+        "jsRaw": 7912,
+        "jsGz": 4041,
+        "jsBr": 3667,
+        "urls": [
+          "/assets/dom-lite.js",
+          "/assets/dom-lite-list.js",
+          "/assets/index.js"
+        ]
+      },
+      "B": {
+        "site": "docs",
+        "html": 8578,
+        "holes": 3,
+        "records": 1,
+        "stateBytes": 343,
+        "inlineJsBytes": 6290,
+        "files": 3,
+        "jsRaw": 7912,
+        "jsGz": 4041,
+        "jsBr": 3667,
+        "urls": [
+          "/assets/dom-lite.js",
+          "/assets/dom-lite-list.js",
+          "/assets/index.js"
+        ]
+      }
+    },
+    {
+      "id": "card-slots",
+      "A": {
+        "site": "docs",
+        "html": 8439,
+        "holes": 13,
+        "records": 3,
+        "stateBytes": 270,
+        "inlineJsBytes": 6290,
+        "files": 2,
+        "jsRaw": 92242,
+        "jsGz": 32985,
+        "jsBr": 29882,
+        "urls": [
+          "/assets/derived-runtime.js",
+          "/assets/index.js"
+        ]
+      },
+      "B": {
+        "site": "docs",
+        "html": 8439,
+        "holes": 13,
+        "records": 3,
+        "stateBytes": 270,
+        "inlineJsBytes": 6290,
+        "files": 2,
+        "jsRaw": 92242,
+        "jsGz": 32985,
+        "jsBr": 29882,
+        "urls": [
+          "/assets/derived-runtime.js",
+          "/assets/index.js"
+        ]
+      }
+    },
+    {
+      "id": "computed-total",
+      "A": {
+        "site": "docs",
+        "html": 9318,
+        "holes": 10,
+        "records": 1,
+        "stateBytes": 131,
+        "inlineJsBytes": 6290,
+        "files": 4,
+        "jsRaw": 8430,
+        "jsGz": 4304,
+        "jsBr": 3910,
+        "urls": [
+          "/assets/dom-lite.js",
+          "/assets/dom-lite-attr.js",
+          "/assets/dom-lite-list.js",
+          "/assets/index.js"
+        ]
+      },
+      "B": {
+        "site": "docs",
+        "html": 9318,
+        "holes": 10,
+        "records": 1,
+        "stateBytes": 131,
+        "inlineJsBytes": 6290,
+        "files": 4,
+        "jsRaw": 8430,
+        "jsGz": 4304,
+        "jsBr": 3910,
+        "urls": [
+          "/assets/dom-lite.js",
+          "/assets/dom-lite-attr.js",
+          "/assets/dom-lite-list.js",
+          "/assets/index.js"
+        ]
+      }
+    },
+    {
+      "id": "todo-list",
+      "A": {
+        "site": "docs",
+        "html": 8031,
+        "holes": 3,
+        "records": 1,
+        "stateBytes": 146,
+        "inlineJsBytes": 6290,
+        "files": 5,
+        "jsRaw": 9189,
+        "jsGz": 4808,
+        "jsBr": 4325,
+        "urls": [
+          "/assets/dom-lite.js",
+          "/assets/dom-lite-attr.js",
+          "/assets/dom-lite-list.js",
+          "/assets/dom-lite-model.js",
+          "/assets/index.js"
+        ]
+      },
+      "B": {
+        "site": "docs",
+        "html": 8031,
+        "holes": 3,
+        "records": 1,
+        "stateBytes": 146,
+        "inlineJsBytes": 6290,
+        "files": 5,
+        "jsRaw": 9189,
+        "jsGz": 4808,
+        "jsBr": 4325,
+        "urls": [
+          "/assets/dom-lite.js",
+          "/assets/dom-lite-attr.js",
+          "/assets/dom-lite-list.js",
+          "/assets/dom-lite-model.js",
+          "/assets/index.js"
+        ]
+      }
+    },
+    {
+      "id": "button-basic",
+      "A": {
+        "site": "ui",
+        "html": 7517,
+        "holes": 1,
+        "records": 2,
+        "stateBytes": 205,
+        "inlineJsBytes": 6290,
+        "files": 2,
+        "jsRaw": 92026,
+        "jsGz": 32901,
+        "jsBr": 29841,
+        "urls": [
+          "/assets/button-lite.js",
+          "/assets/derived-runtime.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 7517,
+        "holes": 1,
+        "records": 2,
+        "stateBytes": 205,
+        "inlineJsBytes": 6290,
+        "files": 2,
+        "jsRaw": 92026,
+        "jsGz": 32901,
+        "jsBr": 29841,
+        "urls": [
+          "/assets/button-lite.js",
+          "/assets/derived-runtime.js"
+        ]
+      }
+    },
+    {
+      "id": "close-button-default",
+      "A": {
+        "site": "ui",
+        "html": 3439,
+        "holes": 1,
+        "records": 0,
+        "stateBytes": 0,
+        "inlineJsBytes": 2323,
+        "files": 0,
+        "jsRaw": 0,
+        "jsGz": 0,
+        "jsBr": 0,
+        "urls": []
+      },
+      "B": {
+        "site": "ui",
+        "html": 3439,
+        "holes": 1,
+        "records": 0,
+        "stateBytes": 0,
+        "inlineJsBytes": 2323,
+        "files": 0,
+        "jsRaw": 0,
+        "jsGz": 0,
+        "jsBr": 0,
+        "urls": []
+      }
+    },
+    {
+      "id": "prompt-suggestion-basic",
+      "A": {
+        "site": "ui",
+        "html": 9140,
+        "holes": 2,
+        "records": 9,
+        "stateBytes": 492,
+        "inlineJsBytes": 6290,
+        "files": 7,
+        "jsRaw": 150664,
+        "jsGz": 53788,
+        "jsBr": 48787,
+        "urls": [
+          "/assets/derived-runtime.js",
+          "/assets/focus-visible.js",
+          "/assets/id-dom.js",
+          "/assets/press.js",
+          "/assets/prompt-suggestion.js",
+          "/assets/routes.js",
+          "/assets/tv.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 9140,
+        "holes": 2,
+        "records": 9,
+        "stateBytes": 492,
+        "inlineJsBytes": 6290,
+        "files": 7,
+        "jsRaw": 150664,
+        "jsGz": 53788,
+        "jsBr": 48787,
+        "urls": [
+          "/assets/derived-runtime.js",
+          "/assets/focus-visible.js",
+          "/assets/id-dom.js",
+          "/assets/press.js",
+          "/assets/prompt-suggestion.js",
+          "/assets/routes.js",
+          "/assets/tv.js"
+        ]
+      }
+    },
+    {
+      "id": "prompt-input-basic",
+      "A": {
+        "site": "ui",
+        "html": 13568,
+        "holes": 12,
+        "records": 22,
+        "stateBytes": 1481,
+        "inlineJsBytes": 6290,
+        "files": 19,
+        "jsRaw": 216749,
+        "jsGz": 79505,
+        "jsBr": 71877,
+        "urls": [
+          "/assets/button.js",
+          "/assets/chat.js",
+          "/assets/circle-alert.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom-tags.js",
+          "/assets/focus.js",
+          "/assets/focus-visible.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/index.js",
+          "/assets/keyboard.js",
+          "/assets/loader-circle.js",
+          "/assets/position.js",
+          "/assets/press.js",
+          "/assets/prompt-input.js",
+          "/assets/routes.js",
+          "/assets/tooltip.js",
+          "/assets/tooltip.js",
+          "/assets/tv.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 13300,
+        "holes": 4,
+        "records": 22,
+        "stateBytes": 1481,
+        "inlineJsBytes": 6290,
+        "files": 16,
+        "jsRaw": 212025,
+        "jsGz": 76949,
+        "jsBr": 69631,
+        "urls": [
+          "/assets/button.js",
+          "/assets/chat.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom-tags.js",
+          "/assets/focus.js",
+          "/assets/focus-visible.js",
+          "/assets/id-dom.js",
+          "/assets/index.js",
+          "/assets/keyboard.js",
+          "/assets/position.js",
+          "/assets/press.js",
+          "/assets/prompt-input.js",
+          "/assets/routes.js",
+          "/assets/tooltip.js",
+          "/assets/tooltip.js",
+          "/assets/tv.js"
+        ]
+      }
+    },
+    {
+      "id": "chain-of-thought-basic",
+      "A": {
+        "site": "ui",
+        "html": 13702,
+        "holes": 15,
+        "records": 14,
+        "stateBytes": 1358,
+        "inlineJsBytes": 6290,
+        "files": 13,
+        "jsRaw": 208443,
+        "jsGz": 73294,
+        "jsBr": 66030,
+        "urls": [
+          "/assets/chain-of-thought.js",
+          "/assets/derived-runtime.js",
+          "/assets/disclosure.js",
+          "/assets/dist.js",
+          "/assets/dom-tags.js",
+          "/assets/focus-visible.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/live-element.js",
+          "/assets/loader-circle.js",
+          "/assets/press.js",
+          "/assets/routes.js",
+          "/assets/tv.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 13668,
+        "holes": 15,
+        "records": 14,
+        "stateBytes": 1358,
+        "inlineJsBytes": 6290,
+        "files": 12,
+        "jsRaw": 208358,
+        "jsGz": 73190,
+        "jsBr": 65935,
+        "urls": [
+          "/assets/chain-of-thought.js",
+          "/assets/derived-runtime.js",
+          "/assets/disclosure.js",
+          "/assets/dist.js",
+          "/assets/dom-tags.js",
+          "/assets/focus-visible.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/live-element.js",
+          "/assets/press.js",
+          "/assets/routes.js",
+          "/assets/tv.js"
+        ]
+      }
+    },
+    {
+      "id": "chat-attachment-basic",
+      "A": {
+        "site": "ui",
+        "html": 11662,
+        "holes": 9,
+        "records": 5,
+        "stateBytes": 561,
+        "inlineJsBytes": 6290,
+        "files": 10,
+        "jsRaw": 173857,
+        "jsGz": 63272,
+        "jsBr": 57297,
+        "urls": [
+          "/assets/button.js",
+          "/assets/chat.js",
+          "/assets/chat-attachment.js",
+          "/assets/derived-runtime.js",
+          "/assets/focus-visible.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/press.js",
+          "/assets/routes.js",
+          "/assets/tv.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 11662,
+        "holes": 9,
+        "records": 5,
+        "stateBytes": 561,
+        "inlineJsBytes": 6290,
+        "files": 10,
+        "jsRaw": 173999,
+        "jsGz": 63263,
+        "jsBr": 57288,
+        "urls": [
+          "/assets/button.js",
+          "/assets/chat.js",
+          "/assets/chat-attachment.js",
+          "/assets/derived-runtime.js",
+          "/assets/focus-visible.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/press.js",
+          "/assets/routes.js",
+          "/assets/tv.js"
+        ]
+      }
+    },
+    {
+      "id": "data-grid-selection",
+      "A": {
+        "site": "ui",
+        "html": 17837,
+        "holes": 29,
+        "records": 3,
+        "stateBytes": 369,
+        "inlineJsBytes": 6290,
+        "files": 13,
+        "jsRaw": 155430,
+        "jsGz": 56966,
+        "jsBr": 51497,
+        "urls": [
+          "/assets/data-grid.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom.js",
+          "/assets/dom-tags.js",
+          "/assets/grip-vertical.js",
+          "/assets/i18n.js",
+          "/assets/icon.js",
+          "/assets/index.js",
+          "/assets/live-announcer.js",
+          "/assets/load-more-sentinel.js",
+          "/assets/loader-circle.js",
+          "/assets/spinner.js",
+          "/assets/tv.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 17769,
+        "holes": 29,
+        "records": 3,
+        "stateBytes": 369,
+        "inlineJsBytes": 6290,
+        "files": 11,
+        "jsRaw": 155640,
+        "jsGz": 56874,
+        "jsBr": 51414,
+        "urls": [
+          "/assets/data-grid.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom.js",
+          "/assets/dom-tags.js",
+          "/assets/i18n.js",
+          "/assets/icon.js",
+          "/assets/index.js",
+          "/assets/live-announcer.js",
+          "/assets/load-more-sentinel.js",
+          "/assets/spinner.js",
+          "/assets/tv.js"
+        ]
+      }
+    },
+    {
+      "id": "table-virtualization",
+      "A": {
+        "site": "ui",
+        "html": 47859,
+        "holes": 61,
+        "records": 63,
+        "stateBytes": 17344,
+        "inlineJsBytes": 6559,
+        "files": 23,
+        "jsRaw": 365967,
+        "jsGz": 122041,
+        "jsBr": 109849,
+        "urls": [
+          "/assets/base.js",
+          "/assets/collection-renderer.js",
+          "/assets/components.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom.js",
+          "/assets/dom-tags.js",
+          "/assets/focus.js",
+          "/assets/focus-visible.js",
+          "/assets/i18n.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/index.js",
+          "/assets/keyboard.js",
+          "/assets/keyed.js",
+          "/assets/list-keyboard-delegate.js",
+          "/assets/live-announcer.js",
+          "/assets/load-more-sentinel.js",
+          "/assets/press.js",
+          "/assets/routes.js",
+          "/assets/state.js",
+          "/assets/table-2.js",
+          "/assets/table.js",
+          "/assets/tv.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 47859,
+        "holes": 61,
+        "records": 63,
+        "stateBytes": 17344,
+        "inlineJsBytes": 6559,
+        "files": 23,
+        "jsRaw": 365918,
+        "jsGz": 122028,
+        "jsBr": 109775,
+        "urls": [
+          "/assets/base.js",
+          "/assets/collection-renderer.js",
+          "/assets/components.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom.js",
+          "/assets/dom-tags.js",
+          "/assets/focus.js",
+          "/assets/focus-visible.js",
+          "/assets/i18n.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/index.js",
+          "/assets/keyboard.js",
+          "/assets/keyed.js",
+          "/assets/list-keyboard-delegate.js",
+          "/assets/live-announcer.js",
+          "/assets/load-more-sentinel.js",
+          "/assets/press.js",
+          "/assets/routes.js",
+          "/assets/state.js",
+          "/assets/table-2.js",
+          "/assets/table.js",
+          "/assets/tv.js"
+        ]
+      }
+    },
+    {
+      "id": "scheduler-views",
+      "A": {
+        "site": "ui",
+        "html": 31638,
+        "holes": 104,
+        "records": 29,
+        "stateBytes": 1820,
+        "inlineJsBytes": 6290,
+        "files": 24,
+        "jsRaw": 407793,
+        "jsGz": 142830,
+        "jsBr": 128014,
+        "urls": [
+          "/assets/aria-hide-outside.js",
+          "/assets/base.js",
+          "/assets/behaviour.js",
+          "/assets/button.js",
+          "/assets/components.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom.js",
+          "/assets/dom-tags.js",
+          "/assets/drop-list.js",
+          "/assets/focus.js",
+          "/assets/focus-visible.js",
+          "/assets/i18n.js",
+          "/assets/id-dom.js",
+          "/assets/index.js",
+          "/assets/keyboard.js",
+          "/assets/keyed.js",
+          "/assets/live-element.js",
+          "/assets/menu.js",
+          "/assets/position.js",
+          "/assets/press.js",
+          "/assets/prevent-scroll.js",
+          "/assets/scheduler.js",
+          "/assets/time-grid.js",
+          "/assets/tv.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 31638,
+        "holes": 104,
+        "records": 29,
+        "stateBytes": 1820,
+        "inlineJsBytes": 6290,
+        "files": 24,
+        "jsRaw": 407793,
+        "jsGz": 142830,
+        "jsBr": 128014,
+        "urls": [
+          "/assets/aria-hide-outside.js",
+          "/assets/base.js",
+          "/assets/behaviour.js",
+          "/assets/button.js",
+          "/assets/components.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom.js",
+          "/assets/dom-tags.js",
+          "/assets/drop-list.js",
+          "/assets/focus.js",
+          "/assets/focus-visible.js",
+          "/assets/i18n.js",
+          "/assets/id-dom.js",
+          "/assets/index.js",
+          "/assets/keyboard.js",
+          "/assets/keyed.js",
+          "/assets/live-element.js",
+          "/assets/menu.js",
+          "/assets/position.js",
+          "/assets/press.js",
+          "/assets/prevent-scroll.js",
+          "/assets/scheduler.js",
+          "/assets/time-grid.js",
+          "/assets/tv.js"
+        ]
+      }
+    },
+    {
+      "id": "showcase-kanban",
+      "A": {
+        "site": "ui",
+        "html": 31508,
+        "holes": 58,
+        "records": 84,
+        "stateBytes": 3760,
+        "inlineJsBytes": 6290,
+        "files": 21,
+        "jsRaw": 312676,
+        "jsGz": 106359,
+        "jsBr": 96035,
+        "urls": [
+          "/assets/button.js",
+          "/assets/circle-alert.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom-tags.js",
+          "/assets/drag.js",
+          "/assets/drag-ref.js",
+          "/assets/drop-list.js",
+          "/assets/focus.js",
+          "/assets/focus-visible.js",
+          "/assets/form-validation.js",
+          "/assets/grip-vertical.js",
+          "/assets/i18n.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/keyed.js",
+          "/assets/live-element.js",
+          "/assets/press.js",
+          "/assets/progress-bar.js",
+          "/assets/routes.js",
+          "/assets/state.js",
+          "/assets/tv.js"
+        ]
+      },
+      "B": {
+        "site": "ui",
+        "html": 31441,
+        "holes": 58,
+        "records": 84,
+        "stateBytes": 3760,
+        "inlineJsBytes": 6290,
+        "files": 19,
+        "jsRaw": 312509,
+        "jsGz": 106160,
+        "jsBr": 95853,
+        "urls": [
+          "/assets/button.js",
+          "/assets/derived-runtime.js",
+          "/assets/dom-tags.js",
+          "/assets/drag.js",
+          "/assets/drag-ref.js",
+          "/assets/drop-list.js",
+          "/assets/focus.js",
+          "/assets/focus-visible.js",
+          "/assets/form-validation.js",
+          "/assets/i18n.js",
+          "/assets/icon.js",
+          "/assets/id-dom.js",
+          "/assets/keyed.js",
+          "/assets/live-element.js",
+          "/assets/press.js",
+          "/assets/progress-bar.js",
+          "/assets/routes.js",
+          "/assets/state.js",
+          "/assets/tv.js"
+        ]
+      }
+    }
+  ],
+  "scope": {
+    "timingClaim": false,
+    "universalHydrationClaim": false,
+    "fullSiteAndFrameMeasurementsSeparate": true,
+    "rawGrowthDisclosed": true
+  },
+  "artifacts": {
+    "before-a1.json": "22eafb5f0a16bce509a579ab9cba21595188b0e75a43a4665a3645f48d0a7e5e",
+    "icon-b1.json": "ad50e88baa8025c7f59d4d222d0b50fcadaaeb62dee32ec7252eacaa8bb30d86",
+    "network.json": "9687253928a6334822d7c555f90e5d0511bf22518c5ec63fe0170a7df119bf0f",
+    "network.mjs": "8ce8725e039c3b166026f12cb965b8f7598409b780635cb0266eba4a5c5eec8e",
+    "cached-baseline-proof.json": "74c0f043e8fdcedc71f4c28173abca7f9573aa0bb18ec9af495799a05ffb6913",
+    "frame-updates.json": "6dcec933311c8ccfab17b4bcbbe91f7e022f66b8c59457153b2230065b4a2c71",
+    "icon-red.json": "4f64888d713962b626296dbe85f40c6286369b2b4bab1814cf2de79cc3ad303e",
+    "selected-green.json": "7726777b9cbfffc8a1fa0cc809c2d84b64baa1d4bc5f38a4f1ba8d821b1e6723",
+    "icon-contract-final.json": "b15794d4924ea59525e8a3997de2d6275c0674e0dcf255e9df365e0b9b5b4ddb",
+    "full-ui-candidate-process.json": "10396739e1d4f57b379b4ee53aba9c182ab6ecf6d68ef7add8b429f19bdca208",
+    "coverage.json": "ba5623677c9ed35a3b078a9cc928de6246a34edc9c266818eb1fe615450a22a7",
+    "interrupted-gates.json": "e3235cb3c410ea238be7433f1c95e60bdb0774c5dee17a27f906d2452367b914",
+    "remaining-gates.json": "af3c023eda65c163bf09ee78f37964bbf2e92b101b7a5791b05319c0b34f74e3",
+    "compiler-one-worker.json": "0fe540ed1d7081b6aef0250cafa71d6d29e2bee33e5c8ed94b95a966a772c2d2",
+    "observer-output-proof.json": "b72159e5c35dd3589d8efae1a9e0aa7dec61124fbf9630b12cb51db5b61a72bc",
+    "final-red.json": "4c41228319e6b08d6763e0e92d8cf506a66797e1d21c3aa939eee1eb42862c86",
+    "final-green.json": "11258465f9d791ec21797a51cfd04dc15811e03ae4752f4074b2b7080a1945fa"
+  },
+  "verification": {
+    "coverageKind": "Coverage assembled from44 immutable passing rows before a resource stop, the complete one-worker compiler rerun, and10 subsequent native gates; original memory failure remains failed",
+    "counts": {
+      "pass": 55
+    },
+    "coveredGates": 55,
+    "compiler": {
+      "passed": 511,
+      "skipped": 1,
+      "files": 101,
+      "workers": 1,
+      "peakRssBytes": 1910833152
+    },
+    "originalResourceFailure": {
+      "code": 128,
+      "reason": "memory-limit",
+      "peakRssBytes": 3230793728,
+      "durationMs": 237636
+    },
+    "continuation": {
+      "code": 0,
+      "reason": null,
+      "peakRssBytes": 3109453824,
+      "durationMs": 760835
+    },
+    "capBytes": 3221225472
+  }
+}
