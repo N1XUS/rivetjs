@@ -38,10 +38,12 @@ export async function coloadBuild(root: string, options: ColoadBuildOptions): Pr
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
   const env = { ...vite.env, [COLOAD_ENV]: dir };
-  const previous = reuse && resolve(reuse, USED_PLAN);
-  if (previous && existsSync(previous)) await copyFile(previous, resolve(dir, "plan.json"));
+  // An incremental build reuses the previous build's plan; without one (none written, or removed) it plans like a cold build.
+  const previous = reuse ? resolve(reuse, USED_PLAN) : null;
+  const reused = previous !== null && existsSync(previous);
+  if (reused) await copyFile(previous, resolve(dir, "plan.json"));
   await viteBuild(root, { ...vite, env });
-  if (!previous && existsSync(resolve(dir, "chunks.json"))) {
+  if (!reused && existsSync(resolve(dir, "chunks.json"))) {
     const report = await planChild(root, options.dist, lean);
     log(`coload: ${report.chunks} chunks always loaded together → ${report.groups} groups (${report.pages} pages)`);
     // The compiler's prop-join facts (`@rivetjs/compiler` `vite.ts`, BIG-UI-3): a component no caller passes two joined
