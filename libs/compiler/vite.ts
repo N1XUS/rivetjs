@@ -812,12 +812,15 @@ function bridgeHost(entries: BridgeEntry[]): Plugin {
     },
     async config(config, env) {
       const root = resolve(config.root ?? process.cwd());
-      let mod: { bridgePlugin(entries: BridgeEntry[]): Plugin };
+      // The app's own copy when it has one; only "not installed there" falls back to the compiler's. A copy that fails
+      // to load throws (silently loading another copy would hide the error and mix versions).
+      let own: string | null = null;
       try {
-        mod = await import(pathToFileURL(createRequire(join(root, "package.json")).resolve("@rivetjs/bridge/vite")).href);
-      } catch {
-        mod = await import("@rivetjs/bridge/vite" as string);
+        own = pathToFileURL(createRequire(join(root, "package.json")).resolve("@rivetjs/bridge/vite")).href;
+      } catch (error) {
+        if ((error as { code?: string }).code !== "MODULE_NOT_FOUND") throw error;
       }
+      const mod = (await import(own ?? ("@rivetjs/bridge/vite" as string))) as { bridgePlugin(entries: BridgeEntry[]): Plugin };
       impl = mod.bridgePlugin(entries);
       return hook("config").call(this, config, env) as UserConfig | null;
     },

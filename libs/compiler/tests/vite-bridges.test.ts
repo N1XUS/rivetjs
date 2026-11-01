@@ -121,3 +121,19 @@ test("a bridge-owned .tsx is never Rivet-compiled; an explicit Rivet include cla
     await app.remove();
   }
 });
+
+test("the app's own @rivetjs/bridge copy failing to load is reported, not replaced by another copy", async () => {
+  const app = await fixtureApp("broken-copy");
+  try {
+    const pkg = resolve(app.root, "node_modules/@rivetjs/bridge");
+    await mkdir(pkg, { recursive: true });
+    await writeFile(resolve(pkg, "package.json"), JSON.stringify({ name: "@rivetjs/bridge", type: "module", exports: { "./vite": "./vite.js" } }));
+    await writeFile(resolve(pkg, "vite.js"), `throw new Error("the app's bridge copy is broken");\n`);
+    await assert.rejects(
+      resolveConfig({ configFile: false, root: app.root, logLevel: "silent", plugins: [rivet({ bridges: [app.fake()] })] }, "serve"),
+      /the app's bridge copy is broken/,
+    );
+  } finally {
+    await app.remove();
+  }
+});
