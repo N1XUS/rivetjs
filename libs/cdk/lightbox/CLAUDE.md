@@ -14,7 +14,7 @@ Headless media lightbox: port of yet-another-react-lightbox (YARL) 3.32.2 (MIT, 
 | `lightbox/captions` | `captions/index.tsx` | `LightboxCaptions`, `LightboxCaptionsToggle`, `lightboxCaptionsVisible`, `setLightboxCaptions` |
 | `lightbox/counter` | `counter/index.tsx` | `LightboxCounter` |
 | `lightbox/download` | `download/index.tsx` | `LightboxDownload`, `lightboxSaveAs`, `lightboxDownload`, `lightboxDownloadUrl` / `Filename`, `lightboxCanDownload` |
-| `lightbox/fullscreen` | `fullscreen/index.tsx` | `LightboxFullscreen`, `lightboxEnterFullscreen` / `Exit`, `lightboxFullscreenEnabled` |
+| `lightbox/fullscreen` | `fullscreen/index.tsx` | `LightboxFullscreen`, `lightboxEnterFullscreen` / `Exit`, `lightboxFullscreenEnabled`; `fullscreenchange` listeners per state only during its fullscreen session (FIX-CDK 2026-11-01, `tests/lightbox-fullscreen-listeners.test.ts`) |
 | `lightbox/share` | `share/index.tsx` | `LightboxShare`, `lightboxShare`, `lightboxShareData`, `lightboxCanShare`, `lightboxShareSupported` |
 | `lightbox/slideshow` | `slideshow/index.tsx` | `LightboxSlideshow`, `lightboxPlay` / `lightboxPause` |
 | `lightbox/thumbnails` | `thumbnails/index.tsx` | `LightboxThumbnails`, `LightboxThumbnailsToggle`, `lightboxThumbnailSrc`, visibility helpers |

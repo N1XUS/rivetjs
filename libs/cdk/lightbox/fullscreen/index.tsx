@@ -3,7 +3,8 @@
 // Rivet:
 // - `<LightboxFullscreen>` toggle button part; the fullscreen element is the lightbox root (`[data-lightbox-root]`, or the
 //   inline root / container), with WebKit prefixes like YARL.
-// - State in `state.fullscreen` (resumable), synced from `fullscreenchange` (listener installed on first use).
+// - State in `state.fullscreen` (resumable), synced from `fullscreenchange` (listeners installed on enter, removed when
+//   the session ends).
 // - `auto`: enter when the (modal) lightbox opens (YARL `auto`); leaving the lightbox exits fullscreen.
 // - Hidden when the Fullscreen API is unavailable (YARL renders nothing; iOS Safari).
 import { onCleanup, untrack } from "@rivetjs/reactivity";
@@ -34,18 +35,31 @@ function target(state: LightboxState): FsElement | null {
   return (container?.closest<FsElement>("[data-lightbox-root],[data-lightbox-inline]") ?? container) as FsElement | null;
 }
 
-const listening = new WeakSet<LightboxState>();
+// The `fullscreenchange` listeners of a state, while its fullscreen session runs (Rivet: YARL removes them with the
+// plugin; a document-level listener per state kept every lightbox ever put in fullscreen alive).
+const listening = new WeakMap<LightboxState, () => void>();
 
 function listen(state: LightboxState): void {
   const d = fsDoc();
   if (!d || listening.has(state)) return;
-  listening.add(state);
   const sync = () => {
     const el = target(state);
-    state.fullscreen.set(!!el && fullscreenElement() === el);
+    const on = !!el && fullscreenElement() === el;
+    state.fullscreen.set(on);
+    // Session over (exit, Escape, another element took fullscreen): stop listening; the next enter listens again.
+    if (!on) release(state);
   };
   d.addEventListener("fullscreenchange", sync);
   d.addEventListener("webkitfullscreenchange", sync);
+  listening.set(state, () => {
+    d.removeEventListener("fullscreenchange", sync);
+    d.removeEventListener("webkitfullscreenchange", sync);
+  });
+}
+
+function release(state: LightboxState): void {
+  listening.get(state)?.();
+  listening.delete(state);
 }
 
 /** Enters fullscreen (YARL `fullscreen.ref.enter`). */
@@ -54,7 +68,10 @@ export function lightboxEnterFullscreen(state: LightboxState): void {
   if (!el || !lightboxFullscreenEnabled()) return;
   listen(state);
   const request = el.requestFullscreen?.bind(el) ?? el.webkitRequestFullscreen?.bind(el);
-  request?.()?.catch?.(() => {});
+  // A refused request starts no session (no `fullscreenchange` follows): release the listeners.
+  request?.()?.catch?.(() => {
+    if (fullscreenElement() !== el) release(state);
+  });
 }
 
 /** Exits fullscreen (YARL `fullscreen.ref.exit`). */
