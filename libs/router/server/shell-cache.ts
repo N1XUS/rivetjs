@@ -735,6 +735,8 @@ class Run implements ShellRequest {
       const relay = new Relay();
       const held: Uint8Array[] = [];
       let text = "";
+      let carry = "",
+        tailSeen = false;
       let answered = false;
       this.link = response.headers.get("link");
       const answer = (state: string | null) => {
@@ -769,7 +771,16 @@ class Run implements ShellRequest {
           const copy = view.slice();
           done();
           held.push(copy);
-          text += latin1(copy);
+          const added = latin1(copy);
+          text += added;
+          // Until the tail shows up only the new chunk is searched (+ the tail's possible start in the previous one):
+          // `text` stays a rope, not flattened and rescanned per chunk.
+          if (!tailSeen) {
+            const probe = carry + added;
+            tailSeen = probe.includes(DERIVED_TAIL);
+            carry = probe.slice(1 - DERIVED_TAIL.length);
+            if (!tailSeen) return undefined;
+          }
           const at = shellCut(text);
           if (at < 0) return undefined;
           this.cut = true;
@@ -1122,13 +1133,18 @@ class Shells {
     );
     (detached as unknown as Record<symbol, ShellRequest>)[SHELL] = run;
     const context = run.nonce !== undefined ? { nonce: run.nonce } : {};
+    // One backoff step per failed refill: `Run.reject` may have counted this one already.
+    const failures = entry.failures;
+    const backoff = () => {
+      if (entry.failures === failures) entry.retry = Date.now() + Math.min(1000 * 2 ** entry.failures++, 300_000);
+    };
     run
       .answer(() => this.host.handler(detached, context))
       .then((response) => {
-        if (response.headers.get("x-rivet-cache") !== "SHELL-REFILL") entry.retry = Date.now() + Math.min(1000 * 2 ** entry.failures++, 300_000);
+        if (response.headers.get("x-rivet-cache") !== "SHELL-REFILL") backoff();
         return response.body?.cancel();
       })
-      .catch(() => void (entry.retry = Date.now() + Math.min(1000 * 2 ** entry.failures++, 300_000)));
+      .catch(backoff);
   }
 }
 const NO_SWAPS: readonly ShellSwap[] = [];
