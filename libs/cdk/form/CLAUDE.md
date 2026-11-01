@@ -26,7 +26,7 @@ Native `<form>` with RAC validation contexts (`validationBehavior`, server `vali
 - `validationBehavior` default `"native"` (constraint validation blocks submit); `"aria"` -> `noValidate` on the form; field resolution: own prop, else Form's, else `"native"`
 - `validationErrors`: object, signal or accessor keyed by field `name`; shown until the field is edited; Provider value defaults to `{}`
 - every field renders `data-rv-error={validityError(state)}`; `formSubmit` applies it as custom validity, cancels + `stopImmediatePropagation` if invalid; user `onSubmit` only runs when not `defaultPrevented`
-- `onFormReset(owner, input, fn)`: one reset listener per form, attached lazily from the first handler that sees the input (once per state); a reset cancelled in the capture phase resets nothing
+- `onFormReset(owner, input, fn)`: one reset listener per form, attached lazily from the first handler that sees the input (once per state); a reset cancelled in the capture phase resets nothing; entries whose input left the form are dropped on the next attach / reset (no longer called, closure released; the owner attaches again once its input is back — FIX-CDK 2026-11-01, `tests/form-reset-listeners.test.ts`)
 - `onReset` / `onInvalidCapture` are always bound (unconditional inline arrows: conditional closures are not resumable)
 - `MaybeAccessor<T>` + `read()` is the shared "value or accessor" convention (also used by Button `isPending`)
 - default class `rv-Form`; `globalDOMProps(props)` no OWNED; props read before JSX

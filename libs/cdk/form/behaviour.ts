@@ -106,24 +106,42 @@ export function commit(state: FormValidationState, input: ValidatableElement | n
 }
 
 // Form reset (RA `useFormReset` + reset listener): attached on the first handler that sees the input.
-const resetFns = new WeakMap<HTMLFormElement, Set<() => void>>();
+// Rivet: attached from handlers (no owner to clean up with), so an entry whose input left the form is dropped on the
+// next attach / reset of that form — it is no longer one of the form's fields (native reset skips it too), and its
+// closure (state + input) was kept for the form's lifetime. Its owner can attach again once the input is back.
+interface ResetEntry {
+  readonly input: Element;
+  readonly fn: () => void;
+}
+const resetFns = new WeakMap<HTMLFormElement, Map<object, ResetEntry>>();
 const attached = new WeakSet<object>();
+
+/** Drops entries whose input is no longer a field of `form`. */
+function prune(form: HTMLFormElement, entries: Map<object, ResetEntry>): void {
+  for (const [owner, entry] of entries)
+    if (!entry.input.isConnected || (entry.input as HTMLInputElement).form !== form) {
+      entries.delete(owner);
+      attached.delete(owner);
+    }
+}
 
 /** Run `fn` when the input's form resets (once per state). */
 export function onFormReset(owner: object, input: ValidatableElement | HTMLElement | null | undefined, fn: () => void): void {
   const form = (input as HTMLInputElement | null)?.form;
   if (!form || attached.has(owner)) return;
   attached.add(owner);
-  let fns = resetFns.get(form);
-  if (!fns) {
-    resetFns.set(form, (fns = new Set()));
+  let entries = resetFns.get(form);
+  if (!entries) {
+    const own = new Map<object, ResetEntry>();
+    resetFns.set(form, (entries = own));
     // RA useFormReset: a reset cancelled (in the capture phase) resets nothing.
     form.addEventListener("reset", (event) => {
       if (event.defaultPrevented) return;
-      for (const f of fns!) f();
+      prune(form, own);
+      for (const entry of [...own.values()]) entry.fn();
     });
-  }
-  fns.add(fn);
+  } else prune(form, entries);
+  entries.set(owner, { input: input!, fn });
 }
 
 function attachReset(state: FormValidationState, input: ValidatableElement): void {
