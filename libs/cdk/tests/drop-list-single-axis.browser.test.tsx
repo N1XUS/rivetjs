@@ -535,7 +535,7 @@ describe("Single-axis drop list", () => {
       const { left, top } = element.getBoundingClientRect();
       const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0, buttons: 1, detail: 1, clientX: left + 5, clientY: top + 5 });
       expect(press.eventPhase).toBe(Event.NONE);
-      const handler = (element as unknown as { $$mousedown?: (event: Event) => void }).$$mousedown;
+      const handler = (element as unknown as { $rmousedown?: (event: Event) => void }).$rmousedown;
       expect(typeof handler).toBe("function");
       Object.defineProperty(press, "currentTarget", { configurable: true, value: element });
       try {
