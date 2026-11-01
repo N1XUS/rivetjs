@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { build, type Rollup } from "vite";
 import { cn } from "tailwind-variants";
 import { tv } from "tailwind-variants";
-import { comptimeAnnotations } from "../comptime.ts";
+import { comptimeAnnotations, evaluator } from "../comptime.ts";
 import { rivet } from "../vite.ts";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
@@ -298,6 +298,24 @@ test("a unary operator over a definition reference stays a runtime call (no buil
   );
   const code = await bundle("unary.ts");
   assert.match(code, /!button/);
+});
+
+test("an evaluation worker that exits (user code calls process.exit) settles its pending evaluations", async () => {
+  await writeFile(join(root, "exits.ts"), `process.exit(0);\nexport function f(): number { return 1; }\n`);
+  const worker = evaluator();
+  try {
+    const result = await Promise.race([
+      worker.evaluate({ file: join(root, "exits.ts"), name: "f", args: [], adapter: "value" }),
+      new Promise<"hang">((done) => setTimeout(() => done("hang"), 3000).unref()),
+    ]);
+    assert.notEqual(result, "hang");
+    assert.equal((result as { ok: boolean }).ok, false);
+    // The next evaluation starts a fresh worker.
+    await writeFile(join(root, "fine.ts"), `export function g(): number { return 2; }\n`);
+    assert.equal((await worker.evaluate({ file: join(root, "fine.ts"), name: "g", args: [], adapter: "value" })).ok, true);
+  } finally {
+    await worker.close();
+  }
 });
 
 test("annotations", () => {

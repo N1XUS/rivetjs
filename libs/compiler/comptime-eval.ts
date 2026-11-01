@@ -794,11 +794,15 @@ export function evaluator(): { evaluate(recipe: Recipe, paths?: TvPaths): Promis
       pending.get(id)?.(result);
       pending.delete(id);
     });
-    w.on("error", (error) => {
-      for (const done of pending.values()) done({ ok: false, reason: "evaluation worker failed: " + (error instanceof Error ? error.message : String(error)) });
+    const fail = (reason: string) => {
+      for (const done of pending.values()) done({ ok: false, reason });
       pending.clear();
-      worker = null;
-    });
+      if (worker === w) worker = null;
+    };
+    w.on("error", (error) => fail("evaluation worker failed: " + (error instanceof Error ? error.message : String(error))));
+    w.on("messageerror", (error) => fail("evaluation worker failed: " + error.message));
+    // Evaluated code may end the thread (`process.exit()`) with no `error` event: settle, do not hang the build.
+    w.on("exit", (code) => fail("evaluation worker exited (code " + code + ")"));
     return w;
   };
   return {
