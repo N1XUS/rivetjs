@@ -6,7 +6,7 @@ Internal, contributor-facing docs (user-facing docs live in `apps/docs/content` 
 
 ## Layout
 
-- Harness RAM repair (2026-11-01): `design/plans/2026-11-01-harness-memory.md` tracks removal of redundant UI-docs Nx residency and retained package E2E TypeScript programs, unchanged checker semantics/resource guards, and a subsequent actual Astra campaign. Intentional baseline updates remain outside automatic worker intake.
+- Harness RAM repair (2026-11-01): `design/plans/2026-11-01-harness-memory.md` and `design/research/2026-11-01-harness-memory-verification.md` record maintenance commit `ef0503906`, actual Astra review,142/142 scripts tests and a20m15s live campaign within3072MiB (peak2964.90625MiB). The campaign independently found an undefined-write defect;53gates pass,1size noise and1zero-cost failure. The three-file repair remains retained outside main because two intentional runtime pins each change+19B. No baseline/policy/resource relaxation or automatic repair commit is claimed.
 
 - `guides/` — how a feature works + its rules (one per subsystem; linked from the lib CLAUDE.md files).
 - `design/` — design records: `specs/` (approved designs, `YYYY-MM-DD-<topic>-design.md`), `plans/` (implementation plans), `research/`, plus standalone implementation notes.
