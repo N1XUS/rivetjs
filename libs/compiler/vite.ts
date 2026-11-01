@@ -286,7 +286,7 @@ export interface RivetOptions {
   locales?: readonly string[];
   /**
    * Persistent compiler cache (INCR-BUILD, default on): every compiler request (compile, module facts) is answered from
-   * `<rivetCacheDir()>/compile/` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`; never inside the project, where
+   * `<rivetCacheDir()>/compile/` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache-<uid>`; never inside the project, where
    * Tailwind source detection would read it) when the same request (source + options, cross-module facts included) was answered by
    * the same compiler module before (`wasm.ts` `setCallCache`; byte-identical output). Size cap: env
    * `RIVET_COMPILE_CACHE_MB` (default 512, least recently used go first). `false` or env `RIVET_COMPILE_CACHE=0` turns it off.

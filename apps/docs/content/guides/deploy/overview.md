@@ -66,7 +66,7 @@ Read secrets the way your platform provides them: `process.env` on Node.js, Verc
 
 ## Cache builds in CI
 
-Builds keep their results in one cache folder outside the project: compiled modules (`compile/`), build-time evaluated calls (`comptime/`), optimized `?image` / `?svg` files (`images/`) and the stylesheet sizes the router measures. The folder is `RIVET_CACHE_DIR` when it is set, else `rivet-cache` in the OS temp directory. Every entry is keyed by everything it depends on (source, options, compiler version), so a restored cache never gives a stale result, and several projects can share one folder. It stays outside the project on purpose: Tailwind's source detection scans the app folder and would read cached text as class names.
+Builds keep their results in one cache folder outside the project: compiled modules (`compile/`), build-time evaluated calls (`comptime/`), optimized `?image` / `?svg` files (`images/`) and the stylesheet sizes the router measures. The folder is `RIVET_CACHE_DIR` when it is set, else `rivet-cache-<uid>` (your user id; created private, refused when another user can write it) in the OS temp directory. Every entry is keyed by everything it depends on (source, options, compiler version), so a restored cache never gives a stale result, and several projects can share one folder. It stays outside the project on purpose: Tailwind's source detection scans the app folder and would read cached text as class names.
 
 A CI runner starts with an empty temp directory, so point the variable at a path your CI caches and restore it between runs:
 

@@ -28,7 +28,7 @@ export interface ImagesConfig {
   presets?: Record<string, Directives>;
   processor?: ImageProcessor;
   /**
-   * Root-relative; default `<rivetCacheDir()>/images` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`). Keep it out of
+   * Root-relative; default `<rivetCacheDir()>/images` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache-<uid>`). Keep it out of
    * the app dir: Tailwind source detection reads the cached `?svg` sources.
    */
   cacheDir?: string;

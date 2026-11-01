@@ -100,7 +100,7 @@ The `@rivetjs/nx:check` executor runs `rivet sync` (routed apps) and `rivet-chec
 
 | Variable | Read by | Effect |
 | --- | --- | --- |
-| `RIVET_CACHE_DIR` | builds | Root of the persistent build caches (default `rivet-cache` in the OS temp directory); see [Cache builds in CI](../guides/deploy/overview.md#cache-builds-in-ci) |
+| `RIVET_CACHE_DIR` | builds | Root of the persistent build caches (default `rivet-cache-<uid>` in the OS temp directory, private to your user); see [Cache builds in CI](../guides/deploy/overview.md#cache-builds-in-ci) |
 | `RIVET_COMPILE_CACHE` | builds | `0` turns the compiler cache off |
 | `RIVET_COMPILE_CACHE_MB` | builds | Size limit of the compiler cache (default 512) |
 | `RIVET_NATIVE_LITE` | production builds | `0`: no native Button rewrite; `all`: every proven site. See [What ships no JavaScript](../guides/performance/zero-js.md#buttons-with-a-simple-handler) |
