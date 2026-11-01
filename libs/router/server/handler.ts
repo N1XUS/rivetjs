@@ -43,8 +43,10 @@ export interface CookieOptions {
   secure?: boolean;
   sameSite?: "lax" | "strict" | "none";
 }
-/** What guards, loaders, actions and endpoints receive. `locals` is shared along one request's chain. */
-/** `RequestEvent<"items/[id]">`: params of a file route id (`RouteParams`, generated). */
+/**
+ * What guards, loaders, actions and endpoints receive. `locals` is shared along one request's chain.
+ * `RequestEvent<"items/[id]">`: params of a file route id (`RouteParams`, generated).
+ */
 export interface RequestEvent<P extends Record<string, string> | RouteId = Record<string, string>> {
   readonly request: Request;
   readonly url: URL;
@@ -54,7 +56,7 @@ export interface RequestEvent<P extends Record<string, string> | RouteId = Recor
   readonly cookies: Cookies;
   /** The handler runs in development (`dev` option); undefined when unknown (treat as production). */
   readonly dev?: boolean;
-  /** Set a response header (HTML, data and action responses alike). */
+  /** Set a response header (HTML, data and action responses alike); `set-cookie` is rejected (use `cookies.set`). */
   setHeader(name: string, value: string): void;
   /** Set several response headers; `set-cookie` is rejected (use `cookies.set`). */
   setHeaders(headers: Readonly<Record<string, string>>): void;
@@ -590,7 +592,11 @@ export function createHandler(options: AppOptions): AppHandler {
           headers.append("set-cookie", serializeCookie(name, "", { ...cookie, maxAge: 0, expires: new Date(0) }));
         },
       },
-      setHeader: (name, value) => headers.set(name, value),
+      setHeader: (name, value) => {
+        // `headers.set("set-cookie")` would replace every cookie `cookies.set` appended (a session cookie) unseen.
+        if (name.toLowerCase() === "set-cookie") throw new TypeError("setHeader: use event.cookies.set for set-cookie");
+        headers.set(name, value);
+      },
       setHeaders: (values) => {
         for (const name in values) {
           if (name.toLowerCase() === "set-cookie") throw new TypeError("setHeaders: use event.cookies.set for set-cookie");

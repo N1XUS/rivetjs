@@ -125,3 +125,23 @@ test("vite build: a component reaching @rivetjs/router/env fails the build (RV30
     await rm(resolve(fixture, ".rivet"), { recursive: true, force: true });
   }
 });
+
+// FIX2 (r3-testgaps#13): a whole-source schema whose output is not an object.
+test("whole-source schema with a non-object output → TypeError", () => {
+  assert.throws(
+    () =>
+      defineEnv(
+        z.object({ A: z.string() }).transform(() => "flat"),
+        { A: "x" },
+      ),
+    /schema output must be an object/,
+  );
+  assert.throws(
+    () =>
+      defineEnv(
+        z.any().transform(() => null),
+        {},
+      ),
+    TypeError,
+  );
+});

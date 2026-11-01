@@ -79,7 +79,7 @@ export function i18n(options: I18nConfig & { dts?: string }): Plugin & { api: I1
         "[rivet:i18n] " +
           warning +
           (m
-            ? `\n  fix: add "${m[1]}" to the ${m[2]} catalog${file ? ` (${relative(root, file)})` : ""}; builds fail on it unless \`missing: "warn"\` or a \`fallback\` covers ${m[2]}`
+            ? `\n  fix: add "${m[1]}" to the ${m[2]} catalog${file ? ` (${relative(root, file)})` : ""}; builds fail on it unless \`missing: "warn"\` or \`missing: "fallback"\` (a configured \`fallback\` locale alone does not)`
             : ""),
       );
     }

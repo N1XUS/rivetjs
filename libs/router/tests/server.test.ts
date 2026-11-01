@@ -368,6 +368,7 @@ test("RequestEvent: route.id, isDataRequest, setHeaders, cookies.getAll", async 
           seen.push({ id: e.route.id, data: e.isDataRequest, all: e.cookies.getAll() });
           e.setHeaders({ "x-one": "1", "x-two": "2" });
           assert.throws(() => e.setHeaders({ "Set-Cookie": "x=1" }), /cookies\.set/);
+          assert.throws(() => e.setHeader("set-cookie", "x=1"), /cookies\.set/);
           return 1;
         },
       }),

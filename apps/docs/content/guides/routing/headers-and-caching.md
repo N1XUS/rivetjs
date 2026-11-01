@@ -404,7 +404,7 @@ await start({ dictionary: { samples: ["/", "/docs/intro", "/blog/first-post"] } 
 
 ## Cookies
 
-Cookies are headers too, but use `event.cookies.set()` rather than `setHeader("set-cookie", …)`: it handles encoding, adds several cookies correctly and applies safe defaults. A cookie that is already serialized (passed through from another server) goes in with `appendHeader("set-cookie", value)`, as it is. See [cookies in guards](./guards.md#cookies).
+Cookies are headers too, but use `event.cookies.set()`: `setHeader("set-cookie", …)` and `setHeaders` throw a `TypeError`, since they would replace the cookies already set. `cookies.set()` handles encoding, adds several cookies correctly and applies safe defaults. A cookie that is already serialized (passed through from another server) goes in with `appendHeader("set-cookie", value)`, as it is. See [cookies in guards](./guards.md#cookies).
 
 ## Static sites
 
