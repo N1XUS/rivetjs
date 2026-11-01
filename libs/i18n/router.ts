@@ -3,16 +3,7 @@
 // one), stores it in `locals.locale` / `locals.dir` for the app (variant, manifest, `<html lang dir>`)
 // and redirects unprefixed URLs; same-site navigations to a locale record it in the locale cookie.
 import { BASE, notFound, redirect, slashPath, TRAILING_SLASH, type HeadLink, type RequestEvent, type TrailingSlash } from "@rivetjs/router";
-import {
-  cookieName,
-  DEFAULT_ORDER,
-  localeCookie,
-  localeCookieOptions,
-  localeFromPath,
-  resolveServer,
-  type ResolveConfig,
-  type Strategy,
-} from "./resolve.ts";
+import { cookieName, DEFAULT_ORDER, localeCookie, localeCookieOptions, localeFromPath, resolveServer, type ResolveConfig, type Strategy } from "./resolve.ts";
 
 /** i18n config of the router integration: resolution order, base URL and RTL languages. */
 export interface I18nRouteConfig extends ResolveConfig {
@@ -26,8 +17,7 @@ export interface I18nRouteConfig extends ResolveConfig {
 
 const RTL = ["ar", "fa", "he", "ur", "ps", "dv", "yi"];
 /** Text direction of a locale. */
-export const dirOf = (locale: string, rtl: readonly string[] = RTL): "ltr" | "rtl" =>
-  rtl.includes(locale.split("-")[0]!.toLowerCase()) ? "rtl" : "ltr";
+export const dirOf = (locale: string, rtl: readonly string[] = RTL): "ltr" | "rtl" => (rtl.includes(locale.split("-")[0]!.toLowerCase()) ? "rtl" : "ltr");
 
 /** Path prefix of `locale` ("" when its URLs carry none). */
 function prefixOf(locale: string, config: I18nRouteConfig): string {
@@ -78,9 +68,14 @@ export function alternates(url: URL, config: I18nRouteConfig, options: Alternate
   const { baseUrl } = config;
   if (!baseUrl) throw new Error("i18n: alternates() needs baseUrl");
   const slash = options.trailingSlash ?? TRAILING_SLASH;
-  const bare = delocalizeHref(url.pathname, config);
+  // One delocalize for all locales: this runs per page render that emits hreflang.
+  const [at, path] = splitBase(url.pathname, BASE);
+  const bare = localeFromPath(path, config) ? path.replace(/^\/[^/]+/, "") || "/" : path;
   const absolute = (path: string, search = "") => new URL(slashPath(path, slash) + search, baseUrl).href;
-  const localized = (locale: string) => absolute(localizeHref(bare, locale, config));
+  const localized = (locale: string) => {
+    const prefix = prefixOf(locale, config);
+    return absolute(at + (prefix && bare === "/" ? prefix : prefix + bare));
+  };
   const kept = new URLSearchParams();
   for (const name of options.query ?? []) for (const value of url.searchParams.getAll(name)) kept.append(name, value);
   return [
@@ -104,9 +99,7 @@ export function errorLocale(config: I18nRouteConfig): (request: Request) => Prom
  * (`Sec-Purpose`) or a client-router data request (those also warm on hover).
  */
 const chosenNavigation = (request: Request): boolean =>
-  request.headers.get("sec-fetch-site") === "same-origin" &&
-  request.headers.get("sec-fetch-mode") === "navigate" &&
-  !request.headers.has("sec-purpose");
+  request.headers.get("sec-fetch-site") === "same-origin" && request.headers.get("sec-fetch-mode") === "navigate" && !request.headers.has("sec-purpose");
 
 /**
  * Layout guard: a `lang` param must name a locale (else 404); without one the locale resolves
@@ -132,8 +125,7 @@ export function i18nGuard(config: I18nRouteConfig): (event: RequestEvent) => Pro
     if (param !== undefined) {
       const locale = localeFromPath("/" + param, config);
       if (!locale) throw notFound();
-      if (name && chosenNavigation(event.request) && locale !== (await resolveServer(event.request, config, preferences)))
-        remember(event, name, locale);
+      if (name && chosenNavigation(event.request) && locale !== (await resolveServer(event.request, config, preferences))) remember(event, name, locale);
       return settle(event, locale);
     }
     const resolved = await resolveServer(event.request, config, config.strategy);

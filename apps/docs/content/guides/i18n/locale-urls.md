@@ -112,7 +112,7 @@ The guard does not set the cookie:
 - for typed URLs, bookmarks and links from other sites, which do not send `Sec-Fetch-Site: same-origin`,
 - for prefetch requests and client router data requests.
 
-The cookie is `rivet_locale=<locale>; Path=/; SameSite=Lax`, plus `Secure` on https. It is a session cookie unless you set `maxAge` (seconds):
+The cookie is `rivet_locale=<locale>; Path=/; SameSite=Lax`, plus `Secure` on https. It is a session cookie unless you set `maxAge` (finite seconds; `NaN` / `Infinity` throw):
 
 ```ts title="i18n.config.ts"
 cookie: { name: "lang", maxAge: 60 * 60 * 24 * 365 },

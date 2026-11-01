@@ -32,8 +32,7 @@ export function flatten(tree: Record<string, unknown>, prefix = ""): Record<stri
   for (const [k, v] of Object.entries(tree)) {
     const key = prefix ? prefix + "." + k : k;
     if (typeof v === "string") out[key] = v;
-    else if (v && typeof v === "object" && !Array.isArray(v))
-      Object.assign(out, flatten(v as Record<string, unknown>, key));
+    else if (v && typeof v === "object" && !Array.isArray(v)) Object.assign(out, flatten(v as Record<string, unknown>, key));
     else throw new I18nError(`${key}: catalog values must be strings or nested objects`);
   }
   return out;
@@ -54,13 +53,14 @@ export function buildTable(config: I18nConfig, raw: Record<string, Record<string
   const keys = new Set(locales.flatMap((l) => Object.keys(flat[l]!)));
   const table: Table = Object.create(null);
   const warnings: string[] = [];
+  const chains = locales.map((locale) => fallbackChain(locale, config));
+  const defaultIndex = locales.indexOf(defaultLocale);
   for (const key of [...keys].sort()) {
-    if (flat[defaultLocale]![key] === undefined)
-      throw new I18nError(`${key}: missing in default locale "${defaultLocale}"`);
+    if (flat[defaultLocale]![key] === undefined) throw new I18nError(`${key}: missing in default locale "${defaultLocale}"`);
     // Locales falling back to the same source share one parsed variant.
     const parsed = new Map<string, Variant>();
-    const variants = locales.map((locale) => {
-      const found = fallbackChain(locale, config).find((l) => flat[l]?.[key] !== undefined)!;
+    const variants = locales.map((locale, index) => {
+      const found = chains[index]!.find((l) => flat[l]?.[key] !== undefined)!;
       if (found !== locale) {
         if (missing === "error") throw new I18nError(`${key}: missing in "${locale}"`);
         if (missing === "warn") warnings.push(`${key}: missing in "${locale}", using "${found}"`);
@@ -70,21 +70,17 @@ export function buildTable(config: I18nConfig, raw: Record<string, Record<string
       return v;
     });
     const names = (v: Variant) => [...paramsOf(v).keys()].sort().join(",");
-    const base = names(variants[locales.indexOf(defaultLocale)]!);
+    const base = names(variants[defaultIndex]!);
     locales.forEach((locale, i) => {
       const own = names(variants[i]!);
-      if (own !== base)
-        throw new I18nError(`${key}: params differ between "${defaultLocale}" (${base}) and "${locale}" (${own})`);
+      if (own !== base) throw new I18nError(`${key}: params differ between "${defaultLocale}" (${base}) and "${locale}" (${own})`);
     });
     table[key] = variants;
   }
   return { table, warnings, files: [] };
 }
 
-export async function loadCatalogs(
-  config: I18nConfig,
-  root: string,
-): Promise<{ raw: Record<string, Record<string, unknown>>; files: string[] }> {
+export async function loadCatalogs(config: I18nConfig, root: string): Promise<{ raw: Record<string, Record<string, unknown>>; files: string[] }> {
   const raw: Record<string, Record<string, unknown>> = {};
   const files: string[] = [];
   for (const locale of config.locales) {

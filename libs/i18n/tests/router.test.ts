@@ -254,6 +254,7 @@ test("localeCookie: document.cookie string with the server's attributes", () => 
   assert.equal(localeCookie("de", config, true), "rivet_locale=de; Path=/; SameSite=Lax; Secure");
   assert.equal(localeCookie("de-AT", { ...config, cookie: { name: "lang", maxAge: 86400.5 } }, false), "lang=de-AT; Path=/; Max-Age=86400; SameSite=Lax");
   assert.equal(localeCookie("de", { ...config, cookie: false }, true), undefined);
+  for (const maxAge of [NaN, Infinity]) assert.throws(() => localeCookie("de", { ...config, cookie: { maxAge } }, true), /finite/);
 });
 
 test("setLocale: writes the cookie, then loads the page in the locale", () => {

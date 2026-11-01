@@ -28,16 +28,22 @@ export interface ResolveConfig {
 /** Default locale resolution order. */
 export const DEFAULT_ORDER = ["url", "cookie", "preferredLanguage", "baseLocale"] as const;
 /** Name of the locale cookie (`rivet_locale` by default); `null` with `cookie: false`. */
-export const cookieName = (config: ResolveConfig): string | null =>
-  config.cookie === false ? null : (config.cookie?.name ?? "rivet_locale");
+export const cookieName = (config: ResolveConfig): string | null => (config.cookie === false ? null : (config.cookie?.name ?? "rivet_locale"));
 
 /**
  * Attributes of the locale cookie, shared by the server (`Set-Cookie`) and `document.cookie`:
  * `Path=/`, `SameSite=Lax`, `Max-Age` from `cookie.maxAge` (none: a session cookie), `Secure` on
  * https. Readable by scripts (the static root redirect and `resolveClient` read it).
  */
-export function localeCookieOptions(config: ResolveConfig, secure: boolean) {
+/** `cookie.maxAge`, rejected at the config error rather than written as `Max-Age=NaN`, which browsers ignore (a silent session cookie). */
+function cookieMaxAge(config: ResolveConfig): number | undefined {
   const maxAge = config.cookie ? config.cookie.maxAge : undefined;
+  if (maxAge !== undefined && !Number.isFinite(maxAge)) throw new TypeError(`i18n: cookie.maxAge must be a finite number of seconds, got ${maxAge}`);
+  return maxAge;
+}
+
+export function localeCookieOptions(config: ResolveConfig, secure: boolean) {
+  const maxAge = cookieMaxAge(config);
   return { path: "/", sameSite: "lax", httpOnly: false, secure, ...(maxAge !== undefined ? { maxAge } : {}) } as const;
 }
 
@@ -45,7 +51,7 @@ export function localeCookieOptions(config: ResolveConfig, secure: boolean) {
 export function localeCookie(locale: string, config: ResolveConfig, secure: boolean): string | undefined {
   const name = cookieName(config);
   if (!name) return undefined;
-  const maxAge = config.cookie ? config.cookie.maxAge : undefined;
+  const maxAge = cookieMaxAge(config);
   let out = name + "=" + encodeURIComponent(locale) + "; Path=/";
   if (maxAge !== undefined) out += "; Max-Age=" + Math.floor(maxAge);
   out += "; SameSite=Lax";
@@ -53,9 +59,15 @@ export function localeCookie(locale: string, config: ResolveConfig, secure: bool
   return out;
 }
 
+// Per-request paths (guard: 1-3 resolutions): derived once per config, which never changes after startup.
+const lowered = new WeakMap<readonly string[], string[]>();
+const prefixTables = new WeakMap<ResolveConfig, Map<string, string>>();
+const builtinTables = new WeakMap<ResolveConfig, ReturnType<typeof strategies>>();
+
 /** Best locale for `wanted` (preference order): exact, then base language ("de-CH" → "de"), then a region of it ("de" → "de-AT"). */
 export function match(wanted: readonly string[], locales: readonly string[]): string | undefined {
-  const lower = locales.map((l) => l.toLowerCase());
+  let lower = lowered.get(locales);
+  if (!lower) lowered.set(locales, (lower = locales.map((l) => l.toLowerCase())));
   for (const w of wanted) {
     const want = w.toLowerCase();
     const language = want.split("-")[0]!;
@@ -72,8 +84,7 @@ export function match(wanted: readonly string[], locales: readonly string[]): st
 /** Locale → first path segment (lowercase, no slashes). */
 function prefixes(config: ResolveConfig): [string, string][] {
   const prefix = config.routing?.prefix;
-  if (prefix && typeof prefix === "object")
-    return Object.entries(prefix).map(([locale, path]) => [locale, path.replace(/^\/|\/$/g, "").toLowerCase()]);
+  if (prefix && typeof prefix === "object") return Object.entries(prefix).map(([locale, path]) => [locale, path.replace(/^\/|\/$/g, "").toLowerCase()]);
   return config.locales.map((locale) => [locale, locale.toLowerCase()]);
 }
 
@@ -81,7 +92,14 @@ function prefixes(config: ResolveConfig): [string, string][] {
 export function localeFromPath(path: string, config: ResolveConfig): string | undefined {
   if (config.routing?.prefix === "never") return undefined;
   const first = path.split("/")[1]?.toLowerCase() ?? "";
-  return first ? prefixes(config).find(([, p]) => p === first)?.[0] : undefined;
+  if (!first) return undefined;
+  let table = prefixTables.get(config);
+  if (!table) {
+    table = new Map();
+    for (const [locale, path] of prefixes(config)) if (!table.has(path)) table.set(path, locale);
+    prefixTables.set(config, table);
+  }
+  return table.get(first);
 }
 
 /** URL path, Cookie header and Accept-Language (q-sorted) of a request. */
@@ -135,7 +153,8 @@ export function strategies(config: ResolveConfig): Record<(typeof DEFAULT_ORDER)
 }
 
 function strategyList(config: ResolveConfig, order: readonly (string | Strategy)[]): Strategy[] {
-  const builtins = strategies(config);
+  let builtins = builtinTables.get(config);
+  if (!builtins) builtinTables.set(config, (builtins = strategies(config)));
   return order.map((s) => {
     if (typeof s !== "string") return s;
     const found = (builtins as Record<string, Strategy>)[s];
@@ -145,11 +164,7 @@ function strategyList(config: ResolveConfig, order: readonly (string | Strategy)
 }
 
 /** Request locale: strategies in `order` (names of built-ins or custom ones), else `defaultLocale`. */
-export async function resolveServer(
-  req: Request,
-  config: ResolveConfig,
-  order: readonly (string | Strategy)[] = DEFAULT_ORDER,
-): Promise<string> {
+export async function resolveServer(req: Request, config: ResolveConfig, order: readonly (string | Strategy)[] = DEFAULT_ORDER): Promise<string> {
   const source = requestSource(req);
   for (const strategy of strategyList(config, order)) {
     const locale = await strategy.server?.(req, source);
