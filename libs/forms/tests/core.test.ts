@@ -382,3 +382,21 @@ test("defaultValue: a Date initial renders yyyy-mm-dd; invalid or out-of-range d
   assert.equal(defaultValue(form, "c"), undefined);
   assert.equal(defaultValue(form, "d"), undefined);
 });
+
+// FIX2 (r3-races#6; ruling: validateAll validates the newest value): typing during submit-time validation superseded
+// the submit's check, whose promise then resolved "done" with no result, and the submit passed an async check.
+test("validateAll waits for the check that superseded its own (the newest value's result decides)", async () => {
+  const def = defineForm({
+    name: "n",
+    schema: schema(() => []),
+    fields: { email: { validate: (value: unknown) => tick(10).then(() => (value === "taken@x" ? "errors.taken" : undefined)) } },
+  });
+  const form = createForm(def);
+  const submitting = validateAll(def, form, fakeElement, fd([["email", "free@x"]]));
+  await tick(2);
+  // The user types while the submit's check runs: a newer check of the newer value replaces it.
+  check(def, form, fakeElement, "email", { email: "taken@x" }, 0);
+  const result = await submitting;
+  assert.equal(result.ok, false);
+  assert.equal(issueText(form, "email"), "errors.taken");
+});

@@ -5,7 +5,20 @@ import type { FieldConfig, FormDefinition, RevalidateOn, ValidateOn } from "./de
 import { decodeFormData } from "./decode.ts";
 import { mapSchemaIssues, toIssues, type IssueMap } from "./issues.ts";
 import { byPattern, canonicalName, getAt } from "./path.ts";
-import { anyArmed, arm, hasBit, isArmed, runtime, setBit, SUBMITTED, VALIDATING, validatingSignal, writeFormIssues, writeIssues, type FormStore } from "./store.ts";
+import {
+  anyArmed,
+  arm,
+  hasBit,
+  isArmed,
+  runtime,
+  setBit,
+  SUBMITTED,
+  VALIDATING,
+  validatingSignal,
+  writeFormIssues,
+  writeIssues,
+  type FormStore,
+} from "./store.ts";
 import type { Issue } from "./types.ts";
 
 export type Trigger = "input" | "change" | "blur";
@@ -95,15 +108,27 @@ function pending(store: FormStore<any>, delta: number): void {
   setBit(store, VALIDATING, state.busy > 0);
 }
 
+/** A superseded check's successor: the superseded check's promise follows it (it validates the newer value). */
+const successors = new WeakMap<AbortController, Promise<void>>();
+
 /**
  * Run the field check configured for `path` (debounced unless `delay` is 0; a newer call aborts the
- * older). Resolves once settled or superseded; undefined when the path has no check.
+ * older). Resolves once settled; a superseded check resolves with the check that replaced it (so `validateAll`
+ * waits for the newest value's result, never a "done" without one); a reset (aborted, no successor) resolves at
+ * once. Undefined when the path has no check.
  */
-export function check(def: FormDefinition<any>, store: FormStore<any>, element: HTMLFormElement | null, path: string, values: unknown, delay?: number): Promise<void> | undefined {
+export function check(
+  def: FormDefinition<any>,
+  store: FormStore<any>,
+  element: HTMLFormElement | null,
+  path: string,
+  values: unknown,
+  delay?: number,
+): Promise<void> | undefined {
   const config = byPattern<FieldConfig | undefined>(def.fields, path);
   if (!config || (!config.validate && !config.remote)) return undefined;
   const state = runtime(store);
-  state.aborts.get(path)?.abort();
+  const previous = state.aborts.get(path);
   clearTimeout(state.timers.get(path));
   const controller = new AbortController();
   state.aborts.set(path, controller);
@@ -132,10 +157,18 @@ export function check(def: FormDefinition<any>, store: FormStore<any>, element: 
     }
   };
   const promise = new Promise<void>((resolve) => {
-    controller.signal.addEventListener("abort", () => resolve(), { once: true });
-    if (wait > 0) state.timers.set(path, setTimeout(() => void run().then(resolve), wait));
+    controller.signal.addEventListener("abort", () => resolve(successors.get(controller)), { once: true });
+    if (wait > 0)
+      state.timers.set(
+        path,
+        setTimeout(() => void run().then(resolve), wait),
+      );
     else void run().then(resolve);
   });
+  if (previous) {
+    successors.set(previous, promise);
+    previous.abort();
+  }
   return promise;
 }
 
@@ -154,7 +187,12 @@ async function remote(store: FormStore<any>, element: HTMLFormElement, path: str
  * Submit-time validation: whole schema (all issues shown), then every configured field check for
  * the submitted paths, awaited up to `asyncTimeout`. Resolves validity and the schema output.
  */
-export async function validateAll(def: FormDefinition<any>, store: FormStore<any>, element: HTMLFormElement | null, data: FormData): Promise<{ ok: boolean; value?: unknown }> {
+export async function validateAll(
+  def: FormDefinition<any>,
+  store: FormStore<any>,
+  element: HTMLFormElement | null,
+  data: FormData,
+): Promise<{ ok: boolean; value?: unknown }> {
   const input = decodeWith(def, data);
   const state = runtime(store);
   const generation = ++state.generation;
@@ -195,6 +233,7 @@ export async function validateAll(def: FormDefinition<any>, store: FormStore<any
       writeIssues(store, path, combined(store, path));
     }
   }
-  const failed = Object.keys(resolved.issues.fields).length > 0 || resolved.issues.form.length > 0 || [...state.checks.values()].some((list) => list.length > 0);
+  const failed =
+    Object.keys(resolved.issues.fields).length > 0 || resolved.issues.form.length > 0 || [...state.checks.values()].some((list) => list.length > 0);
   return failed ? { ok: false } : { ok: true, value: resolved.value };
 }

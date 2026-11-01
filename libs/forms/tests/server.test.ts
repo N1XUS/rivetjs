@@ -213,3 +213,26 @@ test("bad requests: a malformed multipart body and an empty validate intent are 
   assert.equal(intent.status, 400);
   assert.match(await intent.text(), /Invalid validate intent/);
 });
+
+// FIX2 (r3-security#9): every submitted path's checks ran in one Promise.all, so a POST with 1000 `items.N.email`
+// fields started 1000 concurrent check queries.
+test("server checks of one request run at most 8 at once, every path still checked", async () => {
+  const list = defineForm({ name: "list", schema: z.object({ items: z.array(z.object({ email: z.string() })) }) });
+  let running = 0,
+    peak = 0,
+    calls = 0;
+  const check = async (value: unknown) => {
+    calls++;
+    peak = Math.max(peak, ++running);
+    await new Promise((done) => setTimeout(done, 1));
+    running--;
+    return value === "taken" ? "errors.taken" : undefined;
+  };
+  const local = app({ actions: { list: action(list, () => "ok", { checks: { "items.$.email": check } }) } });
+  const fields: Record<string, string> = {};
+  for (let i = 0; i < 50; i++) fields[`items.${i}.email`] = i === 49 ? "taken" : "a@b.co";
+  const result = JSON.parse(await (await post(local, "list", fields)).text()).action.result;
+  assert.equal(calls, 50);
+  assert.ok(peak <= 8, `peak ${peak}`);
+  assert.deepEqual(Object.keys(result.issues), ["items.49.email"]);
+});

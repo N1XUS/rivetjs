@@ -11,7 +11,7 @@ Server half of forms: form definitions → router actions (convention-agnostic `
 
 ## Layout
 
-- `action.ts` — `action(def, fn, options)`, `invalid`, `parse`, `readForm` (bounded body), CSRF modes, echo, remote field checks.
+- `action.ts` — `action(def, fn, options)`, `invalid`, `parse`, `readForm` (bounded body), CSRF modes, echo, remote field checks; `parse` runs server checks only for paths that have one, ≤ 8 at once (`CHECK_CONCURRENCY`, FIX2 2026-11-01: a 1000-row POST no longer starts 1000 concurrent queries).
 - `intents.ts` — `parseIntent` / `applyIntent`: `insert|remove|move|swap:<path>[:…]` applied to echoed raw values (internal; used by `action.ts`).
 - `wizard.ts` — `wizardAction` (one action per step → `DraftStore`, redirect to next step; last step merges, checks `final`, `onComplete`, deletes draft; a last-step submit for a draft whose completion runs in this process answers 409 `errors.conflict` (`completing` set, FIX-CORE 2026-11-01; across processes `onComplete` must be idempotent per draft), test `tests/wizard.test.ts`), `loadWizard` (inside `load(…)`), `draftFrom` (`_draft` field / `?draft=`); a step never adopts an id the store does not `load` (fresh `randomUUID`: no pre-created / client-chosen drafts, FIX2 2026-11-01); ownership = the app's `DraftStore` (JSDoc in `../wizard.ts`).
 - `draft.ts` — `draftAction(drafts)`: merges raw autosave patch; 409 + `{ conflict, version, value }` on stale version.

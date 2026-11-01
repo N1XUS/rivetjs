@@ -146,13 +146,18 @@ export async function parse<D extends FormDefinition<any>>(
     if (path) paths.add(path);
   }
   const signal = context.event?.signal ?? new AbortController().signal;
-  await Promise.all(
-    [...paths].map(async (path) => {
-      if (issues[path]) return;
+  // Only paths with a check, at most CHECK_CONCURRENCY at once: one POST of 1000 `items.N.email` fields must not
+  // start 1000 concurrent uniqueness queries (pool exhaustion).
+  const todo = [...paths].filter((path) => !issues[path] && hasCheck(def, context.checks, path, context.event));
+  let next = 0;
+  const worker = async () => {
+    while (next < todo.length) {
+      const path = todo[next++]!;
       const found = await runChecks(def, context.checks, path, decoded, context.event, signal);
       if (found.length) issues[path] = found;
-    }),
-  );
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CHECK_CONCURRENCY, todo.length) }, worker));
   if (Object.keys(issues).length || form.length) {
     // Submitted (DOM) order, so the re-rendered page autofocuses the first invalid control.
     const ordered: Record<string, Issue[]> = {};
@@ -162,6 +167,18 @@ export async function parse<D extends FormDefinition<any>>(
   }
   return { ok: true, value: outcome.value as InferOutput<D> };
 }
+
+/** Server field checks of one request running at once (`parse`). */
+const CHECK_CONCURRENCY = 8;
+const hasCheck = (
+  def: FormDefinition<any>,
+  checks: Readonly<Record<string, ServerCheck>> | undefined,
+  path: string,
+  event: RequestEvent | undefined,
+): boolean => {
+  const config = byPattern<FieldConfig | undefined>(def.fields, path);
+  return !!(config?.server && config.validate) || (!!event && byPattern(checks, path) !== undefined);
+};
 
 /** Checks for one path: the definition's `server: true` field check, then `options.checks`. */
 async function runChecks(
