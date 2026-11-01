@@ -74,12 +74,20 @@ export function derivedLoader(): void {
   // Starts the runtime; an event / intent (not a trigger, `bg`) also fetches the fetch-ahead list at high priority.
   const boot = (bg?: unknown): Promise<DerivedRuntime> => (
     bg || ahead("high"),
-    (booting ??= retry(script.dataset.rt!).then((module) => {
-      prune();
-      rt = module.default as DerivedRuntime;
-      rt.start(parse(), d, api);
-      return rt;
-    }))
+    (booting ??= retry(script.dataset.rt!).then(
+      (module) => {
+        prune();
+        rt = module.default as DerivedRuntime;
+        rt.start(parse(), d, api);
+        return rt;
+      },
+      // A failed import is not kept: the next event imports again (when the reload fallback did not run: prevented,
+      // storage throwing, a reload in the last 10 s); a failed start keeps its runtime.
+      (error) => {
+        booting = undefined;
+        throw error;
+      },
+    ))
   );
   // The ids of the boundaries around a node whose name listens to `type` ("": to anything), innermost first (D5: tail v2
   // `n[i][2]` by name, a run's member through its template; a record not in the tail — streamed later — and a tail whose
