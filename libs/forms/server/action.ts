@@ -7,7 +7,7 @@ import type { FieldConfig, FormDefinition } from "../define.ts";
 import { FormDecodeError, rawValues } from "../decode.ts";
 import { decodeWith, runSchema } from "../engine.ts";
 import { toIssues, type IssueMap } from "../issues.ts";
-import { byPattern, canonicalName, getAt, matchesPattern } from "../path.ts";
+import { byPattern, canonicalName, getAt, matchesPattern, secretName } from "../path.ts";
 import type { FormReply } from "../store.ts";
 import type { InferOutput, Issue, IssueLike } from "../types.ts";
 import type { MappedIssue } from "../errors.ts";
@@ -55,7 +55,6 @@ export interface HandlerContext {
 const URLENCODED = "application/x-www-form-urlencoded";
 const MULTIPART = "multipart/form-data";
 const MiB = 1024 * 1024;
-const SECRET = /password|secret/i;
 
 /**
  * Wrap a form handler as a router action. `fn` receives the parsed schema output; it may return
@@ -206,12 +205,12 @@ async function validateField(
 }
 
 /**
- * Submitted values to re-render with: strings only, files dropped, names matching `SECRET` always
+ * Submitted values to re-render with: strings only, files dropped, secret names (`secretName`) always
  * dropped, plus any `echo.exclude` paths/patterns (a union — custom excludes never re-enable secrets).
  */
 function echoValues(def: FormDefinition<any>, data: FormData): Record<string, string | string[]> {
   const exclude = def.echo?.exclude;
-  return rawValues(data, (name) => !SECRET.test(name) && !(exclude && exclude.some((pattern) => matchesPattern(pattern, name))));
+  return rawValues(data, (name) => !secretName(name) && !(exclude && exclude.some((pattern) => matchesPattern(pattern, name))));
 }
 
 /**

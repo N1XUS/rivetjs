@@ -9,3 +9,15 @@ export const resetForm = (element: HTMLFormElement): void => HTMLFormElement.pro
 /** `form.requestSubmit(submitter)`, safe from a control named `requestSubmit`. */
 export const requestSubmitOf = (element: HTMLFormElement, submitter: HTMLElement | null): void =>
   HTMLFormElement.prototype.requestSubmit.call(element, submitter as HTMLButtonElement | null);
+
+/** A control whose value differs from its markup default (`dirty`, devtools). */
+export function changed(control: Element): boolean {
+  if (control instanceof HTMLInputElement) {
+    if (control.type === "checkbox" || control.type === "radio") return control.checked !== control.defaultChecked;
+    if (control.type === "file") return (control.files?.length ?? 0) > 0;
+    return control.value !== control.defaultValue;
+  }
+  if (control instanceof HTMLTextAreaElement) return control.value !== control.defaultValue;
+  if (control instanceof HTMLSelectElement) return Array.from(control.options).some((option) => option.selected !== option.defaultSelected);
+  return false;
+}

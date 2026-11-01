@@ -3,9 +3,22 @@
 import { signal, untrack } from "@rivetjs/reactivity";
 import { getAt, idSafe } from "./path.ts";
 import { formatIssue } from "./issues.ts";
-import { absolute, initialOf, issueSignal, prefixOf, storeOf, SUBMITTED, SUBMITTING, touchedSignal, VALIDATING, validatingSignal, valueSignal, type Form } from "./store.ts";
+import {
+  absolute,
+  initialOf,
+  issueSignal,
+  prefixOf,
+  storeOf,
+  SUBMITTED,
+  SUBMITTING,
+  touchedSignal,
+  VALIDATING,
+  validatingSignal,
+  valueSignal,
+  type Form,
+} from "./store.ts";
 import type { FieldPath, Issue, PathValue } from "./types.ts";
-import { controlsOf } from "./members.ts";
+import { changed, controlsOf } from "./members.ts";
 
 /** Shown issues of a field (undefined when none). */
 export function issues<T, P extends FieldPath<T>>(form: Form<T>, path: P): Issue[] | undefined {
@@ -119,16 +132,6 @@ export function dirty<T>(form: Form<T>, path?: FieldPath<T>): boolean {
     if (!name || (path !== undefined ? name !== prefix : !name.startsWith(prefix))) continue;
     if (changed(control)) return true;
   }
-  return false;
-}
-function changed(control: Element): boolean {
-  if (control instanceof HTMLInputElement) {
-    if (control.type === "checkbox" || control.type === "radio") return control.checked !== control.defaultChecked;
-    if (control.type === "file") return (control.files?.length ?? 0) > 0;
-    return control.value !== control.defaultValue;
-  }
-  if (control instanceof HTMLTextAreaElement) return control.value !== control.defaultValue;
-  if (control instanceof HTMLSelectElement) return Array.from(control.options).some((option) => option.selected !== option.defaultSelected);
   return false;
 }
 

@@ -64,7 +64,7 @@ export function canonicalName(name: string): string | null {
 export function matchesPattern(pattern: string, path: string): boolean {
   if (pattern === path) return true;
   if (!pattern.includes("$")) return false;
-  for (let i = 0, j = 0; ; ) {
+  for (let i = 0, j = 0; ;) {
     let a = pattern.indexOf(".", i),
       b = path.indexOf(".", j);
     if (a < 0) a = pattern.length;
@@ -112,3 +112,52 @@ export function getAt(value: unknown, path: string): unknown {
 
 /** Id-safe form of a path (`items.0.qty` → `items-0-qty`). */
 export const idSafe = (path: string): string => path.replace(/[^A-Za-z0-9_-]/g, "-");
+
+const SECRET_PART = /pass(?:word|wd|phrase|code)|secret/i;
+const SECRET_WORDS = new Set([
+  "pass",
+  "pwd",
+  "token",
+  "otp",
+  "totp",
+  "pin",
+  "cvc",
+  "cvv",
+  "cvv2",
+  "csc",
+  "ssn",
+  "iban",
+  "apikey",
+  "cardnumber",
+  "ccnumber",
+  "ccnum",
+]);
+const SECRET_PAIRS = new Set([
+  "api key",
+  "private key",
+  "access key",
+  "secret key",
+  "card number",
+  "card num",
+  "card no",
+  "cc number",
+  "cc num",
+  "security code",
+]);
+/**
+ * A field path that names a secret: never echoed after a failed POST, autosaved, stored as a draft or shown unmasked
+ * by the devtools. Contains `password` / `passwd` / `passphrase` / `passcode` / `secret` anywhere, or has a word (split
+ * on punctuation and camelCase) `pass`, `pwd`, `token`, `otp`, `totp`, `pin`, `cvc`, `cvv`, `csc`, `ssn`, `iban`,
+ * `apiKey`, `cardNumber`, `ccNumber` (`user.pinCode`, `billing.card_number`, `items.0.cvv`; not `shipping`).
+ */
+export function secretName(path: string): boolean {
+  if (SECRET_PART.test(path)) return true;
+  const words = path
+    .replace(/([a-z\d])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .split(/[^a-z\d]+/);
+  for (let i = 0; i < words.length; i++) {
+    if (SECRET_WORDS.has(words[i]!) || (i + 1 < words.length && SECRET_PAIRS.has(words[i] + " " + words[i + 1]))) return true;
+  }
+  return false;
+}

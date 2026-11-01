@@ -6,7 +6,20 @@ import { z } from "zod";
 import { createHandler, type AppRoute, type RenderInput, type ServerModule } from "../../router/server/handler.ts";
 import { redirect } from "@rivetjs/router";
 import { defineForm } from "../index.ts";
-import { back, createWizard, defineWizard, goTo, isComplete, next, step, stepFromUrl, stepHref, type Draft, type DraftStore, type WizardDraft } from "../wizard.ts";
+import {
+  back,
+  createWizard,
+  defineWizard,
+  goTo,
+  isComplete,
+  next,
+  step,
+  stepFromUrl,
+  stepHref,
+  type Draft,
+  type DraftStore,
+  type WizardDraft,
+} from "../wizard.ts";
 import { loadWizard, wizardAction } from "../server/index.ts";
 
 const account = defineForm({ name: "account", schema: z.object({ email: z.string().email() }) });
@@ -26,7 +39,7 @@ function memoryDrafts(): DraftStore<WizardDraft> & { map: Map<string, Draft<Wiza
     save: (id, patch, { version }) => {
       const current = map.get(id);
       if (current && current.version !== version) return { ok: false, conflict: true, version: current.version, value: current.value };
-      const nextVersion = (Number(current?.version ?? 0) + 1);
+      const nextVersion = Number(current?.version ?? 0) + 1;
       map.set(id, { value: { ...(current?.value ?? { steps: {}, completed: [] }), ...patch } as WizardDraft, version: nextVersion });
       return { ok: true, version: nextVersion };
     },
@@ -76,7 +89,10 @@ test("server wizard: step outputs saved, redirects, skip guard, final schema, co
   const location = new URL(first.headers.get("location")!, "http://x");
   assert.equal(location.pathname, "/w");
   assert.equal(location.searchParams.get("step"), "address");
-  assert.equal([...location.searchParams.keys()].some((key) => key.startsWith("/")), false);
+  assert.equal(
+    [...location.searchParams.keys()].some((key) => key.startsWith("/")),
+    false,
+  );
   const draft = location.searchParams.get("draft")!;
   assert.deepEqual(drafts.map.get(draft)!.value, { steps: { account: { email: "a@b.co" } }, completed: ["account"] });
 
@@ -159,4 +175,29 @@ test("loadWizard: an unknown draft with a later ?step= is a 404; without a step,
     assert.equal(fresh.status, 200, url);
     assert.equal(JSON.parse(await fresh.text())[0].step, 0, url);
   }
+});
+
+// FIX2 (r3-security#8): a step never adopts a draft id the store does not know (a client-chosen `?draft=` / `_draft`
+// handed to a victim would let its author read what the victim fills in).
+test("wizardAction: an unknown posted draft id is replaced by a fresh random id", async () => {
+  const drafts = memoryDrafts();
+  const actions = wizardAction(onboarding, drafts, { onComplete: () => "done" });
+  const server: ServerModule = { actions };
+  const handler = createHandler({
+    routes: [{ id: "w", pattern: "/w", page: true, layouts: [], server: () => Promise.resolve(server) }],
+    render: () => new Response("page"),
+    onError: () => {},
+  });
+  const response = await handler(
+    new Request("http://x/w?/account", {
+      method: "POST",
+      body: new URLSearchParams({ email: "a@b.co", _draft: "attacker-chosen" }),
+      headers: { origin: "http://x" },
+    }),
+  );
+  assert.equal(response.status, 303);
+  const draft = new URL(response.headers.get("location")!, "http://x").searchParams.get("draft")!;
+  assert.notEqual(draft, "attacker-chosen");
+  assert.match(draft, /^[\da-f-]{36}$/);
+  assert.equal(drafts.map.has("attacker-chosen"), false);
 });

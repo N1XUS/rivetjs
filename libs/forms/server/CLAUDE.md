@@ -13,7 +13,7 @@ Server half of forms: form definitions → router actions (convention-agnostic `
 
 - `action.ts` — `action(def, fn, options)`, `invalid`, `parse`, `readForm` (bounded body), CSRF modes, echo, remote field checks.
 - `intents.ts` — `parseIntent` / `applyIntent`: `insert|remove|move|swap:<path>[:…]` applied to echoed raw values (internal; used by `action.ts`).
-- `wizard.ts` — `wizardAction` (one action per step → `DraftStore`, redirect to next step; last step merges, checks `final`, `onComplete`, deletes draft; a last-step submit for a draft whose completion runs in this process answers 409 `errors.conflict` (`completing` set, FIX-CORE 2026-11-01; across processes `onComplete` must be idempotent per draft), test `tests/wizard.test.ts`), `loadWizard` (inside `load(…)`), `draftFrom` (`_draft` field / `?draft=`).
+- `wizard.ts` — `wizardAction` (one action per step → `DraftStore`, redirect to next step; last step merges, checks `final`, `onComplete`, deletes draft; a last-step submit for a draft whose completion runs in this process answers 409 `errors.conflict` (`completing` set, FIX-CORE 2026-11-01; across processes `onComplete` must be idempotent per draft), test `tests/wizard.test.ts`), `loadWizard` (inside `load(…)`), `draftFrom` (`_draft` field / `?draft=`); a step never adopts an id the store does not `load` (fresh `randomUUID`: no pre-created / client-chosen drafts, FIX2 2026-11-01); ownership = the app's `DraftStore` (JSDoc in `../wizard.ts`).
 - `draft.ts` — `draftAction(drafts)`: merges raw autosave patch; 409 + `{ conflict, version, value }` on stale version.
 - `redirect.ts` — re-export of `@rivetjs/router` `safeRedirect` (open-redirect guard).
 - `browser.ts` — throwing browser stub.
@@ -23,7 +23,7 @@ Server half of forms: form definitions → router actions (convention-agnostic `
 - Pipeline order (`action.ts`): CSRF → content type (415) → bounded body (413; urlencoded 1 MiB, multipart 10 MiB, `limits.file`) → `_form`/`_intent` → decode (400 on hardening limits) → schema → server field checks (`fields.*.server`, `options.checks`) → handler.
 - Failures answer `fail(status ?? 400, FormReply)`: same reply renders the no-JS page (issues, echo, `autofocus`) and the enhanced JSON answer.
 - CSRF `"strict"` (default): router check + production reject of posts with neither `Origin` nor `Sec-Fetch-Site` (dev exempt). `"lax"`: router check only. Function (e.g. `verifyCsrf`) runs after the strict check.
-- Echo (`echoValues`, `action.ts`): strings only, files dropped; names matching `/password|secret/i` ALWAYS dropped; `defineForm({ echo: { exclude } })` adds paths / `$` index patterns on top (union — never replaces the default; test in `server.test.ts`).
+- Echo (`echoValues`, `action.ts`): strings only, files dropped; secret names (`../path.ts` `secretName`, FIX2 2026-11-01: was `/password|secret/i`; now also token / otp / pin / cvv / ssn / iban / apiKey / card number words) ALWAYS dropped — same rule in `draftAction` (its `exclude` now adds to it, never replaces it), autosave and devtools masking; `defineForm({ echo: { exclude } })` adds paths / `$` index patterns on top (union — never replaces the default; test in `server.test.ts`).
 - Array intents on no-JS posts re-render with applied echo instead of running the handler (`maxRows` 1000).
 - Draft ids come from the client: apps must scope `DraftStore` ids to the session.
 - Never import from client modules; apps import it from `*.server.ts`.

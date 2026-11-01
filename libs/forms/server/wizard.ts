@@ -38,7 +38,11 @@ const completedIndices = (wizard: WizardDefinition<any>, draft: WizardDraft | un
   (draft?.completed ?? []).map((name) => indexOf(wizard, name)).filter((index) => index >= 0);
 
 /** Router actions for every step, keyed by step name: `export const forms = actions(wizardAction(...))`. */
-export function wizardAction<S extends readonly FormDefinition<any>[]>(wizard: WizardDefinition<S>, drafts: DraftStore<WizardDraft>, options: WizardOptions<S>): Record<string, (event: RequestEvent) => Promise<unknown>> {
+export function wizardAction<S extends readonly FormDefinition<any>[]>(
+  wizard: WizardDefinition<S>,
+  drafts: DraftStore<WizardDraft>,
+  options: WizardOptions<S>,
+): Record<string, (event: RequestEvent) => Promise<unknown>> {
   const out: Record<string, (event: RequestEvent) => Promise<unknown>> = {};
   // Drafts whose last step is running in this process: a second last-step submit (double click, retry) while the first
   // one's `onComplete` runs answers 409 instead of completing again (it would load the first one's save and pass every
@@ -63,6 +67,10 @@ export function wizardAction<S extends readonly FormDefinition<any>[]>(wizard: W
     );
     const step = async (value: unknown, event: RequestEvent, id: string): Promise<unknown> => {
       const loaded = await drafts.load(id, event);
+      // Wizard drafts are only ever created here, with a random id: an id the store does not know (a client-chosen
+      // one, e.g. a link with `?draft=aaaaaaaa` handed to a victim) is never adopted, so nobody can pre-create a draft
+      // another user then fills in.
+      if (!loaded) id = crypto.randomUUID();
       const done = completedIndices(wizard, loaded?.value);
       const url = pageUrl(event);
       // No skipping: an earlier step without saved output sends the user back to it.
@@ -106,7 +114,12 @@ export interface LoadedWizard {
   readonly values: Readonly<Record<string, unknown>>;
 }
 /** For the page's loader: the draft named by `?draft=` (unknown ids start over). */
-export async function loadWizard(wizard: WizardDefinition<any>, drafts: DraftStore<WizardDraft>, event: RequestEvent, options: { param?: string } = {}): Promise<LoadedWizard> {
+export async function loadWizard(
+  wizard: WizardDefinition<any>,
+  drafts: DraftStore<WizardDraft>,
+  event: RequestEvent,
+  options: { param?: string } = {},
+): Promise<LoadedWizard> {
   const id = draftFrom(event);
   const loaded = id ? await drafts.load(id, event) : undefined;
   const done = completedIndices(wizard, loaded?.value);

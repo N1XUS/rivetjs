@@ -3,7 +3,21 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { untrack } from "@rivetjs/reactivity";
 import { createHandler, type AppRoute, type RenderInput } from "../../router/server/handler.ts";
-import { conflict, createAutosave, defineAutosave, flush, markChanged, postDraft, resolveConflict, saveError, savedVersion, saving, shouldBlockLeave, unsaved, type Patch } from "../autosave.ts";
+import {
+  conflict,
+  createAutosave,
+  defineAutosave,
+  flush,
+  markChanged,
+  postDraft,
+  resolveConflict,
+  saveError,
+  savedVersion,
+  saving,
+  shouldBlockLeave,
+  unsaved,
+  type Patch,
+} from "../autosave.ts";
 import { draftAction, type RawDraft } from "../server/index.ts";
 import type { Draft, DraftStore } from "../wizard.ts";
 import { tick } from "./fixtures.ts";
@@ -78,7 +92,7 @@ test("draftAction: merges patches, version conflicts → 409, secrets dropped", 
     const response = await handler(new Request("http://x/d?/draft", { method: "POST", body: new URLSearchParams(fields), headers: { origin: "http://x" } }));
     return { status: response.status, result: JSON.parse(await response.text()).action.result };
   };
-  const first = await post({ title: "a", password: "hunter22", _draft: "draft-abcdef" });
+  const first = await post({ title: "a", password: "hunter22", cardNumber: "4242", otp: "123456", _draft: "draft-abcdef" });
   assert.deepEqual(first, { status: 200, result: { ok: true, version: "1", draft: "draft-abcdef" } });
   assert.deepEqual(drafts.map.get("draft-abcdef")!.value, { title: "a" });
   const second = await post({ body: "b", _draft: "draft-abcdef", _version: "1" });

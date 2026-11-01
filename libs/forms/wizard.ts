@@ -7,7 +7,13 @@ import type { FormDefinition } from "./define.ts";
 import type { StandardSchemaV1 } from "./standard-schema.ts";
 import type { InferOutput } from "./types.ts";
 
-/** The app's draft persistence (wizards, autosave). Scope ids to the user/session in `load`/`save`. */
+/**
+ * The app's draft persistence (wizards, autosave). Draft ids travel in URLs (`?draft=`) and form fields, so they leak
+ * (history, logs, `Referer`, shared links): bind every draft to its owner. `load` / `save` / `delete` get the
+ * request `event`: store the session's user (or session id) with a new draft and answer `load` with `undefined`, and
+ * `save` with a conflict, for a draft of anyone else. Wizard steps never adopt an unknown id (a fresh random id
+ * instead).
+ */
 export interface DraftStore<T = unknown> {
   load(id: string, event: unknown): Draft<T> | undefined | Promise<Draft<T> | undefined>;
   /** Merge `patch` into the draft. `version`: the version the client last saw (undefined: new draft). */
@@ -22,7 +28,8 @@ export interface Draft<T = unknown> {
   readonly version: DraftVersion;
 }
 /** Saved (new version) or a conflict: someone saved a newer version (`value` = theirs). */
-export type SaveResult<T = unknown> = { readonly ok: true; readonly version: DraftVersion } | { readonly ok: false; readonly conflict: true; readonly version: DraftVersion; readonly value?: T };
+export type SaveResult<T = unknown> =
+  { readonly ok: true; readonly version: DraftVersion } | { readonly ok: false; readonly conflict: true; readonly version: DraftVersion; readonly value?: T };
 
 type Steps = readonly FormDefinition<any>[];
 /** Merge of every step's output (intersection of step outputs). */
@@ -64,7 +71,10 @@ export interface WizardState {
 }
 
 /** Wizard state from the page's data (`loadWizard` result) or defaults (in-page wizards). */
-export function createWizard(wizard: WizardDefinition<any>, options: { step?: number; completed?: readonly (number | string)[]; draft?: string } = {}): WizardState {
+export function createWizard(
+  wizard: WizardDefinition<any>,
+  options: { step?: number; completed?: readonly (number | string)[]; draft?: string } = {},
+): WizardState {
   const completed = (options.completed ?? []).map((entry) => (typeof entry === "number" ? entry : indexOf(wizard, entry))).filter((index) => index >= 0);
   const state: WizardState = { s: signal(clampStep(wizard, options.step ?? 0, completed)), d: signal([...new Set(completed)].sort((a, b) => a - b)) };
   return options.draft ? { ...state, k: options.draft } : state;

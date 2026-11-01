@@ -13,11 +13,21 @@ export interface CsrfOptions {
   secret: string;
   /** Binds tokens to the signed-in session (default: none, the nonce alone). */
   session?: (event: RequestEvent) => string | undefined;
-  /** Cookie name (default `__rivet_csrf`; `__Host-` prefixed in production). */
+  /** Cookie name (default `__rivet_csrf`; `__Host-rivet_csrf` when `secure`). */
   cookie?: string;
+  /**
+   * `Secure` nonce cookie (default: outside dev). Not taken from the request URL: behind a TLS-terminating proxy
+   * without `origin` / `trustProxy` the server sees `http:` while the browser is on https. `false` only for a
+   * production site served over plain http (browsers drop `Secure` cookies there, except on localhost).
+   */
+  secure?: boolean;
 }
-const cookieName = (event: RequestEvent, options: CsrfOptions) => options.cookie ?? (event.dev || event.url.protocol !== "https:" ? "__rivet_csrf" : "__Host-rivet_csrf");
-const sign = (options: CsrfOptions, nonce: string, session: string) => createHmac("sha256", options.secret).update(nonce + "|" + session).digest("base64url");
+const secureOf = (event: RequestEvent, options: CsrfOptions) => options.secure ?? !event.dev;
+const cookieName = (event: RequestEvent, options: CsrfOptions) => options.cookie ?? (secureOf(event, options) ? "__Host-rivet_csrf" : "__rivet_csrf");
+const sign = (options: CsrfOptions, nonce: string, session: string) =>
+  createHmac("sha256", options.secret)
+    .update(nonce + "|" + session)
+    .digest("base64url");
 
 /** The token for this request's forms (sets the nonce cookie when missing). */
 export function csrfToken(event: RequestEvent, options: CsrfOptions): string {
@@ -26,7 +36,7 @@ export function csrfToken(event: RequestEvent, options: CsrfOptions): string {
   let nonce = event.cookies.get(name);
   if (!nonce || !/^[\w-]{22,64}$/.test(nonce)) {
     nonce = randomBytes(18).toString("base64url");
-    event.cookies.set(name, nonce, { path: "/", httpOnly: true, sameSite: "lax", secure: event.url.protocol === "https:" });
+    event.cookies.set(name, nonce, { path: "/", httpOnly: true, sameSite: "lax", secure: secureOf(event, options) });
   }
   return sign(options, nonce, options.session?.(event) ?? "");
 }

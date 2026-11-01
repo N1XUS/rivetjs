@@ -37,3 +37,50 @@ test("token round trip; wrong token, missing cookie or another session → 403",
   assert.equal(verifyCsrf(options)(event, data), true);
   assert.throws(() => csrfToken(event, { secret: "short" }), RangeError);
 });
+
+// FIX2 (r3-security#12): the cookie's flags came from `event.url.protocol`; behind a TLS-terminating proxy without
+// `origin` / `trustProxy` the server sees `http:` and the production cookie lost `Secure` and the `__Host-` prefix.
+test("production nonce cookie is Secure + __Host- even when the server sees http:; `secure: false` opts out", async () => {
+  const cookie = (await handler(new Request("http://x/n"))).headers.get("set-cookie")!;
+  assert.match(cookie, /^__Host-rivet_csrf=/);
+  assert.match(cookie, /;\s*Secure/i);
+  const set: { name: string; secure?: boolean }[] = [];
+  const event = {
+    cookies: { get: () => undefined, set: (name: string, _: string, o: { secure?: boolean }) => set.push({ name, secure: o.secure }) },
+    url: new URL("http://x/n"),
+    dev: false,
+  };
+  csrfToken(event as never, { ...options, secure: false });
+  csrfToken({ ...event, dev: true } as never, options);
+  assert.deepEqual(set, [
+    { name: "__rivet_csrf", secure: false },
+    { name: "__rivet_csrf", secure: false },
+  ]);
+});
+
+// FIX2 (r3-security#7): secret-looking names beyond password / secret are never echoed after a failed POST.
+test("secretName: words and pairs, not substrings of harmless names", async () => {
+  const { secretName } = await import("../path.ts");
+  for (const name of [
+    "password",
+    "newPassword",
+    "apiSecret",
+    "token",
+    "user.accessToken",
+    "otp",
+    "pinCode",
+    "card.cvv",
+    "billing.card_number",
+    "cardNumber",
+    "ccNum",
+    "ssn",
+    "iban",
+    "apiKey",
+    "api_key",
+    "privateKey",
+    "securityCode",
+  ])
+    assert.ok(secretName(name), name);
+  for (const name of ["shipping", "email", "keyword", "spinner", "monkey", "postcard", "card.holder", "tokenizer", "items.0.sku"])
+    assert.ok(!secretName(name), name);
+});

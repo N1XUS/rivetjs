@@ -62,7 +62,7 @@ The compiler removes `actions(…)` from the browser build, and `@rivetjs/forms/
 
 1. rejects posts from other sites, also when the browser sends neither `Origin` nor `Sec-Fetch-Site` (in production);
 2. refuses wrong content types (`415`) and too-large bodies (`413`; 1 MiB for normal forms, 10 MiB for file uploads);
-3. checks the values with the schema. On failure it answers `400` with the problems and the values the user typed (except passwords, secrets and files; add more paths with `echo: { exclude: ["card.number"] }` in `defineForm`).
+3. checks the values with the schema. On failure it answers `400` with the problems and the values the user typed (except files and fields that look secret: names with `password`, `secret`, `token`, `otp`, `pin`, `cvv`, `ssn`, `iban`, `apiKey`, a card number; add more paths with `echo: { exclude: ["card.holder"] }` in `defineForm`).
 
 Your function can also reject the input itself, for example when an email is already taken: return `invalid({ email: "This email is already registered" })`. `invalid` comes from the same module as `action`:
 
@@ -182,7 +182,7 @@ Others: `touched`, `dirty`, `issues`, `issueText`, `validating` (an async check 
 
 ## More building blocks
 
-Each lives in its own entry, so you only pay for what you import. Server helpers such as `wizardAction(...)` return the whole actions object (`export const forms = actions(wizardAction(...))`); call `loadWizard(...)` inside `load(…)`. A second submit of a wizard's last step while its `onComplete` is still running (a double click, a retry) gets a 409 conflict instead of completing again; with several server processes, make `onComplete` idempotent per draft id.
+Each lives in its own entry, so you only pay for what you import. Server helpers such as `wizardAction(...)` return the whole actions object (`export const forms = actions(wizardAction(...))`); call `loadWizard(...)` inside `load(…)`. Draft ids travel in URLs (`?draft=`), so they can leak through history, logs or a shared link: your `DraftStore` must bind each draft to its owner. `load`, `save` and `delete` get the request event; store the signed-in user (or session) with a new draft and return nothing for anyone else's. Wizard steps never adopt a draft id the store does not know: they start a new draft with a random id. Fields that look secret (`password`, `token`, `pin`, `cvv`, card numbers, …) are never echoed, autosaved or stored as drafts. A second submit of a wizard's last step while its `onComplete` is still running (a double click, a retry) gets a 409 conflict instead of completing again; with several server processes, make `onComplete` idempotent per draft id.
 
 | Entry | For |
 | --- | --- |

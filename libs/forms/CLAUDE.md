@@ -14,7 +14,7 @@ Type-safe, resumable, progressively enhanced forms over Standard Schema v1 (Zod,
 - `./autosave` → `autosave.ts`; `development` → `autosave-dev.ts` (DevTools `lib.autosave`).
 - `./errors` → `errors.ts`: `mapIssues`, `fromPointer`, `fromBracketPath`, `issueRecord`.
 - `./server` → `server/index.ts` (server only; `browser` condition → `server/browser.ts` throws). See `server/CLAUDE.md`.
-- `./csrf` → `csrf.ts` (server only; `browser` → `server/browser.ts`): `csrfToken`, `verifyCsrf`.
+- `./csrf` → `csrf.ts` (server only; `browser` → `server/browser.ts`): `csrfToken`, `verifyCsrf` (`secure` default `!event.dev`, not the request protocol — FIX2 2026-11-01; `__Host-` name when secure). `members.ts` also exports `changed(control)` (dirty vs markup default; `reads.ts` `dirty` + devtools). `path.ts` `secretName(path)`: the one secret-field rule (echo, draftAction, autosave, devtools masking).
 
 ## Layout
 

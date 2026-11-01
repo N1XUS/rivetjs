@@ -9,7 +9,8 @@ import * as forms from "./index.ts";
 import { SUBMITTED, SUBMITTING, VALIDATING, ENHANCED, type FormStore } from "./store.ts";
 import type { FormDefinition } from "./define.ts";
 import type { InferInput, Issue } from "./types.ts";
-import { controlsOf } from "./members.ts";
+import { changed, controlsOf } from "./members.ts";
+import { secretName } from "./path.ts";
 export * from "./index.ts";
 
 /** What the DevTools Forms pane shows for one store. */
@@ -30,17 +31,6 @@ export interface FormSnapshot {
   result?: unknown;
 }
 
-function changed(control: Element): boolean {
-  if (control instanceof HTMLInputElement) {
-    if (control.type === "checkbox" || control.type === "radio") return control.checked !== control.defaultChecked;
-    if (control.type === "file") return (control.files?.length ?? 0) > 0;
-    return control.value !== control.defaultValue;
-  }
-  if (control instanceof HTMLTextAreaElement) return control.value !== control.defaultValue;
-  if (control instanceof HTMLSelectElement) return Array.from(control.options).some((option) => option.selected !== option.defaultSelected);
-  return false;
-}
-
 /** A store's current state, read without tracking or creating field signals (password values masked). */
 function describeForm(store: FormStore<any>): FormSnapshot {
   return untrack(() => {
@@ -49,10 +39,12 @@ function describeForm(store: FormStore<any>): FormSnapshot {
     const dirty = new Set<string>();
     if (element instanceof HTMLFormElement) {
       // Password fields (and names like autosave's default exclusions) are masked.
-      const secret = new Set(Array.from(controlsOf(element)).flatMap((control) => ((control as HTMLInputElement).type === "password" ? [(control as HTMLInputElement).name] : [])));
+      const secret = new Set(
+        Array.from(controlsOf(element)).flatMap((control) => ((control as HTMLInputElement).type === "password" ? [(control as HTMLInputElement).name] : [])),
+      );
       for (const [name, entry] of new FormData(element)) {
         if (name.startsWith("_") || typeof entry !== "string") continue;
-        const value = secret.has(name) || /password|secret/i.test(name) ? (entry ? "••••••" : "") : entry;
+        const value = secret.has(name) || secretName(name) ? (entry ? "••••••" : "") : entry;
         const existing = values[name];
         values[name] = existing === undefined ? value : Array.isArray(existing) ? [...existing, value] : [existing, value];
       }

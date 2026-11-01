@@ -62,7 +62,7 @@ export interface FormOptions<S extends StandardSchemaV1> {
   revalidateOn?: RevalidateOn;
   /** Field checks by path or pattern (`items.$.sku`). */
   fields?: Partial<Record<FieldPath<StandardSchemaV1.InferInput<S>>, FieldConfig>> & Record<string, FieldConfig | undefined>;
-  /** Extra paths/patterns never echoed after a failed POST; added to the always-on default (files, names matching /password|secret/i). */
+  /** Extra paths/patterns never echoed after a failed POST; added to the always-on default (files, secret names: `secretName` — password, token, pin, cvv, card number, …). */
   echo?: { exclude?: readonly string[] };
   /** Submit waits this long for pending field checks (ms, default 10000) → form issue `errors.timeout`. */
   asyncTimeout?: number;

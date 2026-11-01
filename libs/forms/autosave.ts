@@ -7,7 +7,8 @@
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { beforeLeave } from "@rivetjs/router/leave";
 import { formOf } from "./dom.ts";
-import { canonicalName, matchesPattern } from "./path.ts";
+import { controlsOf } from "./members.ts";
+import { canonicalName, matchesPattern, secretName } from "./path.ts";
 import type { Issue } from "./types.ts";
 import type { DraftVersion, SaveResult } from "./wizard.ts";
 import type { ActionAnswer } from "@rivetjs/router";
@@ -26,7 +27,7 @@ export interface AutosaveDefinition {
   readonly save: (patch: Patch, context: SaveContext) => Promise<SaveResult>;
   /** Quiet period after the last input (ms, default 800); blur saves at once. */
   readonly debounce?: number;
-  /** Never saved (default: paths containing "password"/"secret"; files are never saved). */
+  /** Paths / `$` patterns never saved, on top of secret names (`secretName`: password, token, pin, cvv, …) and files, which are never saved. */
   readonly exclude?: readonly string[];
 }
 /** Define an autosave at module scope. */
@@ -51,7 +52,14 @@ export interface AutosaveState {
 }
 /** Create the autosave state of one rendered form, starting from a saved version / draft. */
 export function createAutosave(options: { version?: DraftVersion; draft?: string } = {}): AutosaveState {
-  const state: AutosaveState = { v: signal(options.version), b: signal(0), n: signal(0), t: signal<number | undefined>(undefined), e: signal<Issue | undefined>(undefined), c: signal<{ version: DraftVersion; value?: unknown } | undefined>(undefined) };
+  const state: AutosaveState = {
+    v: signal(options.version),
+    b: signal(0),
+    n: signal(0),
+    t: signal<number | undefined>(undefined),
+    e: signal<Issue | undefined>(undefined),
+    c: signal<{ version: DraftVersion; value?: unknown } | undefined>(undefined),
+  };
   return options.draft ? { ...state, k: options.draft } : state;
 }
 
@@ -67,7 +75,6 @@ const pendingOf = (state: AutosaveState): Pending => {
   if (!found) pendings.set(state, (found = { patch: {} }));
   return found;
 };
-const SECRET = /password|secret/i;
 
 /** `onInput` / `onFocusOut` on the `<form>`: record the field's current value; save after the quiet period (blur: now). */
 export function onAutosave(def: AutosaveDefinition, state: AutosaveState, event: Event): void {
@@ -76,8 +83,16 @@ export function onAutosave(def: AutosaveDefinition, state: AutosaveState, event:
   const name = target?.name;
   if (!element || !name || name.startsWith("_") || target.type === "file") return;
   const path = canonicalName(name);
-  if (!path || (def.exclude ? def.exclude.some((pattern) => matchesPattern(pattern, path)) : SECRET.test(path))) return;
-  const values = new FormData(element).getAll(name).filter((value): value is string => typeof value === "string");
+  if (!path || secretName(path) || def.exclude?.some((pattern) => matchesPattern(pattern, path))) return;
+  // Per keystroke: a text control alone under its name is its own value (no FormData of the whole form).
+  const values =
+    target.type !== "checkbox" &&
+    target.type !== "radio" &&
+    target.type !== "select-multiple" &&
+    !target.disabled &&
+    controlsOf(element).namedItem(name) === target
+      ? [target.value]
+      : new FormData(element).getAll(name).filter((value): value is string => typeof value === "string");
   markChanged(def, state, path, values.length === 1 && !name.endsWith("[]") ? values[0]! : values, event.type === "focusout");
 }
 
@@ -107,7 +122,11 @@ export async function flush(def: AutosaveDefinition, state: AutosaveState): Prom
   const run = (async () => {
     try {
       const version = untrack(state.v);
-      const result = await def.save(patch, { signal: controller.signal, ...(version !== undefined ? { version } : {}), ...(state.k ? { draft: state.k } : {}) });
+      const result = await def.save(patch, {
+        signal: controller.signal,
+        ...(version !== undefined ? { version } : {}),
+        ...(state.k ? { draft: state.k } : {}),
+      });
       if (result.ok) {
         state.v.set(result.version);
         state.t.set(Date.now());
@@ -184,7 +203,13 @@ export function postDraft(action: string): AutosaveDefinition["save"] {
     for (const [name, value] of Object.entries(patch)) for (const item of Array.isArray(value) ? value : [value]) body.append(name, item);
     if (context.draft) body.set("_draft", context.draft);
     if (context.version !== undefined) body.set("_version", String(context.version));
-    const response = await fetch(new URL(action, location.href), { method: "POST", body, headers: { accept: "application/json" }, credentials: "same-origin", signal: context.signal });
+    const response = await fetch(new URL(action, location.href), {
+      method: "POST",
+      body,
+      headers: { accept: "application/json" },
+      credentials: "same-origin",
+      signal: context.signal,
+    });
     const { _decodeWire } = await import("@rivetjs/runtime/resume-format");
     const text = await response.text();
     let answer: ActionAnswer;
