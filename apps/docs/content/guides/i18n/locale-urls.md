@@ -170,7 +170,7 @@ import { setLocale } from "@rivetjs/i18n/router";
 
 ## Tell search engines about other languages
 
-`alternates(url, config)` returns `<link>` entries for the route's `head` export: one `hreflang` link per language, an `x-default` link to the default language and a `canonical` link. It needs `baseUrl` in the config.
+`alternates(url, config)` returns `<link>` entries for the route's `head` export: one `hreflang` link per language, an `x-default` link to the default language and a `canonical` link. It needs `baseUrl` in the config. The canonical link drops the query string and the hash, like kit `canonical()`; keep parameters that select different content with `alternates(url, config, { query: ["page"] })`. All links follow the router's `trailingSlash` setting (override with the `trailingSlash` option).
 
 ```tsx title="src/routes/[[lang]]/index.tsx"
 import { alternates } from "@rivetjs/i18n/router";

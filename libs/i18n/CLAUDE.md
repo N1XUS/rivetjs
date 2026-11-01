@@ -10,7 +10,7 @@ Compile-time i18n: ICU catalogs → per-key, per-locale table → Rust compiler 
 - `./vite` → `vite.ts`: `i18n(config & { dts? })` plugin; `api.rivetCompileOptions(server, id)` read by `@rivetjs/compiler/vite` (`libs/compiler/vite.ts`); `api.clientPaths` (`clientPathPattern`: RegExp source of the app paths a client build's locale serves) read by `@rivetjs/router/vite` (wraps `underBase` → cross-locale links load documents); `DEV_LOCALE_PARAM`.
 - `./runtime` → `runtime.ts`: `plural`, `select`, `number`, `date`, `pick` — imported only by compiled code for runtime-dependent parts (plural/select/number/date, `t.in`).
 - `./resolve` → `resolve.ts`: isomorphic locale resolution (`resolveServer`, `resolveClient`, strategies, `localeCookie`, `cookieName`, `match`, `localeFromPath`). Cookie reads go through `@rivetjs/router` `parseCookies` (router semantics: quotes stripped, invalid percent-encoding kept raw → not a locale → skipped).
-- `./router` → `router.ts`: `i18nGuard`, `errorLocale`, `localizeHref`, `delocalizeHref`, `alternates`, `dirOf`, `setLocale`.
+- `./router` → `router.ts`: `i18nGuard`, `errorLocale`, `localizeHref`, `delocalizeHref`, `alternates`, `dirOf`, `setLocale`. `alternates(url, config, { trailingSlash?, query? })`: hrefs through router `slashPath` (default `TRAILING_SLASH`), canonical drops query (except `query`) + hash — same rules as kit `canonical()` (FIX-CORE 2026-11-01). A prefix-map segment is lower-cased in `prefixOf`, as in `resolve.ts` `prefixes` / `vite.ts` `clientPathPattern`.
 
 ## Layout
 

@@ -280,3 +280,13 @@ test("a prefix map segment is matched lower-case everywhere: links use the lower
   const mapped = { ...config, routing: { prefix: { de: "/Deutsch" } } };
   assert.equal(localizeHref("/cart", "de", mapped), "/deutsch/cart");
 });
+
+test("alternates: the canonical drops the query (except an allowlist) and the hash; trailingSlash shapes every href", () => {
+  const url = new URL("https://x.test/de/cart?utm_source=mail&page=2#top");
+  const hrefs = (options?: Parameters<typeof alternates>[2]) => alternates(url, config, options).map((l) => l.href);
+  assert.deepEqual(hrefs(), ["https://x.test/cart", "https://x.test/de/cart", "https://x.test/cart", "https://x.test/de/cart"]);
+  assert.deepEqual(hrefs({ query: ["page"] }).at(-1), "https://x.test/de/cart?page=2");
+  assert.deepEqual(hrefs({ trailingSlash: "always" }), ["https://x.test/cart/", "https://x.test/de/cart/", "https://x.test/cart/", "https://x.test/de/cart/"]);
+  const root = alternates(new URL("https://x.test/de/"), config, { trailingSlash: "never" }).map((l) => l.href);
+  assert.deepEqual(root, ["https://x.test/", "https://x.test/de", "https://x.test/", "https://x.test/de"]);
+});

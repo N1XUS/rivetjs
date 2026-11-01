@@ -2,7 +2,7 @@
 // Routes take the locale from an optional `[[lang]]` segment; the guard validates it (or resolves
 // one), stores it in `locals.locale` / `locals.dir` for the app (variant, manifest, `<html lang dir>`)
 // and redirects unprefixed URLs; same-site navigations to a locale record it in the locale cookie.
-import { BASE, notFound, redirect, type HeadLink, type RequestEvent } from "@rivetjs/router";
+import { BASE, notFound, redirect, slashPath, TRAILING_SLASH, type HeadLink, type RequestEvent, type TrailingSlash } from "@rivetjs/router";
 import {
   cookieName,
   DEFAULT_ORDER,
@@ -65,16 +65,28 @@ export function localizeHref(href: string, locale: string, config: I18nRouteConf
   return at + (prefix && /^\/(?:[?#]|$)/.test(bare) ? prefix + bare.slice(1) : prefix + bare);
 }
 
-/** `hreflang` alternates for every locale, `x-default` (default locale) and the canonical URL. */
-export function alternates(url: URL, config: I18nRouteConfig): HeadLink[] {
+/** Options of `alternates()` (as kit `canonical()`). */
+export interface AlternatesOptions {
+  /** Path form of every href, as the router's `trailingSlash`. Default: the app's `rivetRouter({ trailingSlash })` policy. */
+  trailingSlash?: TrailingSlash;
+  /** Query parameters the canonical keeps (everything else and the hash are dropped). */
+  query?: readonly string[];
+}
+
+/** `hreflang` alternates for every locale, `x-default` (default locale) and the canonical URL (query stripped except `query`, no hash). */
+export function alternates(url: URL, config: I18nRouteConfig, options: AlternatesOptions = {}): HeadLink[] {
   const { baseUrl } = config;
   if (!baseUrl) throw new Error("i18n: alternates() needs baseUrl");
+  const slash = options.trailingSlash ?? TRAILING_SLASH;
   const bare = delocalizeHref(url.pathname, config);
-  const absolute = (locale: string) => new URL(localizeHref(bare, locale, config), baseUrl).href;
+  const absolute = (path: string, search = "") => new URL(slashPath(path, slash) + search, baseUrl).href;
+  const localized = (locale: string) => absolute(localizeHref(bare, locale, config));
+  const kept = new URLSearchParams();
+  for (const name of options.query ?? []) for (const value of url.searchParams.getAll(name)) kept.append(name, value);
   return [
-    ...config.locales.map((locale) => ({ rel: "alternate", hreflang: locale, href: absolute(locale) })),
-    { rel: "alternate", hreflang: "x-default", href: absolute(config.defaultLocale) },
-    { rel: "canonical", href: new URL(url.pathname + url.search, baseUrl).href },
+    ...config.locales.map((locale) => ({ rel: "alternate", hreflang: locale, href: localized(locale) })),
+    { rel: "alternate", hreflang: "x-default", href: localized(config.defaultLocale) },
+    { rel: "canonical", href: absolute(url.pathname, kept.size ? "?" + kept : "") },
   ];
 }
 
