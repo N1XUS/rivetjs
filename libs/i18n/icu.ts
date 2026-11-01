@@ -30,7 +30,8 @@ const DATE_STYLES: Record<string, "short" | "medium" | "long" | "full"> = {
 // Style of a number/date argument: named style, skeleton (`::…`, parsed by formatjs) or none.
 function styleOf<T>(style: unknown, named: Record<string, T>, where: string, kind: string): T | undefined {
   if (typeof style === "string") {
-    const found = named[style];
+    // Own names only: a style called `constructor` / `toString` is unknown, not an inherited member.
+    const found = Object.hasOwn(named, style) ? named[style] : undefined;
     if (found === undefined) throw new I18nError(`${where}: unknown ${kind} style "${style}"`);
     return found;
   }

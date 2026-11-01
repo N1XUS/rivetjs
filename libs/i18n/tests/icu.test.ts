@@ -55,3 +55,7 @@ test("paramsOf collects kinds", () => {
     ["name", "string"],
   ]);
 });
+test("a style named like an Object.prototype member is unknown, not inherited", () => {
+  assert.throws(() => parseMessage("{n, number, constructor}", "en:a"), /unknown number style "constructor"/);
+  assert.throws(() => parseMessage("{d, date, toString}", "en:a"), /unknown date style "toString"/);
+});

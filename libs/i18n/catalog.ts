@@ -27,7 +27,8 @@ export interface BuiltTable {
 }
 
 export function flatten(tree: Record<string, unknown>, prefix = ""): Record<string, string> {
-  const out: Record<string, string> = {};
+  // Null prototype: keys naming Object.prototype members (`constructor`, `__proto__`) are plain keys.
+  const out: Record<string, string> = Object.create(null);
   for (const [k, v] of Object.entries(tree)) {
     const key = prefix ? prefix + "." + k : k;
     if (typeof v === "string") out[key] = v;
@@ -49,9 +50,9 @@ export function buildTable(config: I18nConfig, raw: Record<string, Record<string
   const { locales, defaultLocale } = config;
   if (!locales.includes(defaultLocale)) throw new I18nError(`defaultLocale "${defaultLocale}" is not in locales`);
   const missing = config.missing ?? "error";
-  const flat = Object.fromEntries(locales.map((l) => [l, flatten(raw[l] ?? {})]));
+  const flat = Object.fromEntries(locales.map((l) => [l, flatten(Object.hasOwn(raw, l) ? raw[l]! : {})]));
   const keys = new Set(locales.flatMap((l) => Object.keys(flat[l]!)));
-  const table: Table = {};
+  const table: Table = Object.create(null);
   const warnings: string[] = [];
   for (const key of [...keys].sort()) {
     if (flat[defaultLocale]![key] === undefined)

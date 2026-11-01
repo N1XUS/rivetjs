@@ -13,7 +13,8 @@ const config: I18nConfig = {
 };
 
 test("flatten nests with dots", () => {
-  assert.deepEqual(flatten({ cart: { title: "Cart", count: "{n}" }, ok: "OK" }), {
+  // Null-prototype result (prototype member names are plain keys): compare its own entries.
+  assert.deepEqual({ ...flatten({ cart: { title: "Cart", count: "{n}" }, ok: "OK" }) }, {
     "cart.title": "Cart",
     "cart.count": "{n}",
     ok: "OK",
@@ -64,4 +65,14 @@ test("loadCatalogs reads {locale} files relative to root", async () => {
   );
   assert.deepEqual(raw, { en: { hi: "Hi" }, de: { hi: "Hallo" } });
   assert.deepEqual(files, [join(root, "locales/en.json"), join(root, "locales/de.json")]);
+});
+// FIX-CORE (2026-11-01): catalog keys that name Object.prototype members are ordinary keys, never inherited values.
+test("prototype member names are plain catalog keys", () => {
+  const two: I18nConfig = { locales: ["en", "de"], defaultLocale: "en", catalogs: "x", missing: "error" };
+  assert.throws(() => buildTable(two, { en: { title: "T" }, de: { title: "T", constructor: "K" } }), /constructor: missing in default locale "en"/);
+  assert.throws(() => buildTable(two, { en: { title: "T", toString: "S" }, de: { title: "T" } }), /toString: missing in "de"/);
+  const { table } = buildTable(two, JSON.parse('{"en":{"__proto__":"P","constructor":"C"},"de":{"__proto__":"Q","constructor":"D"}}'));
+  assert.deepEqual(Object.keys(table).sort(), ["__proto__", "constructor"]);
+  assert.equal(Object.getPrototypeOf(table), null);
+  assert.deepEqual(Object.keys(flatten(JSON.parse('{"__proto__":{"a":"x"}}'))), ["__proto__.a"]);
 });
