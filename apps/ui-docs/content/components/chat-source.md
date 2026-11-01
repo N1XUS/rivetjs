@@ -6,7 +6,7 @@ status: experimental
 related: [components/chat-message, components/tooltip, components/disclosure]
 ---
 
-`ChatSource` is an inline pill linking to a source: favicon (or the domain initial), title (default: the domain of `href`). A URL source shows a preview card on hover and focus (the ui [Tooltip](/components/tooltip/)): site, title (falls back to the URL) and the `description` when given. A source without `href` is a document (file icon, no link). `ChatSources` collects sources in a [Disclosure](/components/disclosure/).
+`ChatSource` is an inline pill linking to a source: favicon (or the first letter of the title or domain, `?` when both are empty), title (default: the domain of `href`). A URL source shows a preview card on hover and focus (the ui [Tooltip](/components/tooltip/)): site, title (falls back to the URL) and the `description` when given. A source without `href` is a document (file icon, no link). `ChatSources` collects sources in a [Disclosure](/components/disclosure/).
 
 ## Usage
 

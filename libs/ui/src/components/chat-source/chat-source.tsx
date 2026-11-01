@@ -38,6 +38,17 @@ interface ChatSourceContext {
 const ChatSourceContext = createContext<ChatSourceContext>({});
 
 /** Host of `href` without `www.` (`undefined` for relative / invalid URLs). */
+/**
+ * One-letter badge: the first code point of the trimmed text upper-cased, itself cut to one code point (`charAt(0)` split
+ * an emoji / astral surrogate pair, `"ß"` upper-cases to `"SS"`); `"?"` when the text is empty or missing. Locale-free
+ * `toUpperCase` so server and browser agree.
+ */
+const initialOf = (text: string | undefined): string => {
+  const first = text?.trim().codePointAt(0);
+  if (first === undefined) return "?";
+  return String.fromCodePoint(String.fromCodePoint(first).toUpperCase().codePointAt(0)!);
+};
+
 const domainOf = (href: string | undefined): string | undefined => {
   if (!href) return undefined;
   try {
@@ -181,7 +192,7 @@ const ChatSourceIcon = (props: ChatSourceIconProps): JSX.Element => {
     );
   if (context.sourceType === "document")
     return <Icon icon={FileText} size={14} class={composeSlotClassName(SLOTS.documentIcon, local.class)} aria-hidden="true" />;
-  const initial = (context.title ?? context.domain ?? "?").charAt(0).toUpperCase();
+  const initial = initialOf(context.title ?? context.domain);
   return (
     <span class={composeSlotClassName(SLOTS.iconFallback, local.class)} aria-hidden="true" data-slot="chat-source-icon">
       {initial}
@@ -309,7 +320,7 @@ const ChatSourcesFavicons = (props: ChatSourcesFaviconsProps): JSX.Element => {
         source.faviconUrl ? (
           <img class={SLOTS.favicon()} src={source.faviconUrl} alt="" width={16} height={16} loading="lazy" />
         ) : (
-          <span class={`${SLOTS.favicon()} ${SLOTS.iconFallback()}`}>{(source.title ?? domainOf(source.href) ?? "?").charAt(0).toUpperCase()}</span>
+          <span class={`${SLOTS.favicon()} ${SLOTS.iconFallback()}`}>{initialOf(source.title ?? domainOf(source.href))}</span>
         ),
       )}
     </span>

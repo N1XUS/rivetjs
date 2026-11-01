@@ -42,3 +42,18 @@ test("chat-sources SSR: group", async () => {
   assert.equal(html.match(/chat-sources__favicon\b/g)?.length, 2);
   assert.match(html, /chat-sources__list/);
 });
+
+test("chat-source SSR: initial badge is one whole upper-case character", async () => {
+  const html = await renderToString(() => (
+    <div>
+      <ChatSource href="https://x.dev" title="😀 Smiles" />
+      <ChatSource href="https://x.dev" title="ßeta notes" />
+      <ChatSource href="https://x.dev" title="  rivet" />
+      <ChatSource href="https://x.dev" title="" />
+      <ChatSources.Favicons sources={[{ href: "https://a.dev", title: "𝒳 math" }]} />
+    </div>
+  ));
+  const initials = [...html.matchAll(/chat-source__icon-fallback[^>]*>([^<]*)</g)].map((m) => m[1]);
+  // `charAt(0)` split the surrogate pair (lone surrogate), "ß" upper-cased to two letters, leading space / "" left it blank.
+  assert.deepEqual(initials, ["😀", "S", "R", "?", "𝒳"]);
+});
