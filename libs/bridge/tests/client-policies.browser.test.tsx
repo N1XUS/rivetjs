@@ -5,7 +5,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { createRoot } from "@rivetjs/reactivity";
 import { hydrateIsland } from "../client.ts";
 import { chunk, clicks, Counter, counterHtml, fakeClient, log, Mismatch, seen, Stopper } from "./fake-client.ts";
-import type { ClientAdapter } from "../adapter.ts";
+import { islandRecovered, type ClientAdapter } from "../adapter.ts";
 
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 const until = async (check: () => boolean, ms = 2000) => {
@@ -84,8 +84,8 @@ test("chunk load failure: the island stays as rendered, one console.error", asyn
   }
 });
 
-test("hydrate throws (mismatch): mounts fresh, the resumed slot nodes moved into the new hole", async () => {
-  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+test("hydrate throws (mismatch): mounts fresh, the resumed slot nodes moved into the new hole; RV2149 once, every build", async () => {
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
   try {
     const root = page(counterHtml("i0", 1, "<b>kept</b>"));
     const slot = root.querySelector("b")!;
@@ -94,8 +94,31 @@ test("hydrate throws (mismatch): mounts fresh, the resumed slot nodes moved into
     expect(log.map((e) => e.call)).toEqual(["hydrate", "mount"]);
     expect(root.querySelector("rivet-slot > b")).toBe(slot);
     expect(root.querySelectorAll(".counter").length).toBe(1);
+    // Reported in production too (a framework hydration error is not a dev-only event), once.
+    expect(error.mock.calls.map((call) => String(call[0]).replace(/:.*/, ""))).toEqual(["[RV2149] framework island i0 recovered from an error"]);
   } finally {
-    warn.mockRestore();
+    error.mockRestore();
+  }
+});
+
+test("hydrate throws an error the adapter already reported (RV2149): not reported twice", async () => {
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const root = page(counterHtml("i0", 1));
+    const reporting: ClientAdapter = {
+      ...fakeClient,
+      hydrate(target, _component, _props, _slots, ctx) {
+        const failure = new Error("mismatch");
+        islandRecovered("fake", ctx.id, failure, target);
+        throw failure;
+      },
+    };
+    const load = () => Promise.resolve({ default: Counter, adapter: reporting });
+    createRoot(() => hydrateIsland(load as never, root, { count: 1 }, { id: "i0", on: "load" }));
+    await until(() => log.some((e) => e.call === "mount"));
+    expect(error.mock.calls.map((call) => String(call[0]).replace(/:.*/, ""))).toEqual(["[RV2149] fake island i0 recovered from an error"]);
+  } finally {
+    error.mockRestore();
   }
 });
 

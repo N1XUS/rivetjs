@@ -217,8 +217,7 @@ test("a throw during hydration: Preact's root is reset, the driver mounts over i
   const button = root.querySelector("button.rivet") as HTMLButtonElement;
   let hits = 0;
   button.addEventListener("click", () => (button.textContent = String(++hits)));
-  const warnings = vi.spyOn(console, "warn").mockImplementation(() => {});
-  vi.spyOn(console, "error").mockImplementation(() => {});
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
   hydrateBoom.armed = true;
   island(chunk(HydrateBoom), root, {}, "i5");
   await until(() => root.querySelector("article.hb p")?.textContent === "ok" && hydrated(root) && !hydrateBoom.armed);
@@ -227,7 +226,8 @@ test("a throw during hydration: Preact's root is reset, the driver mounts over i
   expect(root.querySelector("rivet-slot > button.rivet")).toBe(button);
   button.click();
   expect(button.textContent).toBe("1");
-  expect(warnings.mock.calls.flat().join(" ") + "").toMatch(/hydrate boom|mount/i);
+  // The driver reports the recovery (RV2149, every build) with the thrown error.
+  expect(errors.mock.calls.flat().join(" ") + "").toMatch(/\[RV2149\] framework island i5 recovered from an error: .*hydrate boom/i);
 });
 
 test("mixed nesting: a React island inside a Preact island's slot, and a Preact island inside a React one", async () => {

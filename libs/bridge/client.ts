@@ -6,7 +6,7 @@ import { effect, getOwner, onCleanup, runWithOwner, untrack } from "@rivetjs/rea
 import { DEV } from "#dev";
 import { callbacks } from "./callbacks.ts";
 import { park, track, type DevIsland } from "./hot.ts";
-import type { ClientAdapter, IslandModule, PolicyOptions } from "./adapter.ts";
+import { _hydrateThrew, type ClientAdapter, type IslandModule, type PolicyOptions } from "./adapter.ts";
 
 export type { IslandModule } from "./adapter.ts";
 
@@ -152,7 +152,8 @@ export function _drive(
             result = await untrack(() => adapter!.hydrate(root, component, values, slots, ctx));
           } catch (error) {
             // Hydration mismatch / throw: mount fresh over the server HTML, the resumed slot content moved into the new holes.
-            if (DEV) console.warn("[rivet:bridge] island " + options.id + " failed to hydrate, mounting instead:", error);
+            // RV2149 in every build (a framework error must reach error monitoring), once per error.
+            _hydrateThrew(options.id, error, root);
             if (dead) return;
             root.replaceChildren();
             result = await untrack(() => adapter!.mount(root, component, values, slots, ctx));

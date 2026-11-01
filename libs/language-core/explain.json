@@ -352,7 +352,7 @@
       "fix": "Make the island render the same markup on the server and in the browser: no `typeof window` / `Date.now()` / `Math.random()` / locale-dependent output during render — move browser-only values into an effect, or make the island `client=\"only\"`.",
       "avoid": "// Clock.react.tsx\nexport function Clock() { return <time>{new Date().toLocaleTimeString()}</time>; }",
       "prefer": "// Clock.react.tsx\nexport function Clock() {\n  const [now, setNow] = useState<string | null>(null);\n  useEffect(() => setNow(new Date().toLocaleTimeString()), []);\n  return <time>{now ?? \"\"}</time>;\n}",
-      "note": "Browser (framework adapter). The framework threw away the server HTML of the island and rendered it on the client (React `onRecoverableError`): the page works, but the island paid a full client render and lost the server markup. Dev: an entry on the dev error channel (overlay / devtools log) naming the island; production: `console.error` with the code. Rivet slot content inside the island is kept (same nodes)."
+      "note": "Browser (framework adapter, or the island driver when the adapter's hydrate throws: then the framework name reads `framework`). The framework threw away the server HTML of the island and rendered it on the client (React `onRecoverableError`, a hydrate throw the driver recovers by mounting fresh): the page works, but the island paid a full client render and lost the server markup. Dev: an entry on the dev error channel (overlay / devtools log) naming the island; production: `console.error` with the code. Rivet slot content inside the island is kept (same nodes)."
     },
     {
       "code": "RV2150",

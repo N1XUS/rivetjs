@@ -97,6 +97,14 @@ export interface IslandDef<C = unknown> {
 export const defineAdapter = <C, A extends ServerAdapter<C> | ClientAdapter<C>>(adapter: A): A => adapter;
 
 const HOOK = Symbol.for("rivet.devtools");
+/** Errors an adapter already reported (it reports, then throws so the driver mounts fresh). */
+const reported = new WeakSet<object>();
+/**
+ * @internal The driver's hydrate-throw recovery (`client.ts`): RV2149 unless the adapter already reported this error.
+ */
+export function _hydrateThrew(id: string, error: unknown, root: Element): void {
+  if (error === null || typeof error !== "object" || !reported.has(error)) islandRecovered("framework", id, error, root);
+}
 /**
  * RV2149: a framework threw away an island's server HTML and rendered it on the client (React `onRecoverableError`, a
  * Vue / Preact hydration mismatch). `console.error` with the code, the framework and the island id (every build); dev:
@@ -104,6 +112,7 @@ const HOOK = Symbol.for("rivet.devtools");
  * as its element).
  */
 export function islandRecovered(framework: string, id: string, error: unknown, root?: Element): void {
+  if (error !== null && typeof error === "object") reported.add(error);
   const message = "[RV2149] " + framework + " island " + id + " recovered from an error: " + String((error as Error | null)?.message ?? error);
   if (DEV)
     (globalThis as { [HOOK]?: { emit(type: string, data: object): void } })[HOOK]?.emit("error.island", { framework, id, message, element: root, error });
