@@ -84,7 +84,8 @@ export function own<T>(list: Eff[], fn: () => T): T {
     return fn();
   } finally {
     made = outer;
-    outer?.push(...list);
+    // A loop, not `push(...list)`: a spread of a large unit's effects overflows the call arguments.
+    if (outer) for (let i = 0; i < list.length; i++) outer.push(list[i]!);
   }
 }
 /** A signal of the lite world (the `@rivetjs/reactivity` `Signal` API: call to read, `set`, untracked `update`). */

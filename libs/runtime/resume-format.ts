@@ -211,6 +211,11 @@ export function createEncoder({ special, opaque, json: jsonOn = true, origin }: 
     map.set(key, index),
     index
   );
+  // A nested attempt's journal joins the enclosing one: a loop, not `push(...mine)` (a spread of a large value's journal,
+  // past ~100k entries, overflows the call arguments: the attempt would fail and the value lose its plain encoding).
+  const handOver = (outer: Journal, mine: Journal): void => {
+    for (let i = 0; i < mine.length; i++) outer.push(mine[i]!);
+  };
   const undo = (entries: Journal): void => {
     for (let i = entries.length - 1; i >= 0; i--) {
       const [map, key, previous] = entries[i]!;
@@ -268,7 +273,7 @@ export function createEncoder({ special, opaque, json: jsonOn = true, origin }: 
       mine: Journal = (journal = []);
     try {
       build(value, index);
-      outer?.push(...mine);
+      if (outer) handOver(outer, mine);
       return table[index]!;
     } catch {
       undo(mine);
@@ -295,7 +300,7 @@ export function createEncoder({ special, opaque, json: jsonOn = true, origin }: 
       mine: Journal = (journal = []);
     try {
       const refs = values.map(ref);
-      outer?.push(...mine);
+      if (outer) handOver(outer, mine);
       return refs;
     } catch {
       undo(mine);
