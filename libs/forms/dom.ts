@@ -1,5 +1,6 @@
 // DOM access: the form element owns field values; these read them on demand.
 import { untrack } from "@rivetjs/reactivity";
+import { controlsOf } from "./members.ts";
 import { canonicalName } from "./path.ts";
 import { storeOf, type Form, type FormStore } from "./store.ts";
 
@@ -40,7 +41,7 @@ export function formData(element: HTMLFormElement, submitter?: HTMLElement | nul
 
 /** Typed value of a named control: number inputs as numbers, checkbox groups as arrays, files as FileList. */
 export function readValue(element: HTMLFormElement, name: string): unknown {
-  const item = element.elements.namedItem(name);
+  const item = controlsOf(element).namedItem(name);
   if (!item) return undefined;
   if (typeof RadioNodeList !== "undefined" && item instanceof RadioNodeList) {
     const controls = Array.from(item) as HTMLInputElement[];
@@ -68,7 +69,7 @@ export function focusFirstInvalid(form: Form<any>, element?: HTMLFormElement | n
   return target ? focusInvalid(store, target) : false;
 }
 export function focusInvalid(store: FormStore<any>, element: HTMLFormElement): boolean {
-  for (const control of Array.from(element.elements) as HTMLElement[]) {
+  for (const control of Array.from(controlsOf(element)) as HTMLElement[]) {
     const name = (control as HTMLInputElement).name;
     if (!name) continue;
     const field = store.f[canonicalName(name) ?? ""];

@@ -11,6 +11,7 @@ import { elementOf } from "./dom.ts";
 import { getAt, isIndex } from "./path.ts";
 import { absolute, initialOf, runtime, storeOf, type Form, type FormStore } from "./store.ts";
 import type { FieldArrayPath } from "./types.ts";
+import { controlsOf } from "./members.ts";
 
 /** Rows of an array path in the echo (`#path` count from an intent, else the highest index). */
 function echoedRows(store: FormStore<any>, name: string): number {
@@ -142,7 +143,7 @@ function focusRow(store: FormStore<any>, name: string, index: number): void {
   setTimeout(() => {
     const element = elementOf(store);
     const prefix = `${name}.${index}.`;
-    const control = element && Array.from(element.elements).find((el) => {
+    const control = element && Array.from(controlsOf(element)).find((el) => {
       const field = (el as HTMLInputElement).name;
       return field === `${name}.${index}` || field?.startsWith(prefix);
     });

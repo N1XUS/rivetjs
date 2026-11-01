@@ -5,6 +5,7 @@ import { getAt, idSafe } from "./path.ts";
 import { formatIssue } from "./issues.ts";
 import { absolute, initialOf, issueSignal, prefixOf, storeOf, SUBMITTED, SUBMITTING, touchedSignal, VALIDATING, validatingSignal, valueSignal, type Form } from "./store.ts";
 import type { FieldPath, Issue, PathValue } from "./types.ts";
+import { controlsOf } from "./members.ts";
 
 /** Shown issues of a field (undefined when none). */
 export function issues<T, P extends FieldPath<T>>(form: Form<T>, path: P): Issue[] | undefined {
@@ -107,7 +108,7 @@ export function dirty<T>(form: Form<T>, path?: FieldPath<T>): boolean {
   const element = document.getElementById(store.i) as HTMLFormElement | null;
   if (!element) return false;
   const prefix = absolute(form, path ?? "");
-  for (const control of Array.from(element.elements)) {
+  for (const control of Array.from(controlsOf(element))) {
     const name = (control as HTMLInputElement).name;
     if (!name || (path !== undefined ? name !== prefix : !name.startsWith(prefix))) continue;
     if (changed(control)) return true;

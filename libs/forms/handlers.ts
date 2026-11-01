@@ -4,12 +4,13 @@ import type { FormDefinition } from "./define.ts";
 import { fieldOf, focusInvalid, formData, formOf, owns, readValue } from "./dom.ts";
 import { trigger, validateAll } from "./engine.ts";
 import { ENHANCED, hasBit, setBit, storeOf, SUBMITTED, touchedSignal, writeFormIssues, type Form, type FormStore } from "./store.ts";
+import { requestSubmitOf } from "./members.ts";
 
 /** First handler run in the browser: library messages and focus replace native validation bubbles. */
 function activate(store: FormStore<any>, element: HTMLFormElement): void {
   if (hasBit(store, ENHANCED)) return;
   setBit(store, ENHANCED, true);
-  element.noValidate = true;
+  element.setAttribute("novalidate", ""); // not `element.noValidate`: a control named noValidate shadows it
 }
 const target = (form: Form<any>, event: Event): [FormStore<any>, HTMLFormElement] | null => {
   const store = storeOf(form);
@@ -102,7 +103,7 @@ async function submit(def: FormDefinition<any>, store: FormStore<any>, element: 
   if (!ok) return false;
   if (def.enhance === false) {
     resubmitting.add(element);
-    element.requestSubmit(submitter as HTMLButtonElement | null);
+    requestSubmitOf(element, submitter);
     return false;
   }
   const { send } = await import("./enhance.ts");

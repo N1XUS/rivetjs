@@ -20,7 +20,10 @@ test("post(): accept JSON (+ x-rivet-revalidate on request) only, answers decode
   }) as typeof fetch;
   try {
     const form = (name: string) =>
-      ({ action: "http://x/form?/" + name, enctype: "application/x-www-form-urlencoded", getAttribute: () => null }) as unknown as HTMLFormElement;
+      ({
+        enctype: "application/x-www-form-urlencoded",
+        getAttribute: (attr: string) => (attr === "action" ? "http://x/form?/" + name : null),
+      }) as unknown as HTMLFormElement;
     const data = new FormData();
     data.set("a", "1");
     const ok = await post(form("save"), data, undefined, true);
@@ -35,6 +38,30 @@ test("post(): accept JSON (+ x-rivet-revalidate on request) only, answers decode
       sent.map((headers) => [...headers.keys()].sort()),
       [["accept", "x-rivet-revalidate"], ["accept"]],
     );
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("post(): a control named action does not replace the form's action URL", async () => {
+  const urls: unknown[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (url: unknown) => {
+    urls.push(url);
+    return new Response("{}", { headers: { "content-type": "application/json" } });
+  }) as typeof fetch;
+  try {
+    // In a browser `<input name="action">` makes `form.action` return that input.
+    const control = { name: "action" };
+    const form = {
+      action: control,
+      enctype: control,
+      getAttribute: (attr: string) => (attr === "action" ? "/form?/save" : null),
+    } as unknown as HTMLFormElement;
+    const data = new FormData();
+    data.set("action", "archive");
+    await post(form, data);
+    assert.deepEqual(urls, ["/form?/save"]);
   } finally {
     globalThis.fetch = realFetch;
   }

@@ -121,6 +121,29 @@ test("same-URL enhanced submit revalidates the page from the action's answer (on
   await page.close();
 });
 
+test("fields named after form members (id, action, method, elements, reset, noValidate): enhanced submit, focus, reset", async () => {
+  const page = await browser.newPage();
+  const seen = watch(page);
+  await page.goto(origin + "/shadowed");
+  await intent(page);
+  const fields = ["id", "action", "method", "elements", "reset", "noValidate"];
+  // Invalid: the library reports and focuses the first empty field (reads the controls), nothing is posted.
+  for (const name of fields.slice(0, 3)) await page.fill(`#shadowed-${name}`, name + "1");
+  await page.click("#shadowed-save");
+  await page.waitForFunction(() => document.activeElement?.id === "shadowed-elements");
+  assert.equal(seen.posts, 0);
+  for (const name of fields.slice(3)) await page.fill(`#shadowed-${name}`, name + "1");
+  await page.click("#shadowed-save");
+  await page.waitForFunction(() => document.querySelectorAll("#entries li").length === 1);
+  assert.deepEqual(await page.locator("#entries li").allTextContents(), [fields.map((name) => name + "1").join(",")]);
+  assert.equal(new URL(page.url()).pathname, "/shadowed");
+  assert.equal(await page.inputValue("#shadowed-reset"), "", "reset after success");
+  assert.equal(seen.posts, 1);
+  assert.equal(seen.documents, 1, "no page load");
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
 test("autosave leave guard: client navigation confirms while unsaved; closing gets the beforeunload prompt", async () => {
   const page = await browser.newPage();
   const seen = watch(page);

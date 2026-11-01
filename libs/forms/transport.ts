@@ -9,14 +9,15 @@ import { invalidate, navigate } from "./router.ts";
  * (`revalidate`: plus the page's fresh loader data when the action succeeds).
  */
 export async function post(element: HTMLFormElement, data: FormData, signal?: AbortSignal, revalidate = false): Promise<{ status: number; answer: ActionAnswer }> {
-  const multipart = (element.getAttribute("enctype") ?? element.enctype) === "multipart/form-data";
+  const multipart = element.getAttribute("enctype")?.toLowerCase() === "multipart/form-data";
   let body: FormData | URLSearchParams = data;
   if (!multipart) {
     const pairs = new URLSearchParams();
     for (const [name, value] of data) pairs.append(name, typeof value === "string" ? value : value.name);
     body = pairs;
   }
-  const response = await fetch(element.action, {
+  // Named controls shadow HTMLFormElement members: <input name="action"> replaces element.action.
+  const response = await fetch(element.getAttribute("action") || location.href, {
     method: "POST",
     body,
     headers: { accept: "application/json", ...(revalidate ? { "x-rivet-revalidate": "1" } : {}) },

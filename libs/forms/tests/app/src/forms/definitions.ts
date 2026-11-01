@@ -68,6 +68,13 @@ const orderSchema: StandardSchemaV1<Order, Order> = {
 // Same-URL action (notes page): one required field.
 export const noteForm = defineForm({ name: "note", schema: object<{ note: string }>({ note: [required] }) });
 
+// Field names that are also HTMLFormElement members: a named control shadows the member on the form element.
+export type Shadowed = { id: string; action: string; method: string; elements: string; reset: string; noValidate: string };
+export const shadowedForm = defineForm({
+  name: "shadowed",
+  schema: object<Shadowed>({ id: [required], action: [required], method: [required], elements: [required], reset: [required], noValidate: [required] }),
+});
+
 export const orderForm = defineForm({ name: "order", schema: orderSchema, coerce: { "items.$.qty": "number" }, validateOn: "blur" });
 
 // Custom submit: a third-party endpoint (formcarry-like) instead of a router action. Without JS the

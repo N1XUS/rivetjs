@@ -7,6 +7,7 @@ import { trigger } from "./engine.ts";
 import { toIssues } from "./issues.ts";
 import { absolute, arm, prefixOf, runtime, setBit, storeOf, SUBMITTED, writeFormIssues, writeIssues, type Form } from "./store.ts";
 import type { FieldPath, IssueLike, PathValue } from "./types.ts";
+import { controlsOf, resetForm } from "./members.ts";
 
 /** Write a value into the field's control(s) and the store (custom widgets), then validate as input. */
 export function setValue<T, P extends FieldPath<T>>(def: FormDefinition<any>, form: Form<T>, path: P, next: PathValue<T, P>): void {
@@ -21,7 +22,7 @@ export function setValue<T, P extends FieldPath<T>>(def: FormDefinition<any>, fo
   if (element) trigger(def, store, element, name, "input", () => formData(element));
 }
 function writeControl(element: HTMLFormElement, name: string, next: unknown): void {
-  const item = element.elements.namedItem(name);
+  const item = controlsOf(element).namedItem(name);
   if (!item) return;
   const values = Array.isArray(next) ? next.map(String) : [String(next ?? "")];
   const controls = (typeof RadioNodeList !== "undefined" && item instanceof RadioNodeList ? Array.from(item) : [item]) as HTMLInputElement[];
@@ -60,7 +61,7 @@ export function clearIssues<T>(form: Form<T>, path?: FieldPath<T>): void {
 export function reset<T>(form: Form<T>): void {
   const store = storeOf(form);
   const element = elementOf(store);
-  element?.reset();
+  if (element) resetForm(element);
   const state = runtime(store);
   for (const controller of state.aborts.values()) controller.abort();
   for (const timer of state.timers.values()) clearTimeout(timer);
@@ -79,6 +80,6 @@ export function reset<T>(form: Form<T>): void {
   store.d?.update((n) => n + 1);
 }
 const readDefault = (element: HTMLFormElement, name: string): unknown => {
-  const item = element.elements.namedItem(name) as HTMLInputElement | null;
+  const item = controlsOf(element).namedItem(name) as HTMLInputElement | null;
   return item && "value" in item ? (item.type === "checkbox" ? item.checked : item.value) : undefined;
 };
