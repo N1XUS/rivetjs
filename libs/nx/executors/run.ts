@@ -71,7 +71,7 @@ function hookSignals() {
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.once(signal, () => {
       for (const child of children) child.kill(signal);
-      process.exit(130);
+      process.exit(signal === "SIGINT" ? 130 : 143); // 128 + signal number
     });
   }
 }
