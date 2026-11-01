@@ -94,7 +94,8 @@ async function template(id: string, work: string, env: NodeJS.ProcessEnv, npmArg
   } catch (error) {
     return { template: id, ok: false, steps, error: (error as Error).message, ms: Math.round(performance.now() - started) };
   } finally {
-    if (child && child.exitCode === null) {
+    // A child already ended by a signal has `exitCode` null too, and its "exit" event is gone: check `signalCode`.
+    if (child && child.exitCode === null && child.signalCode === null) {
       child.kill("SIGTERM");
       await new Promise((done) => (child!.exitCode !== null ? done(null) : child!.once("exit", done)));
     }
