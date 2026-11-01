@@ -247,6 +247,9 @@ test(
         const page = await fetch(server.url + "/_isr/about?__rivet_path=%2Fabout", { headers: { host: "a.vercel.app", "x-forwarded-proto": "https" } });
         assert.equal(page.status, 200);
         assert.match((await page.text()).replace(/<!--[^>]*-->/g, ""), /About at build time/);
+        // The prerender function is public: another page through it is not rewritten (the app's 404 for `/_isr/about`).
+        const spoof = await fetch(server.url + "/_isr/about?__rivet_path=%2Fcounter", { headers: { host: "a.vercel.app", "x-forwarded-proto": "https" } });
+        assert.equal(spoof.status, 404);
       } finally {
         await server.close();
       }

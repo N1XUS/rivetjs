@@ -38,13 +38,19 @@ export interface VercelOptions {
 
 const ISR_PATH = "__rivet_path";
 
-/** `/_isr/a?__rivet_path=%2Fa&x=1` → `/a?x=1` (the ISR route's rewrite, undone). */
+/**
+ * `/_isr/a?__rivet_path=%2Fa&x=1` → `/a?x=1` (the ISR route's rewrite, undone). Only the prerender function's own page:
+ * the prerender functions are public, so `/_isr/a?__rivet_path=/admin` (another page under `/a`'s CDN rules and
+ * cache) and a path carrying `?` / `#` (injected query) stay as they are (the app answers `/_isr/…` with its 404).
+ */
 export function isrURL(url: string): string {
   const at = url.indexOf("?");
   if (at < 0) return url;
   const query = new URLSearchParams(url.slice(at + 1));
   const path = query.get(ISR_PATH);
-  if (path === null || !path.startsWith("/") || path.startsWith("//")) return url;
+  if (path === null || !path.startsWith("/") || path.startsWith("//") || /[?#]/.test(path)) return url;
+  // `pack.ts` names a page's prerender function `_isr<path>` (`_isr/index` for `/`).
+  if (url.slice(0, at).replace(/\/+$/, "") !== "/_isr" + (path === "/" ? "/index" : path)) return url;
   query.delete(ISR_PATH);
   const rest = query.toString();
   return path + (rest ? "?" + rest : "");
