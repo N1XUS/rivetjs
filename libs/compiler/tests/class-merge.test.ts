@@ -183,6 +183,11 @@ beforeAll(async () => {
     join(root, "two.tsx"),
     `import { Sched } from "./index.ts";\nexport const Two = () => <Sched class="w-96" classNames={{ base: "p-2" }} />;\nconsole.log(Two);\n`,
   );
+  // The same call through a `$`-named namespace import (`$` is an identifier character, not a regex anchor).
+  await writeFile(
+    join(root, "ns.tsx"),
+    `import * as $ui from "./index.ts";\nexport const Ns = () => <$ui.Sched class="w-96" classNames={{ base: "p-2" }} />;\nconsole.log(Ns);\n`,
+  );
 });
 afterAll(async () => {
   if (root) await rm(root, { recursive: true, force: true });
@@ -244,6 +249,7 @@ test("build: prop joins drop the provider in pass 2 of a co-load build when no c
   for (const [entry, needed] of [
     ["one.tsx", false],
     ["two.tsx", true],
+    ["ns.tsx", true],
   ] as const) {
     const dir = await mkdtemp(join(root, "coload-"));
     assert.match(await run(entry, dir), merged, "pass 1 merges as before");

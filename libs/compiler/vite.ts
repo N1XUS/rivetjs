@@ -1365,7 +1365,9 @@ function rivetPlugin(
         files.set(local + ".*", [...all]);
         const members = new Map<string, Join | null>();
         // Member lookups happen during the synchronous scan: resolve every member the module names first.
-        for (const [, name] of original.matchAll(new RegExp(`\\b${local}\\s*\\.\\s*([A-Za-z_$][\\w$]*)`, "g"))) {
+        // `(?<![\w$])`, not `\b`: `$` is an identifier character (`import * as $ui`); the name is escaped for it too.
+        const access = new RegExp(`(?<![\\w$])${local.replace(/\$/g, "\\$&")}\\s*\\.\\s*([A-Za-z_$][\\w$]*)`, "g");
+        for (const [, name] of original.matchAll(access)) {
           if (members.has(name!)) continue;
           const join = await classJoinOf(ctx, to, name!, merge);
           members.set(name!, join);
