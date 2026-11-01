@@ -39,13 +39,15 @@ export function findDoc(data: McpData, path: string): McpDoc | McpDoc[] | undefi
 export function findComponents(data: McpData, name: string, pkg?: McpComponent["package"]): McpComponent[] {
   const query = name.trim().replace(/^<|\/?>$/g, "");
   const lower = query.toLowerCase();
+  // `ComboBox` → `combo-box` (the entry slug), from the query's own casing.
+  const slug = query.split(".")[0]!.replace(/[A-Z]/g, (c, i) => (i ? "-" : "") + c.toLowerCase());
   const pool = data.components.filter((component) => !pkg || component.package === pkg);
   const exact = pool.filter(
     (component) =>
       component.entry === query ||
       component.entry.toLowerCase() === "@rivetjs/" + lower ||
       component.name.toLowerCase() === lower.split(".")[0] ||
-      component.entry.split("/").at(-1) === lower.replace(/[A-Z]/g, (c, i) => (i ? "-" : "") + c.toLowerCase()),
+      component.entry.split("/").at(-1) === slug,
   );
   if (exact.length) return exact.sort((a, b) => order(a) - order(b));
   return pool.filter((component) => component.symbols.some((symbol) => symbol.name.toLowerCase() === lower)).sort((a, b) => order(a) - order(b));

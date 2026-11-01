@@ -4,7 +4,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { buildData, dataProblems, type McpData } from "../data.ts";
-import { createRivetServer, findDoc } from "../server.ts";
+import { createRivetServer, findComponents, findDoc } from "../server.ts";
 import { tokens } from "../search.ts";
 
 const repo = resolve(import.meta.dirname, "../../..");
@@ -89,5 +89,15 @@ describe("@rivetjs/mcp", () => {
     expect(one.text).toContain("Fix: ");
     expect((await call("explain_diagnostic", { code: "all" })).text.split("\n").length).toBeGreaterThan(40);
     expect((await call("explain_diagnostic", { code: "RV0000" })).isError).toBe(true);
+  });
+});
+
+describe("findComponents", () => {
+  it("matches a PascalCase query against the entry slug when the export name differs", () => {
+    const drawer = { entry: "@rivetjs/cdk/overlay-drawer", name: "Drawer", package: "cdk", symbols: [] };
+    const data = { components: [drawer] } as unknown as McpData;
+    expect(findComponents(data, "OverlayDrawer")).toEqual([drawer]);
+    expect(findComponents(data, "overlay-drawer")).toEqual([drawer]);
+    expect(findComponents(data, "Drawer")).toEqual([drawer]);
   });
 });
