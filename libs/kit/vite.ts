@@ -20,6 +20,17 @@ export interface KitOptions {
 
 const FONT_CSS = ".rivet-font.css";
 const FORMATS: Record<string, "woff2" | "woff" | "truetype" | "opentype"> = { woff2: "woff2", woff: "woff", ttf: "truetype", otf: "opentype" };
+/**
+ * Metric-compatible clones of the common fallback fonts (same advance widths and vertical metrics, so the same overrides
+ * apply), tried after the named font: Linux ships Liberation (`fonts-liberation`, also what Playwright installs for
+ * Chromium), ChromeOS / Android the Croscore fonts. A host without the named font (no Arial on Linux) otherwise drops the
+ * whole fallback face, and the swap to the web font shifts the layout.
+ */
+const CLONES: Readonly<Record<string, readonly string[]>> = {
+  arial: ["Liberation Sans", "Arimo"],
+  "times new roman": ["Liberation Serif", "Tinos"],
+  "courier new": ["Liberation Mono", "Cousine"],
+};
 const GENERIC = new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-sans-serif", "ui-serif", "ui-monospace"]);
 
 interface FontRequest {
@@ -113,7 +124,7 @@ async function fallbackFace(request: FontRequest, warn: (message: string) => voi
   const pct = (n: number) => (n * 100).toFixed(2) + "%";
   const em = primary.unitsPerEm * size;
   return (
-    `@font-face{font-family:"${request.family} Fallback";src:local("${request.fallback}");size-adjust:${pct(size)};` +
+    `@font-face{font-family:"${request.family} Fallback";src:${[request.fallback, ...(CLONES[request.fallback.toLowerCase()] ?? [])].map((name) => `local("${name}")`).join(",")};size-adjust:${pct(size)};` +
     `ascent-override:${pct(primary.ascent / em)};descent-override:${pct(Math.abs(primary.descent) / em)};line-gap-override:${pct(primary.lineGap / em)}}`
   );
 }

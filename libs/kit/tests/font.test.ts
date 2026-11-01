@@ -31,9 +31,12 @@ test("?font fallback: metric-matched @font-face for a local woff2 (capsize unpac
   const sheet = await load(plugin, `${WOFF2}.rivet-font.css?${query}`);
   assert.deepEqual(sheet.warnings, []);
   const face =
-    /@font-face\{font-family:"Jakarta Fallback";src:local\("Arial"\);size-adjust:([\d.]+)%;ascent-override:([\d.]+)%;descent-override:([\d.]+)%;line-gap-override:([\d.]+)%\}/.exec(
+    /@font-face\{font-family:"Jakarta Fallback";src:local\("Arial"\),local\("Liberation Sans"\),local\("Arimo"\);size-adjust:([\d.]+)%;ascent-override:([\d.]+)%;descent-override:([\d.]+)%;line-gap-override:([\d.]+)%\}/.exec(
       sheet.code,
     );
+  // Arial's metric-compatible clones (same advance widths, so the same overrides apply) for hosts without Arial: Linux
+  // (fonts-liberation, CI's Chromium) and ChromeOS / Android (Arimo). Without them the fallback face did not load and
+  // the swap shifted the docs home by CLS 0.008 (CI-RED 2026-11-01).
   assert.ok(face, sheet.code);
   // Geist: xWidthAvg 467 / 1000 upm, ascent 1005, descent -295; Arial: xWidthAvg 913 / 2048 upm.
   const size = 467 / 1000 / (913 / 2048);
