@@ -227,6 +227,9 @@ journey("tenant-inbox-navigation-and-filter", async (p, c) => {
   await p.screenshot({ path: join(app.artifacts, "casework.png"), fullPage: false });
   await p.locator("#ticket-search").fill("Invoice");
   await p.locator("button").filter({ hasText: "Filter" }).click();
+  // The GET form navigates (client navigation fetches the filtered data): the list is read once it has re-rendered.
+  await p.waitForURL(/[?&]q=Invoice/);
+  await p.waitForFunction(() => document.querySelectorAll("[data-ticket]").length !== 6);
   assert.equal(await p.locator("[data-ticket]").count(), 1);
   await p.locator("[data-ticket] h2").click();
   await p.waitForURL(/\/desk\/tickets\/alpha-2/);
