@@ -48,8 +48,9 @@ export function absolute(href: string, base?: string | URL): string {
   if (base === undefined) throw new TypeError(`"${href}" must be absolute for social/SEO tags: pass baseUrl (or a URL) to the builder`);
   return new URL(href, base).href;
 }
+// `url`'s origin, whether a URL or an absolute string (a string's path must not become the base of relative images).
 const baseOf = (url: string | URL | undefined, baseUrl: string | undefined) =>
-  baseUrl ?? (url instanceof URL ? url.origin : url && /^https?:/.test(url) ? url : undefined);
+  baseUrl ?? (url instanceof URL ? url.origin : url && /^https?:/.test(url) ? new URL(url).origin : undefined);
 
 /** Options of `canonical()`. */
 export interface CanonicalOptions {

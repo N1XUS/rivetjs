@@ -87,8 +87,11 @@ export function googleFaces(css: string): Face[] {
 }
 
 const sha = (text: string) => createHash("sha256").update(text).digest("hex").slice(0, 16);
+// One temporary name per write: Vite resolves several `google-font:` imports of one family in parallel, and two cold
+// writers of one file sharing `<path>.<pid>.tmp` made the second `rename` fail (ENOENT). Equal content: the last wins.
+let writes = 0;
 async function writeAtomic(path: string, data: string | Uint8Array): Promise<void> {
-  const tmp = `${path}.${process.pid}.tmp`;
+  const tmp = `${path}.${process.pid}.${++writes}.tmp`;
   await writeFile(tmp, data);
   await rename(tmp, path);
 }

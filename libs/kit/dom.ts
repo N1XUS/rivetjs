@@ -245,20 +245,33 @@ export function loadScript(src: string, options: { type?: "module" | "classic"; 
     if (options.integrity) el.integrity = options.integrity;
     if (options.crossorigin) el.crossOrigin = options.crossorigin;
     el.onload = () => done();
-    el.onerror = () => fail(new Error("Script failed to load: " + src));
+    // A failed load is not cached: the element goes (else the next call takes it for a loaded tag) and a later call
+    // (`<Script>` on another page, a retry) loads again.
+    el.onerror = () => {
+      el.remove();
+      fail(new Error("Script failed to load: " + src));
+    };
     document.head.append(el);
   });
   scripts.set(src, loading);
+  // A microtask after the set (an `error` can fire during `append`): only this attempt's entry goes.
+  const attempt = loading;
+  attempt.catch(() => scripts.get(src) === attempt && scripts.delete(src));
   return loading;
 }
+// Deferred head scripts (`idle` / `interaction`) whose strategy is armed: a head applied again before it fires (each
+// navigation, a mounted head change) arms nothing more.
+const armed = new Set<string>();
 function load(script: Extract<HeadScript, { src: string }>): void {
-  if (scripts.has(script.src)) return;
+  if (scripts.has(script.src) || armed.has(script.src)) return;
   const run = () =>
-    void loadScript(script.src, {
+    void (armed.delete(script.src),
+    loadScript(script.src, {
       ...(script.type ? { type: script.type } : {}),
       ...(script.integrity ? { integrity: script.integrity } : {}),
       ...(script.crossorigin ? { crossorigin: script.crossorigin } : {}),
-    }).catch(() => {});
+    }).catch(() => {}));
+  if (script.strategy === "idle" || script.strategy === "interaction") armed.add(script.src);
   if (script.strategy === "idle") (globalThis.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 1)))(run, { timeout: 4000 });
   else if (script.strategy === "interaction") {
     const events = ["pointerdown", "keydown", "touchstart", "wheel"];

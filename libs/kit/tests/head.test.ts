@@ -116,6 +116,12 @@ test("inline styles: deduped by key / text, nonce, after stylesheets, closing ta
   assert.equal(html, '<link rel="stylesheet" href="/a.css" data-rh=""><style media="print" nonce="n1">p{}<\\/style><b></style>');
 });
 
+test("open graph: a string page url resolves relative images against its origin, as a URL object does", () => {
+  const image = (url: string | URL) => openGraph({ url, image: "img/card.png" }).find((m) => m.property === "og:image")?.content;
+  assert.equal(image("https://a.test/blog/post?x=1"), "https://a.test/img/card.png");
+  assert.equal(image(new URL("https://a.test/blog/post?x=1")), "https://a.test/img/card.png");
+});
+
 test("builders: canonical, open graph, twitter, seo", () => {
   assert.equal(canonical("https://a.test/x/?utm=1&page=2#h", { query: ["page"], trailingSlash: "never" }).href, "https://a.test/x?page=2");
   assert.equal(canonical("/x", { baseUrl: "https://a.test", trailingSlash: "always" }).href, "https://a.test/x/");

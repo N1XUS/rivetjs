@@ -109,7 +109,7 @@ import { Head, seo } from "@rivetjs/kit";
 
 The smaller builders are `canonical()`, `alternates()` (hreflang links), `openGraph()`, `twitterCard()` and `jsonLd()`. They return plain head fields, so you can also use them in a route `head` export.
 
-Social and SEO URLs must be absolute. A relative URL throws an error unless you pass `baseUrl`.
+Social and SEO URLs must be absolute. A relative URL throws an error unless you pass `baseUrl`; `openGraph()` and `seo()` with an absolute `url` resolve a relative image against that URL's origin.
 
 ::api{symbol="@rivetjs/kit#seo"}
 
@@ -154,7 +154,7 @@ import { Script } from "@rivetjs/kit";
 | `idle` | When the browser is idle after load (at most 4 seconds later). |
 | `interaction` | On the first pointer, key or wheel input. |
 
-`load`, `idle` and `interaction` use one small inline script per page (under 400 bytes gzipped), added only to pages that need it. In the browser, `loadScript(src, { type?, integrity?, crossorigin? })` loads a script file once and resolves on its `load` event; a script already in the document (server-rendered or loaded by `<Script>`) resolves at once. Import it from `@rivetjs/kit`: the `kit()` Vite plugin resolves that import to `@rivetjs/kit/dom`, the browser half with the same exports, in the client build. On the server, `loadScript` does nothing and resolves. Do not import `@rivetjs/kit/dom` directly from code that also runs on the server.
+`load`, `idle` and `interaction` use one small inline script per page (under 400 bytes gzipped), added only to pages that need it. In the browser, `loadScript(src, { type?, integrity?, crossorigin? })` loads a script file once and resolves on its `load` event (a failed load rejects and is not cached, so a later call tries again); a script already in the document (server-rendered or loaded by `<Script>`) resolves at once. Import it from `@rivetjs/kit`: the `kit()` Vite plugin resolves that import to `@rivetjs/kit/dom`, the browser half with the same exports, in the client build. On the server, `loadScript` does nothing and resolves. Do not import `@rivetjs/kit/dom` directly from code that also runs on the server.
 
 Inline code needs `unsafeInlineScript(code)`. Plain strings and objects are refused. The name is a warning: only pass code you have reviewed, because it runs with the page's CSP permission.
 
