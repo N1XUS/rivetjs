@@ -198,3 +198,18 @@ test("parse() and safeRedirect()", async () => {
   assert.equal(safeRedirect("/a?b#c"), "/a?b#c");
   for (const bad of ["//evil.com", "https://evil.com", "/\\evil.com", "javascript:alert(1)", "/a\nb", 42]) assert.equal(safeRedirect(bad, "/home"), "/home");
 });
+
+test("bad requests: a malformed multipart body and an empty validate intent are 400s", async () => {
+  const truncated = await handler(
+    new Request("http://x/form?/signup", {
+      method: "POST",
+      body: '--b\r\ncontent-disposition: form-data; name="email"\r\n\r\na@b.co',
+      headers: { origin: "http://x", "content-type": "multipart/form-data; boundary=b" },
+    }),
+  );
+  assert.equal(truncated.status, 400);
+  assert.match(await truncated.text(), /Malformed form body/);
+  const intent = await post(handler, "signup", { ...valid, _intent: "validate:" });
+  assert.equal(intent.status, 400);
+  assert.match(await intent.text(), /Invalid validate intent/);
+});

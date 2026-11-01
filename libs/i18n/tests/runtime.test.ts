@@ -33,3 +33,24 @@ test("pick indexes by locale, defaulting to first", () => {
   assert.equal(pick("de", ["en", "de"], [() => "Hi", () => "Hallo"]), "Hallo");
   assert.equal(pick("fr", ["en", "de"], [() => "Hi", () => "Hallo"]), "Hi");
 });
+
+test("plural: locales with zero / two / few / many categories, fractional, negative and NaN counts", () => {
+  const all = { zero: () => "zero", one: () => "one", two: () => "two", few: () => "few", many: () => "many", other: () => "other" };
+  assert.deepEqual(
+    [0, 1, 2, 3, 11, 100].map((n) => plural("ar", n, all)),
+    ["zero", "one", "two", "few", "many", "other"],
+  );
+  assert.deepEqual(
+    [0, 1, 2, 3, 6, 4].map((n) => plural("cy", n, all)),
+    ["zero", "one", "two", "few", "many", "other"],
+  );
+  assert.equal(plural("en", 1.5, all), "other");
+  assert.equal(plural("en", -1, all), "one");
+  assert.equal(plural("en", Number.NaN, all), "other");
+  // A category the message does not list falls back to other.
+  assert.equal(plural("ar", 3, { other: () => "other" }), "other");
+  assert.deepEqual(
+    [1, 2, 3, 4, 11, 22].map((n) => plural("en", n, all, true)),
+    ["one", "two", "few", "other", "other", "two"],
+  );
+});

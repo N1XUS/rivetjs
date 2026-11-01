@@ -140,3 +140,23 @@ test("server wizard: a last-step submit while completion runs does not complete 
   assert.equal(new URL(late.headers.get("location")!, "http://x").searchParams.get("step"), "account");
   assert.equal(completions, 1);
 });
+
+test("loadWizard: an unknown draft with a later ?step= is a 404; without a step, or with an ill-formed id, it starts over", async () => {
+  const drafts = memoryDrafts();
+  const server: ServerModule = { load: (event) => loadWizard(onboarding, drafts, event) };
+  const routes: AppRoute[] = [{ id: "w", pattern: "/w", page: true, layouts: [], server: () => Promise.resolve(server) }];
+  const handler = createHandler({
+    routes,
+    render: (input: RenderInput) => new Response(JSON.stringify(input.data), { status: input.status }),
+    renderError: ({ status, message }) => new Response(`${status} ${message}`, { status }),
+    onError: () => {},
+  });
+  const missing = await handler(new Request("http://x/w?step=confirm&draft=unknown-draft"));
+  assert.equal(missing.status, 404);
+  assert.match(await missing.text(), /Draft not found/);
+  for (const url of ["http://x/w?draft=unknown-draft", "http://x/w?step=confirm&draft=bad"]) {
+    const fresh = await handler(new Request(url));
+    assert.equal(fresh.status, 200, url);
+    assert.equal(JSON.parse(await fresh.text())[0].step, 0, url);
+  }
+});

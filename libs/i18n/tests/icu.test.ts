@@ -59,3 +59,17 @@ test("a style named like an Object.prototype member is unknown, not inherited", 
   assert.throws(() => parseMessage("{n, number, constructor}", "en:a"), /unknown number style "constructor"/);
   assert.throws(() => parseMessage("{d, date, toString}", "en:a"), /unknown date style "toString"/);
 });
+
+test("unsupported ICU: plural offset, unknown styles, # outside plural are errors naming the location", () => {
+  const fails = (message: string, pattern: RegExp) =>
+    assert.throws(
+      () => parseMessage(message, "fr:x"),
+      (e: unknown) => e instanceof I18nError && /^fr:x: /.test((e as Error).message) && pattern.test((e as Error).message),
+      message,
+    );
+  fails("{n, plural, offset:1 one {a} other {b}}", /plural offset is not supported/);
+  fails("{n, number, fancy}", /unknown number style "fancy"/);
+  fails("{d, date, fancy}", /unknown date style "fancy"/);
+  fails("{n, selectordinal, one {a}}", /requires an "other" case/);
+  fails("{g, select, a {x}}", /requires an "other" case/);
+});
