@@ -39,7 +39,7 @@ import type { ForRow, InsertSlot } from "./dom-v2.ts";
 import { same } from "./dom-adopt.ts";
 import { _adoptRow, adopt, between, captureClasses, copyIn, describe, dirtyOf, gone, kids, mappedClasses, probeRow, save, textOf } from "./dom-adopt-run.ts";
 import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt-run.ts";
-import { _setUnrecorded, _tableDecoder } from "./resume-format.ts";
+import { _setUnrecorded, _tableDecoder } from "./resume-hooks.ts";
 import type { BoundaryTail, DerivedAsync, DerivedDom } from "./resume-format.ts";
 import { eachRecord } from "./resume-tail.ts";
 import { DOM_DATA, DOM_READER } from "./dom-data.ts";

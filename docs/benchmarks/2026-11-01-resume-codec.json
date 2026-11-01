@@ -1,0 +1,544 @@
+{
+  "base": "7e94f810b59a9def6c31f27d8554ccb1d4e69b29",
+  "networkProtocol": "3 rotating A/B repetitions; cold contexts, production immutable hashed-asset cache, Brotli11; initial navigation networkidle; after scroll and native touch/keyboard DOM assertions require500ms of unchanged local JS ledger within15s; non-JS iframe traffic does not define the measurement boundary; local JS body transfer recorded by server; external origins recorded separately; no request interception/cache disabling; timings not compared",
+  "rows": [
+    {
+      "scenario": "button",
+      "A": {
+        "rawUnique": {
+          "median": 175214,
+          "min": 175214,
+          "max": 175214
+        },
+        "brUnique": {
+          "median": 62400,
+          "min": 62400,
+          "max": 62400
+        },
+        "transferredBody": {
+          "median": 62400,
+          "min": 62400,
+          "max": 62400
+        },
+        "uniqueFiles": {
+          "median": 37,
+          "min": 37,
+          "max": 37
+        },
+        "requests": {
+          "median": 37,
+          "min": 37,
+          "max": 37
+        }
+      },
+      "B": {
+        "rawUnique": {
+          "median": 173072,
+          "min": 173072,
+          "max": 173072
+        },
+        "brUnique": {
+          "median": 61754,
+          "min": 61754,
+          "max": 61754
+        },
+        "transferredBody": {
+          "median": 61754,
+          "min": 61754,
+          "max": 61754
+        },
+        "uniqueFiles": {
+          "median": 37,
+          "min": 37,
+          "max": 37
+        },
+        "requests": {
+          "median": 37,
+          "min": 37,
+          "max": 37
+        }
+      }
+    },
+    {
+      "scenario": "prompt-input",
+      "A": {
+        "rawUnique": {
+          "median": 284206,
+          "min": 284206,
+          "max": 284206
+        },
+        "brUnique": {
+          "median": 103375,
+          "min": 103375,
+          "max": 103375
+        },
+        "transferredBody": {
+          "median": 103375,
+          "min": 103375,
+          "max": 103375
+        },
+        "uniqueFiles": {
+          "median": 80,
+          "min": 80,
+          "max": 80
+        },
+        "requests": {
+          "median": 80,
+          "min": 80,
+          "max": 80
+        }
+      },
+      "B": {
+        "rawUnique": {
+          "median": 282044,
+          "min": 282044,
+          "max": 282044
+        },
+        "brUnique": {
+          "median": 102724,
+          "min": 102724,
+          "max": 102724
+        },
+        "transferredBody": {
+          "median": 102724,
+          "min": 102724,
+          "max": 102724
+        },
+        "uniqueFiles": {
+          "median": 80,
+          "min": 80,
+          "max": 80
+        },
+        "requests": {
+          "median": 80,
+          "min": 80,
+          "max": 80
+        }
+      }
+    },
+    {
+      "scenario": "tabs",
+      "A": {
+        "rawUnique": {
+          "median": 239488,
+          "min": 239488,
+          "max": 239488
+        },
+        "brUnique": {
+          "median": 82823,
+          "min": 82823,
+          "max": 82823
+        },
+        "transferredBody": {
+          "median": 82823,
+          "min": 82823,
+          "max": 82823
+        },
+        "uniqueFiles": {
+          "median": 48,
+          "min": 48,
+          "max": 48
+        },
+        "requests": {
+          "median": 48,
+          "min": 48,
+          "max": 48
+        }
+      },
+      "B": {
+        "rawUnique": {
+          "median": 237306,
+          "min": 237306,
+          "max": 237306
+        },
+        "brUnique": {
+          "median": 82184,
+          "min": 82184,
+          "max": 82184
+        },
+        "transferredBody": {
+          "median": 82184,
+          "min": 82184,
+          "max": 82184
+        },
+        "uniqueFiles": {
+          "median": 48,
+          "min": 48,
+          "max": 48
+        },
+        "requests": {
+          "median": 48,
+          "min": 48,
+          "max": 48
+        }
+      }
+    },
+    {
+      "scenario": "modal",
+      "A": {
+        "rawUnique": {
+          "median": 306997,
+          "min": 306997,
+          "max": 306997
+        },
+        "brUnique": {
+          "median": 113173,
+          "min": 113173,
+          "max": 113173
+        },
+        "transferredBody": {
+          "median": 113173,
+          "min": 113173,
+          "max": 113173
+        },
+        "uniqueFiles": {
+          "median": 96,
+          "min": 96,
+          "max": 96
+        },
+        "requests": {
+          "median": 96,
+          "min": 96,
+          "max": 96
+        }
+      },
+      "B": {
+        "rawUnique": {
+          "median": 304835,
+          "min": 304835,
+          "max": 304835
+        },
+        "brUnique": {
+          "median": 112491,
+          "min": 112491,
+          "max": 112491
+        },
+        "transferredBody": {
+          "median": 112491,
+          "min": 112491,
+          "max": 112491
+        },
+        "uniqueFiles": {
+          "median": 96,
+          "min": 96,
+          "max": 96
+        },
+        "requests": {
+          "median": 96,
+          "min": 96,
+          "max": 96
+        }
+      }
+    }
+  ],
+  "rawArtifacts": {
+    "network-v2.json": "81ee7e8edbf7480ad8ba79e0ff76d44fa1b3c06e163f93adbb1c5cd0730e6869",
+    "network-v2.mjs": "70c7665f5cd87b300b3e4e3526ce31719541c420f336dc9d4b81fbb4432d3752",
+    "before-a1.json": "d3f8f72783239fb6ef6e8c7dd21d709418240243b1a885a50c4101327590d34a",
+    "after-hooks-b1.json": "22eafb5f0a16bce509a579ab9cba21595188b0e75a43a4665a3645f48d0a7e5e",
+    "cached-baseline-proof.json": "48359a90053e3675010f6f7a0a06a87198a00a08fa18b7891292208a9bf57ae7",
+    "hydration-comparison/results.json": "3ec6fc7ad4a722c0e1b046bfa88c56f777966cdf1c5eb4b3f1614b0efcd889b3",
+    "network-v3.json": "0e9b7f85bc644295c45c75d7a6cce16a9f0e1383aa1093a071d6f3a38981100a",
+    "network-v3.mjs": "d62bab63ce337a8e60f584ff51512ada060c2b5c6d7dd77f43982dcf4fa9d435",
+    "full-gates.json": "91a3fbdbfc689e731f3b9b02822bf8ba40517a8711fede1a6b30bacd7f860c58",
+    "final-byte-checks.json": "8da7b673ac2479d7f8802a4484fc5e113e086b403b38ab0cb313b607a6e66ad1",
+    "coverage.json": "762d4f5e4fcd4c697e96c1fd138a5b5971acdad0536301a6d42354db67e953ff",
+    "expected-output-updates.json": "688840094ef6dae3d0f8cf682a29506f6ae8595b0441ceb94c488ce1de0d83cb",
+    "size-update-receipt.json": "8310aa49fcd9810a629155f2d0fefa39774f958ecd94ef0bc36f4773248ca458"
+  },
+  "claims": {
+    "timingAdvantage": false,
+    "hydrationComparison": true,
+    "allInteractionAssertionsPassed": true,
+    "repetitionsPerVariantPerScenario": 3,
+    "hydrationComparisonScope": "Four canonical native-control real-pages fixtures on the current candidate only; not a heavy UI library comparison or a new lite-path gain."
+  },
+  "hydrationComparison": {
+    "protocol": "real-pages-v1",
+    "command": "node apps/resume-bench/run.ts --suite real --build --lanes rivet,solid-stable --conditions fast --repeats 5 --out /Users/denisseverin/Projects/claude-test/rivet/.artifacts/js-diet/2026-11-01-runtime-leaves/hydration-comparison --report /Users/denisseverin/Projects/claude-test/rivet/.artifacts/js-diet/2026-11-01-runtime-leaves/hydration-comparison.md",
+    "node": "v24.18.1",
+    "chrome": "156.0.8078.79",
+    "uptimeStart": "14:56  up 11 days,  7:01, 3 users, load averages: 4.62 6.17 7.11",
+    "uptimeEnd": "14:57  up 11 days,  7:02, 3 users, load averages: 5.23 6.12 7.03",
+    "repeats": 5,
+    "verificationCases": 8,
+    "samples": 40,
+    "errors": [],
+    "rows": [
+      {
+        "page": "products",
+        "rivet": {
+          "jsBytes": {
+            "median": 3753,
+            "min": 3753,
+            "max": 3753
+          },
+          "jsRequests": {
+            "median": 1,
+            "min": 1,
+            "max": 1
+          },
+          "inlineScriptBytes": {
+            "median": 3967,
+            "min": 3967,
+            "max": 3967
+          },
+          "htmlTransferBytes": {
+            "median": 4657,
+            "min": 4657,
+            "max": 4657
+          },
+          "documentAndJS": {
+            "median": 8410,
+            "min": 8410,
+            "max": 8410
+          }
+        },
+        "solid-stable": {
+          "jsBytes": {
+            "median": 7490,
+            "min": 7490,
+            "max": 7490
+          },
+          "jsRequests": {
+            "median": 1,
+            "min": 1,
+            "max": 1
+          },
+          "inlineScriptBytes": {
+            "median": 14881,
+            "min": 14881,
+            "max": 14881
+          },
+          "htmlTransferBytes": {
+            "median": 3187,
+            "min": 3187,
+            "max": 3187
+          },
+          "documentAndJS": {
+            "median": 10677,
+            "min": 10677,
+            "max": 10677
+          }
+        }
+      },
+      {
+        "page": "dashboard",
+        "rivet": {
+          "jsBytes": {
+            "median": 4797,
+            "min": 4797,
+            "max": 4797
+          },
+          "jsRequests": {
+            "median": 1,
+            "min": 1,
+            "max": 1
+          },
+          "inlineScriptBytes": {
+            "median": 3967,
+            "min": 3967,
+            "max": 3967
+          },
+          "htmlTransferBytes": {
+            "median": 4541,
+            "min": 4541,
+            "max": 4541
+          },
+          "documentAndJS": {
+            "median": 9338,
+            "min": 9338,
+            "max": 9338
+          }
+        },
+        "solid-stable": {
+          "jsBytes": {
+            "median": 7714,
+            "min": 7714,
+            "max": 7714
+          },
+          "jsRequests": {
+            "median": 1,
+            "min": 1,
+            "max": 1
+          },
+          "inlineScriptBytes": {
+            "median": 9181,
+            "min": 9181,
+            "max": 9181
+          },
+          "htmlTransferBytes": {
+            "median": 3189,
+            "min": 3189,
+            "max": 3189
+          },
+          "documentAndJS": {
+            "median": 10903,
+            "min": 10903,
+            "max": 10903
+          }
+        }
+      },
+      {
+        "page": "settings",
+        "rivet": {
+          "jsBytes": {
+            "median": 3708,
+            "min": 3708,
+            "max": 3708
+          },
+          "jsRequests": {
+            "median": 1,
+            "min": 1,
+            "max": 1
+          },
+          "inlineScriptBytes": {
+            "median": 3967,
+            "min": 3967,
+            "max": 3967
+          },
+          "htmlTransferBytes": {
+            "median": 3511,
+            "min": 3511,
+            "max": 3511
+          },
+          "documentAndJS": {
+            "median": 7219,
+            "min": 7219,
+            "max": 7219
+          }
+        },
+        "solid-stable": {
+          "jsBytes": {
+            "median": 7624,
+            "min": 7624,
+            "max": 7624
+          },
+          "jsRequests": {
+            "median": 1,
+            "min": 1,
+            "max": 1
+          },
+          "inlineScriptBytes": {
+            "median": 624,
+            "min": 624,
+            "max": 624
+          },
+          "htmlTransferBytes": {
+            "median": 1959,
+            "min": 1959,
+            "max": 1959
+          },
+          "documentAndJS": {
+            "median": 9583,
+            "min": 9583,
+            "max": 9583
+          }
+        }
+      },
+      {
+        "page": "article",
+        "rivet": {
+          "jsBytes": {
+            "median": 3500,
+            "min": 3500,
+            "max": 3500
+          },
+          "jsRequests": {
+            "median": 1,
+            "min": 1,
+            "max": 1
+          },
+          "inlineScriptBytes": {
+            "median": 3967,
+            "min": 3967,
+            "max": 3967
+          },
+          "htmlTransferBytes": {
+            "median": 3855,
+            "min": 3855,
+            "max": 3855
+          },
+          "documentAndJS": {
+            "median": 7355,
+            "min": 7355,
+            "max": 7355
+          }
+        },
+        "solid-stable": {
+          "jsBytes": {
+            "median": 7886,
+            "min": 7886,
+            "max": 7886
+          },
+          "jsRequests": {
+            "median": 1,
+            "min": 1,
+            "max": 1
+          },
+          "inlineScriptBytes": {
+            "median": 624,
+            "min": 624,
+            "max": 624
+          },
+          "htmlTransferBytes": {
+            "median": 2316,
+            "min": 2316,
+            "max": 2316
+          },
+          "documentAndJS": {
+            "median": 10202,
+            "min": 10202,
+            "max": 10202
+          }
+        }
+      }
+    ],
+    "scope": "Current Rivet lite fixtures versus Solid1.9.15 hydration, not an effect of codec isolation on full-runtime UI pages; no timing claim. CDP encodedDataLength includes response transfer; inline raw bytes separate, already present inside document transfer."
+  },
+  "hostLoad1UIProbe": {
+    "min": 5.28857421875,
+    "max": 8.27490234375
+  },
+  "networkVerification": {
+    "v2Interactions": 24,
+    "v3Interactions": 24,
+    "sameByteCountsInBothProtocols": true,
+    "onlyV3Change": "records host load1 per case; identical assertions/timeouts/cache protocol"
+  },
+  "validation": {
+    "coverageCounts": {
+      "pass": 53,
+      "known-red": 2
+    },
+    "coveredGates": 55,
+    "originalGates": 54,
+    "originalFailures": [
+      "frames",
+      "zero-cost",
+      "size"
+    ],
+    "followupGates": 5,
+    "coverageKind": "Coverage assembled from immutable original full run and follow-up receipts; not a single rerun or rewritten original report",
+    "knownReds": [
+      {
+        "id": "vitest:runtime",
+        "failures": [
+          "libs/runtime/tests/click-defer-browser.test.ts > first mouse click of a tab paints sooner than with a synchronous flush"
+        ]
+      },
+      {
+        "id": "vitest:runtime-dev",
+        "failures": [
+          "libs/runtime/tests/click-defer-browser.test.ts > first mouse click of a tab paints sooner than with a synchronous flush"
+        ]
+      }
+    ],
+    "processCapBytes": 3221225472,
+    "fullRunPeakBytes": 3060465664,
+    "followupPeakBytes": 3039608832,
+    "scriptsAssertions": 142,
+    "focusedRuntimeAssertions": 47,
+    "sourceRegression": "native base RED / candidate GREEN"
+  }
+}

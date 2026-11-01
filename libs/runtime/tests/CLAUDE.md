@@ -70,3 +70,5 @@ npx vitest run --project runtime -t "shipped loader"          # by name
 - `derived-cold-pointer-browser.test.ts` (stabilization): internal capture-marked surfaces retain mouse/touch movement and release while either runtime or component code is delayed. Exercises both boundary JSX and a lowercase JSX helper; the helper's `pointermove` must join server `data-events` before its code arrives.
 
 - `derived-adopt-browser.test.ts`: a development runtime disposed while a page ready hook is pending never creates new component owners or handlers when that hook settles.
+
+- Codec payload regression (2026-11-01): `dom-v2-chunks.test.ts` builds real production eager/lazy entries and verifies boot excludes the lazy root value codec while the lazy chunk keeps it. The shared browser harness serves `resume-hooks.ts`; derived streamed Date/table adoption and lite fallback cases retain their existing assertions.

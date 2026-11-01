@@ -36,3 +36,40 @@ test("an eager v2 chunk does not carry _spread or the style runtime", async () =
   const all = [...chunks.values()].flatMap((c) => c.moduleIds.map((id) => id.slice(root.length)));
   assert.ok(all.includes("libs/runtime/dom-v2-spread.ts") && all.includes("libs/runtime/style.ts"), "the lazy chunk carries the spread");
 });
+
+test("derived boot does not carry the table decoder of a lazy root", async () => {
+  const entries: Record<string, string> = {
+    boot: `import runtime from "@rivetjs/runtime/dom-derived-runtime"; export { runtime }; export const load = () => import("codec-root");`,
+    "codec-root": `import { _useTableDecoder, createDecoder } from "@rivetjs/runtime/resume-format"; _useTableDecoder(); export const decode = (table) => createDecoder(table).get(0);`,
+  };
+  const build = await rolldown({
+    input: { boot: "boot" },
+    cwd: runtime,
+    platform: "browser",
+    logLevel: "silent",
+    resolve: { conditionNames: ["import", "production", "default"] },
+    plugins: [{ name: "decoder-entries", resolveId: (id) => (id in entries ? id : null), load: (id) => entries[id] ?? null }],
+  });
+  try {
+    const { output } = await build.generate({ format: "esm", minify: true });
+    const chunks = new Map(output.flatMap((o) => (o.type === "chunk" ? [[o.fileName, o] as const] : [])));
+    const closure = (entry: string): string[] => {
+      const visited = new Set<string>();
+      const walk = (file: string): void => {
+        if (visited.has(file)) return;
+        visited.add(file);
+        for (const next of chunks.get(file)!.imports) walk(next);
+      };
+      walk(entry);
+      return [...visited].flatMap((file) => chunks.get(file)!.moduleIds.map((id) => id.slice(root.length)));
+    };
+    const boot = [...chunks.values()].find((chunk) => chunk.facadeModuleId === "boot")!;
+    const lazy = [...chunks.values()].find((chunk) => chunk.facadeModuleId === "codec-root")!;
+    assert.ok(boot && lazy, "both real production entries are emitted");
+    assert.ok(closure(boot.fileName).includes("libs/runtime/dom-derived.ts"), "boot still contains the actual adopt runtime");
+    assert.ok(!closure(boot.fileName).includes("libs/runtime/resume-format.ts"), "eager runtime closure bundles the lazy value-table codec");
+    assert.ok(closure(lazy.fileName).includes("libs/runtime/resume-format.ts"), "loading the root retains its real table decoder");
+  } finally {
+    await build.close();
+  }
+});

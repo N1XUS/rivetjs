@@ -28,11 +28,11 @@ rivet-for.mjs 4bf9d19ba5ba
 rivet-router-bunserve.mjs 7b05a3dfaed1
 rivet-router-uws.mjs 3a1c519b4cf9
 rivet-router.mjs b974012008de
-rivet-router/client/.vite/rivet-resume.json f84310b9cc6e
+rivet-router/client/.vite/rivet-resume.json e56270a6c5e5
 rivet-router/client/assets/_layout-CyqiAmkY.js 754e5e62e1ee
 rivet-router/client/assets/_layout-VCxgTn-M.js f9ed86dc2e38
-rivet-router/client/assets/app-DRffXpPg.js 5211b5d66e6f
-rivet-router/client/assets/derived-runtime-BFlYSohp.js ef719cfd6af5
+rivet-router/client/assets/app-mjvSdmew.js 00f14505ee5a
+rivet-router/client/assets/derived-runtime-LDR9xr9E.js 168e83cd1559
 rivet-router/client/assets/dom-data-reader-DebSi85y.js 5524efbf1e8b
 rivet-router/client/assets/dom-derived-abi-By4Vh5MS.js c66dde161f57
 rivet-router/client/assets/index-BXBdQxhS.js cf495b206698
@@ -41,7 +41,7 @@ rivet-router/client/assets/page-DUpv3Mqu.js 5590025eedc3
 rivet-router/client/assets/props-5B0_rYxI.js fa367792c029
 rivet-router/client/assets/resume-09U_Cja_.js eef4fb6a8f4a
 rivet-router/client/assets/resume-builtins-COoHWQQJ.js a70ad7638b3d
-rivet-router/client/assets/resume-format-CHwU03VW.js 4186078b5118
+rivet-router/client/assets/resume-hooks-CmL_NeR4.js 9d1015a9dec2
 rivet-router/server/assets/content.server-CeYyxAmC.js e6e4384563d8
 rivet-router/server/assets/csp-directives-Coli5tj7.js 2792a48c9e80
 rivet-router/server/assets/deferred-DxG9lGtv.js ea4be2a72eaf
@@ -51,11 +51,11 @@ rivet-router/server/assets/health-D9BInQfM.js a8d52f61d332
 rivet-router/server/assets/metrics-CYMyudnt.js 4c2871ccd30a
 rivet-router/server/assets/page-MODIivh4.js d5d9ab287480
 rivet-router/server/assets/resume-Cp4P4_g7.js b8866c4d6fdf
-rivet-router/server/assets/resume-format-cYh7FszK.js c5f43e8d15ac
+rivet-router/server/assets/resume-format-Co6eC0UE.js 2cc8bb4d6d2f
 rivet-router/server/assets/route-cache-su5Cxhsv.js 7736ecd8ec0e
 rivet-router/server/assets/server-cache-BQnLdqHL.js d4b0efd6b25b
 rivet-router/server/assets/strict-csp-nG9xclrT.js 21a1c9dc0690
-rivet-router/server/entry.server.js ab66198945bf
+rivet-router/server/entry.server.js 926035480168
 rivet.mjs 1d7f24edb7f5
 server-uws.mjs cb8c978a4da4
 server.mjs 68a3f8f56e37
