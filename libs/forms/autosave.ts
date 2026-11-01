@@ -186,7 +186,14 @@ export function postDraft(action: string): AutosaveDefinition["save"] {
     if (context.version !== undefined) body.set("_version", String(context.version));
     const response = await fetch(new URL(action, location.href), { method: "POST", body, headers: { accept: "application/json" }, credentials: "same-origin", signal: context.signal });
     const { _decodeWire } = await import("@rivetjs/runtime/resume-format");
-    const answer = (await _decodeWire(await response.text())) as ActionAnswer;
+    const text = await response.text();
+    let answer: ActionAnswer;
+    // Not an action answer (a proxy's HTML error page, an empty 204): its status, as `transport.ts` reads it.
+    try {
+      answer = (await _decodeWire(text)) as ActionAnswer;
+    } catch {
+      answer = { error: { status: response.status, message: response.statusText || "Request failed" } };
+    }
     if (!answer.action) throw new Error(answer.error?.message ?? `Save failed (${response.status})`);
     return answer.action.result as SaveResult;
   };

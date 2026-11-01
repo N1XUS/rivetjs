@@ -3,7 +3,7 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { untrack } from "@rivetjs/reactivity";
 import { createHandler, type AppRoute, type RenderInput } from "../../router/server/handler.ts";
-import { conflict, createAutosave, defineAutosave, flush, markChanged, resolveConflict, saveError, savedVersion, saving, shouldBlockLeave, unsaved, type Patch } from "../autosave.ts";
+import { conflict, createAutosave, defineAutosave, flush, markChanged, postDraft, resolveConflict, saveError, savedVersion, saving, shouldBlockLeave, unsaved, type Patch } from "../autosave.ts";
 import { draftAction, type RawDraft } from "../server/index.ts";
 import type { Draft, DraftStore } from "../wizard.ts";
 import { tick } from "./fixtures.ts";
@@ -111,4 +111,20 @@ test("a save that throws synchronously reports the error and the next flush save
   const outcome = await Promise.race([next.then(() => "done"), tick(200).then(() => "stuck")]);
   assert.equal(outcome, "done");
   assert.deepEqual(saved, [{ title: "a" }]);
+});
+
+// FIX-CORE (2026-11-01): a non-answer response (a proxy's 502 HTML page, an empty 204) reports its status, as the enhanced
+// submit's transport does, not the wire decoder's parse error.
+test("postDraft: a response that is not an action answer fails with its status", async () => {
+  const global = globalThis as unknown as Record<string, unknown>;
+  const saved = { fetch: global.fetch, location: Object.getOwnPropertyDescriptor(globalThis, "location") };
+  global.fetch = async () => new Response("<html>Bad gateway</html>", { status: 502, statusText: "Bad Gateway" });
+  Object.defineProperty(globalThis, "location", { configurable: true, value: new URL("https://x.test/edit") });
+  try {
+    await assert.rejects(postDraft("?/draft")({ title: "a" }, { signal: new AbortController().signal }), /^Error: Bad Gateway$/);
+  } finally {
+    global.fetch = saved.fetch;
+    if (saved.location) Object.defineProperty(globalThis, "location", saved.location);
+    else Reflect.deleteProperty(globalThis, "location");
+  }
 });
