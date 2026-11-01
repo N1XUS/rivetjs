@@ -263,7 +263,8 @@ export class ListKeyboardDelegate<T> implements KeyboardDelegate {
   getKeyForSearch(search: string, fromKey?: Key | null): Key | null {
     if (!this.collator) return null;
     const collection = this.collection;
-    let key = fromKey || this.getFirstKey();
+    // `??`, not upstream `||`: numeric key 0 is a real focused key here (`data-key-type="number"`).
+    let key = fromKey ?? this.getFirstKey();
     while (key != null) {
       const item = collection.getItem(key);
       if (!item) return null;

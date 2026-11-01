@@ -228,6 +228,16 @@ describe("ListKeyboardDelegate (react-aria)", () => {
     assert.equal(d.getKeyForSearch("zz"), null);
   });
 
+  it("getKeyForSearch starts at a numeric focused key 0 (not the first key)", () => {
+    const collection = new ListCollection(
+      new CollectionBuilder<object>().build({ children: [Item({ key: 5, children: "Bat" }), Item({ key: 0, children: "Bee" }), Item({ key: 7, children: "Bob" })] }),
+    );
+    const d = new ListKeyboardDelegate({ collection, ref: null, collator: new Intl.Collator("en", { usage: "search", sensitivity: "base" }) });
+    assert.equal(d.getKeyForSearch("b", 0), 0);
+    assert.equal(d.getKeyForSearch("b", 7), 7);
+    assert.equal(d.getKeyForSearch("b"), 5);
+  });
+
   it("horizontal: left/right follow direction", () => {
     const ltr = new ListKeyboardDelegate({ collection: list(), ref: null, orientation: "horizontal", direction: "ltr" });
     assert.equal(ltr.getKeyRightOf!("Bear"), "Cat");
