@@ -30,7 +30,11 @@ test("production playground: resumable file-routed pages, endpoints, legacy redi
     const styledHTML = await styled.text();
     const nonce = /'nonce-([^']+)'/.exec(styled.headers.get("content-security-policy")!)![1]!;
     assert.doesNotMatch(styledHTML, /<link rel="stylesheet"/);
-    assert.equal(styledHTML.match(new RegExp(`<style nonce="${nonce.replace(/[+/]/g, "\\$&")}">[\\s\\S]+?</style>`, "g"))?.length, 2);
+    // `data-href` = the sheet's URL (ROUTE-CSS, 401efba8d): preload lists naming it skip the inline sheet.
+    assert.equal(
+      styledHTML.match(new RegExp(`<style data-href="/assets/[^"]+\\.css" nonce="${nonce.replace(/[+/]/g, "\\$&")}">[\\s\\S]+?</style>`, "g"))?.length,
+      2,
+    );
     assert.doesNotMatch(styledHTML, /\$vite\$/);
     const detail = await fetch(app.url + "/items/1?from=list");
     assert.equal(detail.status, 200);
