@@ -174,7 +174,13 @@ export class DOMCollection implements Collection<Node> {
     return this.order;
   }
   getItem(key: Key): Node | null {
-    return this.keyMap.get(key) ?? this.keyMap.get(typeof key === "number" ? String(key) : Number(key)) ?? null;
+    const hit = this.keyMap.get(key);
+    if (hit) return hit;
+    // Number / string twin ("7" <-> 7). Only a canonical numeric string has one: `Number("")`,
+    // `Number(" ")`, `Number("0x0")` and `Number("00")` are numbers too, but those are other keys.
+    if (typeof key === "number") return this.keyMap.get(String(key)) ?? null;
+    const n = Number(key);
+    return String(n) === key ? (this.keyMap.get(n) ?? null) : null;
   }
   at(idx: number): Node | null {
     const key = this.order[idx];

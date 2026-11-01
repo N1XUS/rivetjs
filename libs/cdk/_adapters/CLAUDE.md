@@ -14,7 +14,7 @@ Two families (different branches, overlapping APIs):
   - `intl.ts` - `LocalizedStrings`, `localeOf`, `stringsFor`, `formatMessage` (ICU subset)
 - "aria-grid-tree" family (Tabs / Toolbar / Breadcrumbs):
   - `collection.ts` - Node/Collection types, node helpers, `ListCollection`, `TreeCollection`, `buildNodes`
-  - `dom-collection.ts` - `DOMCollection`, `itemKeyAttrs`/`elementKey` (= `keyAttrs` + `data-collection`, `domKey` from `../collections/dom.ts`), `collectionElements`, `DOMLayoutDelegate`
+  - `dom-collection.ts` - `DOMCollection`, `itemKeyAttrs`/`elementKey` (= `keyAttrs` + `data-collection`, `domKey` from `../collections/dom.ts`), `collectionElements`, `DOMLayoutDelegate`; `getItem` also finds a key's number / string twin (`7` ↔ `"7"`), only for canonical numeric strings (`String(Number(k)) === k`: `""`, `" "`, `"00"` are not key 0; test `tests/adapters-dom-collection.test.ts`)
   - `grid-selection.ts` - `createMultipleSelectionState`, `SelectionManager`, `setSelectedKeys`, `isKeySelected`, `hasKey`
   - `selectable.ts` - `selectableCollectionKeyDown`/`FocusIn`/`FocusOut`, `selectableItemPress*`, `selectableItemLinkClick`, `syncFocus`, `typeSelectKeyDown`
   - `press.ts` - `beginPress`/`endPress`/`currentPress`, `armLongPress`; re-exports `PressEvent` / `pressEvent` (`./interactions.ts`), modality, `isVirtualClick`, `pointerTypeOf`
