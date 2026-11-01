@@ -122,7 +122,9 @@ export const forms = actions({
 
 ## Cross-site protection
 
-Actions change data, so Rivet rejects form posts from other sites. If the request has an `Origin` header, it must match the page's origin. If not, the `Sec-Fetch-Site` header, when present, must be `same-origin`. A form post with neither header is rejected too (outside dev). Otherwise the response is `403` and the action does not run. You do not need a CSRF token for actions.
+Actions change data, so Rivet rejects form posts from other sites. If the request has an `Origin` header, it must match the page's origin. If not, the `Sec-Fetch-Site` header, when present, must be `same-origin`. A form post with neither header is rejected too (outside dev). Otherwise the response is `403` and the action does not run.
+
+Some browsers send `Origin: null`: from a sandboxed frame or a `data:` page, and in Chromium also for a normal form post from a page with `Referrer-Policy: no-referrer`. Then only `Sec-Fetch-Site` counts: `same-origin` passes, anything else (or no header) is rejected. The browser sets that header itself and marks sandboxed frames and cross-site redirects as `cross-site`, so pages with `no-referrer` keep working without opening a gap. Browsers too old for `Sec-Fetch-Site` get `403` on such pages; use `same-origin` or `strict-origin-when-cross-origin` (the default) if you support them. You do not need a CSRF token for actions.
 
 The same check runs for every `POST`, `PUT`, `PATCH` and `DELETE` request, on pages and [endpoints](./endpoints.md) alike, before request handlers, guards and actions. The forms library's `action()` adds a stricter check on top (see [forms](../forms/forms.md)).
 

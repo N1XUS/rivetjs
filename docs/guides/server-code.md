@@ -28,6 +28,7 @@ File routes (`@rivetjs/router`) keep server code next to the page. The compiler 
 ## Security
 - CSRF, every unsafe method (POST/PUT/PATCH/DELETE), page and endpoint routes, before `onRequest(…)`/`on<Method>`/guards/actions:
   - `Origin` present → must equal the request origin; else `Sec-Fetch-Site` present → must be `same-origin`.
+  - `Origin: null` (opaque initiators: sandboxed frames, `data:` / `file:`; also a same-origin form post from a `Referrer-Policy: no-referrer` page in Chromium) → decided by `Sec-Fetch-Site` alone (`same-origin` passes; absent → 403 whatever the type). Browser-set header, `cross-site` for opaque initiators and cross-site redirect chains (OWASP Fetch Metadata; Go `net/http` CrossOriginProtection order). A real `Origin` always wins over `Sec-Fetch-Site`.
   - Neither header + form content type (`application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain`) → 403 (dev exempt). JSON/other types without either (non-browser clients) pass.
   - Opt out per route: `export const csrf = false`.
 - Request origin = request URL origin. Node adapter (`serve`/`start`): `origin: "https://shop.example"` (fixed public origin) or `trustProxy` (proxies you run; default off: every `X-Forwarded-*` header ignored). TLS proxy without either → every action 403.

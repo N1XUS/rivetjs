@@ -93,6 +93,8 @@ test("signup (JS): no form modules before interaction, issues on blur, async che
   await page.click("button[type=submit]");
   await page.waitForURL(origin + "/welcome");
   await page.waitForSelector("#welcome-title");
+  // The action set a cookie only the root layout's loader reads: the redirect reran it (no kept layout data).
+  assert.equal(await page.textContent("#who"), "Ada");
   assert.equal(seen.posts, 1);
   assert.equal(seen.documents, 1, "enhanced submit and redirect stay in the page");
   assert.deepEqual(seen.errors, []);

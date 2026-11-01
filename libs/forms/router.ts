@@ -44,13 +44,15 @@ function router(): Promise<RouterBrand["go"] | undefined> {
 const never = () => new Promise<void>(() => {});
 
 /**
- * Navigate like a link click (router `navigate()`); another origin, no router or no answer in time: a document load
- * (never settles). Non-HTTP(S) URLs reject.
+ * Follow a submit's redirect like a link click (router `navigate()`), after `clear`: the action may have changed what
+ * any loader returns, so the navigation keeps no layout data (`_rivet_keep`) — also when the router booted only now (the
+ * submit's own `clearPrefetch` found none). Another origin, no router or no answer in time: a document load (never
+ * settles). Non-HTTP(S) URLs reject.
  */
 export async function navigate(url: URL): Promise<void> {
   if (!/^https?:$/.test(url.protocol)) throw new TypeError("Cannot follow a non-HTTP(S) redirect: " + url.protocol);
   const go = url.origin === location.origin ? await router() : undefined;
-  if (go) return go(url);
+  if (go) return (clearPrefetch(), go(url));
   location.assign(url.href);
   return never();
 }

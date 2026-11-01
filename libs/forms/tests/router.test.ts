@@ -31,7 +31,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-test("a booted router: navigate / invalidate / clearPrefetch go through the brand", async () => {
+test("a booted router: navigate (clear first) / invalidate / clearPrefetch go through the brand", async () => {
   const calls: unknown[][] = [];
   let cleared = 0;
   install(
@@ -47,16 +47,28 @@ test("a booted router: navigate / invalidate / clearPrefetch go through the bran
     ["http://x.test/form", { data: [1] }],
     ["http://x.test/form", true],
   ]);
-  assert.equal(cleared, 1);
+  // navigate (a submit's redirect) clears first; then the explicit clearPrefetch.
+  assert.equal(cleared, 2);
   assert.equal(asks, 0);
 });
 
 test("before the router: clearPrefetch is a no-op; a client-rendered App answers the first ask at once", async () => {
   clearPrefetch();
   const calls: string[] = [];
-  doc.addEventListener("rivet:go", () => g[BRAND] || install(async (url) => void calls.push(url.href)), { once: true });
+  let cleared = 0;
+  doc.addEventListener(
+    "rivet:go",
+    () =>
+      g[BRAND] ||
+      install(
+        async (url) => void calls.push(url.href + " cleared " + cleared),
+        () => cleared++,
+      ),
+    { once: true },
+  );
   await navigate(new URL("http://x.test/next"));
-  assert.deepEqual(calls, ["http://x.test/next"]);
+  // The submit's clear ran before the router existed: the redirect clears (marks layout data stale) before it goes.
+  assert.deepEqual(calls, ["http://x.test/next cleared 1"]);
   assert.equal(asks, 1);
 });
 

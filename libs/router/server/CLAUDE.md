@@ -55,7 +55,7 @@ Web-standard request pipeline: route match → CSRF → request handlers → gua
 ## Endpoints + CSRF rules
 
 - Endpoint = plain `routes/api/x.ts` exporting request handler calls (`export const GET = onGet(…)`, `onPost(…)` / `onPut(…)` / `onPatch(…)` / `onDelete(…)` / `onOptions(…)` / `onRequest(…)`; any export name) (or `x.server.ts` without a page). Must return `Response`; non-Response → 500 `"<id>: onGet must return a Response"` (the kind).
-- CSRF applies to every non-GET request, page and endpoint alike, before any handler: `Origin` present → must equal URL origin; else `Sec-Fetch-Site` → must be `same-origin`; else form content types (`x-www-form-urlencoded`, `multipart/form-data`, `text/plain`) → 403 outside dev. JSON without either header passes (non-browser clients).
+- CSRF applies to every non-GET request, page and endpoint alike, before any handler: `Origin` present → must equal URL origin (`Origin: null` → only `Sec-Fetch-Site: same-origin` passes, absent → 403: Chromium sends `null` for a same-origin form post on a `Referrer-Policy: no-referrer` page; ROUTER-LAYOUT 2026-11-01, `security.ts` `crossSite`); else `Sec-Fetch-Site` → must be `same-origin`; else form content types (`x-www-form-urlencoded`, `multipart/form-data`, `text/plain`) → 403 outside dev. JSON without either header passes (non-browser clients).
 - Opt-out only per route module: `export const csrf = false` (webhooks). Layout `csrf` is ignored.
 - Origin = request URL origin: behind TLS proxies the adapter must set it (`origin` / `trustProxy`), or every action 403s.
 - Body limit: default 1 MiB, multipart 10 MiB; `Content-Length` first, then streamed count → 413.

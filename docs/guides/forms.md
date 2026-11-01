@@ -48,6 +48,8 @@ const form = createForm(signupForm, { result: actionResult() });
 - Pipeline: CSRF → content type (415) → bounded body (413; 1 MiB urlencoded, 10 MiB multipart, `limits.file`) → `_form`/`_intent` → decode (400 on hardening limits) → schema → server field checks (`fields.*.server`, `options.checks`) → handler.
 - Handler returns data (`{ ok: true, id, data }`), `invalid(issues | mapIssues(...), form?, status?)`, `redirect(...)` (303), a `Response`, or throws.
 - CSRF: the router already rejects cross-site posts and provenance-less form posts (production) before the action; `"strict"` (default) also rejects posts with neither `Origin` nor `Sec-Fetch-Site` of any type in production (dev exempt); `"lax"`: router check only; token mode `@rivetjs/forms/csrf` (`csrfToken`, `verifyCsrf`: HttpOnly SameSite=Lax nonce cookie + HMAC field).
+- Redirect to another URL after an enhanced submit: client navigation that reruns every loader of the target, layouts included (forms `router.ts` `navigate` calls the router brand's `clear` before `go` → no `_rivet_keep`), so a layout reading only a session cookie updates after sign-in.
+- Query: `action="?/name"` replaces the page's query, and a failed / non-redirect action renders the page with an empty `url.search` (router `handler.ts`). Values the page read from its query (`?next=`, `?token=`) must ride in the form (hidden input, echoed back) to survive a failed submit.
 - Echo: strings only; files and names matching `/password|secret/i` never echoed; `echo.exclude` paths/patterns add to that default (never replace it).
 - `parse(def, formData | request)`, `readForm(request, limits)`, `decodeFormData`, `safeRedirect(target, fallback)` (re-export of the router's).
 

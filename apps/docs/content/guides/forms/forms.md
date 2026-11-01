@@ -131,6 +131,7 @@ Once the user interacts with the form, its handlers take over:
 - problems show while the user fills in the form, following `validateOn`;
 - on submit, the form is checked in the browser first. If something is wrong, nothing is sent and focus moves to the first wrong field;
 - if all is fine, the form is sent in the background (with `fetch`). A redirect from the action becomes a client navigation; problems found by the server appear at their fields. If the page's router has not started within 10 seconds of the answer (a very slow connection), the browser loads the redirect target as a normal page instead, so unsent client state, such as other fields, is lost.
+- after a redirect to another page, every loader of that page runs again, its layouts' too, so a header that reads the session cookie shows the new sign-in state.
 - when the action stays on the page, the same answer carries the page's fresh data, and the page shows it. On a [live page](./forms-in-overlays.md) only the parts that read the data change; the rest of the page, an open drawer included, keeps its state.
 - `onSubmit` resolves to `true` once the server accepted the form and the page is up to date, else `false`. Use it to close the dialog the form is in.
 
@@ -195,6 +196,7 @@ A field can also have its own async check, for example "is this user name free?"
 - **Different `name` and action key.** `defineForm({ name: "contact" })` needs a `contact` action in `actions({ … })` and `action="?/contact"`.
 - **Leaving out `result: actionResult()`.** Without it, the page after a failed post without JavaScript shows no messages.
 - **Putting the form definition in a `.server.ts` file.** The browser needs it for its checks. Keep it in a normal module, and keep secrets out of it.
+- **Reading `?next=` or `?token=` from the page URL only.** `action="?/login"` replaces the page's query, and after a failed submit the page is rendered without one. Put such values in the form as a hidden input (it is echoed back with the other fields) and read them from there.
 - **Rendering one definition twice on a page.** Pass a different `id` to each `createForm` call and add `<FormMeta of={form} />` inside each form.
 
 ## See also

@@ -8,7 +8,8 @@ import { signupForm } from "../forms/definitions.js";
 export const head = { title: "Sign up" };
 
 export const forms = actions({
-  signup: action(signupForm, () => redirect("/welcome")),
+  // The cookie only the root layout's loader reads: the redirect must not keep that layout's data.
+  signup: action(signupForm, (value, event) => (event.cookies.set("forms_user", value.name, { path: "/" }), redirect("/welcome"))),
 });
 
 /**

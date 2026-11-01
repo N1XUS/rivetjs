@@ -7,14 +7,17 @@ const FORM_TYPES = new Set(["application/x-www-form-urlencoded", "multipart/form
 const MiB = 1024 * 1024;
 
 /**
- * Reject cross-site unsafe requests: `Origin` must equal the app origin; without it `Sec-Fetch-Site`
- * must be `same-origin`; with neither, form content types are rejected outside dev (browsers send at
- * least one header; non-browser JSON clients send none; dev keeps `curl -d` working).
+ * Reject cross-site unsafe requests: `Origin` must equal the app origin; without it (or with `Origin: null`)
+ * `Sec-Fetch-Site` must be `same-origin`; with neither, form content types are rejected outside dev (browsers send at
+ * least one header; non-browser JSON clients send none; dev keeps `curl -d` working). `Origin: null` alone is
+ * rejected: opaque initiators (sandboxed frames, `data:` / `file:`) get it, and so does a same-origin form on a
+ * `Referrer-Policy: no-referrer` page (Chromium), which Sec-Fetch-Site — set by the browser, `cross-site` for opaque
+ * initiators and cross-site redirect chains — tells apart (as Go `net/http` CrossOriginProtection does).
  */
 export function crossSite(request: Request, origin: string, dev: boolean): boolean {
   const header = request.headers.get("origin");
-  if (header !== null) return header !== origin;
   const site = request.headers.get("sec-fetch-site");
+  if (header !== null && (header !== "null" || site === null)) return header !== origin;
   if (site !== null) return site !== "same-origin";
   return !dev && FORM_TYPES.has(mediaType(request));
 }

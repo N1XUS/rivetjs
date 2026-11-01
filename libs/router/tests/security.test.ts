@@ -50,6 +50,12 @@ test("CSRF: page onPost and onRequest never run for cross-site or provenance-les
   assert.equal((await post("/items", { origin: "http://evil" })).status, 403);
   assert.equal((await post("/items", { "sec-fetch-site": "cross-site" })).status, 403);
   assert.equal((await post("/items", { "sec-fetch-site": "same-site" })).status, 403);
+  // `Origin: null` (opaque initiator, or `Referrer-Policy: no-referrer`): only the browser's Sec-Fetch-Site decides.
+  assert.equal((await post("/items", { origin: "null" })).status, 403);
+  assert.equal((await post("/items", { origin: "null", "content-type": "application/json" }, "{}")).status, 403);
+  assert.equal((await post("/items", { origin: "null", "sec-fetch-site": "cross-site" })).status, 403);
+  assert.equal((await post("/items", { origin: "null", "sec-fetch-site": "same-site" })).status, 403);
+  assert.equal((await post("/items", { origin: "null", "sec-fetch-site": "none" })).status, 403);
   // Form content types (incl. text/plain, multipart) with neither header: 403.
   assert.equal((await post("/items", {})).status, 403);
   assert.equal((await post("/items", { "content-type": "text/plain" }, "a=1")).status, 403);
@@ -61,6 +67,10 @@ test("CSRF: page onPost and onRequest never run for cross-site or provenance-les
   // Same origin passes; JSON without provenance headers (non-browser client) passes.
   assert.equal((await post("/items", { origin: "http://x" })).status, 201);
   assert.equal((await post("/items", { "sec-fetch-site": "same-origin" })).status, 201);
+  // A same-origin form on a `Referrer-Policy: no-referrer` page (Chromium: `Origin: null`).
+  assert.equal((await post("/items", { origin: "null", "sec-fetch-site": "same-origin" })).status, 201);
+  // A real Origin wins over Sec-Fetch-Site.
+  assert.equal((await post("/items", { origin: "http://evil", "sec-fetch-site": "same-origin" })).status, 403);
   assert.equal((await post("/items", { "content-type": "application/json" }, "{}")).status, 201);
   // Other unsafe methods are checked as well (before the 405 / handler logic).
   assert.equal((await handler(new Request("http://x/items", { method: "DELETE", headers: { origin: "http://evil" } }))).status, 403);
