@@ -107,3 +107,30 @@ test("decode hardening: prototype keys, depth, index, field count and key length
   // Meta fields do not count and never decode.
   assert.deepEqual(decodeFormData(fd([["_form", "f"], ["a", "1"]]), { limits: { fields: 1 } }), { a: "1" });
 });
+
+// FIX-CORE (2026-11-01): `matchesPattern` walks segments in place (no split); same answers as the split form.
+test("matchesPattern agrees with the segment-split reference on generated patterns and paths", () => {
+  const reference = (pattern: string, path: string): boolean => {
+    if (pattern === path) return true;
+    if (!pattern.includes("$")) return false;
+    const a = pattern.split("."),
+      b = path.split(".");
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i] && !(a[i] === "$" && /^(0|[1-9]\d*)$/.test(b[i]!))) return false;
+    return true;
+  };
+  const parts = ["", "$", "a", "ab", "0", "1", "01", "10", "x1", "$$", "$a", "9"];
+  let state = 7;
+  const pick = () => parts[(state = (state * 1103515245 + 12345) & 0x7fffffff) % parts.length]!;
+  const name = () => Array.from({ length: 1 + (state % 4) }, pick).join(".");
+  for (let n = 0; n < 20000; n++) {
+    const pattern = name(),
+      path = n % 2 ? name() : pattern.replaceAll("$", String(n % 12));
+    assert.equal(matchesPattern(pattern, path), reference(pattern, path), JSON.stringify([pattern, path]));
+  }
+  assert.equal(matchesPattern("a.$", "a.$"), true);
+  assert.equal(matchesPattern("a.$", "a.01"), false);
+  assert.equal(matchesPattern("a.$.", "a.0."), true);
+  assert.equal(matchesPattern("a.$", "a.0.b"), false);
+  assert.equal(matchesPattern("$", ""), false);
+});

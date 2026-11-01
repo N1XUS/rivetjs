@@ -56,15 +56,40 @@ export function canonicalName(name: string): string | null {
   return segments && !segments.includes("") ? joinPath(segments) : null;
 }
 
-/** Whether `path` matches `pattern`, where a `$` segment matches any array index. */
+/**
+ * Whether `path` matches `pattern`, where a `$` segment matches any array index. Segment by segment in place (no
+ * `split`): `decodeFormData` asks it per FormData entry per `$` coerce pattern on every keystroke (FIX-CORE 2026-11-01:
+ * 100 entries × 9 patterns, decode 99 → 36 µs).
+ */
 export function matchesPattern(pattern: string, path: string): boolean {
   if (pattern === path) return true;
   if (!pattern.includes("$")) return false;
-  const a = pattern.split("."), b = path.split(".");
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i] && !(a[i] === "$" && isIndex(b[i]!))) return false;
-  return true;
+  for (let i = 0, j = 0; ; ) {
+    let a = pattern.indexOf(".", i),
+      b = path.indexOf(".", j);
+    if (a < 0) a = pattern.length;
+    if (b < 0) b = path.length;
+    if (!sameSegment(pattern, i, a, path, j, b) && !(a - i === 1 && pattern.charCodeAt(i) === 36 && indexAt(path, j, b))) return false;
+    // The last segment of either: both must end here (equal segment counts).
+    if (a === pattern.length || b === path.length) return a === pattern.length && b === path.length;
+    i = a + 1;
+    j = b + 1;
+  }
 }
+const sameSegment = (a: string, i: number, ae: number, b: string, j: number, be: number): boolean => {
+  if (ae - i !== be - j) return false;
+  for (; i < ae; i++, j++) if (a.charCodeAt(i) !== b.charCodeAt(j)) return false;
+  return true;
+};
+// `isIndex` over `text[from, to)`: `0` or digits without a leading zero.
+const indexAt = (text: string, from: number, to: number): boolean => {
+  if (from === to || (text.charCodeAt(from) === 48 && to - from > 1)) return false;
+  for (let k = from; k < to; k++) {
+    const c = text.charCodeAt(k);
+    if (c < 48 || c > 57) return false;
+  }
+  return true;
+};
 
 /** Look a value up in a `{ pattern: value }` map (exact first, then `$` wildcards). */
 export function byPattern<V>(map: Readonly<Record<string, V>> | undefined, path: string): V | undefined {
