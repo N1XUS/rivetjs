@@ -31,6 +31,7 @@ Drag and drop for collections: react-aria dnd hooks + react-stately dnd states +
 ## Gotchas / deviations
 - `DropZone` keeps its own drop half (`../drop-zone/dnd.ts`, earlier port); not merged into `use-drop.tsx` yet.
 - Browser-created drag / drop descriptions (`descriptionId`) share a hidden node per distinct text, without reference counting. Tree's drag instructions are owned by their row gridcells instead, so SSR includes both the IDREF and its target; disabled rows have no instruction link. Drop-session descriptions remain browser-created.
+- `useAutoScroll` (WebKit macOS only) resets both deltas on every edge `move`: upstream kept the other axis' previous delta (left edge, then bottom edge at mid width kept scrolling horizontally); FIX-CDK 2026-11-01, `tests/dnd-auto-scroll.test.ts`.
 - Drag preview renders into a body-level container: it inherits the body's text styles (react-aria: where `<DragPreview>` sits).
 - Virtualized collections: no `persistedKeys` for the drop target / dragged keys, and the virtualizer renderer ignores `renderRow` (no drop indicators in a virtualized Tree).
 - Chromium: a constructed `DataTransfer` ignores `effectAllowed` / `dropEffect` writes outside a real drag — tests shadow them (`writableEffects`), real drags are unaffected.

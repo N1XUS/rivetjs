@@ -1,6 +1,6 @@
 // Ported from react-spectrum (packages/react-aria/src/dnd/useAutoScroll.ts), Apache-2.0, © Adobe.
 // Rivet: the scrollable element is resolved on the first `move` (react-aria: an effect after mount); the frame is
-// cancelled by the owner's cleanup.
+// cancelled by the owner's cleanup; each edge `move` resets both deltas (upstream bug: a stale axis kept scrolling).
 import { getOwner, onCleanup } from "@rivetjs/reactivity";
 import { isIOS, isWebKit } from "../platform/index.ts";
 import { getScrollParent, isScrollable } from "../utils/dom.ts";
@@ -50,6 +50,10 @@ export function useAutoScroll(ref: ElementRef<Element>): AutoScrollAria {
       const bottom = box.height - AUTOSCROLL_AREA_SIZE;
       const right = box.width - AUTOSCROLL_AREA_SIZE;
       if (x < left || x > right || y < top || y > bottom) {
+        // Both axes from this position (upstream kept the other axis' old delta: left edge, then bottom edge at mid
+        // width kept scrolling horizontally for the rest of the drag).
+        state.dx = 0;
+        state.dy = 0;
         if (x < left) state.dx = x - left;
         else if (x > right) state.dx = x - right;
         if (y < top) state.dy = y - top;
