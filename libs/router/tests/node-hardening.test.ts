@@ -154,3 +154,37 @@ test("C13: negotiate honours q; validators and ranges parse edge cases", () => {
   assert.equal(byteRange("items=0-1", 10), null);
   assert.equal(byteRange("bytes=7-3", 10), null);
 });
+
+// FIX2 (r3-edges#1, r3-races#11): a suffix range of an empty file was `[0, -1]` (206 `bytes 0--1/0`, then a read
+// stream error); a file replaced after the index (or `stat`) was streamed under its old Content-Length (truncated).
+test("FIX2: empty file ranges are 416; a file replaced on disk is answered with its new length and validators", async () => {
+  assert.equal(byteRange("bytes=-5", 0), "unsatisfiable");
+  assert.equal(byteRange("bytes=0-", 0), "unsatisfiable");
+  for (const mode of ["index", "fs"] as const) {
+    const dir = await mkdtemp(join(tmpdir(), "rivet-node-f-"));
+    await writeFile(join(dir, "empty.bin"), "");
+    await writeFile(join(dir, "data.bin"), Buffer.alloc(100, 1));
+    const serving = await serve({ handler: echo, client: dir, port: 0, onError: () => {}, compress: false, ...(mode === "fs" ? { static: "fs" } : {}) });
+    try {
+      const empty = await fetch(serving.url + "/empty.bin", { headers: { range: "bytes=-5" } });
+      assert.equal(empty.status, 416, mode);
+      assert.equal(empty.headers.get("content-range"), "bytes */0");
+      const before = await fetch(serving.url + "/data.bin");
+      const etag = before.headers.get("etag");
+      assert.equal((await before.arrayBuffer()).byteLength, 100);
+      await new Promise((done) => setTimeout(done, 20));
+      await writeFile(join(dir, "data.bin"), Buffer.alloc(250, 2));
+      const after = await fetch(serving.url + "/data.bin");
+      assert.equal(after.headers.get("content-length"), "250", mode);
+      assert.notEqual(after.headers.get("etag"), etag);
+      const bytes = new Uint8Array(await after.arrayBuffer());
+      assert.equal(bytes.length, 250);
+      assert.ok(bytes.every((b) => b === 2));
+      const part = await fetch(serving.url + "/data.bin", { headers: { range: "bytes=200-" } });
+      assert.equal(part.headers.get("content-range"), "bytes 200-249/250");
+    } finally {
+      await serving.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+});

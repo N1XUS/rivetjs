@@ -1,7 +1,7 @@
 // Node HTTP adapter: serves built client assets and streams a web-standard handler's Responses.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { createReadStream, readdirSync, realpathSync, statSync } from "node:fs";
-import { readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
+import { readdirSync, realpathSync, statSync } from "node:fs";
+import { open, readFile, realpath, rename, rm, stat, writeFile, type FileHandle } from "node:fs/promises";
 import type { AddressInfo, Socket } from "node:net";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { Readable, Transform, type Writable } from "node:stream";
@@ -297,6 +297,8 @@ export function byteRange(header: string | undefined, size: number): [number, nu
   if (!header) return null;
   const match = /^\s*bytes\s*=\s*(\d*)\s*-\s*(\d*)\s*$/i.exec(header);
   if (!match || (!match[1] && !match[2])) return null;
+  // No byte of an empty file can be selected (RFC 9110 14.1.1): every range, suffix ranges included, is a 416.
+  if (size === 0) return "unsatisfiable";
   if (!match[1]) {
     // Suffix: the last n bytes.
     const length = Number(match[2]);
@@ -576,7 +578,15 @@ function sendDirect(
 /** The one dot-named directory served (RFC 8615: `security.txt`, `assetlinks.json`, ACME challenges), at the root only. */
 const WELL_KNOWN = ".well-known";
 /** Dot-named path segments are refused, except a leading `.well-known`. */
+/** Index key of a decoded URL path: `/a/b` → `a/b`; empty segments dropped (`//a//b/` → `a/b`). */
+const indexKey = (path: string): string => {
+  if (path.charCodeAt(0) === 47 && path.charCodeAt(path.length - 1) !== 47 && !path.includes("//")) return path.slice(1);
+  return path.split("/").filter(Boolean).join("/");
+};
+/** Compressed static bodies kept in memory (`serve`), bytes. */
+const CACHE_BYTES = 64 * 1024 * 1024;
 const hidden = (decoded: string): boolean => {
+  if (decoded[0] !== "." && !decoded.includes("/.")) return false;
   const parts = decoded.split("/");
   for (let i = 0; i < parts.length; i++) if (parts[i]!.startsWith(".") && !(parts[i] === WELL_KNOWN && parts.slice(0, i).every((p) => !p))) return true;
   return false;
@@ -588,8 +598,9 @@ const hidden = (decoded: string): boolean => {
  */
 interface StaticFile {
   readonly path: string;
-  readonly size: number;
-  readonly mtime: number;
+  /** Refreshed when a streamed answer finds the file changed on disk (`serveFile`). */
+  size: number;
+  mtime: number;
   zstd?: number;
   br?: number;
   gzip?: number;
@@ -868,6 +879,17 @@ export function createListener(options: ServeOptions): {
   const memory = options.idleMemory !== false && idleMemorySupported() ? idleMemory(() => inflight) : null;
   const readiness = options.ready ? readinessOf(options.ready, onError) : null;
   const cache = new Map<string, Buffer>(); // compressed static bodies by path|etag|encoding
+  let cached = 0; // bytes in `cache`
+  /** Keep a compressed body: at most 512 entries and 64 MiB (a few large assets must not hold unbounded memory). */
+  const remember = (key: string, bytes: Buffer) => {
+    if (bytes.length > CACHE_BYTES) return;
+    if (cache.size >= 512 || cached + bytes.length > CACHE_BYTES) {
+      cache.clear();
+      cached = 0;
+    }
+    cache.set(key, bytes);
+    cached += bytes.length;
+  };
   const pending = new Map<string, Promise<Buffer>>(); // compressions in flight by the same key: N concurrent first requests compress once
   const index = client && options.static !== "fs" ? indexFiles(client) : null;
   const metas = new WeakMap<StaticFile, FileMeta>();
@@ -882,7 +904,7 @@ export function createListener(options: ServeOptions): {
       return null;
     }
     if (decoded.includes("\0") || hidden(decoded)) return null;
-    if (index) return index.get(decoded.split("/").filter(Boolean).join("/")) ?? null;
+    if (index) return index.get(indexKey(decoded)) ?? null;
     clientReal ??= await realpath(client).catch(() => null);
     if (!clientReal) return null;
     const candidate = resolve(clientReal, "." + decoded);
@@ -926,7 +948,12 @@ export function createListener(options: ServeOptions): {
       return void res.writeHead(200, { ...headers, "Content-Length": String(entry.bytes.length) }).end(req.method === "HEAD" ? undefined : entry.bytes);
     const key = entry.id + "|" + encoding;
     let job = dictionaryBodies.get(key);
-    if (!job) dictionaryBodies.set(key, (job = compressBest(encoding, entry.bytes)));
+    if (!job) {
+      // A failed compression is not kept: the next request tries again (else the file 500s for the process lifetime).
+      job = compressBest(encoding, entry.bytes);
+      dictionaryBodies.set(key, job);
+      job.catch(() => dictionaryBodies.get(key) === job && dictionaryBodies.delete(key));
+    }
     const body = await job;
     res.writeHead(200, { ...headers, "Content-Encoding": encoding, "Content-Length": String(body.length) });
     res.end(req.method === "HEAD" ? undefined : body);
@@ -936,13 +963,33 @@ export function createListener(options: ServeOptions): {
   function staticMiss(pathname: string): boolean {
     if (!index || !client || pathname.includes("%")) return false;
     if (prefix && !pathname.startsWith(prefix + "/")) return true;
-    return !index.has((prefix ? pathname.slice(prefix.length) : pathname).split("/").filter(Boolean).join("/"));
+    return !index.has(indexKey(prefix ? pathname.slice(prefix.length) : pathname));
   }
 
-  async function serveFile(req: IncomingMessage, res: ServerResponse, pathname: string): Promise<boolean> {
+  async function serveFile(req: IncomingMessage, res: ServerResponse, pathname: string, retried = false): Promise<boolean> {
     if (prefix && !pathname.startsWith(prefix + "/")) return false;
     const found = await file(pathname.slice(prefix.length));
     if (!found) return false;
+    /**
+     * The file to stream, opened once: size / mtime from its handle, not the earlier `stat` / index entry. A file
+     * replaced since (copy-over deploy) is answered again with its new validators and length (never a truncated
+     * body under the old Content-Length); null: it is gone.
+     */
+    const opened = async (): Promise<FileHandle | "changed" | null> => {
+      const handle = await open(found.path, "r").catch(() => null);
+      if (!handle) return null;
+      const now = await handle.stat();
+      if (now.size === found.size && now.mtimeMs === found.mtime) return handle;
+      await handle.close();
+      if (retried) return null;
+      found.size = now.size;
+      found.mtime = now.mtimeMs;
+      delete found.zstd;
+      delete found.br;
+      delete found.gzip;
+      metas.delete(found);
+      return "changed";
+    };
     const { type, etag, modified } = metaOf(found);
     const headers: Record<string, string> = {
       ...base,
@@ -976,14 +1023,17 @@ export function createListener(options: ServeOptions): {
     }
     if (range) {
       const [from, to] = range;
+      const handle = req.method === "HEAD" ? null : await opened();
+      if (handle === "changed") return serveFile(req, res, pathname, true);
+      if (req.method !== "HEAD" && !handle) return false;
       res.writeHead(206, {
         ...headers,
         "Accept-Ranges": "bytes",
         "Content-Range": `bytes ${from}-${to}/${found.size}`,
         "Content-Length": String(to - from + 1),
       });
-      if (req.method === "HEAD") res.end();
-      else await pipeline(createReadStream(found.path, { start: from, end: to }), res);
+      if (!handle) res.end();
+      else await pipeline(handle.createReadStream({ start: from, end: to }), res);
       return true;
     }
     if (work?.use && found.size >= MIN_COMPRESS) {
@@ -996,11 +1046,7 @@ export function createListener(options: ServeOptions): {
         if (!job) {
           job = readFile(found.path)
             .then((raw) => dczBest(use, raw))
-            .then((bytes) => {
-              if (cache.size > 512) cache.clear();
-              cache.set(key, bytes);
-              return bytes;
-            })
+            .then((bytes) => (remember(key, bytes), bytes))
             .finally(() => pending.delete(key));
           pending.set(key, job);
         }
@@ -1033,8 +1079,7 @@ export function createListener(options: ServeOptions): {
             job = readFile(found.path)
               .then((raw) => compressBest(encoding, raw))
               .then((bytes) => {
-                if (cache.size > 512) cache.clear();
-                cache.set(key, bytes);
+                remember(key, bytes);
                 if (precompress && immutable(pathname))
                   void persist(found.path + ext, bytes).then((written) => {
                     if (written && index) found[encoding] = bytes.length;
@@ -1051,12 +1096,15 @@ export function createListener(options: ServeOptions): {
       res.end(req.method === "HEAD" ? undefined : body);
       return true;
     }
+    const handle = req.method === "HEAD" || res.destroyed ? null : await opened();
+    if (handle === "changed") return serveFile(req, res, pathname, true);
+    if (req.method !== "HEAD" && !res.destroyed && !handle) return false;
     res.writeHead(200, { ...headers, "Accept-Ranges": "bytes", "Content-Length": String(found.size) });
-    if (req.method === "HEAD") res.end();
-    else if (!res.destroyed) {
+    if (!handle) res.end();
+    else {
       // The client may go away mid-file (page left, preload cancelled): a closed response is not a server error.
       try {
-        await pipeline(createReadStream(found.path), res);
+        await pipeline(handle.createReadStream(), res);
       } catch (error) {
         if (!res.destroyed && !res.writableEnded) throw error;
       }
