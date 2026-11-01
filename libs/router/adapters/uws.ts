@@ -14,6 +14,7 @@ import { extname, join, resolve } from "node:path";
 import { brotliCompressSync, constants as zlib, createBrotliCompress, createGzip, gzipSync } from "node:zlib";
 import type { Transform } from "node:stream";
 import { nonce } from "../shared/nonce.ts";
+import { HttpError } from "../shared/errors.ts";
 import { baseHeaders, type BaseHeaders } from "./base-headers.ts";
 import { DIRECT_BODY, type BodySink, type DirectBody } from "../server/body.ts";
 import { negotiate, type Handler, type RequestContext } from "./node.ts";
@@ -65,6 +66,11 @@ export interface UwsServeOptions {
   compress?: boolean;
   /** Fixed public origin for request URLs (default `http://<Host>`). */
   origin?: string;
+  /**
+   * Bytes of a request body uWS may queue before the handler reads them (default 16 MiB): past it the body stream
+   * errors with a 413 `HttpError` and later chunks are dropped (uWS cannot pause a request's `onData`).
+   */
+  maxUnread?: number;
   /** Extra headers on every response; defaults add nosniff + referrer policy (same name replaces, `null` removes). */
   headers?: BaseHeaders;
   /** Milliseconds to drain in-flight requests on close (default 10000). */
@@ -175,6 +181,7 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
   const base: Record<string, string> = {};
   for (const [name, value] of Object.entries(baseHeaders(options.headers))) base[name.toLowerCase()] = value;
   const fixedOrigin = options.origin ? new URL(options.origin).origin : null;
+  const unread = options.maxUnread ?? 16 * 1024 * 1024;
   const files = options.client ? indexFiles(options.client) : null;
   const readiness = options.ready ? readinessOf(options.ready, onError) : null;
   let draining = false,
@@ -319,7 +326,13 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
     };
     const sink: BodySink = {
       write(chunk, done) {
-        if (ex.aborted) throw new Error("Response stream closed");
+        if (ex.aborted) {
+          // The client left: release this chunk and every collected one (the renderer's slabs).
+          collected = null;
+          done();
+          release();
+          throw new Error("Response stream closed");
+        }
         if (collected) {
           collected.push(chunk);
           releases.push(done);
@@ -329,7 +342,11 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
         return stream!.write(chunk, done);
       },
       end() {
-        if (ex.aborted) return settle();
+        if (ex.aborted) {
+          collected = null;
+          release();
+          return settle();
+        }
         if (collected) {
           const chunks = collected;
           collected = null;
@@ -503,11 +520,31 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
     let body: ReadableStream<Uint8Array> | null = null;
     if (method !== "GET" && method !== "HEAD") {
       let push!: ReadableStreamDefaultController<Uint8Array>;
-      body = new ReadableStream<Uint8Array>({ start: (c) => void (push = c) });
+      // Closed: cancelled by the reader (`limitBody` past `maxBody`), failed, or the response already ended with the
+      // body unread. Later chunks are dropped: an enqueue on a closed controller would throw inside uWS's native
+      // callback (uncaught), and a body nobody reads must not queue up an attacker's whole upload.
+      let closed = false;
+      // Byte-sized queue, high-water mark 0: `desiredSize` is minus the unread bytes.
+      body = new ReadableStream<Uint8Array>(
+        { start: (c) => void (push = c), cancel: () => void (closed = true) },
+        { highWaterMark: 0, size: (chunk) => chunk.byteLength },
+      );
       res.onData((chunk, last) => {
-        // uWS neuters the ArrayBuffer on return: copy.
-        if (chunk.byteLength) push.enqueue(new Uint8Array(chunk.slice(0)));
-        if (last) push.close();
+        if (closed || ex.aborted) return;
+        if (ex.ended) return void (closed = true);
+        try {
+          // uWS neuters the ArrayBuffer on return: copy.
+          if (chunk.byteLength) push.enqueue(new Uint8Array(chunk.slice(0)));
+          if (last) {
+            closed = true;
+            push.close();
+          } else if (push.desiredSize! < -unread) {
+            closed = true;
+            push.error(new HttpError(413, "Payload too large"));
+          }
+        } catch {
+          closed = true;
+        }
       });
     }
     const init: RequestInit & { duplex?: "half" } = { method, headers, signal: controller.signal };
