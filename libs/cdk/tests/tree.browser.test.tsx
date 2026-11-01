@@ -2120,6 +2120,37 @@ describe("Tree", () => {
       expect(secondTreeRows[0]).toBe(document.activeElement);
     });
 
+    it("does not refocus the dropped item from the drop timeout once the collection update handled it (Rivet)", async () => {
+      const { getAllByRole } = renderIt(() => <TreeWithDragAndDrop />);
+      const outside = document.createElement("button");
+      outside.textContent = "outside";
+      document.body.append(outside);
+      try {
+        const trees = getAllByRole("treegrid");
+        const firstTreeRows = within(trees[0]!).getAllByRole("row");
+        const dataTransfer = writableEffects(new DataTransfer());
+        fireEvent(firstTreeRows[1]!, new DragEvent("dragstart", { dataTransfer, clientX: 5, clientY: 5, bubbles: true }));
+        await settle();
+        const r = trees[1]!.getBoundingClientRect();
+        const x = r.left + 5;
+        const y = r.top + 5;
+        fireEvent(trees[1]!, new DragEvent("dragenter", { dataTransfer, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+        fireEvent(trees[1]!, new DragEvent("dragover", { dataTransfer, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+        fireEvent(trees[1]!, new DragEvent("drop", { dataTransfer, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+        await frame();
+        await flush();
+        // The insert's collection change focused the new row (react-aria: once per collection update).
+        const row = within(trees[1]!).getAllByRole("row")[0]!;
+        expect(row).toBe(document.activeElement);
+        // Focus moves on before the 50 ms drop timeout: the timeout must not run the focus update a second time.
+        outside.focus();
+        await settle();
+        expect(document.activeElement).toBe(outside);
+      } finally {
+        outside.remove();
+      }
+    });
+
     it("should support disabled drag and drop", async () => {
       const { getByRole, queryAllByRole } = renderIt(() => <DraggableTree isDisabled />);
 

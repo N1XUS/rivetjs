@@ -70,6 +70,8 @@ interface DroppingState {
   draggingKeys: Set<Key | null | undefined>;
   isInternal: boolean;
   timeout: ReturnType<typeof setTimeout> | undefined;
+  /** A collection change already ran the focus update: the timeout only ends the drop state. */
+  handled: boolean;
 }
 
 /**
@@ -253,6 +255,7 @@ export function useDroppableCollection(
       const selectionManager = state.selectionManager;
       const dropping: DroppingState = {
         timeout: undefined,
+        handled: false,
         focusedKey: selectionManager.focusedKey,
         collection: state.collection,
         selectedKeys: selectionManager.selectedKeys,
@@ -268,7 +271,7 @@ export function useDroppableCollection(
       // the focused key here.
       dropping.timeout = setTimeout(() => {
         if (droppingState !== dropping) return;
-        untrack(updateFocusAfterDrop);
+        if (!dropping.handled) untrack(updateFocusAfterDrop);
         droppingState = null;
       }, 50);
     });
@@ -283,8 +286,12 @@ export function useDroppableCollection(
   clientEffect(
     () => {
       const collection = state.collection;
-      // The drop state stays until its timeout (react-aria): a later collection change updates the focus again.
-      if (droppingState && collection !== droppingState.collection) untrack(updateFocusAfterDrop);
+      // The drop state stays until its timeout (react-aria): a later collection change updates the focus again. The
+      // timeout then only clears it (a second update there re-focused the item after focus had moved on).
+      if (droppingState && collection !== droppingState.collection) {
+        droppingState.handled = true;
+        untrack(updateFocusAfterDrop);
+      }
     },
     { when: "interaction" },
   );
