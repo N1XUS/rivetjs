@@ -27,5 +27,7 @@ else
 fi
 node "$dir/dev-leaks.mjs" "$root" || status=1
 node "$dir/condition-parity.mjs" "$root" || status=1
-node libs/compiler/oracle/check.ts | tail -1
+# A pipe would report tail's status: keep the oracle's own exit code.
+node libs/compiler/oracle/check.ts > "$tmp/oracle.out" 2>&1 || status=1
+tail -1 "$tmp/oracle.out"
 exit ${status:-0}
