@@ -126,7 +126,9 @@ export async function flush(def: AutosaveDefinition, state: AutosaveState): Prom
       state.n.set(Object.keys(pending.patch).length);
     }
   })();
-  pending.done = run;
+  // Still in flight: later flushes wait for it. A `save` that threw synchronously settled already (its `finally` ran):
+  // storing it would leave a settled `done` nobody clears, and the next flush would await it forever.
+  if (pending.inflight === controller) pending.done = run;
   await run;
 }
 /** Unsaved changes go back in front of newer ones (newer values win). */

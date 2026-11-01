@@ -88,3 +88,27 @@ test("draftAction: merges patches, version conflicts → 409, secrets dropped", 
   assert.equal(stale.status, 409);
   assert.deepEqual(stale.result, { ok: false, conflict: true, version: "2", value: { title: "a", body: "b" } });
 });
+
+// FIX-CORE (2026-11-01): a `save` that throws synchronously settled the save before `flush` stored it as in flight; the
+// stored (settled) promise was never cleared and the next `flush` awaited it forever (an endless microtask loop).
+test("a save that throws synchronously reports the error and the next flush saves again", async () => {
+  let fail = true;
+  const saved: Patch[] = [];
+  const def = defineAutosave({
+    debounce: 10,
+    save: ((patch: Patch) => {
+      if (fail) throw new Error("bad url");
+      saved.push(patch);
+      return Promise.resolve({ ok: true, version: 2 });
+    }) as never,
+  });
+  const state = createAutosave({ version: 1 });
+  markChanged(def, state, "title", "a");
+  await flush(def, state);
+  assert.equal(untrack(() => saveError(state))?.message, "bad url");
+  fail = false;
+  const next = flush(def, state);
+  const outcome = await Promise.race([next.then(() => "done"), tick(200).then(() => "stuck")]);
+  assert.equal(outcome, "done");
+  assert.deepEqual(saved, [{ title: "a" }]);
+});
