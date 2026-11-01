@@ -253,7 +253,8 @@ function draftOf(base: Container, parent: Draft | null, revokes: (() => void)[])
       const source = draft.copy ?? draft.base;
       if (
         Object.hasOwn(source, key) &&
-        (draft.children?.get(key) === value || (Object.is((source as Record<PropertyKey, unknown>)[key], value) && !draft.children?.has(key)))
+        ((draft.children?.has(key) && draft.children.get(key) === value) ||
+          (Object.is((source as Record<PropertyKey, unknown>)[key], value) && !draft.children?.has(key)))
       )
         return true;
       (touch(draft, key) as Record<PropertyKey, unknown>)[key] = value;

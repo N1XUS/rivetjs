@@ -1,5 +1,7 @@
 # @rivetjs/reactivity
 
+- Store undefined assignments (2026-11-01): `produce` skips a cached-child assignment only when that child exists. Assigning `undefined` to an existing property clears its value, retains the own key, and notifies readers; repeating the assignment is a no-op. `tests/store.test.ts` covers absent and populated child caches, snapshot immutability and untouched subtree identity.
+
 - Store draft finalization (2026-10-31): written containers are finalized even after a cached child draft returns them. Reading a newly assigned object containing another draft must not leave a revoked proxy in the committed data; `tests/store.test.ts` pins finalized identity, nested reads and previous-snapshot immutability.
 
 - Store snapshot immutability (2026-10-30): structural merge copies a container before substituting shared children. Assigning a sibling draft (or moving array rows) cannot mutate a previous snapshot, including frozen rows; `tests/store.test.ts` covers sibling identity, equal target subtree sharing, and unchanged sibling readers.

@@ -207,3 +207,5 @@ Streaming text (2026-10-31): `design/specs/2026-10-31-streaming-text-design.md` 
 - Enhanced-action cookie privacy (2026-10-31): `guides/server-code.md` now records that successful enhanced actions and same-page redirects finalize cookie cache policy after revalidated loaders and head resolution. The router regression preserves cookie-free cache directives, decoded payloads and loader counts. Live campaign evidence is indexed in the autonomous tester verification report.
 
 - Live router campaign (2026-10-31): `729d8d01` found enhanced-action loader cookies bypassing final cache privacy. Repair 0741dc9ad has independent native RED/GREEN, router 442/442, forms 73/73 and actual Astra review. The verification report records all 38 final checks, deliberately limited server byte pins and the separate automatic memory stop/manual completion.
+
+- Undefined-write follow-up (2026-11-01): the user explicitly accepted the two +19B runtime pins for the retained produce repair. The memory verification report records a separate fresh-snapshot RED/GREEN/gates/review intake; the original failed campaign and autonomous baseline policy remain unchanged.

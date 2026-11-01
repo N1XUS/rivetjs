@@ -157,6 +157,33 @@ test("produce mutates a copy; reconcile keeps identity of equal subtrees", () =>
   assert.equal(read(store), before);
 });
 
+test("produce: explicit undefined assignments clear existing properties", () => {
+  for (const readSibling of [false, true]) {
+    const initial: { name: string | undefined; stable: { n: number } } = { name: "Ada", stable: { n: 1 } };
+    const store = createStore(initial);
+    const seen: (string | undefined)[] = [];
+    const root = createRoot(() => effect(() => void seen.push(read(store, "name"))));
+    try {
+      const clear = produce<typeof initial>((draft) => {
+        if (readSibling) void draft.stable.n;
+        draft.name = undefined;
+      });
+      write(store, clear);
+      assert.equal(read(store, "name"), undefined, "produce must retain an explicit undefined assignment to an existing property");
+      assert.deepEqual(seen, ["Ada", undefined], "clearing the property notifies its reader");
+      assert.ok(Object.hasOwn(read(store), "name"), "assigning undefined retains the own property");
+      assert.equal(initial.name, "Ada", "the previous snapshot remains unchanged");
+      assert.equal(read(store, "stable"), initial.stable);
+      const cleared = read(store);
+      write(store, clear);
+      assert.equal(read(store), cleared, "repeating the undefined assignment is a no-op");
+      assert.equal(seen.length, 2);
+    } finally {
+      root.dispose();
+    }
+  }
+});
+
 test("produce: assigning a sibling draft preserves the previous snapshot", () => {
   for (const frozen of [false, true]) {
     const left = { id: 1, nested: { n: 0 } };
