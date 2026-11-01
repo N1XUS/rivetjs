@@ -75,6 +75,7 @@ export async function checkExamplesOnly(root: string, ids: readonly string[], op
   const memory = watchMemory();
   let frames: FramesBuild | undefined;
   const seconds = (from: number, to: number) => ((to - from) / 1000).toFixed(1) + " s";
+  let failed = false;
   try {
     frames = await buildFrames(root, ids, options);
     const { build } = frames;
@@ -84,15 +85,20 @@ export async function checkExamplesOnly(root: string, ids: readonly string[], op
     const kb = (bytes: number) => (bytes / 1024).toFixed(1) + " KB";
     for (const [id, m] of Object.entries(measures))
       log(`measure ${id}: before ${m.requestsBefore} scripts / ${kb(m.bytesBefore)}, first input +${m.requestsAfter} / ${kb(m.bytesAfter)}`);
+  } catch (error) {
+    failed = true;
+    throw error;
   } finally {
-    const peak = await memory.stop();
+    // A failed build / check keeps its own error: the memory report and budget below never replace it.
+    const peak = await memory.stop().catch((error: unknown) => (failed ? 0 : Promise.reject(error)));
     const budget = memoryBudget();
     if (frames)
       log(
         `check-examples: ${ids.length} example(s), ${frames.pages} page(s); vite ${seconds(frames.started, frames.vite)}, prerender ${seconds(frames.vite, frames.rendered)}, ` +
           `checks ${seconds(frames.rendered, performance.now())}; peak tree RSS ${mb(peak)} (budget ${budget ? budget + " MB" : "off"})`,
       );
-    if (budget && peak > budget * 1024 * 1024) throw new Error(`check-examples: peak memory ${mb(peak)} is over the ${budget} MB budget (DOCS_KIT_MAX_RSS_MB)`);
+    if (!failed && budget && peak > budget * 1024 * 1024)
+      throw new Error(`check-examples: peak memory ${mb(peak)} is over the ${budget} MB budget (DOCS_KIT_MAX_RSS_MB)`);
   }
 }
 
