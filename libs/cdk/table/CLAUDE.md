@@ -10,7 +10,7 @@ RAC Table family + RA useTable / useTableColumnHeader / useTableRow / useTableCe
 | `column-resize.tsx` | `tableColumnResizeProps` (RA useTableColumnResize: resizer + visually hidden range input bags), `focusColumnResizer`. |
 | `behaviour.ts` | `tableGridProps`, `tableColumnHeaderProps` (+ `tableColumnHeaderPress`), `tableRowProps` (+ synthetic link attrs), `tableCellProps`, selection checkbox props / handlers, `tableState` view. |
 | `collection.ts` | `TableCollection` + node classes (TableHeaderNode, TableColumnNode, TableBodyNode, TableRowNode, TableCellNode, TableFooterNode) built by B5 build mode. |
-| `keyboard-delegate.ts` | TableKeyboardDelegate (typeahead falls back to the cell element text when a cell has no build-time `textValue`). |
+| `keyboard-delegate.ts` | TableKeyboardDelegate (typeahead falls back to the cell element text when a cell has no build-time `textValue`; the key → cell element map is built once per delegate: a 1000-row typeahead miss 833 ms → 4 ms, FIX-CDK 2026-11-01). |
 | `intl.ts` / `rac-intl.ts` | Generated RA table strings / RAC `tableResizer` string. |
 
 ## Invariants / gotchas

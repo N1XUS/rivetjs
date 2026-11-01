@@ -20,15 +20,28 @@ export class TableKeyboardDelegate<T> extends GridKeyboardDelegate<T, ITableColl
     this.ref = options.ref;
   }
 
+  /** Row header / grid cell elements by key (first in document order), built on the first DOM text lookup. */
+  private cellElements: Map<Key, Element> | null = null;
+
   /** `node.textValue`, else the rendered text of the cell element with the node's key (see header). */
   private textOf(node: Node<T>): string {
     if (node.textValue) return node.textValue;
-    const root = refElement(this.ref);
-    if (!root) return "";
-    for (const el of root.querySelectorAll("[data-key]")) {
-      if (domKey(el) === node.key && (el.getAttribute("role") === "rowheader" || el.getAttribute("role") === "gridcell")) return domTextValue(el);
+    // One scan per delegate (it is built per event), not one `querySelectorAll` per searched cell: a typeahead miss
+    // over 1000 rows took ~0.8 s.
+    if (!this.cellElements) {
+      const root = refElement(this.ref);
+      if (!root) return "";
+      const map = new Map<Key, Element>();
+      for (const el of root.querySelectorAll("[data-key]")) {
+        const role = el.getAttribute("role");
+        if (role !== "rowheader" && role !== "gridcell") continue;
+        const key = domKey(el);
+        if (key != null && !map.has(key)) map.set(key, el);
+      }
+      this.cellElements = map;
     }
-    return "";
+    const el = this.cellElements.get(node.key);
+    return el ? domTextValue(el) : "";
   }
 
   protected override isCell(node: Node<T>): boolean {
