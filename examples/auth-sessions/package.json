@@ -1,0 +1,46 @@
+{
+  "name": "rivet-example-auth-sessions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "rivetExample": {
+    "name": "auth-sessions",
+    "title": "Accounts and sessions",
+    "summary": "Sign up / in / out with hashed session tokens in node:sqlite: sliding expiry, rotation, a sessions list with \"sign out other sessions\", password reset tokens, login rate limits and safe redirects. Every form works without JavaScript.",
+    "services": [],
+    "backends": [
+      "sqlite"
+    ],
+    "jsBudgetKB": 100
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr",
+    "start": "node serve.ts",
+    "migrate": "node scripts/migrate.ts",
+    "seed": "node scripts/seed.ts",
+    "check": "rivet sync && rivet-check && node ../../scripts/tsc.ts -p ."
+  },
+  "dependencies": {
+    "@rivetjs/forms": "experimental",
+    "@rivetjs/kit": "experimental",
+    "@rivetjs/reactivity": "experimental",
+    "@rivetjs/router": "experimental",
+    "@rivetjs/runtime": "experimental",
+    "@rivetjs/ui": "experimental",
+    "lucide": "1.52.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@rivetjs/compiler": "experimental",
+    "@rivetjs/language-core": "experimental",
+    "@rivetjs/typescript-plugin": "experimental",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "26.6.4",
+    "tailwindcss": "4.3.3",
+    "vite": "8.3.2"
+  }
+}
