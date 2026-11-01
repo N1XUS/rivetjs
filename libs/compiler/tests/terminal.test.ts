@@ -26,6 +26,9 @@ test("progress rewrites a TTY, stays periodic and plain in CI, and clears timers
     [true, {}, true],
     [false, {}, false],
     [true, { CI: "1" }, false],
+    [true, { CI: "" }, false],
+    [true, { CI: "false" }, true],
+    [true, { CI: "0" }, true],
     [true, { NO_COLOR: "1" }, false],
   ] as const) {
     let text = "";

@@ -8,9 +8,12 @@ export interface TerminalStream {
 }
 export type TerminalEnv = Record<string, string | undefined>;
 
+/** `CI` set to anything but `false` / `0` (an empty value included). */
+const inCI = (env: TerminalEnv): boolean => env.CI !== undefined && env.CI !== "false" && env.CI !== "0";
+
 /** CI stays plain even when a wrapper sets FORCE_COLOR. NO_COLOR always wins. */
 export function colorEnabled(stream: Pick<TerminalStream, "isTTY">, env: TerminalEnv = process.env): boolean {
-  if (env.NO_COLOR !== undefined || (env.CI !== undefined && env.CI !== "false" && env.CI !== "0") || env.FORCE_COLOR === "0") return false;
+  if (env.NO_COLOR !== undefined || inCI(env) || env.FORCE_COLOR === "0") return false;
   return env.FORCE_COLOR !== undefined || !!stream.isTTY;
 }
 export function paint(format: Parameters<typeof styleText>[0], text: string, stream: TerminalStream = process.stderr, env: TerminalEnv = process.env): string {
@@ -75,7 +78,7 @@ export function progress(
   } = {},
 ) {
   const start = performance.now();
-  const tty = !!stream.isTTY && !env.CI && env.NO_COLOR === undefined;
+  const tty = !!stream.isTTY && !inCI(env) && env.NO_COLOR === undefined;
   let detail = "",
     closed = false;
   const elapsed = () => `${((performance.now() - start) / 1000).toFixed(1)} s`;
