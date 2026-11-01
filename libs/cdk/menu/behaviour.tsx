@@ -181,8 +181,14 @@ export function menuTriggerContextMenuOpen(target: Element, x: number, y: number
   contextClosers.get(state)?.();
   const doc = target.ownerDocument;
   const onMouseDown = (e: MouseEvent) => {
+    // react-aria holds the listener while the menu is open only: release it on the first mousedown after a close
+    // (by any path), so a closed or unmounted trigger keeps no document listener (and its state stays collectable).
+    if (!untrack(state.isOpen)) return stop();
     // Checking if the target is the body works because everything outside the menu is inert.
-    if ((e.button === 2 || (e.button === 0 && e.ctrlKey === true)) && e.target === doc.body) closeMenu(state);
+    if ((e.button === 2 || (e.button === 0 && e.ctrlKey === true)) && e.target === doc.body) {
+      closeMenu(state);
+      stop();
+    }
   };
   doc.addEventListener("mousedown", onMouseDown);
   const stop = () => {
