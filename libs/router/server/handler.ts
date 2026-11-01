@@ -113,6 +113,15 @@ export interface ServerModule {
 }
 type Load<T> = () => Promise<T>;
 /** One generated route-table entry. */
+/** A module of the route has a deferred loader (per document request: a plain loop, no closure). */
+function hasDeferred(modules: readonly (ServerModule | undefined)[]): boolean {
+  for (let i = 0; i < modules.length; i++) {
+    const load = modules[i]?.load;
+    if (load && (load as { [DEFER]?: true })[DEFER]) return true;
+  }
+  return false;
+}
+
 export interface AppRoute {
   readonly id: string;
   readonly pattern: string;
@@ -505,10 +514,13 @@ export function createHandler(options: AppOptions): AppHandler {
     const loads: (Promise<unknown> | undefined)[] = [];
     const errorLayouts = async (): Promise<unknown[]> => {
       const out: unknown[] = [];
-      for (let i = 0; i < Math.min(guarded, route ? route.layouts.length : 1); i++) {
+      const count = Math.min(guarded, route ? route.layouts.length : 1);
+      for (let i = 0; i < count; i++) {
         try {
           out.push(await (loads[i] ??= Promise.resolve(modules[i]?.load?.(event))));
-        } catch {
+        } catch (error) {
+          // The error page renders without this layout (intended); a developer still has to see that it is broken.
+          if (dev) console.warn(`[rivet] layout loader failed while rendering an error page (${url.pathname}):`, error);
           break;
         }
       }
@@ -547,7 +559,8 @@ export function createHandler(options: AppOptions): AppHandler {
         isRedirect(failure) &&
         !(failure as { external?: boolean }).external &&
         ABSOLUTE.test(failure.location!) &&
-        new URL(failure.location!).origin !== url.origin
+        // Unparseable (`redirect("http://")`): another origin as well; `new URL` here would replace the error unreported.
+        (!URL.canParse(failure.location!) || new URL(failure.location!).origin !== url.origin)
       )
         failure = new Error(`redirect() to another origin (${failure.location}); pass { external: true } to allow it`);
       if (isHttpError(failure)) {
@@ -626,10 +639,14 @@ export function createHandler(options: AppOptions): AppHandler {
     const merge = (response: Response): Response => {
       const cookies = headers.getSetCookie();
       let own = false;
-      headers.forEach((_, name) => (own ||= name !== "set-cookie"));
+      for (const [name] of headers)
+        if (name !== "set-cookie") {
+          own = true;
+          break;
+        }
       if (!cookies.length && !own) return response;
       const apply = (target: Headers) => {
-        headers.forEach((value, name) => name !== "set-cookie" && !target.has(name) && target.set(name, value));
+        for (const [name, value] of headers) if (name !== "set-cookie" && !target.has(name)) target.set(name, value);
         for (const cookie of cookies) target.append("set-cookie", cookie);
         if (setsCookie) privateCache(target);
       };
@@ -664,8 +681,9 @@ export function createHandler(options: AppOptions): AppHandler {
           modules = [await loadServer(rootLayout.layouts[0])];
           const verdict = await modules[0]?.guard?.(event);
           if (verdict === undefined) guarded = 1;
-        } catch {
+        } catch (error) {
           /* No layout around the 404 page. */
+          if (dev) console.warn(`[rivet] root layout guard failed while rendering the 404 page (${url.pathname}):`, error);
         }
       }
       return fail(404, "Not found");
@@ -762,7 +780,7 @@ export function createHandler(options: AppOptions): AppHandler {
       phase = "handler";
       for (const module of modules) {
         const extra = module?.headers?.(event);
-        if (extra) new Headers(extra).forEach((value, name) => headers.set(name, value));
+        if (extra) for (const [name, value] of new Headers(extra)) headers.set(name, value);
       }
       // Route rule `shell` (document GET of a page): a hit sends the stored shell now; a fill tracks request reads.
       const shell =
@@ -846,8 +864,7 @@ export function createHandler(options: AppOptions): AppHandler {
       // Deferred loaders (`load(fn, { defer: true })`, document requests only; data requests await them like any loader):
       // started now, not awaited; their slot is a `Deferred` handle (`deferred.ts`, imported on first use).
       let lazy: typeof import("./deferred.ts") | undefined, promises: (Promise<unknown> | undefined)[] | undefined, moved: string | undefined;
-      if (!data && modules.some((module) => module?.load && (module.load as { [DEFER]?: true })[DEFER]))
-        lazy = await (deferredModule ??= import("./deferred.ts"));
+      if (!data && hasDeferred(modules)) lazy = await (deferredModule ??= import("./deferred.ts"));
       const loaded = await Promise.all(
         modules.map((module, i) => {
           if (skip?.has(i) || !module?.load) return (loads[i] = undefined);

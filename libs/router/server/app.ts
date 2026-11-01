@@ -277,6 +277,7 @@ export function createApp(config: AppConfig): AppHandler {
   // Early hints: the per-route Link values live in `early-hints.ts`, loaded at startup only with `earlyHints`.
   const hintOption = dev ? undefined : config.earlyHints;
   let hinter: Hinter | undefined;
+  const mergedStyles = new WeakMap<readonly string[], readonly string[]>();
   let hintLoading: Promise<unknown> | null = hintOption
     ? import("./early-hints.ts").then(({ createHinter }) => {
         hinter = createHinter(hintOption, { styles, routeStyles, inlineFor, base: entry.base ?? "", runtime: manifest?.runtime });
@@ -364,7 +365,13 @@ export function createApp(config: AppConfig): AppHandler {
     extra: readonly string[] | undefined,
     routeId?: string,
   ): Response | Promise<Response> => {
-    const pageStyles = extra?.length ? [...styles, ...extra] : styles;
+    // One merged list per route list (`inlineFor` and the hinter's memo then hit by identity, no join per request).
+    let pageStyles = styles;
+    if (extra?.length) {
+      const known = mergedStyles.get(extra);
+      if (known) pageStyles = known;
+      else mergedStyles.set(extra, (pageStyles = [...styles, ...extra]));
+    }
     const inlineStyles = inlineFor?.(pageStyles);
     const i18n = config.i18n;
     const locale = i18n && typeof locals?.locale === "string" && i18n.locales.includes(locals.locale) ? locals.locale : undefined;
@@ -389,8 +396,8 @@ export function createApp(config: AppConfig): AppHandler {
     const signal = request.signal;
     if (hinter && routeId !== undefined) {
       if (!sink) hinter.learn(routeId, page.head);
-      const links = hinter.links(routeId);
-      if (links.length && !headers.has("link")) headers.set("link", links.join(", "));
+      const link = hinter.header(routeId);
+      if (link && !headers.has("link")) headers.set("link", link);
     }
     if (csp && nonce !== undefined && !headers.has("content-security-policy")) headers.set("content-security-policy", csp(nonce));
     const built = (i18n && i18n.manifests?.[locale ?? i18n.locales[0]!]) || manifest;
@@ -432,7 +439,7 @@ export function createApp(config: AppConfig): AppHandler {
           head: () => {
             collected.close();
             for (const { level, head } of collected.entries)
-              if (level === 0) for (const entry of [...(head.meta ?? []), ...(head.links ?? []), ...(head.scripts ?? [])]) persistent.add(entry);
+              if (level === 0) for (const list of [head.meta, head.links, head.scripts]) if (list) for (const entry of list) persistent.add(entry);
             const merged = rankMerge([...exports, ...collected.entries]);
             if (routeId !== undefined) hinter?.learn(routeId, merged);
             return merged;
@@ -655,8 +662,9 @@ export function createApp(config: AppConfig): AppHandler {
     try {
       const modules = source && layouts.length ? await entry.universal[source.id]?.() : undefined;
       if (modules) return routeHead(modules, layouts, params, url, locals, layouts.length, own) ?? own;
-    } catch {
+    } catch (error) {
       /* The error page's own head. */
+      if (dev) console.warn("[rivet] a layout `head` failed while rendering an error page:", error);
     }
     return own;
   }

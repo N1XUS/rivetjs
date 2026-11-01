@@ -20,10 +20,18 @@ export interface InlineStyleManifest {
  */
 export function inlineStylesFor(manifest: InlineStyleManifest): (styles: readonly string[]) => Readonly<Record<string, string>> | undefined {
   const cache = new Map<string, Readonly<Record<string, string>> | undefined>();
+  const byList = new WeakMap<readonly string[], { readonly result: Readonly<Record<string, string>> | undefined }>();
   const { sheets } = manifest;
   return (styles) => {
+    // The app's lists are stable arrays: no join per request; a `routeStyles` function's fresh arrays fall through.
+    const known = byList.get(styles);
+    if (known) return known.result;
     const key = styles.join("\n");
-    if (cache.has(key)) return cache.get(key);
+    if (cache.has(key)) {
+      const result = cache.get(key);
+      byList.set(styles, { result });
+      return result;
+    }
     const listed = styles.filter((href) => Object.hasOwn(sheets, href));
     let total = 0;
     for (const href of listed) total += sheets[href]!.br;
@@ -32,6 +40,7 @@ export function inlineStylesFor(manifest: InlineStyleManifest): (styles: readonl
     for (const href of listed) if (all || sheets[href]!.bytes <= manifest.limit) out[href] = sheets[href]!.css;
     const result = Object.keys(out).length ? out : undefined;
     cache.set(key, result);
+    byList.set(styles, { result });
     return result;
   };
 }

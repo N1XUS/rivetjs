@@ -60,6 +60,8 @@ function linkValue(link: HeadLink, base: string): string | undefined {
 /** Per route id: its `Link` values, re-derived when the learned head links change. */
 export interface Hinter {
   links(routeId: string): readonly string[];
+  /** The `links` joined into one `Link` header value ("" when none), memoised with them. */
+  header(routeId: string): string;
   /** A render's merged head: its build-asset font preloads become the route's from now on. */
   learn(routeId: string, head: Head | undefined): void;
 }
@@ -81,7 +83,13 @@ export function createHinter(
       : [...(option.links ?? []), ...(option.runtime && app.runtime && SAFE.test(app.runtime) ? [`<${app.runtime}>; rel=modulepreload`] : [])];
   const learned = new Map<string, string>();
   const memo = new Map<string, readonly string[]>();
-  return {
+  const headers = new Map<string, string>();
+  const hinter: Hinter = {
+    header(routeId) {
+      let header = headers.get(routeId);
+      if (header === undefined) headers.set(routeId, (header = hinter.links(routeId).join(", ")));
+      return header;
+    },
     links(routeId) {
       let links = memo.get(routeId);
       if (links) return links;
@@ -94,7 +102,9 @@ export function createHinter(
     },
     learn(routeId, head) {
       const value = headLinks(head, app.base).join("\n");
-      if (value !== (learned.get(routeId) ?? "")) (value ? learned.set(routeId, value) : learned.delete(routeId), memo.delete(routeId));
+      if (value !== (learned.get(routeId) ?? ""))
+        (value ? learned.set(routeId, value) : learned.delete(routeId), memo.delete(routeId), headers.delete(routeId));
     },
   };
+  return hinter;
 }

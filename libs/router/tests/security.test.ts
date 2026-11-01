@@ -430,3 +430,28 @@ test("node adapter: allowedHosts answers 421 for other hosts (DNS rebinding); a 
     await throwing.close();
   }
 });
+
+// FIX2 (r3-errors#22): an unparseable absolute target threw `Invalid URL` inside the catch handler, unreported.
+test("redirect() to an unparseable absolute target is a reported 500, like another origin", async () => {
+  const errors: unknown[] = [];
+  const handler = createHandler({
+    routes: [
+      {
+        id: "r",
+        pattern: "/r",
+        page: true,
+        layouts: [],
+        server: mod({
+          load: () => {
+            throw redirect("http://");
+          },
+        }),
+      },
+    ],
+    render: page,
+    onError: (error) => errors.push(error),
+  });
+  const response = await handler(new Request("http://x/r"));
+  assert.equal(response.status, 500);
+  assert.match(String(errors[0]), /another origin/);
+});
