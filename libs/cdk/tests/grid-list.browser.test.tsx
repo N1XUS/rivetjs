@@ -183,7 +183,7 @@ describe("GridList", () => {
     expect(onHoverChange).toHaveBeenCalledTimes(2);
   });
 
-  it.skip("should show hover state on draggable rows even when not selectable/actionable (drag and drop: C8)", () => {});
+  it.todo("should show hover state on draggable rows even when not selectable/actionable (drag and drop: C8)");
 
   it("should not show hover state when item is not interactive", async () => {
     const onHoverStart = vi.fn();
@@ -775,12 +775,12 @@ describe("GridList", () => {
   });
 
   describe("drag and drop", () => {
-    it.skip("should support drag button slot (C8)", () => {});
-    it.skip("should render drop indicators (C8)", () => {});
-    it.skip("should not skip drop positions before/after a disabled item (C8)", () => {});
-    it.skip("should support dropping on rows (C8)", () => {});
-    it.skip("should support dropping on the root (C8)", () => {});
-    it.skip("should support dropping with horizontal arrow keys when orientation is horizontal (C8)", () => {});
+    it.todo("should support drag button slot (C8)");
+    it.todo("should render drop indicators (C8)");
+    it.todo("should not skip drop positions before/after a disabled item (C8)");
+    it.todo("should support dropping on rows (C8)");
+    it.todo("should support dropping on the root (C8)");
+    it.todo("should support dropping with horizontal arrow keys when orientation is horizontal (C8)");
   });
 
   describe("links", () => {
@@ -1028,9 +1028,9 @@ describe("GridList", () => {
     });
 
     describe("virtualized", () => {
-      it.skip("should always render the sentinel even when virtualized (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)", () => {});
-      it.skip("should not reserve room for the loader if isLoading is false (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)", () => {});
-      it.skip("should have the correct row indicies after loading more items (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)", () => {});
+      it.todo("should always render the sentinel even when virtualized (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)");
+      it.todo("should not reserve room for the loader if isLoading is false (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)");
+      it.todo("should have the correct row indicies after loading more items (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)");
     });
   });
 

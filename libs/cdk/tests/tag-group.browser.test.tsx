@@ -372,7 +372,7 @@ describe("TagGroup", () => {
   });
 
   // TODO(C1b TooltipTrigger in collections): TooltipTrigger around a Tag inside a TagList is not wired.
-  it.skip("supports tooltips", () => {});
+  it.todo("supports tooltips");
 
   describe("supports links", () => {
     describe.each(["mouse", "keyboard"] as const)("%s", (type) => {

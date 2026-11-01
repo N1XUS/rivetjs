@@ -1156,9 +1156,6 @@ describe("Tree", () => {
       expect(onScroll).toHaveBeenCalled();
     });
 
-    // TODO(B5 selectable-item): the row click does not stop propagation yet (RA usePress), so the window click
-    // listener also sees the row click; mouse link cases skipped until then (same as grid-list.browser.test.tsx).
-    const PENDING_CLICK_STOP = true;
     describe("links", () => {
       describe.each(["mouse", "keyboard"])("%s", (type) => {
         // Rivet: `{Space}` is not a user-event key name (it types key "Space", code "Unknown"); `[Space]` (by code) types " ".
@@ -1167,7 +1164,7 @@ describe("Tree", () => {
           else await user.keyboard(key === "Space" ? "[Space]" : `{${key}}`);
         };
 
-        it.skipIf(type === "mouse" && PENDING_CLICK_STOP)('should support links with selectionMode="none"', async () => {
+        it('should support links with selectionMode="none"', async () => {
           const { getAllByRole } = renderIt(() => <StaticTree treeProps={{ selectionMode: "none" }} rowProps={{ href: "https://google.com/" }} />);
           const items = getAllByRole("row");
           for (const item of items) {
@@ -1184,67 +1181,61 @@ describe("Tree", () => {
           expect((onClick.mock.calls[0]![0].target as HTMLAnchorElement).href).toBe("https://google.com/");
         });
 
-        it.skipIf(type === "mouse" && PENDING_CLICK_STOP).each(["single", "multiple"])(
-          'should support links with selectionBehavior="toggle" selectionMode="%s"',
-          async (selectionMode) => {
-            const { getAllByRole } = renderIt(() => <StaticTree treeProps={{ selectionMode }} rowProps={{ href: "https://google.com/" }} />);
-            const items = getAllByRole("row");
-            for (const item of items) {
-              expect(item.tagName).not.toBe("A");
-              expect(item).toHaveAttribute("data-href");
-            }
+        it.each(["single", "multiple"])('should support links with selectionBehavior="toggle" selectionMode="%s"', async (selectionMode) => {
+          const { getAllByRole } = renderIt(() => <StaticTree treeProps={{ selectionMode }} rowProps={{ href: "https://google.com/" }} />);
+          const items = getAllByRole("row");
+          for (const item of items) {
+            expect(item.tagName).not.toBe("A");
+            expect(item).toHaveAttribute("data-href");
+          }
 
-            if (type === "keyboard") await user.tab();
+          if (type === "keyboard") await user.tab();
 
-            const onClick = mockClickDefault();
-            await trigger(items[0]!);
-            expect(onClick).toHaveBeenCalledTimes(1);
-            expect(onClick.mock.calls[0]![0].target).toBeInstanceOf(HTMLAnchorElement);
-            expect((onClick.mock.calls[0]![0].target as HTMLAnchorElement).href).toBe("https://google.com/");
+          const onClick = mockClickDefault();
+          await trigger(items[0]!);
+          expect(onClick).toHaveBeenCalledTimes(1);
+          expect(onClick.mock.calls[0]![0].target).toBeInstanceOf(HTMLAnchorElement);
+          expect((onClick.mock.calls[0]![0].target as HTMLAnchorElement).href).toBe("https://google.com/");
 
-            await user.click(within(items[0]!).getByRole("checkbox"));
-            expect(items[0]).toHaveAttribute("aria-selected", "true");
+          await user.click(within(items[0]!).getByRole("checkbox"));
+          expect(items[0]).toHaveAttribute("aria-selected", "true");
 
-            if (type === "keyboard") {
-              await user.keyboard("{ArrowLeft}");
-              await user.keyboard("{ArrowDown}");
-            }
-            await trigger(items[1]!, "Space");
-            expect(onClick).toHaveBeenCalledTimes(1);
-            expect(items[1]).toHaveAttribute("aria-selected", "true");
-          },
-        );
+          if (type === "keyboard") {
+            await user.keyboard("{ArrowLeft}");
+            await user.keyboard("{ArrowDown}");
+          }
+          await trigger(items[1]!, "Space");
+          expect(onClick).toHaveBeenCalledTimes(1);
+          expect(items[1]).toHaveAttribute("aria-selected", "true");
+        });
 
-        it.skipIf(type === "mouse" && PENDING_CLICK_STOP).each(["single", "multiple"])(
-          'should support links with selectionBehavior="replace" selectionMode="%s"',
-          async (selectionMode) => {
-            const { getAllByRole } = renderIt(() => (
-              <StaticTree treeProps={{ selectionMode, selectionBehavior: "replace" }} rowProps={{ href: "https://google.com/" }} />
-            ));
-            const items = getAllByRole("row");
-            for (const item of items) {
-              expect(item.tagName).not.toBe("A");
-              expect(item).toHaveAttribute("data-href");
-            }
+        it.each(["single", "multiple"])('should support links with selectionBehavior="replace" selectionMode="%s"', async (selectionMode) => {
+          const { getAllByRole } = renderIt(() => (
+            <StaticTree treeProps={{ selectionMode, selectionBehavior: "replace" }} rowProps={{ href: "https://google.com/" }} />
+          ));
+          const items = getAllByRole("row");
+          for (const item of items) {
+            expect(item.tagName).not.toBe("A");
+            expect(item).toHaveAttribute("data-href");
+          }
 
-            const onClick = mockClickDefault();
-            if (type === "mouse") await user.click(items[0]!);
-            else {
-              await user.tab();
-              // As upstream: `{Space}` types key "Space" (not " "), which no handler treats as Space; the row is
-              // selected by the focus entry (useGridList `selectOnFocus` with selectionBehavior "replace").
-              await user.keyboard("{Space}");
-            }
-            expect(onClick).not.toHaveBeenCalled();
-            expect(items[0]).toHaveAttribute("aria-selected", "true");
+          const onClick = mockClickDefault();
+          if (type === "mouse") await user.click(items[0]!);
+          else {
+            await user.tab();
+            // As upstream: `{Space}` types key "Space" (not " "), which no handler treats as Space; the row is
+            // selected by the focus entry (useGridList `selectOnFocus` with selectionBehavior "replace").
+            await user.keyboard("{Space}");
+          }
+          expect(onClick).not.toHaveBeenCalled();
+          expect(items[0]).toHaveAttribute("aria-selected", "true");
 
-            if (type === "mouse") await user.dblClick(items[0]!);
-            else await user.keyboard("{Enter}");
-            expect(onClick).toHaveBeenCalledTimes(1);
-            expect(onClick.mock.calls[0]![0].target).toBeInstanceOf(HTMLAnchorElement);
-            expect((onClick.mock.calls[0]![0].target as HTMLAnchorElement).href).toBe("https://google.com/");
-          },
-        );
+          if (type === "mouse") await user.dblClick(items[0]!);
+          else await user.keyboard("{Enter}");
+          expect(onClick).toHaveBeenCalledTimes(1);
+          expect(onClick.mock.calls[0]![0].target).toBeInstanceOf(HTMLAnchorElement);
+          expect((onClick.mock.calls[0]![0].target as HTMLAnchorElement).href).toBe("https://google.com/");
+        });
       });
     });
 
@@ -1842,7 +1833,7 @@ describe("Tree", () => {
       }
     });
 
-    it.skip("virtualized loaders (TreeLoadMoreItem inside CollectionVirtualizer not covered yet)", () => {});
+    it.todo("virtualized loaders (TreeLoadMoreItem inside CollectionVirtualizer not covered yet)");
   });
 
   describe("shouldSelectOnPressUp", () => {
@@ -2320,11 +2311,8 @@ describe("Tree", () => {
     });
   });
 
-  // TODO(C6a): gridListItemProps does not merge the item's onPress* / onClick props yet (grid-list.browser.test.tsx skips
-  // its "press events" case too); enable with C6a.
-  const PENDING_ITEM_PRESS_PROPS = true;
   describe("press events", () => {
-    it.skipIf(PENDING_ITEM_PRESS_PROPS).each(["mouse", "keyboard"] as const)("should support press events on items when using %s", async (interactionType) => {
+    it.each(["mouse", "keyboard"] as const)("should support press events on items when using %s", async (interactionType) => {
       const onAction = vi.fn();
       const onPressStart = vi.fn();
       const onPressEnd = vi.fn();

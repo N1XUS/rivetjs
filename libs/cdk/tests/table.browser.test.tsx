@@ -917,7 +917,7 @@ describe("Table", () => {
     expect(focused.top).toBeGreaterThanOrEqual(box.top);
     expect(focused.bottom).toBeLessThanOrEqual(box.bottom + 1);
   });
-  it.skip("should support nested collections with colliding keys (TagGroup not ported yet)", () => {});
+  it.todo("should support nested collections with colliding keys (TagGroup inside a table cell not ported yet)");
 
   describe("colSpan", () => {
     const TableCellColSpan = () => (
