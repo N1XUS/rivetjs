@@ -26,7 +26,7 @@ import { SchedulerTimeGridClient, initialMinutes, snapToSlot } from "./time-grid
 import { schedulerPress, timeGridFocusIn, type TimeGridFocus } from "./behaviour.ts";
 import { SCHEDULER_KEYS, chipFocusIn, chipFocusOut, schedulerInteraction } from "./keys.ts";
 import { timeGridKeyDown } from "./keys-time-grid.ts";
-import { formatDay, formatWall } from "./dates.ts";
+import { dayOfWeek, formatDay, formatWall } from "./dates.ts";
 import type { SchedulerBusinessHours, SchedulerClusteredSegment, SchedulerLaneSegment } from "./layout.ts";
 import { DEFAULT_BUSINESS_DAYS, MINUTES_PER_DAY, parseTime, slotCount } from "./time.ts";
 import {
@@ -116,7 +116,7 @@ export function SchedulerTimeGrid<T>(): DOMValue {
     const weekend = ctx.weekend();
     return ctx.days().map((day, dayIndex) => {
       const plain = dateLabel(day, locale);
-      const weekday = (day + 4) % 7;
+      const weekday = dayOfWeek(day);
       const out: SchedulerTimeSlot[] = [];
       for (let minutes = min; minutes < max; minutes += step)
         out.push({

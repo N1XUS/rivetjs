@@ -23,7 +23,7 @@ import { SchedulerEventChip } from "./event.tsx";
 import { closeMorePanel, moreButtonOf, monthFocusIn, monthMoreClick, schedulerPress, type MonthBehaviourContext } from "./behaviour.ts";
 import { SCHEDULER_KEYS, chipFocusIn, chipFocusOut, schedulerInteraction } from "./keys.ts";
 import { monthKeyDown } from "./keys-month.ts";
-import { civilFromDay, dayFromCivil, formatDay } from "./dates.ts";
+import { civilFromDay, dayFromCivil, dayOfWeek, formatDay } from "./dates.ts";
 import type { SchedulerEvent, SchedulerLaneSegment, SchedulerRowSegment } from "./layout.ts";
 import { dateLabel, isCellSelected, isoWeekNumber, schedulerMonthLayout, schedulerSelectionBounds, type SchedulerMonthRow } from "./state.ts";
 
@@ -97,7 +97,7 @@ export function SchedulerMonth<T>(): DOMValue {
           dateLabel: plain,
           outside: civilFromDay(day)[1] !== anchorMonth,
           today: isToday,
-          weekend: weekend.includes((day + 4) % 7),
+          weekend: weekend.includes(dayOfWeek(day)),
           segments: segments.length ? segments : NO_SEGMENTS,
           hidden,
           moreText,
@@ -131,7 +131,7 @@ export function SchedulerMonth<T>(): DOMValue {
     return ctx
       .days()
       .slice(0, ctx.rowLength())
-      .map((day) => ({ name: formatDay(day, locale, { weekday: "short" }), weekend: weekend.includes((day + 4) % 7) }));
+      .map((day) => ({ name: formatDay(day, locale, { weekday: "short" }), weekend: weekend.includes(dayOfWeek(day)) }));
   });
   const gridLabel = () => ctx.t("gridLabel.month", { period: formatDay(ctx.anchorDay(), ctx.locale(), { month: "long", year: "numeric" }) });
   const openDay = () => state.popoverDay();

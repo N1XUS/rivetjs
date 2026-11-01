@@ -67,9 +67,16 @@ const weekThousand = Array.from({ length: 1000 }, (_, i) => {
 export function ThousandWeek() {
   return <Scheduler events={weekThousand} defaultView="week" defaultDate="2031-03-04" timeZone="UTC" locale="en-US" firstDayOfWeek="mon" showCurrentTime={false} />;
 }
+// Days before 1970-01-05 have negative day numbers: weekday must still be 0..6 (weekend + business hours).
+export function Month1969() {
+  return <Scheduler events={[]} defaultDate="1969-12-15" timeZone="UTC" locale="en-US" />;
+}
+export function Week1969() {
+  return <Scheduler events={[]} defaultView="week" defaultDate="1969-12-02" timeZone="UTC" locale="en-US" firstDayOfWeek="mon" showCurrentTime={false} businessHours={{ start: "09:00", end: "17:00" }} />;
+}
 `;
 
-type Fixture = Record<"Month" | "Week" | "Thousand" | "ThousandWeek", () => unknown>;
+type Fixture = Record<"Month" | "Week" | "Thousand" | "ThousandWeek" | "Month1969" | "Week1969", () => unknown>;
 const load = () => importModule<Fixture>("scheduler-ssr-fixture.tsx", source);
 
 describe("Scheduler SSR", () => {
@@ -104,6 +111,18 @@ describe("Scheduler SSR", () => {
     // Client-only now-line; the scroll effects are the time grid's only boot work (spec §6).
     expect(html).not.toContain("rv-SchedulerTimeGrid-now");
     expect(html).toMatch(/<script[^>]*\sdata-boot/);
+  });
+
+  it("weekend + business hours before 1970 (negative day numbers)", async () => {
+    const { Month1969, Week1969 } = await load();
+    const month = await renderHtml(() => Month1969());
+    // Nov 30 1969 (Sun) … Jan 3 1970 (Sat): 5 rows × 2 weekend cells + 2 weekend headers.
+    expect((month.match(/data-weekend="true"/g) ?? []).length).toBe(12);
+    const week = await renderHtml(() => Week1969());
+    // Mon Dec 1 1969, 09:00 is inside business hours; Sat / Sun are weekend columns (header + body each).
+    expect(week).not.toMatch(/data-rv-day-index="0" data-rv-minutes="540" data-outside-business="true"/);
+    expect(week).toMatch(/data-rv-day-index="5" data-rv-minutes="540" data-outside-business="true"/);
+    expect((week.match(/data-weekend="true"/g) ?? []).length).toBe(4);
   });
 
   it("1,000 events: month layout + render cost", async () => {

@@ -1,7 +1,7 @@
 // Rivet-authored date bridge of `@rivetjs/cdk/scheduler` (replaces malva's `MlvDateAdapter<D>` calls in
 // @malva-ui/scheduler `layout/*.ts`, MIT, © 2026 Malva UI — mapping table in `scheduler/CLAUDE.md`).
 // Layout runs on integers only:
-// - `day`  = days since 1970-01-01, proleptic Gregorian (`dayFromCivil`), weekday `(day + 4) % 7` (0 = Sunday);
+// - `day`  = days since 1970-01-01, proleptic Gregorian (`dayFromCivil`), weekday `dayOfWeek(day)` (0 = Sunday; never a bare `(day + 4) % 7`: negative before 1970-01-05);
 // - `minute` = minutes of day 0…1440; "wall minutes" = `day * 1440 + minute` (one integer per instant on the
 //   wall clock of the scheduler `timeZone`; arithmetic = wall-clock arithmetic, so a 00:00 → 24:00 event covers
 //   the whole day on a DST day too).
