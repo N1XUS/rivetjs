@@ -149,6 +149,10 @@ test("changelog: conventional subjects, scopes, breaking (! and footer), section
   const footer = parseCommit("d", "fix(router): links", "Body.\n\nBREAKING CHANGE: `href` must be absolute\n");
   assert.equal(footer?.breaking, true);
   assert.equal(footer?.note, "`href` must be absolute");
+  // A note over several lines is kept whole, up to the next blank line.
+  const long = parseCommit("e", "feat: x", "Body.\n\nBREAKING CHANGE: `a` is gone;\nuse `b` instead.\n\nRefs: #1\n");
+  assert.equal(long?.note, "`a` is gone;\nuse `b` instead.");
+  assert.equal(parseCommit("f", "feat: y", "BREAKING-CHANGE: one\ntwo")?.note, "one\ntwo");
   const md = renderChangelog(
     "0.1.0",
     [

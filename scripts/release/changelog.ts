@@ -29,7 +29,8 @@ const HEADER = /^(\w+)(?:\(([^)]+)\))?(!)?:\s*(.+)$/;
 export function parseCommit(hash: string, subject: string, body = ""): Commit | undefined {
   const match = HEADER.exec(subject.trim());
   if (!match) return undefined;
-  const note = /^BREAKING[ -]CHANGE:\s*([\s\S]+?)(?:\n\s*\n|$)/m.exec(body)?.[1]?.trim();
+  // A footer at a line start; the note runs to the next blank line or the end of the body (no `m` flag: `$` = the end).
+  const note = /(?:^|\n)BREAKING[ -]CHANGE:\s*([\s\S]+?)(?:\n\s*\n|$)/.exec(body)?.[1]?.trim();
   return {
     hash,
     type: match[1]!.toLowerCase(),
