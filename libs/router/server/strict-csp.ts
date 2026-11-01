@@ -15,6 +15,7 @@ export const strictCSP = (nonce: string, options?: CSPOptions): string =>
           ["script-src", [`'nonce-${nonce}'`, "'strict-dynamic'"]],
           ["object-src", ["'none'"]],
           ["base-uri", ["'none'"]],
+          ["frame-ancestors", ["'self'"]],
         ],
         options,
         false,

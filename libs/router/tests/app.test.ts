@@ -222,7 +222,7 @@ test(
       // Strict nonce CSP: inline scripts carry the response's nonce; everything else loads through them.
       const csp = first.headers.get("content-security-policy")!;
       const nonce = /'nonce-([^']+)'/.exec(csp)![1]!;
-      assert.equal(csp, `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'`);
+      assert.equal(csp, `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`);
       for (const tag of html.match(/<script\b[^>]*>/g)!) assert.ok(tag.includes(`nonce="${nonce}"`) || /type="rivet\/boundaries"/.test(tag), tag);
       assert.equal((await fetch(app.url + "/items/1?_rivet=data")).headers.get("content-security-policy"), null);
       assert.match(html, /<script type="rivet\/boundaries"/);

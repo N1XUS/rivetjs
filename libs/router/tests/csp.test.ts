@@ -9,7 +9,7 @@ const sha = (code: string) => `'sha256-${createHash("sha256").update(code).diges
 const policyOf = (html: string) => /<meta http-equiv="Content-Security-Policy" content="([^"]*)">/.exec(html)?.[1];
 
 test("strictCSP: directives merge (script-src additive, object-src replaced, new ones appended), default unchanged", () => {
-  assert.equal(strictCSP("n"), "script-src 'nonce-n' 'strict-dynamic'; object-src 'none'; base-uri 'none'");
+  assert.equal(strictCSP("n"), "script-src 'nonce-n' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'");
   assert.equal(strictCSP("n", { directives: {} }), strictCSP("n"));
   assert.equal(
     strictCSP("n", {
@@ -21,7 +21,7 @@ test("strictCSP: directives merge (script-src additive, object-src replaced, new
         "upgrade-insecure-requests": true,
       },
     }),
-    "script-src 'nonce-n' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; worker-src 'self' blob:; img-src 'self' data: https://cdn.test; upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types rivet rivet-script",
+    "script-src 'nonce-n' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; worker-src 'self' blob:; img-src 'self' data: https://cdn.test; upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types rivet rivet-script",
   );
   // Header policies may carry frame-ancestors / reporting.
   assert.match(strictCSP("n", { directives: { "Frame-Ancestors": "'none'" } }), /; frame-ancestors 'none'$/);
@@ -117,7 +117,7 @@ test("createApp csp directives: merge module loads at startup (pay-per-use), fir
   const get = () => new Request("http://x/p");
   const nonce = "bm9uY2U=";
   const policy = async (handler: ReturnType<typeof createApp>) => (await handler(get(), { nonce })).headers.get("content-security-policy");
-  assert.equal(await policy(createApp({ entry })), `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'`);
+  assert.equal(await policy(createApp({ entry })), `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`);
   assert.match((await policy(createApp({ entry, csp: { trustedTypes: true } })))!, /; trusted-types rivet rivet-script$/);
   const csp = { directives: { "script-src": "'wasm-unsafe-eval'", "worker-src": "'self' blob:" } };
   // Request before the module settled, then after: same merged policy.
@@ -126,7 +126,7 @@ test("createApp csp directives: merge module loads at startup (pay-per-use), fir
   assert.equal(await first, strictCSP(nonce, csp));
   assert.equal(
     await policy(handler),
-    `script-src 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; worker-src 'self' blob:`,
+    `script-src 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; worker-src 'self' blob:`,
   );
 });
 

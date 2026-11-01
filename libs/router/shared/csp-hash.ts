@@ -120,6 +120,7 @@ function bootOrigins(body: string, origins: Set<string>): void {
 
 /**
  * The hash policy: `script-src` = the scripts' hashes + `'self'` + script origins, `object-src` / `base-uri` `'none'`,
+ * `frame-ancestors 'self'` unless `meta` (browsers ignore it in a `<meta>` policy: static hosts send their own header),
  * merged with `options` (`cspPolicy`; `meta`: header-only directives throw). Hashes are CSP sources (`'sha256-…'`).
  * (`'strict-dynamic'` would not do: it trusts the scripts a trusted script inserts with `createElement("script")`, but
  * an `import()` is fetched with the importing script's nonce, and a hash-allowed script has none — Chromium and Firefox
@@ -137,6 +138,7 @@ export function hashPolicy(
       ["script-src", [...new Set(scripts), "'self'", ...origins]],
       ["object-src", ["'none'"]],
       ["base-uri", ["'none'"]],
+      ...(meta ? [] : ([["frame-ancestors", ["'self'"]]] as const)),
     ],
     options,
     meta,

@@ -15,7 +15,7 @@ After reading this page you know what policy Rivet sends, how it works with resu
 With the Node adapter (`start()` or the dev server), every HTML page gets this header:
 
 ```txt
-Content-Security-Policy: script-src 'nonce-<random>' 'strict-dynamic'; object-src 'none'; base-uri 'none'
+Content-Security-Policy: script-src 'nonce-<random>' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'
 ```
 
 What it means:
@@ -24,6 +24,7 @@ What it means:
 - **`'strict-dynamic'`**: scripts that a trusted script loads are trusted too. This lets the loader import your [chunks](../performance/chunks.md).
 - **`object-src 'none'`**: no plugins (`<object>`, `<embed>`).
 - **`base-uri 'none'`**: no `<base>` tag that could redirect relative URLs.
+- **`frame-ancestors 'self'`**: only your own pages can show the page in a frame. Other sites cannot frame it under a fake page and trick visitors into clicking (clickjacking). To allow an embedding site, replace it: `csp: { directives: { "frame-ancestors": ["'self'", "https://partner.example"] } }`. Pages cached by [route rules](../routing/headers-and-caching.md#route-rules-and-page-caching) keep it. `form-action` is not set: a form that posts to your server and then redirects to another site (a payment page, a sign-in provider) would be blocked by `form-action 'self'`; add it with `directives` when your forms never leave your origin.
 
 The page state script (`<script type="rivet/boundaries">`) is data, not code, so it needs no nonce. JSON data responses for client navigation get no CSP header; they are not pages.
 
@@ -37,7 +38,7 @@ await serve({
     new Response(`<!doctype html><script nonce="${nonce}">console.log("allowed")</script>`, {
       headers: {
         "content-type": "text/html; charset=utf-8",
-        "content-security-policy": `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'`,
+        "content-security-policy": `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`,
       },
     }),
 });

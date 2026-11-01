@@ -299,7 +299,7 @@ test("CSP: the app's nonce policy becomes a hash policy for the stored page; the
   const html = await hit.text();
   assert.doesNotMatch(html, /nonce/);
   const sha = createHash("sha256").update("boot()").digest("base64");
-  assert.equal(hit.headers.get("content-security-policy"), `script-src 'sha256-${sha}' 'self'; object-src 'none'; base-uri 'none'`);
+  assert.equal(hit.headers.get("content-security-policy"), `script-src 'sha256-${sha}' 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`);
   // A route's own policy (not the app's) and `csp` functions (hash: null) keep the rendered nonce.
   const own = rules(nonced, { "/a": { swr: 60 } }, { policy: () => "other", hash: {} });
   await get(own, "/a");
@@ -321,13 +321,16 @@ test("createApp: routeRules from the entry (rivetRouter) or the config; dev keep
   const first = await app(new Request("http://x/a"), { nonce: "abc" });
   assert.equal(first.headers.get("x-rivet-cache"), "MISS");
   assert.equal(first.headers.get("x-a"), "1");
-  assert.equal(first.headers.get("content-security-policy"), "script-src 'nonce-abc' 'strict-dynamic'; object-src 'none'; base-uri 'none'");
+  assert.equal(
+    first.headers.get("content-security-policy"),
+    "script-src 'nonce-abc' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'",
+  );
   assert.match(await first.text(), /render 1/);
   const hit = await app(new Request("http://x/a"), { nonce: "def" });
   assert.equal(hit.headers.get("x-rivet-cache"), "HIT");
   assert.match(await hit.text(), /render 1/);
   // No inline scripts: the hash policy allows only same-origin script files.
-  assert.equal(hit.headers.get("content-security-policy"), "script-src 'self'; object-src 'none'; base-uri 'none'");
+  assert.equal(hit.headers.get("content-security-policy"), "script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'");
   assert.equal(typeof (app as unknown as Record<symbol, unknown>)[ROUTE_CACHE], "function");
   // Config rules replace the entry's.
   const other = createApp({ entry: entry(renders, { routeRules: { "/a": { swr: 60 } } }) as never, routeRules: { "/b": { swr: 60 } } });
@@ -623,7 +626,7 @@ test("CSP: only elements carrying the render's nonce are hashed; injected markup
   const hit = await get(app, "/a");
   assert.equal(hit.headers.get("x-rivet-cache"), "HIT");
   const csp = hit.headers.get("content-security-policy")!;
-  assert.equal(csp, `script-src ${sha("boot()")} 'self' https://cdn.example; object-src 'none'; base-uri 'none'`);
+  assert.equal(csp, `script-src ${sha("boot()")} 'self' https://cdn.example; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`);
   assert.ok(!csp.includes(sha("steal()")) && !csp.includes("evil.example"));
   assert.doesNotMatch(await hit.text(), /nonce/);
   // The nonce outside a renderer tag (an attribute value, script text): not stored.

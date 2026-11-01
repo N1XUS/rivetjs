@@ -16,7 +16,8 @@ export interface CSPOptions {
   /**
    * Extra directives (`{ "script-src": "'wasm-unsafe-eval'", "worker-src": ["'self'", "blob:"] }`).
    * `script-src` (and `script-src-elem`, when given) sources are added to the generated ones (nonce /
-   * hashes, `'self'`); `object-src` / `base-uri` replace the generated `'none'`; other directives are
+   * hashes, `'self'`); `object-src` / `base-uri` replace the generated `'none'`, `frame-ancestors` the generated
+   * `'self'` (header policies only); other directives are
    * appended. Names are checked (unknown → `TypeError`); Trusted Types go through `trustedTypes`.
    * Nothing is added implicitly (no `'unsafe-inline'`).
    */
@@ -27,9 +28,12 @@ export interface CSPOptions {
 // `directives` never load it (`createApp` imports it dynamically; `strictCSP` / `hashCSP` statically).
 export { cspPolicy } from "./csp-directives.ts";
 
-/** The default strict nonce policy (+ Trusted Types): what `strictCSP` returns without `directives`. */
+/**
+ * The default strict nonce policy (+ Trusted Types): what `strictCSP` returns without `directives`. `frame-ancestors
+ * 'self'`: no other site frames the page (clickjacking); `directives: { "frame-ancestors": … }` replaces it.
+ */
 export const nonceCSP = (nonce: string, options?: CSPOptions): string =>
-  `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'` + trustedTypesDirectives(options);
+  `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'` + trustedTypesDirectives(options);
 
 /** The Trusted Types directives for `options` (empty when off), each prefixed with `; `. */
 export function trustedTypesDirectives(options: CSPOptions | undefined): string {

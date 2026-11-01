@@ -200,11 +200,15 @@ function scriptTag(script: SrcScript, nonce: string, mark: string): string {
 /** Inline `<style>` (unmanaged: never `data-rh`); `href`: an inlined stylesheet's URL. CSS never contains a closing tag. */
 const styleTag = (style: HeadStyle, nonce: string, href?: string): string =>
   `<style${attr("data-href", href)}${attr("media", style.media)}${nonce}>${style.css.replace(/<\/(style)/gi, "<\\/$1")}</style>`;
-/** Inline script: its JSON data block (if any) right before it. Code never contains a closing tag. */
+/**
+ * Inline script: its JSON data block (if any) right before it. Code never contains a closing tag, nor `<!--` (written
+ * `\x3C!--`, the same text in strings, templates and regexes): after `<!--` a `<script` in the code enters the
+ * "script data double escaped" state, where the closing `</script>` no longer ends the element.
+ */
 function inlineTag(script: Extract<HeadScript, { inline: InlineScript }>, nonce: string): string {
   if (!isInlineScript(script.inline)) throw new TypeError("head script `inline` must be an InlineScript (`?script` import or unsafeInlineScript)");
   const data = script.data !== undefined ? `<script type="application/json">${escapeJSON(JSON.stringify(script.data))}</script>` : "";
-  return `${data}<script${attr("id", script.id)}${nonce}>${script.inline.code.replace(/<\/(script)/gi, "<\\/$1")}</script>`;
+  return `${data}<script${attr("id", script.id)}${nonce}>${script.inline.code.replace(/<\/(script)/gi, "<\\/$1").replaceAll("<!--", "\\x3C!--")}</script>`;
 }
 
 /**

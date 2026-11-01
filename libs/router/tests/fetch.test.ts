@@ -52,7 +52,7 @@ test(
         assert.equal(b.headers.get("content-type"), a.headers.get("content-type"));
         const csp = b.headers.get("content-security-policy")!;
         const nonce = /'nonce-([^']+)'/.exec(csp)![1]!;
-        assert.equal(csp, `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'`);
+        assert.equal(csp, `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'`);
         assert.equal(atob(nonce).length, 16);
         assert.equal(unnonce(a.headers.get("content-security-policy")!), unnonce(csp));
         assert.equal(b.headers.get("x-content-type-options"), "nosniff");
@@ -73,7 +73,7 @@ test(
         const header = async (module: FetchModule) => (await module.fetch(new Request(node.url + "/"))).headers.get("content-security-policy");
         assert.match(
           (await header(create({ csp: { trustedTypes: true } })))!,
-          /'strict-dynamic'; object-src 'none'; base-uri 'none'; require-trusted-types-for 'script'; trusted-types rivet rivet-script$/,
+          /'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'; require-trusted-types-for 'script'; trusted-types rivet rivet-script$/,
         );
         assert.match(
           (await header(create({ csp: (n: string) => `default-src 'self'; script-src 'nonce-${n}'` })))!,
