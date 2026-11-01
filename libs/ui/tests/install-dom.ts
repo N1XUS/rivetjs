@@ -7,6 +7,7 @@ const names = [
   "Node",
   "Element",
   "HTMLElement",
+  "HTMLFormElement",
   "SVGElement",
   "Text",
   "Comment",
