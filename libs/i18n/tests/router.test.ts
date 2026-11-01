@@ -275,3 +275,8 @@ test("setLocale: writes the cookie, then loads the page in the locale", () => {
     delete g.document;
   }
 });
+
+test("a prefix map segment is matched lower-case everywhere: links use the lower-cased segment too", () => {
+  const mapped = { ...config, routing: { prefix: { de: "/Deutsch" } } };
+  assert.equal(localizeHref("/cart", "de", mapped), "/deutsch/cart");
+});

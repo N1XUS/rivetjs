@@ -23,6 +23,8 @@ Set `routing.prefix` in your i18n config:
 | `"never"` | `/about` | `/about` (language from cookie or browser) |
 | `{ en: "us", de: "deutsch" }` | `/us/about` | `/deutsch/about` |
 
+URL segments are lower case: a map entry such as `{ "de-CH": "CH" }` gives `/ch/about`, and `/CH/about` is read as the same language.
+
 ```ts title="i18n.config.ts"
 import type { I18nRouteConfig } from "@rivetjs/i18n/router";
 

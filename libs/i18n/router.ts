@@ -33,7 +33,8 @@ export const dirOf = (locale: string, rtl: readonly string[] = RTL): "ltr" | "rt
 function prefixOf(locale: string, config: I18nRouteConfig): string {
   const prefix = config.routing?.prefix ?? "as-needed";
   if (prefix === "never") return "";
-  if (typeof prefix === "object") return "/" + (prefix[locale] ?? locale).replace(/^\/|\/$/g, "");
+  // Lower-case like resolve.ts `prefixes` and vite.ts `clientPathPattern`, which match the segment.
+  if (typeof prefix === "object") return "/" + (prefix[locale] ?? locale).replace(/^\/|\/$/g, "").toLowerCase();
   if (prefix === "as-needed" && locale === config.defaultLocale) return "";
   return "/" + locale.toLowerCase();
 }
