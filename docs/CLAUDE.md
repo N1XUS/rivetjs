@@ -6,6 +6,8 @@ Internal, contributor-facing docs (user-facing docs live in `apps/docs/content` 
 
 ## Layout
 
+- Harness RAM repair (2026-11-01): `design/plans/2026-11-01-harness-memory.md` tracks removal of redundant UI-docs Nx residency and retained package E2E TypeScript programs, unchanged checker semantics/resource guards, and a subsequent actual Astra campaign. Intentional baseline updates remain outside automatic worker intake.
+
 - `guides/` — how a feature works + its rules (one per subsystem; linked from the lib CLAUDE.md files).
 - `design/` — design records: `specs/` (approved designs, `YYYY-MM-DD-<topic>-design.md`), `plans/` (implementation plans), `research/`, plus standalone implementation notes.
 - Autonomous tester hardening (2026-10-30): `design/plans/2026-10-30-ai-harness-guidance-hardening.md` and `design/research/2026-10-30-autonomous-tester-verification.md` map official OpenAI/Anthropic guidance to enforced checks. Provider readiness, scripted supervisor verification and live bug discovery are recorded separately; explicit harness-only model override was user-authorized after the configured model failed.

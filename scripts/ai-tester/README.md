@@ -28,6 +28,8 @@ Native Go tools receive an explicit soft heap goal after reserving the superviso
 
 ## Evidence and outcomes
 
+For the large UI-docs typecheck, the shared gate planner removes resident Nx wrappers only for the exact verified preparation/checker invocation with static inputs and no root/project dotenv files. It retains the API prerequisite and logs the actual complete command. Every other command, runtime or unsupported inputs (including named inputs), dotenv context, custom executors, cwd/env options, configurations, dependencies, workspace hooks/defaults/custom runners and unknown task behavior retain Nx. This preserves Nx interpolation, local binary lookup and task environment where they may matter. All checks, diagnostics, budgets and baseline acceptance rules remain unchanged.
+
 `.artifacts/ai-tester/<run-id>/` contains the source revision/inventory, protected dirty paths, prompt, worker/reviewer logs/results, copied repro/probe evidence, native RED/GREEN JSON, gate plan/report, candidate and proof-file SHA-256 hashes/patch, run status and append-only events. Logs are capped at 50 MiB each; copied evidence at 10 MiB per file. A coverage JSONL journal records scenario, source revision and outcome for future investigations; it does not edit agent policy.
 
 Once an in-scope finding reaches a fresh validation snapshot, `candidate.patch` and `paths.json` are retained before native RED/GREEN or heavy gates. They describe an unverified proposal until the terminal acceptance checks pass. Patch serialization uses a separate index and raw blobs, preserving binary/non-UTF8 data, existing executable modes and trailing whitespace; it ignores display-only Git diff preferences. This permits human handoff after a failed proof or resource limit without rediscovering the candidate.
@@ -48,6 +50,8 @@ Shared checkout changes are protected: the worker never edits main, all starting
 Worker patches cannot edit the harness, gates, configuration, locks, known-red/quarantine files, byte baselines or compiler Rust/WASM. Intentional baseline changes require human intake. Raw page handler order, Async adoption limits and unsupported array-length paths are documented contracts, not new bugs. Operations fixture session/tenant/upload/checkout rules are application policy, not framework guarantees. No-finding is a bounded investigation result, not security certification.
 
 A live/ambiguous campaign lock is never stolen automatically. If a parent is killed with SIGKILL, inspect its owner PID and recorded artifacts before manually removing its stale `.artifacts/ai-tester/campaign.lock` directory. Keep evidence; remove only owned snapshot build trees when no campaign is using them.
+
+Full scripts verification also releases each package E2E declaration program in a sequential package-build process before consumer builds. The existing package CLI still rejects declaration diagnostics and warnings; its inherited V8 envelope and every template/deployment check are preserved.
 
 ## Maintainer verification
 

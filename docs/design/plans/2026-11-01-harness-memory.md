@@ -1,0 +1,15 @@
+# Harness memory repair
+
+**Goal:** remove redundant UI-docs scheduler residency and retained package E2E TypeScript programs, then run a real gpt-6-astra campaign without manual resource recovery.
+
+**Contract:** `../specs/2026-10-30-autonomous-tester-design.md` and the user's instruction to preserve every check and limit. Work inline in the shared checkout; protect all existing WIP. No automatic baseline updates, resource retries, model fallback or higher budgets.
+
+- [x] Pin a failing regression for the actual UI-docs target: preserve preparation, checker arguments, diagnostics and API prerequisite while eliminating Nx residency. Configurations with dependencies, environment, working-directory changes or custom executors must retain Nx execution.
+- [x] Recognize only the simple committed `nx:run-commands` target in graph metadata; emit its unchanged command as the same gate. Keep gate inventory, classification, RSS/timeout guards and supervisor acceptance unchanged. Document beside the gates and harness. Other-lane WIP landed before the preflight snapshot; update only clean owner files and preserve the remaining two dirty user paths.
+- [ ] Verify native command execution and failure propagation, full maintained scripts, typechecks and a real supervised UI-docs gate in an exported clean snapshot. Review and commit only owned paths, then doctor and launch one real Astra campaign. Record its actual terminal outcome; intentional byte-pin changes still require attention under the unchanged contract.
+
+The RAM acceptance evidence is the real nested supervisor/gates invocation under 3072 MiB, rather than a test asserting a chosen heap constant. A no-finding or a deliberate baseline-policy stop must not be called an automatic repair commit.
+
+Full scripts verification exposed a separate intermittent RSS failure (3252600832B under the unchanged3221225472B cap). Diagnostic tree evidence pins ~2101886976B in the package E2E worker after declaration emit, concurrent with consumer build. Run the exact existing package CLI sequentially per package so program memory dies with the child; retain `--no-typecheck` as before, declaration diagnostics, warning exit codes, V8 envelope and all consumer assertions. No retries or new resource constants. The failing run and diagnostic peak remain in `.artifacts/ai-tester/maintenance/2026-11-01-ram/`.
+
+Final development verification uses a fresh exported snapshot of `a2b91a896f17a060c7b8af20f0ea7955da10eb5b` after the separate UI lane committed. Full scripts:142/142 passing, no skipped/todo assertions,220143ms, peak2954133504B. Strict gate/package types, harness typecheck and changed-source formatting pass. Actual nested supervisor→gates UI preparation/typecheck: both gates pass,108092ms, outer peak2989703168B under unchanged3221225472B. Native checker arguments/API prerequisite, Go1792MiB/V8 2048MiB envelope and baseline policy are unchanged. Earlier RSS failure and rejected review evidence remain retained. Read-only Astra review, maintenance commit and subsequent real campaign are separate remaining steps.

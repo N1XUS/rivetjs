@@ -17,7 +17,7 @@
 // 0 = off), --graph <nx graph json> (skip `nx graph`), --logs <dir>.
 // Exit status: 0 when no gate is a new red (known reds and noise are reported, not failing), 1 otherwise, 2 usage.
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { classify, baselineDelta, restoreQwikLines, timeRss, type KnownRed, type Status, type Verdict } from "./classify.ts";
@@ -163,18 +163,80 @@ export function loadProjects(graphFile?: string): Project[] {
       rmSync(dir, { recursive: true, force: true });
     }
   }
-  return projectsFromGraph(JSON.parse(raw));
+  return projectsFromGraph(JSON.parse(raw), JSON.parse(readFileSync(join(root, "nx.json"), "utf8")), root);
 }
 
 type GraphJson = {
   graph: {
-    nodes: Record<string, { data: { root: string; targets?: Record<string, { options?: { command?: unknown; commands?: unknown }; dependsOn?: unknown[] }> } }>;
+    nodes: Record<string, { data: { root: string; targets?: Record<string, GraphTarget>; namedInputs?: unknown } }>;
     dependencies: Record<string, { target: string }[]>;
   };
 };
 
-export function projectsFromGraph(json: GraphJson): Project[] {
+type GraphTarget = Record<string, unknown> & { options?: { command?: unknown; commands?: unknown }; dependsOn?: unknown[] };
+const UI_TYPECHECK_COMMAND = "node libs/docs-kit/cli.ts prepare apps/ui-docs && node scripts/tsc.ts -p apps/ui-docs --checkers 1";
+
+const staticInputs = (value: unknown): boolean => value === undefined || (Array.isArray(value) && value.every((input) => typeof input === "string"));
+const staticNamedInputs = (value: unknown): boolean =>
+  value === undefined ||
+  (!!value && typeof value === "object" && !Array.isArray(value) && Object.values(value).every((inputs) => Array.isArray(inputs) && staticInputs(inputs)));
+
+function dotenvFree(workspaceRoot: string, projectRoot: string): boolean {
+  try {
+    return [workspaceRoot, resolve(workspaceRoot, projectRoot)].every((directory) =>
+      readdirSync(directory).every((name) => name !== ".env" && !name.startsWith(".env.") && !name.endsWith(".env")),
+    );
+  } catch {
+    return false;
+  }
+}
+
+// The large UI checker fits its native budget; resident npm/Nx executors do not. Expand only the
+// verified UI preparation/checker invocation, not arbitrary Nx command strings.
+function directTypecheck(config: GraphTarget): string | undefined {
+  const allowed = new Set(["executor", "options", "dependsOn", "cache", "inputs", "outputs", "metadata", "parallelism", "configurations"]);
+  const configurations = config.configurations;
+  if (
+    config.executor !== "nx:run-commands" ||
+    !Object.keys(config).every((key) => allowed.has(key)) ||
+    !staticInputs(config.inputs) ||
+    (config.dependsOn?.length ?? 0) !== 0 ||
+    (configurations !== undefined &&
+      (!configurations || typeof configurations !== "object" || Array.isArray(configurations) || Object.keys(configurations).length !== 0)) ||
+    !config.options ||
+    Object.keys(config.options).length !== 1 ||
+    config.options.command !== UI_TYPECHECK_COMMAND
+  )
+    return undefined;
+  return config.options.command;
+}
+
+function directWorkspace(workspace: Record<string, unknown>): boolean {
+  const allowed = new Set(["$schema", "namedInputs", "targetDefaults", "analytics", "plugins", "tasksRunnerOptions"]);
+  if (!Object.keys(workspace).every((key) => allowed.has(key))) return false;
+  if (!staticNamedInputs(workspace.namedInputs)) return false;
+  if (workspace.plugins !== undefined && (!Array.isArray(workspace.plugins) || workspace.plugins.length !== 0)) return false;
+  for (const key of ["tasksRunnerOptions", "targetDefaults"]) {
+    const value = workspace[key];
+    if (value !== undefined && (!value || typeof value !== "object" || Array.isArray(value))) return false;
+  }
+  if (Object.keys((workspace.tasksRunnerOptions ?? {}) as object).length) return false;
+  const harmless = new Set(["cache", "inputs", "outputs", "metadata", "parallelism"]);
+  return Object.entries((workspace.targetDefaults ?? {}) as Record<string, unknown>).every(
+    ([name, target]) =>
+      name === "build" ||
+      ((name === "typecheck" || name === "nx:run-commands") &&
+        !!target &&
+        typeof target === "object" &&
+        !Array.isArray(target) &&
+        Object.keys(target).every((key) => harmless.has(key)) &&
+        staticInputs((target as Record<string, unknown>).inputs)),
+  );
+}
+
+export function projectsFromGraph(json: GraphJson, workspace: Record<string, unknown> = {}, environmentRoot?: string): Project[] {
   const { nodes, dependencies } = json.graph;
+  const direct = directWorkspace(workspace) && Object.values(nodes).every((node) => staticNamedInputs(node.data.namedInputs));
   return Object.entries(nodes).map(([name, node]) => {
     const targets: Project["targets"] = {};
     for (const [target, config] of Object.entries(node.data.targets ?? {})) {
@@ -191,7 +253,16 @@ export function projectsFromGraph(json: GraphJson): Project[] {
               : "",
         )
         .filter((d) => d && !d.startsWith("^"));
-      targets[target] = { commands: list, dependsOn };
+      const directCommand =
+        direct &&
+        name === "ui-docs" &&
+        node.data.root === "apps/ui-docs" &&
+        target === "typecheck" &&
+        environmentRoot !== undefined &&
+        dotenvFree(environmentRoot, node.data.root)
+          ? directTypecheck(config)
+          : undefined;
+      targets[target] = { commands: list, dependsOn, ...(directCommand ? { directCommand } : {}) };
     }
     return { name, root: node.data.root, targets, deps: [...new Set((dependencies[name] ?? []).map((d) => d.target).filter((t) => t !== name && t in nodes))] };
   });

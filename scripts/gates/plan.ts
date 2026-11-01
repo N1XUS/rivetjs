@@ -7,7 +7,7 @@ export interface Project {
   /** Workspace-relative root, e.g. `libs/runtime`. */
   root: string;
   /** Target name → shell command(s) and nx `dependsOn` target names (own-project ones only, `^x` dropped). */
-  targets: Record<string, { commands: string[]; dependsOn: string[] }>;
+  targets: Record<string, { commands: string[]; dependsOn: string[]; directCommand?: string }>;
   /** Projects this one depends on (nx graph edges). */
   deps: string[];
 }
@@ -144,7 +144,9 @@ export function plan(options: PlanOptions): Gate[] {
   for (const name of typechecked)
     add({
       id: `typecheck:${name}`,
-      command: `${NX} run ${name}:typecheck --output-style=static --skip-nx-cache`,
+      command:
+        (name === "ui-docs" ? byName.get(name)?.targets.typecheck?.directCommand : undefined) ??
+        `${NX} run ${name}:typecheck --output-style=static --skip-nx-cache`,
       heavy: true,
       requires: name === "ui-docs" ? ["api:ui-docs"] : [],
       why: why(name),

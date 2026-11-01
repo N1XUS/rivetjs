@@ -1,5 +1,9 @@
 # scripts/ — repo gates and generators
 
+- Package E2E RAM (2026-11-01): `package/create-e2e.ts` runs each unchanged package-build CLI sequentially in a child process, releasing TypeScript programs before the next package and consumer build. Build warnings/declaration diagnostics still fail, the caller's V8 envelope is preserved, and every template/deployment/assertion remains. This removes the measured ~2GiB retained packaging parent from the full scripts suite.
+
+- UI-docs typecheck RAM (2026-11-01): `gates/run.ts` marks only the exact verified UI preparation/checker command with static inputs and dotenv-free root/project for direct execution. `gates/plan.ts` keeps the API prerequisite, classifier and RSS/time guards. All other commands, runtime/unsupported/named inputs, dotenv context, target dependencies/configurations/cwd/env/custom options and workspace hooks/defaults/custom runners/unknown fields retain Nx. `tests/gates.test.ts` exercises actual Nx runtime inputs, dotenv-selected diagnostics, command interpolation, local binaries and task environment; no baseline or threshold changes.
+
 - Stabilization (2026-10-29): removed the Resizable imperative-ref, legacy visible drag-preload and Select focus entries from `gates/known-reds.json` after cold ref forms passed8/8, derived drag/drop contract tests passed7/7 and the unchanged Select suite passed33/33. The registry retains the four existing runtime/router timing flakes.
 
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).

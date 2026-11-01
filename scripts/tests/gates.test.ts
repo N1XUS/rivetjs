@@ -1,9 +1,9 @@
 // scripts/gates: planning (files → projects → ordered gates), selection, output classification, Qwik restore, CLI.
 import { strict as assert } from "node:assert";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, test } from "vitest";
 import { classify, failureLines, restoreQwikLines, sizeGrowth, timeRss, type KnownRed } from "../gates/classify.ts";
@@ -238,6 +238,192 @@ test("arguments, graph conversion, table", () => {
 
 const dir = mkdtempSync(join(tmpdir(), "gates-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
+mkdirSync(join(dir, "apps/ui-docs"), { recursive: true });
+
+const uiTypecheck = (config: Record<string, unknown>, workspace: Record<string, unknown> = {}, environmentRoot = dir, namedInputs?: unknown) => {
+  const projects = projectsFromGraph(
+    {
+      graph: {
+        nodes: { "ui-docs": { data: { root: "apps/ui-docs", targets: { typecheck: config }, ...(namedInputs ? { namedInputs } : {}) } } },
+        dependencies: {},
+      },
+    },
+    workspace,
+    environmentRoot,
+  );
+  return plan({ ...base, projects, files: ["apps/ui-docs/example.ts"] });
+};
+
+test("UI-docs retains its exact native typecheck and API prerequisite without resident Nx wrappers", () => {
+  const config = JSON.parse(readFileSync("apps/ui-docs/project.json", "utf8")).targets.typecheck;
+  const gates = uiTypecheck(config);
+  const gate = gates.find((g) => g.id === "typecheck:ui-docs")!;
+  assert.equal(gate.command, config.options.command, "UI-docs must execute its complete committed native command without Nx residency");
+  assert.deepEqual(gate.requires, ["api:ui-docs"]);
+  assert.equal(gate.heavy, true);
+  before(gates, "api:ui-docs", gate.id);
+  const wrapped = uiTypecheck({ ...config, executor: "custom:checker" });
+  assert.deepEqual(ids(gates), ids(wrapped), "removing the scheduler must not remove any gate");
+});
+
+let nxCounter = 0;
+const nxFixture = (workspace: Record<string, unknown>, config: Record<string, unknown>, namedInputs?: unknown, dotenv?: string, fail = false) => {
+  const work = join(dir, "nx-fixture-" + nxCounter++);
+  mkdirSync(join(work, "apps/ui-docs"), { recursive: true });
+  mkdirSync(join(work, "node_modules/.bin"), { recursive: true });
+  mkdirSync(join(work, "libs/docs-kit"), { recursive: true });
+  mkdirSync(join(work, "scripts"), { recursive: true });
+  const nx = resolve("node_modules/nx");
+  symlinkSync(nx, join(work, "node_modules/nx"));
+  symlinkSync(join(nx, JSON.parse(readFileSync(join(nx, "package.json"), "utf8")).bin.nx), join(work, "node_modules/.bin/nx"));
+  writeFileSync(join(work, "package.json"), JSON.stringify({ name: "gate-fixture", private: true }));
+  writeFileSync(join(work, "nx.json"), JSON.stringify(workspace));
+  writeFileSync(
+    join(work, "apps/ui-docs/project.json"),
+    JSON.stringify({ name: "ui-docs", root: "apps/ui-docs", ...(namedInputs ? { namedInputs } : {}), targets: { typecheck: config } }),
+  );
+  writeFileSync(join(work, "libs/docs-kit/cli.ts"), "import{writeFileSync}from'node:fs';writeFileSync('prepared','fresh');");
+  writeFileSync(
+    join(work, "scripts/tsc.ts"),
+    "import assert from'node:assert/strict';import{readFileSync,writeFileSync}from'node:fs';assert.equal(readFileSync('prepared','utf8'),'fresh');if(process.env.EXPECT_DOTENV)assert.equal(process.env.FIXTURE_CHECK,'loaded');writeFileSync('checked','yes');if(" +
+      (fail && !dotenv) +
+      "){console.error('native checker diagnostic');process.exit(5);}if(process.env.RIVET_TSC==='fixture-diagnostic'){console.error('selected compiler diagnostic');process.exit(4);}",
+  );
+  writeFileSync(join(work, "runtime.mjs"), "import{writeFileSync}from'node:fs';writeFileSync('runtime-ran','yes');console.log('runtime-ok');");
+  if (dotenv) writeFileSync(join(work, dotenv), "FIXTURE_CHECK=loaded\nRIVET_TSC=" + (fail ? "fixture-diagnostic" : "fixture") + "\n");
+  const gate = uiTypecheck(config, workspace, work, namedInputs).find((g) => g.id === "typecheck:ui-docs")!;
+  const env: NodeJS.ProcessEnv = { ...process.env, PATH: join(work, "node_modules/.bin") + ":" + process.env.PATH };
+  delete env.NX_WORKSPACE_ROOT;
+  delete env.NX_SKIP_NX_CACHE;
+  delete env.RIVET_TSC;
+  delete env.FIXTURE_CHECK;
+  return { work, gate, run: (extra = {}) => spawnSync("sh", ["-c", gate.command], { cwd: work, encoding: "utf8", env: { ...env, ...extra } }) };
+};
+
+test("runtime inputs retain Nx execution and checker failure diagnostics", () => {
+  const command = "node libs/docs-kit/cli.ts prepare apps/ui-docs && node scripts/tsc.ts -p apps/ui-docs --checkers 1";
+  const runtime = { runtime: "node runtime.mjs" };
+  const config = { executor: "nx:run-commands", cache: false, options: { command } };
+  for (const [target, workspace, names] of [
+    [{ ...config, inputs: [runtime] }, {}, undefined],
+    [config, { targetDefaults: { typecheck: { inputs: [runtime] } } }, undefined],
+    [config, { namedInputs: { default: [runtime] } }, undefined],
+    [{ ...config, inputs: ["checked"] }, {}, { checked: [runtime] }],
+  ] as const) {
+    const gate = uiTypecheck(target, workspace, dir, names).find((g) => g.id === "typecheck:ui-docs")!;
+    assert.match(gate.command, /nx run ui-docs:typecheck/, "runtime inputs must not disappear when cache is skipped");
+  }
+  for (const fail of [false, true]) {
+    const fixture = nxFixture({}, { ...config, inputs: ["checked"] }, { checked: [runtime] }, undefined, fail);
+    const result = fixture.run();
+    assert.equal(existsSync(join(fixture.work, "runtime-ran")), true, "Nx must execute runtime inputs even with --skip-nx-cache");
+    if (fail) {
+      assert.notEqual(result.status, 0, result.stdout + result.stderr);
+      assert.match(result.stdout + result.stderr, /native checker diagnostic/);
+      assert.equal(existsSync(join(fixture.work, "checked")), true);
+    } else assert.equal(result.status, 0, result.stdout + result.stderr);
+  }
+}, 60000);
+
+test("project and root dotenv files retain Nx loading and selected compiler diagnostics", () => {
+  const config = {
+    executor: "nx:run-commands",
+    cache: false,
+    options: { command: "node libs/docs-kit/cli.ts prepare apps/ui-docs && node scripts/tsc.ts -p apps/ui-docs --checkers 1" },
+  };
+  for (const dotenv of ["apps/ui-docs/.env.typecheck", ".local.env"]) {
+    for (const fail of [false, true]) {
+      const fixture = nxFixture({}, config, undefined, dotenv, fail);
+      assert.match(fixture.gate.command, /nx run ui-docs:typecheck/, "dotenv context must not be dropped");
+      const result = fixture.run({ EXPECT_DOTENV: "1" });
+      if (fail) {
+        assert.notEqual(result.status, 0);
+        assert.match(result.stdout + result.stderr, /selected compiler diagnostic/);
+      } else assert.equal(result.status, 0, result.stdout + result.stderr);
+    }
+  }
+}, 60000);
+
+test("unverified commands retain installed Nx interpolation and execution environment", () => {
+  for (const command of ["node context.mjs {args}", "rivet-native-context-fixture"]) {
+    const fixture = nxFixture({}, { executor: "nx:run-commands", cache: false, options: { command } });
+    assert.match(fixture.gate.command, /nx run ui-docs:typecheck/, "only the verified UI command can bypass Nx");
+    const body =
+      "import assert from'node:assert/strict';import{writeFileSync}from'node:fs';assert.equal(process.env.NX_TASK_TARGET_PROJECT,'ui-docs');assert.equal(process.argv.includes('{args}'),false);writeFileSync('nx-context','preserved');";
+    writeFileSync(join(fixture.work, "context.mjs"), body);
+    writeFileSync(join(fixture.work, "node_modules/.bin/rivet-native-context-fixture"), "#!/usr/bin/env node\n" + body, { mode: 0o755 });
+    const result = fixture.run({ PATH: process.env.PATH });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.equal(readFileSync(join(fixture.work, "nx-context"), "utf8"), "preserved");
+  }
+}, 60000);
+
+test("native UI typecheck runs preparation and preserves checker arguments and failure diagnostics", () => {
+  const work = join(dir, "native-ui");
+  mkdirSync(join(work, "libs/docs-kit"), { recursive: true });
+  mkdirSync(join(work, "scripts"), { recursive: true });
+  mkdirSync(join(work, "apps/ui-docs"), { recursive: true });
+  writeFileSync(
+    join(work, "libs/docs-kit/cli.ts"),
+    "import{writeFileSync}from'node:fs';if(process.env.PREP_FAIL)process.exit(3);writeFileSync('prepared','fresh');",
+  );
+  writeFileSync(
+    join(work, "scripts/tsc.ts"),
+    "import assert from'node:assert/strict';import{readFileSync,writeFileSync}from'node:fs';assert.equal(readFileSync('prepared','utf8'),'fresh');assert.deepEqual(process.argv.slice(2),['-p','apps/ui-docs','--checkers','1']);writeFileSync('checked','yes');if(process.env.TYPE_FAIL){console.error('TS2322: native diagnostic');process.exit(2);}",
+  );
+  const command = "node libs/docs-kit/cli.ts prepare apps/ui-docs && node scripts/tsc.ts -p apps/ui-docs --checkers 1";
+  const gate = uiTypecheck({ executor: "nx:run-commands", options: { command } }, {}, work).find((g) => g.id === "typecheck:ui-docs")!;
+  assert.equal(gate.command, command);
+  const run = (extra = {}) => spawnSync("sh", ["-c", gate.command], { cwd: work, encoding: "utf8", env: { ...process.env, ...extra } });
+  assert.equal(run().status, 0);
+  rmSync(join(work, "prepared"));
+  const failed = run({ TYPE_FAIL: "1" });
+  assert.equal(failed.status, 2);
+  assert.match(failed.stderr, /TS2322: native diagnostic/);
+  rmSync(join(work, "checked"));
+  assert.equal(run({ PREP_FAIL: "1" }).status, 3);
+  assert.equal(existsSync(join(work, "checked")), false, "failed preparation must prevent checker execution");
+});
+
+test("UI typechecks with Nx-specific behavior keep the scheduler and every prerequisite", () => {
+  const command = "node libs/docs-kit/cli.ts prepare apps/ui-docs && node scripts/tsc.ts -p apps/ui-docs --checkers 1";
+  const simple = { executor: "nx:run-commands", options: { command } };
+  for (const config of [
+    { ...simple, dependsOn: ["^typecheck"] },
+    { ...simple, dependsOn: [{ target: "prepare", projects: ["other"] }] },
+    { ...simple, options: { command, cwd: "apps/ui-docs" } },
+    { ...simple, options: { command, env: { EXTRA_CHECK: "1" } } },
+    { ...simple, options: { commands: [command] } },
+    { ...simple, executor: "custom:checker" },
+    { ...simple, configurations: { strict: {} } },
+    { ...simple, defaultConfiguration: "strict" },
+    { ...simple, syncGenerators: ["extra:prepare"] },
+  ]) {
+    const gate = uiTypecheck(config).find((g) => g.id === "typecheck:ui-docs")!;
+    assert.match(gate.command, /nx run ui-docs:typecheck/, JSON.stringify(config));
+    assert.deepEqual(gate.requires, ["api:ui-docs"]);
+  }
+});
+
+test("workspace defaults and lifecycle hooks cannot bypass Nx through a simple project target", () => {
+  const config = {
+    executor: "nx:run-commands",
+    options: { command: "node libs/docs-kit/cli.ts prepare apps/ui-docs && node scripts/tsc.ts -p apps/ui-docs --checkers 1" },
+  };
+  for (const workspace of [
+    { targetDefaults: { typecheck: { dependsOn: ["^build"] } } },
+    { targetDefaults: { "nx:run-commands": { options: { env: { STRICT: "1" } } } } },
+    { targetDefaults: { "*": { dependsOn: ["prepare"] } } },
+    { plugins: ["custom:hooks"] },
+    { tasksRunnerOptions: { default: { runner: "custom:runner" } } },
+    { sync: { globalGenerators: ["custom:prepare"] } },
+  ]) {
+    const gate = uiTypecheck(config, workspace).find((g) => g.id === "typecheck:ui-docs")!;
+    assert.match(gate.command, /nx run ui-docs:typecheck/, "workspace-level task semantics must retain Nx: " + JSON.stringify(workspace));
+  }
+  const actual = JSON.parse(readFileSync("nx.json", "utf8"));
+  assert.equal(uiTypecheck(config, actual).find((g) => g.id === "typecheck:ui-docs")!.command, config.options.command);
+});
 
 test("CLI --list --files --graph writes the plan as JSON and runs nothing", () => {
   const graph = join(dir, "graph.json");

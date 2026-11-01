@@ -26,7 +26,6 @@ import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, resolve } from "node:path";
 import { aiOutputs } from "../../libs/mcp/ai/sync.ts";
-import { buildPackage } from "./build.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 /** Packages a starter installs (directly or through another package), in dependency order. */
@@ -130,8 +129,12 @@ export function packPackages(work: string, { build = true } = {}): Map<string, s
       const buildScript = join(ROOT, "libs", name, "build.ts");
       if (existsSync(buildScript) && !existsSync(join(ROOT, "libs", name, source.publishConfig?.prebuilt ?? "dist")))
         run(process.execPath, [buildScript], ROOT);
-      const result = buildPackage(join("libs", name), at, { typecheck: false });
-      if (result.warnings.length) throw new Error(`build ${name}:\n${result.warnings.join("\n")}`);
+      // Exit releases each TypeScript program before the next package / consumer build.
+      // The CLI retains declaration diagnostics and warning failures; preserve the
+      // caller's V8 envelope (consumer commands intentionally clear NODE_OPTIONS).
+      run(process.execPath, [join(ROOT, "scripts/package/build.ts"), join("libs", name), "--out", at, "--no-typecheck"], ROOT, {
+        NODE_OPTIONS: process.env["NODE_OPTIONS"] ?? "",
+      });
     }
     const manifest = JSON.parse(readFileSync(join(at, "package.json"), "utf8")) as { name: string; version: string };
     const file = join(tarballs, `${manifest.name.replace(/^@/, "").replace("/", "-")}-${manifest.version}.tgz`);
