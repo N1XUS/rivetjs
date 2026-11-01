@@ -78,6 +78,14 @@ export function action<D extends FormDefinition<any>>(
     if (intent?.startsWith("validate:")) return validateField(def, options, event, data, id, intent);
     const array = intent ? parseIntent(intent) : null;
     if (intent && array) {
+      // The decode limits (fields, depth, array index) bound the echoed rows too: `items.999999999.x` is a 400,
+      // never a billion-row allocation.
+      try {
+        decodeWith(def, data);
+      } catch (error) {
+        if (error instanceof FormDecodeError) throw new HttpError(400, error.message);
+        throw error;
+      }
       const applied = applyIntent(echo(), array);
       const reply: FormReply = { ok: false, id, intent, values: applied.values, rows: { [array.path]: applied.rows } };
       return reply;

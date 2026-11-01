@@ -183,6 +183,8 @@ test("intents: validate:<path> answers one field without the handler; array inte
     await (await post(handler, "items", { "items.0.sku": "a", "items.1.sku": "b", "items.2.sku": "c", _intent: "move:items:0:2" })).text(),
   );
   assert.deepEqual(moved.action.result.values, { "items.0.sku": "b", "items.1.sku": "c", "items.2.sku": "a" });
+  // An array index past the decode limit is a 400 before any row is allocated (was: Array.from({ length: 1e9 })).
+  assert.equal((await post(handler, "items", { "items.999999999.sku": "a", _intent: "insert:items" })).status, 400);
 });
 
 test("parse() and safeRedirect()", async () => {

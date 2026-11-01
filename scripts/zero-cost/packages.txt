@@ -34,7 +34,7 @@
 @rivetjs/forms/wizard 6778111f688a 1667
 @rivetjs/forms/autosave 92c1a37d986b 3712
 @rivetjs/forms/errors b921c9d43678 1599
-@rivetjs/forms/server 8739f886b9f5 11617
+@rivetjs/forms/server 0afd9367b970 11681
 @rivetjs/forms/server [browser] d2c003c85936 117
 @rivetjs/forms/csrf bcec6935cc7e 817
 @rivetjs/forms/csrf [browser] d2c003c85936 117
