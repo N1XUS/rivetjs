@@ -134,3 +134,13 @@ test("matchesPattern agrees with the segment-split reference on generated patter
   assert.equal(matchesPattern("a.$", "a.0.b"), false);
   assert.equal(matchesPattern("$", ""), false);
 });
+
+test("number coercion: decimal notation only; hex / binary / octal / infinite stay strings for the schema", () => {
+  const coerce = { n: "number" } as const;
+  const one = (value: string) => decodeFormData(fd([["n", value]]), { coerce }).n;
+  for (const [text, number] of [["42", 42], ["-1.5", -1.5], ["+3", 3], [".5", 0.5], ["5.", 5], ["1e3", 1000], ["2E-2", 0.02], ["0", 0], [" 12 ", 12]] as const)
+    assert.equal(one(text), number, text);
+  for (const text of ["0x1F", "0b11", "0o7", "Infinity", "-Infinity", "1e999", "1_000", "12px"]) assert.equal(one(text), text, text);
+  assert.equal(one(""), undefined);
+  assert.equal(one("  "), undefined);
+});

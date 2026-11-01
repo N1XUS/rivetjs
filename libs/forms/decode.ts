@@ -39,14 +39,19 @@ export class FormDecodeError extends Error {
 type Entry = string | File;
 const isFile = (value: unknown): value is File => typeof File !== "undefined" && value instanceof File;
 
+const DECIMAL = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
+
 function coerceOne(value: Entry, kind: Coercion | undefined, emptyAs: DecodeOptions["emptyAs"]): unknown {
   if (isFile(value)) return value.size === 0 && value.name === "" ? undefined : value;
   switch (kind) {
     case "number": {
-      if (value.trim() === "") return undefined;
-      const number = Number(value);
-      // Not a number: keep the string, so the schema reports a type issue instead of NaN slipping through.
-      return Number.isNaN(number) ? value : number;
+      const text = value.trim();
+      if (text === "") return undefined;
+      // Decimal notation only (what a number input posts; surrounding spaces from a text input are fine): `Number()`
+      // also takes hex / binary / octal and Infinity. Anything else keeps the string, so the schema reports a type
+      // issue instead of NaN, Infinity or 0x1F slipping through.
+      const number = DECIMAL.test(text) ? Number(text) : NaN;
+      return Number.isFinite(number) ? number : value;
     }
     case "boolean":
       return value === "" || value === "off" || value === "false" || value === "0" ? false : true;

@@ -373,3 +373,12 @@ test("records are created lazily and the store type is generic", () => {
   issueSignal(form, "email");
   assert.deepEqual(Object.keys(form.f), ["email"]);
 });
+
+test("defaultValue: a Date initial renders yyyy-mm-dd; invalid or out-of-range dates render no value instead of throwing", () => {
+  const def = defineForm({ name: "dates", schema: schema<{ a: Date; b: Date; c: Date; d: Date }>(() => []) });
+  const form = createForm(def, { initial: { a: new Date("2026-11-01T12:00:00Z"), b: new Date(NaN), c: new Date(8.64e15), d: new Date(Date.UTC(-1, 0, 1)) } });
+  assert.equal(defaultValue(form, "a"), "2026-11-01");
+  assert.equal(defaultValue(form, "b"), undefined);
+  assert.equal(defaultValue(form, "c"), undefined);
+  assert.equal(defaultValue(form, "d"), undefined);
+});

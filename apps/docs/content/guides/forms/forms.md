@@ -32,7 +32,7 @@ export const contactForm = defineForm({
 });
 ```
 
-The schema can come from any library that supports [Standard Schema](https://standardschema.dev): Zod, Valibot, ArkType, or your own object. Form fields arrive as text; use `coerce` to turn them into other types, for example `coerce: { age: "number" }`.
+The schema can come from any library that supports [Standard Schema](https://standardschema.dev): Zod, Valibot, ArkType, or your own object. Form fields arrive as text; use `coerce` to turn them into other types, for example `coerce: { age: "number" }`. A `"number"` field takes decimal notation only (`42`, `-1.5`, `1e3`); text such as `0x1F` or `Infinity` stays a string, so the schema reports a type issue.
 
 `validateOn` says when a field is first checked: `"submit"` (default), `"blur"` (when the user leaves the field), `"input"` or `"change"`. Once a field shows a problem, it is checked again on every input, so the message goes away as soon as the value is fixed.
 

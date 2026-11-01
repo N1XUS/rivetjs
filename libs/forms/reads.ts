@@ -64,6 +64,12 @@ export function lastResult<T>(form: Form<T>): unknown {
   return (storeOf(form).r ??= signal<unknown>(undefined))();
 }
 
+/** `yyyy-mm-dd` of a date (an `<input type="date">` value); none for an invalid date or a year outside 0000–9999. */
+function dateValue(date: Date): string | undefined {
+  const year = date.getUTCFullYear();
+  return year >= 0 && year <= 9999 ? date.toISOString().slice(0, 10) : undefined;
+}
+
 /** Server-side default for an input's `value`: echoed submission, else `initial`. Not reactive. */
 export function defaultValue<T, P extends FieldPath<T>>(form: Form<T>, path: P): string | undefined {
   const store = storeOf(form);
@@ -71,7 +77,7 @@ export function defaultValue<T, P extends FieldPath<T>>(form: Form<T>, path: P):
   const echoed = store.x?.[name];
   if (echoed !== undefined) return Array.isArray(echoed) ? echoed[0] : echoed;
   const initial = getAt(initialOf(store), name);
-  if (initial === undefined || initial === null || typeof initial === "object") return initial instanceof Date ? initial.toISOString().slice(0, 10) : undefined;
+  if (initial === undefined || initial === null || typeof initial === "object") return initial instanceof Date ? dateValue(initial) : undefined;
   return String(initial);
 }
 /** Server-side `checked` for a checkbox/radio (`value` = the input's value; omit for boolean checkboxes). */
