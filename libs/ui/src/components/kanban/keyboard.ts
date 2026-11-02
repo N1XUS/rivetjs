@@ -105,8 +105,12 @@ export function kanbanKey(
       // Before the move: outside an event batch the app re-renders inside `onCardMove`, and the card leaving its old
       // list fires `focusout` (which drops a picked-up card unless a move is in flight).
       root.dataset.kanbanMoving = "";
-      onCardMove({ key, column: from.column, index: from.index, from: { column: at.column, index: at.index } });
-      settle(root, key, text.cancelled, false);
+      // finally: a throwing app callback must not leave `data-kanban-moving` set (focusout would never drop the card).
+      try {
+        onCardMove({ key, column: from.column, index: from.index, from: { column: at.column, index: at.index } });
+      } finally {
+        settle(root, key, text.cancelled, false);
+      }
     } else say(text.cancelled(name, columnName(at.list), at.index + 1, at.total));
     return;
   }
@@ -125,6 +129,9 @@ export function kanbanKey(
   } else return;
   if (column === at.column && index === at.index) return;
   root.dataset.kanbanMoving = "";
-  onCardMove({ key, column, index, from: { column: at.column, index: at.index } });
-  settle(root, key, text.moved, true);
+  try {
+    onCardMove({ key, column, index, from: { column: at.column, index: at.index } });
+  } finally {
+    settle(root, key, text.moved, true);
+  }
 }

@@ -56,6 +56,7 @@ import type { KanbanCardMove } from "./keyboard.ts";
 import type { KanbanListEvent, KanbanSelectableList } from "./selection.ts";
 import { KANBAN_MESSAGES } from "./messages.ts";
 import type { KanbanMessages } from "./messages.ts";
+import { retryableLoad } from "./lazy.ts";
 
 type DivProps = Omit<JSX.IntrinsicElements["div"], "children" | "class"> & { class?: string; children?: Content };
 type SectionProps = Omit<JSX.IntrinsicElements["section"], "children" | "class"> & { class?: string; children?: Content };
@@ -95,7 +96,7 @@ const CARD = '[data-slot="kanban-card"]';
 // The keyboard move logic, loaded on the first handled key (boards without `onCardMove` never load it), then called
 // synchronously.
 let keyboard: typeof import("./keyboard.ts") | undefined;
-let loading: Promise<typeof import("./keyboard.ts")> | undefined;
+const loadKeyboard = retryableLoad(() => import("./keyboard.ts"));
 const MOVE_KEY = /^( |Enter|Escape|ArrowUp|ArrowDown|ArrowLeft|ArrowRight)$/;
 
 const KanbanRoot = (props: KanbanRootProps): JSX.Element => {
@@ -121,13 +122,14 @@ const KanbanRoot = (props: KanbanRootProps): JSX.Element => {
         if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || !MOVE_KEY.test(event.key) || !target.matches?.(CARD)) return;
         // Space / Enter pick up or drop; Escape / arrows only while this card is picked up (or while the first key's
         // module load is pending: that key may be the pick-up).
-        if (event.key !== " " && event.key !== "Enter" && root.dataset.kanbanGrabbed !== target.dataset.kanbanKey && !(loading && !keyboard)) return;
+        if (event.key !== " " && event.key !== "Enter" && root.dataset.kanbanGrabbed !== target.dataset.kanbanKey && !(loadKeyboard.pending() && !keyboard))
+          return;
         event.preventDefault();
         const key = event.key;
         if (keyboard) keyboard.kanbanKey(root, target, key, onCardMove, messages);
         // In order: every key queued during the load runs after it, first to last.
         else
-          void (loading ??= import("./keyboard.ts")).then((m) => {
+          void loadKeyboard().then((m) => {
             keyboard = m;
             m.kanbanKey(root, target, key, onCardMove, messages);
           });
@@ -280,7 +282,7 @@ const SELECT_KEY = /^( |Enter|Escape|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Home
 // The selection handlers, loaded on a selectable list's first event (boards without `selectionMode` never load them),
 // then called synchronously. Events during the load run after it, in order, through a proxy that keeps `currentTarget`.
 let selection: typeof import("./selection.ts") | undefined;
-let selectionLoading: Promise<typeof import("./selection.ts")> | undefined;
+const loadSelection = retryableLoad(() => import("./selection.ts"));
 function listEvent(type: KanbanListEvent, e: Event, board: KanbanSelectableList): void {
   const list = e.currentTarget as HTMLElement;
   if (selection) return selection.kanbanListEvent(type, e, list, board);
@@ -291,7 +293,7 @@ function listEvent(type: KanbanListEvent, e: Event, board: KanbanSelectableList)
       return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(target) : value;
     },
   });
-  void (selectionLoading ??= import("./selection.ts")).then((m) => {
+  void loadSelection().then((m) => {
     selection = m;
     m.kanbanListEvent(type, event, list, board);
   });
