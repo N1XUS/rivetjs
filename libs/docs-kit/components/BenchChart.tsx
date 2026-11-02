@@ -116,8 +116,8 @@ function Plot({ chart, digits }: { chart: Exclude<BenchChartSpec, { kind: "stat"
   const max = extent(chart.groups);
   const wide = niceAxis(max, 5);
   const narrow = niceAxis(max, 4);
-  const rows = chart.groups.flatMap((group, g) => (chart.kind === "bar" ? sorted(group.points, chart.better) : group.points).map((point) => ({ point, g })));
-  const last = rows.length;
+  const grouped = chart.groups.map((group) => (chart.kind === "bar" ? sorted(group.points, chart.better) : group.points));
+  const last = grouped.reduce((sum, points) => sum + points.length, 0);
   let index = 0;
   const ticks = (axis: { max: number; ticks: number[] }, kind: string) => (
     <div class={"bench-axis " + kind} aria-hidden="true">
@@ -139,50 +139,48 @@ function Plot({ chart, digits }: { chart: Exclude<BenchChartSpec, { kind: "stat"
         {chart.groups.map((group, g) => (
           <div class="bench-group">
             {group.label ? <p class="bench-heading">{group.label}</p> : null}
-            {rows
-              .filter((row) => row.g === g)
-              .map(({ point: p }) => {
-                const i = index++;
-                const ranged = p.min !== undefined && p.max !== undefined;
-                const median = `median ${formatValue(p.value, digits)} ${chart.unit}`;
-                const span = ranged ? `min–max ${formatValue(p.min!, digits)}–${formatValue(p.max!, digits)} ${chart.unit}` : "";
-                const say = [
-                  p.label,
-                  median,
-                  ranged ? `range ${formatValue(p.min!, digits)} to ${formatValue(p.max!, digits)} ${chart.unit}` : "",
-                  group.label,
-                  p.note ?? "",
-                ]
-                  .filter(Boolean)
-                  .join(", ");
-                const anchor = (p.max ?? p.value) / (wide.max || 1);
-                const style: Record<string, string> = { "--fw": share(p.value, wide.max), "--fn": share(p.value, narrow.max) };
-                if (ranged) {
-                  style["--lw"] = share(p.min!, wide.max);
-                  style["--ln"] = share(p.min!, narrow.max);
-                  style["--hw"] = share(p.max!, wide.max);
-                  style["--hn"] = share(p.max!, narrow.max);
-                }
-                const tipClass = "bench-tip" + (anchor > 0.55 ? " is-left" : "") + (i >= 2 && i >= last - 2 ? " is-up" : "");
-                return (
-                  <div class={p.rivet ? "bench-row is-rivet" : "bench-row"} style={style} data-say={say}>
-                    <span class="bench-label">{p.label}</span>
-                    <span class="bench-track">
-                      {chart.kind === "bar" ? <span class="bench-bar" /> : null}
-                      {ranged ? <span class="bench-whisker" /> : null}
-                      {chart.kind === "range" ? <span class="bench-dot" /> : null}
-                      <span class="bench-value">{formatValue(p.value, digits)}</span>
-                      <span class={tipClass}>
-                        <strong>{p.label}</strong>
-                        <span>{median}</span>
-                        {span ? <span>{span}</span> : null}
-                        {group.label ? <span class="bench-tip-note">{group.label}</span> : null}
-                        {p.note ? <span class="bench-tip-note">{p.note}</span> : null}
-                      </span>
+            {grouped[g]!.map((p) => {
+              const i = index++;
+              const ranged = p.min !== undefined && p.max !== undefined;
+              const median = `median ${formatValue(p.value, digits)} ${chart.unit}`;
+              const span = ranged ? `min–max ${formatValue(p.min!, digits)}–${formatValue(p.max!, digits)} ${chart.unit}` : "";
+              const say = [
+                p.label,
+                median,
+                ranged ? `range ${formatValue(p.min!, digits)} to ${formatValue(p.max!, digits)} ${chart.unit}` : "",
+                group.label,
+                p.note ?? "",
+              ]
+                .filter(Boolean)
+                .join(", ");
+              const anchor = (p.max ?? p.value) / (wide.max || 1);
+              const style: Record<string, string> = { "--fw": share(p.value, wide.max), "--fn": share(p.value, narrow.max) };
+              if (ranged) {
+                style["--lw"] = share(p.min!, wide.max);
+                style["--ln"] = share(p.min!, narrow.max);
+                style["--hw"] = share(p.max!, wide.max);
+                style["--hn"] = share(p.max!, narrow.max);
+              }
+              const tipClass = "bench-tip" + (anchor > 0.55 ? " is-left" : "") + (i >= 2 && i >= last - 2 ? " is-up" : "");
+              return (
+                <div class={p.rivet ? "bench-row is-rivet" : "bench-row"} style={style} data-say={say}>
+                  <span class="bench-label">{p.label}</span>
+                  <span class="bench-track">
+                    {chart.kind === "bar" ? <span class="bench-bar" /> : null}
+                    {ranged ? <span class="bench-whisker" /> : null}
+                    {chart.kind === "range" ? <span class="bench-dot" /> : null}
+                    <span class="bench-value">{formatValue(p.value, digits)}</span>
+                    <span class={tipClass}>
+                      <strong>{p.label}</strong>
+                      <span>{median}</span>
+                      {span ? <span>{span}</span> : null}
+                      {group.label ? <span class="bench-tip-note">{group.label}</span> : null}
+                      {p.note ? <span class="bench-tip-note">{p.note}</span> : null}
                     </span>
-                  </div>
-                );
-              })}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ))}
         {ticks(wide, "is-wide")}

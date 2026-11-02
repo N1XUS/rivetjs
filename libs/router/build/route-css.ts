@@ -11,8 +11,15 @@ import type { RouteTable } from "./routes.ts";
 /** Client build asset: route id → stylesheet URLs (written only when some route has CSS). */
 export const ROUTE_CSS = ".vite/rivet-route-css.json";
 
+// Route by id (first one wins, like `find`), built once per table: routeFiles runs once per route.
+const tableIndex = new WeakMap<RouteTable, Map<string, RouteTable["routes"][number]>>();
 const routeFiles = (table: RouteTable, routesDir: string, id: string): string[] => {
-  const route = table.routes.find((r) => r.id === id);
+  let byId = tableIndex.get(table);
+  if (!byId) {
+    tableIndex.set(table, (byId = new Map()));
+    for (const r of table.routes) if (!byId.has(r.id)) byId.set(r.id, r);
+  }
+  const route = byId.get(id);
   if (!route?.page) return [];
   return [...route.layouts.flatMap((l) => (l.page ? [l.page] : [])), route.page].map((file) => resolve(routesDir, file));
 };

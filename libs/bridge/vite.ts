@@ -31,7 +31,6 @@ interface Facade {
   entry: BridgeEntry;
 }
 
-/** @internal The plugin behind `rivet({ bridges })` (one per Vite config; `entries` = the configured bridges). */
 /** An `islands.include` / `exclude` list as a test: export names (`"Chart"`) or island-key patterns (`*` wildcard). */
 const matcher = (patterns: readonly string[] | undefined): ((key: string, name: string) => boolean) | null => {
   if (!patterns?.length) return null;
@@ -50,6 +49,7 @@ const matcher = (patterns: readonly string[] | undefined): ((key: string, name: 
   return (key, name) => tests.some((test) => test(key, name));
 };
 
+/** @internal The plugin behind `rivet({ bridges })` (one per Vite config; `entries` = the configured bridges). */
 export function bridgePlugin(entries: BridgeEntry[]): Plugin {
   let root = process.cwd(),
     serve = false,

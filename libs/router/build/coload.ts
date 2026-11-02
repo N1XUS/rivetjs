@@ -100,7 +100,8 @@ export function coloadPlugin(): Plugin {
 
 const SCRIPT_URL = /<(?:script\b[^>]*?\ssrc|link\b[^>]*?\srel="?modulepreload"?[^>]*?\shref)="([^"]+)"/g;
 const STATE_TAG = /<script type="rivet\/boundaries"([^>]*)>/g;
-const attr = (attrs: string, name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(attrs)?.[1];
+const ATTR = { "data-fw": /\sdata-fw="([^"]*)"/, "data-ab": /\sdata-ab="([^"]*)"/, "data-fo": /\sdata-fo="([^"]*)"/ };
+const attr = (attrs: string, name: keyof typeof ATTR) => ATTR[name].exec(attrs)?.[1];
 
 /** Script URLs a prerendered page fetches before input: `<script src>`, modulepreload links, the resume state's `data-fo`. */
 export function pageScripts(html: string, options: { beforeInput?: boolean } = {}): string[] {

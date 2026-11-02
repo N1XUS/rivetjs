@@ -129,8 +129,9 @@ export function scopedCss(blocks: Blocks): string {
   const { light: rl, dark: rd } = rivetDecls();
   const override = (list: readonly Decl[], over: readonly Decl[]) => {
     const map = new Map(over);
+    const names = new Set(list.map(([n]) => n));
     const out = list.map(([n, v]): Decl => [n, map.has(n) ? map.get(n)! : v]);
-    for (const [n, v] of over) if (!list.some(([m]) => m === n)) out.push([n, v]);
+    for (const [n, v] of over) if (!names.has(n)) out.push([n, v]);
     return out;
   };
   // Common block entries (accent / success / radius, …) move into the scoped light block; primitives stay global.
@@ -138,8 +139,7 @@ export function scopedCss(blocks: Blocks): string {
   const themed = (common: readonly Decl[]) => common.filter(([n]) => !PRIMITIVES.has(n));
   // The `@theme inline` variables of themes/shared/theme.css that read a token (`--border-width-field`, `--radius-xl`,
   // `--color-field`, …): a component stylesheet reads some of them by name, and at `:root` the scoped tokens are absent.
-  const sharedTheme = readFileSync(new URL("themes/shared/theme.css", STYLES), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-  const derived = [...sharedTheme.matchAll(/^\s*(--[\w-]+):\s*([^;]*var\([^;]*);/gm)].map((m): Decl => [m[1]!, m[2]!.trim()]);
+  const derived = sharedDerived();
   const heroLight: Decl[] = [["color-scheme", "light"], ...themed(blocks.common), ...blocks.light.filter(([n]) => n !== "color-scheme"), ...derived];
   const heroDark: Decl[] = [["color-scheme", "dark"], ...blocks.dark.filter(([n]) => n !== "color-scheme")];
   const scope = (id: string, light: readonly Decl[], dark: readonly Decl[]) => `  [data-ui-theme="${id}"] {

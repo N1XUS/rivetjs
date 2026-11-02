@@ -1168,7 +1168,9 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     ];
     return parts.length ? parts.join(" & ") : undefined;
   };
-  const firstOf = (id: string) => table.routes.find((r) => r.id === id)!;
+  const first = new Map<string, (typeof table.routes)[number]>();
+  for (const r of table.routes) if (!first.has(r.id)) first.set(r.id, r);
+  const firstOf = (id: string) => first.get(id)!;
   const data = ids.flatMap((id) => {
     const type = typeOf(
       firstOf(id),

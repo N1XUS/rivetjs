@@ -18,34 +18,11 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symli
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { buildPackage, targetsOf } from "./build.ts";
+import { ORDER } from "../release/version.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
-/** Packaged libs in dependency order (`libs/<name>`). */
-export const PACKAGES = [
-  "reactivity",
-  "runtime",
-  "compiler",
-  "router",
-  "kit",
-  "forms",
-  "i18n",
-  "testing",
-  "language-core",
-  "devtools",
-  "typescript-plugin",
-  "mcp",
-  "cdk",
-  "ui",
-  "motion",
-  "bridge",
-  "bridge-react",
-  "bridge-preact",
-  "bridge-solid",
-  "bridge-vue",
-  "bridge-svelte",
-  "create-rivet",
-  "nx",
-];
+/** Every published package, in publish order (one list: `scripts/release/version.ts` `ORDER`). */
+export const PACKAGES = ORDER;
 /** Peers / tools a consumer brings itself: linked from the workspace instead of installed. */
 const PEERS = [
   "vite",

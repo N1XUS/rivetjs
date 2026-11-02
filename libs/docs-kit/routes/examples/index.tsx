@@ -16,7 +16,7 @@ export const loader = load(() =>
     .map(({ id, title, summary, status, tags, codeOnly }) => ({ id, title, summary, status, tags, ...(codeOnly ? { codeOnly } : {}) })),
 );
 
-/** Gallery of every example, grouped by its first tag. */
+/** Gallery of every example (one flat list, by title; tags shown on each card). */
 export default function Examples({ data: all }: PageProps<typeof loader>) {
   return (
     <div class="wide-page">

@@ -120,11 +120,22 @@ function registry(bundle: Root) {
   return { properties, keyframes };
 }
 
+/** `animation` / `animation-name` naming the keyframes `name` (one RegExp per name; the name is matched literally). */
+const keyframeUses = new Map<string, RegExp>();
+function keyframeUse(name: string): RegExp {
+  let pattern = keyframeUses.get(name);
+  if (!pattern) {
+    const literal = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    keyframeUses.set(name, (pattern = new RegExp(`animation(-name)?:[^;]*(^|[\\s,(])${literal}([\\s,;)]|$)`, "m")));
+  }
+  return pattern;
+}
+
 /** Custom properties a stylesheet reads or sets, and the keyframes its `animation` / `animation-name` name. */
 function uses(css: string, keyframeNames: Iterable<string>) {
   const vars = new Set(css.match(/--tw-[\w-]+/g) ?? []);
   const frames = new Set<string>();
-  for (const name of keyframeNames) if (new RegExp(`animation(-name)?:[^;]*(^|[\\s,(])${name}([\\s,;)]|$)`, "m").test(css)) frames.add(name);
+  for (const name of keyframeNames) if (keyframeUse(name).test(css)) frames.add(name);
   return { vars, frames };
 }
 

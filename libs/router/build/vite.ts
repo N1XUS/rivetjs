@@ -1085,7 +1085,9 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
                 ...(i18n ? { i18n: { locales: i18n.locales } } : {}),
                 onError,
               });
-              listener = createListener({ handler: devHandler(handler, server, () => table, devReach), compress: false }).listener;
+              // Same listener as the production Node adapter, minus compression. `idleMemory` keeps its default (on): the
+              // Vite process grows on bursts of dev requests too, and the idle nudge is one unref'd timer at most.
+              listener = createListener({ handler: devHandler(handler, server, () => table, devReach), compress: false, idleMemory: true }).listener;
               listeners.set(entry, listener);
             }
             // Vite's base middleware strips the base from `req.url`: route patterns carry it.
