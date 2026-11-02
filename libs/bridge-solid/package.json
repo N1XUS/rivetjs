@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/bridge-solid",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "license": "MIT",
   "description": "Solid 1.9 islands for Rivet: server rendering, hydration policies, reactive props and resumable slots.",
   "private": true,
@@ -29,7 +29,7 @@
     }
   },
   "peerDependencies": {
-    "@rivetjs/bridge": "0.1.0-alpha.3",
+    "@rivetjs/bridge": "0.1.0-alpha.4",
     "solid-js": ">=1.9.0 <2",
     "vite-plugin-solid": ">=2.11.0 <3"
   },

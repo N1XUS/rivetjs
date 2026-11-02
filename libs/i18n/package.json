@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/i18n",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Compile-time i18n for Rivet: ICU message catalogs inlined per locale, locale resolution.",
   "license": "MIT",
   "private": true,
@@ -30,9 +30,9 @@
   },
   "dependencies": {
     "@formatjs/icu-messageformat-parser": "2.11.4",
-    "@rivetjs/compiler": "0.1.0-alpha.3",
-    "@rivetjs/router": "0.1.0-alpha.3",
-    "@rivetjs/runtime": "0.1.0-alpha.3"
+    "@rivetjs/compiler": "0.1.0-alpha.4",
+    "@rivetjs/router": "0.1.0-alpha.4",
+    "@rivetjs/runtime": "0.1.0-alpha.4"
   },
   "engines": {
     "node": ">=24"

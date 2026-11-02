@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.1.0-alpha.4 (2026-11-02)
+
+### Breaking changes
+
+- **ui:** isDisabled / isOpen prop naming; ChatAttachmentInput follows a live isDisabled (15592191)
+- **ui:** Markdown does not load remote images by default (2e718db9)
+
+### Features
+
+- **router:** add the Electron adapter (050b8d18)
+
+### Fixes
+
+- **ui:** no ripple flash when a touch turns into a scroll (0726deff)
+- **ui:** chart edge cases (tick loop, NaN data, stack overflow, gaps) (bac1ff6a)
+- **ui:** kanban retries a failed chunk load (7b63e0fb)
+- **ui:** hexToOklch reads #rgba / #rrggbbaa correctly, rejects junk (557d6618)
+- **ui:** slider track data-fill-end misses on float sums (87de61db)
+- **ui:** drawer drag releases on pointercancel (085ac893)
+- **ui:** pressable feedback layers stop their timers on unmount (425c60c2)
+- **ui:** favicons follow live sources, morph onClick, breadcrumb keys, IME (04aeaaa2)
+- **ui:** toast queue registry no longer retains dead queues (a79e8578)
+- **ui:** isDisabled / isOpen prop naming; ChatAttachmentInput follows a live isDisabled (15592191)
+- **ui:** editable fields never render under 16 px on touch screens (72db4fde)
+- **ui:** InputOTP picks a text keyboard for letter patterns (aef73b34)
+- **ui:** PromptInput toolbar and queue rows fit phone widths (c6a058c2)
+- **ui:** token suggestions open at the caret without sliding (ff52070f)
+- **ui:** field text utility no longer paints values in the field background (6d49c3f2)
+- **runtime:** land a cold HTML5 drag and drop as on a loaded page (e3a8bced)
+- **ui:** NativeSelect items shorthand starts on its first enabled item (cdc9d005)
+- **ui:** review leftovers — markdown image referrer, sheet parent lookup, hook boxes (10ad420c)
+- **reactivity:** circular computeds throw instead of returning a stale value (763844bd)
+- **i18n:** catalogs must agree on parameter kinds, not only names (c111c256)
+- **ui:** useOverlayState accepts a read-only isOpen accessor (ec845554)
+- **ui:** restore literal markdown heading classes (e3e661aa)
+- **runtime:** WebKit touch taps click delegated handlers on plain elements (COLD-WK-LINUX) (4fa55de1)
+- **cdk:** bound the listbox option manager memo (4dc5eab4)
+- **ui:** Markdown does not load remote images by default (2e718db9)
+- **bridge:** give the paint gate's idle slice a timeout; test(ui): type what fits an OTP (45da05da)
+- **cdk:** Escape on `+N more` closes the panel that has not taken focus yet (7d8dc262)
+
+### Performance
+
+- **cdk,ui:** native contains fast path, cached aside shortcut (018e4b7c)
+- **ui:** streaming Markdown rows read only the revealed text (9e17218f)
+- **cdk,forms:** one Range per followHeight, cheap check first in ErrorSummary (c6e7192f)
+- **ui,cdk:** skip prompt-input layout read once expanded, delta before style in layout shift (c73e67c2)
+- **ui,router:** chart series keys once, persistent head set only when held (ec988de6)
+
+Not listed: 8 chore, 7 test, 6 docs, 5 refactor, 3 non-conventional.
+
 ## 0.1.0-alpha.3 (2026-11-02)
 
 ### Breaking changes

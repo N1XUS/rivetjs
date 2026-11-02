@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/forms",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Resumable forms for Rivet: Standard Schema validation, progressive enhancement through route actions.",
   "license": "MIT",
   "private": true,
@@ -49,11 +49,11 @@
     }
   },
   "dependencies": {
-    "@rivetjs/reactivity": "0.1.0-alpha.3",
-    "@rivetjs/runtime": "0.1.0-alpha.3"
+    "@rivetjs/reactivity": "0.1.0-alpha.4",
+    "@rivetjs/runtime": "0.1.0-alpha.4"
   },
   "peerDependencies": {
-    "@rivetjs/router": "0.1.0-alpha.3"
+    "@rivetjs/router": "0.1.0-alpha.4"
   },
   "devDependencies": {
     "zod": "^3.25.0"
