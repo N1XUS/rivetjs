@@ -14,7 +14,7 @@
 // Purity is never guessed: only the allowlist / annotation. Non-deterministic results (time, randomness, locale,
 // environment) are refused (RV2108, the call stays at runtime). Builds only: dev keeps every runtime call.
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, join, resolve as resolvePath } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -272,9 +272,11 @@ function moduleInfo(file: string, code: string, program: Node): ModuleInfo {
   );
   const deferred: DeferredImport[] = [];
   if (code.includes("@comptime"))
-    for (const stmt of program.body as Node[]) {
+    for (let i = 0, body = program.body as Node[]; i < body.length; i++) {
+      const stmt = body[i]!;
       if (stmt.type !== "ImportDeclaration" || stmt.importKind === "type") continue;
-      const before = code.slice(0, stmt.start);
+      // The text since the previous statement (its doc comment sits there; no copy of the whole prefix per import).
+      const before = code.slice(i ? body[i - 1]!.end : 0, stmt.start);
       const doc = before.lastIndexOf("/**");
       if (doc < 0 || !DEFER.test(before.slice(doc)) || !/\*\/\s*$/.test(before)) continue;
       const names: [string, string][] = [];
@@ -702,7 +704,7 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
     if (!cache) privateCache.set(info, (cache = new Map()));
     const hit = cache.get(name);
     if (hit !== undefined) return hit;
-    let ok = !info.exportedLocals.has(name) && ![...info.exports.values()].some((e) => e.local === name);
+    let ok = !info.exportedLocals.has(name) && !exportLocals(info).has(name);
     if (ok)
       visit(info.program, (node, ancestors) => {
         if (!ok || node.type !== "Identifier" || node.name !== name || inType(ancestors)) return;
@@ -727,6 +729,32 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
     return ok;
   };
 
+  // compiler#7: one read + import scan + resolution per file per build, shared by every recipe's key (recipes of one ui
+  // build share almost the whole closure: tailwind-variants, the helper, the styles modules).
+  const closureNodes = new Map<string, { text: string; deps: string[] } | null>();
+  const closureNode = (file: string): { text: string; deps: string[] } | null => {
+    if (closureNodes.has(file)) return closureNodes.get(file)!;
+    let node: { text: string; deps: string[] } | null = null;
+    try {
+      const text = readFileSync(file, "utf8");
+      node = { text, deps: [] };
+      // Package content: its own files are hashed as reached.
+      if (!/[/\\]node_modules[/\\]/.test(file)) {
+        const req = createRequire(file);
+        for (const m of text.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)) {
+          const spec = m[1]!;
+          try {
+            if (spec.startsWith(".")) {
+              const next = resolvePath(dirname(file), spec);
+              if (existsSync(next) && statSync(next).isFile()) node.deps.push(next);
+            } else node.deps.push(req.resolve(spec));
+          } catch {}
+        }
+      }
+    } catch {}
+    closureNodes.set(file, node);
+    return node;
+  };
   const cacheFile = (recipe: Recipe, paths?: TvPaths): string | null => {
     if (!cacheDir) return null;
     try {
@@ -742,27 +770,10 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
           return;
         }
         files.add(file);
-        let text = "";
-        try {
-          text = readFileSync(file, "utf8");
-        } catch {
-          return;
-        }
-        hash.update(file + "\0" + text);
-        if (/[/\\]node_modules[/\\]/.test(file)) return; // package content: its own files are hashed as reached
-        const req = createRequire(file);
-        for (const m of text.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)) {
-          const spec = m[1]!;
-          try {
-            if (spec.startsWith(".")) {
-              const next = resolvePath(dirname(file), spec);
-              if (existsSync(next) && statSync(next).isFile()) add(next, depth + 1);
-            } else {
-              const pkg = req.resolve(spec);
-              add(pkg, depth + 1);
-            }
-          } catch {}
-        }
+        const node = closureNode(file);
+        if (!node) return;
+        hash.update(file + "\0" + node.text);
+        for (const next of node.deps) add(next, depth + 1);
       };
       const walkRecipe = (r: Recipe) => {
         add(r.file, 0);
@@ -800,7 +811,10 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
         if (file && result.ok) {
           try {
             mkdirSync(dirname(file), { recursive: true });
-            writeFileSync(file, JSON.stringify(result));
+            // Temp + rename (as wasm.ts / build-cache.ts): concurrent docs-kit build children never see a torn file.
+            const temp = file + "." + process.pid + "." + Math.random().toString(36).slice(2) + ".tmp";
+            writeFileSync(temp, JSON.stringify(result));
+            renameSync(temp, file);
           } catch {}
         }
         return result;
@@ -1082,8 +1096,10 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
         if (!arg) return undefined;
         const spec = await specOf(info, arg, host, new Set());
         if (spec === NOT) return NOT;
-        if (JSON.stringify(spec).includes('"\\u0000":"def"') || JSON.stringify(spec).includes('"\\u0000":"call"')) return NOT;
-        return decode(spec, () => null);
+        // A definition / call reference is no constant (one decode walk; compiler#16, router-compiler-2#27).
+        let ref = false;
+        const value = decode(spec, () => ((ref = true), null));
+        return ref ? NOT : value;
       };
       const candidates: { node: Node; ancestors: Node[]; def: TvDef; name: string }[] = [];
       const valueCalls: { node: Node; ancestors: Node[] }[] = [];
@@ -1200,20 +1216,33 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
         }
         return ref;
       };
+      // Uses of a name (rc2#10): one AST pass records the occurrences that count (not bindings, member properties,
+      // keys, shadowed or in a type); `remaining` then only checks them against `skip` and the current `covered`.
+      let usesOf: Map<string, [number, number][]> | null = null;
       const remaining = (name: string, skip?: Node): boolean => {
-        let found = false;
-        visit(program, (node, ancestors) => {
-          if (found || node.type !== "Identifier" || node.name !== name) return;
-          if (skip && node.start >= skip.start && node.end <= (skip.id as Node).end) return;
-          const parent = ancestors[ancestors.length - 1];
-          // Bindings, not uses: import specifiers, and `export { X }` (a re-export: its importers are checked themselves).
-          if (parent && /^(?:Import|Export)(?:Default|Namespace)?Specifier$/.test(parent.type)) return;
-          if (parent && parent.type === "MemberExpression" && parent.property === node && !parent.computed) return;
-          if (parent && parent.type === "Property" && parent.key === node && !parent.computed && !parent.shorthand) return;
-          if (shadowed(name, ancestors) || inType(ancestors)) return;
-          if (!covered.some(([s, e]) => node.start >= s && node.end <= e)) found = true;
-        });
-        return found;
+        if (!usesOf) {
+          const want = new Set<string>([...local.keys(), ...imported.keys(), ...info.imports.keys()]);
+          const map = new Map<string, [number, number][]>();
+          visit(program, (node, ancestors) => {
+            if (node.type !== "Identifier" || !want.has(node.name as string)) return;
+            const id = node.name as string;
+            const parent = ancestors[ancestors.length - 1];
+            // Bindings, not uses: import specifiers, and `export { X }` (a re-export: its importers are checked themselves).
+            if (parent && /^(?:Import|Export)(?:Default|Namespace)?Specifier$/.test(parent.type)) return;
+            if (parent && parent.type === "MemberExpression" && parent.property === node && !parent.computed) return;
+            if (parent && parent.type === "Property" && parent.key === node && !parent.computed && !parent.shorthand) return;
+            if (shadowed(id, ancestors) || inType(ancestors)) return;
+            const list = map.get(id);
+            if (list) list.push([node.start, node.end]);
+            else map.set(id, [[node.start, node.end]]);
+          });
+          usesOf = map;
+        }
+        for (const [start, end] of usesOf.get(name) ?? []) {
+          if (skip && start >= skip.start && end <= (skip.id as Node).end) continue;
+          if (!covered.some(([s, e]) => start >= s && end <= e)) return true;
+        }
+        return false;
       };
       for (const [name, def] of local) {
         const decl = findDeclarator(program, name);
@@ -1225,7 +1254,7 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
           continue;
         }
         const tableText = literal(def.tableSpec);
-        const exported = info.exportedLocals.has(name) || [...info.exports.values()].some((e) => e.local === name);
+        const exported = info.exportedLocals.has(name) || exportLocals(info).has(name);
         const used = remaining(name, decl);
         let fullText = "void 0";
         if (exported || used) {
@@ -1298,13 +1327,27 @@ export function createComptime(options: ComptimeOptions = {}, cacheDir?: string)
         const names = [helpers.core ? "tvCore as __rvtCore" : "", helpers.slot ? "tvSlot as __rvtSlot" : "", ...fullHelpers].filter(Boolean).join(", ");
         head.push(`import { ${names} } from ${JSON.stringify(path)};`);
       }
-      edits.sort((a, b) => b.start - a.start);
-      let out = code;
-      for (const edit of edits) {
-        // Line numbers stay (the input's source map keeps holding): the lines a replaced span covered go inside its last paren.
-        const lost = countLines(out.slice(edit.start, edit.end)) - countLines(edit.text);
-        const text = lost > 0 ? edit.text.slice(0, -1) + "\n".repeat(lost) + ")" : edit.text;
-        out = out.slice(0, edit.start) + text + out.slice(edit.end);
+      // Line numbers stay (the input's source map keeps holding): the lines a replaced span covered go inside its last paren.
+      const keepLines = (text: string, replaced: string): string => {
+        const lost = countLines(replaced) - countLines(text);
+        return lost > 0 ? text.slice(0, -1) + "\n".repeat(lost) + ")" : text;
+      };
+      edits.sort((a, b) => a.start - b.start);
+      let out: string;
+      if (edits.every((edit, i) => i === 0 || (edits[i - 1]!.end <= edit.start && edits[i - 1]!.start < edit.start))) {
+        // Disjoint spans (the usual case): one forward pass of chunks, one join (rc2#11: no whole-text copy per edit).
+        const parts: string[] = [];
+        let at = 0;
+        for (const edit of edits) {
+          parts.push(code.slice(at, edit.start), keepLines(edit.text, code.slice(edit.start, edit.end)));
+          at = edit.end;
+        }
+        parts.push(code.slice(at));
+        out = parts.join("");
+      } else {
+        out = code;
+        for (const edit of [...edits].sort((a, b) => b.start - a.start))
+          out = out.slice(0, edit.start) + keepLines(edit.text, out.slice(edit.start, edit.end)) + out.slice(edit.end);
       }
       // Imports go last (hoisted anyway): line numbers of the module's own code stay.
       return out + (out.endsWith("\n") ? "" : "\n") + head.join("\n") + "\n";
@@ -1320,6 +1363,18 @@ const countLines = (text: string): number => {
   for (let i = text.indexOf("\n"); i >= 0; i = text.indexOf("\n", i + 1)) n++;
   return n;
 };
+
+/** Locals any export names (`export default X` included, which `exportedLocals` leaves out), once per module. */
+const exportLocalsOf = new WeakMap<ModuleInfo, Set<string>>();
+function exportLocals(info: ModuleInfo): Set<string> {
+  let out = exportLocalsOf.get(info);
+  if (!out) {
+    out = new Set();
+    for (const e of info.exports.values()) if (e.local !== undefined) out.add(e.local);
+    exportLocalsOf.set(info, out);
+  }
+  return out;
+}
 
 function findDeclarator(program: Node, name: string): Node | null {
   for (const stmt of program.body as Node[]) {

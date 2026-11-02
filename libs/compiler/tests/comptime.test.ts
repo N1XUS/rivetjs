@@ -3,7 +3,7 @@
 // non-deterministic functions are refused (RV2108), dev keeps every call, results are cached on disk.
 import { afterAll, beforeAll, test } from "vitest";
 import assert from "node:assert/strict";
-import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -269,6 +269,11 @@ test("comptime: false keeps every call; the disk cache holds the evaluated resul
   assert.match(off, /getTailwindVariants|twMerge/);
   const cached = await readdir(join(cacheRoot, "comptime"));
   assert.ok(cached.length >= 3, cached.join());
+  // Written temp + rename (r3-errors#23): only complete entries, no temp file left behind.
+  for (const name of cached) {
+    assert.match(name, /^[0-9a-f]{32}\.json$/);
+    JSON.parse(await readFile(join(cacheRoot, "comptime", name), "utf8"));
+  }
   // Nothing of it under the project or Vite's cacheDir.
   assert.deepEqual(await readdir(join(root, ".vite-cache")).catch(() => []), []);
   // A second build reads the cache (same output).
