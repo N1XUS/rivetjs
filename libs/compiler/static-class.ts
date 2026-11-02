@@ -493,28 +493,40 @@ export interface ClassPlan {
 export async function classPlan(input: ClassPlanInput): Promise<ClassPlan> {
   const { texts, facts, target, resolveTag, namespaceOf, exportsComponent, callers, trace } = input;
   const plan: ClassPlan = { families: [], texts: new Map(), flags: new Map() };
-  // Origin of a binding (`file#local`; `?spec#name` through an import the walk did not resolve).
-  const origin = (file: string, name: string, depth = 0): string | null => {
+  // Origin of a binding (`file#local`; `?spec#name` through an import the walk did not resolve). `seen` (per top-level
+  // lookup) stops `export *` diamonds: a (module, name) pair already explored on this lookup found nothing (it would
+  // have returned), so barrels that reach one module along k paths cost one visit, not k^depth. Top-level results are
+  // memoised: `origin` runs for every import binding of every walked module.
+  const origins = new Map<string, string | null>();
+  const origin = (file: string, name: string): string | null => {
+    const key = file + "\0" + name;
+    let hit = origins.get(key);
+    if (hit === undefined) origins.set(key, (hit = originOf(file, name, 0, new Set())));
+    return hit;
+  };
+  const originOf = (file: string, name: string, depth: number, seen: Set<string>): string | null => {
     const own = facts.get(file);
     if (!own || depth > 32) return null;
     const imported = own.imports.get(name);
     if (!imported) return file + "#" + name;
     const to = target(file, imported.from);
-    return to ? exportOrigin(to, imported.imported, depth + 1) : "?" + imported.imported;
+    return to ? exportOrigin(to, imported.imported, depth + 1, seen) : "?" + imported.imported;
   };
-  const exportOrigin = (file: string, name: string, depth: number): string | null => {
+  const exportOrigin = (file: string, name: string, depth: number, seen: Set<string> = new Set()): string | null => {
     const own = facts.get(file);
-    if (!own || depth > 32) return null;
+    const key = file + "\0" + name;
+    if (!own || depth > 32 || seen.has(key)) return null;
+    seen.add(key);
     const direct = own.exports.get(name);
-    if (direct !== undefined) return origin(file, direct, depth + 1);
+    if (direct !== undefined) return originOf(file, direct, depth + 1, seen);
     const re = own.reexports.get(name);
     if (re) {
       const to = target(file, re.from);
-      return to ? exportOrigin(to, re.imported, depth + 1) : "?" + re.imported;
+      return to ? exportOrigin(to, re.imported, depth + 1, seen) : "?" + re.imported;
     }
     for (const from of own.stars) {
       const to = target(file, from);
-      const hit = to ? exportOrigin(to, name, depth + 1) : null;
+      const hit = to ? exportOrigin(to, name, depth + 1, seen) : null;
       if (hit) return hit;
     }
     return null;

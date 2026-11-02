@@ -125,10 +125,13 @@ export function boundaryFacts(
     const to = imported && target(file, imported.from);
     return imported && to ? exported(to, imported.imported, seen) : null;
   };
-  // An export of `file` (direct, re-exported, `export *`, default) → its binding.
+  // An export of `file` (direct, re-exported, `export *`, default) → its binding. `seen` also holds the explored
+  // exports (`\u0001` keys): `export *` cycles end and diamonds visit each (module, name) once per lookup (compiler#9).
   const exported = (file: string, name: string, seen: Set<string>): Bound | null => {
     const own = facts.get(file);
-    if (!own) return null;
+    const at = "\u0001" + file + "\0" + name;
+    if (!own || seen.has(at)) return null;
+    seen.add(at);
     const direct = own.exports?.get(name);
     if (direct !== undefined) return local(file, direct, seen);
     const re = own.reexports?.get(name);
@@ -344,29 +347,32 @@ export function boundaryFacts(
       }
       return map;
     };
-    // A binding of `file` → the declaration (module, name) it names, through imports and re-exports.
-    const declOf = (file: string, name: string, depth: number): string | null => {
+    // A binding of `file` → the declaration (module, name) it names, through imports and re-exports. `seen` (per
+    // top-level lookup) stops `export *` diamonds: a (module, name) pair already explored on this lookup found nothing.
+    const declOf = (file: string, name: string, depth: number, seen: Set<string> = new Set()): string | null => {
       const own = facts.get(file);
       if (!own || depth > 16) return null;
       if (declMap(file).has(name)) return file + "\0" + name;
       const imported = own.imports.get(name);
       const to = imported && target(file, imported.from);
-      return imported && to ? exportedDecl(to, imported.imported, depth + 1) : null;
+      return imported && to ? exportedDecl(to, imported.imported, depth + 1, seen) : null;
     };
-    const exportedDecl = (file: string, name: string, depth: number): string | null => {
+    const exportedDecl = (file: string, name: string, depth: number, seen: Set<string>): string | null => {
       const own = facts.get(file);
-      if (!own || depth > 16) return null;
+      const key = file + "\0" + name;
+      if (!own || depth > 16 || seen.has(key)) return null;
+      seen.add(key);
       const direct = own.exports?.get(name);
-      if (direct !== undefined) return declOf(file, direct, depth + 1);
+      if (direct !== undefined) return declOf(file, direct, depth + 1, seen);
       const re = own.reexports?.get(name);
       if (re) {
         const to = target(file, re.from);
-        return to && re.imported !== "*" ? exportedDecl(to, re.imported, depth + 1) : null;
+        return to && re.imported !== "*" ? exportedDecl(to, re.imported, depth + 1, seen) : null;
       }
-      if (name === "default" && own.defaultName) return declOf(file, own.defaultName, depth + 1);
+      if (name === "default" && own.defaultName) return declOf(file, own.defaultName, depth + 1, seen);
       for (const from of own.stars ?? []) {
         const to = target(file, from);
-        const hit = to ? exportedDecl(to, name, depth + 1) : null;
+        const hit = to ? exportedDecl(to, name, depth + 1, seen) : null;
         if (hit) return hit;
       }
       return null;

@@ -138,7 +138,7 @@ async function plan(
   ships = false,
   rewrites: Pick<ClassPlanInput, "introduced" | "previouslyActive"> = {},
 ) {
-  const facts = new Map<string, ModuleFacts>();
+  const facts = new CountingMap<string, ModuleFacts>();
   const graph = new Map<string, Map<string, string>>();
   for (const [file, source] of Object.entries(program)) {
     facts.set(file, moduleFacts(source, file, file.endsWith(".tsx") ? { boundaries: true, refs: true } : { refs: true }));
@@ -165,7 +165,16 @@ async function plan(
     scope,
     ...(ships ? { boundaries: verdicts.boundaries, edges: (file: string) => graph.get(file)?.values() ?? [] } : {}),
   });
-  return { result, evaluated };
+  return { result, evaluated, facts };
+}
+
+/** `facts` that counts its lookups (export-chain walks are measured in module visits). */
+class CountingMap<K, V> extends Map<K, V> {
+  gets = 0;
+  override get(key: K): V | undefined {
+    this.gets++;
+    return super.get(key);
+  }
 }
 
 test.skipIf(!hasDerivedModel())("static class: program plan — proven sites get $cls, every other way to an instance flags its module", async () => {
@@ -290,4 +299,26 @@ test.skipIf(!hasDerivedModel())("static class: removing the last caller retains 
     const current = await plan({ ...declarations, [file]: PROGRAM[file]! }, "build", {}, false, rewrites);
     assert.deepEqual(current.result.families, [], file + ": a prior proof never overrides a current unsafe use");
   }
+});
+
+test.skipIf(!hasDerivedModel())("static class: an import through `export *` diamonds visits each barrel once (compiler#9)", async () => {
+  // 16 levels of two-way star diamonds: an import the barrels never export explored every path (2^16 per lookup).
+  const program: Record<string, string> = {
+    ...PROGRAM,
+    "/p/miss.tsx": `import { Missing } from "./d0.ts";\nexport default function Page() {\n  return <i>{String(Missing)}</i>;\n}\n`,
+  };
+  const extra: Record<string, Record<string, string>> = { "/p/miss.tsx": { "./d0.ts": "/p/d0.ts" } };
+  for (let i = 0; i < 16; i++) {
+    program[`/p/d${i}.ts`] = `export * from "./l${i}.ts";\nexport * from "./r${i}.ts";\n`;
+    extra[`/p/d${i}.ts`] = { [`./l${i}.ts`]: `/p/l${i}.ts`, [`./r${i}.ts`]: `/p/r${i}.ts` };
+    for (const side of ["l", "r"]) {
+      program[`/p/${side}${i}.ts`] = `export * from "./d${i + 1}.ts";\n`;
+      extra[`/p/${side}${i}.ts`] = { [`./d${i + 1}.ts`]: `/p/d${i + 1}.ts` };
+    }
+  }
+  program["/p/d16.ts"] = `export const other = 1;\n`;
+  const base = (await plan(PROGRAM)).facts.gets;
+  const { result, facts } = await plan(program, "page", extra);
+  assert.equal(result.families.length, 1);
+  assert.ok(facts.gets - base < 2000, `facts lookups: ${facts.gets - base}`);
 });

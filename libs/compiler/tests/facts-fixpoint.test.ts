@@ -568,3 +568,33 @@ test("ZERO A1: a compound used as a value counts every part adopted", () => {
   const out = boundaryFacts(facts, new Map(), new Set(["src/menu.tsx"]), new Set(["src/menu.tsx"]));
   assert.deepEqual(out.static("src/menu.tsx"), ["Page"]);
 });
+
+test("TABS-ROOT: a shell value imported through `export *` diamonds visits each barrel once (compiler#9)", () => {
+  // Eight levels of six-way star diamonds (depth cap 16): a name no barrel exports explored 6^8 paths per lookup.
+  class CountingMap<K, V> extends Map<K, V> {
+    gets = 0;
+    override get(key: K): V | undefined {
+      this.gets++;
+      return super.get(key);
+    }
+  }
+  const facts = new CountingMap<string, ModuleFacts>();
+  const resolved = new Map<string, Map<string, string>>();
+  facts.set(
+    "src/page.tsx",
+    module({ Page: { renders: [], calls: [], params: "none" } }, { Missing: ["./d0", "Missing"] }, "Page", { refs: refs({ Page: [["Missing"], []] }) }),
+  );
+  resolved.set("src/page.tsx", new Map([["./d0", "src/d0.ts"]]));
+  for (let i = 0; i < 8; i++) {
+    const sides = Array.from({ length: 6 }, (_, k) => `./s${i}_${k}`);
+    facts.set(`src/d${i}.ts`, module({}, {}, null, { exports: new Map(), stars: sides }));
+    resolved.set(`src/d${i}.ts`, new Map(sides.map((s) => [s, `src/${s.slice(2)}.ts`])));
+    for (const s of sides) {
+      facts.set(`src/${s.slice(2)}.ts`, module({}, {}, null, { exports: new Map(), stars: [`./d${i + 1}`] }));
+      resolved.set(`src/${s.slice(2)}.ts`, new Map([[`./d${i + 1}`, `src/d${i + 1}.ts`]]));
+    }
+  }
+  facts.set("src/d8.ts", module({}, {}, null, { exports: new Map() }));
+  boundaryFacts(facts, resolved, new Set(), new Set(["src/page.tsx"]));
+  assert.ok(facts.gets < 5000, `facts lookups: ${facts.gets}`);
+});
