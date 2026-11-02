@@ -146,9 +146,9 @@ function markEditing(wrapper: Element | null | undefined, on: boolean): void {
 }
 
 /** The Value wrapper around an event's target (capture listeners: found from the target, not `currentTarget`). */
-const valueOf = (event: Event): Element | null => (event.target as Element).closest("[data-slot=number-stepper-value]");
-const editStart = (event: Event): void => markEditing(valueOf(event), true);
-const editEnd = (event: Event): void => markEditing(valueOf(event), false);
+const valueWrapperOf = (event: Event): Element | null => (event.target as Element).closest("[data-slot=number-stepper-value]");
+const editStart = (event: Event): void => markEditing(valueWrapperOf(event), true);
+const editEnd = (event: Event): void => markEditing(valueWrapperOf(event), false);
 
 const STEP_KEYS = new Set(["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", "Enter"]);
 const CARET_KEYS = new Set(["ArrowLeft", "ArrowRight"]);

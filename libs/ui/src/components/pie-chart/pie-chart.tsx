@@ -116,6 +116,7 @@ const PieChart = (props: PieChartProps): JSX.Element => {
         label: ring.label ?? d.label,
         items: [{ key: d.key ?? d.label, name: d.label, value: d.value, formatted: format(d.value), color }],
       };
+      const labelAt = polar(outer + 8, mid);
       return {
         d: sectorPath(outer, inner, a0, a1),
         color,
@@ -125,7 +126,7 @@ const PieChart = (props: PieChartProps): JSX.Element => {
         aria: `${ring.label ? `${ring.label}, ` : ""}${d.label}: ${format(d.value)} (${share}%)`,
         anchor: { left: pct(at.x), top: pct(at.y), side: at.x > 60 ? "start" : "end" },
         line: `M${edge.x.toFixed(2)} ${edge.y.toFixed(2)} L${out.x.toFixed(2)} ${out.y.toFixed(2)}`,
-        text: { left: pct(polar(outer + 8, mid).x), top: pct(polar(outer + 8, mid).y), align: Math.cos((mid * Math.PI) / 180) >= 0 ? "start" : "end" },
+        text: { left: pct(labelAt.x), top: pct(labelAt.y), align: Math.cos((mid * Math.PI) / 180) >= 0 ? "start" : "end" },
         labelText: labels === "value" ? format(d.value) : labels === "name" ? d.label : `${share}%`,
         tip: showTooltip === false ? null : renderTooltip(point.label, [{ label: d.label, value: format(d.value), color }], "0px", tooltip?.(point)),
         ring: ri,
