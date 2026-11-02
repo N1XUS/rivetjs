@@ -96,6 +96,8 @@ A one-line pill that expands into the stacked layout when the text wraps or atta
 
 Compose the toolbar with workflow controls for compact agent surfaces: a review follow-up with the pull request, a commit option and an Approve action next to Send.
 
+The shell is a size container: below 30rem (phones, side panels) the toolbar wraps, leading controls on one row and the actions right-aligned on the next, labels on one line. Wider shells keep one row.
+
 ::example{id=prompt-input-review-composer}
 
 ### With Suggestions
@@ -111,6 +113,8 @@ Compose the toolbar with workflow controls for compact agent surfaces: a review 
 ### Queue
 
 `PromptInput.Queue` lists prompts sent while a response runs; rows compose `Icon`, `Body`, `Content`, `Description`, `Attachments`, `AttachmentsOverflow`, `Actions`, `Remove`, `More`. `Handle` is visual only.
+
+In a queue narrower than 26rem a row keeps its content on one line (ellipsis) and moves the description under it; the actions keep their size.
 
 ::example{id=prompt-input-queue}
 

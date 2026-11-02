@@ -47,6 +47,7 @@
     flex-direction: column;
     display: flex;
     position: relative;
+    container: prompt-input-shell / inline-size;
   }
 
   .prompt-input__shell:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .prompt-input__shell:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .prompt-input__shell:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -418,6 +419,22 @@
     flex-shrink: 0;
   }
 
+  @container prompt-input-shell not (min-width: 30rem) {
+    .prompt-input:not([data-layout="inline"], [data-layout="compact"]) .prompt-input__toolbar {
+      row-gap: calc(var(--spacing, .25rem) * 2);
+      flex-wrap: wrap;
+    }
+
+    .prompt-input:not([data-layout="inline"], [data-layout="compact"]) .prompt-input__toolbar-start {
+      row-gap: var(--spacing, .25rem);
+      flex-wrap: wrap;
+    }
+
+    .prompt-input:not([data-layout="inline"], [data-layout="compact"]) .prompt-input__toolbar :where(.prompt-input__toolbar-start, .prompt-input__toolbar-end) > * {
+      white-space: nowrap;
+    }
+  }
+
   .prompt-input .prompt-input__send {
     transition: transform var(--motion-move-duration) var(--motion-move-ease), background-color var(--motion-state-duration) var(--motion-state-ease), color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease), opacity var(--motion-state-duration) var(--motion-state-ease);
   }
@@ -523,6 +540,7 @@
     padding-bottom: calc(var(--spacing, .25rem) * 4);
     flex-direction: column;
     display: flex;
+    container: prompt-input-queue / inline-size;
   }
 
   .prompt-input__queue-list {
@@ -599,6 +617,33 @@
     font-size: var(--text-xs, .75rem);
     line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
     color: var(--muted);
+  }
+
+  @container prompt-input-queue not (min-width: 26rem) {
+    .prompt-input__queue-item-body {
+      column-gap: calc(var(--spacing, .25rem) * 2);
+      flex-wrap: wrap;
+      row-gap: 0;
+    }
+
+    .prompt-input__queue-item-content {
+      -webkit-line-clamp: unset;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      -webkit-box-orient: horizontal;
+      flex-basis: 100%;
+      display: block;
+      overflow: hidden;
+    }
+
+    .prompt-input__queue-item-description {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .prompt-input__queue-item-attachments {
+      flex-shrink: 0;
+    }
   }
 
   .prompt-input__queue-item-actions {
