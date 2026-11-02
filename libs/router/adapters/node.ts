@@ -1026,14 +1026,18 @@ export function createListener(options: ServeOptions): {
       const handle = req.method === "HEAD" ? null : await opened();
       if (handle === "changed") return serveFile(req, res, pathname, true);
       if (req.method !== "HEAD" && !handle) return false;
-      res.writeHead(206, {
-        ...headers,
-        "Accept-Ranges": "bytes",
-        "Content-Range": `bytes ${from}-${to}/${found.size}`,
-        "Content-Length": String(to - from + 1),
-      });
-      if (!handle) res.end();
-      else await pipeline(handle.createReadStream({ start: from, end: to }), res);
+      try {
+        res.writeHead(206, {
+          ...headers,
+          "Accept-Ranges": "bytes",
+          "Content-Range": `bytes ${from}-${to}/${found.size}`,
+          "Content-Length": String(to - from + 1),
+        });
+        if (!handle) res.end();
+        else await pipeline(handle.createReadStream({ start: from, end: to }), res);
+      } finally {
+        await handle?.close();
+      }
       return true;
     }
     if (work?.use && found.size >= MIN_COMPRESS) {
@@ -1099,15 +1103,21 @@ export function createListener(options: ServeOptions): {
     const handle = req.method === "HEAD" || res.destroyed ? null : await opened();
     if (handle === "changed") return serveFile(req, res, pathname, true);
     if (req.method !== "HEAD" && !res.destroyed && !handle) return false;
-    res.writeHead(200, { ...headers, "Accept-Ranges": "bytes", "Content-Length": String(found.size) });
-    if (!handle) res.end();
-    else {
-      // The client may go away mid-file (page left, preload cancelled): a closed response is not a server error.
-      try {
-        await pipeline(handle.createReadStream(), res);
-      } catch (error) {
-        if (!res.destroyed && !res.writableEnded) throw error;
+    try {
+      res.writeHead(200, { ...headers, "Accept-Ranges": "bytes", "Content-Length": String(found.size) });
+      if (!handle) res.end();
+      else {
+        // The client may go away mid-file (page left, preload cancelled): a closed response is not a server error.
+        try {
+          await pipeline(handle.createReadStream(), res);
+        } catch (error) {
+          if (!res.destroyed && !res.writableEnded) throw error;
+        }
       }
+    } finally {
+      // Always closed here: a response destroyed before the read stream starts (client gone while the file was being
+      // opened) never closes it, and Node 26 throws (ERR_INVALID_STATE) when a FileHandle is closed by GC.
+      await handle?.close();
     }
     return true;
   }

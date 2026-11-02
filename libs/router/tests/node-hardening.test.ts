@@ -5,6 +5,8 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { connect } from "node:net";
+import { execFile } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { byteRange, etagMatches, negotiate, serve, type Handler, type ServeOptions } from "../adapters/node.ts";
@@ -187,4 +189,37 @@ test("FIX2: empty file ranges are 416; a file replaced on disk is answered with 
       await rm(dir, { recursive: true, force: true });
     }
   }
+});
+
+// A client that goes away while the file is being opened left its FileHandle to the garbage collector: Node 24 warns
+// ("Closing file descriptor … on garbage collection"), Node 26 throws ERR_INVALID_STATE and the server process dies
+// (examples/operations journeys: every test after the first sign-in got ECONNREFUSED).
+test("static files: a request aborted before the response never leaves a FileHandle to the garbage collector", async () => {
+  const adapter = fileURLToPath(new URL("../adapters/node.ts", import.meta.url));
+  const script = `
+    import { mkdtemp, writeFile } from "node:fs/promises";
+    import { tmpdir } from "node:os";
+    import { join } from "node:path";
+    import { request } from "node:http";
+    import { serve } from ${JSON.stringify(adapter)};
+    const dir = await mkdtemp(join(tmpdir(), "rivet-node-fh-"));
+    await writeFile(join(dir, "big.bin"), Buffer.alloc(1 << 20, 1));
+    const serving = await serve({ handler: () => new Response("h"), client: dir, port: 0, onError: () => {}, compress: false });
+    for (let i = 0; i < 200; i++)
+      await new Promise((done) => {
+        const r = request(serving.url + "/big.bin", { headers: i % 2 ? { range: "bytes=0-" } : {} });
+        r.on("error", () => done());
+        setImmediate(() => (r.destroy(), done()));
+        r.end();
+      });
+    await new Promise((d) => setTimeout(d, 200));
+    for (let i = 0; i < 5; i++) (gc(), await new Promise((d) => setTimeout(d, 50)));
+    await serving.close();
+    console.log("survived");
+  `;
+  const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>((done) =>
+    execFile(process.execPath, ["--expose-gc", "--input-type=module", "-e", script], { timeout: 60000 }, (_error, stdout, stderr) => done({ stdout, stderr })),
+  );
+  assert.doesNotMatch(stderr, /garbage collection/);
+  assert.match(stdout, /survived/);
 });
