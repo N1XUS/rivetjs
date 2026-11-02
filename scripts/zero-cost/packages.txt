@@ -26,6 +26,7 @@
 @rivetjs/router/cloudflare 262e236b8ced 3003
 @rivetjs/router/bun 5decea2d4237 6710
 @rivetjs/router/deno 1509759568df 6779
+@rivetjs/router/electron e60a8e40e48c 7725
 @rivetjs/router/head 529bf74931c1 7888
 @rivetjs/forms a3708cd0a825 4747
 @rivetjs/forms/array e7d1e96d5f86 4001
@@ -390,8 +391,8 @@
 @rivetjs/motion/static d8008f0665c5 7770
 @rivetjs/motion/reduced-motion 0307d0c23965 284
 @rivetjs/bridge 56e1b0c10087 9
-@rivetjs/bridge/server [dom] f84ec79b6e7b 8179
-@rivetjs/bridge/server [server] 8bdd80e56b8b 8175
+@rivetjs/bridge/server [dom] 2d9e2c6c9492 8193
+@rivetjs/bridge/server [server] 818450635281 8189
 @rivetjs/bridge/dom [dom] 82d7dbe24832 5241
 @rivetjs/bridge/dom [server] 055cbb2f1479 5213
 @rivetjs/bridge/client 07a86a486bd6 2687
