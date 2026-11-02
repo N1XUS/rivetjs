@@ -184,10 +184,12 @@ export function selectableItemStates(options: SelectableItemOptions): Selectable
  * focus or when disabled; `data-key`, `data-collection`, `id`). Reads state: bind as accessors.
  */
 export function selectableItemAttrs(options: SelectableItemOptions): Record<string, unknown> {
-  const d = derive(options);
-  const attrs: Record<string, unknown> = { "data-key": String(d.key), "data-collection": getCollectionId(d.manager.collection), id: options.id };
-  if (typeof d.key === "number") attrs["data-key-type"] = "number";
-  if (!options.shouldUseVirtualFocus && !d.isDisabled) attrs.tabIndex = focusedKeyIs(d.manager, d.key) ? 0 : -1;
+  // Only `isDisabled` of `derive` is needed: no link / selectability / emptiness reads (the binding re-ran when the
+  // selection became empty or non-empty, and paid 4 more lookups per row).
+  const { selectionManager: manager, key } = options;
+  const attrs: Record<string, unknown> = { "data-key": String(key), "data-collection": getCollectionId(manager.collection), id: options.id };
+  if (typeof key === "number") attrs["data-key-type"] = "number";
+  if (!options.shouldUseVirtualFocus && !(options.isDisabled || manager.isDisabled(key))) attrs.tabIndex = focusedKeyIs(manager, key) ? 0 : -1;
   return attrs;
 }
 
@@ -557,10 +559,11 @@ export function selectableItemDoubleClick(options: SelectableItemOptions, e: Mou
 
 /** focus on the item element itself: it becomes the focused key. */
 export function selectableItemFocus(options: SelectableItemOptions, e: FocusEvent): void {
+  if (options.shouldUseVirtualFocus) return;
+  const { selectionManager: manager, key } = options;
+  if (options.isDisabled || manager.isDisabled(key)) return;
   const item = itemOf(options, e);
-  const d = derive(options);
-  if (options.shouldUseVirtualFocus || d.isDisabled) return;
-  if (e.target === item && untrack(() => d.manager.focusedKey) !== d.key) d.manager.setFocusedKey(d.key);
+  if (e.target === item && untrack(() => manager.focusedKey) !== key) manager.setFocusedKey(key);
 }
 
 /** dragstart: no native drag after a touch long press that selected. */
@@ -588,7 +591,7 @@ export function focusSelectableItem(options: SelectableItemOptions): void {
 /** The collection item element containing `target` (inside `collection`), with its key. */
 export function closestItem(collection: Element, target: EventTarget | null, selector = "[data-key]"): { element: HTMLElement; key: Key } | null {
   let el = target instanceof Element ? target.closest<HTMLElement>(selector) : null;
-  while (el && !collection.contains(el)) el = null;
+  if (el && !collection.contains(el)) el = null;
   if (!el || el === collection) return null;
   const key = domKey(el);
   return key == null ? null : { element: el, key };

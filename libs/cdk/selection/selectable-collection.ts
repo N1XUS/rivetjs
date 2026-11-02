@@ -259,7 +259,7 @@ function selectAllKey(r: Resolved): ShortcutResult {
 }
 
 function escape(r: Resolved): ShortcutResult {
-  if (r.escapeKeyBehavior === "clearSelection" && !r.disallowEmptySelection && r.manager.selectedKeys.size !== 0) {
+  if (r.escapeKeyBehavior === "clearSelection" && !r.disallowEmptySelection && !r.manager.isEmpty) {
     r.manager.clearSelection();
     return;
   }

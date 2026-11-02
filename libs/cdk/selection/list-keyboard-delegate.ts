@@ -216,8 +216,9 @@ export class ListKeyboardDelegate<T> implements KeyboardDelegate {
     const menu = refElement(this.ref);
     let itemRect = this.layoutDelegate.getItemRect(key);
     if (!itemRect) return null;
-    const reversed = this.isReversed(key);
     if (menu && !isScrollable(menu)) return this.getFirstKey();
+    // After the early return: two item lookups + two rect reads (Rivet order; upstream reads them first).
+    const reversed = this.isReversed(key);
     let nextKey: Key | null = key;
     if (this.orientation === "horizontal") {
       const pageX = Math.max(0, itemRect.x + itemRect.width - this.layoutDelegate.getVisibleRect().width);
@@ -241,8 +242,8 @@ export class ListKeyboardDelegate<T> implements KeyboardDelegate {
     const menu = refElement(this.ref);
     let itemRect = this.layoutDelegate.getItemRect(key);
     if (!itemRect) return null;
-    const reversed = this.isReversed(key);
     if (menu && !isScrollable(menu)) return this.getLastKey();
+    const reversed = this.isReversed(key);
     let nextKey: Key | null = key;
     if (this.orientation === "horizontal") {
       const pageX = Math.min(this.layoutDelegate.getContentSize().width, itemRect.x - itemRect.width + this.layoutDelegate.getVisibleRect().width);
