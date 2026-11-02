@@ -782,8 +782,9 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
     );
   const streaming = (): boolean => inputStreaming() || revealing?.() === true;
   const rows = (): MarkdownRow[] => {
-    const raw = source();
-    const blocks = splitBlocks(displayed ? displayed() : raw);
+    // Streaming reads only the revealed text (`followText` writes it from `source`): reading `source` too re-split every
+    // chunk write a second time, before the reveal caught up.
+    const blocks = splitBlocks(displayed ? displayed() : source());
     const live = streaming();
     const retained = liveFrom?.() ?? -1;
     return blocks.map((raw, index) => {
