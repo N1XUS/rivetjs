@@ -59,6 +59,7 @@ export interface DataGridRow<T> {
 export interface DataGridPipelineInput<T> {
   data: readonly T[];
   columns: readonly DataGridColumnBase<T>[];
+  /** Row key of `item`; `index` is its index in its source array (`data` or the parent's children), never the sorted / filtered position. */
   getRowId: (item: T, index: number) => Key;
   /** Client-side sort (omit or `null`: keep the data order). */
   sort?: SortDescriptor | null | undefined;
@@ -92,12 +93,17 @@ export function collatorFor(locale = "en-US"): Intl.Collator {
   return c;
 }
 
-/** Default comparison: `null` / `undefined` last, numbers / bigints / dates / booleans by value, the rest as locale strings. */
+/** Default comparison: `null` / `undefined` last, `NaN` after numbers, numbers / bigints / dates / booleans by value, the rest as locale strings. */
 export function compareValues(a: unknown, b: unknown, collator: Intl.Collator): number {
   if (a === b) return 0;
   if (a == null) return b == null ? 0 : 1;
   if (b == null) return -1;
-  if (typeof a === "number" && typeof b === "number") return a - b;
+  if (typeof a === "number" && typeof b === "number") {
+    // NaN sorts last (like null), so the comparator stays transitive.
+    if (a !== a) return b !== b ? 0 : 1;
+    if (b !== b) return -1;
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
   if (typeof a === "bigint" && typeof b === "bigint") return a < b ? -1 : a > b ? 1 : 0;
   if (typeof a === "boolean" && typeof b === "boolean") return a === b ? 0 : a ? 1 : -1;
   if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
@@ -153,16 +159,24 @@ export function dataGridRows<T>(input: DataGridPipelineInput<T>): DataGridPipeli
     return !!children && children.some(keep);
   };
 
+  const sign = direction === "descending" ? -1 : 1;
   const visit = (items: readonly T[], depth: number, parentKey: Key | null) => {
-    let level = filter ? items.filter(keep) : items;
-    if (compare) level = sortItems(level, compare, direction);
-    const setSize = level.length;
-    for (let i = 0; i < setSize; i++) {
-      const item = level[i]!;
-      const key = getRowId(item, i);
+    // `getRowId(item, index)` always gets the item's index in its source array (`data` or the
+    // parent's children), so a default index key stays the same row through filter / sort.
+    let order: number[] | null = null;
+    if (filter || compare) {
+      order = [];
+      for (let i = 0; i < items.length; i++) if (!filter || keep(items[i]!)) order.push(i);
+      if (compare) order.sort((x, y) => sign * compare(items[x]!, items[y]!) || x - y);
+    }
+    const setSize = order ? order.length : items.length;
+    for (let p = 0; p < setSize; p++) {
+      const source = order ? order[p]! : p;
+      const item = items[source]!;
+      const key = getRowId(item, source);
       const children = getChildren?.(item);
       const hasChildren = !!children && children.length > 0;
-      out.push({ key, item, depth, parentKey, hasChildren, posInSet: i + 1, setSize, index: out.length });
+      out.push({ key, item, depth, parentKey, hasChildren, posInSet: p + 1, setSize, index: out.length });
       if (hasChildren && (expanded === "all" || expanded.has(key))) visit(children!, depth + 1, key);
     }
   };
@@ -395,8 +409,16 @@ export function reorderItems<T>(
   if (keys.has(target)) return items.slice();
   const moving: T[] = [],
     rest: T[] = [];
-  items.forEach((item, i) => (keys.has(getRowId(item, i)) ? moving : rest).push(item));
-  const at = rest.findIndex((item, i) => getRowId(item, i) === target);
+  let at = -1;
+  // `getRowId` gets each item's index in `items` (the same source index `dataGridRows` passes).
+  items.forEach((item, i) => {
+    const key = getRowId(item, i);
+    if (keys.has(key)) moving.push(item);
+    else {
+      if (key === target) at = rest.length;
+      rest.push(item);
+    }
+  });
   if (at < 0) return items.slice();
   const index = position === "before" ? at : at + 1;
   return [...rest.slice(0, index), ...moving, ...rest.slice(index)];

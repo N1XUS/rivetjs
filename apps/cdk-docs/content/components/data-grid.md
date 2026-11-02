@@ -62,7 +62,7 @@ The pure pipeline and helpers (`dataGridRows`, `sortItems`, `compareValues`, `ne
 | --- | --- | --- | --- |
 | `data` | `T[]` / Signal / accessor | — | Top-level rows (live). |
 | `columns` | `DataGridColumn<T>[]` / Signal / accessor | — | Display order (live). Column fields: `id`, `header`, `accessorKey`, `cell`, `isRowHeader`, `allowsSorting`, `sortFn`, `allowsResizing`, `width`, `minWidth`, `maxWidth`, `align`, `pinned`, `headerClass`, `cellClass`. |
-| `getRowId` | `(item, index) => Key` | `item.id ?? item.key ?? index` | Row key. |
+| `getRowId` | `(item, index) => Key` | `item.id ?? item.key ?? index` | Row key; `index` = position in the source array (`data` or the parent's children), not the sorted / filtered position. |
 | `aria-label` / `aria-labelledby` / `aria-describedby` / `id` | `string` | — | On the `<table>`. |
 | `selectionMode` | `"none" \| "single" \| "multiple"` | `"none"` | |
 | `selectedKeys` / `defaultSelectedKeys` / `onSelectionChange` | `Selection` (Set or `"all"`) | empty | Value, two-way Signal or accessor. |

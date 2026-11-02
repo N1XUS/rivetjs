@@ -116,7 +116,7 @@ export interface DataGridProps<T> extends GlobalDOMAttributes<HTMLDivElement> {
   data: MaybeAccessor<readonly T[]>;
   /** Column definitions in display order. */
   columns: MaybeAccessor<readonly DataGridColumn<T>[]>;
-  /** Unique row key (default `item.id`, then `item.key`, then the index). */
+  /** Unique row key (default `item.id`, then `item.key`, then the index). `index` = the item's index in its source array (`data` or the parent's children), stable through sort / filter. */
   getRowId?: ((item: T, index: number) => Key) | undefined;
   "aria-label"?: string | undefined;
   "aria-labelledby"?: string | undefined;

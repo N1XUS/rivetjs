@@ -417,7 +417,9 @@ export function createRangeCalendarState<T extends DateValue = DateValue>(option
   const toText = (range: RangeValue<T | DateValueString> | null | undefined): RangeValue<DateValueString> | null =>
     range ? { start: toDateValueString(range.start)!, end: toDateValueString(range.end)! } : null;
   // A plain controlled value is the state's starting value (Rivet: the signal form is two-way).
-  const initial = isSignal(valueProp) ? untrack(valueProp) : toText((valueProp !== undefined ? valueProp : options.defaultValue) as RangeValue<T | DateValueString> | null | undefined);
+  const initial = isSignal(valueProp)
+    ? untrack(valueProp)
+    : toText((valueProp !== undefined ? valueProp : options.defaultValue) as RangeValue<T | DateValueString> | null | undefined);
   const value = isSignal(valueProp) ? valueProp : signal<RangeValue<DateValueString> | null>(initial);
   const locale = resolveLocale(options.locale);
   const visibleDuration = options.visibleDuration ?? { months: 1 };
@@ -789,7 +791,7 @@ function normalizeValue(state: CalendarState, newValue: CalendarDate): DateValue
 function emit(state: CalendarState, next: DateValue | DateValue[] | null): void {
   const before = peek(state.value as Signal<unknown>);
   const text = Array.isArray(next) ? next.map((v) => stringifyDateValue(v)) : stringifyDateValue(next);
-  if (next === null && (before === null || (Array.isArray(before) && before.length === 0 && Array.isArray(text)))) return;
+  if (next === null && before === null) return;
   // A read-only accessor (live controlled `value`, string form) is never written: only `onChange` reports.
   if (isWritable(state.value)) (state.value as Signal<unknown>).set(text);
   (state.onChange as ((value: unknown) => void) | undefined)?.(next);

@@ -226,3 +226,38 @@ describe("reorder", () => {
     expect(order(reorderItems(data, id, new Set(["a"]), "a", "after"))).toBe("abcde");
   });
 });
+
+describe("row id index (source position)", () => {
+  const byIndex = (_item: Item, index: number) => index;
+  it("passes the source index to getRowId through sort and filter", () => {
+    const sorted = dataGridRows({ data: items, columns: cols, getRowId: byIndex, sort: { column: "n", direction: "ascending" } });
+    // c (source 2) n=1, a (source 0) n=3, b (source 1) null.
+    expect(sorted.rows.map((r) => [r.key, r.item.id])).toEqual([
+      [2, "c"],
+      [0, "a"],
+      [1, "b"],
+    ]);
+    const filtered = dataGridRows({ data: items, columns: cols, getRowId: byIndex, filter: (x) => x.id !== "a" });
+    expect(filtered.rows.map((r) => [r.key, r.item.id])).toEqual([
+      [1, "b"],
+      [2, "c"],
+    ]);
+  });
+  it("reorderItems finds an index-keyed target by its source index", () => {
+    const data = ["a", "b", "c", "d"].map((x) => ({ id: x, name: x, n: 0 }));
+    // Move source 0 ("a") after source 2 ("c"): the target key is 2, not its position among the rest.
+    expect(reorderItems(data, byIndex, new Set([0]), 2, "after").map((x) => x.id)).toEqual(["b", "c", "a", "d"]);
+  });
+});
+
+describe("compareValues NaN", () => {
+  it("sorts NaN after numbers and before null, transitively", () => {
+    const c = collatorFor();
+    expect(compareValues(Number.NaN, 1, c)).toBe(1);
+    expect(compareValues(1, Number.NaN, c)).toBe(-1);
+    expect(compareValues(Number.NaN, Number.NaN, c)).toBe(0);
+    const rows = [3, Number.NaN, 1, 2].map((n, i) => ({ id: String(i), name: "", n }));
+    const asc = dataGridRows({ data: rows, columns: cols, getRowId: id, sort: { column: "n", direction: "ascending" } });
+    expect(asc.rows.map((r) => r.item.n)).toEqual([1, 2, 3, Number.NaN]);
+  });
+});
