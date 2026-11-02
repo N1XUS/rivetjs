@@ -182,7 +182,8 @@ function watchDisabled(el: Element, press: PressOptions, isDisabled: MaybeAccess
         const disabled = !!read(isDisabled);
         untrack(() => {
           if (disabled && isPressedNow(el)) cancelPress(press, el);
-          if (disabled || !isPressedNow(el)) queueMicrotask(stop);
+          // Arrow, not `stop` itself: this first run is synchronous inside createRoot, before `stop` is initialized.
+          if (disabled || !isPressedNow(el)) queueMicrotask(() => stop());
         });
       });
       return dispose;

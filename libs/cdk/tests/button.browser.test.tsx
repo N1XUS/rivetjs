@@ -599,6 +599,32 @@ describe("Button (Rivet)", () => {
     expect(withBindings).toBeGreaterThanOrEqual(0);
   });
 
+  it("a press whose start disables the button cancels it without errors (NumberField decrement reaching its limit)", async () => {
+    const disabled = signal(false);
+    const events: string[] = [];
+    const errors: unknown[] = [];
+    const onError = (e: ErrorEvent) => (errors.push(e.error), e.preventDefault());
+    window.addEventListener("error", onError);
+    const consoleError = vi.spyOn(console, "error").mockImplementation((...args) => void errors.push(args));
+    try {
+      const user = userEvent.setup();
+      const { getByRole } = renderUI(() => (
+        <Button isDisabled={disabled} onPressStart={() => (events.push("start"), disabled.set(true))} onPress={() => events.push("press")}>
+          Spin
+        </Button>
+      ));
+      const button = getByRole("button");
+      await user.pointer({ keys: "[MouseLeft]", target: button });
+      await new Promise((r) => setTimeout(r, 0));
+      expect(errors).toEqual([]);
+      expect(events).toEqual(["start"]);
+      expect(button).not.toHaveAttribute("data-pressed");
+    } finally {
+      window.removeEventListener("error", onError);
+      consoleError.mockRestore();
+    }
+  });
+
   it("renders nothing in the collection build pass (RAC createHideableComponent)", () => {
     const { container } = render((() => (
       <Provider token={HiddenContext} value={true}>
