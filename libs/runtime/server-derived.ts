@@ -1664,14 +1664,19 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
               } as never,
             ),
           );
-        } catch {
+        } catch (error) {
+          if (DEV) console.warn("[rivet] streamed content failed on the server; the browser renders it:", error);
           html = null;
         } finally {
           ctx.segment = outer;
         }
         Promise.resolve(html).then(
           (text) => ((a.html = text), settled(ctx, a, value)),
-          () => ((a.html = null), settled(ctx, a, NONE)),
+          (error) => {
+            if (DEV) console.warn("[rivet] streamed content failed on the server; the browser renders it:", error);
+            a.html = null;
+            settled(ctx, a, NONE);
+          },
         );
       };
       loaded.then(
@@ -1874,11 +1879,18 @@ function heldContents(ctx: DerivedRender, rest: () => ServerValue): ServerValue 
       html = islandStyleBuffer.run(true, () =>
         renderToString(_scopedRecord(h.owner ?? null, h.value, noop) as unknown as ServerValue, { signal, variant: options?.variant } as never),
       );
-    } catch {
+    } catch (error) {
+      if (DEV) console.warn("[rivet] Suspense content failed on the server; its fallback stays:", error);
       return step();
     }
     // A content that fails stays its fallback (the unit holding it renders in the browser).
-    const out = typeof html === "string" ? html : html.then(undefined, () => null);
+    const out =
+      typeof html === "string"
+        ? html
+        : html.then(undefined, (error) => {
+            if (DEV) console.warn("[rivet] Suspense content failed on the server; its fallback stays:", error);
+            return null;
+          });
     return Promise.resolve(late ? Promise.race([out, late]) : out).then((text) => {
       if (text === LATE) return end();
       if (text === null) return step();
