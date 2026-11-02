@@ -166,3 +166,62 @@ test("pressable feedback: standalone ripple in selectable cards follows the card
   assert.equal(off.querySelector("[data-slot=pressable-feedback-ripple]")!.hasAttribute("data-pressed"), false);
   unmount();
 });
+
+test("pressable feedback: a touch press that turns into a scroll shows no ripple; a touch tap shows one", async () => {
+  const { Button } = await import("../src/components/button/index.ts");
+  const touch = { ...opts, pointerType: "touch" };
+  const tdown = (el: Element) => el.dispatchEvent(new W.PointerEvent("pointerdown", touch));
+  const tcancel = (el: Element) => el.dispatchEvent(new W.PointerEvent("pointercancel", touch));
+  const tup = (el: Element) => {
+    el.dispatchEvent(new W.PointerEvent("pointerup", touch));
+    el.dispatchEvent(new W.MouseEvent("click", { bubbles: true, cancelable: true, button: 0, detail: 1 }));
+  };
+  const { container, unmount } = render(() => (
+    <div>
+      <PressableFeedback id="root">
+        <PressableFeedback.Ripple minimumPressDuration={0} />
+        Root
+      </PressableFeedback>
+      <Button id="standalone" variant="secondary">
+        <PressableFeedback.Ripple minimumPressDuration={0} />
+        Standalone
+      </Button>
+    </div>
+  ));
+  await wait(10);
+  for (const id of ["root", "standalone"]) {
+    const host = container.querySelector(`#${id}`)!;
+    const ripple = host.querySelector("[data-slot=pressable-feedback-ripple]") as HTMLElement;
+    let starts = 0;
+    const observer = new window.MutationObserver((records) => {
+      for (const r of records) if (r.attributeName === "data-pressed" && ripple.hasAttribute("data-pressed")) starts++;
+    });
+    observer.observe(ripple as never, { attributes: true });
+    // The browser takes the touch over for a scroll (pointercancel) right after it went down: no ripple flash.
+    tdown(host);
+    await wait(10);
+    tcancel(host);
+    await wait(150);
+    await Promise.resolve();
+    assert.equal(ripple.hasAttribute("data-pressed"), false, `${id}: a scroll start must not flash a ripple`);
+    assert.equal(starts, 0, `${id}: no ripple start for a scroll`);
+    // A quick tap (released before the touch delay): one ripple, released afterwards.
+    tdown(host);
+    await wait(10);
+    tup(host);
+    await wait(20);
+    assert.equal(ripple.getAttribute("data-pressed"), "true", `${id}: a tap ripples`);
+    assert.equal(ripple.getAttribute("data-released"), "true", `${id}: and releases`);
+    // A held touch ripples once the delay passed, before the release.
+    tdown(host);
+    await wait(150);
+    assert.equal(ripple.hasAttribute("data-released"), false, `${id}: held`);
+    tup(host);
+    await wait(20);
+    assert.equal(ripple.getAttribute("data-released"), "true");
+    observer.disconnect();
+    await Promise.resolve();
+    assert.equal(starts > 0, true);
+  }
+  unmount();
+});

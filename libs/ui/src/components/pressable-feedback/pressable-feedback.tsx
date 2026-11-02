@@ -9,6 +9,7 @@
 // - `.Highlight` is CSS only (`:hover` / `[data-hovered]` / `[data-pressed]` on the parent), usable outside the root.
 // - `.Ripple`: press start sets `--pressable-feedback-ripple-{x,y,size}` from the press point (keyboard / virtual: centre) and
 //   restarts the grow animation (`data-pressed`); press end fades it (`data-released`) after `minimumPressDuration`.
+//   A touch press starts it `TOUCH_DELAY` (80 ms) late: a touch the browser claims for a scroll (`pointercancel`) shows none.
 //   Standalone (no root context: inside a ui `Button` or any positioned pressable element) it drives itself from its parent
 //   element: native `pointerdown` (press point; release on the document's `pointerup` / `pointercancel`) and `keydown`
 //   Space / Enter on the parent itself, or Space on a native checkbox / radio inside it (a selectable card whose focus sits on
@@ -110,6 +111,9 @@ interface PressableFeedbackRippleProps extends SpanProps {
   isDisabled?: boolean;
 }
 
+// Touch press → ripple delay (ms): long enough for the browser to claim a scroll first (Material's touch ripple uses 80).
+const TOUCH_DELAY = 80;
+
 const restart = (el: HTMLElement, name: string) => {
   el.removeAttribute(name);
   void el.offsetWidth;
@@ -171,24 +175,47 @@ const PressableFeedbackRipple = (props: PressableFeedbackRippleProps): JSX.Eleme
   let el: HTMLElement | undefined;
   let startedAt = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  // Touch: the ripple waits TOUCH_DELAY ms, so a touch the browser takes over for a scroll (`pointercancel`, window capture:
+  // before the root's / standalone listeners end the press) never flashes one; a tap released sooner ripples at once.
+  let pending: { e: PressEvent; timer: ReturnType<typeof setTimeout>; cancel: () => void; win: Window } | undefined;
+  const drop = () => {
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pending.win.removeEventListener("pointercancel", pending.cancel, true);
+    pending = undefined;
+  };
+  const show = (e: PressEvent) => {
+    if (!el?.isConnected || local.isDisabled) return;
+    clearTimeout(timer);
+    const box = el.getBoundingClientRect();
+    const keyed = e.pointerType === "keyboard" || e.pointerType === "virtual";
+    const from = e.target.getBoundingClientRect();
+    const x = keyed ? box.width / 2 : from.left + e.x - box.left;
+    const y = keyed ? box.height / 2 : from.top + e.y - box.top;
+    const size = 2 * Math.hypot(Math.max(x, box.width - x), Math.max(y, box.height - y));
+    el.style.setProperty("--pressable-feedback-ripple-x", `${x}px`);
+    el.style.setProperty("--pressable-feedback-ripple-y", `${y}px`);
+    el.style.setProperty("--pressable-feedback-ripple-size", `${size}px`);
+    el.removeAttribute("data-released");
+    restart(el, "data-pressed");
+    startedAt = performance.now();
+  };
   const layer: Required<Pick<Layer, "start" | "end">> = {
     start(e) {
       if (!el?.isConnected || local.isDisabled) return;
-      clearTimeout(timer);
-      const box = el.getBoundingClientRect();
-      const keyed = e.pointerType === "keyboard" || e.pointerType === "virtual";
-      const from = e.target.getBoundingClientRect();
-      const x = keyed ? box.width / 2 : from.left + e.x - box.left;
-      const y = keyed ? box.height / 2 : from.top + e.y - box.top;
-      const size = 2 * Math.hypot(Math.max(x, box.width - x), Math.max(y, box.height - y));
-      el.style.setProperty("--pressable-feedback-ripple-x", `${x}px`);
-      el.style.setProperty("--pressable-feedback-ripple-y", `${y}px`);
-      el.style.setProperty("--pressable-feedback-ripple-size", `${size}px`);
-      el.removeAttribute("data-released");
-      restart(el, "data-pressed");
-      startedAt = performance.now();
+      drop();
+      if (e.pointerType !== "touch") return show(e);
+      const win = el.ownerDocument.defaultView!;
+      const cancel = () => drop();
+      pending = { e, cancel, win, timer: setTimeout(() => (drop(), show(e)), TOUCH_DELAY) };
+      win.addEventListener("pointercancel", cancel, true);
     },
     end() {
+      if (pending) {
+        const { e } = pending;
+        drop();
+        show(e);
+      }
       if (!el?.isConnected || !el.hasAttribute("data-pressed")) return;
       const wait = Math.max(0, (local.minimumPressDuration ?? 225) - (performance.now() - startedAt));
       timer = setTimeout(() => el?.setAttribute("data-released", "true"), wait);

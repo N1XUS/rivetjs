@@ -164,6 +164,8 @@ A `span` overlay; no props beyond `span` attributes and `class`.
 | `minimumPressDuration` | `number`  | `225`   | Minimum time the ripple stays pressed |
 | `isDisabled`           | `boolean` | -       | No ripple                             |
 
+On touch the ripple starts 80 ms after the finger goes down, so a touch that turns into a scroll shows none; a quicker tap ripples when it is released.
+
 ### PressableFeedback.HoldConfirm
 
 | Prop              | Type                                  | Default   | Description                         |
