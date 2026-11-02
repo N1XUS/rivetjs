@@ -62,6 +62,10 @@ For a controlled filter (server results, custom ranking), omit `filter`, own the
 
 ::example{id=autocomplete-filter}
 
+The smallest form: a search field that filters a list, with no styling beyond what the demo adds.
+
+::example{id=autocomplete-basic}
+
 ## Collections
 
 The collection merges `SelectableCollectionContext`: `ListBox`, `Menu`, `GridList`, `TagGroup` and `Table` support it. With a `Menu`, :kbd[Enter] runs the focused item's action (a command palette); with a `ListBox`, it selects. A `ListBox` without children renders its `items`.

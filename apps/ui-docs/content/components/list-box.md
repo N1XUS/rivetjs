@@ -84,6 +84,12 @@ For custom layout options, a ListBox inside the [cdk Virtualizer](site:cdk/found
 
 ::example{id=list-box-virtualization}
 
+### Scrollbar Modes
+
+The `scrollbar` utility follows the nearest `data-scrollbar`: `thin`, `default` (the browser's own) or `none`.
+
+::example{id=list-box-scrollbar-modes}
+
 ### Custom Check Icon
 
 ::example{id=list-box-custom-check-icon}

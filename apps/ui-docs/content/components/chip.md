@@ -47,6 +47,12 @@ Additional exported parts: `Chip.Root`.
 
 An `<Icon>` without `size` takes the chip icon box (14 px, 16 px in `lg`); so does `size={24}` (any 24 × 24 direct-child `svg`: the kit default). Pass another `size` to draw it at that size, as the dots above do.
 
+### Vibrant Palette
+
+Set `data-vibrant-palette="true"` on any ancestor to make the `soft` status text more saturated in that subtree.
+
+::example{id=chip-vibrant-palette}
+
 ## Customization
 
 ### Tailwind CSS

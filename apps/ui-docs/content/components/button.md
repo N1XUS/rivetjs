@@ -43,6 +43,12 @@ Rivet addition: a gradient fill from the logo's deep stops, for the one primary 
 
 ::example{id=button-brand}
 
+### Outline
+
+The `outline` variant works on a `Button` and on a whole `ButtonGroup`.
+
+::example{id=button-outline-variant}
+
 ### Sizes
 
 ::example{id=button-sizes}

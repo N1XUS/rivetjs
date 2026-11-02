@@ -100,6 +100,12 @@ Control how DateRangePicker values are displayed with props such as `granularity
 
 ::example{id=date-range-picker-format-options}
 
+### Input Container
+
+Wrap the inputs in `DateField.InputContainer` so long values stay on one line and scroll instead of wrapping.
+
+::example{id=date-range-picker-input-container}
+
 ### Form Example
 
 ::example{id=date-range-picker-form-example}
