@@ -16,37 +16,44 @@ After reading this page you can build an image, run it, and connect it to your h
 
 ```dockerfile title="Dockerfile"
 # Build, then run the production server with only what it needs.
+# `npm ci` when the project has a lockfile (commit it after your first `npm install`), else `npm install`.
 FROM node:24-slim AS build
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 COPY . .
 RUN npm run build
 
 FROM node:24-slim
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
-COPY package*.json ./
-RUN npm ci --omit=dev
+# The build stage always has a lockfile (`npm install` writes one when the project has none).
+COPY --from=build /app/package.json /app/package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 COPY --from=build /app/dist ./dist
 COPY serve.js ./
+# Files stay root-owned and read-only for the server process: it runs as the image's unprivileged `node` user.
+USER node
 EXPOSE 3000
 CMD ["node", "serve.js"]
 ```
 
 It has two stages:
 
-1. **build** installs all dependencies, including Vite and the compiler, and runs `npm run build` (browser build and server build).
-2. The **final image** installs only production dependencies and copies the `dist` folder and `serve.js`. Your source files, the compiler and Vite are not in it.
+1. **build** installs all dependencies, including Vite and the compiler, and runs `npm run build` (browser build and server build). It uses `npm ci` when you committed a lockfile, else `npm install`.
+2. The **final image** installs only production dependencies against the build stage's lockfile and copies the `dist` folder and `serve.js`. Your source files, the compiler and Vite are not in it. The server runs as the image's unprivileged `node` user, not root.
 
 `HOST=0.0.0.0` matters: the server listens on `127.0.0.1` by default, which is not reachable from outside the container.
 
 The server script reads these variables:
 
 ```js title="serve.js"
+// Production server: serves dist/client files and renders pages with the server build.
 import { closeOnSignals, start } from "@rivetjs/router/node";
 
-const serving = await start({ dist: "dist", port: Number(process.env.PORT ?? 3000), host: process.env.HOST ?? "127.0.0.1" });
+// Production builds of the libraries the server build loads (React, …): set before `start()` imports it.
+process.env.NODE_ENV ??= "production";
+const serving = await start({ dist: "dist", port: Number(process.env.PORT || 3000), host: process.env.HOST || "127.0.0.1" });
 closeOnSignals(serving);
 console.log(`Listening on ${serving.url}`);
 ```

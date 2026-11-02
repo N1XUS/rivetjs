@@ -10,9 +10,12 @@ RUN npm run build
 FROM node:24-slim
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
-COPY --from=build /app/package.json /app/package-lock.json ./
-RUN npm ci --omit=dev
+# The build stage always has a lockfile (`npm install` writes one when the project has none).
+COPY --from=build /app/package.json /app/package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 COPY --from=build /app/dist ./dist
 COPY serve.js ./
+# Files stay root-owned and read-only for the server process: it runs as the image's unprivileged `node` user.
+USER node
 EXPOSE 3000
 CMD ["node", "serve.js"]

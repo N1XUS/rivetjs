@@ -1,7 +1,9 @@
 import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 
 // Server code in the page file: the `load(…)` and `actions(…)` exports (and everything only they use, like
-// `notes`) run on the server and are removed from the browser build. A real app would use a database.
+// `notes`) run on the server and are removed from the browser build. Demo state: one list in server memory, shared by
+// every visitor and lost on restart (a real app would use a database), capped so it never grows without bound.
+const MAX_NOTES = 50;
 const notes: string[] = ["Rendered on the server"];
 
 /** Data for the page, loaded on the server for every request. */
@@ -12,6 +14,7 @@ export const forms = actions({
   add: async ({ request }: RequestEvent<"index">) => {
     const text = String((await request.formData()).get("text") ?? "").trim();
     if (text) notes.push(text.slice(0, 200));
+    if (notes.length > MAX_NOTES) notes.splice(0, notes.length - MAX_NOTES);
     // Post/redirect/get: reloading the page does not submit the form again.
     return redirect("/", 303);
   },
