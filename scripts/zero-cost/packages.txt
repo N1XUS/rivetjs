@@ -51,8 +51,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] de6f7a2643c8 566745 css 5e1f347659da 1219846
-@rivetjs/ui [server] 9fa3d782080d 504033 css 5e1f347659da 1219846
+@rivetjs/ui [dom] ee2c214e5bb9 566886 css 5e1f347659da 1219846
+@rivetjs/ui [server] 74bb74362f73 504174 css 5e1f347659da 1219846
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -242,8 +242,8 @@
 @rivetjs/ui/accordion [server] 61fa39786f5f 10263 css e1c9cca9a1c0 1209544
 @rivetjs/ui/segment [dom] 482217935f2a 6923 css e1c9cca9a1c0 1209544
 @rivetjs/ui/segment [server] 6020754eb8e2 6583 css e1c9cca9a1c0 1209544
-@rivetjs/ui/native-select [dom] 61a43ddbd487 9218 css e1c9cca9a1c0 1209544
-@rivetjs/ui/native-select [server] 69470d06a972 8332 css e1c9cca9a1c0 1209544
+@rivetjs/ui/native-select [dom] 46a2a1c7d5f7 9374 css e1c9cca9a1c0 1209544
+@rivetjs/ui/native-select [server] 435212bbded8 8488 css e1c9cca9a1c0 1209544
 @rivetjs/ui/checkbox-button-group [dom] 737c9cca8dd0 9416 css e1c9cca9a1c0 1209544
 @rivetjs/ui/checkbox-button-group [server] f1b09f0d6ee8 8505 css e1c9cca9a1c0 1209544
 @rivetjs/ui/radio-button-group [dom] 237037142cb3 9179 css e1c9cca9a1c0 1209544
