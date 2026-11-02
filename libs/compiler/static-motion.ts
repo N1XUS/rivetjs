@@ -17,8 +17,7 @@
 //   kit `Transition`, cdk overlays: kit `transition.tsx`), or code the proof cannot see (TOP, an unwalked package).
 // Every compile of a rewritten module (both targets, the second walk round) sees the same text, so symbol ids agree.
 import { parseSync } from "vite";
-
-type Node = { type: string; start: number; end: number; [key: string]: unknown };
+import { jsxName, type Node } from "./jsx-util.ts";
 
 /** `@rivetjs/motion/static`'s `staticMotion` result. */
 export type StaticMotion = { style: Record<string, string>; mve?: string; css?: string } | string;
@@ -182,16 +181,6 @@ function rewrite(element: Node, source: string, lower: MotionLowering): MotionEl
   const edits: [number, number, string][] = [[open.start, open.end, opening]];
   if (close) edits.push([close.start, close.end, "</" + tag + ">"]);
   return { edits, ...(lowered.mve && lowered.css ? { css: { hash: lowered.mve, css: lowered.css } } : {}) };
-}
-
-/** A JSX element name as written (`Tag`, `ns.Tag`), null for namespaced names. */
-function jsxName(node: Node): string | null {
-  if (node.type === "JSXIdentifier") return node.name as string;
-  if (node.type === "JSXMemberExpression") {
-    const head = jsxName(node.object as Node);
-    return head === null ? null : head + "." + ((node.property as Node).name as string);
-  }
-  return null;
 }
 
 const NOT = Symbol("not constant");

@@ -31,6 +31,7 @@
 import { parseSync } from "vite";
 import { posix, relative, dirname, sep } from "node:path";
 import type { ModuleFacts } from "./index.ts";
+import { TS_EXPRESSIONS, componentOf, jsxName, type Node } from "./jsx-util.ts";
 
 /** How a declared prop may be passed. */
 export type LiteProp = { kind: "plain" } | { kind: "live" } | { kind: "handler" } | { kind: "literal"; value: string };
@@ -65,8 +66,6 @@ export function liteFamilies(source: string): LiteFamily[] {
   }
   return out;
 }
-
-type Node = { type: string; start: number; end: number; [key: string]: unknown };
 
 /** One component-tag JSX element of a module. */
 export interface LiteElement {
@@ -116,38 +115,6 @@ const SCOPES = new Set([
 ]);
 const isTag = (tag: string | null): tag is string => tag !== null && (tag.includes(".") || /^[A-Z]/.test(tag));
 
-function jsxName(node: Node): string | null {
-  if (node.type === "JSXIdentifier") return node.name as string;
-  if (node.type === "JSXMemberExpression") {
-    const head = jsxName(node.object as Node);
-    return head === null ? null : head + "." + ((node.property as Node).name as string);
-  }
-  return null;
-}
-
-/** The component a top-level statement declares (`ModuleFacts.boundaries` key), or null (as static-class.ts). */
-function componentOf(statement: Node): string | null {
-  let node = statement;
-  const isFn = (n: Node | null | undefined): n is Node =>
-    !!n && (n.type === "FunctionDeclaration" || n.type === "FunctionExpression" || n.type === "ArrowFunctionExpression");
-  if (node.type === "ExportNamedDeclaration") {
-    if (!node.declaration) return null;
-    node = node.declaration as Node;
-  } else if (node.type === "ExportDefaultDeclaration") {
-    const declaration = node.declaration as Node;
-    if (!isFn(declaration)) return null;
-    return (declaration.id as { name: string } | null | undefined)?.name ?? "default";
-  }
-  if (node.type === "FunctionDeclaration") return (node.id as { name: string } | null)?.name ?? null;
-  if (node.type === "VariableDeclaration") {
-    const decls = node.declarations as Node[];
-    if (decls.length !== 1) return null;
-    const id = decls[0]!.id as Node;
-    return id.type === "Identifier" && isFn(decls[0]!.init as Node | null) ? (id.name as string) : null;
-  }
-  return null;
-}
-
 const children = (node: Node): Node[] => {
   const out: Node[] = [];
   for (const key in node) {
@@ -167,7 +134,6 @@ function* nodes(node: Node): Generator<Node> {
   if (node.type.startsWith("TS") && !TS_EXPRESSIONS.has(node.type)) return;
   for (const child of children(node)) yield* nodes(child);
 }
-const TS_EXPRESSIONS = new Set(["TSAsExpression", "TSSatisfiesExpression", "TSNonNullExpression", "TSInstantiationExpression", "TSTypeAssertion"]);
 
 /** Parse a module for the proof (null: unparsable). */
 export function liteModule(source: string, filename: string): LiteModule | null {

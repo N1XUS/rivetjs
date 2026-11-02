@@ -44,6 +44,7 @@
 
 import { parseAst, parseSync } from "vite";
 import type { ModuleFacts } from "./index.ts";
+import { TS_EXPRESSIONS, componentOf, jsxName, type Node } from "./jsx-util.ts";
 
 /** The hidden prop a proven call site passes. */
 export const CLASS_PROP = "$cls";
@@ -79,7 +80,6 @@ export function classFamilies(source: string): ClassFamily[] {
   return out;
 }
 
-type Node = { type: string; start: number; end: number; [key: string]: unknown };
 export type Literal = string | number | boolean | null;
 /** An attribute whose value is not a compile-time constant. */
 export const DYNAMIC: unique symbol = Symbol("dynamic");
@@ -225,8 +225,6 @@ export function classModule(source: string, filename: string, compounds: Readonl
   return { elements, values, dynamicAny };
 }
 
-const TS_EXPRESSIONS = new Set(["TSAsExpression", "TSSatisfiesExpression", "TSNonNullExpression", "TSInstantiationExpression", "TSTypeAssertion"]);
-
 /** A constant JSX attribute value (string / number / boolean / null literal, a template without `${}`), else DYNAMIC. */
 function literal(node: Node): Literal | typeof DYNAMIC {
   if (node.type === "Literal") {
@@ -271,39 +269,6 @@ function reference(node: Node, parents: Node[]): boolean {
     default:
       return true;
   }
-}
-
-/** A JSX element name as written (`Tag`, `ns.Tag`), null for namespaced names. */
-function jsxName(node: Node): string | null {
-  if (node.type === "JSXIdentifier") return node.name as string;
-  if (node.type === "JSXMemberExpression") {
-    const head = jsxName(node.object as Node);
-    return head === null ? null : head + "." + ((node.property as Node).name as string);
-  }
-  return null;
-}
-
-/** The component a top-level statement declares (`ModuleFacts.boundaries` key), or null (as static-motion.ts). */
-function componentOf(statement: Node): string | null {
-  let node = statement;
-  const isFn = (n: Node | null | undefined): n is Node =>
-    !!n && (n.type === "FunctionDeclaration" || n.type === "FunctionExpression" || n.type === "ArrowFunctionExpression");
-  if (node.type === "ExportNamedDeclaration") {
-    if (!node.declaration) return null;
-    node = node.declaration as Node;
-  } else if (node.type === "ExportDefaultDeclaration") {
-    const declaration = node.declaration as Node;
-    if (!isFn(declaration)) return null;
-    return (declaration.id as { name: string } | null | undefined)?.name ?? "default";
-  }
-  if (node.type === "FunctionDeclaration") return (node.id as { name: string } | null)?.name ?? null;
-  if (node.type === "VariableDeclaration") {
-    const decls = node.declarations as Node[];
-    if (decls.length !== 1) return null;
-    const id = decls[0]!.id as Node;
-    return id.type === "Identifier" && isFn(decls[0]!.init as Node | null) ? (id.name as string) : null;
-  }
-  return null;
 }
 
 /** The declared props of a proven element (absent ones left out), or null (spread, override, a non-constant value). */
