@@ -1,9 +1,10 @@
 import { fail, redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 
-// Kept in memory for the demo. A real app would use a database.
+// Kept in memory for the demo (the newest 100). A real app would use a database.
 // Only the server exports use it, so it is removed from the browser build.
 const messages: { name: string; text: string }[] = [];
+const MAX_MESSAGES = 100;
 
 export const loader = load(() => ({ messages }));
 
@@ -19,6 +20,7 @@ export const forms = actions({
     // Answer 400 and render the page again; the page reads this object with actionResult().
     if (!name || !text) return fail(400, { error: "Please fill in both fields.", name, text });
     messages.push({ name: name.slice(0, 50), text: text.slice(0, 500) });
+    if (messages.length > MAX_MESSAGES) messages.shift();
     // Post/Redirect/Get: reloading the page will not send the form again.
     return redirect("/");
   },

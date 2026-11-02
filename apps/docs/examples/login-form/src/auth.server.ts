@@ -18,18 +18,25 @@ export function checkPassword(email: string, password: string): string | null {
 }
 
 const SESSION = "session";
-const sessions = new Map<string, string>(); // session id → user name
+const TTL = 60 * 60 * 24 * 7; // seconds, the cookie's maxAge too
+// Session id → user name and expiry. Bounded: expired entries go on every sign-in, and past MAX the oldest go.
+const MAX = 10_000;
+const sessions = new Map<string, { name: string; expires: number }>();
 
 export function startSession(cookies: Cookies, name: string): void {
+  const now = Date.now();
+  for (const [id, session] of sessions) if (session.expires <= now) sessions.delete(id);
+  while (sessions.size >= MAX) sessions.delete(sessions.keys().next().value!);
   const id = randomBytes(32).toString("base64url");
-  sessions.set(id, name);
+  sessions.set(id, { name, expires: now + TTL * 1000 });
   // Rivet cookies are HttpOnly, Secure and SameSite=Lax unless you say otherwise.
-  cookies.set(SESSION, id, { maxAge: 60 * 60 * 24 * 7 });
+  cookies.set(SESSION, id, { maxAge: TTL });
 }
 
 export function currentUser(cookies: Cookies): string | null {
   const id = cookies.get(SESSION);
-  return (id && sessions.get(id)) || null;
+  const session = id ? sessions.get(id) : undefined;
+  return session && session.expires > Date.now() ? session.name : null;
 }
 
 export function endSession(cookies: Cookies): void {

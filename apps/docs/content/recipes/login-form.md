@@ -86,7 +86,7 @@ After sign-in the user goes back to the page they wanted (`/login?next=/account`
 
 ## Watch out
 
-- **The demo stores everything in memory.** A restart signs everyone out. A real app keeps users and sessions in a database.
+- **The demo stores everything in memory.** A restart signs everyone out. Sessions carry their expiry and the map is bounded (expired entries go on each sign-in), so it cannot grow forever. A real app keeps users and sessions in a database.
 - **Use HTTPS.** `Secure` cookies are only sent over HTTPS. Browsers make an exception for `localhost`, so local development works.
 - **Limit attempts.** Add rate limiting (per IP and per account) before you go live.
 - **Cross-site posts are rejected.** Rivet refuses action posts whose `Origin` is another site (status 403). Your own forms pass.
