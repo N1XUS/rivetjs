@@ -15,8 +15,14 @@ const files = execFileSync("git", ["ls-files", "*.tsx"], { cwd: root, encoding: 
   // Tracked but deleted in the worktree (a pending removal): nothing for an editor to open.
   .filter((file) => existsSync(file));
 const projects = new Map<string, ts.ParsedCommandLine | undefined>();
+/** Each project's file names as a Set (membership per tsx file, not an array scan). */
+const fileSets = new Map<string, Set<string>>();
 const project = (config: string) => {
-  if (!projects.has(config)) projects.set(config, ts.getParsedCommandLineOfConfigFile(config, {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic() {} }));
+  if (!projects.has(config)) {
+    const parsed = ts.getParsedCommandLineOfConfigFile(config, {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic() {} });
+    projects.set(config, parsed);
+    fileSets.set(config, new Set(parsed?.fileNames));
+  }
   return projects.get(config);
 };
 const missing: string[] = [];
@@ -26,7 +32,7 @@ for (const file of files) {
     const config = ts.findConfigFile(dir, ts.sys.fileExists);
     if (!config) break;
     const parsed = project(config);
-    if (parsed?.fileNames.includes(file)) {
+    if (parsed && fileSets.get(config)!.has(file)) {
       owner = parsed;
       break;
     }

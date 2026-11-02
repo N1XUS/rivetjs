@@ -7,7 +7,10 @@ export function ResumeDemo({ items }: { items: Item[] }) {
   const count = signal(0);
   const query = signal("");
   const titles = items.map((item) => item.title.toLowerCase());
-  const matches = computed(() => titles.filter((title) => title.includes(query().toLowerCase())).length);
+  const matches = computed(() => {
+    const text = query().toLowerCase();
+    return titles.filter((title) => title.includes(text)).length;
+  });
   const width = signal(0);
   let canvas!: HTMLCanvasElement;
   clientEvent(window, "resize", () => width.set(innerWidth));

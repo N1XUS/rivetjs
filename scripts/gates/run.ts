@@ -351,7 +351,7 @@ function treeRss(pid: number): number {
     const [p, pp, r] = line.trim().split(/\s+/).map(Number);
     if (!p) continue;
     rss.set(p, r ?? 0);
-    children.set(pp!, [...(children.get(pp!) ?? []), p]);
+    (children.get(pp!) ?? children.set(pp!, []).get(pp!)!).push(p);
   }
   let total = 0;
   const queue = [pid];

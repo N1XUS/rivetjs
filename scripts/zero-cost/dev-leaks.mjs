@@ -135,7 +135,8 @@ for (const pkg of PACKAGES) {
       for (const text of DEV_STRINGS) if (literal(code, text)) failures.push(`${label} contains "${text}"`);
       for (const text of DEV_MESSAGES) if (literal(code, text)) failures.push(`${label} contains "${text}"`);
     }
-    if (devImports.size) {
+    // Every dev import already seen in an earlier entry: no need to bundle this one again for it.
+    if (devImports.size && devImportsSeen.size < devImports.size) {
       const { modules } = await bundle(`${root}/${pkg}/${file}`, ["import", "development", "default"]);
       for (const [key, dev] of devImports) if (modules.includes(dev)) devImportsSeen.add(key);
     }

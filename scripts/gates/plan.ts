@@ -102,7 +102,7 @@ export function affectedProjects(files: string[], projects: Project[]): { touche
     return { touched: new Set([...touched]), affected: all, global };
   }
   const dependents = new Map<string, string[]>();
-  for (const project of projects) for (const dep of project.deps) dependents.set(dep, [...(dependents.get(dep) ?? []), project.name]);
+  for (const project of projects) for (const dep of project.deps) (dependents.get(dep) ?? dependents.set(dep, []).get(dep)!).push(project.name);
   const affected = new Set(touched);
   const queue = [...touched];
   while (queue.length) for (const next of dependents.get(queue.pop()!) ?? []) if (!affected.has(next)) (affected.add(next), queue.push(next));

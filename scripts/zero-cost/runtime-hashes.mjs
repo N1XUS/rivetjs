@@ -34,8 +34,10 @@ const hash = async (input, plugins) => {
   // The entry's static import closure.
   const byName = new Map(output.map((chunk) => [chunk.fileName, chunk]));
   const closure = [];
+  const seen = new Set();
   const walk = (chunk) => {
-    if (!chunk || closure.includes(chunk)) return;
+    if (!chunk || seen.has(chunk)) return;
+    seen.add(chunk);
     closure.push(chunk);
     for (const name of chunk.imports ?? []) walk(byName.get(name));
   };
