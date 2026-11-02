@@ -345,6 +345,10 @@
     }
   }
 
+  .prompt-input__token-suggestions[data-open="true"] {
+    transition-property: none;
+  }
+
   .prompt-input__token-suggestion {
     min-height: calc(var(--spacing, .25rem) * 9);
     align-items: center;

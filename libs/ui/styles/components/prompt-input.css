@@ -182,6 +182,9 @@
 
   &[data-open="true"] {
     @apply animate-in duration-(--popup-duration) ease-(--popup-ease) fade-in-0 zoom-in-95 motion-reduce:animate-none;
+    /* The duration utility also sets transition-duration over the initial `transition-property: all`: the first open
+       (caret measured after the panel showed at its default place) slid ~40 px into position. Only the entrance animates. */
+    transition-property: none;
   }
 }
 
