@@ -77,15 +77,46 @@ async function sample(page: Page, sel: string, ms: number): Promise<{ p: number;
   );
 }
 
+/** Samples every frame until the returned `stop`, so an input in between (the reversal) falls inside the recording. */
+async function record(page: Page, sel: string): Promise<() => Promise<{ p: number; at: number }[]>> {
+  const running = await page.evaluateHandle((sel) => {
+    const el = document.querySelector(sel)!;
+    const run = { out: [] as { p: number; at: number }[], live: true };
+    const frame = () => {
+      run.out.push({ p: +getComputedStyle(el, "::before").getPropertyValue("--morph-p"), at: performance.now() });
+      if (run.live) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+    return run;
+  }, sel);
+  return () =>
+    running.evaluate((run) => {
+      run.live = false;
+      return run.out;
+    });
+}
+
 /**
- * Largest step between samples as a share of `limit`, `limit` per 50 ms of elapsed time: a slow frame or the gap of a
- * Playwright click between two sample runs moves the bars further without being a snap (2-vCPU CI runners).
+ * The worst step against what the curve can do in that frame: `peak` = the steepest slope of the morph's `linear()`
+ * easing per ms, doubled for a reversal's shortened duration, with one 60 Hz frame's worth as a floor. A frame of a
+ * loaded 2-vCPU CI runner moves the bars further without being a snap.
  */
-const snap = (samples: { p: number; at: number }[], limit: number) =>
-  samples.slice(1).reduce((worst, { p, at }, i) => {
-    const previous = samples[i]!;
-    return Math.max(worst, Math.abs(p - previous.p) / (limit * Math.max(1, (at - previous.at) / 50)));
-  }, 0);
+const snap = (samples: { p: number; at: number }[], peak: number) =>
+  samples.slice(1).reduce(
+    (worst, { p, at }, i) => {
+      const previous = samples[i]!;
+      const ratio = Math.abs(p - previous.p) / (2 * peak * Math.max(1000 / 60, at - previous.at));
+      return ratio > worst.ratio ? { ratio, step: Math.abs(p - previous.p), ms: at - previous.at } : worst;
+    },
+    { ratio: 0, step: 0, ms: 0 },
+  );
+const noSnap = (samples: { p: number; at: number }[], peak: number) => {
+  const worst = snap(samples, peak);
+  assert.ok(worst.ratio < 1, `no snap: step ${worst.step.toFixed(3)} in ${worst.ms.toFixed(0)} ms is ${worst.ratio.toFixed(2)} × what the curve allows`);
+};
+/** Steepest slope per ms: `--ease-morph-chevron-*` over `--duration-morph-chevron`, `--ease-morph-burger` over its own. */
+const CHEVRON_PEAK = 0.012;
+const BURGER_PEAK = 0.0068;
 
 test("morph chevron: CSS bars with lucide ChevronDown geometry at rest; nothing animates at load", () =>
   onPage(async (page) => {
@@ -110,15 +141,16 @@ test("morph chevron: Select open → close → open mid-flight reverses without 
     const sel = CHEVRONS.select;
     await page.click("[data-testid=mi-sel] [data-slot=select-trigger]");
     await page.waitForFunction((sel) => document.querySelector(sel)?.getAttribute("data-open") === "true", sel);
-    const opening = await sample(page, sel, 120);
-    assert.ok(opening.at(-1)!.p > 0 && opening.at(-1)!.p < 1, `mid-flight after 120 ms: ${opening.at(-1)!.p}`);
+    const stop = await record(page, sel);
+    await page.waitForTimeout(120);
+    const mid = (await bars(page, sel)).before.p;
+    assert.ok(mid > 0 && mid < 1, `mid-flight after 120 ms: ${mid}`);
     assert.ok(await transitions(page, sel), "the bars run a transition");
     await page.keyboard.press("Escape");
-    const closing = await sample(page, sel, 120);
+    await page.waitForTimeout(120);
     await page.click("[data-testid=mi-sel] [data-slot=select-trigger]");
-    const reopening = await sample(page, sel, 450);
-    const all = [...opening, ...closing, ...reopening];
-    assert.ok(snap(all, 0.2) < 1, `no snap: largest step ${snap(all, 0.2).toFixed(2)} × the limit`);
+    await page.waitForTimeout(450);
+    noSnap(await stop(), CHEVRON_PEAK);
     const open = await bars(page, sel);
     assert.equal(open.before.p, 1);
     assert.equal(open.before.rot, -45, "⌃: left arm rises");
@@ -205,12 +237,12 @@ test("morph burger: lucide Menu at rest → X when open; open → close mid-flig
       opening.some(({ p }) => p > 0 && p < 1),
       `first open runs mid-flight (${opening.map(({ p }) => p.toFixed(2)).join(" ")})`,
     );
+    const stop = await record(page, BURGER);
     await page.click("#mi-nav-toggle");
-    const closing = await sample(page, BURGER, 80);
+    await page.waitForTimeout(80);
     await page.click("#mi-nav-toggle");
-    const reopening = await sample(page, BURGER, 350);
-    const all = [...opening, ...closing, ...reopening];
-    assert.ok(snap(all, 0.25) < 1, `no snap: largest step ${snap(all, 0.25).toFixed(2)} × the limit`);
+    await page.waitForTimeout(350);
+    noSnap([...opening, ...(await stop())], BURGER_PEAK);
     const x = await bars(page, BURGER);
     assert.equal(x.before.rot, 45, "X");
     assert.equal(x.after.rot, -45);
