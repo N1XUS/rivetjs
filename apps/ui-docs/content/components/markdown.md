@@ -85,6 +85,7 @@ See the [full module API](/api/rivetjs/ui/markdown/) for every named export and 
 | `isStreaming`    | `boolean \| () => boolean` | `false` |
 | `streamingSpeed` | `number`                   | `80`    |
 | `showCaret`      | `boolean`                  | `true`  |
+| `remoteImages`   | `boolean`                  | `false` |
 | `components`     | `MarkdownComponents`       | —       |
 | `class`          | `string`                   | —       |
 
@@ -92,9 +93,15 @@ Other `div` attributes pass to the root. Not supported: reference links, footnot
 
 ::api{symbol="@rivetjs/ui/markdown#MarkdownProps"}
 
+## Security
+
+Images from other origins are not loaded by default: they render as a link (alt text, else the URL). Markdown is often model output, and fetching a URL it wrote can send page data to that host without a click. Relative URLs always load.
+
+Set `remoteImages` only for content you trust; loaded images send no referrer. A `components.img` override receives every image and decides for itself.
+
 ## Accessibility
 
-headings, lists, tables and quotes are their native elements; images keep their alt text and send no referrer (`referrerpolicy="no-referrer"`: an image URL in model output cannot learn the page address); task-list checkboxes are read-only.
+headings, lists, tables and quotes are their native elements; images keep their alt text; task-list checkboxes are read-only.
 
 ## Related Components
 
