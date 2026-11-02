@@ -144,6 +144,25 @@ test("uws: a direct body collected when the client aborts releases every chunk",
   await server.close();
 });
 
+test("uws: a client abort aborts request.signal", async () => {
+  const fake = fakeUws();
+  let signal: AbortSignal | undefined;
+  const server = await serveUws({
+    handler: async (request) => {
+      signal = request.signal;
+      return new Response(new ReadableStream());
+    },
+    uws: fake.module,
+    compress: false,
+  });
+  const res = fake.request("GET", "/page");
+  await until(() => signal !== undefined);
+  assert.equal(signal!.aborted, false);
+  res.abort!();
+  assert.equal(signal!.aborted, true);
+  await server.close();
+});
+
 test("uws: static files: traversal and NUL keys miss, HEAD has no body", async () => {
   const dir = mkdtempSync(join(tmpdir(), "rivet-uws-"));
   try {
