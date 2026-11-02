@@ -55,3 +55,8 @@ test("markdown SSR: string child + streaming repair and caret", async () => {
   assert.doesNotMatch(streaming, /\*\*/);
   assert.equal(streaming.match(/markdown__caret/g)?.length, 1);
 });
+
+test("markdown SSR: images send no referrer (untrusted model output must not leak the page URL to image hosts)", async () => {
+  const html = await renderToString(() => <Markdown content={"![chart](https://img.example.com/c.png)"} />);
+  assert.match(html, /<img [^>]*src="https:\/\/img.example.com\/c.png"[^>]*referrerpolicy="no-referrer"/i);
+});

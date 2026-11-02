@@ -146,6 +146,20 @@ test("useMeasuredHeight: 0, then the observed height", async () => {
     await flush();
     assert.equal(none.container.textContent, "0");
     none.unmount();
+    // the first read is the content box too (same box as the observer's contentRect)
+    const padded = document.createElement("div");
+    padded.style.padding = "6px 0";
+    padded.style.borderTop = "2px solid";
+    padded.getBoundingClientRect = () => ({ height: 50 }) as DOMRect;
+    document.body.append(padded);
+    const p = render(() => {
+      h = hooks.useMeasuredHeight(padded);
+      return <span>{() => String(h())}</span>;
+    });
+    await flush();
+    assert.equal(p.container.textContent, "36");
+    p.unmount();
+    padded.remove();
   } finally {
     g.ResizeObserver = Original;
   }

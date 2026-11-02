@@ -183,8 +183,16 @@ function renderInline(nodes: readonly MarkdownInline[], cx?: MarkdownComponents)
           custom(
             cx,
             "img",
-            () => ({ class: SLOTS.image(), src: node.src, alt: node.alt, title: node.title, loading: "lazy", decoding: "async" }),
-            () => <img class={SLOTS.image()} src={node.src} alt={node.alt} title={node.title} loading="lazy" decoding="async" />,
+            () => ({
+              class: SLOTS.image(),
+              src: node.src,
+              alt: node.alt,
+              title: node.title,
+              loading: "lazy",
+              decoding: "async",
+              referrerPolicy: "no-referrer",
+            }),
+            () => <img class={SLOTS.image()} src={node.src} alt={node.alt} title={node.title} loading="lazy" decoding="async" referrerPolicy="no-referrer" />,
           ),
         );
         break;

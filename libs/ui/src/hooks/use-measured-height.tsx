@@ -11,7 +11,15 @@ export function useMeasuredHeight(target: MeasuredTarget): () => number {
   clientEffect(() => {
     const el = typeof target === "function" ? target() : target;
     if (!el) return;
-    height.set(el.getBoundingClientRect().height);
+    // Same box as the observer's `contentRect` (a border-box first read jumped by padding + border on the first resize).
+    const cs = getComputedStyle(el);
+    const edges = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"] as const;
+    height.set(
+      Math.max(
+        0,
+        edges.reduce((h, k) => h - (parseFloat(cs[k]) || 0), el.getBoundingClientRect().height),
+      ),
+    );
     if (typeof ResizeObserver !== "function") return;
     const observer = new ResizeObserver((entries) => {
       const entry = entries[entries.length - 1];

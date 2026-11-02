@@ -94,7 +94,7 @@ Other `div` attributes pass to the root. Not supported: reference links, footnot
 
 ## Accessibility
 
-headings, lists, tables and quotes are their native elements; images keep their alt text; task-list checkboxes are read-only.
+headings, lists, tables and quotes are their native elements; images keep their alt text and send no referrer (`referrerpolicy="no-referrer"`: an image URL in model output cannot learn the page address); task-list checkboxes are read-only.
 
 ## Related Components
 

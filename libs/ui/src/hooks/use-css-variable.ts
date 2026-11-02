@@ -16,7 +16,8 @@ export function useCSSVariable(variableName: string, override?: string, cache: b
   if (cache && cssVariableCache.has(variableName)) return cssVariableCache.get(variableName);
   try {
     const value = window.getComputedStyle(document.documentElement).getPropertyValue(variableName).trim() || undefined;
-    if (cache) cssVariableCache.set(variableName, value);
+    // Rivet: an unset variable is not cached (a stylesheet loaded later may define it; upstream cached `undefined`).
+    if (cache && value !== undefined) cssVariableCache.set(variableName, value);
     return value;
   } catch {
     // Any error (e.g. document not available) → undefined.

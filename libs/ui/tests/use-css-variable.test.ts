@@ -22,10 +22,11 @@ test("useCSSVariable: reads the computed custom property on :root and caches by 
   assert.equal(useCSSVariable("--skeleton-animation", "own"), "own"); // override beats the cache
 });
 
-test("useCSSVariable: an unset / empty variable is undefined (and that is cached)", () => {
+test("useCSSVariable: an unset / empty variable is undefined and not cached (a later stylesheet may define it)", () => {
   installDom();
   assert.equal(useCSSVariable("--nope"), undefined);
   document.documentElement.style.setProperty("--nope", "now");
-  assert.equal(useCSSVariable("--nope"), undefined); // cached undefined
-  assert.equal(useCSSVariable("--nope", undefined, false), "now");
+  assert.equal(useCSSVariable("--nope"), "now");
+  document.documentElement.style.setProperty("--nope", "later");
+  assert.equal(useCSSVariable("--nope"), "now"); // a defined value is cached
 });

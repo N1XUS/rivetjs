@@ -20,7 +20,10 @@ function surroundings(dialog: HTMLElement, state: SheetState): { wrapper: HTMLEl
   const doc = dialog.ownerDocument;
   return {
     wrapper: state.shouldScaleBackground ? doc.querySelector<HTMLElement>("[data-sheet-wrapper]") : null,
-    parent: state.parentId ? doc.querySelector<HTMLElement>(`[data-sheet-id="${state.parentId}"]`) : null,
+    // Attribute compare, not a selector built from the id (no escaping needed for any id text).
+    parent: state.parentId
+      ? ([...doc.querySelectorAll<HTMLElement>("[data-sheet-id]")].find((el) => el.getAttribute("data-sheet-id") === state.parentId) ?? null)
+      : null,
   };
 }
 
