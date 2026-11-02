@@ -318,14 +318,16 @@ function tabWithinCell(event: KeyboardEvent, chip: HTMLElement): void {
 
 /**
  * Keydown on a `+N more` button (malva `_onMoreKeydown`): the last stop of the cell's ring — `Shift+Tab` steps back to
- * the cell's last chip, `Escape` returns to the cell. Activation is the button's own click.
+ * the cell's last chip, `Escape` closes an open panel, else returns to the cell. Activation is the button's own click.
  */
-export function moreKeyDown(event: KeyboardEvent, button: HTMLElement): void {
+export function moreKeyDown(event: KeyboardEvent, ctx: Ctx, button: HTMLElement): void {
   const cell = button.closest<HTMLElement>("[" + DAY_INDEX_ATTR + "][" + MINUTES_ATTR + "]");
   if (!cell) return;
   if (event.key === "Escape") {
     event.preventDefault();
-    cell.focus();
+    // An open panel first: focus is still here until its focus move runs (a frame later), or came back by Shift+Tab.
+    if (untrack(ctx.state.popoverDay) !== null) ctx.state.popoverDay.set(null);
+    else cell.focus();
     return;
   }
   if (event.key !== "Tab" || !event.shiftKey) return;

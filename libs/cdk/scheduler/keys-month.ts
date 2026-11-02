@@ -30,7 +30,7 @@ export function monthKeyDown(event: KeyboardEvent, ctx: SchedulerContextValue<an
   if (!target?.closest) return;
   const chip = target.closest<HTMLElement>("[" + EVENT_ID_ATTR + "]");
   if (chip) return chipKeyDown(event, ctx, chip);
-  if (target.hasAttribute("data-rv-more")) return moreKeyDown(event, target);
+  if (target.hasAttribute("data-rv-more")) return moreKeyDown(event, ctx, target);
   if (target.getAttribute("role") !== "gridcell" || !target.hasAttribute(DAY_INDEX_ATTR)) return;
   if (cellKeyPrelude(event, ctx, target)) return;
   const dayIndex = cellPosition(target).dayIndex;

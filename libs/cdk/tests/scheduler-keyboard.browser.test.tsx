@@ -415,6 +415,19 @@ describe("Scheduler month keyboard", () => {
     expect(focused()).toBe(more);
   });
 
+  it("Escape on `+N more` closes the panel that has not taken focus yet", async () => {
+    const { moreButton, popover } = await mount({ events: monthEvents() });
+    const more = moreButton(8);
+    more.focus();
+    more.click();
+    // Same task as the press: the panel is open and its focus move is at least a frame away (several on a slow machine).
+    expect(focused()).toBe(more);
+    expect(key(more, "Escape").defaultPrevented).toBe(true);
+    await settle();
+    expect(popover()).toBeNull();
+    expect(focused()).toBe(more);
+  });
+
   describe("keyboard range selection", () => {
     it("Shift+Arrow selects days, Enter emits an all-day range with source keyboard", async () => {
       const { cell, selected, log, liveText } = await mount();

@@ -1596,8 +1596,8 @@
     "cdk-example:scheduler-views-binding": {
       "totalJS": {
         "files": 82,
-        "min": 448219,
-        "br": 150790
+        "min": 448281,
+        "br": 150824
       },
       "serverJS": {
         "min": 433284,
@@ -1606,7 +1606,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5637,
+          "htmlBr": 5686,
           "cssSheets": 1,
           "css": {
             "min": 43066,
@@ -1616,8 +1616,8 @@
           "inlineBytes": 4553,
           "eagerRequests": 51,
           "eagerJS": {
-            "min": 382474,
-            "br": 128384
+            "min": 382536,
+            "br": 128398
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1677,8 +1677,8 @@
             "br": 29733
           },
           "pageJS": {
-            "min": 382474,
-            "br": 128384
+            "min": 382536,
+            "br": 128398
           },
           "interactionRequests": 0,
           "interactionJS": {
