@@ -107,7 +107,7 @@ export function requestReset({ email }: { email: string }, event: RequestEvent) 
  * checked before any hashing work, and invalid tokens count against the client address: random tokens never buy a
  * scrypt run.
  */
-export async function confirmReset({ token, password }: { token: string; password: string }, event: RequestEvent) {
+export async function confirmReset({ resetId: token, password }: { resetId: string; password: string }, event: RequestEvent) {
   const key = `confirm:${ipKey(event)}`;
   const over = limited(event, key, limits().confirm, "reset attempts");
   if (over) return over;

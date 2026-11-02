@@ -249,21 +249,21 @@ test("password reset: same answer for unknown emails, single-use token, expiry, 
   assert.equal(form.headers.get("referrer-policy"), "same-origin");
   assert.equal(form.headers.get("cache-control"), "no-store");
   assert.match(await html(form), /id="reset-confirm"/);
-  const done = await post(`/reset/confirm?/reset&token=${token}`, { token: token!, password: "reset-password-77" });
+  const done = await post(`/reset/confirm?/reset&token=${token}`, { resetId: token!, password: "reset-password-77" });
   assert.equal(done.headers.get("location"), "/account?done=reset");
   assert.equal(await signedIn(before), false);
   assert.equal(await signedIn(tokenOf(done)!), true);
   assert.equal((await signIn(address, "reset-password-77")).status, 303);
   // Used: the page and the action refuse it.
   assert.match(await html(await get(path!)), /id="reset-invalid"/);
-  const reused = await post(`/reset/confirm?/reset&token=${token}`, { token: token!, password: "another-password-88" });
+  const reused = await post(`/reset/confirm?/reset&token=${token}`, { resetId: token!, password: "another-password-88" });
   assert.equal(reused.status, 400);
   assert.match(await html(reused), /invalid, used or expired/);
   // Expired.
   await post("/reset?/request", { email: address });
   const fresh = /token=([\w-]{43})/.exec(outbox().at(-1)!.text)![1]!;
   db.prepare("UPDATE password_resets SET expires_at = ?").run(Date.now() - 1);
-  assert.equal((await post(`/reset/confirm?/reset&token=${fresh}`, { token: fresh, password: "another-password-88" })).status, 400);
+  assert.equal((await post(`/reset/confirm?/reset&token=${fresh}`, { resetId: fresh, password: "another-password-88" })).status, 400);
   // At most 3 mails per email per 15 minutes (two sent above).
   const count = outbox().length;
   for (let i = 0; i < 3; i++) await post("/reset?/request", { email: address });
@@ -303,8 +303,8 @@ test("hashing work is rate limited: sign-ups per address; invalid reset tokens p
     assert.equal(third.status, 429);
     assert.ok(Number(third.headers.get("retry-after")) > 800);
     const random = () => "A".repeat(42) + String(++n % 10);
-    for (let i = 0; i < 2; i++) assert.equal((await post(`/reset/confirm?/reset`, { token: random(), password: "x".repeat(128) })).status, 400);
-    const blocked = await post(`/reset/confirm?/reset`, { token: random(), password: "x".repeat(128) });
+    for (let i = 0; i < 2; i++) assert.equal((await post(`/reset/confirm?/reset`, { resetId: random(), password: "x".repeat(128) })).status, 400);
+    const blocked = await post(`/reset/confirm?/reset`, { resetId: random(), password: "x".repeat(128) });
     assert.equal(blocked.status, 429);
     assert.match(await html(blocked), /Too many reset attempts/);
   } finally {

@@ -26,5 +26,7 @@ export const changePasswordForm = defineForm({
   echo: { exclude: ["current"] },
 });
 export const resetRequestForm = defineForm({ name: "request", schema: z.object({ email }), emptyAs: "string" });
-// `token` is echoed after a failed POST: the page rendered for a failed action has no query string to read it from.
-export const resetConfirmForm = defineForm({ name: "reset", schema: z.object({ token: z.string().max(100), password: newPassword }), emptyAs: "string" });
+// `resetId` (the reset token) is echoed after a failed POST: the page rendered for a failed action has no query string
+// to read it from. Not named `token`: forms never echo a secret name (`secretName`); this value is already in the
+// page's own hidden input, so the echo exposes nothing new.
+export const resetConfirmForm = defineForm({ name: "reset", schema: z.object({ resetId: z.string().max(100), password: newPassword }), emptyAs: "string" });

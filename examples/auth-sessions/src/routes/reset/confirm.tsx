@@ -30,8 +30,8 @@ export default function ResetConfirm({ data }: PageProps<typeof loader>) {
   const result = actionResult("reset");
   const store = createForm(resetConfirmForm, { result });
   // A failed POST renders this page without its query (`?/reset&token=…` is the action URL): the token comes back in
-  // the echo then.
-  const token = ((result?.result as FormReply | undefined)?.values?.token as string | undefined) ?? data.token;
+  // the echo (`resetId`) then.
+  const token = ((result?.result as FormReply | undefined)?.values?.resetId as string | undefined) ?? data.token;
   return (
     <Card class="mx-auto w-full max-w-sm">
       <Card.Header>
@@ -41,7 +41,7 @@ export default function ResetConfirm({ data }: PageProps<typeof loader>) {
         {data.valid || result ? (
           // The action URL keeps the token in the address bar after a failed POST (a reload shows the form again).
           <Form form={store} definition={resetConfirmForm} action={`?/reset&token=${encodeURIComponent(token)}`} class="flex flex-col gap-3">
-            <input type="hidden" name="token" value={token} />
+            <input type="hidden" name="resetId" value={token} />
             <TextField
               id="reset-password"
               name="password"
