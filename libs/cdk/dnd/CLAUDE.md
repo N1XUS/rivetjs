@@ -12,7 +12,7 @@ Drag and drop for collections: react-aria dnd hooks + react-stately dnd states +
 - `use-drag.ts`, `use-drop.tsx`, `use-virtual-drop.ts`, `use-auto-scroll.ts`, `drag-preview.tsx`
 - `use-draggable-collection.tsx`, `use-draggable-item.ts`, `use-droppable-collection.tsx`, `use-droppable-item.tsx`, `use-drop-indicator.ts`, `drop-target-keyboard-navigation.ts`, `list-drop-target-delegate.ts`
 - `index.tsx` — RAC `useDragAndDrop.tsx` + `DragAndDrop.tsx`
-- tests: `../tests/tree.browser.test.tsx` "drag and drop" (RAC `test/Tree.test.tsx`), story `../tests-components/tree-dnd.test.ts` (cold keyboard + mouse drags)
+- tests: `../tests/tree.browser.test.tsx` "drag and drop" (RAC `test/Tree.test.tsx`), story `../tests-components/tree-dnd.test.ts` (cold keyboard + mouse drags; a mouse drag before any code loaded, Chromium + WebKit: replayed by the runtime, COLD-DND — `docs/guides/resumability.md` "Cold drag and drop")
 
 ## Upstream
 - react-spectrum 06891de: `packages/react-aria/src/dnd/*`, `packages/react-aria/intl/dnd/*.json`, `packages/react-stately/src/dnd/*`, `packages/react-aria-components/src/{useDragAndDrop,DragAndDrop,Tree}.tsx`, `test/Tree.test.tsx` (Apache-2.0, `../NOTICE`)

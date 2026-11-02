@@ -102,7 +102,7 @@ The root exposes `data-hovered`, `data-focused`, `data-focus-visible`, `data-dro
 
 ## Resumability
 
-Native drag handlers load on the first drag event. Repeated `dragover` events establish the target after loading; a drop before the code is ready can fall back to the browser default. Clipboard items and File objects should be processed in handlers; store serializable metadata in application state.
+Native drag handlers load on the first drag event. A drag that enters or drops before the code is ready is held: the page accepts the drop (the browser does not open the dropped file) and replays the drag's events once the code loaded, with a copy of the data taken when each event happened (strings and files). Clipboard items and File objects should be processed in handlers; store serializable metadata in application state.
 
 ## Upstream
 

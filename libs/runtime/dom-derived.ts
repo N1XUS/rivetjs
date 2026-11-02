@@ -2546,8 +2546,10 @@ function enter(event: Event, path: EventTarget[]): void {
 async function drain(): Promise<void> {
   while (pending.length) {
     let item = pending[0]!;
-    const run = /enter$/.test(item[0].type),
-      next = (): boolean => run && !!pending[1] && /enter$/.test(pending[1][0].type);
+    // A run of held hover enters (`pointerenter` / `mouseenter`) stands for itself, never replayed; a drag's `dragenter`
+    // replays (COLD-DND).
+    const run = /[er]enter$/.test(item[0].type),
+      next = (): boolean => run && !!pending[1] && /[er]enter$/.test(pending[1][0].type);
     try {
       do {
         // A run of held enters: its innermost one stands for the run (its path holds the others' targets) — also the
@@ -2560,7 +2562,7 @@ async function drain(): Promise<void> {
         for (let step = listeners(item[0]); step !== true; step = listeners(item[0])) await step;
       } while (next());
       enter(item[0], item[1]);
-      if (!/enter$/.test(item[0].type)) await replay(item);
+      if (!run) await replay(item);
     } catch (error) {
       report(error);
     }

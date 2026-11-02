@@ -1,8 +1,18 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { brotliCompressSync } from "node:zlib";
-import { minifiedDerived, minifiedDerivedLater, minifiedDerivedStream, minifiedDerivedVisible } from "../build-loader.ts";
-import { DERIVED_LOADER, DERIVED_LOADER_LATER, DERIVED_LOADER_VISIBLE, DERIVED_LOADER_VISIBLE_LATER, DERIVED_STREAM } from "../resume-loader-derived.min.ts";
+import { minifiedDerived, minifiedDerivedDrag, minifiedDerivedLater, minifiedDerivedStream, minifiedDerivedVisible } from "../build-loader.ts";
+import {
+  DERIVED_LOADER,
+  DERIVED_LOADER_DRAG,
+  DERIVED_LOADER_LATER,
+  DERIVED_LOADER_LATER_DRAG,
+  DERIVED_LOADER_VISIBLE,
+  DERIVED_LOADER_VISIBLE_DRAG,
+  DERIVED_LOADER_VISIBLE_LATER,
+  DERIVED_LOADER_VISIBLE_LATER_DRAG,
+  DERIVED_STREAM,
+} from "../resume-loader-derived.min.ts";
 
 // Derived model loader (M2 lane R, R2; spec §3.2 budget ≤ 1 KB br): 1,023 B (2026-10-20) — the serialized loader's
 // navigation-type reload fallback and the `mousewheel` passive type were left out to fit (see resume-loader-derived.ts).
@@ -75,6 +85,28 @@ test("shipped lazy-part loaders are current, inline-safe and fit 1,910 / 2,086 B
     console.log(`derived lazy-part loader brotli: ${size} B`);
   }
   assert.ok(DERIVED_LOADER_VISIBLE_LATER.includes(".dataset.boot?(function("));
+});
+
+// COLD-DND drag loaders (pages whose `data-events` lists a drag type): each loader variant with `derivedDrag` spliced in
+// (`$d` made first, asked before `rt?.on`, called on the held event); every other page keeps its loader byte for byte.
+// At landing (2026-11-01): 2,204 / 2,388 / 2,273 / 2,451 B brotli (+389 / +399 / +384 / +380 B over their plain variants).
+test("shipped drag loaders are current, inline-safe and fit 2,220 / 2,400 / 2,300 / 2,470 B brotli", async () => {
+  for (const [drag, plain, budget] of [
+    [DERIVED_LOADER_DRAG, DERIVED_LOADER, 2220],
+    [DERIVED_LOADER_VISIBLE_DRAG, DERIVED_LOADER_VISIBLE, 2400],
+    [DERIVED_LOADER_LATER_DRAG, DERIVED_LOADER_LATER, 2300],
+    [DERIVED_LOADER_VISIBLE_LATER_DRAG, DERIVED_LOADER_VISIBLE_LATER, 2470],
+  ] as const) {
+    assert.equal(drag, await minifiedDerivedDrag(plain), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
+    assert.ok(!/<\/script|<!--/i.test(drag));
+    assert.ok(drag.startsWith("(function(){const $d=(function(){"), "the add-on is made first");
+    assert.equal(drag.split("$d(").length, 3, "asked before the runtime runs an event live, called on the held one");
+    assert.ok(!plain.includes("$d"), "the plain loader carries none of it");
+    new Function(drag);
+    const size = brotliCompressSync(drag).length;
+    assert.ok(size <= budget, `minified ${size} B`);
+    console.log(`derived drag loader brotli: ${size} B (+${size - brotliCompressSync(plain).length} B)`);
+  }
 });
 
 // Derived stream add-on (DERIVED-C2): `$rD`, shipped once before a derived page's first streamed segment (the serialized

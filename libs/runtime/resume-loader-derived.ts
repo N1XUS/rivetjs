@@ -304,6 +304,60 @@ export function derivedVisibleBoot(script: HTMLScriptElement, boot: (bg?: unknow
 }
 
 /**
+ * Cold HTML5 drag and drop (COLD-DND 2026-11-01): pages whose `data-events` lists a drag type (`server-derived.ts`
+ * `DERIVED_LOADERS`) ship the loader with this add-on spliced in (`build-loader.ts` `dragSplice`: every other page's loader
+ * is unchanged). The loader calls the returned function twice per event: before asking the runtime to run it live (no
+ * `held`: a truthy result = a drag the page held from its start is still on, so its event is held too — its replay must
+ * read the drag's own DataTransfer, not the browser's empty one; a `dragstart` ends a stale one) and once it holds it
+ * (`held`). A held drag event gets a DataTransfer that outlives its dispatch (the browser's turns unreadable then): a held
+ * `dragstart` starts one per drag (empty: the replayed handler writes it, the drag's later replays read it), any other
+ * event without one gets a copy of its own (types, strings, files; a file's placeholder while the data is protected).
+ * Each replay first reads the browser's `dropEffect` of its own dispatch (a `dragend`: the drag's outcome). A cold
+ * `dragenter` / `dragover` / `drop` inside a listening boundary is accepted (default prevented): without it the browser
+ * fires no `drop`; a replayed handler that rejects the drop leaves no drop target behind (cdk `useDrop`). A cold drag
+ * itself starts natively (a `draggable` element needs no data in Chromium / WebKit; its drag image is the element).
+ */
+export function derivedDrag(): (event: Event, held?: 1) => unknown {
+  // The drag held from its start: [its data, its effectAllowed, the current drag operation (the last target handler's dropEffect)].
+  let s: [DataTransfer, string, string] | undefined;
+  return (event, held) => {
+    const type = event.type,
+      dt = (event as DragEvent).dataTransfer;
+    if (!dt || !/^d(rag|rop)/.test(type)) return;
+    if (!held) return type == "dragstart" ? (s = undefined) : s;
+    // A target's enter / over (its handler's dropEffect is the drag's operation), the drop / end of a drag that dropped.
+    const over = /^drag(enter|over)$/.test(type),
+      native = dt.dropEffect,
+      outcome = type == "drop" || (type == "dragend" && native != "none");
+    let d = s,
+      effect: string | undefined,
+      v: unknown;
+    if (type == "dragstart") d = s = [new DataTransfer(), "uninitialized", "none"];
+    else if (!d) {
+      d = [new DataTransfer(), dt.effectAllowed, native];
+      for (const i of Array.from(dt.items))
+        i.kind == "file" ? d[0].items.add(i.getAsFile() || new File([], "", { type: i.type })) : d[0].setData(i.type, dt.getData(i.type));
+    }
+    if (type == "dragend") s = undefined;
+    // One view per event: the drag's data; its own dropEffect (the browser's on a target, read at the replay the drag's
+    // operation on a drop / end that dropped, else none) and effectAllowed (a constructed DataTransfer ignores effect writes).
+    const view = new Proxy(d[0], {
+      get: (t, k) =>
+        k == "dropEffect"
+          ? (effect ??= over ? native : outcome ? d[2] : "none")
+          : k == "effectAllowed"
+            ? d[1]
+            : typeof (v = Reflect.get(t, k)) == "function"
+              ? (v as (...a: unknown[]) => unknown).bind(t)
+              : v,
+      set: (t, k, to) => (k == "dropEffect" ? ((effect = to), over && (d[2] = to)) : k == "effectAllowed" ? (d[1] = to) : Reflect.set(t, k, to), true),
+    });
+    Object.defineProperty(event, "dataTransfer", { value: view });
+    /^d(ragenter|ragover|rop)$/.test(type) && event.preventDefault();
+  };
+}
+
+/**
  * Streamed segment add-on (DERIVED-C2), shipped once before a derived page's first streamed segment (`server-derived.ts`
  * `segments`). `$rD(id)` runs at the end of each segment: its `<template data-a>` (when the segment has content) replaces
  * what is between `<!--a<id>-->` and its `<!--/a-->` (the fallback), its patch (`<script type="rivet/boundaries"

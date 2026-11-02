@@ -4,7 +4,7 @@
 // The resume-loader test fails when the generated file is stale.
 import { writeFile } from "node:fs/promises";
 import { transform } from "esbuild";
-import { derivedFetchLater, derivedLoader, derivedStream, derivedVisibleBoot } from "./resume-loader-derived.ts";
+import { derivedDrag, derivedFetchLater, derivedLoader, derivedStream, derivedVisibleBoot } from "./resume-loader-derived.ts";
 
 const minify = async (fn: () => void): Promise<string> => (await transform("(" + fn + ")()", { minify: true, target: "es2020" })).code.trim();
 /** Minified inline loader, shipped after the boundaries tail. */
@@ -53,6 +53,35 @@ export const minifiedDerivedLater = async (visible?: boolean): Promise<string> =
   const [at, boot] = await visibleSplice(later);
   return later.slice(0, at) + boot + later.slice(at);
 };
+/** The loader's minified start, its `rt?.on(event)` ask and its held item (after a press's / held event's `preventDefault`). */
+const HEAD = /^\(function\(\)\{/,
+  ASK = /\|\|(\w+)\?\.on\((\w+)\)\)return;/,
+  HOLD = /(\w+)&&(\w+)\.preventDefault\(\);const (\w+)=\[\2,\2\.composedPath\(\)/;
+/**
+ * COLD-DND: the drag loaders (pages whose `data-events` lists a drag type) = a loader with `derivedDrag` spliced in: its
+ * instance `$d` made first thing, `!$d(<event>)&&` before the `rt?.on(<event>)` ask and `$d(<event>,1);` before the held
+ * item is made. The same three text replacements apply to every loader variant (the visible / lazy-part splices touch
+ * other places): [search, replacement] pairs.
+ */
+export const dragSplice = async (loader: string): Promise<[string, string][]> => {
+  const head = HEAD.exec(loader),
+    ask = ASK.exec(loader),
+    hold = HOLD.exec(loader);
+  if (!head || !ask || !hold) throw Error("build-loader: no drag splice point in the minified loader");
+  if (loader.includes("$d")) throw Error("build-loader: the minified loader already uses $d");
+  // (Assigned: an unused call of a pure function minifies away.)
+  const fn = (await transform("__d=(" + derivedDrag + ")();", { minify: true, target: "es2020" })).code.trim().replace(/^__d=/, "").replace(/;$/, "");
+  const [, rt, event] = ask,
+    held = hold[0].slice(0, hold[0].indexOf(";") + 1);
+  return [
+    [head[0], head[0] + "const $d=" + fn + ";"],
+    [ask[0], "||!$d(" + event + ")&&" + rt + "?.on(" + event + "))return;"],
+    [held, held + "$d(" + hold[2] + ",1);"],
+  ];
+};
+const spliced = (loader: string, pairs: [string, string][]): string => pairs.reduce((l, [from, to]) => l.replace(from, () => to), loader);
+/** A drag loader (`DERIVED_LOADER_DRAG` …): `loader` = one of the minified variants. */
+export const minifiedDerivedDrag = async (loader: string): Promise<string> => spliced(loader, await dragSplice(await minifiedDerived()));
 /** Minified stream add-on (`$rD`), shipped once before a page's first streamed segment. */
 export const minifiedDerivedStream = (): Promise<string> => minify(derivedStream);
 
@@ -60,7 +89,8 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
   const derived = await minifiedDerived(),
     [at, splice] = await visibleSplice(derived),
     [from, to, laterText] = await laterSplice(derived),
-    derivedAdd = await minifiedDerivedStream();
+    derivedAdd = await minifiedDerivedStream(),
+    drags = await dragSplice(derived);
   if (to > at) throw Error("build-loader: the fetch-ahead loop follows the data-boot start");
   // In the lazy-part loader the data-boot start moved by the length difference of the replaced loop.
   const atLater = at + laterText.length - (to - from);
@@ -75,6 +105,14 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
       "/** The loader of a page with lazy parts (`data-fl`, `derivedFetchLater`); `_VISIBLE_LATER`: with the visible boot too. */\n" +
       `export const DERIVED_LOADER_LATER = DERIVED_LOADER.slice(0, ${from}) + ${JSON.stringify(laterText)} + DERIVED_LOADER.slice(${to});\n` +
       `export const DERIVED_LOADER_VISIBLE_LATER = DERIVED_LOADER_LATER.slice(0, ${atLater}) + ${JSON.stringify(splice)} + DERIVED_LOADER_LATER.slice(${atLater});\n` +
+      "/** COLD-DND: each loader with the cold drag add-on (`derivedDrag`), for pages whose `data-events` lists a drag type. */\n" +
+      "const drag = (loader: string): string => " +
+      drags.map(([from, to]) => ".replace(" + JSON.stringify(from) + ", () => " + JSON.stringify(to) + ")").reduce((code, step) => code + step, "loader") +
+      ";\n" +
+      "export const DERIVED_LOADER_DRAG = drag(DERIVED_LOADER);\n" +
+      "export const DERIVED_LOADER_VISIBLE_DRAG = drag(DERIVED_LOADER_VISIBLE);\n" +
+      "export const DERIVED_LOADER_LATER_DRAG = drag(DERIVED_LOADER_LATER);\n" +
+      "export const DERIVED_LOADER_VISIBLE_LATER_DRAG = drag(DERIVED_LOADER_VISIBLE_LATER);\n" +
       "export const DERIVED_STREAM = " +
       JSON.stringify(derivedAdd) +
       ";\n",
@@ -87,6 +125,8 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
       derivedVisible.length +
       ", lazy parts +" +
       (laterText.length - (to - from)) +
+      ", drag +" +
+      (spliced(derived, drags).length - derived.length) +
       ", + stream " +
       derivedAdd.length +
       ")",

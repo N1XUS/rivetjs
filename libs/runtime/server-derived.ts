@@ -60,7 +60,17 @@ import type { BoundaryRecord, ClassHooks, ClassRegistry, DerivedAsync, DerivedDo
 import { encodeTail, tailPieces } from "./server-tail.ts";
 import { DOM_DATA_SERVER, derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
-import { DERIVED_LOADER, DERIVED_LOADER_LATER, DERIVED_LOADER_VISIBLE, DERIVED_LOADER_VISIBLE_LATER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
+import {
+  DERIVED_LOADER,
+  DERIVED_LOADER_DRAG,
+  DERIVED_LOADER_LATER,
+  DERIVED_LOADER_LATER_DRAG,
+  DERIVED_LOADER_VISIBLE,
+  DERIVED_LOADER_VISIBLE_DRAG,
+  DERIVED_LOADER_VISIBLE_LATER,
+  DERIVED_LOADER_VISIBLE_LATER_DRAG,
+  DERIVED_STREAM,
+} from "./resume-loader-derived.min.ts";
 import { _onEager, _onIsland, _onWeak } from "./derived-eager.ts";
 import type { DerivedIsland } from "./derived-eager.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
@@ -993,12 +1003,31 @@ export function _rListens(type: string): null {
   const b = ctx && !ctx.off && current(ctx);
   // Scroll may be the first interaction and does not bubble. Pointer moves must join a held resize gesture too:
   // capture alone keeps their target stable but cannot queue events the loader does not listen to.
-  // Other helper types keep the default-event wake rule (keyup is paired with its cold keydown in the loader).
+  // Drag and drop (COLD-DND): a drop target's type joins with the rest of the target's events (a sibling handler may be an
+  // untyped conditional value); its page then lists the drag source's events too (`dragTypes`). A helper's `dragstart`
+  // alone does not: cdk rows have one whether or not they drag. Other helper types keep the default-event wake rule
+  // (keyup is paired with its cold keydown in the loader).
   if (b) {
     listen(b, type);
     if (type === "scroll" || type === "pointermove") ctx!.events.add(type);
+    else if (DRAG_TARGET.includes(type)) for (let i = 0; i < DRAG_TARGET.length; i++) ctx!.events.add(DRAG_TARGET[i]!);
   }
   return null;
+}
+/** A drop target's events / a drag source's events (COLD-DND). */
+const DRAG_TARGET = ["dragenter", "dragover", "dragleave", "drop"],
+  DRAG_SOURCE = ["dragstart", "drag", "dragend"];
+/**
+ * COLD-DND: a page with a drop target listens to its drags' source events too, so the loader holds a cold drag from its
+ * start (cdk rows: an unconditional `dragstart` helper handler, `onDragEnd={dragProps?.onDragEnd}` untyped). A page
+ * without one keeps its event types (a drag source alone drops outside the page: nothing of the page replays there).
+ */
+function dragTypes(events: Set<string>): void {
+  for (let i = 0; i < DRAG_TARGET.length; i++)
+    if (events.has(DRAG_TARGET[i]!)) {
+      for (let j = 0; j < DRAG_SOURCE.length; j++) events.add(DRAG_SOURCE[j]!);
+      return;
+    }
 }
 
 /**
@@ -2493,6 +2522,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   // (Encoded after the fetch-ahead list: encoding rewrites the records' names in place.)
   const pieces = tailPieces(tail);
   let events = "";
+  dragTypes(ctx.events);
   for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
   const boot = ctx.boot ? visibleBoot(ctx) : null;
   // (`later` is a function of the manifest and `ahead`.)
@@ -2621,14 +2651,28 @@ function tailFragments(
     (ahead ? ' data-fo="' + attr(ahead) + '"' + (when === "idle" ? "" : ' data-fw="' + when + '"') : "") +
     (later ? ' data-fl="' + attr(later) + '"' : "");
   const open = '<script type="rivet/boundaries"' + attrs + ">",
-    // Lazy parts (IDLE-PREFETCH): the loader whose fetch-ahead also fetches `data-fl` once the list loaded (`derivedFetchLater`).
-    loader = boot ? (later ? DERIVED_LOADER_VISIBLE_LATER : DERIVED_LOADER_VISIBLE) : later ? DERIVED_LOADER_LATER : DERIVED_LOADER;
+    // Lazy parts (IDLE-PREFETCH): the loader whose fetch-ahead also fetches `data-fl` once the list loaded (`derivedFetchLater`);
+    // drag types (COLD-DND): with the cold drag add-on (`derivedDrag`).
+    loader = DERIVED_LOADERS[(boot ? 1 : 0) | (later ? 2 : 0) | (DRAG.test(events) ? 4 : 0)]!;
   return Object.freeze(nonce ? [open, '</script><script nonce="', '">' + loader + "</script>"] : [open, "</script><script>" + loader + "</script>"]);
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`); `data-events` = these + the page's
  * other listener types (boundary `events`, spread listener props). */
 const DEFAULT_EVENTS = "click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout";
 const DEFAULT_TYPES = new Set(DEFAULT_EVENTS.split(" "));
+// COLD-DND: a page listening to a drag type ships the loader with the cold drag add-on (`derivedDrag`); others keep theirs.
+const DRAG = /(?:^| )d(?:rag|rop)/;
+// The loader by [visible boot, lazy parts, drag] bits.
+const DERIVED_LOADERS = [
+  DERIVED_LOADER,
+  DERIVED_LOADER_VISIBLE,
+  DERIVED_LOADER_LATER,
+  DERIVED_LOADER_VISIBLE_LATER,
+  DERIVED_LOADER_DRAG,
+  DERIVED_LOADER_VISIBLE_DRAG,
+  DERIVED_LOADER_LATER_DRAG,
+  DERIVED_LOADER_VISIBLE_LATER_DRAG,
+];
 const attr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 /** A streamed segment's patch (records + wake lists added since the last flush), "" when nothing was added. */

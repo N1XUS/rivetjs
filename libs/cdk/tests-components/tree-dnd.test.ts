@@ -1,8 +1,11 @@
 // Tree drag and drop on a resumed page (story `/tree-dnd`): server markup carries drag buttons with valid instruction
 // targets, `draggable` rows and no drop indicators, no library code before interaction, and the first input on the cold
-// page drags: a keyboard drag from the drag button (Enter → Tab to a drop target → Enter) and a native mouse drag.
+// page drags: a keyboard drag from the drag button (Enter → Tab to a drop target → Enter) and a native mouse drag — also
+// one that starts and ends before any code loaded (COLD-DND: chunks held back until after the drop, Chromium + WebKit).
+import { existsSync } from "node:fs";
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
+import { webkit, type Browser } from "playwright";
 import { stories, watch, libraryScripts, type Stories } from "./harness.ts";
 
 let s: Stories;
@@ -88,3 +91,39 @@ test("Tree drag and drop: cold mouse drag of a row reorders", async () => {
   assert.deepEqual(seen.errors, []);
   await page.close();
 });
+
+// COLD-DND: the whole drag happens while every script request is held (the deterministic form of a slow host / network);
+// once code loads, the held gesture replays and the rows reorder as on a loaded page. WebKit where Playwright's is installed.
+for (const engine of ["chromium", "webkit"] as const)
+  (engine === "webkit" && !existsSync(webkit.executablePath()) ? test.skip : test)(
+    `Tree drag and drop (${engine}): a mouse drag before any code loaded reorders once it loads`,
+    async () => {
+      let other: Browser | undefined;
+      const browser = engine === "webkit" ? (other = await webkit.launch({ headless: true })) : s.browser;
+      try {
+        const page = await browser.newPage();
+        const seen = watch(page);
+        await page.goto(s.origin + "/tree-dnd");
+        await page.waitForLoadState("networkidle");
+        let release!: () => void;
+        const code = new Promise<void>((resolve) => (release = resolve));
+        await page.route(/\.m?js(\?|$)/, async (route) => (await code, route.continue()));
+        const box = (await (await page.$('#tree-dnd [data-key="documents"]'))!.boundingBox())!;
+        await page.dragAndDrop('#tree-dnd [data-key="photos"] span', '#tree-dnd [data-key="documents"]', { targetPosition: { x: box.width / 2, y: 2 } });
+        assert.deepEqual(await rowNames(page), ["Documents", "Report", "Photos", "Music"], "nothing ran yet");
+        release();
+        await untilRows(page, ["Photos", "Documents", "Report", "Music"]);
+        // The replayed drag ended: no row stays dragging, no drop indicator stays, every row still drags.
+        await page.waitForFunction(() => !document.querySelector('#tree-dnd [data-dragging="true"], #tree-dnd .rv-DropIndicator[data-drop-target]'));
+        assert.deepEqual(await page.$$eval("#tree-dnd .rv-TreeItem", (els) => els.map((el) => el.getAttribute("draggable"))), ["true", "true", "true", "true"]);
+        // A second drag on the now running page.
+        const first = (await (await page.$('#tree-dnd [data-key="photos"]'))!.boundingBox())!;
+        await page.dragAndDrop('#tree-dnd [data-key="music"] span', '#tree-dnd [data-key="photos"]', { targetPosition: { x: first.width / 2, y: 2 } });
+        await untilRows(page, ["Music", "Photos", "Documents", "Report"]);
+        assert.deepEqual(seen.errors, []);
+        await page.close();
+      } finally {
+        await other?.close();
+      }
+    },
+  );
