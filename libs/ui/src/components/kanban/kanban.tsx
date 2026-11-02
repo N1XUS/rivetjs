@@ -66,6 +66,7 @@ type SpanProps = Omit<JSX.IntrinsicElements["span"], "children" | "class"> & { c
 
 const SLOTS: Record<string, ReturnType<typeof kanbanVariants>> = {};
 const slotsFor = (size: KanbanVariants["size"]) => (SLOTS[String(size)] ??= kanbanVariants({ size }));
+// Size only sets the root `kanban--<size>` class (the parts size through it in CSS), so the parts share one slot set.
 const S = slotsFor("md");
 
 /* -------------------------------------------------------------------------------------------------
