@@ -7,6 +7,7 @@
 //   interactive elements or `Drawer.Body`; activation after 8 px; only towards the dismiss edge; dismiss when dragged past
 //   30 % of the dialog dimension or released faster than 0.5 px/ms; a dismissed drawer keeps its inline transform so the
 //   exit animation (upstream CSS, `data-exiting`) continues from the dragged position.
+//   Rivet: `pointercancel` / `lostpointercapture` release like a short drag (settle back, never dismiss).
 // - Motion: the drag and the settle back after a short release run on `@rivetjs/cdk/motion` (embla-carousel 8.6.0 physics,
 //   MIT, © David Jerleke; user decision 2026-10-08: the house motion, no CSS easing) instead of upstream's CSS
 //   `transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1)`: `Motion1D` `hold` + `drag` while dragging (embla drag
@@ -144,16 +145,14 @@ export function drawerDrag(dialog: HTMLElement, options: DrawerDragOptions): () 
     motion.drag(delta - motion.target.get());
   };
 
+  // `pointercancel` / `lostpointercapture` (system gesture, OS dialog, touch-action takeover): release without dismissing,
+  // or the drawer stays held at the dragged offset (`motion.hold`) until the next full press.
   const onPointerUp = (e: PointerEvent): void => {
     if (!isDragging) return;
     isDragging = false;
-
-    if (!isActive) {
-      isActive = false;
-
-      return;
-    }
+    if (!isActive) return;
     isActive = false;
+    const cancelled = e.type !== "pointerup";
 
     // Release pointer capture
     try {
@@ -166,7 +165,7 @@ export function drawerDrag(dialog: HTMLElement, options: DrawerDragOptions): () 
     const absOffset = Math.abs(currentOffset);
     const absVelocity = Math.abs(velocity);
 
-    const shouldDismiss = absOffset > dimension * DISMISS_FRACTION || absVelocity > VELOCITY_THRESHOLD;
+    const shouldDismiss = !cancelled && (absOffset > dimension * DISMISS_FRACTION || absVelocity > VELOCITY_THRESHOLD);
 
     motion.hold(false);
     if (shouldDismiss) {
@@ -196,10 +195,14 @@ export function drawerDrag(dialog: HTMLElement, options: DrawerDragOptions): () 
   dialog.addEventListener("pointerdown", onPointerDown);
   dialog.addEventListener("pointermove", onPointerMove);
   dialog.addEventListener("pointerup", onPointerUp);
+  dialog.addEventListener("pointercancel", onPointerUp);
+  dialog.addEventListener("lostpointercapture", onPointerUp);
   return () => {
     motion.stop();
     dialog.removeEventListener("pointerdown", onPointerDown);
     dialog.removeEventListener("pointermove", onPointerMove);
     dialog.removeEventListener("pointerup", onPointerUp);
+    dialog.removeEventListener("pointercancel", onPointerUp);
+    dialog.removeEventListener("lostpointercapture", onPointerUp);
   };
 }

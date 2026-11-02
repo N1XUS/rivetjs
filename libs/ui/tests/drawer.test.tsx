@@ -405,6 +405,30 @@ test("drawer drag: a short slow drag settles back on the motion loop; only the d
   r.unmount();
 });
 
+test("drawer drag: a cancelled pointer (system gesture) settles back instead of freezing the drawer", async () => {
+  const calls: boolean[] = [];
+  const r = render(() => <DrawerFixture defaultOpen onOpenChange={(o) => calls.push(o)} />);
+  await flush();
+  const d = dialog()!;
+  sized(d, 400);
+  pointer(slot("drawer-handle")!, "pointerdown", { y: 100 });
+  for (let y = 110; y <= 300; y += 10) {
+    await new Promise((r) => setTimeout(r, 5));
+    pointer(d, "pointermove", { y });
+  }
+  await until(() => d.style.transform !== "");
+  // The browser takes the pointer over: no pointerup ever arrives.
+  pointer(d, "pointercancel", { y: 300 });
+  assert.equal(await until(() => d.style.transform === "" && d.style.transition === ""), true, "settled back after pointercancel");
+  assert.deepEqual(calls, [], "a cancel never dismisses");
+  // The next drag works again from a clean state.
+  pointer(slot("drawer-handle")!, "pointerdown", { y: 100 });
+  pointer(d, "pointermove", { y: 100 + DRAG_THRESHOLD - 1 });
+  assert.equal(d.style.transform, "", "below the threshold: no drag");
+  pointer(d, "pointerup", { y: 100 });
+  r.unmount();
+});
+
 test("drawer drag: never from the body or a button; not dismissable → no drag", async () => {
   const r = render(() => <DrawerFixture defaultOpen />);
   await flush();
