@@ -1,6 +1,6 @@
 // Ported from @react-aria/selection (utils.ts), Apache-2.0, © Adobe.
 import { createId } from "@rivetjs/runtime/id";
-import { isMac } from "../platform/index.ts";
+import { isAppleDevice } from "../platform/index.ts";
 import type { Collection, Key } from "../collections/types.ts";
 export { getItemElement } from "../collections/dom.ts";
 
@@ -19,16 +19,10 @@ interface ModifierEvent {
   metaKey: boolean;
 }
 
-/** Apple devices: Mac, iPhone, iPad. */
-const isAppleDevice = (): boolean => {
-  if (isMac()) return true;
-  return typeof navigator !== "undefined" && /^(iPhone|iPad)/i.test(navigator.platform ?? "");
-};
-
 export function isNonContiguousSelectionModifier(e: ModifierEvent): boolean {
   // Ctrl + Arrow Up/Arrow Down has a system wide meaning on macOS, so use Alt instead.
   // On Windows and Ubuntu, Alt + Space has a system wide meaning.
-  return isAppleDevice() ? e.altKey : e.ctrlKey;
+  return isAppleDevice() ? e.altKey : e.ctrlKey; // platform probe: cached, `undefined` (falsy) on the server
 }
 
 /** Ctrl (Cmd on Apple) pressed. */
