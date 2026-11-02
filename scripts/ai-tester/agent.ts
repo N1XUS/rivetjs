@@ -65,7 +65,7 @@ export function codexIsolationArgs(servers: string[] | undefined): string[] {
     throw new Error("Codex MCP capabilities must be inspected before launch");
   return ["--disable", "apps", "--disable", "plugins", "--disable", "multi_agent", ...servers.flatMap((name) => ["-c", `mcp_servers.${name}.enabled=false`])];
 }
-export const codex: Agent = ({ role, workspace, output, schema, prompt, model, mcpServers }) => {
+const codexCommand: Agent = ({ role, workspace, output, schema, prompt, model, mcpServers }) => {
   if (model !== undefined) checkModel(model);
   return {
     file: "codex",
@@ -80,6 +80,9 @@ export const codex: Agent = ({ role, workspace, output, schema, prompt, model, m
       "-c",
       "sandbox_workspace_write.writable_roots=[]",
       "-c",
+      // Sockets stay open in the sandbox: the gates the worker runs start loopback servers (vitest browser
+      // projects, production examples) and the sandbox does not tell loopback from the network. Writes stay
+      // confined to the snapshot workspace (`writable_roots=[]`), approvals off.
       "sandbox_workspace_write.network_access=true",
       "--json",
       ...(model ? ["--model", model] : []),
@@ -96,6 +99,8 @@ export const codex: Agent = ({ role, workspace, output, schema, prompt, model, m
     stdin: prompt,
   };
 };
+/** The Codex CLI agent; its repairs are committed with a Codex `Co-Authored-By` trailer. */
+export const codex: Agent = Object.assign(codexCommand, { coAuthor: "Codex <noreply@openai.com>" });
 export function workerPrompt(area: Area, base: string, history: string): string {
   return `You are the autonomous Rivet tester for one bounded campaign, area ${area}, source revision ${base}.
 Investigate existing supported behavior, minimize ONE real counterexample, add a permanent native regression test, then make the smallest fix. If none is found, report no-finding honestly with executed probe evidence. Do not fabricate a defect or fix a documented limitation.

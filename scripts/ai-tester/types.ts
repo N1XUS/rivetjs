@@ -32,7 +32,8 @@ export interface AgentContext {
   model?: string;
   mcpServers?: string[];
 }
-export type Agent = (context: AgentContext) => Command;
+/** Launches one agent role. `coAuthor` (`Name <email>`) is the `Co-Authored-By` trailer of commits it repairs. */
+export type Agent = ((context: AgentContext) => Command) & { coAuthor?: string };
 export interface RunRecord {
   id: string;
   area: Area;

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -82,6 +82,15 @@ test("exclusive lock never steals a live owner's lock and releases only its own"
   release();
   const next = acquireLock(root);
   next();
+});
+
+test("a lock left by a crashed campaign (owner pid gone) is never reclaimed automatically: recovery is manual (README)", () => {
+  const root = join(temp, "stale-locks");
+  mkdirSync(join(root, "campaign.lock"), { recursive: true });
+  assert.throws(() => acquireLock(root), /campaign.*running|locked/i, "owner not written yet");
+  const dead = spawnSync(process.execPath, ["-e", "process.pid"]).pid!;
+  writeFileSync(join(root, "campaign.lock", "owner.json"), JSON.stringify({ pid: dead, token: "crashed" }));
+  assert.throws(() => acquireLock(root), /campaign.*running|locked/i, "dead owner: the operator inspects its evidence first");
 });
 
 const regression = { project: "reactivity", file: "libs/reactivity/tests/repro.test.ts", testName: "clears read child", assertion: "clears read child" };

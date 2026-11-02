@@ -7,7 +7,7 @@ import { join, resolve } from "node:path";
 import { afterAll, test } from "vitest";
 import { runCampaign } from "../ai-tester/run.ts";
 import { git } from "../ai-tester/workspace.ts";
-import type { Agent } from "../ai-tester/types.ts";
+import type { Agent, AgentContext } from "../ai-tester/types.ts";
 const scratch = mkdtempSync(join(tmpdir(), "rivet-ai-run-"));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 const modules = resolve("node_modules");
@@ -93,7 +93,12 @@ function fixture(mode = "ok") {
   // Individual dependency links reproduce production snapshot setup, never a whole-node_modules symlink.
   for (const name of ["vitest", "vite", "@vitest", "@vitejs", "@rolldown", "@esbuild", "esbuild", "rolldown", "typescript"])
     if (existsSync(join(modules, name))) symlinkSync(join(modules, name), join(root, "node_modules", name));
-  const agent: Agent = ({ role, workspace, output }) => ({ file: process.execPath, args: [worker, role, workspace, output, mode, root] });
+  const agent: Agent = Object.assign(
+    ({ role, workspace, output }: AgentContext) => ({ file: process.execPath, args: [worker, role, workspace, output, mode, root] }),
+    {
+      coAuthor: "Fixture Agent <fixture@example.invalid>",
+    },
+  );
   return { root, agent, base: git(root, ["rev-parse", "HEAD"]) };
 }
 test("seeded supported bug independently reproduces RED/GREEN and commits exactly the verified fix", async () => {
@@ -104,7 +109,8 @@ test("seeded supported bug independently reproduces RED/GREEN and commits exactl
   assert.equal(result.hashes?.["proof:red.json"], createHash("sha256").update(redBytes).digest("hex"));
   assert.equal(git(f.root, ["rev-list", "--count", f.base + "..HEAD"]), "1");
   assert.equal(readFileSync(join(f.root, "libs/reactivity/index.js"), "utf8"), "export const clear=()=>[];");
-  assert.match(git(f.root, ["log", "-1", "--format=%B"]), /Co-Authored-By: Claude Opus 5\.5/);
+  // The trailer names the agent that wrote the repair (codex: `Codex <noreply@openai.com>`).
+  assert.match(git(f.root, ["log", "-1", "--format=%B"]), /\nCo-Authored-By: Fixture Agent <fixture@example\.invalid>\s*$/);
   assert.deepEqual(git(f.root, ["show", "--pretty=", "--name-only", "HEAD"]).split("\n").filter(Boolean), [
     "libs/reactivity/index.js",
     "libs/reactivity/tests/repro.test.ts",

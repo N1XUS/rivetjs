@@ -210,7 +210,7 @@ export async function runCampaign(options: RunOptions): Promise<RunRecord> {
       } else {
         event("intake");
         const subject = finding.summary.split(/[\r\n]/)[0].slice(0, 100);
-        const message = `fix(${options.area}): ${subject}\n\n${finding.scenario}\nExpected: ${finding.expected}\nObserved before repair: ${finding.actual}\n\nAutonomous tester ${id}: independent native RED/GREEN, complete affected\ngates and read-only review accepted. Evidence: .artifacts/ai-tester/${id}\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n`;
+        const message = `fix(${options.area}): ${subject}\n\n${finding.scenario}\nExpected: ${finding.expected}\nObserved before repair: ${finding.actual}\n\nAutonomous tester ${id}: independent native RED/GREEN, complete affected\ngates and read-only review accepted. Evidence: .artifacts/ai-tester/${id}\n${agent.coAuthor ? `\nCo-Authored-By: ${agent.coAuthor}\n` : ""}`;
         record.commit = intake(root, base, files, originalDirty, dir, message);
         record.status = "committed";
         record.message = finding.summary;
