@@ -1555,10 +1555,9 @@ describe("Tree", () => {
         expect(rows[0]).toHaveAttribute("aria-expanded", "true");
         expect(rows[0]).toHaveAttribute("data-expanded", "true");
         expect(onExpandedChange).toHaveBeenCalledTimes(0);
-        // Upstream (jsdom): the synthetic link click blurs the row. Chromium keeps focus on the row for a
-        // prevented navigation; Rivet: only assert focus left nothing else focused.
-        if (document.activeElement !== rows[0]) expect(document.activeElement).toBe(document.body);
-        else (document.activeElement as HTMLElement).blur();
+        // Upstream (jsdom): the synthetic link click blurs the row; Chromium does the same (asserted exactly, FIX2-CDK:
+        // was a conditional that also accepted a focused row).
+        expect(document.activeElement).toBe(document.body);
 
         await user.tab();
         const chevron = within(rows[0]!).getAllByRole("button")[0]!;
