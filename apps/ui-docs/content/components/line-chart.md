@@ -84,7 +84,7 @@ Four series with the built-in legend off (`showLegend={false}`) and a list of to
 
 ### Missing Values
 
-A `null` value (or a missing key) is no value: the line breaks into separate runs, the hovered x value lists only the series that have a value, and a slot with no values is named "no data". `connectNulls` draws straight across the gaps instead.
+A `null` value, a missing key, an empty string or a value that is not a finite number is no value: the line breaks into separate runs, the hovered x value lists only the series that have a value, and a slot with no values is named "no data". `connectNulls` draws straight across the gaps instead.
 
 ::example{id=line-chart-gaps}
 

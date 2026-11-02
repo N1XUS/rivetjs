@@ -48,7 +48,7 @@ Several series overlap, each with its own gradient fill; the legend appears with
 
 ### Sparkline
 
-`Sparkline` is an area chart without axes, grid, legend or tooltip, sized to its container: a trend next to a value.
+`Sparkline` is an area chart without axes, grid, legend or tooltip, sized to its container: a trend next to a value. Like the area chart, a missing value leaves a gap (`connectNulls` joins the runs).
 
 ::example{id=area-chart-sparkline}
 

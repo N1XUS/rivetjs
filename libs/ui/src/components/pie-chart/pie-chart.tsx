@@ -132,7 +132,7 @@ const PieChart = (props: PieChartProps): JSX.Element => {
       };
     });
   });
-  const legendItems = rings[0]!.data.map((d, i) => sectors[i]!);
+  const legendItems = (rings[0]?.data ?? []).map((_, i) => sectors[i]!);
   const total = (rings[0]?.data ?? []).reduce((s, d) => s + Math.max(0, d.value), 0);
   return (
     <figure

@@ -14,7 +14,7 @@ import { chartVariants } from "../../../styles/src/components/chart/index.ts";
 import { composedChartVariants } from "../../../styles/src/components/composed-chart/index.ts";
 import { colorOf, defaultFormat, pct, renderFrame, renderTooltip, STOP_BOTTOM, STOP_TOP } from "../chart/chart.tsx";
 import type { CartesianChartProps, ChartPoint, ChartSeries, Prepared } from "../chart/chart.tsx";
-import { areaPath, linearPath, monotonePath, niceTicks } from "../chart/chart-math.ts";
+import { areaPath, extent, linearPath, monotonePath, niceTicks, numeric } from "../chart/chart-math.ts";
 
 const SLOTS = chartVariants();
 const COMPOSED = composedChartVariants();
@@ -39,14 +39,17 @@ const ComposedChart = (props: ComposedChartProps): JSX.Element => {
   const isBar = series.map((s) => s.type === "bar");
   const stacked = props.stacked === true;
   const rows = props.data.map((d) => {
-    const values = series.map((s) => Number(d[s.key] ?? 0));
+    // Missing / non-numeric / infinite → 0 (one point per index).
+    const values = series.map((s) => numeric(d[s.key]) ?? 0);
     let acc = 0;
     const sums = values.map((v, i) => (isBar[i] ? (acc += v) : v));
     return { label: indexFormat(d[props.index] ?? ""), values, sums };
   });
-  const all = rows.flatMap((r) => r.values.map((v, i) => (stacked && isBar[i] ? r.sums[i]! : v)));
-  const lo = Math.min(props.minValue ?? 0, ...all);
-  const hi = props.maxValue ?? Math.max(...all, lo + 1);
+  function* all() {
+    for (const r of rows) for (let i = 0; i < r.values.length; i++) yield stacked && isBar[i] ? r.sums[i]! : r.values[i]!;
+  }
+  const [lo, top] = extent(all(), props.minValue ?? 0);
+  const hi = props.maxValue ?? Math.max(top, lo + 1);
   const ticks = niceTicks(lo, hi, 4);
   const min = ticks[0]!;
   const max = props.maxValue ?? ticks[ticks.length - 1]!;

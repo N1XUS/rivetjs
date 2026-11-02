@@ -12,7 +12,7 @@ import { chartVariants } from "../../../styles/src/components/chart/index.ts";
 import { radarChartVariants } from "../../../styles/src/components/radar-chart/index.ts";
 import { colorOf, defaultFormat, pct, renderTooltip } from "../chart/chart.tsx";
 import type { ChartDatum, ChartPoint, ChartSeries } from "../chart/chart.tsx";
-import { niceTicks } from "../chart/chart-math.ts";
+import { niceTicks, numeric } from "../chart/chart-math.ts";
 import { circlePath, polar, polygonPath, sectorPath } from "../chart/polar-math.ts";
 
 const SLOTS = chartVariants();
@@ -74,8 +74,9 @@ const RadarChart = (props: RadarChartProps): JSX.Element => {
   } = props;
   const format = valueFormatter ?? defaultFormat;
   const n = Math.max(1, data.length);
-  const all = data.flatMap((d) => series.map((s) => Number(d[s.key] ?? 0)));
-  const ticks = niceTicks(0, maxValue ?? Math.max(1, ...all), 4);
+  let top = 1;
+  for (const d of data) for (const s of series) top = Math.max(top, numeric(d[s.key]) ?? 0);
+  const ticks = niceTicks(0, maxValue ?? top, 4);
   const max = maxValue ?? ticks[ticks.length - 1]!;
   const angleOf = (i: number) => 90 - (i * 360) / n;
   const at = (v: number, i: number) => polar((Math.max(0, v) / (max || 1)) * R, angleOf(i));
@@ -87,17 +88,17 @@ const RadarChart = (props: RadarChartProps): JSX.Element => {
     return `M50 50 L${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
   });
   const shapes = series.map((s, si) => ({
-    d: polygonPath(data.map((d, i) => at(Number(d[s.key] ?? 0), i))),
+    d: polygonPath(data.map((d, i) => at(numeric(d[s.key]) ?? 0, i))),
     color: colors[si]!,
     fill: s.fill !== false,
     stroke: s.stroke !== false,
-    dots: s.dots === true ? data.map((d, i) => at(Number(d[s.key] ?? 0), i)) : [],
+    dots: s.dots === true ? data.map((d, i) => at(numeric(d[s.key]) ?? 0, i)) : [],
   }));
   const step = 360 / n;
   const wedges = data.map((d, i) => {
     const a = angleOf(i);
     const label = String(d[index] ?? "");
-    const rows = series.map((s, si) => ({ label: s.label ?? s.key, value: format(Number(d[s.key] ?? 0)), color: colors[si]! }));
+    const rows = series.map((s, si) => ({ label: s.label ?? s.key, value: format(numeric(d[s.key]) ?? 0), color: colors[si]! }));
     const tip = polar(R, a);
     const point: ChartPoint = {
       index: i,
@@ -105,7 +106,7 @@ const RadarChart = (props: RadarChartProps): JSX.Element => {
       items: series.map((s, si) => ({
         key: s.key,
         name: s.label ?? s.key,
-        value: Number(d[s.key] ?? 0),
+        value: numeric(d[s.key]) ?? 0,
         formatted: rows[si]!.value,
         color: colors[si]!,
       })),
@@ -114,7 +115,7 @@ const RadarChart = (props: RadarChartProps): JSX.Element => {
       d: sectorPath(R + 6, 0, a + step / 2, a - step / 2),
       aria: `${label}: ${rows.map((r) => `${r.label} ${r.value}`).join(", ")}`,
       dots: series.map((s, si) => {
-        const p = at(Number(d[s.key] ?? 0), i);
+        const p = at(numeric(d[s.key]) ?? 0, i);
         return { left: pct(p.x), top: pct(p.y), color: colors[si]! };
       }),
       anchor: { left: pct(tip.x), top: pct(tip.y), side: tip.x > 55 ? "start" : "end" },

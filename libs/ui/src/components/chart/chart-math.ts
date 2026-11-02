@@ -7,9 +7,28 @@ export interface Point {
   y: number;
 }
 
+const MAX_TICKS = 1000;
+
+/** Finite number from a datum value; `null` / `undefined` / `""` / non-numeric / infinite → `undefined` (a missing value). */
+export function numeric(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** `[min, max]` of `values` with a loop (a spread into `Math.min` overflows the call stack past ~100k values). */
+export function extent(values: Iterable<number>, lo = Infinity, hi = -Infinity): [number, number] {
+  for (const v of values) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  return [lo, hi];
+}
+
 /** Rounds `range / count` to 1, 2, 2.5 or 5 × 10^n and returns ticks from `min` (floored) to ≥ `max`. */
 export function niceTicks(min: number, max: number, count = 5): number[] {
   if (!Number.isFinite(min) || !Number.isFinite(max)) return [0, 1];
+  if (max < min) [min, max] = [max, min];
   if (max === min) max = min + 1;
   const raw = (max - min) / Math.max(1, count);
   const power = 10 ** Math.floor(Math.log10(raw));
@@ -17,8 +36,13 @@ export function niceTicks(min: number, max: number, count = 5): number[] {
   const step = (unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 2.5 ? 2.5 : unit <= 5 ? 5 : 10) * power;
   const start = Math.floor(min / step) * step;
   const ticks: number[] = [];
-  for (let v = start; v < max + step * 0.5; v += step) ticks.push(Math.round(v / step) * step);
-  if (ticks[ticks.length - 1]! < max) ticks.push(ticks[ticks.length - 1]! + step);
+  // Bounded: below float resolution (e.g. 1e17 … 1e17 + 16) `v + step === v` and the walk would never advance.
+  for (let v = start; v < max + step * 0.5 && ticks.length < MAX_TICKS; v += step) {
+    ticks.push(Math.round(v / step) * step);
+    if (v + step === v) break;
+  }
+  const last = ticks[ticks.length - 1]!;
+  if (last < max && last + step > last) ticks.push(last + step);
   return ticks;
 }
 

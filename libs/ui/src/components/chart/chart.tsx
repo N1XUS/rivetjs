@@ -21,7 +21,7 @@ import { cachedIntl } from "@rivetjs/cdk/i18n/intl-cache";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import { chartVariants } from "../../../styles/src/components/chart/index.ts";
-import { areaPath, labelIndices, linearPath, monotonePath, niceTicks } from "./chart-math.ts";
+import { areaPath, extent, labelIndices, linearPath, monotonePath, niceTicks, numeric } from "./chart-math.ts";
 import type { Point } from "./chart-math.ts";
 
 const SLOTS = chartVariants();
@@ -125,16 +125,19 @@ export function prepare(props: CartesianChartProps, stacked: boolean): Prepared 
   const format = props.valueFormatter ?? defaultFormat;
   const indexFormat = props.indexFormatter ?? ((v: string | number) => String(v));
   const rows = props.data.map((d) => {
-    const has = props.series.map((s) => d[s.key] != null && d[s.key] !== "");
-    const values = props.series.map((s, i) => (has[i] ? Number(d[s.key]) : 0));
+    const nums = props.series.map((s) => numeric(d[s.key]));
+    const has = nums.map((v) => v !== undefined);
+    const values = nums.map((v) => v ?? 0);
     let acc = 0;
     const sums = values.map((v) => (acc += v));
     return { label: indexFormat(d[props.index] ?? ""), values, sums, has };
   });
   // Missing values do not widen the range (stacked: the sums still count them as 0).
-  const all = rows.flatMap((r) => (stacked ? r.sums : r.values.filter((_, i) => r.has[i])));
-  const lo = Math.min(props.minValue ?? 0, ...all);
-  const hi = props.maxValue ?? Math.max(...all, lo + 1);
+  function* all() {
+    for (const r of rows) for (let i = 0; i < r.values.length; i++) if (stacked || r.has[i]) yield stacked ? r.sums[i]! : r.values[i]!;
+  }
+  const [lo, top] = extent(all(), props.minValue ?? 0);
+  const hi = props.maxValue ?? Math.max(top, lo + 1);
   const ticks = niceTicks(lo, hi, 4);
   const min = ticks[0]!;
   const max = props.maxValue ?? ticks[ticks.length - 1]!;
@@ -446,10 +449,16 @@ const Sparkline = (props: Omit<AreaChartProps, "showLegend" | "showGrid" | "show
   const n = p.rows.length;
   const xOf = (i: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100);
   const id = createId();
+  // One path per run of values: a missing value leaves a gap (`connectNulls` joins the runs), as in Area / Line.
   const paths = props.series.map((_, si) => {
-    const points = p.rows.map((r, i) => ({ x: xOf(i), y: p.y(r.values[si]!) }));
-    const line = monotonePath(points);
-    return { line, area: areaPath(line, points, 100), color: p.colors[si]!, gradient: `${id}-g${si}` };
+    const runs = runsOf(p, si, props.connectNulls === true).map((run) => run.map((i) => ({ x: xOf(i), y: p.y(p.rows[i]!.values[si]!) })));
+    const lines = runs.map((points) => monotonePath(points));
+    return {
+      line: lines.join(" "),
+      area: runs.map((points, k) => areaPath(lines[k]!, points, 100)).join(" "),
+      color: p.colors[si]!,
+      gradient: `${id}-g${si}`,
+    };
   });
   return renderFrame(
     { ...props, showTooltip: false },
