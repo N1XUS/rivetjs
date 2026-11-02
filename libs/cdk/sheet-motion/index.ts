@@ -385,7 +385,8 @@ export function sheetMotion(sheet: HTMLElement, options: SheetMotionOptions): Sh
     snapTo: (i: number, jump?: boolean): void => {
       if (dismissing) return;
       measure();
-      if (points) index = Math.max(0, Math.min(points.length - 1, i));
+      // A non-finite index (NaN from bad input) keeps the current point; fractions round down.
+      if (points && Number.isFinite(i)) index = Math.max(0, Math.min(points.length - 1, Math.trunc(i)));
       const next = restOf(points ? index : -1);
       if (jump || reduced()) motion.to(next, true);
       else animateTo(next, 0);

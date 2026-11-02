@@ -228,7 +228,8 @@ const GRAMMARS: Record<Exclude<CodeLanguage, "plaintext" | "diff">, Rule[]> = {
     ["string", /"(?:\\.|[^\\"])*"?|'[^']*'?/y],
     ["variable", /\$(?:\{[^}]*\}?|\w+|[@#?$!*-])/y],
     ["attribute", /(?<=\s)--?[\w-]+/y],
-    ["meta", /^(?:\$|>|#) /my],
+    // A line-start `# ` is the comment rule's (shell comments outnumber root prompts); prompts: `$ ` / `> `.
+    ["meta", /^(?:\$|>) /my],
     ["number", /\b\d+\b/y],
     ["ident", /[A-Za-z_][\w.-]*/y],
     ["operator", /&&|\|\||[|&;<>]=?|=/y],
@@ -272,6 +273,13 @@ const GRAMMARS: Record<Exclude<CodeLanguage, "plaintext" | "diff">, Rule[]> = {
     ["punctuation", /[{}()[\];,.]/y],
   ],
 };
+
+/** The two characters after the whitespace run at `from` (aligned `name     : 1` / `foo   (x)` see `:` / `(`). */
+function nextChars(code: string, from: number): string {
+  let j = from;
+  while (j < code.length && /\s/.test(code[j]!)) j++;
+  return code.slice(j, j + 2);
+}
 
 function classify(language: CodeLanguage, word: string, rest: string, prev: CodeToken | undefined, lineStart: boolean): CodeTokenType {
   const call = /^\s*\(/.test(rest);
@@ -345,7 +353,7 @@ export function highlight(code: string, language?: string): CodeToken[] {
       const m = re.exec(code);
       if (!m || !m[0]) continue;
       const value = m[0];
-      const resolved = type === "ident" ? classify(lang, value, code.slice(i + value.length, i + value.length + 3), prev, lineStart) : type;
+      const resolved = type === "ident" ? classify(lang, value, nextChars(code, i + value.length), prev, lineStart) : type;
       push(resolved, value);
       prev = { type: resolved, value };
       lineStart = false;

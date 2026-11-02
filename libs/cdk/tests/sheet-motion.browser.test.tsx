@@ -295,6 +295,10 @@ describe("sheetMotion: snap points", () => {
     expect(Math.abs(translate(sheet))).toBeLessThan(0.01);
     controller!.snapTo(0, true);
     expect(translate(sheet)).toBe(400);
+    // A non-finite index keeps the current point (FIX2-CDK: NaN used to reach `motion.to(undefined)`).
+    controller!.snapTo(Number.NaN, true);
+    expect(translate(sheet)).toBe(400);
+    expect(controller!.index()).toBe(0);
   });
 
   it("sequential: a flick moves one point only; dismiss only from the lowest point", async () => {

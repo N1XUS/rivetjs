@@ -107,3 +107,4 @@ Collection model: Rivet DOM-as-collection helpers + `createSelection`, React Sta
 - [../CLAUDE.md](../CLAUDE.md), [../selection/CLAUDE.md](../selection/CLAUDE.md), [../_adapters/CLAUDE.md](../_adapters/CLAUDE.md), [../state/CLAUDE.md](../state/CLAUDE.md)
 - `apps/cdk-docs/content/foundations/collections.md`, `apps/cdk-docs/content/foundations/selection.md`
 - `docs/design/specs/2026-10-05-collections-parity.md`
+- `builder.ts` `capitalize` (@internal) is `""`-safe (the dev type-mismatch message threw a TypeError over the real error; FIX2-CDK 2026-11-01).

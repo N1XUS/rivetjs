@@ -15,3 +15,4 @@ Rivet-authored synchronous regex tokenizer for code blocks (feature set inspired
 ## Gotchas
 - Tag rule has a lookbehind `(?<![\w$)\]])` so TS generics (`Array<number>`) are not tags; shell command words are detected at line start only.
 - A function token needs `name(`: `function f<T>(` names stay plain.
+- FIX2-CDK 2026-11-01: `classify` peeks past the whole whitespace run (`nextChars`: aligned `name     : 1` / `foo   (x)` are property / call; was a 3-char window); shell prompt rule is `$ ` / `> ` only (line-start `# ` was always the comment rule's). Tests `../tests/highlight.test.ts`.

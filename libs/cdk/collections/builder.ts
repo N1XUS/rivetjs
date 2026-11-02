@@ -320,8 +320,9 @@ function compose(outer: Wrapper | void, inner: Wrapper | void): Wrapper | undefi
   return undefined;
 }
 
-function capitalize(str: string): string {
-  return str[0]!.toUpperCase() + str.slice(1);
+/** @internal `Item` from `item` (`""` stays `""`: the dev error message must not throw over the real error). */
+export function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 export interface CollectionOptions<T, C extends Collection<Node<T>>> extends Omit<CollectionStateBase<T, C>, "children"> {

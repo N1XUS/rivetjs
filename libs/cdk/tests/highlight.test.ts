@@ -43,3 +43,16 @@ test("highlight: token types", () => {
   assert.ok(types("diff").has("inserted") && types("diff").has("deleted"));
   assert.deepEqual(highlight("plain <b>", "plaintext"), [{ type: "plain", value: "plain <b>" }]);
 });
+
+test("highlight: a call / property key after several spaces (FIX2-CDK, review cdk-b-2#8)", () => {
+  const typeOf = (code: string, lang: string, word: string) => highlight(code, lang).find((t) => t.value === word)?.type;
+  assert.equal(typeOf("foo    (x)", "ts", "foo"), "function");
+  assert.equal(typeOf("const o = { name     : 1 }", "ts", "name"), "property");
+  assert.equal(typeOf("foo\n\n\n(x)", "ts", "foo"), "function");
+  assert.ok(!highlight("a ? name : 1", "ts").some((t) => t.type === "property"), "a ternary branch is no key");
+});
+
+test("highlight: shell line-start `# ` is a comment (the prompt rule has no `#` alternative)", () => {
+  assert.deepEqual(highlight("# apt install x", "shell")[0], { type: "comment", value: "# apt install x" });
+  assert.equal(highlight("$ npm i", "shell")[0]!.type, "meta");
+});

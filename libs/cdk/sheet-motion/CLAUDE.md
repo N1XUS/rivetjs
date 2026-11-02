@@ -25,3 +25,4 @@
 ## Gotchas
 
 - Touch inside a scroll container of the sheet: the container's own `touch-action` (auto) wins for touches that start in it (effective touch-action stops at the nearest scroller), so the browser pans it and sends `pointercancel`: on touch, a scrollable body never drags the sheet, even scrolled to its start (mouse / pen follow the scroll-first rule above). Drag from the handle / header. Sidebar adoption: `side` left / right → `placement`, `closeThreshold: 0.5`, `backdrop` = its overlay.
+- `snapTo(i)`: a non-finite `i` keeps the current point, fractions truncate (NaN reached `motion.to(undefined)`; FIX2-CDK 2026-11-01, `../tests/sheet-motion.browser.test.tsx` snap points).
