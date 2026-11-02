@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { build, createServer, type InlineConfig, type Plugin, type ViteDevServer } from "vite";
 import { rivet, _STYLE_SUFFIX } from "../vite.ts";
-import { nameRegistry, scopedName } from "../styles.ts";
+import { nameRegistry, scopedName, scopeHash } from "../styles.ts";
 
 const CARD = (color: string, extra = "") => `import { css, cx } from "@rivetjs/runtime/css";
 import m from "./note.module.scss";
@@ -132,4 +132,53 @@ test("names registry reports collisions", () => {
   assert.equal(registry.add("a.tsx", { x: "r000001" }), undefined);
   assert.equal(registry.add("a.tsx", { x: "r000001" }), undefined);
   assert.match(registry.add("b.tsx", { y: "r000001" })!, /collision: "r000001" for b\.tsx \.y and a\.tsx \.x/);
+});
+
+test("build: two CSS modules whose scoped names collide fail the build (rc2#36)", async () => {
+  // Readable names keep 5 base-36 digits (about 26 bits): the same class in two files collides within thousands of paths.
+  const seen = new Map<string, string>();
+  let pair: [string, string] | null = null;
+  for (let i = 0; !pair; i++) {
+    const file = `m${i}.module.css`;
+    const name = scopedName(file, "note", "readable");
+    if (seen.has(name)) pair = [seen.get(name)!, file];
+    else seen.set(name, file);
+  }
+  await mkdir(".artifacts", { recursive: true });
+  const root = await mkdtemp(resolve(".artifacts/vite-styles-"));
+  try {
+    await writeFile(resolve(root, pair[0]), ".note { color: red }\n");
+    await writeFile(resolve(root, pair[1]), ".note { color: blue }\n");
+    await writeFile(resolve(root, "entry.ts"), `import a from "./${pair[0]}";\nimport b from "./${pair[1]}";\nexport default [a.note, b.note];\n`);
+    await assert.rejects(
+      build({
+        root,
+        configFile: false,
+        logLevel: "silent",
+        plugins: [rivet({ devtools: false, css: { names: "readable" } })],
+        build: { write: false, lib: { entry: resolve(root, "entry.ts"), formats: ["es"], fileName: "out" } },
+      }),
+      /scoped class name collision/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("scopeHash: FNV-1a 64 in 32-bit halves equals the BigInt definition", () => {
+  const big = (scope: string, local: string) => {
+    let h = 0xcbf29ce484222325n;
+    for (const byte of [...new TextEncoder().encode(scope), 0, ...new TextEncoder().encode(local)]) {
+      h ^= BigInt(byte);
+      h = (h * 0x100000001b3n) & ((1n << 64n) - 1n);
+    }
+    return h;
+  };
+  for (const [scope, local] of [
+    ["", ""],
+    ["src/a.tsx", "card"],
+    ["src/ü/日本.module.css", "größe"],
+    ["x".repeat(500), "y"],
+  ] as const)
+    assert.equal(scopeHash(scope, local), big(scope, local));
 });

@@ -142,28 +142,31 @@ export function classJoinDeclarations(code: string): Map<string, number[]> {
 }
 
 const tokenCache = new WeakMap<(value: string) => string, Map<string, boolean>>();
+/** A token tailwind-merge recognises (it drops a repeated one, keeps a repeated unknown one), memoised per merge. */
+const knownToken = (merge: (value: string) => string): ((token: string) => boolean) => {
+  let recognised = tokenCache.get(merge);
+  if (!recognised) tokenCache.set(merge, (recognised = new Map()));
+  return (token) => {
+    let hit = recognised!.get(token);
+    if (hit === undefined) recognised!.set(token, (hit = merge(token + " " + token) === token));
+    return hit;
+  };
+};
 
 /**
  * The override sources of a module (source text, before the JSX compile). Empty: every override it can make is a
  * tailwind-merge fixed point. Unparsable code is one source (conservative). A module declaring `@rivet-class-join`
  * helpers is trusted for their bodies (their arguments are checked at each call).
  */
-export function classOverrideSites(code: string, file: string, options: ClassOverrideOptions): ClassOverrideSite[] {
+export function classOverrideSites(code: string, file: string, options: ClassOverrideOptions, parsed?: Node): ClassOverrideSite[] {
   let program: Node;
   try {
-    program = parseAst(code, { lang: langOf(file) }) as unknown as Node;
+    program = parsed ?? (parseAst(code, { lang: langOf(file) }) as unknown as Node);
   } catch {
     return [{ at: 0, why: "unparsable" }];
   }
   const merge = options.merge;
-  let recognised = tokenCache.get(merge);
-  if (!recognised) tokenCache.set(merge, (recognised = new Map()));
-  const known = (token: string): boolean => {
-    let hit = recognised!.get(token);
-    // tailwind-merge drops a repeated token it recognises, keeps a repeated unknown one.
-    if (hit === undefined) recognised!.set(token, (hit = merge(token + " " + token) === token));
-    return hit;
-  };
+  const known = knownToken(merge);
   const own = classJoinDeclarations(code);
   // `// @rivet-class-resolvers a b`: module bindings holding resolver results (memo helpers the pass cannot follow).
   const declaredResolvers = new Set<string>();
@@ -177,7 +180,21 @@ export function classOverrideSites(code: string, file: string, options: ClassOve
       for (const s of stmt.specifiers as Node[]) importOf.set((s.local as Node).name as string, (stmt.source as Node).value as string);
   // Scopes: parents of every node (a name resolves to its nearest declaration).
   const parent = new Map<Node, Node>();
+  // Member assignments by root name (`S[v] ??= cardVariants(…)` makes `S` hold resolvers), collected in the same
+  // traversal as the parents (rc2#25).
+  const assigned = new Map<string, Node[]>();
   const link = (node: Node): void => {
+    if (node.type === "AssignmentExpression") {
+      let left = unwrap(node.left as Node);
+      if (left.type === "MemberExpression") {
+        while (left.type === "MemberExpression") left = unwrap(left.object as Node);
+        if (left.type === "Identifier") {
+          const list = assigned.get(left.name as string);
+          if (list) list.push(node.right as Node);
+          else assigned.set(left.name as string, [node.right as Node]);
+        }
+      }
+    }
     for (const child of children(node)) {
       parent.set(child, node);
       link(child);
@@ -268,19 +285,6 @@ export function classOverrideSites(code: string, file: string, options: ClassOve
     const last = stmts[stmts.length - 1];
     return last && last.type === "ReturnStatement" ? (last.argument as Node) : null;
   };
-  // Member assignments by root name (`S[v] ??= cardVariants(…)` makes `S` hold resolvers).
-  const assigned = new Map<string, Node[]>();
-  const collect = (node: Node): void => {
-    if (node.type === "AssignmentExpression") {
-      let left = unwrap(node.left as Node);
-      if (left.type === "MemberExpression") {
-        while (left.type === "MemberExpression") left = unwrap(left.object as Node);
-        if (left.type === "Identifier") assigned.set(left.name as string, [...(assigned.get(left.name as string) ?? []), node.right as Node]);
-      }
-    }
-    for (const child of children(node)) collect(child);
-  };
-  collect(program);
   // Whether `raw` evaluates to a variant resolver result or function: a chain rooted at a styles-module import, or at a
   // binding made from one (consts, functions returning one, objects whose members are assigned one).
   const resolverValue = (raw: Node | null | undefined, depth = 0): boolean => {
@@ -562,8 +566,21 @@ export function classOverrideSites(code: string, file: string, options: ClassOve
   };
   // A local component (top-level function of this module) whose props parameter is only read as `p.<key>…` and whose
   // `p.<attr>…` reads are each the whole value of an intrinsic element's `class` / `className`: it renders the value.
+  // Memoised per (binding, attr) (rc2#38: asked for every unresolved class attr of the same local component).
+  const rendered = new Map<unknown, Map<string, boolean>>();
   const rendersOnly = (tag: string, attr: string, at: Node): boolean => {
     const b = binding(tag, at);
+    const key = b.what === "fn" ? b.fn : b.what === "const" ? b.init : null;
+    if (key) {
+      let byAttr = rendered.get(key);
+      if (!byAttr) rendered.set(key, (byAttr = new Map()));
+      let hit = byAttr.get(attr);
+      if (hit === undefined) byAttr.set(attr, (hit = rendersOnlyOf(b, attr)));
+      return hit;
+    }
+    return false;
+  };
+  const rendersOnlyOf = (b: ReturnType<typeof binding>, attr: string): boolean => {
     const fn = b.what === "fn" ? b.fn : b.what === "const" && b.init && /Function/.test(unwrap(b.init).type) ? unwrap(b.init) : null;
     const param = fn ? (fn.params as Node[])[0] : null;
     if (!fn || !param || param.type !== "Identifier") return false;
@@ -763,7 +780,7 @@ export function classModuleInfo(code: string, file: string, options: ClassOverri
     }
   }
   if (!classOverrideCandidate(code)) return info;
-  for (const s of classOverrideSites(code, file, options)) {
+  for (const s of classOverrideSites(code, file, options, program)) {
     if (!s.conditional) {
       info.hard = true;
       continue;
@@ -799,7 +816,7 @@ export function classPropUse(
     for (const local of targets.keys()) hits.add("sets" in targets.get(local)! ? local : local + ".*");
     return hits;
   }
-  const known = (token: string) => options.merge(token + " " + token) === token;
+  const known = knownToken(options.merge); // compiler#15: the memo classOverrideSites shares
   const given = (value: Node | null | undefined): boolean => {
     if (value === undefined) return false;
     if (value === null) return true;
@@ -830,8 +847,8 @@ export function classPropUse(
     return sets.some((props) => props.filter((path) => passes(opening, path)).length >= 2);
   };
   const parent = new Map<Node, Node>();
+  // One traversal (rc2#25): a node's parent is set before it is visited (only its own parent is read).
   const visit = (node: Node): void => {
-    for (const child of children(node)) parent.set(child, node);
     if (node.type === "ImportDeclaration" || node.type === "JSXClosingElement") return;
     // Types name no value (`typeof X` in a type is no use either).
     if (/^TS/.test(node.type) && !/^TS(?:As|Satisfies|NonNull|Instantiation)Expression$|^TSTypeAssertion$/.test(node.type)) return;
@@ -855,7 +872,7 @@ export function classPropUse(
           if (sets && callSite(node, sets)) hits.add(`${local}.${member}`);
         } else if (t) hits.add(local + ".*");
       }
-      for (const attr of node.attributes as Node[]) visit(attr);
+      for (const attr of node.attributes as Node[]) (parent.set(attr, node), visit(attr));
       return;
     }
     if (node.type === "Identifier" && targets.has(node.name as string)) {
@@ -870,7 +887,7 @@ export function classPropUse(
       } else hits.add(local + ".*");
       return;
     }
-    for (const child of children(node)) visit(child);
+    for (const child of children(node)) (parent.set(child, node), visit(child));
   };
   visit(program);
   return hits;

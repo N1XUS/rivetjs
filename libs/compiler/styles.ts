@@ -4,16 +4,23 @@
 export type ClassNames = "readable" | "short";
 
 const encoder = new TextEncoder();
-const MASK = (1n << 64n) - 1n;
 
 /** FNV-1a 64 of `scope`, NUL, `local` (UTF-8): same value as the compiler's `styles::hash`. */
 export function scopeHash(scope: string, local: string): bigint {
-  let h = 0xcbf29ce484222325n;
-  for (const byte of [...encoder.encode(scope), 0, ...encoder.encode(local)]) {
-    h ^= BigInt(byte);
-    h = (h * 0x100000001b3n) & MASK;
-  }
-  return h;
+  // Two 32-bit halves in doubles (rc2#23: no BigInt per byte). prime = 2^40 + 0x1b3; every product stays below 2^53.
+  let lo = 0x84222325,
+    hi = 0xcbf29ce4;
+  const mix = (byte: number) => {
+    lo = (lo ^ byte) >>> 0;
+    const low = lo * 0x1b3;
+    const high = hi * 0x1b3 + lo * 256 + Math.floor(low / 0x100000000);
+    lo = low % 0x100000000;
+    hi = high % 0x100000000;
+  };
+  for (const byte of encoder.encode(scope)) mix(byte);
+  mix(0);
+  for (const byte of encoder.encode(local)) mix(byte);
+  return (BigInt(hi) << 32n) | BigInt(lo);
 }
 
 const base36 = (n: bigint, length: number) => {

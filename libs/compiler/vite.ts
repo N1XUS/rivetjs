@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { switchContent } from "./switches.ts";
+import { DERIVED_SWITCHES, DOM_DATA_SWITCHES, SWITCH_MODULE, switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
 import { placeCalls, placementMismatches } from "./facts-placement.ts";
 import { nativeFamilies, stylesState, type NativeFamily } from "./facts-native.ts";
@@ -294,10 +294,13 @@ export interface RivetOptions {
   compileCache?: boolean;
 }
 
+/** A module's leading comments (after a hashbang): where JSX pragmas live. */
+const LEADING_COMMENTS = /^(?:#![^\n]*\n)?(?:\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/)*/;
+
 /** A file that asks for another JSX runtime in its leading comments (`@jsxImportSource react`, or a
  * classic `@jsx h` pragma): its JSX belongs to that framework, the Rivet compiler leaves it alone. */
 export function foreignJsxPragma(source: string): boolean {
-  const head = /^(?:#![^\n]*\n)?(?:\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/)*/.exec(source)![0];
+  const head = LEADING_COMMENTS.exec(source)![0];
   const named = /@jsxImportSource\s+([^\s*]+)/.exec(head);
   if (named) return named[1] !== "@rivetjs/runtime";
   return /@jsx\s+[^\s*]/.test(head);
@@ -355,7 +358,7 @@ function runtimeImport(node: unknown): string | null {
  */
 function rivetRuntimeUse(source: string, file: string): string | null {
   if (!source.includes("@rivetjs/runtime")) return null;
-  const head = /^(?:#![^\n]*\n)?(?:\s+|\/\/[^\n]*|\/\*[\s\S]*?\*\/)*/.exec(source)![0];
+  const head = LEADING_COMMENTS.exec(source)![0];
   if (/@jsxImportSource\s+@rivetjs\/runtime\b/.test(head)) return "@jsxImportSource @rivetjs/runtime";
   const lang = langOf(file);
   if (!lang) return /^\s*import\s+(?!type\b)[^;]*?\bfrom\s*["'](@rivetjs\/runtime(?:\/[^"']*)?)["']/m.exec(source)?.[1] ?? null;
@@ -515,18 +518,79 @@ export function domListIn(code: string, slots: DomSlots | null): boolean {
   visit(body);
   return hit;
 }
-const DERIVED_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](derived|lazy-rows)\.([cm]?[jt]s)$/;
-function derivedSwitch(id: string): string | null {
-  const hit = DERIVED_SWITCH.exec(id);
-  return hit && switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]);
+// One path table (`switches.ts` `SWITCH_MODULE`; rc2#29), split by the switch families.
+function switchOf(id: string, family: readonly string[]): string | null {
+  const hit = SWITCH_MODULE.exec(id);
+  return hit && family.includes(hit[1]!) ? switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]) : null;
 }
+// A module that may hold a `<For>`: the tag (namespaced too) or an aliased import; the bare word in prose asks for a
+// second compile (rc2#14: 50 -> 34 of the ui + cdk modules).
+const FOR_USE = /<\s*(?:[\w$]+\.)?For\b|\bFor\s+as\b/;
+const derivedSwitch = (id: string): string | null => switchOf(id, DERIVED_SWITCHES);
 /** `resume.domData` (DERIVED-C5): the runtime's switch modules (`dom-data.ts` for the browser, `dom-data-derived.ts` for
  * the server) → their opted-in content (`switches.ts` `DOM_DATA_SWITCHES`). */
-const DOM_DATA_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](dom-data(?:-derived)?)\.([cm]?[jt]s)$/;
-function domDataSwitch(id: string): string | null {
-  const hit = DOM_DATA_SWITCH.exec(id);
-  return hit && switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]);
+const domDataSwitch = (id: string): string | null => switchOf(id, DOM_DATA_SWITCHES);
+/**
+ * @internal Per node, every node reachable from it through `edges` (itself included only through a cycle back to it… and
+ * as the SCC's member: callers drop the start node). One reach set per strongly connected component, memoised.
+ */
+export function staticClosures(edges: (name: string) => readonly string[]): (name: string) => ReadonlySet<string> {
+  const index = new Map<string, number>(),
+    low = new Map<string, number>(),
+    sccOf = new Map<string, Set<string>>(),
+    reach = new Map<Set<string>, Set<string>>();
+  const onStack = new Set<string>();
+  const stack: string[] = [];
+  let counter = 0;
+  const run = (start: string) => {
+    const work: [string, number][] = [[start, 0]];
+    (index.set(start, counter), low.set(start, counter++), stack.push(start), onStack.add(start));
+    while (work.length) {
+      const frame = work[work.length - 1]!;
+      const [v, i] = frame;
+      const out = edges(v);
+      if (i < out.length) {
+        frame[1]++;
+        const w = out[i]!;
+        if (!index.has(w)) {
+          (index.set(w, counter), low.set(w, counter++), stack.push(w), onStack.add(w));
+          work.push([w, 0]);
+        } else if (onStack.has(w)) low.set(v, Math.min(low.get(v)!, index.get(w)!));
+        continue;
+      }
+      work.pop();
+      if (work.length) {
+        const u = work[work.length - 1]![0];
+        low.set(u, Math.min(low.get(u)!, low.get(v)!));
+      }
+      if (low.get(v) !== index.get(v)) continue;
+      // `v` roots a component: its successors' components are complete (reverse topological order).
+      const members = new Set<string>();
+      for (let w; (w = stack.pop()) !== undefined;) {
+        onStack.delete(w);
+        members.add(w);
+        sccOf.set(w, members);
+        if (w === v) break;
+      }
+      const all = new Set<string>();
+      const cyclic = members.size > 1 || edges(v).includes(v);
+      if (cyclic) for (const m of members) all.add(m);
+      for (const m of members)
+        for (const w of edges(m)) {
+          const other = sccOf.get(w)!;
+          if (other === members) continue;
+          all.add(w);
+          for (const x of reach.get(other)!) all.add(x);
+        }
+      reach.set(members, all);
+    }
+  };
+  return (name) => {
+    if (!index.has(name)) run(name);
+    return reach.get(sccOf.get(name)!)!;
+  };
 }
+
 // V8 explicit compile hint: compile every function when the script is compiled (module scripts: on the
 // streaming compile thread while they download). Client entry chunks: their functions run at startup (mount),
 // which otherwise re-parses + lazily compiles each one on the main thread (krausest startup scriptBootup
@@ -615,7 +679,7 @@ export function _foldFacade(bundle: Rollup.OutputBundle, facade: Rollup.OutputCh
   }
   if (added.length) {
     const at = tail.index;
-    target.code = target.code.slice(0, at) + "export{" + [tail[1]!, ...added].filter(Boolean).join(",") + "};" + tail[2]! + "";
+    target.code = target.code.slice(0, at) + "export{" + [tail[1]!, ...added].filter(Boolean).join(",") + "};" + tail[2]!;
     target.exports = [...new Set([...target.exports, ...exported.map(([name]) => name)])];
   }
   return target;
@@ -861,10 +925,10 @@ const DEFAULT_LAYERS = "theme, base, components, utilities";
 /** Resume membership for editors (`.rivet/editor.json`); best effort, builds never depend on it.
  * Written on every config resolution (bumps its mtime: `rivet-check`'s staleness check). */
 function writeEditorManifest(root: string, resume: RivetResumeOptions | undefined): void {
-  const posix = (path: string) => path.split(sep).join("/");
+  const toPosix = (path: string) => path.split(sep).join("/");
   try {
     // Undefined removes what a previous config wrote.
-    updateEditorManifest(root, { resumeModules: resume ? [...new Set(resume.modules.map(posix))].sort() : undefined });
+    updateEditorManifest(root, { resumeModules: resume ? [...new Set(resume.modules.map(toPosix))].sort() : undefined });
   } catch {}
 }
 
@@ -992,10 +1056,16 @@ function rivetPlugin(
     const facts = moduleFacts(source, filename, { boundaries: true }).boundaries ?? new Map();
     const marked = new Set<string>();
     for (const [name, c] of facts) if (c.source || c.interactive || c.listens) marked.add(name);
-    for (let grew = true; grew;) {
-      grew = false;
-      for (const [name, c] of facts) if (!marked.has(name) && [...c.renders].some((tag) => marked.has(tag))) (marked.add(name), (grew = true));
-    }
+    // Reverse edges (compiler#30): a marked component marks the module's components rendering it, once.
+    const renderedBy = new Map<string, string[]>();
+    for (const [name, c] of facts)
+      for (const tag of c.renders) {
+        const list = renderedBy.get(tag);
+        if (list) list.push(name);
+        else renderedBy.set(tag, [name]);
+      }
+    const queue = [...marked];
+    for (let i = 0; i < queue.length; i++) for (const name of renderedBy.get(queue[i]!) ?? []) if (!marked.has(name)) (marked.add(name), queue.push(name));
     const boundaries = [...marked];
     const entry = { source, boundaries, conditional: boundaries.filter((name) => !facts.get(name)!.source) };
     devVerdicts.set(filename, entry);
@@ -1132,10 +1202,17 @@ function rivetPlugin(
   // Read live on the dev server (the router adds route modules while it runs); builds resolve the list once per build
   // (`routeSet`, reset by `buildStart`): a scan per call was ~0.8 s of a ui-docs client build (thousands of routes).
   let routeSet: Set<string> | null = null;
+  let routeList: readonly string[] | null = null,
+    routeCount = 0;
   const isRoute = (filename: string) => {
     if (!serverExports) return false;
-    if (serve) return serverExports.modules.some((path) => resolve(root, path) === resolve(filename));
-    routeSet ??= new Set(serverExports.modules.map((path) => resolve(root, path)));
+    // Dev (compiler#19): the router grows the list while it runs; the Set is rebuilt when the list changed.
+    if (serve && (routeList !== serverExports.modules || routeCount !== serverExports.modules.length)) routeSet = null;
+    if (!routeSet) {
+      routeList = serverExports.modules;
+      routeCount = routeList.length;
+      routeSet = new Set(routeList.map((path) => resolve(root, path)));
+    }
     return routeSet.has(resolve(filename));
   };
   const split = (filename: string) => (isRoute(filename) ? { serverExports: true } : {});
@@ -1153,7 +1230,7 @@ function rivetPlugin(
   // a chunk of its own by client builds; the `dom-data` switch serves its URL (`import.meta.ROLLUP_FILE_URL_<ref>`).
   let domReaderId: string | null = null,
     domReaderRef: string | null = null;
-  const posix = (path: string) => path.split(sep).join("/");
+  const toPosix = (path: string) => path.split(sep).join("/");
   const devResume: DevResume = {
     manifest: () => ({
       runtime: base + devUrl(DERIVED_ENTRY),
@@ -1190,27 +1267,29 @@ function rivetPlugin(
     }
     return found;
   };
-  const appModule = (file: string): boolean => {
-    if (file.startsWith("\0")) return virtual(file);
-    if (/[/\\]node_modules[/\\]/.test(file)) return false;
-    const dir = packageOf(dirname(file));
-    if (!dir) return true;
-    const { name } = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name?: string };
-    return !(name && FRAMEWORK.has(name)) || /^tests[/\\]/.test(relative(dir, file));
-  };
-  // Installed framework packages ship their components as preserved-JSX `.jsx` (`router/client/link.jsx`,
-  // `forms/components.jsx`): compiled like their workspace sources, which are not under node_modules.
-  const frameworkNames = new Map<string, boolean>(); // package dir → framework package
-  const frameworkJsx = (file: string): boolean => {
-    if (!/\.[jt]sx$/.test(file)) return false;
-    const dir = packageOf(dirname(file));
-    if (!dir) return false;
+  // Package dir → a framework package (its package.json read once; rc2#13: `appModule` runs per module / resolve).
+  const frameworkNames = new Map<string, boolean>();
+  const frameworkPackage = (dir: string): boolean => {
     let hit = frameworkNames.get(dir);
     if (hit === undefined) {
       const { name } = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name?: string };
       frameworkNames.set(dir, (hit = !!name && FRAMEWORK.has(name)));
     }
     return hit;
+  };
+  const appModule = (file: string): boolean => {
+    if (file.startsWith("\0")) return virtual(file);
+    if (/[/\\]node_modules[/\\]/.test(file)) return false;
+    const dir = packageOf(dirname(file));
+    if (!dir) return true;
+    return !frameworkPackage(dir) || /^tests[/\\]/.test(relative(dir, file));
+  };
+  // Installed framework packages ship their components as preserved-JSX `.jsx` (`router/client/link.jsx`,
+  // `forms/components.jsx`): compiled like their workspace sources, which are not under node_modules.
+  const frameworkJsx = (file: string): boolean => {
+    if (!/\.[jt]sx$/.test(file)) return false;
+    const dir = packageOf(dirname(file));
+    return !!dir && frameworkPackage(dir);
   };
   // tailwind-merge on demand (ZERO UI-JS2, `class-merge.ts`): a production client module that can hand `@rivetjs/ui`'s
   // resolver an override tailwind-merge would change imports `@rivetjs/ui/tv-merge` (registers the merge before its code
@@ -1336,6 +1415,13 @@ function rivetPlugin(
     }
     return out;
   };
+  // One namespace walk per target per build (rc2#8: a ui barrel imported as `* as UI` by thousands of modules).
+  const classJoinMemo = new Map<string, Promise<Set<string>>>();
+  const classJoinFilesOf = (ctx: Rollup.TransformPluginContext, file: string, merge: (value: string) => string): Promise<Set<string>> => {
+    let hit = classJoinMemo.get(file);
+    if (!hit) classJoinMemo.set(file, (hit = classJoinFiles(ctx, file, merge)));
+    return hit;
+  };
   // Pass 1: the prop-join modules a module's uses may pass two joined props to (static imports via `classPropUse`;
   // dynamic imports: a literal specifier = its whole namespace, `import.meta.glob` / `import(\`…${…}\`)` = unknown).
   const classRecordUses = async (
@@ -1354,7 +1440,7 @@ function rivetPlugin(
         continue;
       }
       const to = await classResolve(ctx, spec, filename);
-      if (to) for (const file of await classJoinFiles(ctx, to, merge)) record.needed.add(joinKey(file));
+      if (to) for (const file of await classJoinFilesOf(ctx, to, merge)) record.needed.add(joinKey(file));
     }
     if (!info.imports.size) return;
     const targets = new Map<string, ClassPropTarget>();
@@ -1363,7 +1449,7 @@ function rivetPlugin(
       const to = await classResolve(ctx, from, filename);
       if (!to) continue;
       if (imported === "*") {
-        const all = await classJoinFiles(ctx, to, merge);
+        const all = await classJoinFilesOf(ctx, to, merge);
         if (!all.size) continue;
         files.set(local + ".*", [...all]);
         const members = new Map<string, Join | null>();
@@ -1400,8 +1486,10 @@ function rivetPlugin(
         const require = createRequire(id.split("?", 1)[0]!);
         const mod = (await import(pathToFileURL(require.resolve("tailwind-variants")).href)) as { cn: (value: string) => string };
         twMergeFn = (value: string) => mod.cn(value) ?? "";
-      } catch {
+      } catch (error) {
         twMergeFn = null;
+        // Safe (every override counts as changing) but larger: say so once per build (r3-errors#16).
+        ctx.warn(`[rivet] tailwind-variants could not be loaded at build time, class overrides stay on the runtime merge: ${String(error)}`);
       }
     }
     // Without tailwind-merge at build time every override counts as one that may change.
@@ -1531,7 +1619,7 @@ function rivetPlugin(
       table: placementTable(config.table),
       ...(config.weights ? { weights: config.weights } : {}),
       explain: !!explainFile,
-      display: (file) => posix(relative(root, file)),
+      display: (file) => toPosix(relative(root, file)),
     });
     if (!placed.agrees) console.warn("[rivet] placement: the legal call sites differ from the call-site proof; today's verdicts kept");
     if (explainFile) {
@@ -1566,47 +1654,58 @@ function rivetPlugin(
     const plain = new Set<string>();
     const passThrough = (file: string) =>
       /\.[cm]?[jt]s$/.test(file) && !/[/\\]node_modules[/\\]/.test(file) && (!relative(root, file).startsWith("..") || sourcePackage(file) !== null);
+    // compiler#10: breadth-first in waves — a wave's reads and its modules' import resolutions run concurrently, the
+    // facts / graph bookkeeping in queue order (the FIFO order the one-at-a-time walk had, so every map keeps its order).
     const walk = async (): Promise<void> => {
-      for (let filename; (filename = pending.shift());) {
-        if (facts.has(filename)) continue;
-        const source = prepared(filename, await sourceOf(ctx, filename));
-        sourceBytes.set(filename, source.length);
-        texts.set(filename, source);
-        const route = isRoute(filename);
-        const f = plain.has(filename)
-          ? moduleFacts(source, filename, { refs: true })
-          : placeCalls(
-              source,
-              filename,
-              moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true }),
-            );
-        facts.set(filename, f);
-        if (!plain.has(filename) && resume?.domData !== false && /\bFor\b/.test(source)) forSources.set(filename, source);
-        // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
-        const declared = plain.has(filename) ? [] : nativeFamilies(source);
-        if (declared.length) families.set(filename, declared);
-        // PRESS-LITE: the module's `@rivet-native-lite` families (`native-lite.ts`).
-        const light = plain.has(filename) ? [] : liteFamilies(source);
-        if (light.length) lites.set(filename, light);
-        if (!plain.has(filename) && stylesState(source)) stateStyled.add(filename);
-        typeExports.set(filename, _typeExports(source));
-        if (route || isDerivedRoot(filename)) roots.add(filename);
-        if (route) routeFiles.add(filename);
-        const map = new Map<string, string>();
-        for (const spec of new Set([...f.statics, ...f.dynamics])) {
-          const hit = await resolveFact(ctx, spec, filename);
-          const file = hit && !hit.external ? hit.id.split("?")[0]! : null;
-          if (!file) continue;
-          if (isResumable(file)) {
-            map.set(spec, file);
-            if (!resumable.has(file)) (resumable.add(file), pending.push(file));
-          } else if (!file.startsWith("\0") && passThrough(file) && existsSync(file)) {
-            // (Dynamic ones too, ZERO CALLSITE: `import("./announcer.ts")` in a hook reaches that module's declarations.)
-            map.set(spec, file);
-            if (!plain.has(file)) (plain.add(file), pending.push(file));
-          }
-        }
-        graph.set(filename, map);
+      while (pending.length) {
+        const wave: string[] = [];
+        const inWave = new Set<string>();
+        for (const filename of pending.splice(0)) if (!facts.has(filename) && !inWave.has(filename)) (inWave.add(filename), wave.push(filename));
+        const sources = await Promise.all(wave.map((filename) => sourceOf(ctx, filename)));
+        const walked = wave.map((filename, i) => {
+          const source = prepared(filename, sources[i]!);
+          sourceBytes.set(filename, source.length);
+          texts.set(filename, source);
+          const route = isRoute(filename);
+          const f = plain.has(filename)
+            ? moduleFacts(source, filename, { refs: true })
+            : placeCalls(
+                source,
+                filename,
+                moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true }),
+              );
+          facts.set(filename, f);
+          if (!plain.has(filename) && resume?.domData !== false && FOR_USE.test(source)) forSources.set(filename, source);
+          // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
+          const declared = plain.has(filename) ? [] : nativeFamilies(source);
+          if (declared.length) families.set(filename, declared);
+          // PRESS-LITE: the module's `@rivet-native-lite` families (`native-lite.ts`).
+          const light = plain.has(filename) ? [] : liteFamilies(source);
+          if (light.length) lites.set(filename, light);
+          if (!plain.has(filename) && stylesState(source)) stateStyled.add(filename);
+          typeExports.set(filename, _typeExports(source));
+          if (route || isDerivedRoot(filename)) roots.add(filename);
+          if (route) routeFiles.add(filename);
+          return { filename, specs: [...new Set([...f.statics, ...f.dynamics])] };
+        });
+        const hits = await Promise.all(walked.map(({ filename, specs }) => Promise.all(specs.map((spec) => resolveFact(ctx, spec, filename)))));
+        walked.forEach(({ filename, specs }, i) => {
+          const map = new Map<string, string>();
+          specs.forEach((spec, k) => {
+            const hit = hits[i]![k];
+            const file = hit && !hit.external ? hit.id.split("?")[0]! : null;
+            if (!file) return;
+            if (isResumable(file)) {
+              map.set(spec, file);
+              if (!resumable.has(file)) (resumable.add(file), pending.push(file));
+            } else if (!file.startsWith("\0") && passThrough(file) && existsSync(file)) {
+              // (Dynamic ones too, ZERO CALLSITE: `import("./announcer.ts")` in a hook reaches that module's declarations.)
+              map.set(spec, file);
+              if (!plain.has(file)) (plain.add(file), pending.push(file));
+            }
+          });
+          graph.set(filename, map);
+        });
       }
     };
     await walk();
@@ -1713,7 +1812,7 @@ function rivetPlugin(
             edges: (file) => graph.get(file)?.values() ?? [],
             keyOf: (file, name, declaring) =>
               createHash("sha256")
-                .update(posix(relative(root, file)) + "#" + name + (introduced.has(declaring) ? "#" + posix(relative(root, declaring)) : ""))
+                .update(toPosix(relative(root, file)) + "#" + name + (introduced.has(declaring) ? "#" + toPosix(relative(root, declaring)) : ""))
                 .digest("hex")
                 .slice(0, 10),
             ...(classTrace
@@ -1802,7 +1901,7 @@ function rivetPlugin(
           CLASS_REGISTRY +
             ":" +
             createHash("sha256")
-              .update(posix(relative(root, family.file)))
+              .update(toPosix(relative(root, family.file)))
               .digest("hex")
               .slice(0, 10),
         );
@@ -1877,7 +1976,9 @@ function rivetPlugin(
     if (!existsSync(helper)) return null;
     try {
       return ((await import(pathToFileURL(helper).href)) as { _domSlots?: DomSlots })._domSlots ?? null;
-    } catch {
+    } catch (error) {
+      // Safe (the dom-data switch ships) but larger: say so (r3-errors#16; one walk per build).
+      ctx.warn(`[rivet] ${helper} could not be loaded at build time, the DOM data reader ships: ${String(error)}`);
       return null;
     }
   };
@@ -1980,15 +2081,12 @@ function rivetPlugin(
       }
     // After the loop: folding (`foldFacade`) appends export names to a chunk named earlier.
     for (const chunk of sized) sizes[base + chunk.fileName] = Buffer.byteLength(chunk.code);
+    // Static closures, memoised per chunk (compiler#13: boundary chunks share most of theirs). Chunk import cycles exist:
+    // strongly connected components (Tarjan, iterative) share one reach set, built in reverse topological order.
+    const reachOf = staticClosures((name) => chunks.get(name)?.imports ?? []);
     for (const file of roots) {
-      const seen = new Set<string>(),
-        stack = [...(chunks.get(file)?.imports ?? [])];
-      while (stack.length) {
-        const next = stack.pop()!;
-        if (seen.has(next) || next === file) continue;
-        seen.add(next);
-        stack.push(...(chunks.get(next)?.imports ?? []));
-      }
+      const seen = new Set(reachOf(file));
+      seen.delete(file);
       if (seen.size) deps[base + file] = [...seen].sort().map((name) => base + name);
     }
     // Framework CSS belongs to every rendered island, even a static one with no hydration record. Preserve Vite's
@@ -2023,7 +2121,7 @@ function rivetPlugin(
         if (!css.length) continue;
         for (const id of chunk.moduleIds) {
           const file = id.split("?", 1)[0]!;
-          if (!file.startsWith("\0") && bridges.owner(file)) moduleCss[posix(relative(root, file))] = css;
+          if (!file.startsWith("\0") && bridges.owner(file)) moduleCss[toPosix(relative(root, file))] = css;
         }
       }
     // ROUTER-PRIME (`resume.ready`): per key, the chunks of the modules the root's `ready` loads + their static closures.
@@ -2098,7 +2196,9 @@ function rivetPlugin(
         `[rivet] lite resume: the lite graph shares ${shared.join(", ")} with the ordinary client graph (pages on the full runtime may load other chunks than without lite modules)`,
       );
   }
-  const warned = new Set<string>();
+  // Per module: the source hash its warnings were reported for and their codes (compiler#20: the hash once per
+  // transform, not per warning group; one entry per module, so dev edits do not grow it).
+  const warned = new Map<string, { hash: string; codes: Set<string> }>();
   let diagnosticErrors = 0,
     diagnosticWarnings = 0;
   let diagnosticLogger: ViteDevServer["config"]["logger"] | undefined;
@@ -2107,10 +2207,17 @@ function rivetPlugin(
     const result = compile(source, moduleOptions(filename, source, server, id));
     if (result.diagnostics.length) fail(ctx, result, filename);
     // One warning per code/file, retaining occurrence counts; repeated transforms stay silent.
-    for (const { diagnostic: w, count } of groupDiagnostics(result.warnings ?? [])) {
-      const key = `${filename}\0${w.code}\0${createHash("sha256").update(source).digest("hex")}`;
-      if (warned.has(key)) continue;
-      warned.add(key);
+    const groups = groupDiagnostics(result.warnings ?? []);
+    let seen: Set<string> | null = null;
+    if (groups.length) {
+      const hash = createHash("sha256").update(source).digest("hex");
+      const entry = warned.get(filename);
+      if (entry?.hash === hash) seen = entry.codes;
+      else warned.set(filename, { hash, codes: (seen = new Set()) });
+    }
+    for (const { diagnostic: w, count } of groups) {
+      if (seen!.has(w.code)) continue;
+      seen!.add(w.code);
       diagnosticWarnings += count;
       ctx.warn(
         formatDiagnostic({ origin: "compiler", code: w.code, message: w.message, file: filename, line: w.line, column: w.column }, { root }) +
@@ -2201,14 +2308,14 @@ function rivetPlugin(
   const moduleId = (filename: string) => {
     if (filename.startsWith("\0")) return bridges?.module(filename) ?? filename.slice(1);
     const pkg = sourcePackage(filename);
-    return pkg ? pkg.name + "/" + posix(relative(pkg.dir, filename)) : posix(relative(root, filename));
+    return pkg ? pkg.name + "/" + toPosix(relative(pkg.dir, filename)) : toPosix(relative(root, filename));
   };
   /** Dev URL of a module: root-relative inside the Vite root, else `/@fs/<absolute>` (source packages). */
   const devUrl = (filename: string): string => {
     // Virtual modules: Vite's `/@id/__x00__<id>` form.
     if (filename.startsWith("\0")) return "@id/__x00__" + filename.slice(1);
-    const local = posix(relative(root, filename));
-    return local.startsWith("../") ? "@fs" + posix(filename) : local;
+    const local = toPosix(relative(root, filename));
+    return local.startsWith("../") ? "@fs" + toPosix(filename) : local;
   };
   // Framework source (Rivet packages outside their tests, linked from the workspace): one instance per page.
   const frameworkSource = (file: string): boolean =>
@@ -2292,9 +2399,15 @@ function rivetPlugin(
   // VCLS (`static-class.ts`), production browser builds: a declaring module reads its resolvers lazily; a module that may
   // create an instance without `$cls` (the walk's flags, and any module the walk did not see that imports a family's
   // package) imports the registrations first, on line 1 (later lines and source maps stay put).
-  const CLASS_PACKAGE_IMPORT = (name: string): RegExp => {
-    const escaped = name.replace(/[.*+?^$()|[\]\\/{}]/g, "\\$&");
-    return new RegExp("(?:\\bfrom|\\bimport)\\s*\\(?\\s*[\"']" + escaped + "(?:[\"'/])");
+  // One RegExp per package entry (compiler#14: not rebuilt per transformed module per package).
+  const classPackageRes = new WeakMap<object, RegExp>();
+  const CLASS_PACKAGE_IMPORT = (pkg: { name: string }): RegExp => {
+    let re = classPackageRes.get(pkg);
+    if (!re) {
+      const escaped = pkg.name.replace(/[.*+?^$()|[\]\\/{}]/g, "\\$&");
+      classPackageRes.set(pkg, (re = new RegExp("(?:\\bfrom|\\bimport)\\s*\\(?\\s*[\"']" + escaped + "(?:[\"'/])")));
+    }
+    return re;
   };
   const classImports = (
     ctx: Rollup.TransformPluginContext,
@@ -2313,7 +2426,7 @@ function rivetPlugin(
     if (!classState.walked.has(filename)) {
       const net = new Set<string>();
       for (const pkg of classState.packages)
-        if (pkg.name ? CLASS_PACKAGE_IMPORT(pkg.name).test(original) : !id.startsWith("\0") && !/[/\\]node_modules[/\\]/.test(filename))
+        if (pkg.name ? CLASS_PACKAGE_IMPORT(pkg).test(original) : !id.startsWith("\0") && !/[/\\]node_modules[/\\]/.test(filename))
           for (const key of pkg.keys) if (classState.definitions.get(key)?.file !== filename) net.add(key);
       if (net.size) keys = net;
     }
@@ -2485,7 +2598,14 @@ function rivetPlugin(
         ...packages,
         css: {
           modules: {
-            generateScopedName: (local: string, filename: string) => scopedName(posix(relative(root, filename.split("?")[0]!)), local, names),
+            generateScopedName: (local: string, filename: string) => {
+              const scope = toPosix(relative(root, filename.split("?")[0]!));
+              const name = scopedName(scope, local, names);
+              // Fails loudly like css`` blocks (rc2#36: a silent collision merges two classes' styles).
+              const collision = registry.add(scope, { [local]: name });
+              if (collision) throw new Error("[rivet] " + collision);
+              return name;
+            },
           },
         },
       };
