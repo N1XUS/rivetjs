@@ -5,7 +5,8 @@ export async function request<T>(url: string, method = "GET", body?: unknown): P
     headers: body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const data = await response.json();
+  // A non-JSON body (proxy error page, empty 204) must not hide the status behind a SyntaxError.
+  const data = (await response.json().catch(() => ({}))) as { error?: string };
   if (!response.ok) throw Error(`${response.status}: ${data.error ?? "Request failed"}`);
   return data as T;
 }

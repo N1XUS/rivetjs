@@ -1,9 +1,9 @@
 import { onGet, onPost, onDelete, type RequestEvent } from "@rivetjs/router";
-import { answer, json, login, logout, userOf } from "../../server/http.server.ts";
+import { answer, json, login, logout, objectBody, userOf } from "../../server/http.server.ts";
 export const GET = onGet((e: RequestEvent) => answer(() => userOf(e)));
 export const POST = onPost((e: RequestEvent) =>
   answer(async () => {
-    const body = (await e.request.json()) as { email: string; password: string };
+    const body = await objectBody(e.request);
     return json(await login(e, String(body.email ?? ""), String(body.password ?? "")));
   }),
 );

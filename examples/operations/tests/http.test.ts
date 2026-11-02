@@ -64,6 +64,24 @@ check("sse-delivers-in-order", async () => {
   assert.deepEqual(ids, [1, 2, 3, 4, 5, 6, 7, 8]);
   return { ids };
 });
+check("sse-non-numeric-limit-and-ms-fall-back-to-defaults", async () => {
+  const text = await (await fetch(`${base}/api/events?limit=abc&ms=xyz`, { signal: AbortSignal.timeout(5000) })).text();
+  const ids = [...text.matchAll(/^id: (\d+)/gm)].map((m) => Number(m[1]));
+  assert.deepEqual(ids, [1, 2, 3, 4, 5, 6, 7, 8]);
+  return { ids };
+});
+check("json-null-and-non-object-bodies-are-400", async () => {
+  const post = (path: string, body: string) => fetch(base + path, { method: "POST", headers: { origin: base, "content-type": "application/json" }, body });
+  for (const body of ["null", "[]", "42"]) {
+    const session = await post("/auth/session", body);
+    assert.equal(session.status, 400, `/auth/session ${body}`);
+    assert.deepEqual(await session.json(), { error: "Object required" });
+    const tasks = await post(`/api/tasks?token=null-${Date.now()}`, body);
+    assert.equal(tasks.status, 400, `/api/tasks ${body}`);
+    await tasks.body?.cancel();
+  }
+  return { status: 400 };
+});
 check("sse-disconnect-disposes-producer", async () => {
   const controller = new AbortController();
   const r = await fetch(`${base}/api/events?limit=10000&ms=10`, { signal: controller.signal });

@@ -62,10 +62,14 @@ export default function TicketPage({ data }: PageProps<typeof loader>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget as HTMLFormElement);
     form.set("ticket", ticket().id);
-    const r = await fetch("/desk/api/files", { method: "POST", body: form });
-    const result = await r.json();
-    if (!r.ok) error.set(result.error);
-    else files.update((old) => [...old, result]);
+    try {
+      const r = await fetch("/desk/api/files", { method: "POST", body: form });
+      const result = await r.json().catch(() => ({ error: `Upload failed (${r.status})` }));
+      if (!r.ok) error.set(result.error ?? `Upload failed (${r.status})`);
+      else files.update((old) => [...old, result]);
+    } catch (e) {
+      error.set(String(e));
+    }
   }
   return (
     <main>

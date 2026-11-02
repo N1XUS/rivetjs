@@ -127,6 +127,8 @@ export function authenticate(email: string, password: string): User | null {
 }
 export function createSession(user: User, seconds = 3600): string {
   const token = randomBytes(32).toString("hex");
+  // Expired rows go on every sign-in, so the table never keeps dead sessions.
+  db.prepare("DELETE FROM sessions WHERE expires<=?").run(Date.now());
   db.prepare("INSERT INTO sessions VALUES(?,?,?)").run(token, user.id, Date.now() + seconds * 1000);
   return token;
 }
