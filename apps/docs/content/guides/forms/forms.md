@@ -193,6 +193,8 @@ Each lives in its own entry, so you only pay for what you import. Server helpers
 | `@rivetjs/forms/errors` | Mapping your backend's error format onto fields. |
 | `@rivetjs/forms/csrf` | Token-based CSRF protection, for setups where proxies strip the `Origin` header. |
 
+Draft ids come from the request, so anyone who knows an id can ask for that draft. Rivet does not tie a draft to a session, because sessions belong to your app: check ownership in your `DraftStore`, whose `load` and `save` receive the request event, and refuse a draft the current user does not own.
+
 A field can also have its own async check, for example "is this user name free?", with `fields: { name: { validate: async (value) => …, server: true } }` in `defineForm`.
 
 ## Common mistakes
