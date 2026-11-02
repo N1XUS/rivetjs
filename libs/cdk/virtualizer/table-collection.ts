@@ -111,6 +111,9 @@ export function createTableCollection<R>(columns: readonly TableColumn[], rows: 
   for (const n of top) visit(n);
   const keys = [...keyMap.keys()];
   const rowKeys = [...keyMap.values()].filter((n) => n.type === "item").map((n) => n.key);
+  // key → row index: getKeyBefore / getKeyAfter are O(1) (range selection walks getKeyAfter per row).
+  const rowIndex = new Map<Key, number>();
+  for (let i = 0; i < rowKeys.length; i++) rowIndex.set(rowKeys[i]!, i);
 
   return {
     headerRows: [headerRow],
@@ -129,10 +132,10 @@ export function createTableCollection<R>(columns: readonly TableColumn[], rows: 
     getItem: (key) => keyMap.get(key) ?? null,
     at: (idx) => (keys[idx] === undefined ? null : keyMap.get(keys[idx]!)!),
     // Row navigation order (like the grid collection's row keys).
-    getKeyBefore: (key) => rowKeys[rowKeys.indexOf(key) - 1] ?? null,
+    getKeyBefore: (key) => rowKeys[(rowIndex.get(key) ?? -1) - 1] ?? null,
     getKeyAfter: (key) => {
-      const i = rowKeys.indexOf(key);
-      return i < 0 ? null : (rowKeys[i + 1] ?? null);
+      const i = rowIndex.get(key);
+      return i === undefined ? null : (rowKeys[i + 1] ?? null);
     },
     getFirstKey: () => rowKeys[0] ?? null,
     getLastKey: () => rowKeys.at(-1) ?? null,

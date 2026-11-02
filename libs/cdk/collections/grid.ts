@@ -117,11 +117,11 @@ export class GridCollection<T> implements IGridCollection<T> {
   }
 
   *[Symbol.iterator](): IterableIterator<GridNode<T>> {
-    yield* [...this.rows];
+    yield* this.rows;
   }
 
   get size(): number {
-    return [...this.rows].length;
+    return this.rows.length;
   }
 
   getKeys(): IterableIterator<Key> {
@@ -139,12 +139,11 @@ export class GridCollection<T> implements IGridCollection<T> {
   }
 
   getFirstKey(): Key | null {
-    return [...this.rows][0]?.key ?? null;
+    return this.rows[0]?.key ?? null;
   }
 
   getLastKey(): Key | null {
-    const rows = [...this.rows];
-    return rows[rows.length - 1]?.key ?? null;
+    return this.rows[this.rows.length - 1]?.key ?? null;
   }
 
   getItem(key: Key): GridNode<T> | null {

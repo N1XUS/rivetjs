@@ -80,7 +80,8 @@ export class TableCollection<T> extends BaseCollection<T> implements ITableColle
   private getRowNodes(): GridNode<T>[] {
     const rows: GridNode<T>[] = [];
     for (const child of this) {
-      if (child.type === "tablebody" || child.type === "tablefooter") rows.push(...(this.getChildren(child.key) as Iterable<GridNode<T>>));
+      // for-of, not `push(...)`: a spread past ~100k rows throws RangeError (argument limit).
+      if (child.type === "tablebody" || child.type === "tablefooter") for (const row of this.getChildren(child.key) as Iterable<GridNode<T>>) rows.push(row);
     }
     return rows;
   }

@@ -108,3 +108,4 @@ Collection model: Rivet DOM-as-collection helpers + `createSelection`, React Sta
 - `apps/cdk-docs/content/foundations/collections.md`, `apps/cdk-docs/content/foundations/selection.md`
 - `docs/design/specs/2026-10-05-collections-parity.md`
 - `builder.ts` `capitalize` (@internal) is `""`-safe (the dev type-mismatch message threw a TypeError over the real error; FIX2-CDK 2026-11-01).
+- `grid.ts` `GridCollection`: `size` / iterator / `getFirstKey` / `getLastKey` read `rows` directly (no array copy per call; FIX2-CDK 2026-11-01).
