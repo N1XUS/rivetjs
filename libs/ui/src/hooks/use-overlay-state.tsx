@@ -13,9 +13,10 @@ import type { Signal } from "@rivetjs/reactivity";
 
 export interface UseOverlayStateProps {
   /**
-   * Whether the overlay is currently open (controlled): a plain value, or a two-way Signal.
+   * Whether the overlay is currently open (controlled): a plain value, a two-way Signal, or a read-only accessor (never
+   * written: changes call `onOpenChange`, as the cdk overlay trigger state).
    */
-  isOpen?: boolean | Signal<boolean>;
+  isOpen?: boolean | Signal<boolean> | (() => boolean);
   /**
    * Whether the overlay is open by default (uncontrolled)
    * @default false
