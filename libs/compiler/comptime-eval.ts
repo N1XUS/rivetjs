@@ -282,9 +282,12 @@ export function tvDomain(resolver: Resolver, key: string): unknown[] {
   return values;
 }
 
-const sentinels = (n: number): unknown[] => [OTHER, {}, NaN].slice(0, n);
-/** Token `t` of a key with `values` → a sample value. */
-const sampleOf = (values: readonly unknown[], t: number): unknown => (t < values.length ? values[t] : sentinels(3)[t - values.length]);
+/** Token `t` of a key with `values` → a sample value (past the values: the sentinels OTHER, a fresh object, NaN). */
+const sampleOf = (values: readonly unknown[], t: number): unknown => {
+  if (t < values.length) return values[t];
+  const k = t - values.length;
+  return k === 0 ? OTHER : k === 1 ? {} : NaN;
+};
 
 /** The real resolver's output for `props`: one value per slot (`[value]` without slots). */
 function realOutputs(resolver: Resolver, props: Record<string, unknown>, slots: readonly string[] | null, sp?: Record<string, unknown>): unknown[] {
@@ -547,14 +550,15 @@ export function buildTvTable(resolver: Resolver, fresh: () => Resolver, helper: 
       const props = randomProps();
       const sp = randomProps();
       const values = realOutputs(resolver, props, slots, sp);
-      const object = resolver(props) as Record<string, (p?: unknown) => unknown>;
+      let hasVariant = false;
+      for (const key in sp)
+        if (key !== "class" && key !== "className" && sp[key] !== undefined) {
+          hasVariant = true;
+          break;
+        }
       for (let s = 0; s < nSlots; s++) {
-        const real = values[s];
-        let hasVariant = false;
-        for (const key in sp) if (key !== "class" && key !== "className" && sp[key] !== undefined) hasVariant = true;
         const mine = hasVariant ? helper.tvSlot(t, props, s, sp) : helper.tvSlot(t, props, s);
-        if (mine !== real) throw new Error("random slot props mismatch: " + describe(sp));
-        void object;
+        if (mine !== values[s]) throw new Error("random slot props mismatch: " + describe(sp));
       }
     }
   }
@@ -642,8 +646,13 @@ function detectFlavour(
       const object = resolver(props) as Record<string, (p?: unknown) => unknown>;
       for (let s = 0; s < slots.length && ok; s++) {
         const real = object[slots[s]!]!(sp);
-        let core: unknown = helper.tvSlot(t, props, s);
-        for (const key in sp) if (key !== "class" && key !== "className" && sp[key] !== undefined) core = helper.tvSlot(t, props, s, sp);
+        let variant = false;
+        for (const key in sp)
+          if (key !== "class" && key !== "className" && sp[key] !== undefined) {
+            variant = true;
+            break;
+          }
+        const core: unknown = variant ? helper.tvSlot(t, props, s, sp) : helper.tvSlot(t, props, s);
         const mine = sp && hasOverride(sp) ? merge(core, sp.class, sp.className) : core;
         if (real !== mine) ok = false;
       }
