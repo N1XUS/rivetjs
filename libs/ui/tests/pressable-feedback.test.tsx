@@ -225,3 +225,45 @@ test("pressable feedback: a touch press that turns into a scroll shows no ripple
   }
   unmount();
 });
+
+test("pressable feedback: timers and standalone listeners stop when the layer unmounts", async () => {
+  const log: string[] = [];
+  const { container, unmount } = render(() => (
+    <PressableFeedback>
+      <PressableFeedback.HoldConfirm duration={40} onComplete={() => log.push("hold")} />
+      <PressableFeedback.ProgressFeedback duration={40} resetDelay={10} onComplete={() => log.push("progress")} onReset={() => log.push("reset")} />
+      Go
+    </PressableFeedback>
+  ));
+  await wait(10);
+  const root = container.querySelector("button")!;
+  down(root);
+  up(root);
+  down(root);
+  unmount();
+  await wait(100);
+  assert.deepEqual(log, [], "no callback after unmount");
+
+  const { Button } = await import("../src/components/button/index.ts");
+  const doc = window.document as unknown as Document;
+  const signals: AbortSignal[] = [];
+  const add = doc.addEventListener.bind(doc);
+  doc.addEventListener = ((type: string, fn: EventListener, o?: { signal?: AbortSignal }) => {
+    if (o?.signal) signals.push(o.signal);
+    return add(type, fn, o as never);
+  }) as never;
+  const view = render(() => (
+    <Button>
+      <PressableFeedback.Ripple />
+      Ripple
+    </Button>
+  ));
+  await wait(10);
+  doc.addEventListener = add as never;
+  assert.ok(signals.length > 0, "the standalone ripple listens on the document");
+  view.unmount();
+  assert.ok(
+    signals.every((signal) => signal.aborted),
+    "its document listeners are removed on unmount, not on the next event",
+  );
+});

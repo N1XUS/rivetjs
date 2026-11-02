@@ -26,7 +26,7 @@
 import { Button as ButtonPrimitive } from "@rivetjs/cdk/button";
 import type { ButtonProps as ButtonPrimitiveProps, ButtonRenderProps } from "@rivetjs/cdk/button";
 import type { PressEvent } from "@rivetjs/cdk/interactions/press";
-import { createContext, useContext } from "@rivetjs/reactivity";
+import { createContext, getOwner, onCleanup, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 
@@ -124,7 +124,7 @@ const restart = (el: HTMLElement, name: string) => {
 // shape (`target` = the parent, `x` / `y` relative to it). Document capture listeners filtered to the parent: a cold
 // press replays its held events into listeners its adopt run added, and a replay stops at an element once a delegated
 // handler stopped propagation (cdk `usePress` does) — the document's capture phase still runs.
-const selfDriven = (el: HTMLElement, layer: Required<Pick<Layer, "start" | "end">>): void => {
+const selfDriven = (el: HTMLElement, layer: Required<Pick<Layer, "start" | "end">>): (() => void) | undefined => {
   const host = el.parentElement;
   if (!host) return;
   const ac = new AbortController(),
@@ -167,6 +167,12 @@ const selfDriven = (el: HTMLElement, layer: Required<Pick<Layer, "start" | "end"
   // A cold keyup is not held (not a delegated type) and may land before the adopt run: the native button's / input's
   // Space click, which is held and replayed, ends the press too.
   for (const type of ["keyup", "focusout", "click"]) listen(type, (e) => e.target === keyed && active === "keyboard" && end());
+  return () => ac.abort();
+};
+
+// The owner's disposal runs `fn` (timers, listeners); outside an owner (a detached call) nothing to tie it to.
+const disposed = (fn: () => void): void => {
+  if (getOwner()) onCleanup(fn);
 };
 
 const PressableFeedbackRipple = (props: PressableFeedbackRippleProps): JSX.Element => {
@@ -223,7 +229,21 @@ const PressableFeedbackRipple = (props: PressableFeedbackRippleProps): JSX.Eleme
   };
   layers?.push(layer);
   // Standalone: drive it from the parent once the node is in place (a client render inserts it after the ref).
-  const own = (node: HTMLElement) => (node.parentElement ? selfDriven(node, layer) : queueMicrotask(() => selfDriven(node, layer)));
+  let stop: (() => void) | undefined;
+  let gone = false;
+  disposed(() => {
+    gone = true;
+    clearTimeout(timer);
+    drop();
+    stop?.();
+  });
+  const own = (node: HTMLElement) => {
+    const attach = () => {
+      if (!gone) stop = selfDriven(node, layer);
+    };
+    if (node.parentElement) attach();
+    else queueMicrotask(attach);
+  };
   const style = {
     "--pressable-feedback-ripple-duration": `${local.duration ?? 150}ms`,
     ...(local.hoverOpacity == null ? {} : { "--pressable-feedback-ripple-hover-opacity": String(local.hoverOpacity) }),
@@ -269,6 +289,7 @@ const PressableFeedbackHoldConfirm = (props: PressableFeedbackHoldConfirmProps):
   const layers = useContext(PressableFeedbackContext);
   let el: HTMLElement | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  disposed(() => clearTimeout(timer));
   layers?.push({
     start() {
       if (!el?.isConnected || local.isDisabled || el.hasAttribute("data-complete") || el.hasAttribute("data-holding")) return;
@@ -347,17 +368,19 @@ const PressableFeedbackProgressFeedback = (props: PressableFeedbackProgressFeedb
   ]);
   const layers = useContext(PressableFeedbackContext);
   let el: HTMLElement | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  disposed(() => clearTimeout(timer));
   layers?.push({
     press() {
       if (!el?.isConnected || local.isDisabled || el.hasAttribute("data-progressing") || el.hasAttribute("data-complete")) return;
       el.setAttribute("data-progressing", "true");
-      setTimeout(() => {
+      timer = setTimeout(() => {
         if (!el) return;
         el.setAttribute("data-complete", "true");
         el.removeAttribute("data-progressing");
         local.onComplete?.();
         if (local.autoReset === false) return;
-        setTimeout(() => {
+        timer = setTimeout(() => {
           el?.removeAttribute("data-complete");
           local.onReset?.();
         }, local.resetDelay ?? 1500);
