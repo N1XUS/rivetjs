@@ -16,7 +16,7 @@ Dev: `npx vite`. Reset: delete `data/`.
 
 - `src/server/db.server.ts`: connection (WAL, foreign keys, busy timeout), SQL migrations from `migrations/` (applied once, tracked in `_migrations`), queries, deterministic seed.
 - `src/routes/index.server.ts`: `load` with `depends("bookmarks")`, search `?q=`, tag `?tag=`, keyset cursor `?before=<id>`, `actions` create / update / remove.
-- `src/routes/api/export.json.ts` (GET) and `api/import.ts` (POST a JSON array, all or nothing).
+- `src/routes/api/export.json.ts` (GET) and `api/import.ts` (POST a JSON array, all or nothing; no authentication: add a guard before exposing it beyond your machine).
 - `/healthz` is built into the node adapter.
 
 ## Test

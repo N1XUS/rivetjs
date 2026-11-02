@@ -64,10 +64,27 @@ test("JS-off create / search / tag / edit / delete via redirecting forms", async
   assert.match(await (await fetch(base + "/?q=zebra")).text(), /No bookmarks match/);
 });
 
-test("invalid input redirects with the message", async () => {
+test("invalid input redirects with an error code; the page shows its message, never text from the URL", async () => {
   const r = await post("/?/create", form({ title: "", url: "x" }));
   assert.equal(r.status, 303);
-  assert.match(decodeURIComponent(r.headers.get("location")!.replaceAll("+", " ")), /error=Title is required/);
+  assert.equal(r.headers.get("location"), "/?error=title-required");
+  assert.match(await (await fetch(base + "/?error=title-required")).text(), /role="alert"[^>]*>Title is required/);
+  const spoofed = await (await fetch(base + "/?error=" + encodeURIComponent("Your session expired, call 555-0100"))).text();
+  assert.doesNotMatch(spoofed, /555-0100/);
+  assert.doesNotMatch(spoofed, /role="alert"/);
+});
+
+test("add / edit / delete keep the visitor's search and tag filter", async () => {
+  const page = await (await fetch(base + "/?q=reading&tag=rust")).text();
+  assert.match(page, /name="q" value="reading"/);
+  assert.match(page, /name="tag" value="rust"/);
+  const created = await post("/?/create", form({ title: "Filtered add", url: "https://f.example", tags: "rust", q: "reading", tag: "rust" }));
+  assert.equal(created.headers.get("location"), "/?q=reading&tag=rust");
+  const invalid = await post("/?/create", form({ title: "", url: "x", q: "reading", tag: "rust" }));
+  assert.equal(invalid.headers.get("location"), "/?q=reading&tag=rust&error=title-required");
+  const id = /name="id" value="(\d+)"/.exec(page)![1]!;
+  const removed = await post("/?/remove", form({ id, q: "reading", tag: "rust" }));
+  assert.equal(removed.headers.get("location"), "/?q=reading&tag=rust");
 });
 
 test("import then export", async () => {
@@ -79,6 +96,13 @@ test("import then export", async () => {
   assert.deepEqual(await ok.json(), { added: 1 });
   const exported = (await (await fetch(base + "/api/export.json")).json()) as { title: string }[];
   assert.ok(exported.some((b) => b.title === "Imported"));
+});
+
+test("import bodies over the router's 1 MiB maxBody are refused before the handler (413)", async () => {
+  const huge = JSON.stringify([{ title: "x".repeat(2 * 1024 * 1024), url: "https://big.example" }]);
+  const r = await post("/api/import", huge, { "content-type": "application/json" });
+  assert.equal(r.status, 413);
+  await r.body?.cancel();
 });
 
 test("cross-site form posts are rejected", async () => {

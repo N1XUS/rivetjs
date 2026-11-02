@@ -175,8 +175,19 @@ export function importBookmarks(db: DatabaseSync, items: unknown): { added: numb
 
 /** Deterministic seed: the same `count` rows every time (no clock, no randomness). */
 export function seedBookmarks(db: DatabaseSync, count = 500): number {
-  const topics = ["rust", "web", "database", "design", "css", "node", "testing", "perf"];
   db.exec("BEGIN");
+  try {
+    seedRows(db, count);
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+  return count;
+}
+
+function seedRows(db: DatabaseSync, count: number): void {
+  const topics = ["rust", "web", "database", "design", "css", "node", "testing", "perf"];
   for (let i = 1; i <= count; i++) {
     const a = topics[i % topics.length]!;
     const b = topics[(i * 3) % topics.length]!;
@@ -186,8 +197,6 @@ export function seedBookmarks(db: DatabaseSync, count = 500): number {
       1_700_000_000_000 + i * 60_000,
     );
   }
-  db.exec("COMMIT");
-  return count;
 }
 
 let shared: DatabaseSync | undefined;

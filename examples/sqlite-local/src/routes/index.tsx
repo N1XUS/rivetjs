@@ -47,6 +47,8 @@ export default function Home({ data, url }: PageProps<"index">) {
           data.editing && data.editing.id === b.id ? (
             <li>
               <form method="post" action="?/update" class="grid">
+                {q ? <input type="hidden" name="q" value={q} /> : null}
+                {tag ? <input type="hidden" name="tag" value={tag} /> : null}
                 <input type="hidden" name="id" value={String(b.id)} />
                 <input name="title" value={b.title} aria-label="Title" required />
                 <input name="url" value={b.url} aria-label="URL" required />
@@ -75,6 +77,8 @@ export default function Home({ data, url }: PageProps<"index">) {
                   <Icon icon={Pencil} />
                 </a>
                 <form method="post" action="?/remove">
+                  {q ? <input type="hidden" name="q" value={q} /> : null}
+                  {tag ? <input type="hidden" name="tag" value={tag} /> : null}
                   <input type="hidden" name="id" value={String(b.id)} />
                   <button aria-label={"Delete " + b.title}>
                     <Icon icon={Trash2} />
@@ -93,6 +97,8 @@ export default function Home({ data, url }: PageProps<"index">) {
       ) : null}
       <h2>Add</h2>
       <form method="post" action="?/create" class="grid">
+        {q ? <input type="hidden" name="q" value={q} /> : null}
+        {tag ? <input type="hidden" name="tag" value={tag} /> : null}
         <input name="title" placeholder="Title" aria-label="Title" required />
         <input name="url" placeholder="https://" aria-label="URL" required />
         <input name="tags" placeholder="tags, separated by spaces" aria-label="Tags" />
