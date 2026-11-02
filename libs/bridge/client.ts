@@ -5,7 +5,7 @@
 import { effect, getOwner, onCleanup, runWithOwner, untrack } from "@rivetjs/reactivity";
 import { DEV } from "#dev";
 import { callbacks } from "./callbacks.ts";
-import { park, track, type DevIsland } from "./hot.ts";
+import { park, retireIsland, swapIsland, track, type DevIsland } from "./hot.ts";
 import { _hydrateThrew, type ClientAdapter, type IslandModule, type PolicyOptions } from "./adapter.ts";
 
 export type { IslandModule } from "./adapter.ts";
@@ -113,9 +113,12 @@ export function _drive(
       adapter: adapter!,
       handle,
       swap(component) {
-        untrack(() => adapter!.unmount(handle));
-        root.replaceChildren();
-        void Promise.resolve(untrack(() => adapter!.mount(root, component, latest!, slots, ctx))).then((next) => (handle = island.handle = next));
+        island.handle = handle;
+        swapIsland(
+          island,
+          () => untrack(() => adapter!.mount(root, component, latest!, slots, ctx)),
+          (next) => (handle = island.handle = next),
+        );
       },
     });
     untrackDev = track(island);
@@ -206,7 +209,7 @@ export function _drive(
           untrackDev!();
           const island = dev;
           island.handle = handle;
-          park(island, () => untrack(() => island.adapter.unmount(island.handle)));
+          park(island, () => retireIsland(island));
         } else untrack(() => adapter!.unmount(handle));
       }
     });

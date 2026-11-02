@@ -45,13 +45,19 @@ export function headOf(prefix: string): { head: IslandHead | null; rest: string 
   return { head: Object.keys(head).length ? (head as IslandHead) : null, rest };
 }
 
+// Sticky: no copy of the remaining text per tag (libs-small#17).
+const GAP = /(?:\s+|<!--[\s\S]*?-->)+/y;
+const skipGap = (text: string, at: number): number => {
+  GAP.lastIndex = at;
+  return GAP.test(text) ? GAP.lastIndex : at;
+};
+
 /** Parse framework head-only prefixes, ignoring hydration/teleport anchors between tags. */
 export function headOfMarked(prefix: string): { head: IslandHead | null; rest: string } {
   let normalized = "",
     at = 0;
   while (at < prefix.length) {
-    const gap = /^(?:\s+|<!--[\s\S]*?-->)+/.exec(prefix.slice(at));
-    if (gap) at += gap[0].length;
+    at = skipGap(prefix, at);
     if (at === prefix.length) break;
     TAG.lastIndex = at;
     const tag = TAG.exec(prefix);
@@ -75,8 +81,7 @@ export function nativeHead(framework: "vue" | "svelte", id: string, raw: string,
   let titles = 0;
   let at = 0;
   while (at < raw.length) {
-    const gap = /^(?:\s+|<!--[\s\S]*?-->)+/.exec(raw.slice(at));
-    if (gap) at += gap[0].length;
+    at = skipGap(raw, at);
     if (at === raw.length) break;
     TAG.lastIndex = at;
     const tag = TAG.exec(raw);

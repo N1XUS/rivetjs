@@ -121,7 +121,7 @@ export function boot(): void {
       else {
         // Two observers over the same boxes: within one viewport → fetch the closure; visible → hydrate. The near one
         // has the document as its explicit root: a root margin also widens the viewport of a page inside an iframe.
-        const watch = (go: () => unknown, margin?: string): void => {
+        const observeBoxes = (go: () => unknown, margin?: string): void => {
           const observer = new IntersectionObserver(
             (entries) => entries.some((entry) => entry.isIntersecting) && (observer.disconnect(), go()),
             margin ? { root: doc, rootMargin: margin } : {},
@@ -129,8 +129,8 @@ export function boot(): void {
           const n = Math.min(boxes.length, 48);
           for (let i = 0; i < n; i++) observer.observe(boxes[Math.floor((i * boxes.length) / n)]!);
         };
-        watch(preload, "100% 0px");
-        watch(start);
+        observeBoxes(preload, "100% 0px");
+        observeBoxes(start);
       }
     } else if (on.startsWith("media:")) {
       const query = matchMedia(on.slice(6));

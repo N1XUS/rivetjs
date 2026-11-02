@@ -17,6 +17,33 @@ export interface DevIsland {
   handle: unknown;
   /** Re-mount with a new component (same root, props and slot nodes). */
   swap(component: unknown): void;
+  /** Swaps started; a mount that resolves under an older number is superseded. */
+  swaps?: number;
+  /** A swap's mount is pending: `handle` was already unmounted. */
+  pending?: boolean;
+}
+
+/**
+ * Re-mount through an async adapter (r3-races#9): the old handle is unmounted once, and a mount a later swap or a
+ * disposal superseded is unmounted when it resolves instead of staying mounted and leaked.
+ */
+export function swapIsland(island: DevIsland, mount: () => unknown, commit: (next: unknown) => void): void {
+  const mine = (island.swaps = (island.swaps ?? 0) + 1);
+  if (!island.pending) island.adapter.unmount(island.handle);
+  island.pending = true;
+  island.root.replaceChildren();
+  void Promise.resolve(mount()).then((next) => {
+    if (mine !== island.swaps) return void island.adapter.unmount(next);
+    island.pending = false;
+    commit(next);
+  });
+}
+
+/** The final unmount of a parked island nobody claimed: a pending swap's mount unmounts itself when it resolves. */
+export function retireIsland(island: DevIsland): void {
+  if (!island.pending) return void island.adapter.unmount(island.handle);
+  island.swaps = (island.swaps ?? 0) + 1;
+  island.pending = false;
 }
 
 const live = new Map<string, Set<DevIsland>>();
