@@ -3,7 +3,7 @@
 // syntax colour stylesheet. Fails on schema errors, unknown references, nav orphans and dangling
 // nav entries.
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { splitFrontmatter, validateFrontmatter, type Frontmatter } from "./frontmatter.ts";
@@ -104,6 +104,20 @@ async function put(file: string, contents: string): Promise<boolean> {
 
 let shared: Promise<Highlight> | undefined;
 
+/**
+ * `import()` that sees edits: a new `?t=` URL only when the file's mtime changed. Every URL stays in the ESM cache for
+ * the process lifetime, so `serve --dev` (which regenerates on every Markdown edit) would otherwise keep one module
+ * record per regeneration.
+ */
+const fresh = new Map<string, { mtime: number; module: Promise<unknown> }>();
+async function freshImport(file: string): Promise<unknown> {
+  const mtime = (await stat(file)).mtimeMs;
+  const known = fresh.get(file);
+  if (known?.mtime === mtime) return known.module;
+  const module = import(pathToFileURL(file).href + "?t=" + mtime);
+  fresh.set(file, { mtime, module });
+  return module;
+}
 /** Generate every content route for the app at `root`. */
 export async function generateContent(
   root: string,
@@ -125,7 +139,7 @@ export async function generateContent(
   const contentDir = resolve(root, "content");
   // Diagnostic code pages (site `errorPages`): committed Markdown under content/errors/, refreshed before the pages are read.
   if (site.errorPages && !options.dryRun) await generateErrorPages(root);
-  const navModule = (await import(pathToFileURL(resolve(contentDir, "_nav.ts")).href + "?t=" + Date.now())) as { nav: NavSection[]; areas?: NavArea[] };
+  const navModule = (await freshImport(resolve(contentDir, "_nav.ts"))) as { nav: NavSection[]; areas?: NavArea[] };
   const nav = navModule.nav;
   const areas = navModule.areas;
   if (!Array.isArray(areas) || !areas.length) throw new Error("content/_nav.ts: export const areas: NavArea[] (the top-bar sections) is required");
@@ -136,9 +150,7 @@ export async function generateContent(
     if (!area.href && !nav.some((section) => section.area === area.id)) throw new Error(`content/_nav.ts: area "${area.id}" has no section`);
 
   const chartsFile = resolve(contentDir, "_charts.ts");
-  const chartsModule = existsSync(chartsFile)
-    ? ((await import(pathToFileURL(chartsFile).href + "?t=" + Date.now())) as { charts: Record<string, BenchChartSpec> })
-    : undefined;
+  const chartsModule = existsSync(chartsFile) ? ((await freshImport(chartsFile)) as { charts: Record<string, BenchChartSpec> }) : undefined;
   const charts = chartsModule ? new Map(Object.entries(chartsModule.charts)) : undefined;
   const files = await listMarkdown(contentDir);
   const examples = new Set((await listDirs(resolve(root, "examples"))).filter((id) => existsSync(resolve(root, "examples", id, "example.ts"))));
@@ -152,12 +164,13 @@ export async function generateContent(
   // Nav ↔ files.
   const order: { path: string; section: NavSection; group: string }[] = [];
   const seen = new Set<string>();
+  const fileSet = new Set(files);
   for (const section of nav)
     for (const group of section.groups)
       for (const path of group.pages.flatMap(navPaths)) {
         if (seen.has(path)) throw new Error(`content/_nav.ts: ${path} is listed twice`);
         seen.add(path);
-        if (!files.includes(path)) {
+        if (!fileSet.has(path)) {
           const message = `content/_nav.ts: ${path} has no file (content/${path}.md)`;
           if (!lenient) throw new Error(message);
           lenient(message + " — skipped");

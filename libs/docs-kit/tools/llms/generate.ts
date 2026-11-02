@@ -78,7 +78,11 @@ export function llmsFrom(source: LlmsSource, options: LlmsOptions = {}): LlmsOut
   };
   const link = options.link ? (target: LlmsLinkTarget) => options.link!(target, source) : defaultLink;
   const symbols = new Map<string, ApiSymbol[]>();
-  for (const symbol of api.symbols) symbols.set(symbol.key, [...(symbols.get(symbol.key) ?? []), symbol]);
+  for (const symbol of api.symbols) {
+    const list = symbols.get(symbol.key);
+    if (list) list.push(symbol);
+    else symbols.set(symbol.key, [symbol]);
+  }
   // A custom link callback can mutate its source; retain live joins in that case.
   const symbolsByEntry = options.link ? null : new Map<string, ApiSymbol[]>();
   if (symbolsByEntry)

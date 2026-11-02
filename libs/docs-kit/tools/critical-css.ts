@@ -346,7 +346,12 @@ export function pruneCustomProperties(css: string, html = ""): string {
       for (const decl of item.decls) {
         const name = propertyOf(decl);
         if (name === undefined) for (const ref of decl.match(CUSTOM) ?? []) used.add(ref);
-        else values.set(name, [...(values.get(name) ?? []), decl.slice(decl.indexOf(":") + 1)]);
+        else {
+          const value = decl.slice(decl.indexOf(":") + 1);
+          const list = values.get(name);
+          if (list) list.push(value);
+          else values.set(name, [value]);
+        }
       }
   }
   for (let grew = true; grew;) {

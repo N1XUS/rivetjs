@@ -64,21 +64,24 @@ export function createSearchIndex(docs: readonly McpDoc[]): SearchIndex {
     const n = df.get(token) ?? 0;
     return Math.log(1 + (indexed.length - n + 0.5) / (n + 0.5));
   };
+  const byId = new Map(indexed.map((item) => [item.doc.id, item.doc]));
   return {
     search(query, options = {}) {
       const terms = [...new Set(tokens(query))];
       if (!terms.length) return [];
+      const idfs = terms.map(idf);
+      const exact = query.trim().toLowerCase();
       const hits: SearchHit[] = [];
       for (const item of indexed) {
         if (options.site && item.doc.site !== options.site) continue;
         if (options.kind && item.doc.kind !== options.kind) continue;
         let score = 0;
         let matched = 0;
-        for (const term of terms) {
-          const f = item.tf.get(term);
+        for (let t = 0; t < terms.length; t++) {
+          const f = item.tf.get(terms[t]!);
           if (!f) continue;
           matched++;
-          score += idf(term) * ((f * (K1 + 1)) / (f + K1 * (1 - B + (B * item.length) / average)));
+          score += idfs[t]! * ((f * (K1 + 1)) / (f + K1 * (1 - B + (B * item.length) / average)));
         }
         if (!score) continue;
         // Pages that match every term rank above partial matches; content pages above API / example docs on ties.
@@ -86,13 +89,12 @@ export function createSearchIndex(docs: readonly McpDoc[]): SearchIndex {
         if (item.doc.kind === "page") score *= 1.15;
         // A title equal to the query (a component or API name) wins; a title holding every term ranks high.
         const title = item.doc.title.toLowerCase();
-        if (title === query.trim().toLowerCase()) score *= 3;
+        if (title === exact) score *= 3;
         else if (terms.every((term) => title.includes(term))) score *= 1.5;
         hits.push({ id: item.doc.id, title: item.doc.title, description: item.doc.description, site: item.doc.site, kind: item.doc.kind, score, snippet: "" });
       }
       hits.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id, "en"));
       const top = hits.slice(0, options.limit ?? 10);
-      const byId = new Map(indexed.map((item) => [item.doc.id, item.doc]));
       for (const hit of top) hit.snippet = snippet(byId.get(hit.id)!.markdown, terms);
       return top.map((hit) => ({ ...hit, score: Math.round(hit.score * 100) / 100 }));
     },

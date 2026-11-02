@@ -410,15 +410,21 @@ function docsScripts(routes: Record<string, string> = {}): Plugin {
     generateBundle(_options, bundle) {
       if (this.environment.config.consumer !== "client") return;
       const chunks = Object.values(bundle).filter((output): output is Rollup.OutputChunk => output.type === "chunk");
+      const byFacade = new Map(chunks.map((output) => [output.facadeModuleId, output]));
       const url = (file: string) => {
-        const chunk = chunks.find((output) => output.facadeModuleId === file);
+        const chunk = byFacade.get(file);
         return chunk ? base + chunk.fileName : undefined;
       };
       const page = url(PAGE_SCRIPT);
       // The page script's static imports (the preload helper): `document.ts`'s stub preloads them with the script, so
       // the first intent waits one round trip, not two (DOCS-ZERO).
-      const imports = chunks.find((output) => output.facadeModuleId === PAGE_SCRIPT)?.imports.map((file) => base + file) ?? [];
-      const scripts = Object.fromEntries(files.flatMap(([path, file]) => (url(file) ? [[path, url(file)]] : [])));
+      const imports = byFacade.get(PAGE_SCRIPT)?.imports.map((file) => base + file) ?? [];
+      const scripts = Object.fromEntries(
+        files.flatMap(([path, file]) => {
+          const script = url(file);
+          return script ? [[path, script]] : [];
+        }),
+      );
       // The lazy chrome parts' closures (THEME-JS): the stub preloads one on an event on its button, with the script.
       const parts = chromeParts(chunks, PAGE_SCRIPT, CHROME_PARTS, base);
       if (page) this.emitFile({ type: "asset", fileName: SCRIPTS_FILE, source: JSON.stringify({ page, pageImports: imports, parts, routes: scripts }) + "\n" });

@@ -240,7 +240,7 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
         return text(":" + (node.name ?? "")) + (node.children?.length ? "[" + label + "]" : "");
       }
       case "html":
-        if (/^<!--[\s\S]*-->$/.test(node.value ?? "")) return "";
+        if (isComment(node.value)) return "";
         return fail(node, `raw HTML is not supported (${(node.value ?? "").slice(0, 40)}); use Markdown or a directive`);
       case "image":
         return fail(node, "images are not supported yet (use an example or inline SVG in a component)");
@@ -490,7 +490,7 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
         return fail(node, `unknown directive ::${node.name}`);
       }
       case "html":
-        if (/^<!--[\s\S]*-->$/.test((node.value ?? "").trim())) return "";
+        if (isComment(node.value)) return "";
         return fail(node, `raw HTML is not supported (${(node.value ?? "").slice(0, 40)}); use Markdown or a directive`);
       case "definition":
         return "";
@@ -501,4 +501,9 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
 
   const jsx = blocks(tree.children).filter(Boolean).join("\n");
   return { jsx, headings, uses, examples, icons, links, localLinks, ...(firstParagraph !== undefined ? { firstParagraph } : {}) };
+}
+
+/** An HTML comment node (inline or block; surrounding whitespace ignored): the only raw HTML pages may hold. */
+function isComment(value: string | undefined): boolean {
+  return /^<!--[\s\S]*-->$/.test((value ?? "").trim());
 }

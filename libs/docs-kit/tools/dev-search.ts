@@ -201,6 +201,7 @@ export function devServerPages(server: ViteDevServer, options: { concurrency?: n
     const origin = `${server.config.server.https ? "https" : "http"}://${host}:${address.port}`;
     const entry = (await server.ssrLoadModule("/" + (options.outDir ?? ".rivet") + "/entry.server.tsx")) as { routes: readonly DevRoute[] };
     const paths: string[] = [];
+    const listed = new Set<string>();
     /** Paths to render again (the rest reuse `rendered`). */
     const render = new Set<string>();
     const scope = changedRoutes(
@@ -217,7 +218,8 @@ export function devServerPages(server: ViteDevServer, options: { concurrency?: n
       const sets = dynamic ? [...(((await module?.entries?.()) as Iterable<Record<string, string>> | undefined) ?? [])] : [{}];
       for (const params of sets) {
         const path = fillPattern(route.pattern, params);
-        if (paths.includes(path)) continue;
+        if (listed.has(path)) continue;
+        listed.add(path);
         paths.push(path);
         if (scope === "all" || (route.id !== undefined && scope.has(route.id)) || !rendered.has(path)) render.add(path);
       }

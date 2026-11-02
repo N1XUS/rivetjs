@@ -20,16 +20,24 @@ export async function checkLinks(dist: string): Promise<string[]> {
   const problems: string[] = [];
   const files = await htmlFiles(client);
   const ids = new Map<string, Set<string>>();
-  const idsOf = async (file: string): Promise<Set<string>> => {
+  const idsOf = async (file: string, current?: string): Promise<Set<string>> => {
     let found = ids.get(file);
     if (!found) {
-      const html = await readFile(file, "utf8");
+      const html = current ?? (await readFile(file, "utf8"));
       found = new Set([...html.matchAll(ID)].map((m) => decode(m[1]!)));
       ids.set(file, found);
     }
     return found;
   };
+  // Nav / footer links repeat on every page: one lookup per distinct path.
+  const pages = new Map<string, string | undefined>();
   const pageFile = (path: string): string | undefined => {
+    if (pages.has(path)) return pages.get(path);
+    const found = lookup(path);
+    pages.set(path, found);
+    return found;
+  };
+  const lookup = (path: string): string | undefined => {
     const target = resolve(client, "." + decodeURIComponent(path));
     if (target !== client && !target.startsWith(client + sep)) return undefined;
     if (path.endsWith("/")) return existsSync(join(target, "index.html")) ? join(target, "index.html") : undefined;
@@ -59,7 +67,7 @@ export async function checkLinks(dist: string): Promise<string[]> {
         problems.push(`${from}: ${kind}="${value}" does not exist`);
         continue;
       }
-      if (hash && target.endsWith(".html") && !(await idsOf(target)).has(decodeURIComponent(hash)))
+      if (hash && target.endsWith(".html") && !(await idsOf(target, target === file ? html : undefined)).has(decodeURIComponent(hash)))
         problems.push(`${from}: #${hash} not found in ${path || "the same page"}`);
     }
   }

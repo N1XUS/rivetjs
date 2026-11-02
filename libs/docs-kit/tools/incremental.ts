@@ -176,8 +176,13 @@ export async function prerenderPartial(options: {
     if (oldData !== null && rewritePage(oldData, map, false, hash) !== new TextDecoder().decode(data)) return { ok: false, why: `canary ${path} data changed` };
   }
   const missing = new Set<string>();
+  const present = new Map<string, boolean>();
   const verify = (text: string) => {
-    for (const ref of assetRefs(text)) if (!existsSync(resolve(client, ref.slice(1)))) missing.add(ref);
+    for (const ref of assetRefs(text)) {
+      let ok = present.get(ref);
+      if (ok === undefined) present.set(ref, (ok = existsSync(resolve(client, ref.slice(1)))));
+      if (!ok) missing.add(ref);
+    }
   };
   await pool(carried, 16, async (file) => {
     if (/\.(html|json)$/.test(file)) {

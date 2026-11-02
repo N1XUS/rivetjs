@@ -79,7 +79,22 @@ export async function buildData(repo: string): Promise<McpData> {
     origins[source.site.origin.replace(/\/+$/, "")] = site;
     sources.push({ site, source });
   }
+  // Pages by the ui / cdk / kit specifiers they import (sources order, then page order), one pass over all bodies.
+  const importers = new Map<string, { key: SiteKey; page: (typeof sources)[number]["source"]["pages"][number] }[]>();
+  for (const { site: key, source: s } of sources)
+    for (const page of s.pages)
+      for (const specifier of new Set([...page.body.matchAll(/from "(@rivetjs\/(?:ui|cdk|kit)(?:\/[^"]*)?)"/g)].map((m) => m[1]!))) {
+        const list = importers.get(specifier);
+        if (list) list.push({ key, page });
+        else importers.set(specifier, [{ key, page }]);
+      }
   for (const { site, source } of sources) {
+    const symbolsOf = new Map<string, (typeof source.api.symbols)[number][]>();
+    for (const symbol of source.api.symbols) {
+      const list = symbolsOf.get(symbol.entry);
+      if (list) list.push(symbol);
+      else symbolsOf.set(symbol.entry, [symbol]);
+    }
     const output = llms.llmsFrom(source, {
       link: (target) => {
         if (target.kind === "external") {
@@ -104,21 +119,18 @@ export async function buildData(repo: string): Promise<McpData> {
     for (const entry of source.api.entries) {
       const pkg = /^@rivetjs\/(ui|cdk|kit)(\/|$)/.exec(entry.entry)?.[1] as McpComponent["package"] | undefined;
       if (!pkg || components.has(entry.entry)) continue;
-      const symbols = source.api.symbols.filter((symbol) => symbol.entry === entry.entry);
+      const symbols = symbolsOf.get(entry.entry) ?? [];
       const last = entry.entry.split("/").at(-1)!;
       const pascal = last.replace(/(^|-)([a-z0-9])/g, (_, __, c: string) => c.toUpperCase());
       const main = symbols.find((symbol) => symbol.name.toLowerCase() === pascal.toLowerCase()) ?? symbols.find((symbol) => /^[A-Z]/.test(symbol.name));
       // The docs page that documents the entry: a page importing it, components/<last> first.
-      const importing = (body: string) => body.includes(`from "${entry.entry}"`);
-      const candidates = sources.flatMap(({ site: key, source: s }) => s.pages.filter((page) => importing(page.body)).map((page) => ({ key, page })));
+      const candidates = importers.get(entry.entry) ?? [];
       const page =
         candidates.find(({ key, page }) => key === pkg && page.path.endsWith(`/${last}`)) ??
         candidates.find(({ page }) => page.path.endsWith(`/${last}`)) ??
         candidates.find(({ key }) => key === pkg);
       const examples = page
-        ? [...page.page.body.matchAll(/::example\{[^}]*\bid="?([\w-]+)"?/g)]
-            .map((match) => `${page.key}:/examples/${match[1]}/`)
-            .filter((id, i, all) => all.indexOf(id) === i)
+        ? [...new Set([...page.page.body.matchAll(/::example\{[^}]*\bid="?([\w-]+)"?/g)].map((match) => `${page.key}:/examples/${match[1]}/`))]
         : [];
       components.set(entry.entry, {
         name: main?.name ?? pascal,

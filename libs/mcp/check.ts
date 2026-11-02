@@ -2,7 +2,7 @@
 // the editor and `rivet check` report them: RV diagnostics with line / column, the explanation's fix text, the quick
 // fixes that apply (with the fixed source), RV3101 / RV1017 when a TypeScript program can be built, and TypeScript's
 // own errors when the `@rivetjs/*` packages resolve from the working directory.
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import ts from "typescript";
 import {
   analyzeFile,
@@ -69,6 +69,10 @@ const OPTIONS: ts.CompilerOptions = {
  * Check `code` as the file `filename` (default `src/routes/index.tsx`) of an app rooted at `cwd`. `resume` (default
  * true): compile as a resumable module, as the starters do (handler / capture rules apply).
  */
+// TypeScript's own lib d.ts files never change under a running server: parse them once (~1 MB of lib.dom etc.).
+const LIB_DIR = dirname(ts.getDefaultLibFilePath(OPTIONS));
+const libFiles = new Map<string, ts.SourceFile | undefined>();
+
 export function checkCode(code: string, options: { filename?: string; resume?: boolean; cwd?: string; types?: boolean } = {}): CheckCodeResult {
   const filename = options.filename ?? "src/routes/index.tsx";
   const resume = options.resume ?? /\.[jt]sx$/.test(filename);
@@ -106,7 +110,13 @@ export function checkCode(code: string, options: { filename?: string; resume?: b
   if (options.types !== false) {
     const host = ts.createCompilerHost(OPTIONS, true);
     const getSourceFile = host.getSourceFile.bind(host);
-    host.getSourceFile = (file, language, onError, create) => (resolve(file) === absolute ? source : getSourceFile(file, language, onError, create));
+    host.getSourceFile = (file, language, onError, create) => {
+      const path = resolve(file);
+      if (path === absolute) return source;
+      if (!path.startsWith(LIB_DIR)) return getSourceFile(file, language, onError, create);
+      if (!libFiles.has(path)) libFiles.set(path, getSourceFile(file, language, onError, create));
+      return libFiles.get(path);
+    };
     const fileExists = host.fileExists.bind(host);
     host.fileExists = (file) => resolve(file) === absolute || fileExists(file);
     host.getCurrentDirectory = () => cwd;
