@@ -68,11 +68,14 @@ export function toggleAside(state: AsideState, sheet: boolean): void {
 }
 
 const handledShortcuts = new WeakSet<Event>();
+/** Parsed shortcut per string: the handler runs on every window keydown. */
+const shortcutSpecs = new Map<string, ReturnType<typeof parseSidebarShortcut>>();
 
 /** The aside shortcut handler (delegated wrapper keydown + window listener: an event is handled once). */
 export function asideShortcutKeyDown(event: KeyboardEvent, state: AsideState, sheet: boolean): void {
   if (handledShortcuts.has(event) || !state.shortcut) return;
-  const spec = parseSidebarShortcut(state.shortcut);
+  let spec = shortcutSpecs.get(state.shortcut);
+  if (spec === undefined) shortcutSpecs.set(state.shortcut, (spec = parseSidebarShortcut(state.shortcut)));
   if (spec && matchesSidebarShortcut(event, spec)) {
     handledShortcuts.add(event);
     event.preventDefault();

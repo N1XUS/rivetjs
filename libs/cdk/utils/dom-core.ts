@@ -109,6 +109,9 @@ export function setStyle(target: HTMLElement | HTMLElement[] | null, property: s
 /** Shadow-DOM-safe `node.contains(otherNode)`: crosses shadow roots (via `host`) and slots. */
 export function nodeContains(node: Node | null | undefined, otherNode: Node | EventTarget | null | undefined): boolean {
   if (!node || !otherNode || !isNode(otherNode)) return false;
+  // Native fast path (per hover / press / focus event): a light-tree containment is also a flattened-tree one (a slotted
+  // node's slot sits in its host's shadow root, under the host); only a `false` needs the walk across roots / slots.
+  if (node.contains(otherNode)) return true;
   let current: Node | null | undefined = otherNode;
   while (current != null) {
     if (current === node) return true;
