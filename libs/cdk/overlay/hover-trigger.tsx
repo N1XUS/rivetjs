@@ -66,10 +66,11 @@ const delayOf = (delay: number | (() => number | undefined) | undefined): number
 const read = (source: ElementSource | undefined): Element | null => (typeof source === "function" ? untrack(source) : source) ?? null;
 
 // useHover: iOS fires an emulated mouse pointer event right after a touch.
-const touch = { ignoreEmulatedMouse: false, tracking: false };
+// One listener per document (iframes / popup windows / docs-kit frames get their own).
+const touch = { ignoreEmulatedMouse: false, tracking: new WeakSet<Document>() };
 function trackTouch(doc: Document): void {
-  if (touch.tracking) return;
-  touch.tracking = true;
+  if (touch.tracking.has(doc)) return;
+  touch.tracking.add(doc);
   doc.addEventListener("pointerup", (e) => {
     if (e.pointerType !== "touch") return;
     touch.ignoreEmulatedMouse = true;

@@ -301,12 +301,18 @@ function erasOf(state: DateFieldState): { era: string; formatted: string }[] {
   return eras;
 }
 
-function commonPrefixLength(strings: string[]): number {
+/** @internal Length of the common prefix (UTF-16 units), never ending inside a surrogate pair (Rivet; React Aria compares code units). */
+export function commonPrefixLength(strings: string[]): number {
   // Sort the strings, and compare the characters in the first and last to find the common prefix.
   strings.sort();
   const first = strings[0]!;
   const last = strings[strings.length - 1]!;
-  for (let i = 0; i < first.length; i++) if (first[i] !== last[i]) return i;
+  for (let i = 0; i < first.length; i++) {
+    if (first[i] === last[i]) continue;
+    // Split between a high and a low surrogate: back off to the pair's start.
+    const high = i > 0 ? first.charCodeAt(i - 1) : 0;
+    return high >= 0xd800 && high <= 0xdbff ? i - 1 : i;
+  }
   return 0;
 }
 
@@ -568,7 +574,8 @@ export function dateFieldInput(event: FieldEvent<InputEvent>, state: DateFieldSt
 
 // Focus within the field (useFocusWithin of useDateField): value on focus, blur commits.
 const valueOnFocus = new WeakMap<DateFieldState, string | null>();
-let selectionListener = false;
+/** Documents with the `selectionchange` collapse listener (one per document: iframes / popups get their own). */
+const selectionListeners = new WeakSet<Document>();
 
 /** focusin on the field: focus within starts (value on focus), the segment's selection collapses. */
 export function dateFieldFocusIn(event: FieldEvent<FocusEvent>, state: DateFieldState): void {
@@ -588,8 +595,8 @@ export function dateFieldFocusIn(event: FieldEvent<FocusEvent>, state: DateField
   // Collapse selection to start or Chrome won't fire input events.
   const doc = field.ownerDocument;
   doc.defaultView?.getSelection()?.collapse(target.el);
-  if (!selectionListener) {
-    selectionListener = true;
+  if (!selectionListeners.has(doc)) {
+    selectionListeners.add(doc);
     doc.addEventListener("selectionchange", () => {
       // Enforce that the selection is collapsed when inside a date segment.
       // Otherwise, when tapping on a segment in Android Chrome and then entering text,

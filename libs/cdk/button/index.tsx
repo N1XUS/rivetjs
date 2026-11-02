@@ -168,26 +168,33 @@ function unwatchPending(el: Element): void {
 // The first run cancels too: a press never starts on a disabled button, so `isDisabled` true there means the press
 // start itself disabled it (NumberField decrement reaching its limit: the spin must not keep stepping).
 const disabledWatchers = new WeakMap<Element, () => void>();
+// The watcher also ends when the press does (pointerup / pointercancel / keyup, capture): a long-lived `isDisabled`
+// signal (context / store) would otherwise keep the effect, and with it the element, until it next changed.
+const PRESS_ENDS = ["pointerup", "pointercancel", "keyup"] as const;
 function watchDisabled(el: Element, press: PressOptions, isDisabled: MaybeAccessor<boolean | undefined>): void {
   if (typeof isDisabled !== "function" || !isPressedNow(el)) return;
   disabledWatchers.get(el)?.();
+  const doc = el.ownerDocument;
+  const ended = () => queueMicrotask(() => !isPressedNow(el) && stop());
   const root = runWithOwner(null, () =>
     createRoot((dispose) => {
       effect(() => {
         const disabled = !!read(isDisabled);
         untrack(() => {
           if (disabled && isPressedNow(el)) cancelPress(press, el);
-          if (disabled || !isPressedNow(el)) queueMicrotask(() => unwatchDisabled(el, dispose));
+          if (disabled || !isPressedNow(el)) queueMicrotask(stop);
         });
       });
       return dispose;
     }),
   );
-  disabledWatchers.set(el, root.value);
-}
-function unwatchDisabled(el: Element, dispose: () => void): void {
-  dispose();
-  if (disabledWatchers.get(el) === dispose) disabledWatchers.delete(el);
+  const stop = (): void => {
+    for (const type of PRESS_ENDS) doc.removeEventListener(type, ended, true);
+    root.value();
+    if (disabledWatchers.get(el) === stop) disabledWatchers.delete(el);
+  };
+  for (const type of PRESS_ENDS) doc.addEventListener(type, ended, true);
+  disabledWatchers.set(el, stop);
 }
 
 /** Attribute value of a prop that may be an accessor (context-provided `aria-expanded={() => state.isOpen()}`). */

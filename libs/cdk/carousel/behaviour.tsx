@@ -328,12 +328,27 @@ export function carouselDragStart(event: MouseEvent | TouchEvent, state: Carouse
   if (!("buttons" in event) || !api.internalEngine().dragHandler.pointerDown()) return;
   // The button may have gone up while the chunk loaded: the first move with no button ends the drag.
   const doc = api.internalEngine().ownerDocument;
-  const check = (move: MouseEvent) => {
-    doc.removeEventListener("mousemove", check, true);
+  onFirstMove(doc, (move) => {
     if (move.buttons === 0 && api.internalEngine().dragHandler.pointerDown())
       doc.dispatchEvent(new MouseEvent("mouseup", { clientX: move.clientX, clientY: move.clientY, bubbles: true }));
+  });
+}
+
+const firstMoves = new WeakMap<Document, (move: MouseEvent) => void>();
+/**
+ * @internal Run `check` on the document's next `mousemove` (capture), once. One pending check per document: a repeated
+ * cold drag start (released without moving, replayed again) replaces the previous one instead of stacking listeners.
+ */
+export function onFirstMove(doc: Document, check: (move: MouseEvent) => void): void {
+  const previous = firstMoves.get(doc);
+  if (previous) doc.removeEventListener("mousemove", previous, true);
+  const once = (move: MouseEvent) => {
+    doc.removeEventListener("mousemove", once, true);
+    firstMoves.delete(doc);
+    check(move);
   };
-  doc.addEventListener("mousemove", check, true);
+  firstMoves.set(doc, once);
+  doc.addEventListener("mousemove", once, true);
 }
 
 /** Tab list keydown (W3C APG tabs, automatic activation): arrows / Home / End move focus between tabs and select. */

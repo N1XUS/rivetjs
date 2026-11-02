@@ -149,11 +149,20 @@ interface Live {
 }
 
 const lives = new Map<string, Live>();
+const detached = (el: HTMLElement | null): boolean => !el || !el.isConnected;
+/** Idle (no hold, no panel) and its rows left the document: the list is gone (keyed by id: the morph is resume data). */
+const gone = (l: Live): boolean => !l.hold && !l.surface && l.release.length === 0 && detached(l.item) && detached(l.pressed);
 const liveOf = (m: ItemMorph): Live => {
   let l = lives.get(m.id);
-  if (!l) lives.set(m.id, (l = { item: null, pressed: null, surface: null, backdrop: null, host: null, hold: null, release: [], synthetic: false }));
+  if (!l) {
+    // A new list's first event: drop the entries of lists that unmounted (they hold their detached rows).
+    for (const [id, other] of lives) if (gone(other)) lives.delete(id);
+    lives.set(m.id, (l = { item: null, pressed: null, surface: null, backdrop: null, host: null, hold: null, release: [], synthetic: false }));
+  }
   return l;
 };
+/** @internal number of live item-morph entries (tests). */
+export const itemMorphLiveCount = (): number => lives.size;
 
 const sourceOf = (m: ItemMorph, e: Event): HTMLElement | null => {
   const t = e.target;

@@ -51,3 +51,4 @@ iOS context-menu style item preview: a list item (ListBox option, GridList row, 
 
 - happy-dom has no layout: stub `matchMedia` to `reduce` so morphs jump.
 - The first trusted click flushes one task later (root CLAUDE.md): wait for `data-open` before measuring.
+- `item.tsx` `lives` (keyed by `ItemMorph.id`: the morph is resume data): a new list's first event prunes entries that are idle with detached rows (unmounted lists held their rows; FIX2-CDK 2026-11-01, `itemMorphLiveCount` @internal, `../tests/item-morph-lives.test.ts`).

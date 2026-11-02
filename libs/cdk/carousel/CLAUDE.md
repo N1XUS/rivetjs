@@ -63,3 +63,4 @@
 - `behaviour.tsx` reads `globalThis.document` (bare `document` in a server-rendered `.tsx` = compiler RV2001).
 
 - ID-RESUME (2026-10-27): Generated carousel viewport / slide / tab IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.
+- `behaviour.tsx` `carouselDragStart` (cold replay): the first-move button check is one per document (`onFirstMove`, @internal; repeated cold drag starts stacked capture `mousemove` listeners). FIX2-CDK 2026-11-01, `../tests/carousel-first-move.test.ts`.

@@ -75,10 +75,11 @@ const refs = (state: TooltipTriggerState): TriggerRefs => {
 };
 
 // useHover's global touch tracking: iOS fires an emulated mouse pointer event right after a touch.
-const touch = { ignoreEmulatedMouse: false, tracking: false };
+// One listener per document (iframes / popup windows / docs-kit frames get their own).
+const touch = { ignoreEmulatedMouse: false, tracking: new WeakSet<Document>() };
 function setupTouchTracking(doc: Document): void {
-  if (touch.tracking) return;
-  touch.tracking = true;
+  if (touch.tracking.has(doc)) return;
+  touch.tracking.add(doc);
   doc.addEventListener("pointerup", (e) => {
     if (e.pointerType !== "touch") return;
     touch.ignoreEmulatedMouse = true;
@@ -160,6 +161,8 @@ function engage(state: TooltipTriggerState, wrapper: Element, options: TooltipTr
   if (r.removePress) return;
   const doc = getOwnerDocument(wrapper);
   const onPress = (e: Event) => {
+    // The trigger left the document while hovered / focused (no pointerleave / blur fires): release on the next press.
+    if (!wrapper.isConnected) return release(state, options);
     if (inside(wrapper, getEventTarget(e))) tooltipTriggerPressStart(options, state);
   };
   doc.addEventListener("pointerdown", onPress, true);
@@ -184,6 +187,15 @@ function endHover(state: TooltipTriggerState, options: TooltipTriggerOptions): v
   r.removeGlobal = null;
   disengage(r);
   tooltipTriggerHoverEnd(options, state);
+}
+
+/** A removed trigger: end its hover and focus, drop the document listeners, close its tooltip. */
+function release(state: TooltipTriggerState, options: TooltipTriggerOptions): void {
+  const r = refs(state);
+  r.focusTarget = null;
+  if (r.hoverTarget) endHover(state, options);
+  disengage(r);
+  triggerBlur(options, state);
 }
 
 /** The trigger's `onPointerEnter` (useHover start). */

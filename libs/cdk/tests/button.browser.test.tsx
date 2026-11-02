@@ -575,6 +575,30 @@ describe("Button (Rivet)", () => {
     expect(events).not.toContain("press");
   });
 
+  it("the isDisabled watcher ends with the press, not at the signal's next change (FIX2-CDK, review r3-leaks#9)", async () => {
+    const disabled = signal(false);
+    let reads = 0;
+    const isDisabled = () => (reads++, disabled());
+    const user = userEvent.setup();
+    const { getByRole } = renderUI(() => <Button isDisabled={isDisabled}>Spin</Button>);
+    const button = getByRole("button");
+    await user.pointer({ keys: "[MouseLeft]", target: button });
+    await new Promise((r) => setTimeout(r, 0));
+    // Bindings only: how many reads one change costs without a watcher.
+    const tick = () => new Promise((r) => setTimeout(r, 0));
+    const before = reads;
+    disabled.set(true);
+    const withBindings = reads - before;
+    await tick();
+    disabled.set(false);
+    await tick();
+    const after = reads;
+    disabled.set(true);
+    // A live watcher would add one effect read per change.
+    expect(reads - after).toBe(withBindings);
+    expect(withBindings).toBeGreaterThanOrEqual(0);
+  });
+
   it("renders nothing in the collection build pass (RAC createHideableComponent)", () => {
     const { container } = render((() => (
       <Provider token={HiddenContext} value={true}>

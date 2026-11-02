@@ -15,7 +15,7 @@ React Aria overlay primitives (imperative, browser-side): overlay stack, positio
 - `@rivetjs/cdk/dismiss-button` → `dismiss-button.tsx`: `DismissButton`
 - `@rivetjs/cdk/overlay-strings` → `overlay-strings.ts`: `dismissStrings` (34 locales), `dismissLabel(locale)`
 - `@rivetjs/cdk/overlay-contexts` → `contexts.ts`: `OverlayTriggerStateContext`, `PopoverContext` (`PopoverContextValue`: `clearContexts`, `idRef`), `OverlayArrowContext` (`placement`, `ref`, `offset`), `ArrowOffset`
-- `@rivetjs/cdk/hover-trigger` → `hover-trigger.tsx`: `hoverTriggerProps(props, state)`, `hoverTriggerOpen` / `CheckClose`, trigger + overlay handlers, `attachHoverTrigger` (safe area while open), `OverlayTriggerMode`; DialogTrigger `trigger="hover" | "focus"`; `delay` / `closeDelay` may be accessors (live; `delayOf`, untracked at event time)
+- `@rivetjs/cdk/hover-trigger` → `hover-trigger.tsx`: `hoverTriggerProps(props, state)`, `hoverTriggerOpen` / `CheckClose`, trigger + overlay handlers, `attachHoverTrigger` (safe area while open), `OverlayTriggerMode`; DialogTrigger `trigger="hover" | "focus"`; `delay` / `closeDelay` may be accessors (live; `delayOf`, untracked at event time); touch tracking once per `Document` (WeakSet, FIX2-CDK 2026-11-01)
 - `@rivetjs/cdk/safe-area` → `safe-area.ts`: `safeArea(options)` → release, `isPointInSafeArea` (RA useSafeArea)
 - `prevent-scroll-ios.ts`: no subpath; lazy-loaded by `preventScroll` on iOS Safari / `overrideFocus`
 

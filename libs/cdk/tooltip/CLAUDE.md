@@ -35,3 +35,4 @@
 - [../overlay-arrow/CLAUDE.md](../overlay-arrow/CLAUDE.md), [../overlay/CLAUDE.md](../overlay/CLAUDE.md), [../preview-trigger/CLAUDE.md](../preview-trigger/CLAUDE.md)
 
 - ID-RESUME (2026-10-27): Generated trigger / tooltip IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.
+- `behaviour.tsx`: a trigger removed while hovered / focused (no pointerleave / blur) releases on the next document press (`release`: hover + focus end, listeners off, tooltip closes); touch tracking installs once per `Document` (WeakSet; iframes / frames get theirs). FIX2-CDK 2026-11-01, `../tests/tooltip-trigger-release.test.ts`.
