@@ -449,7 +449,14 @@ export function callSites(input: CallSiteInput): CallSites {
     }
     return out;
   };
+  // compiler#22: per file once (every component of a shell module asks); callers get a copy (the fixpoint grows it).
+  const hostSets = new Map<string, Set<number>>();
   const hostSet = (file: string): Set<number> => {
+    let out = hostSets.get(file);
+    if (!out) hostSets.set(file, (out = hostSetOf(file)));
+    return new Set(out);
+  };
+  const hostSetOf = (file: string): Set<number> => {
     let list = layouts.get(file);
     if (!list) {
       const at = file.lastIndexOf("/routes/");
@@ -471,7 +478,13 @@ export function callSites(input: CallSiteInput): CallSites {
     if (!routeHostFiles.has(file) && !/(^|[/\\])_layout\.[jt]sx$/.test(file))
       for (const name of byNameV.keys()) if (input.isRoot(file + "?" + name)) routePages.add(file);
   let routeProv: Set<number> | null = null;
+  const routeSets = new Map<string, Set<number>>();
   const routeSet = (file: string): Set<number> => {
+    let out = routeSets.get(file);
+    if (!out) routeSets.set(file, (out = routeSetOf(file)));
+    return new Set(out);
+  };
+  const routeSetOf = (file: string): Set<number> => {
     if (!routeProv) {
       routeProv = new Set();
       for (const h of routeHostFiles) for (const t of hostProvOf(h + "?" + (facts.get(h)?.defaultName ?? "default"), routePages, new Set())) routeProv.add(t);
@@ -508,29 +521,90 @@ export function callSites(input: CallSiteInput): CallSites {
     else if (!list) above.set(id, input.shell(id) && options.hosts ? hostSet(id.slice(0, at)) : new Set(TOPSET));
     else above.set(id, new Set());
   }
+  // compiler#6: a site's own part (what its caller provides + its enclosing components) does not change between rounds:
+  // computed once per site; the fixpoint unions it on the first round and only `above(caller)` after. After the
+  // fixpoint `siteAbove` is final and memoised (`prove`, `reads`, `aboveSite` ask per site, Motion / lite per call).
+  const siteBase = new Map<CallSiteSite, Set<number>>();
+  const baseOf = (s: CallSiteSite): Set<number> => {
+    let out = siteBase.get(s);
+    if (!out) {
+      out = new Set(providedBy(s.caller));
+      s.around.forEach((key, i) => {
+        for (const t of aroundOf(s.caller, key, s.tags[i] ?? "")) out!.add(t);
+      });
+      siteBase.set(s, out);
+    }
+    return out;
+  };
+  // Worklist: a component is revisited only when the `above` of one of its callers grew.
+  const dependents = new Map<string, Set<string>>();
+  const work: string[] = [];
+  for (const id of keys) {
+    const list = input.sites.get(id);
+    if (!list) continue;
+    work.push(id);
+    for (const s of list) {
+      let d = dependents.get(s.caller);
+      if (!d) dependents.set(s.caller, (d = new Set()));
+      d.add(id);
+    }
+  }
+  // Callers first (reverse post-order over caller → callee): in an acyclic call graph each component is visited once
+  // with its callers final; only cycles requeue.
+  const order: string[] = [];
+  const visited = new Set<string>();
+  for (const start of keys) {
+    if (visited.has(start)) continue;
+    visited.add(start);
+    const stack: [string, Iterator<string>][] = [[start, (dependents.get(start) ?? new Set<string>()).values()]];
+    while (stack.length) {
+      const top = stack[stack.length - 1]!;
+      const next = top[1].next();
+      if (next.done) {
+        order.push(top[0]);
+        stack.pop();
+      } else if (!visited.has(next.value)) {
+        visited.add(next.value);
+        stack.push([next.value, (dependents.get(next.value) ?? new Set<string>()).values()]);
+      }
+    }
+  }
+  work.length = 0;
+  for (let i = order.length - 1; i >= 0; i--) if (input.sites.has(order[i]!)) work.push(order[i]!);
+  const queued = new Set(work);
+  const based = new Set<string>();
+  for (let i = 0; i < work.length; i++) {
+    const id = work[i]!;
+    queued.delete(id);
+    const set = above.get(id)!;
+    if (set.has(TOP)) continue;
+    const before = set.size;
+    const first = !based.has(id);
+    based.add(id);
+    for (const s of input.sites.get(id)!) {
+      if (s.escapes) {
+        set.add(TOP);
+        break;
+      }
+      if (first) for (const t of baseOf(s)) set.add(t);
+      const up = above.get(s.caller);
+      if (up) for (const t of up) set.add(t);
+      else set.add(TOP);
+    }
+    if (set.size !== before) for (const d of dependents.get(id) ?? []) if (!queued.has(d)) (queued.add(d), work.push(d));
+  }
+  const finalAbove = new Map<CallSiteSite, Set<number>>();
   const siteAbove = (s: CallSiteSite): Set<number> => {
     if (s.escapes) return TOPSET;
-    const out = new Set(providedBy(s.caller));
-    s.around.forEach((key, i) => {
-      for (const t of aroundOf(s.caller, key, s.tags[i] ?? "")) out.add(t);
-    });
+    let out = finalAbove.get(s);
+    if (out) return out;
+    out = new Set(baseOf(s));
     const up = above.get(s.caller);
     if (up) for (const t of up) out.add(t);
     else out.add(TOP);
+    finalAbove.set(s, out);
     return out;
   };
-  for (let changed = true; changed;) {
-    changed = false;
-    for (const id of keys) {
-      const list = input.sites.get(id);
-      if (!list) continue;
-      const set = above.get(id)!;
-      if (set.has(TOP)) continue;
-      const before = set.size;
-      for (const s of list) for (const t of siteAbove(s)) set.add(t);
-      if (set.size !== before) changed = true;
-    }
-  }
   // ---- Verdicts.
   const trace = new Map<string, (Unproven | "proven")[]>();
   const prove = (callee: string, s: CallSiteSite): Unproven | "proven" => {

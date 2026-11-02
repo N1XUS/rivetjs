@@ -260,22 +260,39 @@ export function boundaryFacts(
   };
   // A context it reads may come from any provider above a call site: one enclosing it in the caller's JSX, the caller,
   // or (up the call sites) the caller's own ancestors. Unknown ancestry (no resolved call site, not a root) counts as live.
-  const contextLive = (id: string): boolean => {
+  // compiler#8: the ancestry is static — only `live` changes between passes. Per component, once: whether an ancestor
+  // has unknown ancestry, and the providers (enclosing components / callers with `provides`) on the way up; a pass then
+  // only reads their `live`.
+  const ancestry = new Map<string, { unknown: boolean; providers: string[] }>();
+  const ancestryOf = (id: string): { unknown: boolean; providers: string[] } => {
+    let hit = ancestry.get(id);
+    if (hit) return hit;
     const seen = new Set<string>();
-    const up = (at: string): boolean => {
-      if (seen.has(at)) return false;
+    const providers = new Set<string>();
+    let unknown = false;
+    const stack = [id];
+    while (stack.length && !unknown) {
+      const at = stack.pop()!;
+      if (seen.has(at)) continue;
       seen.add(at);
-      if (isRoot.has(at)) return false;
+      if (isRoot.has(at)) continue;
       const list = sites.get(at);
-      if (!list) return true;
-      for (const s of list) {
-        for (const a of s.around) if (a !== null && info.get(a)?.provides && live.get(a)) return true;
-        if (info.get(s.caller)?.provides && live.get(s.caller)) return true;
-        if (up(s.caller)) return true;
+      if (!list) {
+        unknown = true;
+        break;
       }
-      return false;
-    };
-    return up(id);
+      for (const s of list) {
+        for (const a of s.around) if (a !== null && info.get(a)?.provides) providers.add(a);
+        if (info.get(s.caller)?.provides) providers.add(s.caller);
+        stack.push(s.caller);
+      }
+    }
+    ancestry.set(id, (hit = { unknown, providers: [...providers] }));
+    return hit;
+  };
+  const contextLive = (id: string): boolean => {
+    const { unknown, providers } = ancestryOf(id);
+    return unknown || providers.some((p) => live.get(p) === true);
   };
   // Components used as values (`componentValues`): code the walk does not see may render them (and, ZERO A1, adopt them).
   const escaped = new Set<string>();
@@ -497,6 +514,7 @@ export function boundaryFacts(
   for (const [file, f] of facts) {
     const byName = new Map<string, BoundaryVerdict>();
     verdicts.set(file, byName);
+    let exportedLocals: Set<string> | null = null;
     for (const [name, c] of f.boundaries) {
       const id = key(file, name);
       const isInteractive = interactive.get(id) ?? false;
@@ -528,7 +546,7 @@ export function boundaryFacts(
         // A shell (ZERO A1: rendered only by a host that never adopts it) taking no props has no parent to adopt with and
         // nothing a call site could pass: standalone is its only adopt (RT-DIET: docs frame pages, then lite residuals).
         if (!list) shell(id) && c.params === "none" ? (verdict.independent = true) : (verdict.dependentBecause = "no-call-site");
-        else if (name !== "default" && ![...f.exports.values()].includes(name) && list.every((s) => s.caller.startsWith(file + "?")))
+        else if (name !== "default" && !(exportedLocals ??= new Set(f.exports.values())).has(name) && list.every((s) => s.caller.startsWith(file + "?")))
           verdict.dependentBecause = "not-exported";
         else if (list.every((s) => s.data)) verdict.independent = true;
         else verdict.dependentBecause = "call-site";
@@ -536,12 +554,36 @@ export function boundaryFacts(
       byName.set(name, verdict);
     }
   }
-  const names = (file: string, pick: (v: BoundaryVerdict) => boolean) => [...(verdicts.get(file) ?? [])].filter(([, v]) => pick(v)).map(([name]) => name);
+  // The four per-file name lists in one pass, on first ask (after `callSites` demoted its verdicts; compiler#21).
+  type Lists = { boundaries: string[]; independent: string[]; conditional: string[]; static: string[] };
+  const lists = new Map<string, Lists>();
+  const names = (file: string): Lists => {
+    let out = lists.get(file);
+    if (out) return out;
+    out = { boundaries: [], independent: [], conditional: [], static: [] };
+    for (const [name, v] of verdicts.get(file) ?? []) {
+      if (v.interactive) out.boundaries.push(name);
+      if (v.independent) out.independent.push(name);
+      if (v.conditional) out.conditional.push(name);
+      if (!v.adopted) out.static.push(name);
+    }
+    lists.set(file, out);
+    return out;
+  };
   const native = natives?.families.size
     ? nativeSites({ ...natives, facts, info, sites, escaped, interactive: (id) => interactive.get(id) ?? false, live: (id) => live.get(id) ?? false, renders })
     : new Map<string, string[]>();
   const proof = contexts ? callSites({ facts, target, sites, verdicts, isRoot: (id) => isRoot.has(id), escaped, hidden, shell, options: contexts }) : null;
+  // Memoised per call (compiler#6): Motion asks per call × rounds, PRESS-LITE per site; the proof is final here.
+  const aboveMemo = new Map<string, string[] | null>();
   const aboveCall = (caller: string, index: number): string[] | null => {
+    const key = caller + "\0" + index;
+    if (aboveMemo.has(key)) return aboveMemo.get(key)!;
+    const out = aboveCallOf(caller, index);
+    aboveMemo.set(key, out);
+    return out;
+  };
+  const aboveCallOf = (caller: string, index: number): string[] | null => {
     const call = info.get(caller)?.calls[index];
     if (!proof || !call) return null;
     const file = caller.slice(0, caller.lastIndexOf("?"));
@@ -588,9 +630,9 @@ export function boundaryFacts(
     callers: sites,
     roots: isRoot,
     verdicts,
-    boundaries: (file) => names(file, (v) => v.interactive),
-    independent: (file) => names(file, (v) => v.independent),
-    conditional: (file) => names(file, (v) => v.conditional),
-    static: (file) => names(file, (v) => !v.adopted),
+    boundaries: (file) => names(file).boundaries,
+    independent: (file) => names(file).independent,
+    conditional: (file) => names(file).conditional,
+    static: (file) => names(file).static,
   };
 }
