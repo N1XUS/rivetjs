@@ -16,6 +16,9 @@ import githubLight from "shiki/themes/github-light.mjs";
 import { COMPILER_NAME, highlightRule, langOf, RV_HIGHLIGHT, THEMES, tokenClass, type Lang } from "./highlight-classes.ts";
 import { formatHTML } from "./format-html.ts";
 
+/** Global copy of `COMPILER_NAME` for scanning token text (one regex, `lastIndex` reset per token). */
+const COMPILER_NAMES = new RegExp(COMPILER_NAME.source, "g");
+
 const GRAMMARS: Record<Lang, () => Promise<{ default: LanguageInput }>> = {
   tsx: () => import("shiki/langs/tsx.mjs"),
   ts: () => import("shiki/langs/typescript.mjs"),
@@ -207,7 +210,8 @@ export async function highlightPre(pre: HTMLElement): Promise<void> {
         if (range) highlightOf(cls).add(range);
       }
       if (!rv) continue;
-      for (let match, re = new RegExp(COMPILER_NAME.source, "g"); (match = re.exec(content));) {
+      COMPILER_NAMES.lastIndex = 0;
+      for (let match; (match = COMPILER_NAMES.exec(content));) {
         const range = rangeOf(texts, ends, start + match.index, start + match.index + match[0].length);
         if (range) highlightOf(RV_HIGHLIGHT).add(range);
       }

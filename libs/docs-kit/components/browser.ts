@@ -5,13 +5,20 @@
 /** Scroll-spy: mark the TOC link of the last heading above the reading line (both TOC copies). */
 export function spy() {
   spyState.queued = false;
+  // Pages without a TOC: nothing to mark (checked here, once per frame, not per scroll event).
+  if (!document.querySelector(".toc-list")) return;
   const headings = document.querySelectorAll<HTMLElement>(".prose h2[id], .prose h3[id]");
   if (!headings.length) return;
   const line = 120;
   let active: HTMLElement | undefined;
   const bottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
   if (bottom) active = headings[headings.length - 1];
-  else for (const heading of headings) if (heading.getBoundingClientRect().top <= line) active = heading;
+  // Headings are in document order: stop at the first one below the line (one rect read past the active heading).
+  else
+    for (const heading of headings) {
+      if (heading.getBoundingClientRect().top > line) break;
+      active = heading;
+    }
   const id = active?.id;
   for (const link of document.querySelectorAll<HTMLAnchorElement>(".toc-list a")) {
     if (link.hash.slice(1) === id) link.setAttribute("aria-current", "true");

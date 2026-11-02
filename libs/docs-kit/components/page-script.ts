@@ -25,7 +25,7 @@ const lean = document.documentElement.hasAttribute("data-lean");
 const dialog = () => import("../search/dialog.tsx");
 
 const onScroll = () => {
-  if (spyState.queued || !document.querySelector(".toc-list")) return;
+  if (spyState.queued) return;
   spyState.queued = true;
   requestAnimationFrame(spy);
 };
