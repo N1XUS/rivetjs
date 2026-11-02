@@ -86,6 +86,9 @@ function Timeline(props: { findings: PerfFinding[]; onPick: (id: number) => void
   const start = Math.min(...items.map((f) => f.ts));
   const end = Math.max(...items.map((f) => f.ts + (f.dur ?? 0)), start + 1);
   const pct = (t: number) => ((t - start) / (end - start)) * 100;
+  // One pass over the findings, not one filter of all of them per lane.
+  const byLane = new Map<string, (typeof items)[number][]>();
+  for (const f of items) (byLane.get(f.kind) ?? byLane.set(f.kind, []).get(f.kind)!).push(f);
   return (
     <div class="timeline">
       <For each={() => LANES} by={([kind]) => kind}>
@@ -93,7 +96,7 @@ function Timeline(props: { findings: PerfFinding[]; onPick: (id: number) => void
           <div class="lane" data-lane={lane()[0]}>
             <span class="lane-label">{lane()[1]}</span>
             <div class="track">
-              <For each={() => items.filter((f) => f.kind === lane()[0])} by={(f) => f.id}>
+              <For each={() => byLane.get(lane()[0]) ?? []} by={(f) => f.id}>
                 {(f) => (
                   <button
                     type="button"

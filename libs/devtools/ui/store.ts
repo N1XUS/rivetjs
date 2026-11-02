@@ -191,11 +191,42 @@ let refetch: ReturnType<typeof setTimeout> | null = null;
 const refreshTree = () => {
   refetch ??= setTimeout(async () => {
     refetch = null;
-    tree.set(await link!.request("tree.get", {}));
-    const id = selected();
-    if (id !== null) details.set(await link!.request("owner.get", { id }));
+    try {
+      tree.set(await link!.request("tree.get", {}));
+      const id = selected();
+      if (id !== null) details.set(await link!.request("owner.get", { id }));
+    } catch {
+      // The page went away or reloaded mid-request: the next snapshot / tree.changed refetches.
+    }
   }, 30);
 };
+
+/** Entries the HMR / error panes keep (the agent keeps the same number on its side). */
+export const LOG_CAP = 200;
+
+/** HMR log after `entry`: an update of the latest entry (same ts / kind / id) replaces it; newest `LOG_CAP` kept. */
+export function appendHmr(list: readonly HmrEntry[], entry: HmrEntry): HmrEntry[] {
+  const last = list.at(-1);
+  const replace = last !== undefined && last.ts === entry.ts && last.kind === entry.kind && last.id === entry.id;
+  const keep = list.slice(Math.max(0, list.length - (replace ? 1 : 0) - (LOG_CAP - 1)), replace ? -1 : undefined);
+  keep.push(entry);
+  return keep;
+}
+
+/**
+ * Error log after `entry` (ids are monotonic; an entry is sent again once its source file is located): an update
+ * replaces its entry in place, a new id is appended (sorted insert for an out-of-order one); newest `LOG_CAP` kept.
+ */
+export function upsertError(list: readonly ErrorEntry[], entry: ErrorEntry): ErrorEntry[] {
+  let i = list.length - 1;
+  while (i >= 0 && list[i]!.id > entry.id) i--;
+  const next = list.slice(Math.max(0, list.length - LOG_CAP));
+  const at = i - (list.length - next.length);
+  if (at >= 0 && next[at]!.id === entry.id) next[at] = entry;
+  else next.splice(at + 1, 0, entry);
+  if (next.length > LOG_CAP) next.shift();
+  return next;
+}
 
 function onEvent<K extends keyof Events>(type: K, data: Events[K]): void {
   switch (type) {
@@ -226,17 +257,12 @@ function onEvent<K extends keyof Events>(type: K, data: Events[K]): void {
       });
       break;
     case "hmr": {
-      const entry = data as HmrEntry;
       // Updates to the latest entry (state reset after the update) replace it.
-      const list = hmr();
-      const last = list.at(-1);
-      hmr.set(last && last.ts === entry.ts && last.kind === entry.kind && last.id === entry.id ? [...list.slice(0, -1), entry] : [...list, entry]);
+      hmr.set(appendHmr(hmr(), data as HmrEntry));
       break;
     }
     case "error": {
-      const entry = data as ErrorEntry;
-      const list = errors().filter((e) => e.id !== entry.id);
-      errors.set([...list, entry].sort((a, b) => a.id - b.id));
+      errors.set(upsertError(errors(), data as ErrorEntry));
       break;
     }
     case "pick.hover":

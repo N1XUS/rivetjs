@@ -30,6 +30,7 @@ Not exported: `build.ts`, `names.ts` (reached via `./server`), `ui/`.
 - Builds never include DevTools (production or development builds). `nameSignals` runs only on `vite serve` client modules; `compile()` output unchanged.
 - Agent never imports app or framework code; its failures surface as `agent` errors, never thrown into the page.
 - Previews never invoke user code (getters reported, not called); proxy trap errors contained.
+- Panel HMR / error lists (`ui/store.ts` `appendHmr` / `upsertError`): newest `LOG_CAP` (200, the agent's own cap) kept; a located error re-send replaces its entry in place (no filter + sort per event). Tree refetch failures (page gone mid-request) are swallowed; the next snapshot refetches. Perf timeline buckets findings per lane once per render.
 - Overlay: shadow root, constructed stylesheet (strict CSP OK), DOM built without HTML parsing (Trusted Types OK).
 - Hook key: `globalThis[Symbol.for("rivet.devtools")]`. Levels: 1 = structure (always), 2 = writes/runs/DOM updates (panel open). The hook retains no events (no rings): kept events go straight to the agent.
 - Requests always get a response: handler result, or `error.request` (throw / unknown type) → panel rejects; panel also rejects after `REQUEST_TIMEOUT`. Event names/payloads typed by `Events` (agent `send` / `Outgoing`).
