@@ -69,7 +69,12 @@ export function buildTable(config: I18nConfig, raw: Record<string, Record<string
       if (v === undefined) parsed.set(found, (v = parseMessage(flat[found]![key]!, `${found}:${key}`)));
       return v;
     });
-    const names = (v: Variant) => [...paramsOf(v).keys()].sort().join(",");
+    // Names and kinds: a `{n, number}` in one locale and a plain `{n}` in another type the same parameter differently.
+    const names = (v: Variant) =>
+      [...paramsOf(v)]
+        .map(([name, kind]) => `${name}:${kind}`)
+        .sort()
+        .join(",");
     const base = names(variants[defaultIndex]!);
     locales.forEach((locale, i) => {
       const own = names(variants[i]!);

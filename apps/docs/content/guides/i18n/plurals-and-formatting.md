@@ -129,7 +129,7 @@ A tag such as `<b>`, at the top level or inside a `plural` or `select` case, mak
 
 ### Parameters that differ between languages
 
-Each language must use the same parameter names for a key. If a translator renames `{n}` to `{count}`, the build fails with `params differ between "en" (n) and "de" (count)`.
+Each language must use the same parameter names and kinds for a key. If a translator renames `{n}` to `{count}`, the build fails with `params differ between "en" (n:string) and "de" (count:string)`. A `{n, number}` in one language and a plain `{n}` in another fails the same way (`n:number` against `n:string`).
 
 ## See also
 

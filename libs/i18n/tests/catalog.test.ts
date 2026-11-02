@@ -14,11 +14,14 @@ const config: I18nConfig = {
 
 test("flatten nests with dots", () => {
   // Null-prototype result (prototype member names are plain keys): compare its own entries.
-  assert.deepEqual({ ...flatten({ cart: { title: "Cart", count: "{n}" }, ok: "OK" }) }, {
-    "cart.title": "Cart",
-    "cart.count": "{n}",
-    ok: "OK",
-  });
+  assert.deepEqual(
+    { ...flatten({ cart: { title: "Cart", count: "{n}" }, ok: "OK" }) },
+    {
+      "cart.title": "Cart",
+      "cart.count": "{n}",
+      ok: "OK",
+    },
+  );
 });
 test("flatten rejects non-string leaves", () => {
   assert.throws(() => flatten({ a: 1 }), /a: catalog values must be strings/);
@@ -36,10 +39,7 @@ test("table is indexed by locale order, falling back along the chain", () => {
   assert.deepEqual(table.bye, ["Bye", "Tschüss", "Tschüss"]);
 });
 test("missing in default locale is always an error", () => {
-  assert.throws(
-    () => buildTable({ ...config, missing: "fallback" }, { en: {}, de: { only: "x" }, "de-AT": {} }),
-    /only: missing in default locale "en"/,
-  );
+  assert.throws(() => buildTable({ ...config, missing: "fallback" }, { en: {}, de: { only: "x" }, "de-AT": {} }), /only: missing in default locale "en"/);
 });
 test("missing policy error/warn", () => {
   const raw = { en: { hi: "Hi" }, de: {}, "de-AT": {} };
@@ -51,7 +51,13 @@ test("missing policy error/warn", () => {
 test("param name mismatch across locales is an error", () => {
   assert.throws(
     () => buildTable(config, { en: { c: "{n} items" }, de: { c: "{count} Artikel" }, "de-AT": { c: "{n}" } }),
-    /c: params differ between "en" \(n\) and "de" \(count\)/,
+    /c: params differ between "en" \(n:string\) and "de" \(count:string\)/,
+  );
+});
+test("param kind mismatch across locales is an error", () => {
+  assert.throws(
+    () => buildTable(config, { en: { c: "{n, number} items" }, de: { c: "{n} Artikel" }, "de-AT": { c: "{n, number}" } }),
+    /c: params differ between "en" \(n:number\) and "de" \(n:string\)/,
   );
 });
 test("loadCatalogs reads {locale} files relative to root", async () => {
@@ -59,10 +65,7 @@ test("loadCatalogs reads {locale} files relative to root", async () => {
   mkdirSync(join(root, "locales"));
   writeFileSync(join(root, "locales/en.json"), JSON.stringify({ hi: "Hi" }));
   writeFileSync(join(root, "locales/de.json"), JSON.stringify({ hi: "Hallo" }));
-  const { raw, files } = await loadCatalogs(
-    { locales: ["en", "de"], defaultLocale: "en", catalogs: "locales/{locale}.json" },
-    root,
-  );
+  const { raw, files } = await loadCatalogs({ locales: ["en", "de"], defaultLocale: "en", catalogs: "locales/{locale}.json" }, root);
   assert.deepEqual(raw, { en: { hi: "Hi" }, de: { hi: "Hallo" } });
   assert.deepEqual(files, [join(root, "locales/en.json"), join(root, "locales/de.json")]);
 });

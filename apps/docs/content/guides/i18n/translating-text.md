@@ -78,7 +78,7 @@ A catalog is a JSON file. Nested objects become dotted keys:
 
 Values use ICU MessageFormat, a common format for translations. `{name}` is a parameter.
 
-Every language must use the same parameters for a key. If `en` has `{name}` and `de` does not, the build fails with a clear message.
+Every language must use the same parameters, of the same kind, for a key. If `en` has `{name}` and `de` does not, the build fails with a clear message.
 
 ## Translate text
 
