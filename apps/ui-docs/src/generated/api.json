@@ -142067,7 +142067,7 @@
      "name": "getRowId",
      "kind": "property",
      "signature": "getRowId?: (item: T, index: number) => Key",
-     "doc": "Unique row key (default `item.id`, then `item.key`, then the index).",
+     "doc": "Unique row key (default `item.id`, then `item.key`, then the index). `index` = the item's index in its source array (`data` or the parent's children), stable through sort / filter.",
      "optional": true
     },
     {
@@ -217867,8 +217867,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/morph/item.tsx",
-    "line": 344,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/morph/item.tsx#L344"
+    "line": 353,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/morph/item.tsx#L353"
    },
    "href": "/api/rivetjs/ui/item-morph/closeItemMorph/"
   },
@@ -217897,8 +217897,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/morph/item.tsx",
-    "line": 351,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/morph/item.tsx#L351"
+    "line": 360,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/morph/item.tsx#L360"
    },
    "href": "/api/rivetjs/ui/item-morph/isItemMorphOpen/"
   },
@@ -217985,8 +217985,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/morph/item.tsx",
-    "line": 336,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/morph/item.tsx#L336"
+    "line": 345,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/morph/item.tsx#L345"
    },
    "href": "/api/rivetjs/ui/item-morph/openItemMorph/"
   },
@@ -236933,8 +236933,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/lightbox/thumbnails/index.tsx",
-    "line": 177,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/lightbox/thumbnails/index.tsx#L177"
+    "line": 179,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/lightbox/thumbnails/index.tsx#L179"
    },
    "href": "/api/rivetjs/ui/lightbox/LightboxThumbnailsToggleProps/"
   },
