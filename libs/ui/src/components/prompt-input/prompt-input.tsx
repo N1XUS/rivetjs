@@ -194,8 +194,9 @@ const PromptInputFooter = (props: Omit<JSX.IntrinsicElements["p"], "class" | "ch
 /** Compact layout: expand (`data-expanded`) once the text wraps or has a newline; collapse when emptied. */
 const syncCompactExpanded = (textarea: HTMLTextAreaElement): void => {
   const root = textarea.closest("[data-slot=prompt-input]");
-  const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) || 24;
-  const expanded = textarea.value.includes("\n") || textarea.scrollHeight > lineHeight * 1.5 + 1;
+  // Already expanded and not emptied: nothing can change, skip the forced layout on every keystroke.
+  if (textarea.value && root?.hasAttribute("data-expanded")) return;
+  const expanded = textarea.value.includes("\n") || textarea.scrollHeight > (parseFloat(getComputedStyle(textarea).lineHeight) || 24) * 1.5 + 1;
   if (expanded) root?.setAttribute("data-expanded", "true");
   else if (!textarea.value) root?.removeAttribute("data-expanded");
 };

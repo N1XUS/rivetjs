@@ -42,12 +42,12 @@ export function captureLayoutShift(elements: readonly HTMLElement[]): () => void
       for (let i = 0; i < elements.length; i++) {
         const element = elements[i];
         if (!element.isConnected) continue;
-        const timing = transformTransition(element) || before[i];
-        if (!timing) continue;
         const last = element.getBoundingClientRect();
         const x = first[i].left - last.left;
         const y = first[i].top - last.top;
         if (!x && !y) continue;
+        const timing = transformTransition(element) || before[i];
+        if (!timing) continue;
         element.animate([{ transform: `translate3d(${x}px, ${y}px, 0)` }, { transform: "translate3d(0, 0, 0)" }], {
           ...timing,
           composite: "add",
