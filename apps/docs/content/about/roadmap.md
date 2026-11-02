@@ -56,7 +56,7 @@ The derived resume model is the only model. Keyed list adoption, reading eligibl
 | Feature | What remains | Design |
 | --- | --- | --- |
 | Resume triggers and grouping | Per-component preload/grouping controls and page-wide interaction/media wake triggers. See [current limits](../learn/resuming.md#what-it-does-not-do-yet). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-18-structural-resume-design.md) |
-| Solid, Vue and Svelte components | Bridges for three more frameworks, and keeping an island alive across client navigation (`persist`). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-11-framework-bridges-design.md) |
+| Persistent islands | Keeping a framework island alive across client navigation (`persist`: the option is reserved and has no effect yet). Solid, Vue and Svelte bridges shipped in `0.1.0-alpha.3`. | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-11-framework-bridges-design.md) |
 
 ## Goals that are not met yet
 
