@@ -26,16 +26,16 @@ import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, resolve } from "node:path";
 import { aiOutputs } from "../../libs/mcp/ai/sync.ts";
+import { ORDER } from "../release/version.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
-/** Packages a starter installs (directly or through another package), in dependency order. */
-export const E2E_PACKAGES = [
+/** Packages a starter installs (directly or through another package; forms: ui Form / field validation), in release {@link ORDER}. */
+const STARTER_PACKAGES = new Set([
   "reactivity",
   "runtime",
   "compiler",
   "router",
   "kit",
-  // @rivetjs/ui dependency (ui Form / field validation).
   "forms",
   "devtools",
   "language-core",
@@ -43,7 +43,8 @@ export const E2E_PACKAGES = [
   "cdk",
   "ui",
   "create-rivet",
-];
+]);
+export const E2E_PACKAGES = ORDER.filter((name) => STARTER_PACKAGES.has(name));
 /** create-rivet template ids (`libs/create-rivet/index.ts` `TEMPLATES`). */
 export const E2E_TEMPLATES = ["minimal", "static", "server", "ui"];
 /**
