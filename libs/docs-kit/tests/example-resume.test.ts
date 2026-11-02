@@ -83,7 +83,11 @@ export const nav = [{ id: "start", title: "Start", area: "start", groups: [{ tit
     `import { onGet } from "@rivetjs/router";
 export const get = onGet(() => new Response("<!doctype html><html><body>Frame loaded</body></html>", { headers: { "content-type": "text/html" } }));`,
   );
-  await write("src/document.ts", `export default () => ({ start: '<!doctype html><html><head></head><body>', end: '</body></html>' });`);
+  // The docs document's head script sets lazy example frames' `src` (`PARENT_LAZY_FRAMES`); this minimal document carries only that part.
+  await write(
+    "src/document.ts",
+    `import { PARENT_LAZY_FRAMES } from "@rivetjs/docs-kit/frame-theme.ts";\nexport default ({ nonce }: { nonce?: string }) => ({ start: '<!doctype html><html><head><script' + (nonce ? ' nonce="' + nonce + '"' : "") + '>' + PARENT_LAZY_FRAMES + '</script></head><body>', end: '</body></html>' });`,
+  );
   await write(
     "src/routes/_layout.tsx",
     `import { clientEffect } from "@rivetjs/runtime/dom";
@@ -134,7 +138,10 @@ test("a loaded iframe and its source survive idle adoption", async () => {
     assert.equal(await page.locator('[aria-label="Example missing"]').count(), 0);
     assert.equal(await page.locator("figure.example iframe").count(), 1);
     assert.match((await page.locator(".code-panel").first().textContent()) ?? "", /const answer = 42/);
-    assert.equal(await page.frameLocator("iframe").locator("body").textContent(), "Frame loaded");
+    // Lazy frame (`data-lazy`, no `src` in the HTML): the head script sets `src` near the viewport; adoption keeps it.
+    assert.match((await page.locator("figure.example iframe").getAttribute("data-lazy")) ?? "", /\/frame\/$/);
+    await page.frameLocator("iframe").locator("body", { hasText: "Frame loaded" }).waitFor({ timeout: 10_000 });
+    assert.match((await page.locator("figure.example iframe").getAttribute("src")) ?? "", /\/frame\/$/);
   } finally {
     await page.close();
   }

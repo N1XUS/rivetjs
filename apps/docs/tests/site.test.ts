@@ -34,7 +34,7 @@ test("internal links, anchors and example frames resolve", async () => {
 
 test("embedded examples are pages of the docs app, without the docs chrome", () => {
   const page = html("/guides/state/signals/");
-  const src = /<iframe[^>]*\ssrc="([^"]+)"/.exec(page)?.[1];
+  const src = /<iframe[^>]*\s(?:src|data-lazy)="([^"]+)"/.exec(page)?.[1];
   assert.ok(src, "the signals guide embeds a live example");
   assert.equal(src, "/examples/counter/frame/");
   const frame = html("/examples/counter/frame/");

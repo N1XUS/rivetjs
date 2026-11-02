@@ -66,8 +66,9 @@ function WhatLoaded({ id }: { id: string }) {
  * A live example: preview (the example's frame page, `/examples/<id>/frame/`, a page of this docs app without its
  * chrome), code tabs, the frame page's HTML (fetched and formatted in the browser when the tab is shown), and a
  * toolbar (reload, phone width, new tab). An auto-height example's iframe (`data-auto-height`) takes the height its
- * page posts (`frame-theme.ts`). Tabs are radio buttons styled with CSS, so the frame works without
- * JavaScript. Examples that need a server are shown as code only.
+ * page posts (`frame-theme.ts`). Tabs are radio buttons styled with CSS. A non-`eager` preview has no `src` in the HTML
+ * (`data-lazy`): `PARENT_LAZY_FRAMES` sets it when the frame comes within 600 px of the viewport, so off-screen demos
+ * cost the page nothing; without JavaScript such a preview stays empty. Examples that need a server are shown as code only.
  */
 export function Example({ id, example, eager }: { id: string; example: ExampleView | undefined; eager?: boolean }) {
   if (!example) {
@@ -104,15 +105,27 @@ export function Example({ id, example, eager }: { id: string; example: ExampleVi
       </div>
       {live ? (
         <div class="example-panel example-preview" data-panel="0">
-          <iframe
-            src={src}
-            name={frame}
-            title={example.title + " (live example)"}
-            height={String(example.height)}
-            data-auto-height={example.auto ? "" : undefined}
-            loading={eager ? "eager" : "lazy"}
-            allow="clipboard-write"
-          />
+          {/* Two branches, not `src={eager ? src : undefined}`: that binding's adopt run would remove the `src` the head
+              script set on a lazy frame. */}
+          {eager ? (
+            <iframe
+              src={src}
+              name={frame}
+              title={example.title + " (live example)"}
+              height={String(example.height)}
+              data-auto-height={example.auto ? "" : undefined}
+              allow="clipboard-write"
+            />
+          ) : (
+            <iframe
+              data-lazy={src}
+              name={frame}
+              title={example.title + " (live example)"}
+              height={String(example.height)}
+              data-auto-height={example.auto ? "" : undefined}
+              allow="clipboard-write"
+            />
+          )}
         </div>
       ) : null}
       {example.files.map((file, index) => (

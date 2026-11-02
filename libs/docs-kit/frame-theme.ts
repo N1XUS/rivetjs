@@ -3,6 +3,7 @@
 // - PARENT_THEME_BRIDGE (docs-kit document.ts, after the pre-paint theme script): answers a frame's
 //   "rivet-docs:theme?" with `{ rivetDocsTheme: "light" | "dark" }` and posts every `<html data-theme>` change to all
 //   iframes.
+// - PARENT_LAZY_FRAMES (same script): `<iframe data-lazy>` gets `src` within 600 px of the viewport.
 // - PARENT_FRAME_HEIGHT (same script): auto-height frames (`<iframe data-auto-height>`, example `frame.auto`) take the
 //   height their page posts (`{ rivetDocsFrameHeight: px }`), clamped to FRAME_HEIGHT_MIN..MAX; only the iframe whose
 //   window sent it, every other iframe / sender / message is ignored.
@@ -60,6 +61,21 @@ export const PARENT_THEME_BRIDGE =
   '(function(){var d=document.documentElement;function s(w){w.postMessage({rivetDocsTheme:d.dataset.theme},"*")}' +
   `addEventListener("message",function(e){if(e.data===${JSON.stringify(THEME_REQUEST)}&&e.source)s(e.source)});` +
   'new MutationObserver(function(){for(var f of document.querySelectorAll("iframe"))if(f.contentWindow)s(f.contentWindow)}).observe(d,{attributes:true,attributeFilter:["data-theme"]})})()';
+
+/**
+ * Parent side (docs pages): lazy example frames (`<iframe data-lazy>`, `Example` without `eager`) get their `src` once
+ * they come within 600 px of the viewport. Replaces `loading="lazy"`, whose distance threshold (1250–2500 px) loaded
+ * frames nobody had scrolled to; each one parses its page, styles and fetch-ahead JS (ui-docs `/components/scheduler`,
+ * CPU 4×: 810 → 427 ms page CPU, JS heap 12.5 → 6.8 MB, 327 → 4 script requests; a far jump shows the demo ~80–135 ms
+ * later). A MutationObserver from the head script sees parser-inserted and client-rendered frames alike; the
+ * IntersectionObserver is created at the first frame. No IntersectionObserver: `src` at once. `Example` renders the
+ * lazy and the eager iframe as separate branches: a `src={eager ? src : undefined}` binding's adopt run removed the
+ * `src` this script set.
+ */
+export const PARENT_LAZY_FRAMES =
+  '(function(){var o;function a(f){if(f.__rvLazy)return;f.__rvLazy=1;if(!window.IntersectionObserver)return f.src=f.getAttribute("data-lazy");' +
+  'o=o||new IntersectionObserver(function(es){for(var e of es)if(e.isIntersecting){o.unobserve(e.target);e.target.src=e.target.getAttribute("data-lazy")}},{rootMargin:"600px"});o.observe(f)}' +
+  'new MutationObserver(function(l){for(var r of l)for(var n of r.addedNodes)if(n.nodeType===1){if(n.localName==="iframe"){if(n.hasAttribute("data-lazy"))a(n)}else if(n.firstElementChild)for(var f of n.querySelectorAll("iframe[data-lazy]"))a(f)}}).observe(document.documentElement,{childList:true,subtree:true})})()';
 
 /** Parent side (docs pages): heights of `<iframe data-auto-height>` frames. */
 export const PARENT_FRAME_HEIGHT =

@@ -1,4 +1,4 @@
-// Link check over the built site: internal hrefs/srcs resolve to files (example iframes: their frame pages),
+// Link check over the built site: internal hrefs/srcs resolve to files (example iframes, `src` or lazy `data-lazy`: their frame pages),
 // `#anchors` exist in their target page, StackBlitz forms (starters) post to the run endpoint. Example frame pages
 // (`/examples/<id>/frame/…`) are checked for their assets only: element hrefs other than `<link>` are demo content
 // (placeholder paths and anchors of the example's own app, also on non-`<a>` link elements).
@@ -10,7 +10,7 @@ async function htmlFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { recursive: true, withFileTypes: true });
   return entries.filter((e) => e.isFile() && e.name.endsWith(".html")).map((e) => join(e.parentPath, e.name));
 }
-const ATTR = /\s(href|src|action)="([^"]*)"/g;
+const ATTR = /\s(href|src|data-lazy|action)="([^"]*)"/g;
 const ID = /\sid="([^"]*)"/g;
 const decode = (value: string) => value.replaceAll("&amp;", "&").replaceAll("&quot;", '"').replaceAll("&lt;", "<").replaceAll("&gt;", ">");
 

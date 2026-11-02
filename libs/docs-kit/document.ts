@@ -5,6 +5,7 @@ import {
   FRAME_THEME,
   frameIdOf,
   PARENT_FRAME_HEIGHT,
+  PARENT_LAZY_FRAMES,
   PARENT_FRAME_JS_METER,
   PARENT_THEME_BRIDGE,
   pathIn,
@@ -32,6 +33,8 @@ const themeScript = (nonce: string | undefined, stub = "", meter = false) =>
   PARENT_THEME_BRIDGE +
   ";" +
   PARENT_FRAME_HEIGHT +
+  ";" +
+  PARENT_LAZY_FRAMES +
   (meter ? ";" + PARENT_FRAME_JS_METER : "") +
   stub +
   "</script>";
