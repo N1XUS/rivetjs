@@ -78,7 +78,7 @@ test("a forged completed field does not unlock a later step: completion comes fr
   const { post, completed } = app();
   const first = await post("alice", "account", { email: "alice@example.com" });
   const draft = new URL(first.headers.get("location")!, "http://x").searchParams.get("draft")!;
-  for (const forged of [{ completed: "account,address" }, { "completed[]": "address" }, { _completed: "0,1" }]) {
+  for (const forged of [{ completed: "account,address" }, { "completed[]": "address" }, { _completed: "0,1" }] as Record<string, string>[]) {
     const skipped = await post("alice", "confirm", { agree: "on", _draft: draft, ...forged });
     assert.equal(skipped.status, 303);
     assert.equal(new URL(skipped.headers.get("location")!, "http://x").searchParams.get("step"), "address", JSON.stringify(forged));
