@@ -38,7 +38,7 @@
 
 ## Field text (TW-195, FIX-UI 2026-11-01)
 
-- Editable controls (input / textarea / native select / date segments / Command / NumberStepper value / PromptInput textarea, token input + mirror) take `@apply text-field` (`utilities/index.css`): `font-size: var(--rv-field-font-size, --text-sm)`, `line-height: var(--rv-field-line-height, 20 px)`; under `(pointer: coarse), (width < 40rem)` `max(1rem, token)` + 24 px — iOS Safari zooms into a focused field under 16 px. A component with its own size scale sets the token on the element (PromptInput `--prompt-input-text`, NumberStepper `--number-stepper-font-size`). A new editable control uses `text-field`, never `text-sm` / `sm:text-sm`; never `maximum-scale` / `user-scalable=no`. Test `tests-components/field-text.test.ts`.
+- Editable controls (input / textarea / native select / date segments / Command / NumberStepper value / PromptInput textarea, token input + mirror) take `@apply field-text` (`utilities/index.css`): `font-size: var(--rv-field-font-size, --text-sm)`, `line-height: var(--rv-field-line-height, 20 px)`; under `(pointer: coarse), (width < 40rem)` `max(1rem, token)` + 24 px — iOS Safari zooms into a focused field under 16 px. A component with its own size scale sets the token on the element (PromptInput `--prompt-input-text`, NumberStepper `--number-stepper-font-size`). A new editable control uses `field-text`, never `text-sm` / `sm:text-sm`; the name is not `text-*`: Tailwind also reads `text-<name>` as a theme colour (`text-field` = `color: var(--color-field)`, the field background — values vanished where no `text-field-foreground` followed); never `maximum-scale` / `user-scalable=no`. Test `tests-components/field-text.test.ts`.
 
 ## Icons (identity T8, TW-140)
 

@@ -112,7 +112,7 @@
   /* Rivet (TW-195): field text — the size variant on desktop, at least 16 px on touch (iOS focus zoom); the input inherits it. */
   --rv-field-font-size: var(--number-stepper-font-size);
   --rv-field-line-height: 1.5;
-  @apply text-field;
+  @apply field-text;
   height: 100%;
 }
 

@@ -103,7 +103,6 @@
   }
 
   .color-input-group__input {
-    color: var(--field-background, var(--default));
     --tw-shadow: 0 0 #0000;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;

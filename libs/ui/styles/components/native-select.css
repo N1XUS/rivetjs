@@ -36,7 +36,7 @@
  * Element: select - the native <select>, styled like a HeroUI field trigger
  */
 .native-select__select {
-  @apply min-h-9 w-full appearance-none truncate rounded-field border bg-field py-2 ps-3 pe-8 text-field text-field-foreground shadow-field outline-none;
+  @apply min-h-9 w-full appearance-none truncate rounded-field border bg-field py-2 ps-3 pe-8 field-text text-field-foreground shadow-field outline-none;
 
   border-width: var(--border-width-field);
   border-color: var(--field-border);

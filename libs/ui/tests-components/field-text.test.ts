@@ -1,4 +1,4 @@
-// Field text size (styles/TWEAKS.md TW-195, `text-field` utility) on `/field-text` (`app/src/routes/field-text.tsx`): on a
+// Field text size (styles/TWEAKS.md TW-195, `field-text` utility) on `/field-text` (`app/src/routes/field-text.tsx`): on a
 // coarse pointer (Playwright `hasTouch` → `(pointer: coarse)`) every editable control renders its text at ≥ 16 px (iOS
 // Safari zooms the page into a focused field with smaller text); a fine pointer at desktop width keeps the design sizes.
 import { test, afterAll, beforeAll } from "vitest";

@@ -7454,7 +7454,6 @@
   }
 
   .color-input-group__input {
-    color: var(--field-background, var(--default));
     --tw-shadow: 0 0 #0000;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
@@ -11539,7 +11538,6 @@
   }
 
   .input-group__input {
-    color: var(--field-background, var(--default));
     --tw-shadow: 0 0 #0000;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
@@ -11953,7 +11951,6 @@
   }
 
   .number-field__input {
-    color: var(--field-background, var(--default));
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
     --tw-shadow: 0 0 #0000;
@@ -12316,7 +12313,6 @@
   }
 
   .number-stepper__value {
-    color: var(--field-background, var(--default));
     height: 100%;
   }
 
@@ -13150,7 +13146,6 @@
   }
 
   .search-field__input {
-    color: var(--field-background, var(--default));
     --tw-shadow: 0 0 #0000;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
@@ -14439,7 +14434,6 @@
   }
 
   .date-input-group__input {
-    color: var(--field-background, var(--default));
     --tw-shadow: 0 0 #0000;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
@@ -27716,7 +27710,6 @@
   }
 
   .prompt-input__token-input, .prompt-input__token-mirror {
-    color: var(--field-background, var(--default));
     --rv-field-font-size: var(--prompt-input-text);
     --rv-field-line-height: 1.5rem;
     letter-spacing: inherit;

@@ -60,7 +60,7 @@
 }
 
 .date-input-group__input {
-  @apply flex flex-1 cursor-text items-center gap-px rounded-none border-0 bg-transparent px-3 py-2 text-field shadow-none outline-none;
+  @apply flex flex-1 cursor-text items-center gap-px rounded-none border-0 bg-transparent px-3 py-2 field-text shadow-none outline-none;
 
   /* Remove border radius on left side when prefix is present */
   .date-input-group:has([data-slot="date-input-group-prefix"]) & {

@@ -204,7 +204,6 @@
   }
 
   .prompt-input__token-input, .prompt-input__token-mirror {
-    color: var(--field-background, var(--default));
     --rv-field-font-size: var(--prompt-input-text);
     --rv-field-line-height: 1.5rem;
     letter-spacing: inherit;

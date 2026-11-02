@@ -1,4 +1,4 @@
-// Field text size (TWEAKS.md TW-195, `text-field` utility): one of every editable control, each inside a
+// Field text size (TWEAKS.md TW-195, `field-text` utility): one of every editable control, each inside a
 // `data-field-scope` (or carrying `data-field`) naming it. `field-text.test.ts` reads the computed font size on fine vs coarse pointers.
 import { signal } from "@rivetjs/reactivity";
 import { ColorField } from "@rivetjs/ui/color-field";
