@@ -965,3 +965,21 @@ it('bulk moves preserve sparse kept slots and array species', () => {
     ...Array.from({length: 20}, (_, i) => i * 2), 39
   ]);
 });
+
+// Rivet: five or more keys take the key → index map path (FIX2-CDK); same result as the per-key scan.
+describe('createListData move many keys (Rivet)', function () {
+  it('moveAfter with five keys keeps their list order', function () {
+    let {result} = renderHook(() => createListData({initialItems: many, getKey}));
+    act(() => {
+      result.current.moveAfter('Ten', ['Seven', 'One', 'Five', 'Three', 'Nine']);
+    });
+    expect(result.current.items.map(getKey)).toEqual(['Two', 'Four', 'Six', 'Eight', 'Ten', 'One', 'Three', 'Five', 'Seven', 'Nine', 'Eleven']);
+  });
+  it('moveBefore with five keys matches four-key scans', function () {
+    let {result} = renderHook(() => createListData({initialItems: many, getKey}));
+    act(() => {
+      result.current.moveBefore('Two', ['Eleven', 'Nine', 'Seven', 'Five', 'Three']);
+    });
+    expect(result.current.items.map(getKey)).toEqual(['One', 'Three', 'Five', 'Seven', 'Nine', 'Eleven', 'Two', 'Four', 'Six', 'Eight', 'Ten']);
+  });
+});

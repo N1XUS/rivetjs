@@ -49,9 +49,8 @@ export function compareNodeOrder<T>(collection: Collection<Node<T>>, a: Node<T>,
     }
 
   // One of the nodes is the ancestor of the other.
-  if (aAncestors.includes(b)) return 1;
-  else if (bAncestors.includes(a)) return -1;
-  return -1;
+  // `b` above `a`: `a` comes after it; otherwise `a` is the ancestor (or the nodes match) and comes first.
+  return aAncestors.includes(b) ? 1 : -1;
 }
 
 function getAncestors<T>(collection: Collection<Node<T>>, node: Node<T>): Node<T>[] {

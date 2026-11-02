@@ -148,7 +148,7 @@ export class Typeahead<T extends TypeaheadItem> {
     for (let i = 1; i < this._items.length + 1; i++) {
       const index = (this._selectedItemIndex + i) % this._items.length;
       const item = this._items[index]!;
-      if (!this._skipPredicateFn?.(item) && item.getLabel?.().toLocaleUpperCase().trim().indexOf(inputString) === 0) {
+      if (!this._skipPredicateFn?.(item) && item.getLabel?.().toLocaleUpperCase().trim().startsWith(inputString)) {
         this._selectedItem.next(item);
         break;
       }

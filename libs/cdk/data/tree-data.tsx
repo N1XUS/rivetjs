@@ -155,7 +155,6 @@ function moveItems<T extends object>(
     parent = parent.parentKey != null ? (nodeMap.get(parent.parentKey) ?? null) : null;
   }
   const originalToIndex = toIndex;
-  const keyArray = Array.isArray(keys) ? keys : [...keys];
   // Depth first search to put keys in order.
   const inOrderKeys: Map<Key, number> = new Map();
   const removedItems: TreeNode<T>[] = [];
@@ -175,12 +174,12 @@ function moveItems<T extends object>(
   }
   function inorder(child: TreeNode<T>): void {
     // In-order so we add items as we encounter them in the tree, then insert them in expected order later.
-    if (keyArray.includes(child.key)) inOrderKeys.set(child.key, i++);
+    if (removeKeys.has(child.key)) inOrderKeys.set(child.key, i++);
   }
   function postorder(child: TreeNode<T>): void {
     // Remove items and update the tree from the leaves upwards toward the root, so we don't copy
     // child node references from parents inadvertently.
-    if (keyArray.includes(child.key)) {
+    if (removeKeys.has(child.key)) {
       removedItems.push({ ...newMap.get(child.key)!, parentKey: toParent?.key ?? null });
       const { items: nextItems, nodeMap: nextMap } = update(newItems, child.key, () => null, newMap);
       newItems = nextItems;
@@ -190,7 +189,7 @@ function moveItems<T extends object>(
     // index. The root is null and has no key, but a parentKey can still point to it.
     if (
       (child.parentKey === (toParent as unknown) || child.parentKey === toParent?.key) &&
-      keyArray.includes(child.key) &&
+      removeKeys.has(child.key) &&
       (toParent?.children ? toParent.children.indexOf(child) : items.indexOf(child)) < originalToIndex
     ) {
       toIndex--;

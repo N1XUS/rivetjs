@@ -208,7 +208,7 @@ function enqueue(key: object, t: Transition | undefined, el: Element, run: (dela
     queues.set(key, (queue = []));
     queueMicrotask(() => {
       queues.delete(key);
-      queue!.sort(([a], [b]) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+      queue!.sort(([a], [b]) => (a === b ? 0 : a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
       queue!.forEach(([, go], i) => go(childDelay(t, i, queue!.length)));
     });
   }

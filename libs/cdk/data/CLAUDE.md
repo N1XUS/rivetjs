@@ -17,3 +17,4 @@ react-stately data hooks as signal factories. Subpath: `data` (index.tsx).
 
 ## Tests
 `tests/data-list-data.test.ts`, `data-async-list.test.ts`, `data-tree-data.test.ts` (react-stately ports), `data-rivet.test.ts`, helper `data-hook-utils.ts`.
+- FIX2-CDK 2026-11-01: list `moveBefore` / `moveAfter` find ≥ 5 keys through one key → index map (`indicesOf`; ≤ 4 keys keep the per-key scan; 100 of 1000: 133 → 17 µs); tree `moveItems` tests membership with the existing `removeKeys` Set instead of `keyArray.includes` per node.

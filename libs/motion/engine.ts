@@ -94,7 +94,7 @@ function seed(el: Element, s: ElementState, target: Target): void {
     else if (property === "rotate") s.values[key] = 0;
   }
 }
-const num = (text: string): Primitive => (/^-?[\d.]+(e-?\d+)?$/.test(text) ? Number(text) : text);
+const num = (text: string): Primitive => (/^-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i.test(text) ? Number(text) : text);
 
 /** The element's current motion values for `keys` (unknown keys read from its inline / computed style first). */
 export function currentValues(el: Element, keys: Iterable<string>): MotionState {

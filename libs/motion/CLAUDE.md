@@ -154,3 +154,4 @@ NX_DAEMON=false npx nx run motion:typecheck --output-style=static --skip-nx-cach
 
 - Motion suite (rivet / `motion/react` / vanilla): `node apps/dom-bench/motion/build.ts && node apps/dom-bench/motion/run.ts [--samples 5] [--cpu 4] [--out f.json]`; SSR `node apps/dom-bench/motion/ssr.ts [--samples 25] [--out f.json]` (timed runs under the bench lock).
 - vitest projects (root `vitest.config.ts`): `motion` (`tests/*.test.ts`, node), `motion-browser` (`tests/*.browser.test.{ts,tsx}`, Chromium; happy-dom has no WAAPI).
+- FIX2-CDK 2026-11-01: `engine.ts` `num` only converts real numbers (`.`, `1.2.3` stay strings instead of `NaN`); the stagger queue comparator returns 0 for the same element.
