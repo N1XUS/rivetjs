@@ -213,3 +213,4 @@ Retained Markdown rows preserve glyph nodes after completion. Atomic tables/clos
 
 Markdown retains animated rows from its first queued block onward (liveFrom signal), so completion never replaces fading glyphs. row.last gates mark repair and the single caret. A reveal starts by establishing preexisting glyphs before enabling their animation flag. No extra animation timers or duplicate pacing.
 - REVIEW-UI3 (2026-11-02): `markdown/` images render `referrerpolicy="no-referrer"` (model output must not learn the page URL from an image host; test `tests/markdown.server.test.tsx`); `sheet/sheet.utils.ts` finds a nested sheet's parent by comparing `data-sheet-id` values (no selector built from the id).
+- Markdown images (2026-11-02, user ruling on r3-security#14): remote images keep loading with `no-referrer`; exfiltration is closed by the app's CSP `img-src` (docs `markdown.md` "Security"), not by a component default.

