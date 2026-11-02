@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { checkFiles, grade, promptOf, readOutput } from "../ai-eval/run.ts";
+import { buildSteps, checkFiles, grade, promptOf, readOutput } from "../ai-eval/run.ts";
 import { TASKS } from "../ai-eval/tasks.ts";
 
 const reference = resolve(import.meta.dirname, "../ai-eval/reference");
@@ -65,5 +65,25 @@ describe("ai-eval tasks", () => {
     expect(firstFailure).toEqual({ "counter-step": "files", "filter-list": "rv", "window-size": "rv", "live-props": "behaviour" });
     expect(results.find((result) => result.id === "filter-list")!.checks[1]!.detail).toContain("RV1012");
     expect(results.find((result) => result.id === "window-size")!.checks[1]!.detail).toContain("RV2001");
+  });
+});
+
+describe("ai-eval build script and file rules", () => {
+  it("buildSteps: env assignments, quoted arguments, && steps; shell syntax refused", () => {
+    expect(buildSteps(`NODE_ENV=production vite build --mode "a b" && node 'pre render.js'`)).toEqual([
+      { env: { NODE_ENV: "production" }, bin: "vite", args: ["build", "--mode", "a b"] },
+      { env: {}, bin: "node", args: ["pre render.js"] },
+    ]);
+    expect(buildSteps("vite build && vite build --ssr")).toHaveLength(2);
+    expect(() => buildSteps("vite build | tee log")).toThrow(/unsupported shell syntax/);
+    expect(() => buildSteps(`vite build "x`)).toThrow(/unterminated quote/);
+  });
+
+  it("common forbid rules apply to code files only (a Markdown answer may use arrows as text)", () => {
+    const task = TASKS[0]!;
+    const output = new Map([...task.files.map((file) => [file, "export {};\n"] as const), ["NOTES.md", "Click Save \u2192 done \u2713"]]);
+    expect(checkFiles(task, output)).toMatchObject({ ok: true });
+    output.set("src/extra.tsx", "export const X = () => <span>\u2713</span>;");
+    expect(checkFiles(task, output)).toMatchObject({ ok: false });
   });
 });

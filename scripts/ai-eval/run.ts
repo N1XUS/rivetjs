@@ -84,11 +84,15 @@ export function checkFiles(task: EvalTask, output: ReadonlyMap<string, string>):
   const problems: string[] = [];
   for (const file of task.files) if (!output.has(file)) problems.push(`missing ${file}`);
   for (const [file, text] of output)
-    for (const rule of [...COMMON_FORBID, ...(task.forbid ?? [])]) if (rule.pattern.test(text)) problems.push(`${file}: ${rule.why} (${rule.pattern})`);
+    for (const rule of [...(CODE.test(file) ? COMMON_FORBID : []), ...(task.forbid ?? [])])
+      if (rule.pattern.test(text)) problems.push(`${file}: ${rule.why} (${rule.pattern})`);
   return { check: "files", ok: problems.length === 0, detail: problems.join("\n") || `${output.size} file(s)` };
 }
 
-/** Rules for every task: what the project instructions forbid. */
+/** Files the common rules apply to: source code (a Markdown or text answer may use arrows and check marks as text). */
+const CODE = /\.(tsx?|jsx?|mjs|cjs)$/;
+
+/** Rules for every task's code files: what the project instructions forbid. */
 const COMMON_FORBID: { pattern: RegExp; why: string }[] = [
   { pattern: /from\s+["'](react|react-dom|solid-js)(\/[^"']*)?["']/, why: "imports React / Solid" },
   { pattern: /<path\b[^>]*\bd=/, why: "hand-written SVG path (use lucide via @rivetjs/kit/icon)" },
@@ -123,24 +127,65 @@ export function stage(task: EvalTask, output: ReadonlyMap<string, string>): stri
   return dir;
 }
 
-const run = (dir: string, argv: string[]) =>
+const run = (dir: string, argv: string[], env: Record<string, string> = {}) =>
   execFileSync(process.execPath, argv, {
     cwd: dir,
     encoding: "utf8",
     stdio: "pipe",
-    env: { ...process.env, NODE_ENV: "production", NO_COLOR: "1" },
+    env: { ...process.env, NODE_ENV: "production", NO_COLOR: "1", ...env },
     maxBuffer: 64 << 20,
   });
 
-/** `npm run build` of the starter, step by step (`vite …` / `node …`), from the staged folder. */
+/**
+ * The steps of an npm `build` script: `a && b`, each with leading `NAME=value` assignments, single / double quoted
+ * arguments and backslash escapes. Only `vite …` and `node …` steps run (through this Node and the workspace Vite, no
+ * shell): pipes, `;`, `||`, redirects and other commands are refused with the step named.
+ */
+export function buildSteps(script: string): { env: Record<string, string>; bin: string; args: string[] }[] {
+  const steps: { env: Record<string, string>; bin: string; args: string[] }[] = [];
+  let words: string[] = [];
+  let word: string | null = null;
+  const end = () => {
+    if (word !== null) words.push(word);
+    word = null;
+  };
+  const step = () => {
+    end();
+    const env: Record<string, string> = {};
+    while (words.length && /^[A-Za-z_]\w*=/.test(words[0]!)) {
+      const [name, ...value] = words.shift()!.split("=");
+      env[name!] = value.join("=");
+    }
+    const [bin, ...args] = words;
+    if (!bin) throw new Error(`empty build step in ${JSON.stringify(script)}`);
+    steps.push({ env, bin, args });
+    words = [];
+  };
+  for (let i = 0; i < script.length; i++) {
+    const c = script[i]!;
+    if (c === "'" || c === '"') {
+      const close = script.indexOf(c, i + 1);
+      if (close < 0) throw new Error(`unterminated quote in build script ${JSON.stringify(script)}`);
+      word = (word ?? "") + script.slice(i + 1, close);
+      i = close;
+    } else if (c === "\\" && i + 1 < script.length) word = (word ?? "") + script[++i];
+    else if (c === "&" && script[i + 1] === "&") (step(), i++);
+    else if (/[|;<>&`$()]/.test(c)) throw new Error(`unsupported shell syntax ${JSON.stringify(c)} in build script ${JSON.stringify(script)}`);
+    else if (/\s/.test(c)) end();
+    else word = (word ?? "") + c;
+  }
+  step();
+  return steps;
+}
+
+/** `npm run build` of the starter, step by step (`vite …` / `node …`, see `buildSteps`), from the staged folder. */
 export function build(task: EvalTask, dir: string): CheckResult {
   const script = (JSON.parse(readFileSync(resolve(dir, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts.build!;
   try {
-    for (const step of script.split("&&").map((s) => s.trim())) {
-      const [bin, ...args] = step.split(/\s+/);
-      if (bin === "vite") run(dir, [VITE, ...args, "--logLevel", "error"]);
-      else if (bin === "node") run(dir, args);
-      else throw new Error(`unexpected build step ${step}`);
+    for (const { env, bin, args } of buildSteps(script)) {
+      if (bin === "vite") run(dir, [VITE, ...args, "--logLevel", "error"], env);
+      else if (bin === "node") run(dir, args, env);
+      else throw new Error(`unexpected build step ${bin} ${args.join(" ")} (only vite / node steps run)`);
     }
     return { check: "build", ok: true, detail: script };
   } catch (error) {
@@ -166,7 +211,7 @@ export function typecheck(dir: string): CheckResult {
 }
 
 /** Start the built app (`node serve.js`, PORT=0) and resolve with its URL. */
-async function serveApp(dir: string): Promise<{ url: string; stop: () => void }> {
+async function serveApp(dir: string): Promise<{ url: string; stop: () => Promise<void> }> {
   const child = spawn(process.execPath, ["serve.js"], { cwd: dir, env: { ...process.env, PORT: "0", HOST: "127.0.0.1", NO_COLOR: "1" }, stdio: "pipe" });
   let output = "";
   const url = await new Promise<string>((done, fail) => {
@@ -180,7 +225,15 @@ async function serveApp(dir: string): Promise<{ url: string; stop: () => void }>
     child.stderr.on("data", read);
     child.on("exit", (code) => (clearTimeout(timer), fail(new Error(`server exited ${code}:\n${output}`))));
   });
-  return { url, stop: () => child.kill() };
+  // Resolves once the server process is gone, so the next task never races its port or files.
+  const stop = () =>
+    new Promise<void>((done) => {
+      if (child.exitCode !== null || child.signalCode !== null) return done();
+      const force = setTimeout(() => child.kill("SIGKILL"), 5_000);
+      child.once("exit", () => (clearTimeout(force), done()));
+      child.kill();
+    });
+  return { url, stop };
 }
 
 type Browser = import("playwright").Browser;
@@ -213,7 +266,7 @@ export async function behaviour(task: EvalTask, dir: string, browser: Browser): 
     return { check: "behaviour", ok: false, detail: tail([(error as Error).message, ...errors].join("\n")) };
   } finally {
     await context.close();
-    server?.stop();
+    await server?.stop();
   }
 }
 
@@ -263,10 +316,14 @@ export async function grade(options: { outputs: string; ids?: readonly string[];
   const results: TaskResult[] = [];
   try {
     for (const task of tasks) {
-      const result = await gradeTask(task, readOutput(resolve(options.outputs, task.id)), open);
-      results.push(result);
-      options.log?.(formatResult(result));
-      if (!options.keep) rmSync(resolve(STAGE, task.id), { recursive: true, force: true });
+      try {
+        const result = await gradeTask(task, readOutput(resolve(options.outputs, task.id)), open);
+        results.push(result);
+        options.log?.(formatResult(result));
+      } finally {
+        // Also when grading threw (stage / browser error): no staged app is left behind.
+        if (!options.keep) rmSync(resolve(STAGE, task.id), { recursive: true, force: true });
+      }
     }
   } finally {
     await browser?.close();
