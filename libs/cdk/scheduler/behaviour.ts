@@ -30,7 +30,8 @@ export const MINUTES_ATTR = "data-rv-minutes";
  */
 export function findEventElement(root: Element, id: string, dayIndex?: number): HTMLElement | null {
   let first: HTMLElement | null = null;
-  for (const element of Array.from(root.querySelectorAll<HTMLElement>("[" + EVENT_ID_ATTR + "]"))) {
+  // A static NodeList iterates directly (no array copy).
+  for (const element of root.querySelectorAll<HTMLElement>("[" + EVENT_ID_ATTR + "]")) {
     if (element.getAttribute(EVENT_ID_ATTR) !== id) continue;
     if (dayIndex === undefined) return element;
     first ??= element;

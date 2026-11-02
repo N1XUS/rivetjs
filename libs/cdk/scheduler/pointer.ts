@@ -146,13 +146,13 @@ export function startPointerDrag(
   const onMove = (event: Event): void => {
     if (!origin || foreign(event)) return;
     const at = point(event);
-    const travelled = Math.hypot(at.x - origin.x, at.y - origin.y);
     if (pending) {
-      if (travelled >= threshold) onCancel();
+      if (Math.hypot(at.x - origin.x, at.y - origin.y) >= threshold) onCancel();
       return;
     }
+    // The distance only matters until the gesture starts (no hypot per move after that).
     if (!started) {
-      if (travelled < threshold) return;
+      if (Math.hypot(at.x - origin.x, at.y - origin.y) < threshold) return;
       started = true;
       handlers.onStart?.(origin, event);
     }

@@ -462,21 +462,8 @@ export function schedulerRowLength(state: SchedulerState<any>): number {
 
 /** Localized title: month-year, "Aug 31 – Sep 6, 2026", or the full day label. */
 export function schedulerTitle(state: SchedulerState<any>): string {
-  const locale = schedulerLocale(state);
-  const range = schedulerDayRange(state);
-  const anchor = schedulerAnchorDay(state);
-  switch (range.view) {
-    case "month":
-      return formatDay(anchor, locale, { month: "long", year: "numeric" });
-    case "week":
-      return (
-        formatDay(range.start, locale, { day: "numeric", month: "short" }) +
-        " – " +
-        formatDay(range.end - 1, locale, { day: "numeric", month: "short", year: "numeric" })
-      );
-    case "day":
-      return formatDay(anchor, locale, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  }
+  // One title format (also the live-region announcement's `titleFor`).
+  return titleFor(state, schedulerDayRange(state), state.date.value());
 }
 
 /** `events` normalized (wall minutes in `timeZone`; unparsable dates dropped, dev warning once per event object). */

@@ -74,31 +74,55 @@ export function SchedulerMonth<T>(): DOMValue {
     },
     { equals: (a, b) => a.length === b.length && a.every((key, i) => key === b[i]) },
   );
-  const cells = computed((): SchedulerMonthCell<T>[] => {
+  // Per-day labels depend on days / locale / today / weekend / anchor only: a drag preview (each cell the pointer
+  // enters) re-runs `rows()` and `cells`, not the Intl formatting (FIX2-CDK).
+  const dayInfo = computed(() => {
     const days = ctx.days();
     const locale = ctx.locale();
     const today = ctx.today();
     const weekend = ctx.weekend();
     const anchorMonth = civilFromDay(ctx.anchorDay())[1];
+    return days.map((day) => {
+      const plain = dateLabel(day, locale);
+      const isToday = today === day;
+      return {
+        plain,
+        dayNumber: formatDay(day, locale, { day: "numeric" }),
+        label: isToday ? ctx.t("dayLabelToday", { date: plain }) : plain,
+        outside: civilFromDay(day)[1] !== anchorMonth,
+        today: isToday,
+        weekend: weekend.includes(dayOfWeek(day)),
+      };
+    });
+  });
+  const cells = computed((): SchedulerMonthCell<T>[] => {
+    const days = ctx.days();
+    const info = dayInfo();
     const out: SchedulerMonthCell<T>[] = [];
     for (const row of rows()) {
+      // Visible segments by start day, one pass per row (was a filter over the row per cell).
+      const starts = new Map<number, SchedulerLaneSegment<T>[]>();
+      for (const segment of row.layout.visible) {
+        const list = starts.get(segment.startIndex);
+        if (list) list.push(segment);
+        else starts.set(segment.startIndex, [segment]);
+      }
       for (let dayIndex = row.startIndex; dayIndex <= row.endIndex; dayIndex++) {
         const day = days[dayIndex]!;
-        const plain = dateLabel(day, locale);
-        const isToday = today === day;
+        const d = info[dayIndex]!;
+        const plain = d.plain;
         const hidden = (row.layout.hiddenByDay.get(dayIndex) ?? []).map((segment) => segment.normalized.event);
         const moreText = hidden.length ? ctx.t("moreEvents", { count: hidden.length }) : "";
-        const segments = row.layout.visible.filter((segment) => segment.startIndex === dayIndex);
         out.push({
           dayIndex,
           day,
-          dayNumber: formatDay(day, locale, { day: "numeric" }),
-          label: isToday ? ctx.t("dayLabelToday", { date: plain }) : plain,
+          dayNumber: d.dayNumber,
+          label: d.label,
           dateLabel: plain,
-          outside: civilFromDay(day)[1] !== anchorMonth,
-          today: isToday,
-          weekend: weekend.includes(dayOfWeek(day)),
-          segments: segments.length ? segments : NO_SEGMENTS,
+          outside: d.outside,
+          today: d.today,
+          weekend: d.weekend,
+          segments: starts.get(dayIndex) ?? NO_SEGMENTS,
           hidden,
           moreText,
           moreLabel: hidden.length ? moreText + ", " + ctx.t("moreEventsLabel", { count: hidden.length, date: plain }) : "",
