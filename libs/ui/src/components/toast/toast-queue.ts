@@ -10,7 +10,7 @@
 //   (cdk `ToastRegion` wake event). `toastQueue` (the `toast()` queue) is named `"toast"`, a `new ToastQueue()` defaults to the cdk
 //   default `"default"`: several queues on one page need distinct names. Queues must live at module level (a component-local queue
 //   is another instance in the browser).
-// - Exit-aware queues register themselves (`exitAwareQueueOf`): the provider finds the queue a cdk region mirrors (the region's
+// - Exit-aware queues register themselves weakly (`exitAwareQueueOf`; an unreachable queue is collected): the provider finds the queue a cdk region mirrors (the region's
 //   `visibleToasts` is the queue's array) without capturing the instance in a resumable closure.
 import type { ToastOptions as StatelyToastOptions } from "@rivetjs/cdk/state/toast";
 import { ToastQueue as ToastQueuePrimitive } from "@rivetjs/cdk/state/toast";
@@ -109,8 +109,9 @@ class ManagedToastTimer {
   }
 }
 
-// Rivet: live exit-aware queues (module-level queues in an app; see `exitAwareQueueOf`).
-const exitAwareQueues = new Set<ExitAwareToastQueue<object>>();
+// Rivet: live exit-aware queues (module-level queues in an app; see `exitAwareQueueOf`). Weak: a queue made per component
+// instance / SSR request / test is collected once unreachable (dead refs are pruned on lookup).
+const exitAwareQueues = new Set<WeakRef<ExitAwareToastQueue<object>>>();
 
 // A react-stately ToastQueue that keeps closing toasts mounted for exitDuration (so CSS exit animations can play), supports in-place updates, and centralizes timer pausing. Every close path funnels through close().
 class ExitAwareToastQueue<T extends object> extends ToastQueuePrimitive<T> {
@@ -128,7 +129,7 @@ class ExitAwareToastQueue<T extends object> extends ToastQueuePrimitive<T> {
   constructor(options: { maxVisibleToasts?: number; wrapUpdate?: (fn: () => void) => void; name?: string }, exitDuration: number = DEFAULT_EXIT_DURATION) {
     super(options);
     this.exitDuration = exitDuration;
-    exitAwareQueues.add(this as unknown as ExitAwareToastQueue<object>);
+    exitAwareQueues.add(new WeakRef(this as unknown as ExitAwareToastQueue<object>));
   }
 
   // Sources form a set, not a refcount: timers pause once when the set becomes non-empty and resume once when it empties.
@@ -379,10 +380,10 @@ export const isExitAwareToastQueue = <T extends object>(queue: ToastQueuePrimiti
  * @internal
  */
 export const exitAwareQueueOf = <T extends object>(visibleToasts: readonly unknown[]): ExitAwareToastQueue<T> | null => {
-  for (const queue of exitAwareQueues) {
-    if (queue.visibleToasts === visibleToasts) {
-      return queue as unknown as ExitAwareToastQueue<T>;
-    }
+  for (const ref of exitAwareQueues) {
+    const queue = ref.deref();
+    if (!queue) exitAwareQueues.delete(ref);
+    else if (queue.visibleToasts === visibleToasts) return queue as unknown as ExitAwareToastQueue<T>;
   }
 
   return null;
