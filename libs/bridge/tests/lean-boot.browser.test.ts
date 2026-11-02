@@ -227,7 +227,8 @@ test("paint gate fallback: no `paint` entry type, no `supportedEntryTypes`, or n
     const restore = stubObserver(types);
     try {
       serve(counterHtml("i0", 1), [["i0", ISLAND, { count: 1 }, "load"]]);
-      await until(() => log.length === 1, 500);
+      // Default budget: the first pass imports the island module, which took > 500 ms on a 2-vCPU CI runner.
+      await until(() => log.length === 1);
     } finally {
       restore();
       log.length = 0;
