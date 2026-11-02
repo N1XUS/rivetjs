@@ -616,17 +616,17 @@
     "starter-ui": {
       "totalJS": {
         "files": 49,
-        "min": 193918,
-        "br": 69452
+        "min": 193944,
+        "br": 69469
       },
       "serverJS": {
-        "min": 251344,
-        "br": 81236
+        "min": 251370,
+        "br": 81187
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 3742,
+          "htmlBr": 3729,
           "cssSheets": 2,
           "css": {
             "min": 81851,
@@ -636,8 +636,8 @@
           "inlineBytes": 4048,
           "eagerRequests": 30,
           "eagerJS": {
-            "min": 184564,
-            "br": 64900
+            "min": 184590,
+            "br": 64919
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -676,8 +676,8 @@
             "br": 28121
           },
           "pageJS": {
-            "min": 184564,
-            "br": 64900
+            "min": 184590,
+            "br": 64919
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1596,17 +1596,17 @@
     "cdk-example:scheduler-views-binding": {
       "totalJS": {
         "files": 82,
-        "min": 448025,
-        "br": 150750
+        "min": 448051,
+        "br": 150763
       },
       "serverJS": {
-        "min": 433159,
-        "br": 130111
+        "min": 433185,
+        "br": 130189
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5630,
+          "htmlBr": 5612,
           "cssSheets": 1,
           "css": {
             "min": 43066,
@@ -1616,8 +1616,8 @@
           "inlineBytes": 4462,
           "eagerRequests": 51,
           "eagerJS": {
-            "min": 382280,
-            "br": 128311
+            "min": 382306,
+            "br": 128344
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1677,8 +1677,8 @@
             "br": 29657
           },
           "pageJS": {
-            "min": 382280,
-            "br": 128311
+            "min": 382306,
+            "br": 128344
           },
           "interactionRequests": 0,
           "interactionJS": {

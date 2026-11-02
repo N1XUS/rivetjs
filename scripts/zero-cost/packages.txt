@@ -29,8 +29,8 @@
 @rivetjs/router/head 529bf74931c1 7888
 @rivetjs/forms a3708cd0a825 4747
 @rivetjs/forms/array e7d1e96d5f86 4001
-@rivetjs/forms/components [dom] 92c319e012bb 2278
-@rivetjs/forms/components [server] 65ca0809bc8f 1797
+@rivetjs/forms/components [dom] 74e8333a5362 2278
+@rivetjs/forms/components [server] 6026b96e4c7a 1797
 @rivetjs/forms/scope 4ccc7479e694 179
 @rivetjs/forms/wizard 6778111f688a 1667
 @rivetjs/forms/autosave bb278e440676 4859
@@ -51,8 +51,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 40d0feaefb1c 567158 css 5e1f347659da 1219846
-@rivetjs/ui [server] bbbef3ae3082 504448 css 5e1f347659da 1219846
+@rivetjs/ui [dom] b07050187b59 567231 css 5e1f347659da 1219846
+@rivetjs/ui [server] 28131612d4f7 504519 css 5e1f347659da 1219846
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -124,8 +124,8 @@
 @rivetjs/ui/popover [server] c64689c54f72 6747 css e1c9cca9a1c0 1209544
 @rivetjs/ui/sidebar [dom] 763f1eab3ffc 15029 css bd7079971da2 83460
 @rivetjs/ui/sidebar [server] 7d01abc3b9b4 14278 css bd7079971da2 83460
-@rivetjs/ui/app-layout [dom] cdb1e74abb5d 30646 css e1c9cca9a1c0 1209544
-@rivetjs/ui/app-layout [server] 9daacb065a48 25741 css e1c9cca9a1c0 1209544
+@rivetjs/ui/app-layout [dom] eef473f51a8f 30726 css e1c9cca9a1c0 1209544
+@rivetjs/ui/app-layout [server] 414671c62837 25822 css e1c9cca9a1c0 1209544
 @rivetjs/ui/stepper [dom] 40fe00f25bf9 9087 css e1c9cca9a1c0 1209544
 @rivetjs/ui/stepper [server] 8561e93bccb0 8186 css e1c9cca9a1c0 1209544
 @rivetjs/ui/tooltip [dom] 9e9b75a712e7 7342 css e1c9cca9a1c0 1209544
@@ -330,8 +330,8 @@
 @rivetjs/ui/cell-color-picker [server] cd2de558c820 8293 css e1c9cca9a1c0 1209544
 @rivetjs/ui/chart-tooltip [dom] 2d99df5a6896 5668 css e1c9cca9a1c0 1209544
 @rivetjs/ui/chart-tooltip [server] e77fb9dccfdc 5569 css e1c9cca9a1c0 1209544
-@rivetjs/ui/pie-chart [dom] 3fc516ff0cb0 11235 css 44c54c1755b7 18524
-@rivetjs/ui/pie-chart [server] e55b4fc815d9 14338 css 44c54c1755b7 18524
+@rivetjs/ui/pie-chart [dom] 3ae16d1d11a3 11232 css 44c54c1755b7 18524
+@rivetjs/ui/pie-chart [server] b8a46f72139f 14335 css 44c54c1755b7 18524
 @rivetjs/ui/radar-chart [dom] aea1d9d4dbff 12331 css 2f0dafd1ef45 19329
 @rivetjs/ui/radar-chart [server] e9e8b4cec65e 15605 css 2f0dafd1ef45 19329
 @rivetjs/ui/radial-chart [dom] b35bf0f8544c 9962 css d5b8ed5ebb8e 18464
@@ -356,8 +356,8 @@
 @rivetjs/ui/chat-list-view [server] 4e89a872d19f 5465 css e1c9cca9a1c0 1209544
 @rivetjs/ui/code-block [dom] 6241ee3ce4a0 9766 css e1c9cca9a1c0 1209544
 @rivetjs/ui/code-block [server] c560ec1d8ad7 9043 css e1c9cca9a1c0 1209544
-@rivetjs/ui/markdown [dom] 0c844e097b1e 25235 css e1c9cca9a1c0 1209544
-@rivetjs/ui/markdown [server] 58331e8c0c98 22803 css e1c9cca9a1c0 1209544
+@rivetjs/ui/markdown [dom] 9841ddec9c7a 25231 css e1c9cca9a1c0 1209544
+@rivetjs/ui/markdown [server] 6bdfcc3f9b02 22799 css e1c9cca9a1c0 1209544
 @rivetjs/ui/chain-of-thought [dom] b1c47df346cd 10703 css e1c9cca9a1c0 1209544
 @rivetjs/ui/chain-of-thought [server] c6ba2de91c43 9289 css e1c9cca9a1c0 1209544
 @rivetjs/ui/chat-source [dom] e45fcc78457f 15983 css e1c9cca9a1c0 1209544
@@ -423,6 +423,6 @@
 @rivetjs/cdk/masonry [server] 5dee8f78dc6b 81233
 @rivetjs/cdk/masonry/behaviour 9a3cc9e6aabd 16055
 @rivetjs/cdk/flip 94e1c39bc99c 3782
-@rivetjs/cdk/scheduler [dom] 93e507ebd362 199507
-@rivetjs/cdk/scheduler [server] 725ff2c4f288 182328
+@rivetjs/cdk/scheduler [dom] 5bb9ec01fbd1 199533
+@rivetjs/cdk/scheduler [server] c3f088bc44e5 182354
 @rivetjs/cdk/scheduler/layout f4c2c747b346 23962

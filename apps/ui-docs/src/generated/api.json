@@ -13519,8 +13519,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/app-layout/app-layout-state.ts",
-    "line": 87,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L87"
+    "line": 90,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L90"
    },
    "href": "/api/rivetjs/ui/app-layout/asideCookieOpen/"
   },
@@ -218212,8 +218212,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 523,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L523"
+    "line": 524,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L524"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanBoard/"
   },
@@ -218242,8 +218242,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 410,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L410"
+    "line": 411,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L411"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCard/"
   },
@@ -218272,8 +218272,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 463,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L463"
+    "line": 464,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L464"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCardContent/"
   },
@@ -218302,8 +218302,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 302,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L302"
+    "line": 303,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L303"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCardList/"
   },
@@ -219114,8 +219114,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 246,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L246"
+    "line": 247,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L247"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCardListProps/"
   },
@@ -219932,8 +219932,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 405,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L405"
+    "line": 406,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L406"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCardProps/"
   },
@@ -219962,8 +219962,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 163,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L163"
+    "line": 164,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L164"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumn/"
   },
@@ -219992,8 +219992,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 220,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L220"
+    "line": 221,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L221"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnActions/"
   },
@@ -220022,8 +220022,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 229,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L229"
+    "line": 230,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L230"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnBody/"
   },
@@ -220052,8 +220052,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 211,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L211"
+    "line": 212,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L212"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnCount/"
   },
@@ -220082,8 +220082,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 172,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L172"
+    "line": 173,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L173"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnHeader/"
   },
@@ -220112,8 +220112,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 186,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L186"
+    "line": 187,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L187"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnIndicator/"
   },
@@ -221801,8 +221801,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 181,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L181"
+    "line": 182,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L182"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnIndicatorProps/"
   },
@@ -221831,8 +221831,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 202,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L202"
+    "line": 203,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L203"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnTitle/"
   },
@@ -221989,8 +221989,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 83,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L83"
+    "line": 84,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L84"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanContext/"
   },
@@ -222033,8 +222033,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 74,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L74"
+    "line": 75,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L75"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanContextValue/"
   },
@@ -222085,8 +222085,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 478,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L478"
+    "line": 479,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L479"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanDragHandle/"
   },
@@ -222115,8 +222115,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 495,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L495"
+    "line": 496,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L496"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanDropIndicator/"
   },
@@ -222159,8 +222159,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 487,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L487"
+    "line": 488,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L488"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanDropIndicatorProps/"
   },
@@ -222181,8 +222181,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 274,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L274"
+    "line": 275,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L275"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanListContext/"
   },
@@ -222211,8 +222211,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 270,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L270"
+    "line": 271,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L271"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanListContextValue/"
   },
@@ -222334,8 +222334,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 510,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L510"
+    "line": 511,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L511"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanOptions/"
   },
@@ -222364,8 +222364,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 102,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L102"
+    "line": 103,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L103"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanRoot/"
   },
@@ -223019,8 +223019,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 85,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L85"
+    "line": 86,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L86"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanRootProps/"
   },
@@ -223049,8 +223049,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 238,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L238"
+    "line": 239,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L239"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanScrollShadow/"
   },
@@ -223101,8 +223101,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 535,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L535"
+    "line": 536,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L536"
    },
    "href": "/api/rivetjs/ui/kanban/createKanban/"
   },
@@ -244203,8 +244203,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 721,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L721"
+    "line": 731,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L731"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownProps/"
   },
@@ -244233,8 +244233,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/markdown/markdown.tsx",
-    "line": 737,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L737"
+    "line": 747,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/markdown/markdown.tsx#L747"
    },
    "href": "/api/rivetjs/ui/markdown/MarkdownRoot/"
   },
@@ -257800,8 +257800,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 176,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L176"
+    "line": 184,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L184"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectIndicator/"
   },
@@ -257838,8 +257838,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 168,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L168"
+    "line": 176,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L176"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectIndicatorProps/"
   },
@@ -257860,8 +257860,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 174,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L174"
+    "line": 182,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L182"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectIndicatorSpanProps/"
   },
@@ -257934,8 +257934,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 203,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L203"
+    "line": 211,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L211"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectOptGroup/"
   },
@@ -257956,8 +257956,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 201,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L201"
+    "line": 209,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L209"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectOptGroupProps/"
   },
@@ -257986,8 +257986,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 195,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L195"
+    "line": 203,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L203"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectOption/"
   },
@@ -258008,8 +258008,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 193,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L193"
+    "line": 201,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L201"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectOptionProps/"
   },
@@ -259075,8 +259075,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 148,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L148"
+    "line": 156,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L156"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectTrigger/"
   },
@@ -260864,8 +260864,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/native-select/native-select.tsx",
-    "line": 139,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L139"
+    "line": 147,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/native-select/native-select.tsx#L147"
    },
    "href": "/api/rivetjs/ui/native-select/NativeSelectTriggerProps/"
   },
@@ -308045,8 +308045,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 352,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L352"
+    "line": 353,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L353"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptSegment/"
   },
@@ -308082,8 +308082,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 337,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L337"
+    "line": 338,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L338"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTextSegment/"
   },
@@ -308199,8 +308199,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 343,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L343"
+    "line": 344,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L344"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTokenSegment/"
   },
@@ -308221,8 +308221,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/chat/index.tsx",
-    "line": 355,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L355"
+    "line": 356,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/chat/index.tsx#L356"
    },
    "href": "/api/rivetjs/ui/prompt-input-tokens/PromptTokenValue/"
   },
