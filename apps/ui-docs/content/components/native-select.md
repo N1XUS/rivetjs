@@ -48,7 +48,7 @@ Additional exported parts: `NativeSelect.Root`.
 
 ### Shorthand
 
-Rivet addition: without children, `label`, `description`, `errorMessage` and `items` (`{ value, label, isDisabled? }[]`, live: a keyed list by `value`, so each `value` must be unique) render the Label, a Trigger with one Option per item, the Description and the FieldError, with the same markup and accessibility as the compound form. Use the parts for option groups or a custom indicator. Explicit children win: next to children the shorthand props are ignored, with a development warning.
+Rivet addition: without children, `label`, `description`, `errorMessage` and `items` (`{ value, label, isDisabled? }[]`, live: a keyed list by `value`, so each `value` must be unique) render the Label, a Trigger with one Option per item, the Description and the FieldError, with the same markup and accessibility as the compound form. Use the parts for option groups or a custom indicator. Without `value` or `defaultValue`, the shorthand starts on its first enabled item, the option a native `<select>` shows. Explicit children win: next to children the shorthand props are ignored, with a development warning.
 
 ::example{id=native-select-shorthand}
 

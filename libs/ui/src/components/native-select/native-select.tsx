@@ -26,7 +26,7 @@ import type {
 } from "@rivetjs/cdk/native-select";
 import { TextField as TextFieldPrimitive } from "@rivetjs/cdk/text-field";
 import type { TextFieldProps as TextFieldPrimitiveProps, TextFieldRenderProps } from "@rivetjs/cdk/text-field";
-import { createContext, useContext } from "@rivetjs/reactivity";
+import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { For, Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 
@@ -104,9 +104,17 @@ const NativeSelectRoot = (props: NativeSelectRootProps): JSX.Element => {
   const classOf = (): string | ((values: TextFieldRenderProps) => string) =>
     composeTwRenderProps(local.class as never, slotsFor(local.variant, local.fullWidth).base());
   const cls = hasLiveProp(local, ["class", ...CONTEXT_PROPS]) ? (values: TextFieldRenderProps) => renderClass(classOf(), values) : classOf();
+  // The `items` shorthand without `value` / `defaultValue` starts on its first enabled item: the empty field value matched
+  // no option, so a client render showed a blank select while the server markup (and native HTML) showed that item.
+  // Read once at mount (as `defaultValue`).
+  const defaultValue = untrack(() =>
+    rest.defaultValue !== undefined || rest.value !== undefined || local.children !== undefined
+      ? rest.defaultValue
+      : local.items?.find((item) => !item.isDisabled)?.value,
+  );
 
   return (
-    <TextFieldPrimitive data-slot="native-select" {...(rest as TextFieldPrimitiveProps)} class={cls as never}>
+    <TextFieldPrimitive data-slot="native-select" {...(rest as TextFieldPrimitiveProps)} defaultValue={defaultValue} class={cls as never}>
       {(values: TextFieldRenderProps) => (
         <Provider token={NativeSelectContext} value={contextValue}>
           {local.children === undefined ? (

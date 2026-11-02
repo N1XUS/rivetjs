@@ -74,6 +74,7 @@ export const pins: FuzzPin[] = [
   pin("/pro-forms", "load", 'data-roll="true"', "ui", "number roll entrance: " + MOUNT_EFFECT, true),
   pin("/reanimate", "load", 'data-roll="true"', "ui", "number roll entrance: " + MOUNT_EFFECT, true),
   pin("/forms", "load", 'csr only [data-roll="true"]', "ui", "NumberStepper roll entrance (libs/ui/CLAUDE.md reanimate): " + MOUNT_EFFECT, true),
+  pin("/field-text", "load", 'csr only [data-roll="true"]', "ui", "NumberStepper roll entrance (libs/ui/CLAUDE.md reanimate): " + MOUNT_EFFECT, true),
   // ScrollArea deviation (cdk/CLAUDE.md, scroll-area/CLAUDE.md): a resumed area stays native (no scroll-area code) until
   // pointerenter / wheel / focusin / scroll.
   pin("/scroll-area", "load", "overflow-x:scroll", "cdk", "ScrollArea viewport overflow: " + MOUNT_EFFECT, true),

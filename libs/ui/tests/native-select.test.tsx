@@ -137,3 +137,24 @@ test("native-select items: append / remove / reorder / edit after mount, unchang
   assert.equal(option("a"), a);
   r.unmount();
 });
+
+test("native-select: the items shorthand without a value starts on the first enabled item, as the server markup shows", async () => {
+  const changes: string[] = [];
+  const r = render(() => (
+    <NativeSelect
+      label="Tea"
+      onChange={(v: string) => changes.push(v)}
+      items={[
+        { value: "white", label: "White", isDisabled: true },
+        { value: "green", label: "Green" },
+        { value: "black", label: "Black" },
+      ]}
+    />
+  ));
+  await flush();
+  // Before: the field's empty value matched no option, so a client render showed a blank select (the server's markup
+  // and native HTML select the first enabled option).
+  assert.equal(r.container.querySelector("select")!.value, "green");
+  assert.deepEqual(changes, []);
+  r.unmount();
+});
