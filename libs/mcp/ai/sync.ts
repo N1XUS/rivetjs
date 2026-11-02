@@ -149,8 +149,8 @@ export function staleOutputs(expected: ReadonlyMap<string, string>, repo = REPO)
 }
 
 /** Differences between the generated files and the repository (`missing` / `differs` / `stale` + path). */
-export async function aiProblems(repo = REPO): Promise<string[]> {
-  const expected = await aiOutputs(repo);
+export async function aiProblems(repo = REPO, expected?: Map<string, string>): Promise<string[]> {
+  expected ??= await aiOutputs(repo);
   const problems: string[] = [];
   for (const [path, contents] of expected) {
     const file = join(repo, path);
@@ -164,7 +164,7 @@ export async function aiProblems(repo = REPO): Promise<string[]> {
 if (import.meta.main) {
   const expected = await aiOutputs();
   if (process.argv.includes("--check")) {
-    const problems = await aiProblems();
+    const problems = await aiProblems(REPO, expected);
     if (problems.length) {
       console.error(`ai sync --check: ${problems.length} problem(s) (run node libs/mcp/ai/sync.ts)\n  ${problems.join("\n  ")}`);
       process.exit(1);

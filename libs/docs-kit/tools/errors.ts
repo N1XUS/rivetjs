@@ -377,8 +377,8 @@ export async function errorPageProblems(root: string, pages?: Map<string, string
 }
 
 /** Write the pages of the app at `root` (only changed files; orphans removed). Returns the written / removed paths. */
-export async function generateErrorPages(root: string): Promise<string[]> {
-  const pages = await errorPages(root);
+export async function generateErrorPages(root: string, pages?: Map<string, string>): Promise<string[]> {
+  pages ??= await errorPages(root);
   const dir = resolve(root, "content", ERRORS_DIR);
   await mkdir(dir, { recursive: true });
   const written: string[] = [];
@@ -417,6 +417,6 @@ export async function errorsCommand(root: string, args: string[]): Promise<void>
     console.log(`errors --check: ok, ${pages.size} pages`);
     return;
   }
-  const written = await generateErrorPages(root);
+  const written = await generateErrorPages(root, pages);
   console.log(`errors: ${pages.size} pages, ${written.length} written${written.length ? "\n  " + written.join("\n  ") : ""}`);
 }
