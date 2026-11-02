@@ -222,6 +222,21 @@ test("paint gate: a first pointerdown opens it at once (interaction islands, and
   }
 });
 
+test("paint gate: starved idle callbacks still open it (the idle slice has a timeout)", async () => {
+  const restore = stubObserver([]);
+  const real = self.requestIdleCallback;
+  // A main thread that never idles: only a callback with a timeout ever runs.
+  self.requestIdleCallback = ((callback: IdleRequestCallback, options?: IdleRequestOptions) =>
+    options?.timeout ? setTimeout(callback, options.timeout) : 0) as typeof requestIdleCallback;
+  try {
+    serve(counterHtml("i0", 1), [["i0", ISLAND, { count: 1 }, "load"]]);
+    await until(() => log.length === 1);
+  } finally {
+    self.requestIdleCallback = real;
+    restore();
+  }
+});
+
 test("paint gate fallback: no `paint` entry type, no `supportedEntryTypes`, or no PerformanceObserver → the idle slice alone", async () => {
   for (const types of [[], null, "no-list"] as const) {
     const restore = stubObserver(types);

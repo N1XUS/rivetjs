@@ -77,7 +77,7 @@ Server CPU: one list component, `ul > ((N − 1) / 2) × li > span`, rendered 2,
 
 - Tests: `NODE_OPTIONS=--max-old-space-size=1536 npx vitest run --project bridge --project bridge-browser --maxWorkers=1` (`bridge-browser`: Chromium, `*.browser.test.{ts,tsx}`; `derived-browser.test.ts` in `bridge` launches Playwright Chromium itself).
 - Typecheck: `NX_DAEMON=false npx nx run bridge:typecheck --output-style=static --skip-nx-cache`.
-- Lean boot: `node libs/bridge/build-boot.ts` after editing `boot.ts` (regenerates `boot.min.ts`).
+- Lean boot: `node libs/bridge/build-boot.ts` after editing `boot.ts` (regenerates `boot.min.ts`). The paint gate's idle slice has `{ timeout: 1e3 }` (2026-11-02): without it a main thread that never idles held the gate past the fallbacks (test "starved idle callbacks").
 
 ## Gotchas
 

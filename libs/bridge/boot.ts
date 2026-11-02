@@ -29,12 +29,14 @@ export function boot(): void {
   // presented). Fallbacks, so an island always mounts: no `paint` entry type → the idle slice alone; 1 s after `load`
   // at the latest (a page that never paints contentfully: hidden until an island reveals it, an empty `only` shell,
   // a 0×0 iframe — Safari / Firefox emit only `first-contentful-paint`); a first pointerdown / keydown opens it at once
-  // (the user sees the page). A hidden tab / prerender waits for its paint (or the cap).
+  // (the user sees the page). A hidden tab / prerender waits for its paint (or the cap). The slice has a timeout: a main
+  // thread that never idles would otherwise hold the gate past every fallback.
   let open!: (value?: unknown) => void;
   const idle = new Promise((go) => {
     open = go;
     const Observer = self.PerformanceObserver;
-    const slice = (): unknown => (self.requestIdleCallback ?? setTimeout)(go as () => void);
+    const slice = (): unknown =>
+      ((self.requestIdleCallback ?? setTimeout) as (run: () => void, options: { timeout: number }) => unknown)(go as () => void, { timeout: 1e3 });
     // The cap first (armed now when `load` already fired), so nothing below can keep the gate shut.
     const cap = (): unknown => setTimeout(slice, 1e3);
     doc.readyState == "complete" ? cap() : addEventListener("load", cap);

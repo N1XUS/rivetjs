@@ -118,17 +118,6 @@ export const pins: FuzzPin[] = [
     ),
     step: 20,
   },
-  {
-    ...pin(
-      "/reanimate",
-      "mismatch",
-      /^resumed: "\w"\ncsr: "\w"$/,
-      "ui",
-      "InputOTP typing on the cold first keystrokes: one slot shows a different character (1 of 11 runs; input-otp selection sync timing)",
-      true,
-    ),
-    step: 2,
-  },
   pin(
     "/visual/avatar",
     "load",
@@ -170,4 +159,8 @@ export const pins: FuzzPin[] = [
 ];
 
 /** Per-route fuzz options. */
-export const routeOptions = (_route: string): Partial<FuzzOptions> => ({});
+// InputOTP with fewer free slots than the default "Rivet 7": a key past the end replaces the last slot only once the
+// input's async selection sync has run, so the value depends on key timing ("Rive" at full speed, "Riv7" with 80 ms
+// between keys; measured 12/12 each, a CI run in between left "Riv "). Not a resume difference: type what fits.
+const OTP_ROUTES = new Set(["/reanimate", "/forms", "/removed-region-auth"]);
+export const routeOptions = (route: string): Partial<FuzzOptions> => (OTP_ROUTES.has(route) ? { text: "Rive" } : {});
