@@ -15,9 +15,9 @@ export const site = {
   /** Branch or tag the source links point at. */
   repoRef: "main",
   /** npm version or dist-tag that starters install. */
-  packageVersion: "0.1.0-alpha.1",
+  packageVersion: "0.1.0-alpha.3",
   /** Version label in the top bar. */
-  version: "0.1.0-alpha.1",
+  version: "0.1.0-alpha.3",
   /**
    * Disable generic docs idle effects and fetch-ahead. The home has no script before input; neither has the counter page
    * its product shot embeds (no idle prefetch of its handlers: router `preload.lean`, so the shot's meter shows what the
