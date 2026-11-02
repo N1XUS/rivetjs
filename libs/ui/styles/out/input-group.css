@@ -102,27 +102,31 @@
     border-style: var(--tw-border-style);
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
-    --tw-shadow: 0 0 #0000;
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
     border-width: 0;
     border-radius: 0;
-    outline-style: none;
     flex: 1;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .input-group__input {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .input-group__input {
+    color: var(--field-background, var(--default));
+    --tw-shadow: 0 0 #0000;
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .input-group__input::placeholder {
     color: var(--field-placeholder, var(--muted));
-  }
-
-  @media (min-width: 40rem) {
-    .input-group__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
-    }
   }
 
   .input-group:has([data-slot="input-group-prefix"]) .input-group__input {

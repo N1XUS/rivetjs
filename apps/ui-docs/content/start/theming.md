@@ -427,6 +427,23 @@ Shape tokens of the current theme, read live from this page's CSS:
 
 Form controls (inputs, checkboxes, radios, OTP slots) read only the `--field-*` variables. Their hover, focus and border states are calculated in `variables.css` and bridged in `theme.css` (`--color-field-hover: var(--field-hover)`). Override `--field-background`, `--field-hover` and the related tokens to restyle form controls without changing buttons or cards.
 
+### Field text size
+
+Editable fields (Input, TextArea, InputGroup, SearchField, NumberField, NumberStepper, DateField / TimeField segments, ColorField, NativeSelect, Command, PromptInput and the token composer) read their text size from one token pair:
+
+| Variable                 | Default                                 | Reads             |
+| ------------------------ | --------------------------------------- | ----------------- |
+| `--rv-field-font-size`   | `var(--text-sm)` (14 px)                | field text size   |
+| `--rv-field-line-height` | 20 px (24 px on touch / narrow screens) | field line height |
+
+On touch screens (`pointer: coarse`) and below the `sm` width (640 px) the size never drops under 16 px, whatever the token says: iOS Safari zooms the page into a focused field whose text is smaller. Desktop sizes stay as set. Do not stop the zoom with `maximum-scale=1` or `user-scalable=no` in the viewport meta: that also blocks pinch zoom.
+
+```css
+:root {
+  --rv-field-font-size: 0.9375rem; /* 15 px on desktop, still 16 px on phones */
+}
+```
+
 ## Scrollbars
 
 Component scroll areas (tables, popovers, drawers and similar) share one scrollbar style. It is built only from the standard properties `scrollbar-width`, `scrollbar-color` and `scrollbar-gutter`; there are no `::-webkit-scrollbar` rules.

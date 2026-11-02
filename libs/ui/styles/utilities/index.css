@@ -55,6 +55,21 @@
   }
 }
 
+/**
+ * Text of an editable field (input, textarea, native select, date segments, composer). `--rv-field-font-size` /
+ * `--rv-field-line-height` set it (default 14 / 20 px). On touch screens and below the `sm` width it never drops under
+ * 16 px: iOS Safari zooms the page into a focused field whose text is smaller (Rivet: TWEAKS.md TW-195; before: upstream
+ * `text-base sm:text-sm`, 14 px on coarse pointers from 640 px up).
+ */
+@utility text-field {
+  font-size: var(--rv-field-font-size, var(--text-sm, 0.875rem));
+  line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / 0.875)));
+  @media (pointer: coarse), (width < 40rem) {
+    font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, 0.875rem)));
+    line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+  }
+}
+
 /* === Statuses === */
 @utility status-focused {
   @apply focus-ring;

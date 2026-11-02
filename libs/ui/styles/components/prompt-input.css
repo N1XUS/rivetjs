@@ -72,8 +72,10 @@
 }
 
 .prompt-input__textarea {
-  @apply block w-full min-w-0 resize-none appearance-none border-0 bg-transparent px-1.5 py-1 leading-6 text-foreground outline-none placeholder:text-field-placeholder;
-  font-size: var(--prompt-input-text);
+  @apply block w-full min-w-0 resize-none appearance-none border-0 bg-transparent px-1.5 py-1 text-field text-foreground outline-none placeholder:text-field-placeholder;
+  /* Field text (TW-195): the size variant on desktop, at least 16 px on touch (iOS focus zoom). */
+  --rv-field-font-size: var(--prompt-input-text);
+  --rv-field-line-height: 1.5rem;
   field-sizing: content;
   min-height: 1.5rem;
   max-height: var(--prompt-input-max-height);
@@ -94,8 +96,10 @@
 
 .prompt-input__token-input,
 .prompt-input__token-mirror {
-  @apply m-0 border-0 px-1.5 py-1 leading-6;
-  font-size: var(--prompt-input-text);
+  @apply m-0 border-0 px-1.5 py-1 text-field;
+  /* Same field text as the textarea (TW-195); the mirror must match the token textarea glyph for glyph. */
+  --rv-field-font-size: var(--prompt-input-text);
+  --rv-field-line-height: 1.5rem;
   font-family: inherit;
   letter-spacing: inherit;
   tab-size: 4;

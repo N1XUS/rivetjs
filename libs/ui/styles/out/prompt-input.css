@@ -125,14 +125,24 @@
     min-width: 0;
     padding-inline: calc(var(--spacing, .25rem) * 1.5);
     padding-block: var(--spacing, .25rem);
-    --tw-leading: calc(var(--spacing, .25rem) * 6);
-    line-height: calc(var(--spacing, .25rem) * 6);
-    color: var(--foreground);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
     border-width: 0;
-    outline-style: none;
     display: block;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .prompt-input__textarea {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .prompt-input__textarea {
+    color: var(--foreground);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .prompt-input__textarea::placeholder {
@@ -140,7 +150,8 @@
   }
 
   .prompt-input__textarea {
-    font-size: var(--prompt-input-text);
+    --rv-field-font-size: var(--prompt-input-text);
+    --rv-field-line-height: 1.5rem;
     field-sizing: content;
     min-height: 1.5rem;
     max-height: var(--prompt-input-max-height);
@@ -178,17 +189,29 @@
     border-style: var(--tw-border-style);
     padding-inline: calc(var(--spacing, .25rem) * 1.5);
     padding-block: var(--spacing, .25rem);
-    --tw-leading: calc(var(--spacing, .25rem) * 6);
-    line-height: calc(var(--spacing, .25rem) * 6);
-    font-size: var(--prompt-input-text);
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
+    border-width: 0;
+    margin: 0;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .prompt-input__token-input, .prompt-input__token-mirror {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .prompt-input__token-input, .prompt-input__token-mirror {
+    color: var(--field-background, var(--default));
+    --rv-field-font-size: var(--prompt-input-text);
+    --rv-field-line-height: 1.5rem;
     letter-spacing: inherit;
     tab-size: 4;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     word-break: normal;
     scrollbar-gutter: stable;
-    border-width: 0;
-    margin: 0;
     font-family: inherit;
   }
 
@@ -722,14 +745,14 @@
   syntax: "*";
   inherits: false
 }
-@property --tw-leading {
-  syntax: "*";
-  inherits: false
-}
 @property --tw-outline-style {
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+@property --tw-leading {
+  syntax: "*";
+  inherits: false
 }
 @property --tw-animation-duration {
   syntax: "*";

@@ -9,25 +9,28 @@
     background-color: var(--field-background, var(--default));
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
+    border-width: 1px;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .input {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .input {
     color: var(--field-foreground, var(--foreground));
     --tw-shadow: var(--field-shadow);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
-    border-width: 1px;
     outline-style: none;
   }
 
   .input::placeholder {
     color: var(--field-placeholder, var(--muted));
-  }
-
-  @media (min-width: 40rem) {
-    .input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
-    }
   }
 
   .input {
@@ -144,10 +147,6 @@
   syntax: "*";
   inherits: false;
   initial-value: solid;
-}
-@property --tw-leading {
-  syntax: "*";
-  inherits: false
 }
 @property --tw-shadow {
   syntax: "*";

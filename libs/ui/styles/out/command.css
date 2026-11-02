@@ -172,20 +172,23 @@
   .command__input {
     height: calc(var(--spacing, .25rem) * 12);
     min-width: 0;
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
-    color: var(--foreground);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
-    outline-style: none;
     flex: 1;
   }
 
-  @media (min-width: 48rem) {
+  @media (pointer: coarse), not (min-width: 40rem) {
     .command__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
     }
+  }
+
+  .command__input {
+    color: var(--foreground);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .command__input::placeholder {

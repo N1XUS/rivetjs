@@ -1,7 +1,7 @@
 /* Ported from HeroUI v3.2.6 packages/styles/components/input.css (Apache-2.0, © 2025 NextUI Inc.). */
 /* Rivet: modified, see TWEAKS.md */
 .input {
-  @apply rounded-field border bg-field px-3 py-2 text-base text-field-foreground shadow-field outline-none placeholder:text-field-placeholder sm:text-sm;
+  @apply rounded-field border bg-field px-3 py-2 text-field text-field-foreground shadow-field outline-none placeholder:text-field-placeholder;
 
   border-width: var(--border-width-field);
   border-color: var(--field-border);

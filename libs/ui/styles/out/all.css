@@ -7436,25 +7436,29 @@
     height: 100%;
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
-    --tw-shadow: 0 0 #0000;
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
     border-width: 0;
     border-radius: 0;
-    outline-style: none;
     flex: 1;
     align-items: center;
     display: flex;
   }
 
-  @media (min-width: 40rem) {
+  @media (pointer: coarse), not (min-width: 40rem) {
     .color-input-group__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
     }
+  }
+
+  .color-input-group__input {
+    color: var(--field-background, var(--default));
+    --tw-shadow: 0 0 #0000;
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .color-input-group__input::placeholder {
@@ -11285,25 +11289,28 @@
     background-color: var(--field-background, var(--default));
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
+    border-width: 1px;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .input {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .input {
     color: var(--field-foreground, var(--foreground));
     --tw-shadow: var(--field-shadow);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
-    border-width: 1px;
     outline-style: none;
   }
 
   .input::placeholder {
     color: var(--field-placeholder, var(--muted));
-  }
-
-  @media (min-width: 40rem) {
-    .input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
-    }
   }
 
   .input {
@@ -11516,27 +11523,31 @@
     border-style: var(--tw-border-style);
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
-    --tw-shadow: 0 0 #0000;
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
     border-width: 0;
     border-radius: 0;
-    outline-style: none;
     flex: 1;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .input-group__input {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .input-group__input {
+    color: var(--field-background, var(--default));
+    --tw-shadow: 0 0 #0000;
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .input-group__input::placeholder {
     color: var(--field-placeholder, var(--muted));
-  }
-
-  @media (min-width: 40rem) {
-    .input-group__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
-    }
   }
 
   .input-group:has([data-slot="input-group-prefix"]) .input-group__input {
@@ -11927,24 +11938,28 @@
     min-width: 0;
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
+    background-color: #0000;
+    border-width: 0;
+    border-radius: 0;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .number-field__input {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .number-field__input {
+    color: var(--field-background, var(--default));
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
     --tw-shadow: 0 0 #0000;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
-    background-color: #0000;
-    border-width: 0;
-    border-radius: 0;
     outline-style: none;
-  }
-
-  @media (min-width: 40rem) {
-    .number-field__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
-    }
   }
 
   .number-field__group:has([slot="decrement"]) .number-field__input {
@@ -12284,11 +12299,25 @@
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
     min-width: var(--number-stepper-value-width);
-    font-size: var(--number-stepper-font-size);
+    --rv-field-font-size: var(--number-stepper-font-size);
+    --rv-field-line-height: 1.5;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     place-items: center;
-    height: 100%;
     display: inline-grid;
     position: relative;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .number-stepper__value {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .number-stepper__value {
+    color: var(--field-background, var(--default));
+    height: 100%;
   }
 
   .number-stepper__input {
@@ -13105,23 +13134,27 @@
     border-style: var(--tw-border-style);
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
-    --tw-shadow: 0 0 #0000;
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
     border-width: 0;
     border-radius: 0;
-    outline-style: none;
     flex: 1;
   }
 
-  @media (min-width: 40rem) {
+  @media (pointer: coarse), not (min-width: 40rem) {
     .search-field__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
     }
+  }
+
+  .search-field__input {
+    color: var(--field-background, var(--default));
+    --tw-shadow: 0 0 #0000;
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .search-field__input::-webkit-search-cancel-button {
@@ -13262,25 +13295,28 @@
     background-color: var(--field-background, var(--default));
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
+    border-width: 1px;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .textarea {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .textarea {
     color: var(--field-foreground, var(--foreground));
     --tw-shadow: var(--field-shadow);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
-    border-width: 1px;
     outline-style: none;
   }
 
   .textarea::placeholder {
     color: var(--field-placeholder, var(--muted));
-  }
-
-  @media (min-width: 40rem) {
-    .textarea {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
-    }
   }
 
   .textarea {
@@ -14384,26 +14420,30 @@
     border-style: var(--tw-border-style);
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
-    --tw-shadow: 0 0 #0000;
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
     border-width: 0;
     border-radius: 0;
-    outline-style: none;
     flex: 1;
     align-items: center;
     gap: 1px;
     display: flex;
   }
 
-  @media (min-width: 40rem) {
+  @media (pointer: coarse), not (min-width: 40rem) {
     .date-input-group__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
     }
+  }
+
+  .date-input-group__input {
+    color: var(--field-background, var(--default));
+    --tw-shadow: 0 0 #0000;
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .date-input-group:has([data-slot="date-input-group-prefix"]) .date-input-group__input {
@@ -20471,31 +20511,31 @@
     background-color: var(--field-background, var(--default));
     width: 100%;
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
-    color: var(--field-foreground, var(--foreground));
-    --tw-shadow: var(--field-shadow);
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     border-width: 1px;
-    outline-style: none;
     padding-inline-start: calc(var(--spacing, .25rem) * 3);
     padding-inline-end: calc(var(--spacing, .25rem) * 8);
     overflow: hidden;
   }
 
-  @media (min-width: 40rem) {
+  @media (pointer: coarse), not (min-width: 40rem) {
     .native-select__select {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
     }
   }
 
   .native-select__select {
+    color: var(--field-foreground, var(--foreground));
+    --tw-shadow: var(--field-shadow);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    --tw-outline-style: none;
     border-width: var(--border-width-field);
     border-color: var(--field-border);
     cursor: var(--cursor-interactive);
     transition: background-color var(--motion-state-duration) var(--motion-state-ease), border-color var(--motion-state-duration) var(--motion-state-ease), box-shadow var(--motion-state-duration) var(--motion-state-ease);
+    outline-style: none;
   }
 
   .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *), .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):before, .native-select__select:is([data-reduce-motion="true"], [data-reduce-motion="true"] *):after {
@@ -23484,20 +23524,23 @@
   .command__input {
     height: calc(var(--spacing, .25rem) * 12);
     min-width: 0;
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
-    color: var(--foreground);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
-    outline-style: none;
     flex: 1;
   }
 
-  @media (min-width: 48rem) {
+  @media (pointer: coarse), not (min-width: 40rem) {
     .command__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
     }
+  }
+
+  .command__input {
+    color: var(--foreground);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .command__input::placeholder {
@@ -27594,14 +27637,24 @@
     min-width: 0;
     padding-inline: calc(var(--spacing, .25rem) * 1.5);
     padding-block: var(--spacing, .25rem);
-    --tw-leading: calc(var(--spacing, .25rem) * 6);
-    line-height: calc(var(--spacing, .25rem) * 6);
-    color: var(--foreground);
-    --tw-outline-style: none;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     background-color: #0000;
     border-width: 0;
-    outline-style: none;
     display: block;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .prompt-input__textarea {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .prompt-input__textarea {
+    color: var(--foreground);
+    --tw-outline-style: none;
+    outline-style: none;
   }
 
   .prompt-input__textarea::placeholder {
@@ -27609,7 +27662,8 @@
   }
 
   .prompt-input__textarea {
-    font-size: var(--prompt-input-text);
+    --rv-field-font-size: var(--prompt-input-text);
+    --rv-field-line-height: 1.5rem;
     field-sizing: content;
     min-height: 1.5rem;
     max-height: var(--prompt-input-max-height);
@@ -27647,17 +27701,29 @@
     border-style: var(--tw-border-style);
     padding-inline: calc(var(--spacing, .25rem) * 1.5);
     padding-block: var(--spacing, .25rem);
-    --tw-leading: calc(var(--spacing, .25rem) * 6);
-    line-height: calc(var(--spacing, .25rem) * 6);
-    font-size: var(--prompt-input-text);
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
+    border-width: 0;
+    margin: 0;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .prompt-input__token-input, .prompt-input__token-mirror {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .prompt-input__token-input, .prompt-input__token-mirror {
+    color: var(--field-background, var(--default));
+    --rv-field-font-size: var(--prompt-input-text);
+    --rv-field-line-height: 1.5rem;
     letter-spacing: inherit;
     tab-size: 4;
     white-space: pre-wrap;
     overflow-wrap: break-word;
     word-break: normal;
     scrollbar-gutter: stable;
-    border-width: 0;
-    margin: 0;
     font-family: inherit;
   }
 

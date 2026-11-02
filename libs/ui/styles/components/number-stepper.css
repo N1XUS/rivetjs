@@ -109,7 +109,10 @@
   @apply relative inline-grid items-center justify-items-center px-1 font-medium text-foreground tabular-nums;
 
   min-width: var(--number-stepper-value-width);
-  font-size: var(--number-stepper-font-size);
+  /* Rivet (TW-195): field text — the size variant on desktop, at least 16 px on touch (iOS focus zoom); the input inherits it. */
+  --rv-field-font-size: var(--number-stepper-font-size);
+  --rv-field-line-height: 1.5;
+  @apply text-field;
   height: 100%;
 }
 

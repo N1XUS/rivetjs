@@ -145,11 +145,25 @@
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
     min-width: var(--number-stepper-value-width);
-    font-size: var(--number-stepper-font-size);
+    --rv-field-font-size: var(--number-stepper-font-size);
+    --rv-field-line-height: 1.5;
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
     place-items: center;
-    height: 100%;
     display: inline-grid;
     position: relative;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .number-stepper__value {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .number-stepper__value {
+    color: var(--field-background, var(--default));
+    height: 100%;
   }
 
   .number-stepper__input {

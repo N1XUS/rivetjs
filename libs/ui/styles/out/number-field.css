@@ -126,24 +126,28 @@
     min-width: 0;
     padding-inline: calc(var(--spacing, .25rem) * 3);
     padding-block: calc(var(--spacing, .25rem) * 2);
-    font-size: var(--text-base, 1rem);
-    line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
+    font-size: var(--rv-field-font-size, var(--text-sm, .875rem));
+    line-height: var(--rv-field-line-height, var(--text-sm--line-height, calc(1.25 / .875)));
+    background-color: #0000;
+    border-width: 0;
+    border-radius: 0;
+  }
+
+  @media (pointer: coarse), not (min-width: 40rem) {
+    .number-field__input {
+      font-size: max(1rem, var(--rv-field-font-size, var(--text-sm, .875rem)));
+      line-height: var(--rv-field-line-height, var(--text-base--line-height, 1.5));
+    }
+  }
+
+  .number-field__input {
+    color: var(--field-background, var(--default));
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal, ) var(--tw-slashed-zero, ) var(--tw-numeric-figure, ) var(--tw-numeric-spacing, ) var(--tw-numeric-fraction, );
     --tw-shadow: 0 0 #0000;
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-outline-style: none;
-    background-color: #0000;
-    border-width: 0;
-    border-radius: 0;
     outline-style: none;
-  }
-
-  @media (min-width: 40rem) {
-    .number-field__input {
-      font-size: var(--text-sm, .875rem);
-      line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
-    }
   }
 
   .number-field__group:has([slot="decrement"]) .number-field__input {

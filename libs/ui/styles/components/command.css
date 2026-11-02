@@ -94,7 +94,7 @@
 }
 
 .command__input {
-  @apply h-12 min-w-0 flex-1 bg-transparent text-base text-foreground outline-none md:text-sm;
+  @apply h-12 min-w-0 flex-1 bg-transparent text-field text-foreground outline-none;
 
   &::placeholder {
     color: var(--muted);
