@@ -73,8 +73,9 @@ export class TableLayout<T, O extends TableLayoutProps = TableLayoutProps> exten
   override update(invalidationContext: InvalidationContext<O>): void {
     const newCollection = this.table;
 
-    // Column widths from layoutOptions, else computed here.
-    if (invalidationContext.layoutOptions?.columnWidths) {
+    // Column widths from layoutOptions, else computed here. Rivet: an empty map counts as none (React Aria adopts
+    // nothing from it, leaving every column 0 wide when no width was computed before).
+    if (invalidationContext.layoutOptions?.columnWidths?.size) {
       for (const [key, val] of invalidationContext.layoutOptions.columnWidths) {
         if (this.columnWidths.get(key) !== val) {
           this.columnWidths = invalidationContext.layoutOptions.columnWidths;

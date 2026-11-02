@@ -500,3 +500,37 @@ describe("component window (server)", () => {
     assert.ok(next.some((view) => view.key === 14));
   });
 });
+
+// FIX2-CDK (review cdk-a-2#14): layout edge cases.
+describe("layout edges (Rivet)", () => {
+  test("WaterfallLayout: a zero-height skeleton terminates (one per column)", () => {
+    const layout = new WaterfallLayout<object>();
+    const skeleton = { ...loaderNode<object>("sk", false), type: "skeleton" } as Node<object>;
+    engine(layout, createCollection([], {}, [skeleton]) as any, 440, 1000, {
+      minItemSize: new Size(200, 0),
+      maxItemSize: new Size(200, 0),
+      minSpace: new Size(10, 0),
+    });
+    assert.ok(layout.getLayoutInfo("sk-0") && layout.getLayoutInfo("sk-1"), "one skeleton per column");
+    assert.equal(layout.getLayoutInfo("sk-2"), undefined);
+  });
+  test("TableLayout: an empty columnWidths map falls back to computed widths", () => {
+    const columns = [
+      { key: "foo", label: "Foo", isRowHeader: true },
+      { key: "bar", label: "Bar" },
+    ];
+    const rows = range(5).map((i) => ({ id: i, foo: "Foo " + i, bar: "Bar " + i }));
+    const layout = new TableLayout<unknown>({ rowHeight: 25 });
+    engine(layout, createTableCollection(columns, rows) as any, 100, 100, { rowHeight: 25, columnWidths: new Map() });
+    assert.equal(layout.getLayoutInfo("foo")!.rect.width, 75);
+  });
+  test("persisted ancestors: a persisted table row keeps its body visible far from the viewport", () => {
+    const columns = [{ key: "foo", label: "Foo", isRowHeader: true }];
+    const rows = range(200).map((i) => ({ id: i, foo: "Foo " + i }));
+    const layout = new TableLayout<unknown>({ rowHeight: 25 });
+    const e = engine(layout, createTableCollection(columns, rows) as any, 100, 100, { rowHeight: 25 });
+    e.persist([199]);
+    assert.ok(e.keys("row").includes(199));
+    assert.ok(e.v.isPersistedKey(layout.getLayoutInfo(199)!.parentKey!), "the body is an ancestor of the persisted row");
+  });
+});

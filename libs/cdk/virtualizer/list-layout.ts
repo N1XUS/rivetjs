@@ -274,8 +274,8 @@ export class ListLayout<T, O extends ListLayoutOptions = ListLayoutOptions> exte
     const isEmptyOrLoading = collection?.size === 0;
     if (isEmptyOrLoading) offset = 0;
 
+    const rowHeight = (this.rowSize ?? this.estimatedRowSize ?? DEFAULT_HEIGHT) + this.gap;
     for (const node of collectionNodes) {
-      const rowHeight = (this.rowSize ?? this.estimatedRowSize ?? DEFAULT_HEIGHT) + this.gap;
       // Skip rows before the valid rectangle unless they are already cached.
       if (node.type === "item" && offset + rowHeight < this.requestedRect[offsetProperty] && !this.isValid(node, offset)) {
         offset += rowHeight;
@@ -385,10 +385,10 @@ export class ListLayout<T, O extends ListLayoutOptions = ListLayoutOptions> exte
 
     let skipped = 0;
     const children: LayoutNode[] = [];
+    const rowHeight = (this.rowSize ?? this.estimatedRowSize ?? DEFAULT_HEIGHT) + this.gap;
     for (const child of getChildNodes(node, collection)) {
       // Content nodes (Tree) are skipped.
       if (child.type === "content") continue;
-      const rowHeight = (this.rowSize ?? this.estimatedRowSize ?? DEFAULT_HEIGHT) + this.gap;
 
       // Skip rows before the valid rectangle unless they are already cached. Rivet: never the section header —
       // a cold-started engine (resumed page, first scroll) lays out from the scrolled rect, not from 0 as upstream

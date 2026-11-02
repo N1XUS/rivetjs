@@ -150,10 +150,15 @@ export class WaterfallLayout<T extends object, O extends WaterfallLayoutOptions 
       if (node.type === "skeleton") {
         // Add skeleton cards until every column has at least one, and we fill the viewport.
         const startingHeights = [...columnHeights];
+        // Rivet: a skeleton that adds no height (0 item height + 0 spacing, or a NaN measured ratio) cannot fill the
+        // viewport: stop after one per column instead of looping forever.
+        let added = 0;
         while (!columnHeights.every((h, i) => h !== startingHeights[i]) || Math.min(...columnHeights) < this.virtualizer!.size.height) {
+          const before = columnHeights.reduce((a, h) => a + h, 0);
           const key = `${node.key}-${skeletonCount++}`;
           const content = this.layoutInfos.get(key)?.content || { ...node };
           addNode(key, content);
+          if (++added >= numColumns && !(columnHeights.reduce((a, h) => a + h, 0) > before)) break;
         }
         break;
       } else if (node.type !== "loader") {

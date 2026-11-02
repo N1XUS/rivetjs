@@ -131,11 +131,25 @@ function keyOfView<T>(views: readonly VirtualView<T>[], text: string): Key | nul
   return null;
 }
 
+/** Same set (non-null) entries; allocation-free (runs per visible view per scroll step). */
 const sameStyle = (a: StyleObject, b: StyleObject): boolean => {
-  const ka = Object.keys(a).filter((k) => a[k] != null),
-    kb = Object.keys(b).filter((k) => b[k] != null);
-  return ka.length === kb.length && ka.every((k) => a[k] === b[k]);
+  if (a === b) return true;
+  let count = 0;
+  for (const k in a) {
+    const v = a[k];
+    if (v == null) continue;
+    if (b[k] !== v) return false;
+    count++;
+  }
+  for (const k in b) if (b[k] != null) count--;
+  return count === 0;
 };
+
+function sameChildren<T>(a: readonly VirtualView<T>[], b: readonly VirtualView<T>[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
 
 /** Views of the engine as JSON; unchanged views keep their previous object (resumed rows stay adopted). */
 export function projectViews<T>(
@@ -150,38 +164,45 @@ export function projectViews<T>(
     if (!li) continue;
     const node = view.content;
     const children = projectViews(view.children, dir, previous, li);
-    const next: VirtualView<T> = {
+    const item = (node?.value ?? null) as T | null;
+    const index = node?.index ?? 0;
+    const level = node?.level ?? 0;
+    const style = layoutInfoToStyle(li, dir, parent);
+    const old = previous.get(li.key);
+    // Scalars first, then style and children; the new view object is built only when something changed.
+    if (
+      old &&
+      old.type === li.type &&
+      old.item === item &&
+      old.index === index &&
+      old.level === level &&
+      old.parentKey === li.parentKey &&
+      old.x === li.rect.x &&
+      old.y === li.rect.y &&
+      old.width === li.rect.width &&
+      old.height === li.rect.height &&
+      old.estimated === li.estimatedSize &&
+      sameStyle(old.style, style) &&
+      sameChildren(old.children, children)
+    ) {
+      out.push(old);
+      continue;
+    }
+    out.push({
       key: li.key,
       type: li.type,
-      item: (node?.value ?? null) as T | null,
-      index: node?.index ?? 0,
-      level: node?.level ?? 0,
+      item,
+      index,
+      level,
       parentKey: li.parentKey,
       x: li.rect.x,
       y: li.rect.y,
       width: li.rect.width,
       height: li.rect.height,
       estimated: li.estimatedSize,
-      style: layoutInfoToStyle(li, dir, parent),
+      style,
       children,
-    };
-    const old = previous.get(li.key);
-    const same =
-      old &&
-      old.type === next.type &&
-      old.item === next.item &&
-      old.index === next.index &&
-      old.level === next.level &&
-      old.parentKey === next.parentKey &&
-      old.x === next.x &&
-      old.y === next.y &&
-      old.width === next.width &&
-      old.height === next.height &&
-      old.estimated === next.estimated &&
-      sameStyle(old.style, next.style) &&
-      old.children.length === children.length &&
-      old.children.every((c, i) => c === children[i]);
-    out.push(same ? old : next);
+    });
   }
   return out;
 }
@@ -529,8 +550,9 @@ function loadMore<T, O>(model: VirtualizerModel<T, O>, driver: Driver, el: HTMLE
 export function virtualizerFocusIn<T, O>(model: VirtualizerModel<T, O>, event: FocusEvent): void {
   const key = (event.target as Element | null)?.closest?.<HTMLElement>("[data-rv-view]")?.dataset.rvView;
   if (key == null) return;
-  const view = [...flatten(untrack(model.views)).values()].find((v) => String(v.key) === key);
-  if (view && untrack(model.focusedKey) !== view.key) model.focusedKey.set(view.key);
+  // Allocation-free depth-first lookup (was a Map of every view + an array per focusin).
+  const viewKey = keyOfView(untrack(model.views), key);
+  if (viewKey != null && untrack(model.focusedKey) !== viewKey) model.focusedKey.set(viewKey);
   driverOf(model, event.currentTarget as Element);
 }
 

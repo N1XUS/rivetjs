@@ -89,22 +89,24 @@ export function layoutInfoToStyle(layoutInfo: LayoutInfo, dir?: Direction | null
   const xProperty = dir === "rtl" ? "right" : dir === "ltr" ? "left" : "inset-inline-start";
   // Sticky children of an overflowing parent are positioned against the scroll container, not the parent.
   const relative = parent && !(parent.allowOverflow && layoutInfo.isSticky);
-  const style: Record<string, string | undefined> = {
-    position: layoutInfo.isSticky ? "sticky" : "absolute",
-    // Sticky elements are in normal flow: inline-block so sticky columns don't push each other onto new rows.
-    display: layoutInfo.isSticky ? "inline-block" : undefined,
-    overflow: layoutInfo.allowOverflow ? "visible" : "hidden",
-    opacity: layoutInfo.opacity === 1 ? undefined : String(layoutInfo.opacity),
-    "z-index": layoutInfo.zIndex ? String(layoutInfo.zIndex) : undefined,
-    transform: layoutInfo.transform ?? undefined,
-    contain: "size layout style",
-    top: px(layoutInfo.rect.y - (relative ? parent.rect.y : 0)),
-    [xProperty]: px(layoutInfo.rect.x - (relative ? parent.rect.x : 0)),
-    width: px(layoutInfo.rect.width),
-    height: px(layoutInfo.rect.height),
-  };
-  // Non-finite / unset values are dropped (no `undefined` in serialized state).
-  for (const key in style) if (style[key] === undefined) delete style[key];
+  // Only set keys are written (no `undefined` in serialized state; no `delete` pass: same key order as before).
+  const style: Record<string, string> = { position: layoutInfo.isSticky ? "sticky" : "absolute" };
+  // Sticky elements are in normal flow: inline-block so sticky columns don't push each other onto new rows.
+  if (layoutInfo.isSticky) style.display = "inline-block";
+  style.overflow = layoutInfo.allowOverflow ? "visible" : "hidden";
+  if (layoutInfo.opacity !== 1) style.opacity = String(layoutInfo.opacity);
+  if (layoutInfo.zIndex) style["z-index"] = String(layoutInfo.zIndex);
+  if (layoutInfo.transform != null) style.transform = layoutInfo.transform;
+  style.contain = "size layout style";
+  // Non-finite values are dropped.
+  const top = px(layoutInfo.rect.y - (relative ? parent.rect.y : 0));
+  if (top !== undefined) style.top = top;
+  const x = px(layoutInfo.rect.x - (relative ? parent.rect.x : 0));
+  if (x !== undefined) style[xProperty] = x;
+  const width = px(layoutInfo.rect.width);
+  if (width !== undefined) style.width = width;
+  const height = px(layoutInfo.rect.height);
+  if (height !== undefined) style.height = height;
   return style as StyleObject;
 }
 

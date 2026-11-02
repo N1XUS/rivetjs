@@ -49,6 +49,9 @@ export class Virtualizer<T extends object, V> {
   private _overscanManager: OverscanManager;
   private _scrollAnchor: ScrollAnchorTracker;
   private _viewKey = 0;
+  /** Persisted keys + their ancestors, built once per layout query (`visibleInfos`); `null` outside one. */
+  private _persistedClosure: Set<Key> | null = null;
+  private _inQuery = false;
 
   constructor(options: VirtualizerOptions<T, V>) {
     this.delegate = options.delegate;
@@ -75,16 +78,37 @@ export class Virtualizer<T extends object, V> {
   /** Returns whether the given key, or an ancestor, is persisted. */
   isPersistedKey(key: Key): boolean {
     if (this.persistedKeys.has(key)) return true;
-    // Check if the key is an ancestor of any of the persisted keys.
+    if (this.persistedKeys.size === 0) return false;
+    // Inside a layout query every non-intersecting node asks: walk the ancestors once (Rivet; upstream walks per node).
+    if (this._inQuery) return (this._persistedClosure ??= this.persistedAncestors()).has(key);
+    return this.persistedAncestors().has(key);
+  }
+
+  /** The ancestors of every persisted key (via layout infos' `parentKey`). */
+  private persistedAncestors(): Set<Key> {
+    const out = new Set<Key>();
     for (let k of this.persistedKeys) {
       while (k != null) {
         const layoutInfo = this.layout.getLayoutInfo(k);
         if (!layoutInfo || layoutInfo.parentKey == null) break;
         k = layoutInfo.parentKey;
-        if (k === key) return true;
+        if (out.has(k)) break; // the rest of the chain is in already
+        out.add(k);
       }
     }
-    return false;
+    return out;
+  }
+
+  /** `layout.getVisibleLayoutInfos(rect)` with the persisted-ancestor set shared by the whole query. */
+  private visibleInfos(rect: Rect): LayoutInfo[] {
+    this._inQuery = true;
+    this._persistedClosure = null;
+    try {
+      return this.layout.getVisibleLayoutInfos(rect);
+    } finally {
+      this._inQuery = false;
+      this._persistedClosure = null;
+    }
   }
 
   private getParentView(layoutInfo: LayoutInfo): ReusableView<T, V> | undefined {
@@ -118,7 +142,7 @@ export class Virtualizer<T extends object, V> {
   /** Returns the key for the item view currently at the given point. */
   keyAtPoint(point: Point): Key | null {
     const rect = new Rect(point.x, point.y, 1, 1);
-    const layoutInfos = rect.area === 0 ? [] : this.layout.getVisibleLayoutInfos(rect);
+    const layoutInfos = rect.area === 0 ? [] : this.visibleInfos(rect);
     // Layouts may return persisted keys too: find the first one that actually intersects.
     for (const layoutInfo of layoutInfos) if (layoutInfo.rect.intersects(rect)) return layoutInfo.key;
     return null;
@@ -182,7 +206,7 @@ export class Virtualizer<T extends object, V> {
   getVisibleLayoutInfos(): Map<Key, LayoutInfo> {
     const rect = this._overscanManager.getOverscannedRect();
     const map = new Map<Key, LayoutInfo>();
-    for (const layoutInfo of this.layout.getVisibleLayoutInfos(rect)) map.set(layoutInfo.key, layoutInfo);
+    for (const layoutInfo of this.visibleInfos(rect)) map.set(layoutInfo.key, layoutInfo);
     return map;
   }
 
