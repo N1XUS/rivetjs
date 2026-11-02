@@ -97,10 +97,13 @@ function triggerHoverStart(hover: Hover, event: PointerEvent, pointerType: strin
 
 function triggerHoverEnd(hover: Hover, _event: Event | null, pointerType: string): void {
   const { state, props } = hover;
+  // Touch never hovers, so a touch event (a tap elsewhere on a hybrid device) must not end a mouse / pen
+  // hover either. Rivet deviation: upstream clears `target` first, which orphaned the hover (stuck `isHovered`).
+  if (pointerType === "touch") return;
   const target = state.target;
   state.pointerType = "";
   state.target = null;
-  if (pointerType === "touch" || !state.isHovered || !target) return;
+  if (!state.isHovered || !target) return;
   state.isHovered = false;
   for (const remove of state.globals.splice(0)) remove();
   props.onHoverEnd?.({ type: "hoverend", target, pointerType: pointerType as "mouse" | "pen" });

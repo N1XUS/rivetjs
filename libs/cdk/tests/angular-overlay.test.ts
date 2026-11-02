@@ -154,9 +154,19 @@ describe("Overlay", () => {
       const set = cdk.createOverlayRef({ direction: "ltr" });
       set.attach(t.content());
       set.setDirection("rtl");
-      return { ltr: ltr.getDirection(), rtl: rtl.hostElement.getAttribute("dir"), set: set.hostElement.getAttribute("dir") };
+      const out = { ltr: ltr.getDirection(), rtl: rtl.hostElement.getAttribute("dir"), set: set.hostElement.getAttribute("dir"), afterDispose: "" };
+      // Rivet: setDirection / updateSize after dispose are no-ops (the host is gone), not a TypeError.
+      set.dispose();
+      try {
+        set.setDirection("ltr");
+        set.updateSize({ width: 10 });
+        out.afterDispose = "ok";
+      } catch (e) {
+        out.afterDispose = String(e);
+      }
+      return out;
     });
-    assert.deepEqual(r, { ltr: "ltr", rtl: "rtl", set: "rtl" });
+    assert.deepEqual(r, { ltr: "ltr", rtl: "rtl", set: "rtl", afterDispose: "ok" });
   });
 
   test("attachments / detachments streams: order, not on unattached dispose, complete on dispose", async () => {
@@ -283,8 +293,13 @@ describe("Overlay", () => {
       ref.updateSize({ width: 0, height: 0 });
       const zero = [s.width, s.height];
       ref.updateSize({ width: "", height: "", minWidth: "", minHeight: "", maxWidth: "", maxHeight: "" });
-      return { first, zero, reset: [s.width, s.height, s.minWidth, s.minHeight, s.maxWidth, s.maxHeight] };
+      const reset = [s.width, s.height, s.minWidth, s.minHeight, s.maxWidth, s.maxHeight];
+      // An explicit `undefined` clears a size too (the config drops undefined keys, the field default is unset).
+      ref.updateSize({ width: 300 });
+      ref.updateSize({ width: undefined });
+      return { first, zero, reset, cleared: s.width };
     });
+    assert.equal(r.cleared, "");
     assert.deepEqual(r.first, ["500px", "100vh", "200px", "50%", "800px", "90vh"]);
     assert.deepEqual(r.zero, ["0px", "0px"]);
     assert.deepEqual(r.reset, ["", "", "", "", "", ""]);

@@ -368,7 +368,8 @@ export class OverlayRef implements PortalOutlet, OverlayReference {
   }
 
   private _updateElementDirection(): void {
-    this._host.setAttribute("dir", this.getDirection());
+    // Disposed: no host (Rivet: a no-op, Angular throws).
+    this._host?.setAttribute("dir", this.getDirection());
   }
 
   private _updateElementSize(): void {

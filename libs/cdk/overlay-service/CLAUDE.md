@@ -45,3 +45,4 @@ Angular CDK overlay port: imperative `Overlay` service, `OverlayRef` panes in on
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../portal/CLAUDE.md](../portal/CLAUDE.md), [../overlay/CLAUDE.md](../overlay/CLAUDE.md)
 - Docs: [overlay-service](../../../apps/cdk-docs/content/foundations/overlay-service.md); examples `apps/cdk-docs/examples/overlay-service-{connected,global}/`
+- `OverlayRef.setDirection` / `updateSize` after `dispose()` are no-ops (no host / pane; Angular throws on `setDirection`); `updateSize({ width: undefined })` clears that size (config drops undefined keys) (FIX2-CDK 2026-11-01, `../tests/angular-overlay.test.ts`)

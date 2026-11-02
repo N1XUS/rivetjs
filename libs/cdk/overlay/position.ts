@@ -502,7 +502,8 @@ export function calculatePositionInternal(
   // With an arrow, it is the animation origin; otherwise the target edge.
   ({ placement, crossPlacement } = placementInfo);
   if (arrowSize) origin = at(arrowPosition, crossAxis);
-  else if (crossPlacement === "right") origin += at(childOffset, crossSize);
+  // Rivet: `bottom` mirrors `right` (the trigger's far edge; React Aria handles `right` only).
+  else if (crossPlacement === "right" || crossPlacement === "bottom") origin += at(childOffset, crossSize);
   else if (crossPlacement === "center") origin += at(childOffset, crossSize) / 2;
 
   const crossOrigin = placement === "left" || placement === "top" ? at(overlaySize, size) : 0;

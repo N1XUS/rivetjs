@@ -357,3 +357,43 @@ describe("calculatePosition", () => {
     document.body.removeChild(target);
   });
 });
+
+// Rivet (FIX2-CDK, review cdk-a-2#8): without an arrow the anchor point is the trigger's aligned edge;
+// `bottom` mirrors `right` (React Aria only handles `right`, so `left bottom` / `right bottom` anchored at the top edge).
+describe("triggerAnchorPoint without an arrow", () => {
+  const anchor = (placement: Placement) => {
+    const container = createElementWithDimensions(containerDimensions);
+    container.style.position = "relative";
+    const target = createElementWithDimensions({ top: 250, left: 250, width: 100, height: 100 });
+    const overlay = createElementWithDimensions(overlaySize as Box);
+    const parent = document.createElement("div");
+    parent.append(container, target);
+    container.appendChild(overlay);
+    const boundary = createElementWithDimensions(boundaryDimensions);
+    parent.appendChild(boundary);
+    document.documentElement.appendChild(parent);
+    const result = calculatePosition({
+      placement,
+      overlayNode: overlay,
+      targetNode: target,
+      scrollNode: overlay,
+      padding: 0,
+      shouldFlip: false,
+      boundaryElement: boundary,
+      offset: 0,
+      crossOffset: 0,
+      arrowSize: 0,
+      arrowBoundaryOffset: 0,
+    });
+    parent.remove();
+    return result.triggerAnchorPoint;
+  };
+  test("right top / right bottom / bottom right", () => {
+    // right top: overlay top 250 → the trigger's top edge is y 0.
+    assert.equal(anchor("right top").y, 0);
+    // right bottom: overlay top 150 → the trigger's bottom edge (350) is y 200.
+    assert.equal(anchor("right bottom").y, 200);
+    // bottom right: overlay left 150 → the trigger's right edge (350) is x 200.
+    assert.equal(anchor("bottom right").x, 200);
+  });
+});

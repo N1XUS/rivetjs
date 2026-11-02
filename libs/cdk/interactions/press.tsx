@@ -133,6 +133,8 @@ interface PressState {
   /** Browser-only: cleanup functions and global listeners of the current press. */
   disposables: (() => void)[];
   globals: (() => void)[];
+  /** The document `keyup` listener of a keyboard press is bound (one per press, not one per repeated keydown). */
+  keyupBound: boolean;
   /** `timeStamp` of the last click seen (a replayed cold keydown older than it starts nothing). */
   lastClick: number;
 }
@@ -181,6 +183,7 @@ export function createPressState(): PressState {
     metaKeyEvents: null,
     disposables: [],
     globals: [],
+    keyupBound: false,
     lastClick: -1,
   };
 }
@@ -248,7 +251,9 @@ function addGlobal(press: Press, target: EventTarget, type: string, listener: (e
 }
 
 function removeAllGlobals(press: Press): void {
-  for (const remove of pressState(press).globals.splice(0)) remove();
+  const state = pressState(press);
+  state.keyupBound = false;
+  for (const remove of state.globals.splice(0)) remove();
 }
 
 function triggerPressStart(press: Press, originalEvent: EventBase, pointerType: PointerType): boolean {
@@ -375,21 +380,25 @@ export function pressKeyDown(press: Press, e: KeyboardEvent): void {
         );
     }
     // Focus may move before keyup: listen on the document, capturing (before a child's stopPropagation).
-    const originalTarget = currentTarget;
-    const pressUp = (event: KeyboardEvent) => {
-      if (isValidKeyboardEvent(event, originalTarget) && !event.repeat && nodeContains(originalTarget, getEventTarget(event)) && state.target)
-        triggerPressUp(press, createEvent(state.target, event), "keyboard");
-    };
-    addGlobal(
-      press,
-      getOwnerDocument(currentTarget),
-      "keyup",
-      (event: KeyboardEvent) => {
-        pressUp(event);
-        onKeyUp(press, event);
-      },
-      true,
-    );
+    // Once per press: a held key repeats keydown at ~30 Hz (React Aria adds one per keydown).
+    if (!state.keyupBound) {
+      state.keyupBound = true;
+      const originalTarget = currentTarget;
+      const pressUp = (event: KeyboardEvent) => {
+        if (isValidKeyboardEvent(event, originalTarget) && !event.repeat && nodeContains(originalTarget, getEventTarget(event)) && state.target)
+          triggerPressUp(press, createEvent(state.target, event), "keyboard");
+      };
+      addGlobal(
+        press,
+        getOwnerDocument(currentTarget),
+        "keyup",
+        (event: KeyboardEvent) => {
+          pressUp(event);
+          onKeyUp(press, event);
+        },
+        true,
+      );
+    }
     if (shouldStopPropagation) e.stopPropagation();
     // macOS does not fire keyup for keys released while Meta is held: remember them and release them
     // when Meta goes up.
