@@ -68,3 +68,31 @@ test("shorthand SSR (T21): InputOTP without children = one Group with a Slot per
     ),
   );
 });
+
+test("SSR: the default keyboard follows the pattern; an explicit inputMode / autoCapitalize wins", async () => {
+  const { REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS } = await import("../src/components/input-otp/index.ts");
+  const input = async (props: Record<string, unknown>) => {
+    const html = await renderToString(() => (
+      <InputOTP maxLength={4} {...props}>
+        <InputOTP.Group>
+          <InputOTP.Slot index={0} />
+        </InputOTP.Group>
+      </InputOTP>
+    ));
+    return /<input[^>]*>/.exec(html)![0];
+  };
+  const none = await input({});
+  assert.match(none, /inputmode="numeric"/);
+  assert.doesNotMatch(none, /autocapitalize|autocorrect/);
+  assert.match(await input({ pattern: REGEXP_ONLY_DIGITS }), /inputmode="numeric"/);
+  const chars = await input({ pattern: REGEXP_ONLY_CHARS });
+  assert.match(chars, /inputmode="text"/);
+  assert.match(chars, /autocapitalize="off"/);
+  assert.match(chars, /autocorrect="off"/);
+  assert.match(await input({ pattern: REGEXP_ONLY_DIGITS_AND_CHARS }), /inputmode="text"/);
+  assert.match(await input({ pattern: "^[a-z]{4}$" }), /inputmode="text"/);
+  const explicit = await input({ pattern: REGEXP_ONLY_CHARS, inputMode: "email", autoCapitalize: "characters" });
+  assert.match(explicit, /inputmode="email"/);
+  assert.match(explicit, /autocapitalize="characters"/);
+  assert.match(await input({ pattern: REGEXP_ONLY_DIGITS, inputMode: "tel" }), /inputmode="tel"/);
+});

@@ -89,6 +89,22 @@ test("vendor: input attributes (autocomplete, inputmode, maxlength, spellcheck, 
   r.unmount();
 });
 
+test("vendor: a letter pattern defaults to a text keyboard without auto-capitalisation; explicit props win", () => {
+  for (const [props, mode, cap, corr] of [
+    [{}, "numeric", null, null],
+    [{ pattern: REGEXP_ONLY_CHARS }, "text", "off", "off"],
+    [{ pattern: REGEXP_ONLY_DIGITS_AND_CHARS }, "text", "off", "off"],
+    [{ pattern: REGEXP_ONLY_CHARS, inputMode: "email", autoCapitalize: "words", autoCorrect: "on" }, "email", "words", "on"],
+  ] as const) {
+    const r = renderOtp(props);
+    const el = input(r.container);
+    assert.equal(el.getAttribute("inputmode"), mode, JSON.stringify(props));
+    assert.equal(el.getAttribute("autocapitalize"), cap, JSON.stringify(props));
+    assert.equal(el.getAttribute("autocorrect"), corr, JSON.stringify(props));
+    r.unmount();
+  }
+});
+
 test("upstream: calls onChange while typing digits", async () => {
   const calls: string[] = [];
   const r = renderOtp({ onChange: (v: string) => calls.push(v) });

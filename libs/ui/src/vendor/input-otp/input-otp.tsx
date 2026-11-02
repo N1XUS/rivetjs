@@ -6,7 +6,7 @@
 // Upstream behaviour kept 1:1:
 // - one transparent `<input data-input-otp>` (absolute, `letter-spacing: -.5em`, `font-size: var(--root-height)`) over the
 //   container `div[data-input-otp-container][translate=no]` (`position: relative`, `pointer-events: none`); `autocomplete`
-//   `one-time-code` default, `inputmode` `numeric` default, `spellcheck` false default, `pattern` = the regexp source,
+//   `one-time-code` default, `inputmode` default (Rivet: `numeric`, or `text` when `pattern` accepts letters), `spellcheck` false default, `pattern` = the regexp source,
 //   `aria-placeholder` = `placeholder`, `data-input-otp-placeholder-shown` / `-mss` / `-mse` mirrors;
 // - typing: value sliced to `maxLength`, rejected (input keeps the old value) when it does not match `pattern`; a shorter value
 //   dispatches `selectionchange` on the document (cut / delete fire none); `onComplete(value)` when the value grows to
@@ -23,6 +23,8 @@
 // - `render(renderProps)` or `OTPInputContext` children;
 //   render props `{ slots: { char, placeholderChar, isActive, hasFakeCaret }[], isFocused, isHovering }`.
 // Rivet:
+// - default `inputMode` follows `pattern`: letters accepted (tested on `a` / `A` samples) → `text` + `autoCapitalize` /
+//   `autoCorrect` `off` (upstream: always `numeric`, a digits keyboard for `REGEXP_ONLY_CHARS`); explicit props win.
 // - `className` → `class` (the input, as upstream `className`), `containerClassName` → `containerClass`; `ref` → the input
 //   (upstream `useImperativeHandle`), callback or `signal` ref (runtime `bindRef`).
 // - `value`: a string (live prop `value={v()}`), an accessor, or a two-way `Signal<string>` (set on change, cdk convention);
@@ -75,6 +77,15 @@ export type OTPInputBaseProps = Omit<InputAttributes, "value" | "onChange" | "ma
   onChange?: (newValue: string) => unknown;
   maxLength: number;
   textAlign?: "left" | "center" | "right";
+  /**
+   * Virtual keyboard. Default: `"numeric"` without a `pattern` or with a digits-only one (`REGEXP_ONLY_DIGITS`), `"text"` when
+   * the pattern accepts letters (`REGEXP_ONLY_CHARS`, `REGEXP_ONLY_DIGITS_AND_CHARS`). An explicit value always wins.
+   */
+  inputMode?: InputAttributes["inputMode"];
+  /** Default `"off"` when the pattern accepts letters (iOS would capitalise the first one), else unset. */
+  autoCapitalize?: InputAttributes["autoCapitalize"];
+  /** Safari `autocorrect` (not in the JSX attribute types). Default `"off"` when the pattern accepts letters, else unset. */
+  autoCorrect?: "on" | "off";
   onComplete?: (...args: any[]) => unknown;
   pushPasswordManagerStrategy?: "increase-width" | "none" | "experimental-no-flickering";
   pasteTransformer?: (pasted: string) => string;
@@ -204,6 +215,8 @@ export const OTPInput = (props: OTPInputProps): JSX.Element => {
     "pattern",
     "placeholder",
     "inputMode",
+    "autoCapitalize",
+    "autoCorrect",
     "onComplete",
     "pushPasswordManagerStrategy",
     "pasteTransformer",
@@ -239,6 +252,16 @@ export const OTPInput = (props: OTPInputProps): JSX.Element => {
   const regexp = computed(() => {
     const pattern = local.pattern as string | RegExp | undefined;
     return pattern ? (typeof pattern === "string" ? new RegExp(pattern) : pattern) : null;
+  });
+  /** Rivet: the pattern accepts letters (`REGEXP_ONLY_CHARS`, …) → a text keyboard, no auto-capitalisation / correction. */
+  const acceptsLetters = computed(() => {
+    const re = regexp();
+    if (!re) return false;
+    const n = Math.max(1, maxLength() || 1);
+    return ["a", "A", "a".repeat(n), "A".repeat(n)].some((sample) => {
+      re.lastIndex = 0;
+      return re.test(sample);
+    });
   });
 
   /** Elements (upstream `inputRef` / `containerRef`). */
@@ -474,7 +497,9 @@ export const OTPInput = (props: OTPInputProps): JSX.Element => {
             data-input-otp-placeholder-shown={value().length === 0 || undefined}
             data-input-otp-mss={mirrorSelectionStart() ?? undefined}
             data-input-otp-mse={mirrorSelectionEnd() ?? undefined}
-            inputMode={local.inputMode ?? "numeric"}
+            inputMode={local.inputMode ?? (acceptsLetters() ? "text" : "numeric")}
+            autoCapitalize={local.autoCapitalize ?? (acceptsLetters() ? "off" : undefined)}
+            {...({ autocorrect: local.autoCorrect ?? (acceptsLetters() ? "off" : undefined) } as {})}
             pattern={regexp()?.source}
             aria-placeholder={local.placeholder}
             style={{

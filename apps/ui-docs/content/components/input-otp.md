@@ -210,13 +210,13 @@ InputOTP uses Rivet’s in-tree signals implementation of input-otp, with styled
 
 #### Input Props
 
-| Prop               | Type                                                                        | Default     | Description                                                        |
-| ------------------ | --------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------ |
-| `pattern`          | `string`                                                                    | -           | Regex pattern for allowed characters (e.g., `REGEXP_ONLY_DIGITS`). |
-| `textAlign`        | `'left' \| 'center' \| 'right'`                                             | `'left'`    | Text alignment within slots.                                       |
-| `inputMode`        | `'numeric' \| 'text' \| 'decimal' \| 'tel' \| 'search' \| 'email' \| 'url'` | `'numeric'` | Virtual keyboard type on mobile devices.                           |
-| `placeholder`      | `string`                                                                    | -           | Placeholder text for empty slots.                                  |
-| `pasteTransformer` | `(text: string) => string`                                                  | -           | Transform pasted text (e.g., remove hyphens).                      |
+| Prop               | Type                                                                        | Default                                              | Description                                                                                                      |
+| ------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `pattern`          | `string`                                                                    | -                                                    | Regex pattern for allowed characters (e.g., `REGEXP_ONLY_DIGITS`).                                               |
+| `textAlign`        | `'left' \| 'center' \| 'right'`                                             | `'left'`                                             | Text alignment within slots.                                                                                     |
+| `inputMode`        | `'numeric' \| 'text' \| 'decimal' \| 'tel' \| 'search' \| 'email' \| 'url'` | `'numeric'`, `'text'` when `pattern` accepts letters | Virtual keyboard type on mobile devices; letter patterns also default `autoCapitalize` / `autoCorrect` to `off`. |
+| `placeholder`      | `string`                                                                    | -                                                    | Placeholder text for empty slots.                                                                                |
+| `pasteTransformer` | `(text: string) => string`                                                  | -                                                    | Transform pasted text (e.g., remove hyphens).                                                                    |
 
 #### Form Props
 
@@ -266,7 +266,7 @@ import { REGEXP_ONLY_CHARS, REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS } f
 
 ## Accessibility
 
-A single native `<input>` holds the value (`inputmode="numeric"` by default, `maxlength`, `pattern`), so screen readers, autofill and paste see one text field; the slots are presentational. Label it with `aria-label` / `aria-labelledby` or a visible `Label`.
+A single native `<input>` holds the value (`inputmode="numeric"` by default, `"text"` when the pattern accepts letters, `maxlength`, `pattern`), so screen readers, autofill and paste see one text field; the slots are presentational. Label it with `aria-label` / `aria-labelledby` or a visible `Label`.
 
 ## Related Components
 
