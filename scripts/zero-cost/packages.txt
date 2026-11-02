@@ -1,5 +1,5 @@
 @rivetjs/router 965ee4bafd7e 3340
-@rivetjs/router/server f91c40be1eee 32232
+@rivetjs/router/server d0ec6ad5b938 32354
 @rivetjs/router/route-cache f49c03f3006f 19228
 @rivetjs/router/server-only 56e1b0c10087 9
 @rivetjs/router/env 13d077a34a5e 1062
@@ -18,7 +18,7 @@
 @rivetjs/router/link [server] d4342bebcbab 1945
 @rivetjs/router/node 8b9557593410 30003
 @rivetjs/router/fetch 91499616f785 2924
-@rivetjs/router/static b69b2356bc4b 14953
+@rivetjs/router/static 84640145fb53 15032
 @rivetjs/router/csr bc5dafbcc9ff 407
 @rivetjs/router/vercel f52022a631a1 25524
 @rivetjs/router/vercel-edge 04626adac103 3028
