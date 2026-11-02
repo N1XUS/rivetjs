@@ -64,5 +64,8 @@ test("prompt input wide: one-row toolbar, description beside the content", async
   const m = await measure(1280);
   const centres = m.parts.map((p) => (p.top + p.bottom) / 2);
   assert.ok(Math.max(...centres) - Math.min(...centres) <= 1, `toolbar rows: ${centres.join(", ")}`);
-  assert.ok(Math.abs((m.description.top + m.description.bottom) / 2 - (m.content.top + m.content.bottom) / 2) <= 2, `description beside content ${JSON.stringify([m.content, m.description, m.item])}`);
+  assert.ok(
+    Math.abs((m.description.top + m.description.bottom) / 2 - (m.content.top + m.content.bottom) / 2) <= 2,
+    `description beside content ${JSON.stringify([m.content, m.description, m.item])}`,
+  );
 });

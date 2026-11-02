@@ -57,6 +57,9 @@
   "/disclosure light": [
     "aria-valid-attr-value"
   ],
+  "/field-text dark": [
+    "color-contrast"
+  ],
   "/forms dark": [
     "aria-valid-attr-value",
     "color-contrast",

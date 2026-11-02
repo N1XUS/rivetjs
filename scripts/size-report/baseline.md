@@ -123,6 +123,6 @@ CSS before first paint = the stylesheets the route's HTML links (`minified / bro
 | solid-stable-interactive | 53.91 k / 15.88 k |
 | rivet-compiled | 37.41 k / 12.69 k |
 | rivet-for | 39.02 k / 13.21 k |
-| rivet-router | 33.06 k / 12.19 k |
+| rivet-router | 33.14 k / 12.18 k |
 | react-static | 243.40 k / 42.24 k |
 | react-interactive | 244.07 k / 42.43 k |

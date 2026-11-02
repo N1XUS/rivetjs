@@ -27,7 +27,7 @@ rivet-compiled.mjs e3d993861c11
 rivet-for.mjs e7649ddd8184
 rivet-router-bunserve.mjs 3326bc609d97
 rivet-router-uws.mjs f0d229bbf420
-rivet-router.mjs 9aa878290eba
+rivet-router.mjs 3383d5cba9c8
 rivet-router/client/.vite/rivet-resume.json 286ab9885a60
 rivet-router/client/assets/_layout-CATbUbJ1.js 8b1ebf81c4c4
 rivet-router/client/assets/_layout-CSbqJcYS.js 89551a7defbb
