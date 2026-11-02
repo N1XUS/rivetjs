@@ -106,15 +106,15 @@ export function nativeSites(input: NativeInput): Map<string, string[]> {
   const id = (file: string, name: string) => file + "?" + name;
   const nameOf = (cid: string) => cid.slice(cid.lastIndexOf("?") + 1);
   const fileOf = (cid: string) => cid.slice(0, cid.lastIndexOf("?"));
-  // Per caller: its calls by index → resolved callee (inverted `sites`).
-  const callee = new Map<string, Map<number, string>>();
+  // Per caller: its calls by index → resolved callee and its site record (inverted `sites`; compiler#5: no per-call scan
+  // of the callee's sites, `Icon` / `Text` have thousands).
+  const callee = new Map<string, Map<number, { to: string; site: NativeSite }>>();
   for (const [to, list] of sites)
     for (const s of list) {
       let m = callee.get(s.caller);
       if (!m) callee.set(s.caller, (m = new Map()));
-      m.set(s.index, to);
+      if (m.get(s.index)?.to !== to) m.set(s.index, { to, site: s });
     }
-  const siteOf = (caller: string, index: number, to: string) => sites.get(to)?.find((s) => s.caller === caller && s.index === index);
   const trace = process.env.RIVET_NATIVE_TRACE ? (...a: unknown[]) => console.error("[native]", ...a) : null;
   // A non-part component inside a native root: this instance is no boundary and reads no context — no change source of
   // its own (`source` / `listens`), static inputs at this call (data, or values a caller that is not live computes: a
@@ -166,8 +166,9 @@ export function nativeSites(input: NativeInput): Map<string, string[]> {
         const resolved = callee.get(site.caller);
         calls.forEach((call, index) => {
           if (!ok || index === site.index) return;
-          const to = resolved?.get(index);
-          const s = to ? siteOf(site.caller, index, to) : undefined;
+          const hit = resolved?.get(index);
+          const to = hit?.to;
+          const s = hit?.site;
           // Enclosed by a root of this family (`around` resolves; an unresolved tag never names the root).
           if (!s ? !call.around.some((tag) => tag === own.tag) : !s.around.includes(rootId)) return;
           if (!to) {
