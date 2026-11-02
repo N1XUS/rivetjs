@@ -3,7 +3,8 @@
 // and records what the page actually ships; also records the ssr-bench lane server bundles.
 //
 //   npm run size-report                   build + measure, print the table, write .artifacts/size-report/
-//   npm run size-report -- --check        also compare with scripts/size-report/baseline.json (exit 1 on growth)
+//   npm run size-report -- --check        also compare with scripts/size-report/baseline.json (exit 1 on growth, or on a
+//                                         route that newly answers non-200 / fails its interaction / throws page errors)
 //   npm run size-report -- --update       rewrite scripts/size-report/baseline.{json,md}
 //   npm run size-report -- --apps=playground,example:counter --no-lanes   (cdk docs examples: cdk-example:<id>)
 //   --apps=... --update                   update only the selected apps, preserving other apps and lanes
@@ -20,7 +21,7 @@ import { dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { brotliCompressSync, constants } from "node:zlib";
 import { spawnSync } from "node:child_process";
-import { baselineAfterUpdate } from "./size-report/baseline.mjs";
+import { baselineAfterUpdate, broken, growth } from "./size-report/baseline.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const work = resolve(root, ".artifacts/size-report");
@@ -357,19 +358,6 @@ function table(report) {
   return lines.join("\n") + "\n";
 }
 
-/** Numeric leaves that grew (current > baseline + tolerance). */
-function growth(base, now, tolerance, at = "") {
-  const out = [];
-  for (const [key, value] of Object.entries(now ?? {})) {
-    const path = at ? at + "." + key : key;
-    const old = base?.[key];
-    if (typeof value === "number" && typeof old === "number" && !/status|Requests$/.test(key) && value > old + tolerance) out.push(`${path}: ${old} -> ${value} (+${value - old})`);
-    else if (typeof value === "number" && typeof old === "number" && /Requests$/.test(key) && value > old) out.push(`${path}: ${old} -> ${value}`);
-    else if (value && typeof value === "object" && !Array.isArray(value)) out.push(...growth(old, value, tolerance, path));
-  }
-  return out;
-}
-
 const only = typeof args.apps === "string" ? args.apps.split(",") : undefined;
 const report = { apps: {} };
 await mkdir(resolve(work, "html"), { recursive: true });
@@ -395,7 +383,10 @@ if (args.update) {
 }
 if (args.check) {
   const base = JSON.parse(await readFile(resolve(baselineDir, "baseline.json"), "utf8"));
+  const failed = broken(base, report);
+  if (failed.length) console.error("size-report: routes broke vs scripts/size-report/baseline.json (no numbers to compare):\n  " + failed.join("\n  "));
   const grew = growth(base, report, Number(args.tolerance ?? 0));
+  if (failed.length && !grew.length) process.exit(1);
   if (grew.length) {
     console.error("size-report: grew vs scripts/size-report/baseline.json:\n  " + grew.join("\n  "));
     // A different eager request set names the files (a slow runner can prefetch one more chunk before the measurement).

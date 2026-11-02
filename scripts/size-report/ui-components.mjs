@@ -78,12 +78,19 @@ async function bundleShares(names) {
     const file = `${ui}/styles/components/${name}.css`;
     if (existsSync(file)) for (const b of blocks(file)) if (!owner.has(b)) owner.set(b, name);
   }
-  const byBlockLength = [...owner.keys()].sort((a, b) => b.length - a.length);
+  // A rule belongs to the longest block its first class equals or extends (`block`, `block__elem`, `block--mod`): the
+  // candidate blocks are that class's prefixes ending before a `__` / `--`, looked up longest first in `owner`.
+  const blockOf = (first) => {
+    if (owner.has(first)) return first;
+    for (let end = first.length; (end = Math.max(first.lastIndexOf("__", end - 1), first.lastIndexOf("--", end - 1))) > 0;)
+      if (owner.has(first.slice(0, end))) return first.slice(0, end);
+    return undefined;
+  };
   const share = {};
   postcss.parse(css).walkRules((rule) => {
     const first = /\.([a-z][\w-]*)/.exec(rule.selector)?.[1];
     if (!first) return;
-    const block = byBlockLength.find((b) => first === b || first.startsWith(b + "__") || first.startsWith(b + "--"));
+    const block = blockOf(first);
     if (!block) return;
     const name = owner.get(block);
     (share[name] ??= []).push(rule.toString());

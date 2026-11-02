@@ -112,7 +112,6 @@ export function assertFrameCeilings(measured, ceilings, { tolerance = 0 } = {}) 
   return better;
 }
 
-/** Distance to a stated target (ZERO acceptance): `{ id: { jsGz: limit } }` → rows over target (informational). */
 /**
  * Targets that gate (2026-10-26 rule: a ZERO target becomes a gate once met): the fields of `targets` the committed
  * baseline (`frames.json`) already meets. A frame or field without a baseline value stays informational.
@@ -133,6 +132,7 @@ export function targetGaps(measured, targets, baseline) {
   return { met, gating, open };
 }
 
+/** Distance to a stated target (ZERO acceptance): `{ id: { jsGz: limit } }` → rows over target (informational). */
 export function overTargets(measured, targets) {
   const rows = [];
   for (const [id, target] of Object.entries(targets))
