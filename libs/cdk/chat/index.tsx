@@ -239,9 +239,8 @@ const reducedMotion = (): boolean => typeof matchMedia === "function" && matchMe
  * pinned box included) plus the last child's bottom margin and `el`'s bottom padding / border. Not `scrollHeight`: with
  * `overflow: clip` the element is no scroll container and `scrollHeight` stops at the pinned height.
  */
-function contentHeight(el: HTMLElement): number {
+function contentHeight(el: HTMLElement, range: Range): number {
   const top = el.getBoundingClientRect().top;
-  const range = el.ownerDocument.createRange();
   range.selectNodeContents(el);
   const style = getComputedStyle(el);
   const last = el.lastElementChild;
@@ -261,6 +260,8 @@ export function followHeight(el: HTMLElement, active: () => boolean, options: Fo
   const style = el.style;
   const maxSpeed = options.maxSpeed ?? 240;
   const smoothing = options.smoothing ?? 90;
+  // One Range per follow: re-selected each measure (the contents change), not allocated per frame.
+  const range = el.ownerDocument.createRange();
   let frame = 0;
   let on = false;
   let pinned = false;
@@ -275,7 +276,7 @@ export function followHeight(el: HTMLElement, active: () => boolean, options: Fo
     frame = 0;
     const dt = last ? Math.min(now - last, 50) : 1000 / 60;
     last = now;
-    const gap = contentHeight(el) - height;
+    const gap = contentHeight(el, range) - height;
     if (Math.abs(gap) < 0.5) {
       height += gap;
       style.height = `${height}px`;

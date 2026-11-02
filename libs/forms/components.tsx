@@ -18,7 +18,8 @@ export function FieldError<T>(props: { of: Form<T>; name: FieldPath<T>; format?:
   );
 }
 
-const empty = (form: Form<any>) => fieldIssues(form).length === 0 && formIssues(form).length === 0;
+// Form-level issues first: one signal read, skips the field walk whenever the form itself has an issue.
+const empty = (form: Form<any>) => formIssues(form).length === 0 && fieldIssues(form).length === 0;
 
 /**
  * Every shown issue as links to its field (`role="alert"`, focusable), plus form-level issues.
