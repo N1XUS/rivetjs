@@ -237,6 +237,8 @@ export function nodeSelectionManager(state: ListState, key: Key, isDisabled?: bo
   let maps = nodeManagers.get(selectionState);
   if (maps === undefined) nodeManagers.set(selectionState, (maps = [new Map(), new Map()]));
   const byKey = maps[isDisabled ? 1 : 0];
+  // A memo only: a long-lived list whose keys keep changing (a feed) must not grow it forever.
+  if (byKey.size > 4096) byKey.clear();
   let manager = byKey.get(key);
   if (manager === undefined)
     byKey.set(key, (manager = new SelectionManager(new OneNodeCollection(key, !!isDisabled) as unknown as Collection<Node<unknown>>, selectionState)));
