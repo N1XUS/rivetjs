@@ -240,3 +240,20 @@ test("prompt-input tokens: Enter in the same task as its input picks the first o
   assert.deepEqual(submitted, []);
   r.unmount();
 });
+
+test("prompt-input tokens: keys during IME composition next to a token stay native", async () => {
+  const { r, textarea } = setup();
+  focus(textarea);
+  type(textarea, "Hi @a");
+  await flush();
+  key(textarea, "Enter");
+  await flush();
+  assert.equal(textarea.value, "Hi @ana ");
+  textarea.setSelectionRange(7, 7);
+  for (const k of ["Backspace", "ArrowLeft"]) {
+    assert.equal(key(textarea, k, { isComposing: true }).defaultPrevented, false, `${k} while composing`);
+    assert.equal(key(textarea, k, { keyCode: 229 } as KeyboardEventInit).defaultPrevented, false, `${k} with keyCode 229`);
+  }
+  assert.equal(textarea.value, "Hi @ana ");
+  r.unmount();
+});

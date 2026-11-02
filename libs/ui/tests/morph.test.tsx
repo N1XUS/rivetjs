@@ -115,3 +115,25 @@ test("morph: useMorph actions + controlled Signal", async () => {
   assert.equal(q("#m3")!.hasAttribute("data-open"), false);
   r.unmount();
 });
+
+test("morph: a user onClick on CollapsedContent runs and the click still opens; managed panel attributes win", async () => {
+  const clicks: string[] = [];
+  const r = render(() => (
+    <Morph id="m-oc">
+      <Morph.CollapsedContent id="m-oc-c" onClick={() => clicks.push("user")}>
+        Bag
+      </Morph.CollapsedContent>
+      <Morph.ExpandedContent aria-label="Summary" role="region" tabIndex={3}>
+        Panel
+      </Morph.ExpandedContent>
+    </Morph>
+  ));
+  await flush();
+  assert.equal(q("#m-oc-panel")!.getAttribute("role"), "dialog");
+  assert.equal(q("#m-oc-panel")!.getAttribute("tabindex"), "-1");
+  q("#m-oc-c")!.click();
+  await flush();
+  assert.deepEqual(clicks, ["user"]);
+  assert.equal(q("#m-oc")!.hasAttribute("data-open"), true, "the opener still runs");
+  r.unmount();
+});

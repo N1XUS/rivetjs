@@ -208,3 +208,15 @@ test("breadcrumbs: items without a render function (links, disabled entry, curre
   assert.equal(r.container.querySelectorAll("[data-slot=breadcrumbs-separator]").length, 2);
   r.unmount();
 });
+
+test("breadcrumbs: an id-less entry never takes the key of an explicit id equal to its index", () => {
+  const r = render(() => <Breadcrumbs items={[{ label: "Home", href: "/" }, { id: 0, label: "Docs", href: "/docs" }, { label: "Here" }]} />);
+  const items = [...r.container.querySelectorAll("li")] as HTMLElement[];
+  assert.deepEqual(
+    items.map((i) => i.textContent),
+    ["Home", "Docs", "Here"],
+    "three distinct items",
+  );
+  assert.equal(items[2]!.getAttribute("data-current"), "true");
+  r.unmount();
+});

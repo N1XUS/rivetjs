@@ -67,7 +67,7 @@ A function child replaces an item's link with your own content: here an [InlineS
 
 ### Items
 
-Rivet addition: `items` without a render function render one `Breadcrumbs.Item` per `{ label, href?, id?, isDisabled? }` entry (key = `id`, else the entry's index: stable across label edits, not across reorders, so give reorderable trails an `id`; `items` is live); the last entry is the current page. With a render function, `items` work as in the cdk (data-driven collection).
+Rivet addition: `items` without a render function render one `Breadcrumbs.Item` per `{ label, href?, id?, isDisabled? }` entry (key = `id`, else the entry's index, `#` + index when an explicit `id` already uses that index: stable across label edits, not across reorders, so give reorderable trails an `id`; `items` is live); the last entry is the current page. With a render function, `items` work as in the cdk (data-driven collection).
 
 ::example{id=breadcrumbs-items}
 

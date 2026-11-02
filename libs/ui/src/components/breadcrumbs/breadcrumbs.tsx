@@ -99,9 +99,21 @@ interface BreadcrumbsItemData {
 }
 
 /** Rivet: `items` without a render function — an entry without `id` is keyed by its index (stable across label / href edits;
- *  a reorder of id-less entries moves keys with positions: give `id` for reorderable lists). */
-const keyedItems = (items: Iterable<BreadcrumbsItemData> | undefined): BreadcrumbsItemData[] | undefined =>
-  items === undefined ? undefined : Array.from(items, (item, index) => (item.id == null ? { ...item, id: index } : item));
+ *  a reorder of id-less entries moves keys with positions: give `id` for reorderable lists). An index some entry already
+ *  uses as its explicit `id` becomes `#<index>` (then `##<index>`, …) so keys stay unique. */
+const keyedItems = (items: Iterable<BreadcrumbsItemData> | undefined): BreadcrumbsItemData[] | undefined => {
+  if (items === undefined) return undefined;
+  const list = Array.from(items);
+  const taken = new Set<string>();
+  for (const item of list) if (item.id != null) taken.add(String(item.id));
+  return list.map((item, index) => {
+    if (item.id != null) return item;
+    let id: string | number = index;
+    while (taken.has(String(id))) id = `#${id}`;
+    taken.add(String(id));
+    return { ...item, id };
+  });
+};
 
 const BreadcrumbsRoot = <T extends object = object>(props: BreadcrumbsRootProps<T>): JSX.Element => {
   const [local, rest] = splitLive(props as BreadcrumbsRootProps<object>, ["children", "class", "separator", "renderOverflow"]);

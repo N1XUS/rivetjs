@@ -134,21 +134,23 @@ interface MorphCollapsedContentProps extends Omit<JSX.IntrinsicElements["div"], 
 }
 
 const MorphCollapsedContent = (props: MorphCollapsedContentProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class"]);
+  const [local, rest] = splitLive(props, ["children", "class", "onClick"]);
   const context = useContext(MorphContext);
   const state = context.state;
   const motion = context.motion;
   const initiallyOpen = state ? untrack(state.open.value) === true : false;
   return (
+    // `rest` first: the managed attributes and the opener win; a user `onClick` runs before the opener.
     <div
+      {...rest}
       class={composeSlotClassName(slotsOf(context)?.collapsed, local.class)}
       data-slot="morph-collapsed"
       data-morph-collapsed=""
       inert={initiallyOpen ? true : undefined}
-      onClick={(e) => {
+      onClick={(e: MouseEvent) => {
+        (local.onClick as ((e: MouseEvent) => void) | undefined)?.(e);
         if (state) openMorph(state, e.currentTarget as Element, motion);
       }}
-      {...rest}
     >
       {local.children}
     </div>
@@ -176,14 +178,14 @@ const MorphExpandedContent = (props: MorphExpandedContentProps): JSX.Element => 
   return (
     <div class={composeSlotClassName(slots?.surface, local.surfaceClass)} data-slot="morph-surface" data-morph-surface="">
       <div
-        id={context.id ? `${context.id}-panel` : undefined}
+        {...rest}
+        id={context.id ? `${context.id}-panel` : (rest as { id?: string }).id}
         class={composeSlotClassName(slots?.expanded, local.class)}
         data-slot="morph-expanded"
         data-morph-expanded=""
         role="dialog"
         tabIndex={-1}
         inert={initiallyOpen ? undefined : true}
-        {...rest}
       >
         {local.children}
       </div>

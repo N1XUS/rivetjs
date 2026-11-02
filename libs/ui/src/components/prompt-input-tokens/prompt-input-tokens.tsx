@@ -273,6 +273,8 @@ function usePromptInputTokens(options: PromptInputTokensOptions = {}): PromptInp
       keyDown: (el, event) => {
         input = el;
         syncFocus(el);
+        // IME composition owns every key (Enter commits, arrows pick candidates, Backspace edits the composition).
+        if (event.isComposing || event.keyCode === 229) return false;
         const open = isOpen();
         const key = event.key;
         if (open && (key === "ArrowDown" || key === "ArrowUp") && !event.altKey) {
@@ -280,7 +282,7 @@ function usePromptInputTokens(options: PromptInputTokensOptions = {}): PromptInp
           move(key === "ArrowDown" ? 1 : -1);
           return true;
         }
-        if (open && key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+        if (open && key === "Enter" && !event.shiftKey) {
           // The highlight settles in a microtask: a key replayed right after its input (cold page) sees the first option.
           const items = options_();
           const option = items.find((item) => item.id === activeId()) ?? items[0];

@@ -313,16 +313,18 @@ interface ChatSourcesFaviconsProps {
 
 const ChatSourcesFavicons = (props: ChatSourcesFaviconsProps): JSX.Element => {
   const [local] = splitLive(props, ["sources", "max", "class"]);
-  const shown = local.sources.slice(0, local.max ?? 3);
+  // Read in the binding (not once in the body): a streamed `sources` list keeps the stack current.
   return (
     <span class={composeSlotClassName(SLOTS.favicons, local.class)} aria-hidden="true" data-slot="chat-sources-favicons">
-      {shown.map((source) =>
-        source.faviconUrl ? (
-          <img class={SLOTS.favicon()} src={source.faviconUrl} alt="" width={16} height={16} loading="lazy" />
-        ) : (
-          <span class={`${SLOTS.favicon()} ${SLOTS.iconFallback()}`}>{initialOf(source.title ?? domainOf(source.href))}</span>
-        ),
-      )}
+      {local.sources
+        .slice(0, local.max ?? 3)
+        .map((source) =>
+          source.faviconUrl ? (
+            <img class={SLOTS.favicon()} src={source.faviconUrl} alt="" width={16} height={16} loading="lazy" />
+          ) : (
+            <span class={`${SLOTS.favicon()} ${SLOTS.iconFallback()}`}>{initialOf(source.title ?? domainOf(source.href))}</span>
+          ),
+        )}
     </span>
   );
 };

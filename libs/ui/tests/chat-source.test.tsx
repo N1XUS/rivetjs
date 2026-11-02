@@ -98,3 +98,18 @@ test("chat-source: two sources in one paragraph each preview their own source (U
   assert.match(texts[0]!, /css-anchor-position-1/);
   r.unmount();
 });
+
+test("chat-sources favicons: follow a live sources list; initials are whole characters", async () => {
+  const { signal } = await import("@rivetjs/reactivity");
+  const sources = signal<{ href?: string; title?: string }[]>([{ title: "Alpha" }]);
+  const { container, unmount } = render(() => <ChatSources.Favicons sources={sources()} max={3} />);
+  await flush();
+  const count = () => container.querySelectorAll("[data-slot=chat-sources-favicons] > *").length;
+  assert.equal(count(), 1);
+  sources.set([{ title: "Alpha" }, { title: "𝐁eta" }, { title: " gamma", href: "https://x.test" }, { title: "Delta" }]);
+  await flush();
+  assert.equal(count(), 3, "a streamed source shows up (max 3)");
+  const initials = [...container.querySelectorAll("[data-slot=chat-sources-favicons] > *")].map((n) => n.textContent);
+  assert.deepEqual(initials, ["A", "𝐁", "G"], "no lone surrogate, no blank initial");
+  unmount();
+});
