@@ -231,6 +231,21 @@ test("release.ts --publish refuses to run outside GitHub Actions", () => {
   assert.match(run.stderr, /--publish runs only in \.github\/workflows\/release\.yml/);
 });
 
+test("release.ts flag guards: --publish needs --apply, --resume-from needs --publish, --registry excludes --publish", () => {
+  const release = (...args: string[]) =>
+    spawnSync(process.execPath, [join(ROOT, "scripts/release/release.ts"), "minor", ...args], { cwd: ROOT, encoding: "utf8" });
+  const refused = (args: string[], message: RegExp) => {
+    const run = release(...args);
+    assert.equal(run.status, 1, args.join(" "));
+    assert.match(run.stderr, message, args.join(" "));
+  };
+  refused(["--publish"], /--publish needs --apply/);
+  refused(["--resume-from", "@rivetjs/router"], /--resume-from requires --publish/);
+  refused(["--resume-from", "@rivetjs/router", "--apply"], /--resume-from requires --publish/);
+  refused(["--registry", "http://127.0.0.1:4873/", "--publish"], /--publish needs --apply/);
+  refused(["--registry", "http://127.0.0.1:4873/", "--publish", "--apply"], /--registry \(local publish\) and --publish \(npmjs, CI only\) exclude each other/);
+});
+
 test("release.ts --registry: non-local registries and --apply refused", () => {
   const release = (...args: string[]) =>
     spawnSync(process.execPath, [join(ROOT, "scripts/release/release.ts"), "minor", ...args], { cwd: ROOT, encoding: "utf8" });
