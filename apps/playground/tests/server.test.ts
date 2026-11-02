@@ -22,7 +22,10 @@ test("production playground: resumable file-routed pages, endpoints, legacy redi
     assert.match(html, /<title>Rivet playground<\/title>/);
     assert.match(html, /<meta name="description" content="Rivet compiled JSX framework example">/);
     assert.equal(home.headers.get("cache-control"), "no-cache");
-    assert.match(home.headers.get("content-security-policy")!, /^script-src 'nonce-[^']+' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'$/);
+    assert.match(
+      home.headers.get("content-security-policy")!,
+      /^script-src 'nonce-[^']+' 'strict-dynamic'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'$/,
+    );
     // Stylesheets (`inlineStylesheets` "auto"): the page's sheets add up to ≤ 6 KB brotli (Tailwind ~3.5 KB), so all of
     // them are inline with the request nonce, in link order: no render-blocking stylesheet request.
     assert.doesNotMatch(html, /<link rel="stylesheet"/);
