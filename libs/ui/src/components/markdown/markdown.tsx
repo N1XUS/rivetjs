@@ -203,17 +203,32 @@ function renderInline(nodes: readonly MarkdownInline[], cx?: MarkdownComponents)
 
 const withCaret = (children: Node[], tail: boolean): Node[] => (tail ? [...children, caret()] : children);
 
-const HEADING_CLASS = [
-  "markdown__heading markdown__heading--1",
-  "markdown__heading markdown__heading--2",
-  "markdown__heading markdown__heading--3",
-  "markdown__heading markdown__heading--4",
-  "markdown__heading markdown__heading--5",
-  "markdown__heading markdown__heading--6",
-];
-
 function heading(level: number, children: Node[], live?: boolean, cx?: MarkdownComponents): Node {
-  const cls = HEADING_CLASS[Math.min(level, 6) - 1]! + (live ? " markdown__live" : "");
+  // Whole-string literals on purpose: the build proves each class constant (no tailwind-merge for this module,
+  // `libs/compiler/class-merge.ts`); a computed string flags markdown in `tests/tv-merge-census.test.ts`.
+  const cls = live
+    ? level === 1
+      ? "markdown__heading markdown__heading--1 markdown__live"
+      : level === 2
+        ? "markdown__heading markdown__heading--2 markdown__live"
+        : level === 3
+          ? "markdown__heading markdown__heading--3 markdown__live"
+          : level === 4
+            ? "markdown__heading markdown__heading--4 markdown__live"
+            : level === 5
+              ? "markdown__heading markdown__heading--5 markdown__live"
+              : "markdown__heading markdown__heading--6 markdown__live"
+    : level === 1
+      ? "markdown__heading markdown__heading--1"
+      : level === 2
+        ? "markdown__heading markdown__heading--2"
+        : level === 3
+          ? "markdown__heading markdown__heading--3"
+          : level === 4
+            ? "markdown__heading markdown__heading--4"
+            : level === 5
+              ? "markdown__heading markdown__heading--5"
+              : "markdown__heading markdown__heading--6";
   const C = cx?.[`h${level}` as "h1"] as Override<MarkdownHeadingProps> | undefined;
   if (C) return C({ class: cls, level: level as 1, children });
   switch (level) {
