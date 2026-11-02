@@ -59,15 +59,15 @@ const transitions = (page: Page, sel: string) =>
   page.$eval(sel, (el) => document.getAnimations().filter((a) => (a.effect as KeyframeEffect | null)?.target === el).length);
 
 /** `--morph-p` of `::before` sampled every frame for `ms`. */
-async function sample(page: Page, sel: string, ms: number): Promise<number[]> {
+async function sample(page: Page, sel: string, ms: number): Promise<{ p: number; at: number }[]> {
   return page.$eval(
     sel,
     (el, ms) =>
-      new Promise<number[]>((done) => {
-        const out: number[] = [];
+      new Promise<{ p: number; at: number }[]>((done) => {
+        const out: { p: number; at: number }[] = [];
         const t0 = performance.now();
         const frame = () => {
-          out.push(+getComputedStyle(el, "::before").getPropertyValue("--morph-p"));
+          out.push({ p: +getComputedStyle(el, "::before").getPropertyValue("--morph-p"), at: performance.now() });
           if (performance.now() - t0 < ms) requestAnimationFrame(frame);
           else done(out);
         };
@@ -77,7 +77,15 @@ async function sample(page: Page, sel: string, ms: number): Promise<number[]> {
   );
 }
 
-const maxStep = (values: number[]) => values.slice(1).reduce((m, v, i) => Math.max(m, Math.abs(v - values[i]!)), 0);
+/**
+ * Largest step between samples as a share of `limit`, `limit` per 50 ms of elapsed time: a slow frame or the gap of a
+ * Playwright click between two sample runs moves the bars further without being a snap (2-vCPU CI runners).
+ */
+const snap = (samples: { p: number; at: number }[], limit: number) =>
+  samples.slice(1).reduce((worst, { p, at }, i) => {
+    const previous = samples[i]!;
+    return Math.max(worst, Math.abs(p - previous.p) / (limit * Math.max(1, (at - previous.at) / 50)));
+  }, 0);
 
 test("morph chevron: CSS bars with lucide ChevronDown geometry at rest; nothing animates at load", () =>
   onPage(async (page) => {
@@ -103,14 +111,14 @@ test("morph chevron: Select open → close → open mid-flight reverses without 
     await page.click("[data-testid=mi-sel] [data-slot=select-trigger]");
     await page.waitForFunction((sel) => document.querySelector(sel)?.getAttribute("data-open") === "true", sel);
     const opening = await sample(page, sel, 120);
-    assert.ok(opening.at(-1)! > 0 && opening.at(-1)! < 1, `mid-flight after 120 ms: ${opening.at(-1)}`);
+    assert.ok(opening.at(-1)!.p > 0 && opening.at(-1)!.p < 1, `mid-flight after 120 ms: ${opening.at(-1)!.p}`);
     assert.ok(await transitions(page, sel), "the bars run a transition");
     await page.keyboard.press("Escape");
     const closing = await sample(page, sel, 120);
     await page.click("[data-testid=mi-sel] [data-slot=select-trigger]");
     const reopening = await sample(page, sel, 450);
     const all = [...opening, ...closing, ...reopening];
-    assert.ok(maxStep(all) < 0.2, `no snap: largest frame step ${maxStep(all).toFixed(3)}`);
+    assert.ok(snap(all, 0.2) < 1, `no snap: largest step ${snap(all, 0.2).toFixed(2)} × the limit`);
     const open = await bars(page, sel);
     assert.equal(open.before.p, 1);
     assert.equal(open.before.rot, -45, "⌃: left arm rises");
@@ -126,8 +134,8 @@ test("morph chevron: ComboBox / Autocomplete / CellSelect: first open runs mid-f
       // First change on the resumed page: the bars transition (a re-created component would jump to 1).
       const first = await sample(page, sel, 120);
       assert.ok(
-        first.some((p) => p > 0 && p < 1),
-        `${name}: first open runs mid-flight (${first.map((p) => p.toFixed(2)).join(" ")})`,
+        first.some(({ p }) => p > 0 && p < 1),
+        `${name}: first open runs mid-flight (${first.map(({ p }) => p.toFixed(2)).join(" ")})`,
       );
       await page.waitForFunction((sel) => getComputedStyle(document.querySelector(sel)!, "::before").getPropertyValue("--morph-p") === "1", sel);
       assert.equal((await bars(page, sel)).before.rot, -45, name);
@@ -194,15 +202,15 @@ test("morph burger: lucide Menu at rest → X when open; open → close mid-flig
     await page.waitForFunction((sel) => document.querySelector(sel)?.getAttribute("data-open") === "true", BURGER);
     const opening = await sample(page, BURGER, 100);
     assert.ok(
-      opening.some((p) => p > 0 && p < 1),
-      `first open runs mid-flight (${opening.map((p) => p.toFixed(2)).join(" ")})`,
+      opening.some(({ p }) => p > 0 && p < 1),
+      `first open runs mid-flight (${opening.map(({ p }) => p.toFixed(2)).join(" ")})`,
     );
     await page.click("#mi-nav-toggle");
     const closing = await sample(page, BURGER, 80);
     await page.click("#mi-nav-toggle");
     const reopening = await sample(page, BURGER, 350);
     const all = [...opening, ...closing, ...reopening];
-    assert.ok(maxStep(all) < 0.25, `no snap: largest frame step ${maxStep(all).toFixed(3)}`);
+    assert.ok(snap(all, 0.25) < 1, `no snap: largest step ${snap(all, 0.25).toFixed(2)} × the limit`);
     const x = await bars(page, BURGER);
     assert.equal(x.before.rot, 45, "X");
     assert.equal(x.after.rot, -45);

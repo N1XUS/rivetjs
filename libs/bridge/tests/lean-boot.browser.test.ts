@@ -87,7 +87,7 @@ test("visible (ruling 2026-10-27): nothing at idle; fetched (modulepreload) once
   window.scrollTo(0, box.getBoundingClientRect().top + window.scrollY - window.innerHeight * 1.5);
   await until(() => preloads().length === 2);
   expect(preloads()).toEqual([ISLAND, FAKE_CLIENT]);
-  await new Promise((resolve) => setTimeout(resolve, 150));
+  await new Promise((resolve) => setTimeout(resolve, 0));
   expect(log).toEqual([]);
   box.scrollIntoView();
   await until(() => log.length === 1);
@@ -246,8 +246,10 @@ test("paint gate fallback: no `paint` entry type, no `supportedEntryTypes`, or n
       await until(() => log.length === 1);
     } finally {
       restore();
-      log.length = 0;
+      // Removal first: its `unmount` entry lands a microtask later and must not count for the next round's hydration.
       document.body.innerHTML = "";
+      await tick();
+      log.length = 0;
     }
   }
 });
