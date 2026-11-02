@@ -553,9 +553,9 @@ function spreadString(records: readonly AttributeRecord[]): string | null {
   let out = "";
   for (let i = 0; i < records.length; i++) {
     const record = records[i]!,
-      encoded = primitive(record) ? primitiveAttribute(record.name, record.namespace, record.value) : null;
-    if (encoded === null) return null;
-    out += encoded;
+      attribute = primitive(record) ? primitiveAttribute(record.name, record.namespace, record.value) : null;
+    if (attribute === null) return null;
+    out += attribute;
   }
   return out;
 }

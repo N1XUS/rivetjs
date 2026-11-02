@@ -117,9 +117,10 @@ function walk(fragments: readonly string[], entries: readonly unknown[] | null, 
     }
     if (f === fragments.length - 1) break;
     // Slot f: an `_rId` attribute names the element whose start tag is open; a child slot outside a tag is content.
-    if (ids.includes(f)) {
+    const id = ids.indexOf(f);
+    if (id >= 0) {
       if (tag === null) return null;
-      paths[ids.indexOf(f)] = tag + ":" + path;
+      paths[id] = tag + ":" + path;
     } else if (entries === null ? tag === null : entries[f] === null) {
       if (tag === null) {
         content.push(f);

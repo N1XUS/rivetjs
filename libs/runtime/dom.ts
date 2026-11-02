@@ -276,7 +276,7 @@ function dynamicContent(type: unknown, rest: Record<string, unknown>): DOMValue 
   const doc = _constructionDoc(),
     ns = type === "svg" ? SVG : type === "math" ? MATH : HTML;
   let element = doc.createElementNS(ns, ns === HTML ? type.toLowerCase() : type);
-  // A tag HTML does not know: an SVG child, else MathML.
+  // A tag HTML does not know: an SVG child, else MathML as the deliberate last fallback (a misspelled HTML tag lands there too).
   if (String(element) === "[object HTMLUnknownElement]") element = doc.createElementNS(SVG, type);
   if (String(element) === "[object SVGElement]" && ns === HTML) element = doc.createElementNS(MATH, type);
   if (LAZY_ROWS && _adoption.node) element = _adoption.node(element, 0);
@@ -351,7 +351,6 @@ export function bindRef(target: Element, fn: ((element: Element) => void) | null
   onCleanup(() => untrack(ref) === target && ref.set!(undefined));
 }
 const passiveTypes = new Set(["scroll", "wheel", "touchstart", "touchmove", "touchend", "pointermove", "resize"]);
-/** Run browser-only work after the current mount as an owned effect; a returned function is its cleanup. */
 /**
  * A value built where it is used: lazy (first read), reactive (a factory reading signals re-runs; `onCleanup` inside it
  * disposes the previous value). On a resumed page the factory runs in the browser on first read, under the server's
@@ -362,6 +361,7 @@ export function reconstruct<T>(factory: () => T): () => T {
   return computed(factory, { equals: false });
 }
 
+/** Run browser-only work after the current mount as an owned effect; a returned function is its cleanup. */
 export function clientEffect(fn: () => void | (() => void) | Promise<unknown>, _options?: { when?: ClientWhen }): void {
   if (typeof fn !== "function") throw TypeError("clientEffect requires a function");
   const owner = getOwner();

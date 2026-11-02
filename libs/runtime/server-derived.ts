@@ -510,8 +510,14 @@ export const _shellRecorder = (): Recorder | undefined => store.getStore();
  */
 export function _renderNonce(): string | undefined {
   const nonce = store.getStore()?.options.nonce;
-  return nonce ? String(nonce).replace(/[^\w+/=-]/g, "") : undefined;
+  return nonce ? cleanNonce(nonce) : undefined;
 }
+
+// A CSP nonce as written into markup: base64 / base64url characters only.
+function cleanNonce(nonce: unknown): string {
+  return String(nonce).replace(/[^\w+/=-]/g, "");
+}
+const nonceAttribute = (nonce: unknown): string => (nonce ? ' nonce="' + cleanNonce(nonce) + '"' : "");
 // Buffered Suspense contents are inert until their template is swapped. Their styles must be written outside it.
 const islandStyleBuffer = new AsyncLocalStorage<boolean>();
 /**
@@ -542,7 +548,7 @@ export function _renderIslandStyles(key: string, modules?: readonly string[]): S
 function islandStyleLinks(ctx: DerivedRender): string {
   const styles = ctx.islandStyles;
   if (!styles?.pending.length) return "";
-  const nonce = ctx.options?.nonce ? ' nonce="' + String(ctx.options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "";
+  const nonce = nonceAttribute(ctx.options?.nonce);
   let html = "";
   for (const url of styles.pending) html += '<link rel="stylesheet" href="' + attr(url) + '"' + nonce + ">";
   styles.pending.length = 0;
@@ -1713,7 +1719,7 @@ async function segments(ctx: DerivedRender, writer: { write(chunk: string): unkn
   const options = ctx.options,
     signal = options?.signal,
     deadline = options?.stream?.deadline,
-    nonce = options?.nonce ? ' nonce="' + String(options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "",
+    nonce = nonceAttribute(options?.nonce),
     open = "<script" + nonce + ">";
   let expired = false;
   const timer = deadline == null ? null : setTimeout(() => ((expired = true), ctx.wakeup?.()), Math.max(0, deadline));
@@ -1860,7 +1866,7 @@ function heldContents(ctx: DerivedRender, rest: () => ServerValue): ServerValue 
     options = ctx.options,
     signal = options?.signal,
     deadline = options?.stream?.deadline,
-    nonce = options?.nonce ? ' nonce="' + String(options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "";
+    nonce = nonceAttribute(options?.nonce);
   let timer: ReturnType<typeof setTimeout> | null = null,
     late: Promise<typeof LATE> | null = null;
   if (deadline != null) late = new Promise((resolve) => (timer = setTimeout(() => resolve(LATE), Math.max(0, deadline - (Date.now() - held.start)))));
@@ -2272,8 +2278,10 @@ function flush(ctx: DerivedRender): FlushTail | null {
   ctx.flushed = ctx.boundaries.length;
   const tail: FlushTail = { b };
   if (rd) tail.r = rd;
-  if (ctx.adopt.length)
-    tail.i = ctx.adopt.splice(0).map((island) => (island.on === "visible" && ctx.lean.includes(island) ? 0 : islandUrls.push(island.key), island.id));
+  if (ctx.adopt.length) {
+    const lean = new Set(ctx.lean);
+    tail.i = ctx.adopt.splice(0).map((island) => (island.on === "visible" && lean.has(island) ? 0 : islandUrls.push(island.key), island.id));
+  }
   if (d?.length) tail.d = d;
   // `_rListen`: the first top-level boundary of this flush takes the pending document click listeners.
   if (ctx.listen.length) {
@@ -2456,9 +2464,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   const options = ctx.options;
   // Lean islands (M6-PARITY): their records + the bridge's boot, before the boundaries tail (each script reads the one
   // right before it). A page whose only boundaries are such islands ships nothing else.
-  const lean = ctx.lean.length
-    ? ctx.lean[0]!.tail(ctx.lean, options?.manifest as never, options?.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "")
-    : "";
+  const lean = ctx.lean.length ? ctx.lean[0]!.tail(ctx.lean, options?.manifest as never, options?.nonce ? cleanNonce(options.nonce) : "") : "";
   if (!tail) return lean ? template([lean]) : null;
   if (!options?.manifest?.runtime) return template([lean + '<script type="rivet/boundaries">' + encodeTail(tail) + "</script>"]);
   // Fetch-ahead (DERIVED-C): the runtime, the chunks of the page's boundaries (tail `m`) and their static import closures
@@ -2470,7 +2476,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   // once per process, not per request; the JSON and the nonce are slots.
   const manifest = options.manifest,
     runtime = liteTail ? manifest.lite!.runtime : manifest.runtime!,
-    nonce = options.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "",
+    nonce = options.nonce ? cleanNonce(options.nonce) : "",
     // RT-DIET2 mixed lite: ahead = the lite runtime + the live records' lite entries; the full runtime's list rides in the
     // tail (`F`, fetched on a link intent / fallback only).
     // ROUTER-PRIME: the modules the root's `ready` loads (manifest `ready`), when its record ships (not on lite pages).
