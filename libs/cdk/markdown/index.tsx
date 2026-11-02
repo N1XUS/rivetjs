@@ -100,7 +100,9 @@ export function splitBlocks(source: string): string[] {
         while (j < lines.length && BLANK.test(lines[j]!)) j++;
         const next = lines[j];
         if (next !== undefined && (kind === "list" ? ITEM.test(next) || /^[ \t]{2,}\S/.test(next) : QUOTE.test(next))) {
-          current.push(line);
+          // Keep the whole blank run at once (no rescan per blank line).
+          for (; i < j; i++) current.push(lines[i]!);
+          i--;
           continue;
         }
       }

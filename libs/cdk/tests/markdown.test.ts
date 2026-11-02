@@ -82,3 +82,13 @@ test("markdown: closeOpenMarks", () => {
   ]);
   assert.equal(closeOpenMarks("x `co "), "x `co `");
 });
+
+test("markdown: splitBlocks keeps a blank run inside a list / quote in one pass (FIX2-CDK)", () => {
+  assert.deepEqual(splitBlocks("- a\n\n\n\n- b\n\n\npara"), ["- a\n\n\n\n- b", "para"]);
+  assert.deepEqual(splitBlocks("> a\n\n\n> b\n\n\n\nafter"), ["> a\n\n\n> b", "after"]);
+  // 20000 blank lines inside a list: linear (was one rescan of the remaining run per blank line).
+  const blanks = "\n".repeat(20000);
+  const t = performance.now();
+  assert.equal(splitBlocks(`- a${blanks}- b`).length, 1);
+  assert.ok(performance.now() - t < 200);
+});

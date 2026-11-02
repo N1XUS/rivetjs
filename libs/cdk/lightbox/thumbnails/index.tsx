@@ -46,7 +46,9 @@ export interface LightboxThumbnailsOptions {
 export function lightboxThumbnailSrc(slide: LightboxSlide): string | undefined {
   if (slide.thumbnail) return slide.thumbnail;
   if (isImageSlide(slide)) {
-    const smallest = slide.srcSet?.slice().sort((a, b) => a.width - b.width)[0];
+    // Smallest width (first on ties), one pass: no copy + sort per thumbnail render.
+    let smallest = slide.srcSet?.[0];
+    for (const image of slide.srcSet ?? []) if (image.width < smallest!.width) smallest = image;
     return smallest?.src ?? slide.src;
   }
   const poster = (slide as { poster?: unknown }).poster;
