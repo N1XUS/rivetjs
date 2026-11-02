@@ -21,6 +21,15 @@ export function findMatchingHitRegions(
       return;
     }
 
+    // Rivet: hover runs on every document pointermove for every mounted group. A pointer farther than the largest
+    // hit-target expansion from the group's box cannot be in one of its regions: one rect read instead of every
+    // panel / separator rect + sort.
+    const box = axisData.element.getBoundingClientRect();
+    const margin = Math.max(axisData.resizeTargetMinimumSize.coarse, axisData.resizeTargetMinimumSize.fine);
+    if (event.clientX < box.left - margin || event.clientX > box.right + margin || event.clientY < box.top - margin || event.clientY > box.bottom + margin) {
+      return;
+    }
+
     const hitRegions = calculateHitRegions({ axis: axisData });
     const match = findClosestHitRegion(axisData.orientation, hitRegions, {
       x: event.clientX,

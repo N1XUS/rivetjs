@@ -43,3 +43,4 @@
 - Props read once: `orientation`, `resizePreviewMode`, panel sizes / `collapsible`, `id` (upstream re-registers on change); accessors for `disabled` / `disableCursor` / `defaultLayout`.
 
 - ID-RESUME (2026-10-27): generated Group / Panel / Separator ids use the shared `resumedId()` keyed-signal helper. Separators' `aria-controls` (`aria().valueControls`) and the panel records keep the server ids when parts adopt independently; explicit ids and upstream resize behaviour stay unchanged.
+- Engine deviation (FIX2-CDK 2026-11-01): `engine/global/utils/findMatchingHitRegions.ts` skips a group when the pointer is farther than `max(resizeTargetMinimumSize)` from its box (hover runs per document pointermove per group): pointer outside every group, 1 group 11.9 → 2.1 µs, 10 groups 113 → 6.2 µs per move (Chromium).
