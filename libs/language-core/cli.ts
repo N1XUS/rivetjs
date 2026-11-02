@@ -6,7 +6,7 @@
 // Exit 0 clean (warnings do not fail), 1 on errors (incl. a missing .rivet/editor.json, RV7101),
 // 1 also covers setup failures; 2 is reserved for invalid arguments.
 import { readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import ts from "typescript";
 import { docsUrl } from "@rivetjs/compiler/codes";
 import { codeFrame, remedyLines, paint, suggestion, groupDiagnostics, debugEnabled } from "@rivetjs/compiler/format";
@@ -97,6 +97,7 @@ export function checkProjects(
   const skipped: CheckRun["skipped"] = [];
   const seen = new Set<string>();
   const roots = new Set<string>();
+  const rootOf = new Map<string, string | null>();
   const visited = new Set<string>();
   let files = 0;
   const pending = configs.map((config) => ({ config, path: configPath(cwd, config) }));
@@ -146,7 +147,9 @@ export function checkProjects(
       const file = program.getSourceFile(name);
       if (!file) continue;
       files++;
-      const root = viteRoot(name);
+      const dir = dirname(name);
+      let root = rootOf.get(dir);
+      if (root === undefined) rootOf.set(dir, (root = viteRoot(name)));
       if (root) roots.add(root);
       diagnostics.push(...analyzeFile(ts, core, program, file, { typeAware }).diagnostics);
     }
@@ -159,11 +162,11 @@ export function checkProjects(
  * Text output of one diagnostic: the tsc-style header `file:line:col - error RVnnnn: message` (editor problem matchers
  * read this line), then the code frame, `fix:` (the code's explanation, `explain.json`) and `docs:` lines.
  */
-export function format(d: CheckDiagnostic, cwd = process.cwd()): string {
+export function format(d: CheckDiagnostic, cwd = process.cwd(), read: (file: string) => string = (file) => readFileSync(file, "utf8")): string {
   const head = `${relative(cwd, d.filename)}:${d.line ?? 1}:${d.column ?? 1} - ${paint(d.severity === "error" ? "red" : "yellow", d.severity, process.stdout)} ${d.code}: ${d.message}`;
   let source: string | undefined;
   try {
-    source = d.line ? readFileSync(d.filename, "utf8") : undefined;
+    source = d.line ? read(d.filename) : undefined;
   } catch {
     source = undefined;
   }
@@ -232,9 +235,15 @@ export function main(argv: readonly string[]): number {
     console.log(JSON.stringify({ files, errors, warnings: diagnostics.length - errors, skipped, diagnostics: list }, null, 2));
     return errors ? 1 : 0;
   }
+  // Diagnostics come grouped by file: one read per run of a file.
+  let lastFile: string | undefined, lastText: string | undefined;
+  const read = (file: string): string => {
+    if (file !== lastFile) ((lastText = readFileSync(file, "utf8")), (lastFile = file));
+    return lastText!;
+  };
   for (const { diagnostic: d, count } of groupDiagnostics(diagnostics)) {
     if (!quiet || d.severity === "error")
-      console.log(format(d) + (count > 1 ? `\n  occurrences: ${count} (same code and file; --json lists every location)` : ""));
+      console.log(format(d, process.cwd(), read) + (count > 1 ? `\n  occurrences: ${count} (same code and file; --json lists every location)` : ""));
   }
   if (quiet) return errors ? 1 : 0;
   for (const s of skipped) console.log(`rivet check: skipped ${s.config} (${s.reason})`);

@@ -27,10 +27,9 @@ export class ManifestCache {
   }
 
   #read(path: string, root: string): ProjectManifest | null {
-    let mtime: number;
-    try {
-      mtime = statSync(path).mtimeMs;
-    } catch {
+    // Most levels have no manifest: no thrown ENOENT per level (this runs several times per editor request).
+    const mtime = statSync(path, { throwIfNoEntry: false })?.mtimeMs;
+    if (mtime === undefined) {
       this.#files.delete(path);
       return null;
     }

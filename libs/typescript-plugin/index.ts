@@ -136,15 +136,24 @@ function init({ typescript: ts }: { typescript: typeof TS }): TS.server.PluginMo
         return match && { project: manifest, ...match };
       };
 
+      const analyzed = new WeakMap<TS.SourceFile, { program: TS.Program; manifest: unknown; typeAware: unknown; linkModules: unknown; found: Found }>();
       /** Every Rivet diagnostic for a file (compiler + RV3010 + RV3101), TS duplicates dropped. */
-      const rivetDiagnostics = (fileName: string): { file: TS.SourceFile; diagnostics: CheckDiagnostic[]; result: FileCheck } | null => {
+      const rivetDiagnostics = (fileName: string): Found | null => {
         const ctx = context(fileName);
         if (!ctx) return null;
         const { typeAware, linkModules } = config();
-        return {
+        // Diagnostics, then code fixes, ask for the same analysis: reuse it while the program, the file, the manifest
+        // (its routes feed the link checks) and the settings are the same.
+        const manifest = ctx.core.project(fileName)?.manifest;
+        const memo = analyzed.get(ctx.file);
+        if (memo && memo.program === ctx.program && memo.manifest === manifest && memo.typeAware === typeAware && memo.linkModules === linkModules)
+          return memo.found;
+        const found = {
           file: ctx.file,
           ...analyzeFile(ts, ctx.core, ctx.program, ctx.file, { ...(typeAware === undefined ? {} : { typeAware }), ...(linkModules ? { linkModules } : {}) }),
         };
+        analyzed.set(ctx.file, { program: ctx.program, manifest, typeAware, linkModules, found });
+        return found;
       };
 
       const proxy: TS.LanguageService = Object.create(null);
@@ -260,6 +269,8 @@ function init({ typescript: ts }: { typescript: typeof TS }): TS.server.PluginMo
         return guard(prior, () => {
           const ctx = context(fileName);
           if (!ctx) return prior;
+          // A route completion needs the cursor in a string: most requests stop before the checker walk.
+          if (!inString(ts, ctx.file, position)) return prior;
           const [link] = links(ctx.file, ctx.program.getTypeChecker(), position);
           const routes = ctx.core.routes(fileName);
           if (!link || link.narrowed || !routes.length) return prior;
@@ -382,6 +393,22 @@ function init({ typescript: ts }: { typescript: typeof TS }): TS.server.PluginMo
       }
     },
   };
+}
+
+interface Found {
+  file: TS.SourceFile;
+  diagnostics: CheckDiagnostic[];
+  result: FileCheck;
+}
+
+/** Whether `position` sits inside a string or no-substitution template literal token. */
+function inString(ts: typeof TS, file: TS.SourceFile, position: number): boolean {
+  const find = (node: TS.Node): boolean => {
+    if (position < node.getFullStart() || position > node.end) return false;
+    if (ts.isStringLiteralLike(node)) return position > node.getStart(file) && position <= node.end;
+    return ts.forEachChild(node, find) ?? false;
+  };
+  return find(file);
 }
 
 const KIND: Record<CheckSite["kind"], string> = {
