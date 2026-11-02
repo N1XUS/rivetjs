@@ -32,7 +32,7 @@ export interface CdnImageOptions {
 /** Descriptor for a CDN-hosted image: pure string building at render time, no fetch. */
 export function cdn(src: string, options: CdnImageOptions): ImageDescriptor {
   if (!(options.width > 0) || !(options.height > 0)) throw new TypeError(`cdn("${src}") needs width and height`);
-  const densities = options.densities ?? DEFAULT_DENSITIES;
+  const densities = options.densities?.length ? options.densities : DEFAULT_DENSITIES;
   const maxWidth = options.maxWidth ?? Math.round(options.width * Math.max(...densities));
   const layout = options.layout ?? "constrained";
   const plan = planWidths({
@@ -90,7 +90,7 @@ export function imgix({ domain }: { domain: string }): ImageCdn {
     autoFormat: true,
     url: (src, o) => {
       const q = new URLSearchParams({ w: String(o.width) });
-      if (o.height) q.set("h", String(o.height)), q.set("fit", o.fit === "contain" ? "clip" : "crop");
+      if (o.height) (q.set("h", String(o.height)), q.set("fit", o.fit === "contain" ? "clip" : "crop"));
       if (o.format) q.set("fm", short(o.format)!);
       else q.set("auto", "format");
       if (o.quality) q.set("q", String(o.quality));

@@ -1,7 +1,7 @@
 // kit() Vite plugin: browser builds resolve kit's DOM entries, `?font` imports become font
 // descriptors with `@font-face` CSS, and the router (rivetRouter) turns component head on.
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import type { Plugin } from "vite";
 
@@ -188,7 +188,7 @@ export function kit(options: KitOptions = {}): Plugin {
       }
       if (!request) return null;
       this.addWatchFile(request.file);
-      await readFile(request.file).catch(() => this.error(`${request!.file}: font file not found`));
+      await access(request.file).catch(() => this.error(`${request!.file}: font file not found`));
       const fallback = await fallbackOf(request, (message) => this.warn(message));
       const generic = request.fallback && GENERIC.has(request.fallback) ? request.fallback : "sans-serif";
       const stack = [

@@ -26,7 +26,12 @@ test("fixed: x descriptors, clamped density collapses and is relabelled", () => 
 
 test("full-width: all breakpoints up to intrinsic plus intrinsic", () => {
   assert.deepEqual(widths(planWidths({ intrinsic: { width: 1700, height: 850 }, layout: "full-width" })), [
-    "640:640w", "768:768w", "1024:1024w", "1280:1280w", "1536:1536w", "1700:1700w",
+    "640:640w",
+    "768:768w",
+    "1024:1024w",
+    "1280:1280w",
+    "1536:1536w",
+    "1700:1700w",
   ]);
 });
 
@@ -98,7 +103,21 @@ test("constrained describe carries sizes; src = largest fallback ≤ display wid
 
 test("single passthrough descriptor", () => {
   assert.deepEqual(single("/i.svg", "svg", 24, 24, "fixed"), {
-    src: "/i.svg", width: 24, height: 24, layout: "fixed", sources: [{ type: "image/svg+xml", srcset: "/i.svg" }],
+    src: "/i.svg",
+    width: 24,
+    height: 24,
+    layout: "fixed",
+    sources: [{ type: "image/svg+xml", srcset: "/i.svg" }],
   });
   assert.equal(mimeType("jpeg"), "image/jpeg");
+});
+
+test("empty densities fall back to the defaults, a zero-size intrinsic has height 0", () => {
+  const plan = planWidths({ intrinsic: { width: 1000, height: 500 }, layout: "constrained", width: 400, densities: [], breakpoints: [] });
+  assert.deepEqual(
+    plan.widths.map((w) => w.descriptor),
+    planWidths({ intrinsic: { width: 1000, height: 500 }, layout: "constrained", width: 400, breakpoints: [] }).widths.map((w) => w.descriptor),
+  );
+  assert.ok(plan.widths.every((w) => Number.isFinite(w.width)));
+  assert.equal(planWidths({ intrinsic: { width: 0, height: 0 }, layout: "fixed" }).height, 0);
 });

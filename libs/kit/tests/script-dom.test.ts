@@ -49,3 +49,18 @@ test("an interaction head script arms its listeners once across head applies", (
     window.dispatchEvent(new window.Event("pointerdown"));
     assert.equal(window.document.querySelectorAll('script[src="/later.js"]').length, 1);
   }));
+
+test("a head script that fails to load warns with its src", () =>
+  inWindow(async () => {
+    const { applyRouteHead } = await import("../dom.ts");
+    const warn = console.warn,
+      warned: unknown[][] = [];
+    console.warn = (...args: unknown[]) => void warned.push(args);
+    try {
+      applyRouteHead({ head: { scripts: [{ src: "/blocked.js" }] } });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    } finally {
+      console.warn = warn;
+    }
+    assert.deepEqual(warned, [["[rivet:kit] script failed to load:", "/blocked.js"]]);
+  }));

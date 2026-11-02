@@ -35,7 +35,7 @@ Document head as components (title, meta, links, scripts, JSON-LD, theme script)
 - `image.ts` / `font.ts` import `pushHead` from `"@rivetjs/kit"` (self-import, not `./index.ts`) so the plugin can swap targets in browser builds. Keep it.
 - Export names + subpaths are load-bearing outside the package — do not rename:
   - Compiler site-less allow-list `libs/compiler/rust/src/resume.rs` `static_framework_component`: `@rivetjs/kit[/…]` `Picture` `Image` `Font` `Head` `Title` `Meta` `HeadLink` `Script` `JsonLd` `ThemeScript` (documented in `docs/guides/resumability.md`). New head component that reads no signals → add to that list too (compiler owner).
-  - Router codegen `libs/router/build/codegen.ts:199` imports `HeadLevel`, `applyRouteHead` from `@rivetjs/kit`.
+  - Router codegen `libs/router/build/codegen.ts` imports `HeadLevel`, `applyRouteHead` from `@rivetjs/kit`.
   - `KIT_POLICY = "rivet-script"`: shared with the router's script bootstrap (`document.$rs = { p, l }`); one policy per page, no `'allow-duplicates'`.
 - Head components render nothing in place (server: only late post-shell body-valid markup). Resumed pages never run them: zero client JS for head.
 - `HeadLink`, not `Link` (router owns `Link`).

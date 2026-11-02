@@ -270,7 +270,7 @@ function load(script: Extract<HeadScript, { src: string }>): void {
       ...(script.type ? { type: script.type } : {}),
       ...(script.integrity ? { integrity: script.integrity } : {}),
       ...(script.crossorigin ? { crossorigin: script.crossorigin } : {}),
-    }).catch(() => {}));
+    }).catch(() => console.warn("[rivet:kit] script failed to load:", script.src)));
   if (script.strategy === "idle" || script.strategy === "interaction") armed.add(script.src);
   if (script.strategy === "idle") (globalThis.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 1)))(run, { timeout: 4000 });
   else if (script.strategy === "interaction") {

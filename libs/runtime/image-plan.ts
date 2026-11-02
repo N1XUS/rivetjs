@@ -60,12 +60,13 @@ export interface Plan {
 /** Widths to generate for a layout; never upscales past the intrinsic width. */
 export function planWidths(input: PlanInput): Plan {
   const { intrinsic, layout } = input;
-  const densities = [...(input.densities ?? DEFAULT_DENSITIES)].sort((a, b) => a - b);
+  const densities = [...(input.densities?.length ? input.densities : DEFAULT_DENSITIES)].sort((a, b) => a - b);
   const breakpoints = input.breakpoints ?? DEFAULT_BREAKPOINTS;
   const requested = input.width ?? intrinsic.width;
   const cap = intrinsic.width;
   const width = Math.min(requested, cap);
-  const aspect = input.height ? input.height / requested : intrinsic.height / intrinsic.width;
+  // A zero-size intrinsic (an undecodable or empty source) has no ratio: height 0, not NaN.
+  const aspect = input.height ? input.height / requested : intrinsic.width > 0 ? intrinsic.height / intrinsic.width : 0;
   const height = Math.round(width * aspect);
   const clamped = requested > cap;
   if (layout === "fixed") {

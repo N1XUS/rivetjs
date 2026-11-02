@@ -41,7 +41,18 @@ test("provider URL shapes", () => {
     cloudinary({ cloud: "c" }).url("a.png", { width: 100, height: 50, fit: "contain" }),
     "https://res.cloudinary.com/c/image/upload/w_100,h_50,c_fit,f_auto,q_auto/a.png",
   );
-  assert.equal(imgix({ domain: "x.imgix.net" }).url("/a.jpg", { width: 300, height: 200, fit: "cover" }), "https://x.imgix.net/a.jpg?w=300&h=200&fit=crop&auto=format");
+  assert.equal(
+    imgix({ domain: "x.imgix.net" }).url("/a.jpg", { width: 300, height: 200, fit: "cover" }),
+    "https://x.imgix.net/a.jpg?w=300&h=200&fit=crop&auto=format",
+  );
   assert.equal(imgix({ domain: "x.imgix.net" }).url("a.jpg", { width: 300, format: "jpeg", quality: 50 }), "https://x.imgix.net/a.jpg?w=300&fm=jpg&q=50");
-  assert.equal(cloudflare({ origin: "https://s.test" }).url("a.jpg", { width: 300, format: "webp", quality: 80 }), "https://s.test/cdn-cgi/image/width=300,fit=cover,format=webp,quality=80/a.jpg");
+  assert.equal(
+    cloudflare({ origin: "https://s.test" }).url("a.jpg", { width: 300, format: "webp", quality: 80 }),
+    "https://s.test/cdn-cgi/image/width=300,fit=cover,format=webp,quality=80/a.jpg",
+  );
+});
+
+test("cdn: empty densities use the defaults, never a -Infinity max width", () => {
+  const t = urlTemplate("https://img.test/{src}?w={width}");
+  assert.deepEqual(cdn("/a.jpg", { cdn: t, width: 400, height: 200, densities: [] }), cdn("/a.jpg", { cdn: t, width: 400, height: 200 }));
 });
