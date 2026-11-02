@@ -2,7 +2,7 @@ import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
   title: "FloatingToc: Controlled",
-  summary: "open takes a value or a two-way signal; onOpenChange reports changes.",
+  summary: "isOpen takes a value or a two-way signal; onOpenChange reports changes.",
   tags: ["floating-toc"],
   status: "experimental",
   frame: { height: 360 },

@@ -13,7 +13,7 @@ export function Disabled() {
         <DropZone.Description>Try again tomorrow.</DropZone.Description>
         <DropZone.Trigger isDisabled />
       </DropZone.Area>
-      <DropZone.Input disabled />
+      <DropZone.Input isDisabled />
     </DropZone>
   );
 }

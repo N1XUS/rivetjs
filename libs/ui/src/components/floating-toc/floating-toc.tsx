@@ -1,9 +1,9 @@
 // Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no floating TOC). Feature set inspired by commercial UI kits' public Floating
 // TOC docs (a compact bar indicator per section that opens a floating list of sections on hover or press: root `placement`
-// left / right, `triggerMode` hover / press, `open` / `defaultOpen` / `onOpenChange`, `openDelay` 200 / `closeDelay` 300;
+// left / right, `triggerMode` hover / press, `open` / `defaultOpen` / `onOpenChange` (Rivet: `isOpen`, the overlay naming), `openDelay` 200 / `closeDelay` 300;
 // parts `.Trigger`, `.Bar` (`active`, `level`), `.Content` (popover, `offset` 8), `.Item` (`active`, `level`); classes
 // `.floating-toc__*`, `--floating-toc-*` variables); independent implementation, Rivet-authored styles.
-// - Root = cdk `DialogTrigger` (`trigger` = "hover" with `delay` / `closeDelay`, or "press"); `open` may be a two-way Signal.
+// - Root = cdk `DialogTrigger` (`trigger` = "hover" with `delay` / `closeDelay`, or "press"); `isOpen` may be a two-way Signal.
 //   Context `rv-ui-floating-toc` carries plain data (`placement`, `triggerMode`).
 // - `.Trigger` = cdk `Button` (`.floating-toc__trigger`, `data-placement`) holding the bars; `.Bar` = `span` with
 //   `data-active` and `--floating-toc-level`.
@@ -45,7 +45,7 @@ interface FloatingTocRootProps {
   /** What opens the content. @default "hover" */
   triggerMode?: "hover" | "press";
   /** Controlled open state (a value or a two-way Signal). */
-  open?: boolean | Signal<boolean>;
+  isOpen?: boolean | Signal<boolean>;
   /** Initial open state. */
   defaultOpen?: boolean;
   /** Open state changed. */
@@ -59,7 +59,7 @@ interface FloatingTocRootProps {
 }
 
 const FloatingTocRoot = (props: FloatingTocRootProps): JSX.Element => {
-  const [local] = splitLive(props, ["children", "placement", "triggerMode", "open", "defaultOpen", "onOpenChange", "openDelay", "closeDelay"]);
+  const [local] = splitLive(props, ["children", "placement", "triggerMode", "isOpen", "defaultOpen", "onOpenChange", "openDelay", "closeDelay"]);
   const placement = local.placement ?? "right";
   const triggerMode = local.triggerMode ?? "hover";
   const value: FloatingTocContext = { placement, triggerMode };
@@ -68,7 +68,7 @@ const FloatingTocRoot = (props: FloatingTocRootProps): JSX.Element => {
       trigger={triggerMode}
       delay={local.openDelay ?? 200}
       closeDelay={local.closeDelay ?? 300}
-      isOpen={local.open as never}
+      isOpen={local.isOpen as never}
       defaultOpen={local.defaultOpen}
       onOpenChange={local.onOpenChange}
     >

@@ -81,7 +81,7 @@ Additional exported parts: `FloatingToc.Root`.
 
 ::example{id=floating-toc-virtualized}
 
-For hundreds of sections, render a fixed window of bars around the active one and put a [virtualized ListBox](/components/list-box/) in `FloatingToc.Content`: only the rows in view are rendered. Its selection is the active section; close the list from `onSelectionChange` through a controlled `open` signal.
+For hundreds of sections, render a fixed window of bars around the active one and put a [virtualized ListBox](/components/list-box/) in `FloatingToc.Content`: only the rows in view are rendered. Its selection is the active section; close the list from `onSelectionChange` through a controlled `isOpen` signal.
 
 ## Styling Reference
 
@@ -118,7 +118,7 @@ The cdk `DialogTrigger`.
 | -------------- | ---------------------------- | --------- | ----------------------------------------------- |
 | `placement`    | `"left" \| "right"`          | `"right"` | Side of the page                                |
 | `triggerMode`  | `"hover" \| "press"`         | `"hover"` | What opens the list                             |
-| `open`         | `boolean \| Signal<boolean>` | -         | Controlled open state (a signal is two-way)     |
+| `isOpen`       | `boolean \| Signal<boolean>` | -         | Controlled open state (a signal is two-way)     |
 | `defaultOpen`  | `boolean`                    | -         | Initial open state                              |
 | `onOpenChange` | `(open: boolean) => void`    | -         | Open state changed                              |
 | `openDelay`    | `number`                     | `200`     | Hover delay before opening (ms)                 |

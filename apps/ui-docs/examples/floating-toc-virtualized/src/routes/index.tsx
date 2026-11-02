@@ -39,7 +39,7 @@ export function Virtualized() {
         </h3>
         <p class="text-sm text-muted">Open the list and pick another release: only the rows in view are rendered.</p>
       </article>
-      <FloatingToc open={open} triggerMode="press">
+      <FloatingToc isOpen={open} triggerMode="press">
         <FloatingToc.Trigger id="toc-virtual">
           {Array.from({ length: BARS }, (_, i) => (
             <FloatingToc.Bar level={RELEASES[first() + i]!.level} active={first() + i === activeIndex()} />

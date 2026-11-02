@@ -2,7 +2,7 @@
 // ChatAttachment docs (attachment tile / file card: `mediaType` (inferred), `mimeType`, `name`, `size` (bytes), `src`;
 // parts `Preview` / `Icon` / `Info` / `Name` / `Size` / `Remove`; `data-variant` media / file; helpers
 // `inferChatAttachmentFileKind` / `formatChatAttachmentSize`; `ChatAttachmentGroup`; `ChatAttachmentInput` (`accept`,
-// `multiple` (true), `disabled`, `onFilesSelected`) with `Trigger` (file picker) and `Dropzone` (`render` onto
+// `multiple` (true), `isDisabled` (live), `onFilesSelected`) with `Trigger` (file picker) and `Dropzone` (`render` onto
 // `PromptInput.Shell`)); independent implementation, Rivet-authored styles.
 // - `ChatAttachment` context = plain data (`rv-ui-chat-attachment`). Rivet extra: `onRemove` on the root renders `Remove`
 //   in the preset (otherwise place `ChatAttachment.Remove` yourself; it is a ui `CloseButton`).
@@ -266,8 +266,8 @@ interface ChatAttachmentInputRootProps {
   accept?: string;
   /** @default true */
   multiple?: boolean;
-  /** Disables the picker and dropping. */
-  disabled?: boolean;
+  /** Disables the picker and dropping (live: a reactive value is followed). */
+  isDisabled?: boolean;
   /** Called with the picked / dropped files (after the `accept` filter). */
   onFilesSelected?: (files: File[]) => void;
   children?: Content;
@@ -276,19 +276,18 @@ interface ChatAttachmentInputRootProps {
 const DROPZONE = "[data-chat-dropzone]";
 
 const ChatAttachmentInputRoot = (props: ChatAttachmentInputRootProps): JSX.Element => {
-  const [local] = splitLive(props, ["accept", "multiple", "disabled", "onFilesSelected", "children"]);
-  const accept = local.accept;
-  const multiple = local.multiple !== false;
-  const disabled = local.disabled === true;
-  const onFilesSelected = local.onFilesSelected;
+  const [local] = splitLive(props, ["accept", "multiple", "isDisabled", "onFilesSelected", "children"]);
+  // Read on use: live props (e.g. `isDisabled={uploading()}`) are followed, not frozen at the first render.
+  const multiple = () => local.multiple !== false;
+  const disabled = () => local.isDisabled === true;
   return (
     <div
       class={SLOTS.input()}
       data-chat-attachment-input=""
-      data-disabled={disabled ? "true" : undefined}
+      data-disabled={disabled() ? "true" : undefined}
       onDragOver={(event: DragEvent) => {
         const zone = (event.target as Element | null)?.closest?.(DROPZONE);
-        if (disabled || !zone || !dragHasFiles(event)) return;
+        if (disabled() || !zone || !dragHasFiles(event)) return;
         event.preventDefault();
         if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
         zone.setAttribute("data-drop-target", "true");
@@ -302,26 +301,26 @@ const ChatAttachmentInputRoot = (props: ChatAttachmentInputRootProps): JSX.Eleme
         const zone = (event.target as Element | null)?.closest?.(DROPZONE);
         if (!zone) return;
         zone.removeAttribute("data-drop-target");
-        if (disabled || !dragHasFiles(event)) return;
+        if (disabled() || !dragHasFiles(event)) return;
         event.preventDefault();
-        const files = selectedFiles(event.dataTransfer?.files, accept, multiple);
-        if (files.length) onFilesSelected?.(files);
+        const files = selectedFiles(event.dataTransfer?.files, local.accept, multiple());
+        if (files.length) local.onFilesSelected?.(files);
       }}
     >
       <input
         class={SLOTS.fileInput()}
         type="file"
-        accept={accept}
-        multiple={multiple}
-        disabled={disabled}
+        accept={local.accept}
+        multiple={multiple()}
+        disabled={disabled()}
         tabIndex={-1}
         aria-hidden="true"
         hidden
         onChange={(event: Event) => {
           const input = event.currentTarget as HTMLInputElement;
-          const files = selectedFiles(input.files, accept, multiple);
+          const files = selectedFiles(input.files, local.accept, multiple());
           input.value = "";
-          if (files.length) onFilesSelected?.(files);
+          if (files.length) local.onFilesSelected?.(files);
         }}
       />
       {local.children}

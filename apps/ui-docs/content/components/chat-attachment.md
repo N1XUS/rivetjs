@@ -80,7 +80,7 @@ See the [full module API](/api/rivetjs/ui/chat-attachment/) for every named expo
 | `onRemove`                                | `() => void`              | —        |
 | `accept` (`ChatAttachmentInput`)          | `string`                  | —        |
 | `multiple` (`ChatAttachmentInput`)        | `boolean`                 | `true`   |
-| `disabled` (`ChatAttachmentInput`)        | `boolean`                 | `false`  |
+| `isDisabled` (`ChatAttachmentInput`)      | `boolean`                 | `false`  |
 | `onFilesSelected` (`ChatAttachmentInput`) | `(files: File[]) => void` | —        |
 | `render` (`Dropzone`)                     | `(attrs) => JSX.Element`  | a `div`  |
 

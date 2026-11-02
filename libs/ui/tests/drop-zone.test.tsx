@@ -53,7 +53,7 @@ test("drop zone: a disabled input is not clicked", async () => {
         <DropZone.Label>Drop</DropZone.Label>
         <DropZone.Trigger />
       </DropZone.Area>
-      <DropZone.Input disabled />
+      <DropZone.Input isDisabled />
     </DropZone>
   ));
   await flush();

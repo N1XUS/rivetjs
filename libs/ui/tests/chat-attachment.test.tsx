@@ -78,3 +78,40 @@ test("chat-attachment-input: pick + drop", () => {
   assert.deepEqual(got, [["a.png"], ["a.png"]]);
   r.unmount();
 });
+
+test("chat-attachment-input: a live isDisabled follows the value (drop, picker, data-disabled)", async () => {
+  const { signal } = await import("@rivetjs/reactivity");
+  const busy = signal(false);
+  const got: string[][] = [];
+  const r = render(() => (
+    <ChatAttachmentInput isDisabled={busy()} onFilesSelected={(files) => got.push(files.map((f) => f.name))}>
+      <ChatAttachmentInput.Dropzone>
+        <ChatAttachmentInput.Trigger />
+      </ChatAttachmentInput.Dropzone>
+    </ChatAttachmentInput>
+  ));
+  const root = r.container.querySelector("[data-chat-attachment-input]")!;
+  const input = r.container.querySelector("input[type=file]") as HTMLInputElement;
+  const zone = r.container.querySelector("[data-chat-dropzone]")!;
+  const F = (window as unknown as { File: typeof File }).File;
+  const files = [new F(["x"], "a.png", { type: "image/png" })];
+  const drop = () => {
+    const event = new W.Event("drop", { bubbles: true, cancelable: true }) as DragEvent;
+    Object.defineProperty(event, "dataTransfer", { value: { types: ["Files"], files, dropEffect: "none" } });
+    zone.dispatchEvent(event);
+  };
+  drop();
+  assert.deepEqual(got, [["a.png"]]);
+  busy.set(true);
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(root.getAttribute("data-disabled"), "true");
+  assert.equal(input.disabled, true);
+  drop();
+  assert.deepEqual(got, [["a.png"]], "a disabled input ignores the drop");
+  busy.set(false);
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(root.hasAttribute("data-disabled"), false);
+  drop();
+  assert.deepEqual(got, [["a.png"], ["a.png"]]);
+  r.unmount();
+});

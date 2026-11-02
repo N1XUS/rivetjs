@@ -23,7 +23,7 @@ export function Controlled() {
       <Button id="toc-open" size="sm" variant="secondary" onPress={() => open.set(!open())}>
         {open() ? "Close" : "Open"} list
       </Button>
-      <FloatingToc open={open} triggerMode="press">
+      <FloatingToc isOpen={open} triggerMode="press">
         <FloatingToc.Trigger id="toc-ctrl">
           {SECTIONS.map((s) => (
             <FloatingToc.Bar level={s.level} active={active() === s.id} />

@@ -183,13 +183,13 @@ Secondary description text.
 
 The hidden file input the triggers open.
 
-| Prop       | Type                        | Default | Description                                 |
-| ---------- | --------------------------- | ------- | ------------------------------------------- |
-| `accept`   | `string`                    | -       | Accepted file types (e.g. `"image/*,.pdf"`) |
-| `multiple` | `boolean`                   | -       | Whether multiple files can be selected      |
-| `onSelect` | `(files: FileList) => void` | -       | Called when files are picked                |
-| `disabled` | `boolean`                   | -       | Triggers do not open the picker             |
-| `name`     | `string`                    | -       | Form field name                             |
+| Prop         | Type                        | Default | Description                                 |
+| ------------ | --------------------------- | ------- | ------------------------------------------- |
+| `accept`     | `string`                    | -       | Accepted file types (e.g. `"image/*,.pdf"`) |
+| `multiple`   | `boolean`                   | -       | Whether multiple files can be selected      |
+| `onSelect`   | `(files: FileList) => void` | -       | Called when files are picked                |
+| `isDisabled` | `boolean`                   | -       | Triggers do not open the picker             |
+| `name`       | `string`                    | -       | Form field name                             |
 
 ### DropZone.Trigger
 

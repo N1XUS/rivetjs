@@ -100,11 +100,12 @@ interface DropZoneInputProps {
   onSelect?: (files: FileList) => void;
   class?: string;
   name?: string;
-  disabled?: boolean;
+  /** Triggers do not open the picker (the native input is disabled). */
+  isDisabled?: boolean;
 }
 
 const DropZoneInput = (props: DropZoneInputProps): JSX.Element => {
-  const [local] = splitLive(props, ["accept", "multiple", "onSelect", "class", "name", "disabled"]);
+  const [local] = splitLive(props, ["accept", "multiple", "onSelect", "class", "name", "isDisabled"]);
   const onSelect = local.onSelect;
   return (
     <input
@@ -115,7 +116,7 @@ const DropZoneInput = (props: DropZoneInputProps): JSX.Element => {
       accept={local.accept}
       multiple={local.multiple}
       name={local.name}
-      disabled={local.disabled}
+      disabled={local.isDisabled}
       tabIndex={-1}
       aria-hidden="true"
       hidden

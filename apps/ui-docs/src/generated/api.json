@@ -74300,8 +74300,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-attachment/chat-attachment.tsx",
-    "line": 359,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L359"
+    "line": 358,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L358"
    },
    "href": "/api/rivetjs/ui/chat-attachment/ChatAttachmentDropzoneRenderProps/"
   },
@@ -74537,8 +74537,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-attachment/chat-attachment.tsx",
-    "line": 371,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L371"
+    "line": 370,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L370"
    },
    "href": "/api/rivetjs/ui/chat-attachment/ChatAttachmentInputDropzone/"
   },
@@ -74581,8 +74581,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-attachment/chat-attachment.tsx",
-    "line": 364,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L364"
+    "line": 363,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L363"
    },
    "href": "/api/rivetjs/ui/chat-attachment/ChatAttachmentInputDropzoneProps/"
   },
@@ -74643,10 +74643,10 @@
      "optional": true
     },
     {
-     "name": "disabled",
+     "name": "isDisabled",
      "kind": "property",
-     "signature": "disabled?: boolean",
-     "doc": "Disables the picker and dropping.",
+     "signature": "isDisabled?: boolean",
+     "doc": "Disables the picker and dropping (live: a reactive value is followed).",
      "optional": true
     },
     {
@@ -74700,8 +74700,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-attachment/chat-attachment.tsx",
-    "line": 337,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L337"
+    "line": 336,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L336"
    },
    "href": "/api/rivetjs/ui/chat-attachment/ChatAttachmentInputTrigger/"
   },
@@ -75572,8 +75572,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chat-attachment/chat-attachment.tsx",
-    "line": 332,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L332"
+    "line": 331,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chat-attachment/chat-attachment.tsx#L331"
    },
    "href": "/api/rivetjs/ui/chat-attachment/ChatAttachmentInputTriggerProps/"
   },
@@ -163035,8 +163035,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 210,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L210"
+    "line": 211,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L211"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileFormatIcon/"
   },
@@ -163057,8 +163057,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 203,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L203"
+    "line": 204,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L204"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileFormatIconProps/"
   },
@@ -163087,8 +163087,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 230,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L230"
+    "line": 231,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L231"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileInfo/"
   },
@@ -163117,8 +163117,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 177,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L177"
+    "line": 178,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L178"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileItem/"
   },
@@ -163139,8 +163139,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 170,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L170"
+    "line": 171,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L171"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileItemProps/"
   },
@@ -163169,8 +163169,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 159,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L159"
+    "line": 160,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L160"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileList/"
   },
@@ -163191,8 +163191,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 157,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L157"
+    "line": 158,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L158"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileListProps/"
   },
@@ -163221,8 +163221,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 248,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L248"
+    "line": 249,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L249"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileMeta/"
   },
@@ -163251,8 +163251,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 239,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L239"
+    "line": 240,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L240"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileName/"
   },
@@ -163281,8 +163281,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 260,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L260"
+    "line": 261,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L261"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileProgress/"
   },
@@ -163311,8 +163311,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 274,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L274"
+    "line": 275,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L275"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileProgressFill/"
   },
@@ -163341,8 +163341,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 273,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L273"
+    "line": 274,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L274"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileProgressTrack/"
   },
@@ -163371,8 +163371,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 298,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L298"
+    "line": 299,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L299"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileRemoveTrigger/"
   },
@@ -163401,8 +163401,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 281,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L281"
+    "line": 282,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L282"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileRetryTrigger/"
   },
@@ -163423,8 +163423,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 168,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L168"
+    "line": 169,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L169"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileStatus/"
   },
@@ -163445,8 +163445,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 279,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L279"
+    "line": 280,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L280"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneFileTriggerProps/"
   },
@@ -163505,8 +163505,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 106,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L106"
+    "line": 107,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L107"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneInput/"
   },
@@ -163537,10 +163537,10 @@
      "optional": true
     },
     {
-     "name": "disabled",
+     "name": "isDisabled",
      "kind": "property",
-     "signature": "disabled?: boolean",
-     "doc": "",
+     "signature": "isDisabled?: boolean",
+     "doc": "Triggers do not open the picker (the native input is disabled).",
      "optional": true
     },
     {
@@ -165371,8 +165371,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 132,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L132"
+    "line": 133,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L133"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneTrigger/"
   },
@@ -165393,8 +165393,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/drop-zone/drop-zone.tsx",
-    "line": 130,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L130"
+    "line": 131,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/drop-zone/drop-zone.tsx#L131"
    },
    "href": "/api/rivetjs/ui/drop-zone/DropZoneTriggerProps/"
   },
@@ -183845,17 +183845,17 @@
      "optional": true
     },
     {
+     "name": "isOpen",
+     "kind": "property",
+     "signature": "isOpen?: boolean | Signal<boolean>",
+     "doc": "Controlled open state (a value or a two-way Signal).",
+     "optional": true
+    },
+    {
      "name": "onOpenChange",
      "kind": "property",
      "signature": "onOpenChange?: (open: boolean) => void",
      "doc": "Open state changed.",
-     "optional": true
-    },
-    {
-     "name": "open",
-     "kind": "property",
-     "signature": "open?: boolean | Signal<boolean>",
-     "doc": "Controlled open state (a value or a two-way Signal).",
      "optional": true
     },
     {
