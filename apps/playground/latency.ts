@@ -1,7 +1,7 @@
 // Document latency of the production playground: first request after a fresh start and warm
 // percentiles per route, over loopback with Brotli negotiated like a browser. Fails when a warm p50
 // exceeds the budget (LATENCY_BUDGET_MS, default 1 ms). Requires `node build.ts` first.
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { createConnection } from "node:net";
 import { fileURLToPath } from "node:url";
 
@@ -12,9 +12,13 @@ const port = Number(process.env.LATENCY_PORT ?? 4198);
 const serve = fileURLToPath(new URL("./dist/serve.mjs", import.meta.url));
 const headers = { accept: "text/html", "accept-encoding": "br, gzip" };
 
-const ready = () =>
-  new Promise<void>((done) => {
+/** Resolves once the port accepts a connection; rejects when the server exits first or after 10 s. */
+const ready = (child: ChildProcess) =>
+  new Promise<void>((done, fail) => {
+    const deadline = Date.now() + 10_000;
     const attempt = () => {
+      if (child.exitCode !== null || child.signalCode !== null) return fail(new Error(`dist/serve.mjs exited (${child.exitCode ?? child.signalCode}) before listening on ${port}`));
+      if (Date.now() > deadline) return fail(new Error(`dist/serve.mjs did not listen on 127.0.0.1:${port} within 10 s`));
       const socket = createConnection(port, "127.0.0.1", () => (socket.destroy(), done()));
       socket.on("error", () => setTimeout(attempt, 20));
     };
@@ -30,11 +34,15 @@ async function time(url: string): Promise<number> {
 async function withServer<T>(run: (origin: string) => Promise<T>): Promise<T> {
   const child = spawn(process.execPath, [serve], { env: { ...process.env, PORT: String(port), HOST: "127.0.0.1" }, stdio: "ignore" });
   try {
-    await ready();
+    await ready(child);
     return await run(`http://127.0.0.1:${port}`);
   } finally {
-    child.kill();
-    await new Promise((done) => child.once("exit", done));
+    // Already exited (crash, port taken): no "exit" event would come.
+    if (child.exitCode === null && child.signalCode === null) {
+      const exited = new Promise((done) => child.once("exit", done));
+      child.kill();
+      await exited;
+    }
   }
 }
 

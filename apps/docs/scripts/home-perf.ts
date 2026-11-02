@@ -129,10 +129,13 @@ async function lighthouse(repo: string): Promise<NonNullable<HomePerf["lighthous
   const port = Number(process.env.HOME_PERF_PORT ?? 4419);
   const server = spawn(process.execPath, [resolve(harness, "static-server.mjs"), resolve(root, "dist/client"), String(port)], { stdio: "ignore" });
   try {
-    for (let i = 0; i < 100; i++) {
-      if (await fetch(`http://127.0.0.1:${port}/`).then((r) => r.ok, () => false)) break;
-      await new Promise((done) => setTimeout(done, 100));
+    let up = false;
+    for (let i = 0; i < 100 && !up; i++) {
+      up = await fetch(`http://127.0.0.1:${port}/`).then((r) => r.ok, () => false);
+      if (!up) await new Promise((done) => setTimeout(done, 100));
     }
+    // Lighthouse against a server that never came up would measure an error page (or nothing) as the home page.
+    if (!up) throw new Error(`home-perf: static server on 127.0.0.1:${port} did not answer within 10 s (port taken? set HOME_PERF_PORT)`);
     const url = `http://127.0.0.1:${port}/`;
     const runs = [];
     for (let i = 0; i < 3; i++) runs.push(await runLighthouse(url, chromium.executablePath(), process.env.HOME_PERF_PORT ? port + 1 : undefined));
