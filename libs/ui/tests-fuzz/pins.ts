@@ -71,6 +71,17 @@ export const pins: FuzzPin[] = [
   pin("/table-static-parity", "mismatch", 'csr only [data-hovered="true"]', "runtime", COLD_HOVER + " (grid twins)", true),
   pin("/carousel", "load", 'data-ready="true"', "cdk", "carousel engine starts on the first interaction on a resumed page, at mount in a client render", true),
   pin("/carousel", "mismatch", "data-in-view", "cdk", "carousel engine state (in-view slides) follows its start", true),
+  // CI (Linux runner, shard order) leaves the pointer over these elements: a client render sees the hover, a resumed page
+  // does not until its hover handler's chunk loaded (autoplay pauses on mouseenter; a sidebar tooltip opens on hover).
+  pin("/carousel", "mismatch", 'resumed only [data-playing="true"]', "cdk", COLD_HOVER + " (autoplay hover pause; CI 2/2 runs, local 0/3)", true),
+  pin(
+    "/sidebar-badges",
+    "load",
+    'aria-describedby="#0" class="sidebar__menu-button"',
+    "ui",
+    COLD_HOVER + " (menu button tooltip; CI 2/2 runs, local 0/3)",
+    true,
+  ),
   pin("/pro-forms", "load", 'data-roll="true"', "ui", "number roll entrance: " + MOUNT_EFFECT, true),
   pin("/reanimate", "load", 'data-roll="true"', "ui", "number roll entrance: " + MOUNT_EFFECT, true),
   pin("/forms", "load", 'csr only [data-roll="true"]', "ui", "NumberStepper roll entrance (libs/ui/CLAUDE.md reanimate): " + MOUNT_EFFECT, true),
