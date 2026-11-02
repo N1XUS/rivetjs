@@ -624,6 +624,22 @@ export async function classPlan(input: ClassPlanInput): Promise<ClassPlan> {
   // Elements a proven site matched; every other element naming a family (JSX in a helper function or at module level:
   // no call site of the walk records it) flags its module below.
   const matched = new Set<ClassElement>();
+  // Per (module, component, tag): the call indices and parsed elements a site is matched against (compiler#18: built
+  // once, not per site).
+  const tagCalls = new Map<string, number[]>();
+  const sameTag = (file: string, component: string, calls: readonly { tag: string }[], tag: string): number[] => {
+    const key = file + "\0" + component + "\0" + tag;
+    let list = tagCalls.get(key);
+    if (!list) tagCalls.set(key, (list = calls.flatMap((c, i) => (c.tag === tag ? [i] : []))));
+    return list;
+  };
+  const tagElements = new Map<string, ClassElement[]>();
+  const elementsOf = (file: string, mod: ClassModule, component: string, tag: string): ClassElement[] => {
+    const key = file + "\0" + component + "\0" + tag;
+    let list = tagElements.get(key);
+    if (!list) tagElements.set(key, (list = mod.elements.filter((e) => e.component === component && e.tag === tag)));
+    return list;
+  };
   for (let index = 0; index < fams.length; index++) {
     const f = fams[index]!;
     for (const site of callers.get(f.id) ?? []) {
@@ -637,8 +653,8 @@ export async function classPlan(input: ClassPlanInput): Promise<ClassPlan> {
         flag(file, index, "site without source");
         continue;
       }
-      const same = calls.flatMap((c, i) => (c.tag === call.tag ? [i] : []));
-      const elements = mod.elements.filter((e) => e.component === component && e.tag === call.tag);
+      const same = sameTag(file, component, calls, call.tag);
+      const elements = elementsOf(file, mod, component, call.tag);
       const element = same.length === elements.length ? elements[same.indexOf(site.index)] : undefined;
       if (!element || element.around.join("\0") !== call.around.join("\0")) {
         flag(file, index, "site not matched " + component + ":" + site.index);

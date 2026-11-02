@@ -237,6 +237,12 @@ export function liteModule(source: string, filename: string): LiteModule | null 
       case "AssignmentExpression":
         for (const n of nodes(node.left as Node)) if (n.type === "Identifier") assigned.add(n.name as string);
         break;
+      case "ForInStatement":
+      case "ForOfStatement":
+        // `for (h of list)` reassigns `h` without an AssignmentExpression (router-compiler-2#6).
+        if ((node.left as Node).type !== "VariableDeclaration")
+          for (const n of nodes(node.left as Node)) if (n.type === "Identifier") assigned.add(n.name as string);
+        break;
       case "UpdateExpression":
         if ((node.argument as Node).type === "Identifier") assigned.add((node.argument as Node).name as string);
         break;
@@ -431,6 +437,35 @@ export function litePlan(input: LitePlanInput): LitePlan {
     if (!parsed.has(file)) parsed.set(file, texts.has(file) ? liteModule(texts.get(file)!, file) : null);
     return parsed.get(file)!;
   };
+  // Per-module memos (compiler#3 / #18): import edges (the caller's `edges` allocates per call), the elements of one
+  // (component, tag) in a parsed module, and whether a module's source already names a local.
+  const edgeMemo = new Map<string, string[]>();
+  const edgesOf = (file: string): string[] => {
+    let list = edgeMemo.get(file);
+    if (!list) edgeMemo.set(file, (list = [...input.edges!(file)]));
+    return list;
+  };
+  const elementIndex = new Map<string, Map<string, LiteElement[]>>();
+  const elementsOf = (file: string, mod: LiteModule, component: string, tag: string): LiteElement[] => {
+    let index = elementIndex.get(file);
+    if (!index) {
+      elementIndex.set(file, (index = new Map()));
+      for (const e of mod.elements) {
+        const key = e.component + "\0" + e.tag;
+        const list = index.get(key);
+        if (list) list.push(e);
+        else index.set(key, [e]);
+      }
+    }
+    return index.get(component + "\0" + tag) ?? [];
+  };
+  const taken = new Map<string, boolean>();
+  const nameTaken = (file: string, local: string): boolean => {
+    const key = file + "\0" + local;
+    let hit = taken.get(key);
+    if (hit === undefined) taken.set(key, (hit = texts.get(file)!.includes(local)));
+    return hit;
+  };
   const candidates: Candidate[] = [];
   /** Per family root id: the caller files of its sites that stay (unproven, caller shipping code). */
   const kept = new Map<string, Set<string>>();
@@ -490,7 +525,7 @@ export function litePlan(input: LitePlanInput): LitePlan {
           const mod = parse(callerFile);
           if (!mod) return why("unparsable");
           const same = calls.flatMap((c, i) => (c.tag === call.tag ? [i] : []));
-          const elements = mod.elements.filter((e) => e.component === component && e.tag === call.tag);
+          const elements = elementsOf(callerFile, mod, component, call.tag);
           const element = same.length === elements.length ? elements[same.indexOf(site.index)] : undefined;
           if (!element || element.around.join("\0") !== call.around.join("\0") || element.spread) return why("element not matched");
           for (const [name, value] of element.attrs) {
@@ -509,7 +544,7 @@ export function litePlan(input: LitePlanInput): LitePlan {
           });
           if (reader) return why("inner reads", reader.tag);
           const local = liteLocal(family.lite);
-          if (texts.get(callerFile)!.includes(local)) return why("local name taken");
+          if (nameTaken(callerFile, local)) return why("local name taken");
           return element;
         })();
         if (element) {
@@ -534,7 +569,7 @@ export function litePlan(input: LitePlanInput): LitePlan {
         if (!seen.has(f)) {
           seen.add(f);
           if (skip.has(f)) continue;
-          for (const to of input.edges!(f)) stack.push(to);
+          for (const to of edgesOf(f)) stack.push(to);
         }
       for (const f of seen) if (!skip.has(f)) for (const to of input.dynamicEdges?.(f) ?? []) if (!queued.has(to)) (queued.add(to), queue.push(to));
     }
@@ -557,18 +592,26 @@ export function litePlan(input: LitePlanInput): LitePlan {
         }
       return { page, seen };
     });
+    // Every module some unit loads (a union: the same shared module is checked once per root, not once per unit).
+    const loaded = new Set<string>();
+    for (const { seen } of units.values()) for (const f of seen) if (!skip.has(f)) loaded.add(f);
+    const meets = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => {
+      const [small, large] = a.size <= b.size ? [a, b] : [b, a];
+      for (const f of small) if (large.has(f)) return true;
+      return false;
+    };
     for (const root of roots) {
       const stays = kept.get(root.id)!;
       // Modules that keep the root's code on any page loading them: sites that stay, importers of a foreign dependency
       // (the root module's own imports aside: not followed).
       const bad = new Set(stays);
-      for (const { seen } of units.values()) for (const f of seen) if (!skip.has(f) && [...input.edges!(f)].some((to) => root.foreign.has(to))) bad.add(f);
+      if (root.foreign.size) for (const f of loaded) if (edgesOf(f).some((to) => root.foreign.has(to))) bad.add(f);
       const mine = new Set(chosen.filter((c) => c.rootId === root.id).map((c) => c.file));
-      const relevant = closures.filter(({ seen }) => [...mine].some((f) => seen.has(f)));
+      const relevant = mine.size ? closures.filter(({ seen }) => meets(mine, seen)) : [];
       for (let changed = true; changed;) {
         changed = false;
         for (const { page, seen } of relevant) {
-          if (![...seen].some((f) => bad.has(f))) continue;
+          if (!meets(seen, bad)) continue;
           for (const f of mine)
             if (seen.has(f) && !stays.has(f)) {
               trace?.(root.id.slice(root.id.lastIndexOf("?") + 1), f, "page keeps root", page);

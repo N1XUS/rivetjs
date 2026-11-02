@@ -1731,6 +1731,7 @@ function rivetPlugin(
           twins.set(file + "\0" + family.spec, hit && !hit.external ? hit.id.split("?")[0]! : null);
         }
       const proof = verdicts.callSites;
+      const staticOf = new Map<string, Set<string>>();
       const lite = litePlan({
         texts,
         facts,
@@ -1752,7 +1753,10 @@ function rivetPlugin(
               packageOf: (file: string) => sourcePackage(file)?.dir ?? null,
               isStatic: (id: string) => {
                 const at = id.lastIndexOf("?");
-                return verdicts.static(id.slice(0, at)).includes(id.slice(at + 1));
+                const file = id.slice(0, at);
+                let set = staticOf.get(file);
+                if (!set) staticOf.set(file, (set = new Set(verdicts.static(file))));
+                return set.has(id.slice(at + 1));
               },
             }),
         ...(liteTrace ? { trace: (...a: unknown[]) => liteTrace(...a.map((v) => (typeof v === "string" && v.startsWith(root) ? relative(root, v) : v))) } : {}),

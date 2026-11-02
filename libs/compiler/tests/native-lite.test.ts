@@ -58,6 +58,9 @@ test("lite: handlers that never read their arguments", () => {
     ["const h = (e) => go(e);", `<B onPress={h} />`],
     ["let h = () => go();", `<B onPress={h} />`],
     ["function h() { go(); }\nh = other;", `<B onPress={h} />`],
+    ["function h() { go(); }\nfor (h of list);", `<B onPress={h} />`],
+    ["function h() { go(); }\nfor (h in table);", `<B onPress={h} />`],
+    ["function h() { go(); }\nfor ([h] of pairs);", `<B onPress={h} />`],
     ["const h = () => 1;\nfunction other() { const h = (e) => e; }", `<B onPress={h} />`],
     ["const h = pick();", `<B onPress={h} />`],
   ])
