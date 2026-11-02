@@ -82,34 +82,34 @@ CSS before first paint = the stylesheets the route's HTML links (`minified / bro
 
 | app | client JS files | all client JS | server build JS |
 |---|--:|--:|--:|
-| playground | 36 | 140.56 k / 53.81 k | 203.44 k / 73.50 k |
-| kit-fixture | 14 | 107.32 k / 38.70 k | 180.65 k / 64.48 k |
-| router:nav-api | 13 | 106.01 k / 37.63 k | 156.58 k / 55.55 k |
-| router:nested | 16 | 105.67 k / 37.16 k | 161.62 k / 55.04 k |
-| starter-server | 2 | 60.77 k / 20.02 k | 155.17 k / 53.28 k |
-| starter-static | 23 | 174.57 k / 62.48 k | 166.48 k / 57.92 k |
-| starter-minimal | 10 | 136.09 k / 47.24 k | 148.90 k / 51.48 k |
-| starter-ui | 49 | 193.94 k / 69.47 k | 251.37 k / 81.19 k |
-| example:counter | 10 | 136.25 k / 47.37 k | 148.98 k / 51.58 k |
-| example:todo-list | 11 | 157.67 k / 55.07 k | 167.47 k / 57.95 k |
-| example:loader-data | 4 | 67.71 k / 23.22 k | 157.28 k / 54.75 k |
-| example:search-with-debounce | 5 | 76.57 k / 26.58 k | 169.47 k / 58.71 k |
-| example:lazy-chunk-demo | 16 | 139.87 k / 49.22 k | 149.66 k / 51.67 k |
-| example:nested-layouts | 18 | 170.75 k / 60.15 k | 153.62 k / 52.46 k |
-| example:two-way-input | 10 | 140.79 k / 48.99 k | 150.23 k / 51.99 k |
-| example:route-transitions | 10 | 104.51 k / 37.46 k | 165.27 k / 59.37 k |
-| example:action-form | 2 | 60.77 k / 20.02 k | 156.82 k / 53.83 k |
-| example:motion-basics | 71 | 159.16 k / 63.84 k | 179.88 k / 62.45 k |
-| example:motion-gestures | 71 | 160.33 k / 64.25 k | 181.15 k / 62.83 k |
-| example:motion-presence | 74 | 163.32 k / 65.82 k | 190.56 k / 65.71 k |
-| example:motion-layout | 72 | 167.75 k / 67.10 k | 194.85 k / 67.75 k |
-| example:motion-scroll | 2 | 60.77 k / 20.02 k | 154.36 k / 53.69 k |
-| example:resume-demo | 10 | 136.66 k / 47.53 k | 149.17 k / 51.63 k |
-| example:tutorial-03 | 12 | 139.80 k / 48.56 k | 149.65 k / 51.82 k |
-| example:card-slots | 6 | 70.03 k / 24.23 k | 150.44 k / 52.04 k |
-| cdk-example:masonry-expand | 8 | 171.32 k / 57.19 k | 232.56 k / 77.90 k |
-| cdk-example:masonry-feed | 8 | 170.70 k / 56.95 k | 232.05 k / 77.71 k |
-| cdk-example:scheduler-views-binding | 82 | 448.05 k / 150.76 k | 433.19 k / 130.19 k |
+| playground | 36 | 140.56 k / 53.81 k | 203.45 k / 73.48 k |
+| kit-fixture | 14 | 107.32 k / 38.70 k | 180.67 k / 64.50 k |
+| router:nav-api | 13 | 106.01 k / 37.63 k | 156.60 k / 55.55 k |
+| router:nested | 16 | 105.67 k / 37.16 k | 161.64 k / 55.04 k |
+| starter-server | 2 | 60.77 k / 20.02 k | 155.18 k / 53.27 k |
+| starter-static | 23 | 174.57 k / 62.48 k | 166.50 k / 57.90 k |
+| starter-minimal | 10 | 136.09 k / 47.24 k | 148.91 k / 51.53 k |
+| starter-ui | 49 | 193.94 k / 69.47 k | 251.38 k / 81.18 k |
+| example:counter | 10 | 136.25 k / 47.37 k | 149.00 k / 51.52 k |
+| example:todo-list | 11 | 157.67 k / 55.07 k | 167.48 k / 57.97 k |
+| example:loader-data | 4 | 67.71 k / 23.22 k | 157.29 k / 54.77 k |
+| example:search-with-debounce | 5 | 76.57 k / 26.58 k | 169.47 k / 58.72 k |
+| example:lazy-chunk-demo | 16 | 139.87 k / 49.22 k | 149.67 k / 51.77 k |
+| example:nested-layouts | 18 | 170.75 k / 60.15 k | 153.63 k / 52.44 k |
+| example:two-way-input | 10 | 140.79 k / 48.99 k | 150.24 k / 51.88 k |
+| example:route-transitions | 10 | 104.51 k / 37.46 k | 165.29 k / 59.36 k |
+| example:action-form | 2 | 60.77 k / 20.02 k | 156.84 k / 53.81 k |
+| example:motion-basics | 71 | 159.16 k / 63.84 k | 179.89 k / 62.47 k |
+| example:motion-gestures | 71 | 160.33 k / 64.25 k | 181.16 k / 62.89 k |
+| example:motion-presence | 74 | 163.32 k / 65.82 k | 190.57 k / 65.64 k |
+| example:motion-layout | 72 | 167.75 k / 67.10 k | 194.86 k / 67.79 k |
+| example:motion-scroll | 2 | 60.77 k / 20.02 k | 154.37 k / 53.73 k |
+| example:resume-demo | 10 | 136.66 k / 47.53 k | 149.18 k / 51.67 k |
+| example:tutorial-03 | 12 | 139.80 k / 48.56 k | 149.66 k / 51.85 k |
+| example:card-slots | 6 | 70.03 k / 24.23 k | 150.45 k / 52.05 k |
+| cdk-example:masonry-expand | 8 | 171.32 k / 57.19 k | 232.57 k / 77.95 k |
+| cdk-example:masonry-feed | 8 | 170.70 k / 56.95 k | 232.06 k / 77.77 k |
+| cdk-example:scheduler-views-binding | 82 | 448.05 k / 150.76 k | 433.19 k / 130.23 k |
 
 | ssr-bench lane | server bundle |
 |---|--:|

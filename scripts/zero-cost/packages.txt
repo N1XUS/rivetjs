@@ -1,5 +1,5 @@
 @rivetjs/router 965ee4bafd7e 3340
-@rivetjs/router/server d0ec6ad5b938 32354
+@rivetjs/router/server ea8c2015f00e 32364
 @rivetjs/router/route-cache f49c03f3006f 19228
 @rivetjs/router/server-only 56e1b0c10087 9
 @rivetjs/router/env 13d077a34a5e 1062
@@ -51,8 +51,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] b07050187b59 567231 css 5e1f347659da 1219846
-@rivetjs/ui [server] 28131612d4f7 504519 css 5e1f347659da 1219846
+@rivetjs/ui [dom] 857e09fe885a 567257 css 5e1f347659da 1219846
+@rivetjs/ui [server] 00a47b4daf13 504502 css 5e1f347659da 1219846
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -280,8 +280,8 @@
 @rivetjs/ui/trend-chip [server] e20aa20d7dca 5223 css e1c9cca9a1c0 1209544
 @rivetjs/ui/kpi [dom] 5a1cb46a898a 7925 css e1c9cca9a1c0 1209544
 @rivetjs/ui/kpi [server] b2844890eb3d 7615 css e1c9cca9a1c0 1209544
-@rivetjs/ui/chart [dom] 6080a7818c65 23761 css cb382e635ad4 17692
-@rivetjs/ui/chart [server] 1d354970a042 26507 css cb382e635ad4 17692
+@rivetjs/ui/chart [dom] bb53254eb634 23723 css cb382e635ad4 17692
+@rivetjs/ui/chart [server] cf32ac5659ce 26469 css cb382e635ad4 17692
 @rivetjs/ui/kpi-group [dom] 996ac20c6e57 4225 css e1c9cca9a1c0 1209544
 @rivetjs/ui/kpi-group [server] a2694c478b6e 4232 css e1c9cca9a1c0 1209544
 @rivetjs/ui/number-value [dom] df5793d8eb73 6288 css e1c9cca9a1c0 1209544
@@ -336,8 +336,8 @@
 @rivetjs/ui/radar-chart [server] e9e8b4cec65e 15605 css 2f0dafd1ef45 19329
 @rivetjs/ui/radial-chart [dom] b35bf0f8544c 9962 css d5b8ed5ebb8e 18464
 @rivetjs/ui/radial-chart [server] 7a197ff47568 13263 css d5b8ed5ebb8e 18464
-@rivetjs/ui/composed-chart [dom] bae9eb56bc44 14419 css 8b779158df7b 18342
-@rivetjs/ui/composed-chart [server] a3acaa712edd 18183 css 8b779158df7b 18342
+@rivetjs/ui/composed-chart [dom] 1d169a539d14 14440 css 8b779158df7b 18342
+@rivetjs/ui/composed-chart [server] 6dfd410b1c58 18204 css 8b779158df7b 18342
 @rivetjs/ui/kanban [dom] b07e822b6af8 25888 css e1c9cca9a1c0 1209544
 @rivetjs/ui/kanban [server] 96e46bf98995 23661 css e1c9cca9a1c0 1209544
 @rivetjs/ui/text-shimmer [dom] d93e9446d0b1 3789 css 91b77d4ecd3a 1993
@@ -368,9 +368,9 @@
 @rivetjs/ui/chat-conversation [server] c3c67940cf7c 8483 css e1c9cca9a1c0 1209544
 @rivetjs/ui/chat-attachment [dom] aad2a65c5527 16226 css e1c9cca9a1c0 1209544
 @rivetjs/ui/chat-attachment [server] fecdd899a134 14195 css e1c9cca9a1c0 1209544
-@rivetjs/ui/prompt-input [dom] 8850cf627c99 19096 css e1c9cca9a1c0 1209544
+@rivetjs/ui/prompt-input [dom] cddcd9ce5a16 19139 css e1c9cca9a1c0 1209544
 @rivetjs/ui/prompt-input [server] a1d4f7ccbb98 17126 css e1c9cca9a1c0 1209544
-@rivetjs/ui/prompt-input-tokens [dom] 5e2c85caba50 13681 css e1c9cca9a1c0 1209544
+@rivetjs/ui/prompt-input-tokens [dom] a0bee1c3db28 13724 css e1c9cca9a1c0 1209544
 @rivetjs/ui/prompt-input-tokens [server] 934515e50c2a 12441 css e1c9cca9a1c0 1209544
 @rivetjs/ui/prompt-input-queue-reorder [dom] c2f18f63a2ec 2109
 @rivetjs/ui/prompt-input-queue-reorder [server] 38b70d125f89 1850

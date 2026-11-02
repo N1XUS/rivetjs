@@ -61090,8 +61090,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chart/chart.tsx",
-    "line": 441,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L441"
+    "line": 436,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L436"
    },
    "href": "/api/rivetjs/ui/chart/AreaChart/"
   },
@@ -62931,8 +62931,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chart/chart.tsx",
-    "line": 490,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L490"
+    "line": 485,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L485"
    },
    "href": "/api/rivetjs/ui/chart/BarChart/"
   },
@@ -66686,8 +66686,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chart/chart.tsx",
-    "line": 712,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L712"
+    "line": 693,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L693"
    },
    "href": "/api/rivetjs/ui/chart/DonutChart/"
   },
@@ -68419,8 +68419,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chart/chart.tsx",
-    "line": 697,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L697"
+    "line": 678,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L678"
    },
    "href": "/api/rivetjs/ui/chart/DonutChartProps/"
   },
@@ -68470,8 +68470,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chart/chart.tsx",
-    "line": 690,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L690"
+    "line": 671,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L671"
    },
    "href": "/api/rivetjs/ui/chart/DonutSegment/"
   },
@@ -68500,8 +68500,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chart/chart.tsx",
-    "line": 444,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L444"
+    "line": 439,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L439"
    },
    "href": "/api/rivetjs/ui/chart/LineChart/"
   },
@@ -68552,8 +68552,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/chart/chart.tsx",
-    "line": 447,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L447"
+    "line": 442,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/chart/chart.tsx#L442"
    },
    "href": "/api/rivetjs/ui/chart/Sparkline/"
   },
@@ -291113,8 +291113,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 258,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L258"
+    "line": 259,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L259"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputAction/"
   },
@@ -291998,8 +291998,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 253,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L253"
+    "line": 254,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L254"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputActionProps/"
   },
@@ -292146,8 +292146,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 337,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L337"
+    "line": 338,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L338"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueue/"
   },
@@ -292176,8 +292176,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 362,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L362"
+    "line": 363,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L363"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItem/"
   },
@@ -292206,8 +292206,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 420,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L420"
+    "line": 421,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L421"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemAction/"
   },
@@ -292228,8 +292228,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 387,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L387"
+    "line": 388,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L388"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemActions/"
   },
@@ -292250,8 +292250,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 386,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L386"
+    "line": 387,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L387"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemAttachments/"
   },
@@ -292280,8 +292280,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 410,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L410"
+    "line": 411,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L411"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemAttachmentsOverflow/"
   },
@@ -292325,8 +292325,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 402,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L402"
+    "line": 403,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L403"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemAttachmentsOverflowProps/"
   },
@@ -292347,8 +292347,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 383,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L383"
+    "line": 384,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L384"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemBody/"
   },
@@ -292369,8 +292369,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 384,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L384"
+    "line": 385,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L385"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemContent/"
   },
@@ -292391,8 +292391,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 385,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L385"
+    "line": 386,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L386"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemDescription/"
   },
@@ -292421,8 +292421,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 390,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L390"
+    "line": 391,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L391"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemHandle/"
   },
@@ -292451,8 +292451,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 396,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L396"
+    "line": 397,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L397"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemIcon/"
   },
@@ -292481,8 +292481,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 443,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L443"
+    "line": 444,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L444"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemMore/"
   },
@@ -292511,8 +292511,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 434,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L434"
+    "line": 435,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L435"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueItemRemove/"
   },
@@ -292541,8 +292541,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 353,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L353"
+    "line": 354,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L354"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueList/"
   },
@@ -294239,8 +294239,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 330,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L330"
+    "line": 331,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L331"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputQueueProps/"
   },
@@ -296066,8 +296066,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 287,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L287"
+    "line": 288,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L288"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputSend/"
   },
@@ -296946,8 +296946,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 280,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L280"
+    "line": 281,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L281"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputSendProps/"
   },
@@ -297020,8 +297020,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 215,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L215"
+    "line": 216,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L216"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputTextArea/"
   },
@@ -298824,8 +298824,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/prompt-input/prompt-input.tsx",
-    "line": 203,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L203"
+    "line": 204,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/prompt-input/prompt-input.tsx#L204"
    },
    "href": "/api/rivetjs/ui/prompt-input/PromptInputTextAreaProps/"
   },
