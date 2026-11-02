@@ -20,11 +20,17 @@ const portOf = (origin: string) => Number(new URL(origin).port || 80);
 
 const html = { "content-type": "text/html; charset=utf-8" };
 
-/** Folder → index.html and the 404 page, read from `dir` per request. */
+/** Folder → index.html and the 404 page, read from `dir` per request; a malformed percent-encoded path is a 400. */
 function pages(dir: string) {
   return async (request: Request): Promise<Response> => {
     const { pathname } = new URL(request.url);
-    const file = resolve(dir, "." + decodeURIComponent(pathname).replace(/\/?$/, "/") + "index.html");
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(pathname);
+    } catch {
+      return new Response("Bad request", { status: 400, headers: html });
+    }
+    const file = resolve(dir, "." + decoded.replace(/\/?$/, "/") + "index.html");
     if (file.startsWith(dir + sep) && existsSync(file)) return new Response(await readFile(file), { headers: html });
     if (!existsSync(dir))
       return new Response('<!doctype html><meta http-equiv="refresh" content="2"><p>Building the site…</p>', { status: 503, headers: html });

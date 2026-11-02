@@ -23,7 +23,7 @@ const PASSWORD = "rivet-dev-password-1";
 let serving: { close(): Promise<unknown> } | undefined;
 let db: DatabaseSync;
 let jsBytes = 0;
-const ENV = { DATABASE_PATH: dbPath, MAIL_LOG: "0", RATE_LIMIT_IP: "1000", APP_ORIGIN: base };
+const ENV = { DATABASE_PATH: dbPath, MAIL_LOG: "0", RATE_LIMIT_IP: "1000", RATE_LIMIT_SIGNUP: "1000", RATE_LIMIT_CONFIRM: "1000", APP_ORIGIN: base };
 const savedEnv: Record<string, string | undefined> = {};
 
 type Mail = { to: string; text: string };
@@ -289,6 +289,27 @@ test("login rate limit: per account (5 failures) and per client address", async 
     assert.equal((await signIn(other)).status, 429);
   } finally {
     process.env.RATE_LIMIT_IP = "1000";
+    failures()!.clear();
+  }
+});
+
+test("hashing work is rate limited: sign-ups per address; invalid reset tokens per address, before any scrypt run", async () => {
+  failures()?.clear();
+  process.env.RATE_LIMIT_SIGNUP = "2";
+  process.env.RATE_LIMIT_CONFIRM = "2";
+  try {
+    for (let i = 0; i < 2; i++) assert.equal((await signUp()).response.status, 303);
+    const third = await post("/signup?/signup", { name: "Spray", email: email("spray"), password: PASSWORD, next: "" });
+    assert.equal(third.status, 429);
+    assert.ok(Number(third.headers.get("retry-after")) > 800);
+    const random = () => "A".repeat(42) + String(++n % 10);
+    for (let i = 0; i < 2; i++) assert.equal((await post(`/reset/confirm?/reset`, { token: random(), password: "x".repeat(128) })).status, 400);
+    const blocked = await post(`/reset/confirm?/reset`, { token: random(), password: "x".repeat(128) });
+    assert.equal(blocked.status, 429);
+    assert.match(await html(blocked), /Too many reset attempts/);
+  } finally {
+    process.env.RATE_LIMIT_SIGNUP = "1000";
+    process.env.RATE_LIMIT_CONFIRM = "1000";
     failures()!.clear();
   }
 });

@@ -7,15 +7,26 @@ import { sendMail } from "./mail.server.ts";
 import { dummyHash, hashPassword, needsRehash, verifyPassword } from "./password.server.ts";
 import { clearFailures, limits, recordFailure, retryAfter } from "./rate-limit.server.ts";
 import { authOf, deleteUserSessions, startSession } from "./sessions.server.ts";
-import { consumeResetToken, createResetToken, createUser, findUserByEmail, getUser, setPasswordHash } from "./users.server.ts";
+import { consumeResetToken, createResetToken, createUser, findUserByEmail, getUser, resetTokenValid, setPasswordHash } from "./users.server.ts";
 
 const WRONG = "Wrong email or password";
+
+/** Limiter key of the client address. Without `trustProxy` the node adapter reports the socket address. */
+const ipKey = (event: RequestEvent) => `ip:${event.platform.clientAddress ?? "unknown"}`;
+
+/** 429 with `Retry-After` when `key` is over `max` in the window, else undefined. */
+function limited(event: RequestEvent, key: string, max: number, what: string) {
+  const wait = retryAfter(key, max);
+  if (!wait) return undefined;
+  event.setHeader("retry-after", String(wait));
+  return invalid({}, `Too many ${what}. Try again in ${Math.ceil(wait / 60)} minutes.`, 429);
+}
 
 /** Rate-limited sign-in: per client address and per account, checked before any hashing work. */
 export async function signIn({ email, password, next }: { email: string; password: string; next: string }, event: RequestEvent) {
   // Without `trustProxy` the node adapter reports the socket address; behind a proxy configure it, or every client
   // shares the proxy's address (and its limit).
-  const ip = `ip:${event.platform.clientAddress ?? "unknown"}`;
+  const ip = ipKey(event);
   const account = `account:${email}`;
   const max = limits();
   const wait = Math.max(retryAfter(ip, max.ip), retryAfter(account, max.account));
@@ -37,7 +48,12 @@ export async function signIn({ email, password, next }: { email: string; passwor
   return redirect(safeRedirect(next, "/account"), 303);
 }
 
+/** Sign-up: every attempt counts against the client address (each one costs a full scrypt run), checked before hashing. */
 export async function signUp({ name, email, password, next }: { name: string; email: string; password: string; next: string }, event: RequestEvent) {
+  const key = `signup:${ipKey(event)}`;
+  const over = limited(event, key, limits().signup, "sign-ups from this address");
+  if (over) return over;
+  recordFailure(key);
   const id = createUser(getDb(), { name, email, passwordHash: await hashPassword(password) });
   // Telling a visitor an email is registered is a deliberate usability trade-off (README: "Account enumeration").
   if (id === null) return invalid({ email: "An account with this email already exists" });
@@ -86,11 +102,24 @@ export function requestReset({ email }: { email: string }, event: RequestEvent) 
   return redirect("/reset?sent=1", 303);
 }
 
-/** Reset confirm: consumes the token (single use), sets the password, ends every session, signs in afresh. */
+/**
+ * Reset confirm: consumes the token (single use), sets the password, ends every session, signs in afresh. The token is
+ * checked before any hashing work, and invalid tokens count against the client address: random tokens never buy a
+ * scrypt run.
+ */
 export async function confirmReset({ token, password }: { token: string; password: string }, event: RequestEvent) {
+  const key = `confirm:${ipKey(event)}`;
+  const over = limited(event, key, limits().confirm, "reset attempts");
+  if (over) return over;
+  const INVALID = "This reset link is invalid, used or expired. Ask for a new one.";
+  if (!resetTokenValid(getDb(), token)) {
+    recordFailure(key);
+    return invalid({}, INVALID);
+  }
   const passwordHash = await hashPassword(password);
+  // Consumed after hashing: a concurrent use of the same token between the check and here still loses (single use).
   const userId = consumeResetToken(getDb(), token);
-  if (userId === null) return invalid({}, "This reset link is invalid, used or expired. Ask for a new one.");
+  if (userId === null) return invalid({}, INVALID);
   setPasswordHash(getDb(), userId, passwordHash);
   deleteUserSessions(getDb(), userId);
   startSession(event, userId);

@@ -1,4 +1,5 @@
-// Failed-attempt limiter: a sliding window of failure times per key (`ip:<address>`, `account:<email>`, `reset:<email>`).
+// Attempt limiter: a sliding window of attempt times per key (`ip:<address>`, `account:<email>`, `reset:<email>`,
+// `signup:ip:<address>`, `confirm:ip:<address>`).
 // In-process memory: right for one server process; several processes need a shared store (Redis, the database).
 const WINDOW = 15 * 60 * 1000;
 const MAX_KEYS = 10_000;
@@ -6,8 +7,18 @@ const KEY = Symbol.for("rivet.example.auth-sessions.limits");
 /** Key → failure times (ms), oldest first. On `globalThis`: one store per process (tests clear it between cases). */
 export const failures = ((globalThis as Record<symbol, Map<string, number[]> | undefined>)[KEY] ??= new Map());
 
-/** Failed sign-ins per 15 minutes: per client address (`RATE_LIMIT_IP`, default 20) and per account (`RATE_LIMIT_ACCOUNT`, 5). */
-export const limits = () => ({ ip: Number(process.env.RATE_LIMIT_IP) || 20, account: Number(process.env.RATE_LIMIT_ACCOUNT) || 5, reset: 3 });
+/**
+ * Limits per 15 minutes: failed sign-ins per client address (`RATE_LIMIT_IP`, default 20) and per account
+ * (`RATE_LIMIT_ACCOUNT`, 5); reset mails per email (3); sign-up attempts per client address (`RATE_LIMIT_SIGNUP`, 10);
+ * invalid reset-confirm tokens per client address (`RATE_LIMIT_CONFIRM`, 10).
+ */
+export const limits = () => ({
+  ip: Number(process.env.RATE_LIMIT_IP) || 20,
+  account: Number(process.env.RATE_LIMIT_ACCOUNT) || 5,
+  reset: 3,
+  signup: Number(process.env.RATE_LIMIT_SIGNUP) || 10,
+  confirm: Number(process.env.RATE_LIMIT_CONFIRM) || 10,
+});
 
 function recent(key: string, now: number): number[] {
   const list = failures.get(key);

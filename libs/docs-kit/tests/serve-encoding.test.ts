@@ -72,3 +72,22 @@ for (const [name, start] of [
       await serving.close();
     }
   });
+
+for (const [name, start] of [
+  ["serveStatic", (dir: string) => serveStatic(dir, 0)],
+  ["serveSwappable", (dir: string) => serveSwappable(dir, 0)],
+] as const)
+  test(`${name}: a malformed percent-encoded path answers 400, not a handler rejection`, async () => {
+    const dist = mkdtempSync(join(tmpdir(), "docs-kit-badpath-"));
+    const client = join(dist, "client");
+    writeBuild(client);
+    const serving = await start(client);
+    try {
+      const bad = await get(serving.url + "/%E0", {});
+      assert.equal(bad.status, 400);
+      const ok = await get(serving.url + "/guide/", {});
+      assert.equal(ok.status, 200);
+    } finally {
+      await serving.close();
+    }
+  });

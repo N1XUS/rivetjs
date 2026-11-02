@@ -25,7 +25,7 @@ The `__Host-session` cookie is `Secure`. Chromium and Firefox accept it on `http
 - `migrations/0001_init.sql`: `users`, `sessions` (SHA-256 of the token, never the token), `password_resets` (hashed, single use).
 - `src/server/sessions.server.ts`: 256-bit random tokens, sliding expiry (30 days, extended once less than 15 are left), rotation, sessions list, cookie flags.
 - `src/server/password.server.ts`: scrypt from `node:crypto` (N=2^14, r=8, p=5, OWASP), 16-byte per-user salt, `timingSafeEqual`, parameters stored with the hash (`needsRehash`).
-- `src/server/rate-limit.server.ts`: failed sign-ins per client address (20 per 15 minutes) and per account (5). Reset mails are limited to 3 per email per 15 minutes.
+- `src/server/rate-limit.server.ts`: failed sign-ins per client address (20 per 15 minutes) and per account (5). Reset mails are limited to 3 per email per 15 minutes. Sign-up attempts and invalid reset-confirm tokens are limited per client address (10 each), so neither form becomes a way to buy scrypt runs.
 - `src/server/auth.server.ts`: the action bodies for sign in, sign up, password change, reset request and confirmation.
 - `src/routes/_layout.tsx`: root `guard(readSession)` puts the user on `event.locals.auth` for every page, data request and action. It also sets frame and referrer headers.
 - `src/routes/account.tsx`: a `guard` that sends signed-out visitors to `/signin?next=…`, the sessions list (revoke one, sign out others), password change and the sign-out action.
@@ -44,6 +44,7 @@ The `__Host-session` cookie is `Secure`. Chromium and Firefox accept it on `http
 - [x] Passwords: scrypt with a per-user salt, constant-time compare, 10–128 characters (NIST 800-63B: length over composition rules; the upper bound caps hashing work), never echoed into HTML.
 - [x] No account enumeration through sign-in or reset: one message for an unknown email and a wrong password, and an unknown email still pays for a scrypt run (dummy hash). The reset form gives the same answer for every email.
 - [x] Brute force: per-address and per-account limits, checked before any hashing. Over the limit: 429 with `Retry-After`.
+- [x] Hashing work: sign-up is limited per address, and reset confirmation checks the token before hashing (invalid tokens count against the address), so unauthenticated requests cannot queue scrypt runs at will.
 - [x] Reset tokens: 256 bits, hashed, single use (consumed by one `UPDATE … RETURNING`), 30-minute expiry, a new request voids the old token. `Referrer-Policy: same-origin` and `Cache-Control: no-store` on the page.
 - [x] CSRF: the router refuses cross-site unsafe requests (`Origin` / `Sec-Fetch-Site`). In production, `@rivetjs/forms` actions also refuse POSTs that carry neither header. No route sets `csrf = false`.
 - [x] Open redirects: `?next=` passes through `safeRedirect` (same-origin paths only) on both the page and the action.
