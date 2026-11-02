@@ -113,6 +113,24 @@ test("frequent runs: one effect re-running N times for one interaction names its
   assert.ok(row.reasons.some((r) => /ran 12× for one interaction/.test(r)));
 });
 
+test("frequent runs: a runaway effect is described once per input, not on every further run", async () => {
+  const { perf } = setup();
+  let described = 0;
+  (perf as unknown as { env: PerfEnv }).env.describe = () => (described++, { label: "effect #7" });
+  const effect = {};
+  perf.input("keydown", node(3), 0);
+  for (let i = 0; i < FREQUENT + 500; i++) perf.run(effect, 3, 0.01, 10 + i / 100);
+  assert.equal(described, 1);
+  perf.input("keydown", node(3), 100);
+  for (let i = 0; i < FREQUENT; i++) perf.run(effect, 3, 0.01, 110 + i / 100);
+  assert.equal(described, 2, "a new input describes again (the label may have changed)");
+  const runs = (await perf.info()).findings.filter((f) => f.kind === "frequent-runs");
+  assert.deepEqual(
+    runs.map((f) => f.title),
+    ["effect #7 ran " + (FREQUENT + 500) + "× for one keydown", "effect #7 ran " + FREQUENT + "× for one keydown"],
+  );
+});
+
 test("chunks: script loads after an input belong to it (sizes, timing); devtools and late loads ignored", async () => {
   const { perf } = setup();
   perf.resumed = true;

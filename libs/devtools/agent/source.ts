@@ -30,6 +30,9 @@ interface SourceMap {
   lines: number[][][];
 }
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+/** char code → base64 digit (-1 = not base64, as `indexOf` gave). */
+const DIGIT = new Int8Array(128).fill(-1);
+for (let i = 0; i < B64.length; i++) DIGIT[B64.charCodeAt(i)] = i;
 function decodeMappings(mappings: string): number[][][] {
   const lines: number[][][] = [];
   let source = 0, line = 0, col = 0;
@@ -40,8 +43,9 @@ function decodeMappings(mappings: string): number[][][] {
       if (!part) continue;
       const values: number[] = [];
       let value = 0, shift = 0;
-      for (const char of part) {
-        const digit = B64.indexOf(char);
+      for (let i = 0; i < part.length; i++) {
+        const code = part.charCodeAt(i);
+        const digit = code < 128 ? DIGIT[code]! : -1;
         value += (digit & 31) << shift;
         if (digit & 32) shift += 5;
         else {

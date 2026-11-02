@@ -221,6 +221,10 @@ export class Perf {
   private seq = 0;
   private inputSeq = 0;
   private nodeKeys = new WeakMap<object, number>();
+  /** Finding → its `keyed` key (drop without scanning `keyed`). */
+  private keyOf = new WeakMap<Raw, string>();
+  /** Node → its description while it keeps re-running for one input (`describe` walks the owner tree). */
+  private described = new WeakMap<object, { label: string; stack?: Error }>();
   private nodeSeq = 0;
   private located = new WeakMap<Error, Promise<SourceLocation[]>>();
   /** A resumed dev page's switch to client render: its own shifts and frames are not the page's. */
@@ -243,10 +247,11 @@ export class Perf {
     }
     const entry: Raw = { ...raw, id: ++this.seq, count: raw.count ?? 1 };
     this.findings.push(entry);
-    if (key) this.keyed.set(key, entry);
+    if (key) (this.keyed.set(key, entry), this.keyOf.set(entry, key));
     if (this.findings.length > MAX_FINDINGS) {
       const dropped = this.findings.shift()!;
-      for (const [k, v] of this.keyed) if (v === dropped) this.keyed.delete(k);
+      const k = this.keyOf.get(dropped);
+      if (k !== undefined && this.keyed.get(k) === dropped) this.keyed.delete(k);
     }
     return entry;
   }
@@ -297,7 +302,11 @@ export class Perf {
       if (count >= FREQUENT) {
         let key = this.nodeKeys.get(node);
         if (key === undefined) this.nodeKeys.set(node, (key = ++this.nodeSeq));
-        const { label, stack } = this.env.describe(node);
+        // A runaway effect keeps hitting this: describe it once per input, then only the count changes.
+        const findingKey = "runs:" + key + ":" + input.seq;
+        let description = this.keyed.has(findingKey) ? this.described.get(node) : undefined;
+        if (!description) this.described.set(node, (description = this.env.describe(node)));
+        const { label, stack } = description;
         const type = input.type;
         this.add(
           {
@@ -315,7 +324,7 @@ export class Perf {
             ...(stack ? { stack } : {}),
             count,
           },
-          "runs:" + key + ":" + input.seq,
+          findingKey,
         );
       }
     }

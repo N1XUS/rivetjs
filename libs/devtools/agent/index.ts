@@ -442,8 +442,12 @@ export function start(): AgentHook {
       const node = event.composedPath()[0] as Node | undefined;
       return node && !overlay.owns(node) ? node : null;
     };
+    // `componentAt` scans every mounted component: pointer moves inside the same node reuse the last answer.
+    let last: Node | null | undefined;
     const move = (event: PointerEvent) => {
       const node = target(event);
+      if (node === last) return;
+      last = node;
       const id = node ? model.componentAt(node) : null;
       highlight(id);
       send("pick.hover", { id });
@@ -477,20 +481,9 @@ export function start(): AgentHook {
   function highlight(id: number | null): void {
     quiet(() => {
       const rect = id === null ? null : rectOf(model.region(id));
-      overlay.highlight(rect, id === null ? undefined : model.tree().length ? label(id) : undefined);
+      overlay.highlight(rect, id === null ? undefined : model.nameOf(id));
     });
   }
-  const label = (id: number): string | undefined => {
-    const find = (nodes: ReturnType<Model["tree"]>): string | undefined => {
-      for (const node of nodes) {
-        if (node.id === id) return node.name;
-        const inner = find(node.children);
-        if (inner) return inner;
-      }
-      return undefined;
-    };
-    return find(model.tree());
-  };
 
   const handlers: Handlers = {
     hello: () => ({

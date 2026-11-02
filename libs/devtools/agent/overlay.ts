@@ -40,7 +40,7 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: strin
   parent.appendChild(node);
   return node;
 }
-function place(node: HTMLElement, rect: DOMRect): void {
+function place(node: HTMLElement, rect: Pick<DOMRect, "left" | "top" | "width" | "height">): void {
   node.style.left = rect.left + "px";
   node.style.top = rect.top + "px";
   node.style.width = Math.max(rect.width, 2) + "px";
@@ -131,7 +131,7 @@ export function createOverlay(options: { url: () => string; onToggle(open: boole
       label.hidden = !text;
     },
     flash(rects, color) {
-      for (const rect of rects) {
+      for (const rect of capRects(rects)) {
         const node = element("div", "flash", shadow);
         place(node, rect);
         if (color) {
@@ -147,4 +147,25 @@ export function createOverlay(options: { url: () => string; onToggle(open: boole
   };
   toggle.addEventListener("click", () => overlay.open());
   return overlay;
+}
+
+/** Flash boxes per frame and color: past this, the remaining rects merge into one bounding box (a 1000-row update). */
+export const MAX_FLASH = 200;
+
+type Box = Pick<DOMRect, "left" | "top" | "width" | "height">;
+/** `rects` with at most `MAX_FLASH` entries: the first `MAX_FLASH - 1`, then the bounding box of the rest. */
+export function capRects(rects: readonly Box[]): readonly Box[] {
+  if (rects.length <= MAX_FLASH) return rects;
+  let left = Infinity,
+    top = Infinity,
+    right = -Infinity,
+    bottom = -Infinity;
+  for (let i = MAX_FLASH - 1; i < rects.length; i++) {
+    const r = rects[i]!;
+    left = Math.min(left, r.left);
+    top = Math.min(top, r.top);
+    right = Math.max(right, r.left + r.width);
+    bottom = Math.max(bottom, r.top + r.height);
+  }
+  return [...rects.slice(0, MAX_FLASH - 1), { left, top, width: right - left, height: bottom - top }];
 }

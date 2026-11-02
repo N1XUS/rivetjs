@@ -469,6 +469,19 @@ export class Model {
     return element.nodeType === 1 ? element.localName + (element.id ? "#" + element.id : "") : "fragment";
   }
 
+  /**
+   * The name `tree()` shows for `id` (a mount root or a reported component), without building the tree: the picker
+   * labels the hovered component on every pointer move.
+   */
+  nameOf(id: number): string | undefined {
+    const object = this.byId(id);
+    if (object === undefined) return undefined;
+    const root = this.roots.get(object);
+    if (root) return this.rootName(root.container);
+    const comp = this.comps.get(object);
+    return comp && !this.hidden.has(comp.fn) ? this.name(comp).name : undefined;
+  }
+
   /** Component tree: mount roots → reported components (plain owners and hidden wrappers collapsed). */
   tree(): TreeNode[] {
     const walk = (owner: object, into: TreeNode[]): void => {

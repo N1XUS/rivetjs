@@ -67,6 +67,9 @@ test("tree, owner details, edits, graph and update counts", async () => {
   ]);
   const counterId = tree[0]!.children[0]!.id;
   assert.equal(counterId, model.id(counter));
+  // nameOf (picker label) = the tree's name, without building the tree.
+  const all = (nodes: typeof tree): typeof tree => nodes.flatMap((n) => [n, ...all(n.children)]);
+  for (const node of all(tree)) assert.equal(model.nameOf(node.id), node.name);
 
   const info = (await model.owner(counterId))!;
   assert.equal(info.name, "CounterView");
