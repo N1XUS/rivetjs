@@ -3,8 +3,7 @@
 // being written, incomplete-markdown repair + caret while streaming, fenced code as a CodeBlock); independent
 // implementation, Rivet-authored styles.
 // - Parser = `@rivetjs/cdk/markdown` (safe plain-data AST): elements are built from the AST, never from HTML strings, so
-//   raw HTML in a response stays text and unsafe link / image URLs (`javascript:` …) are dropped (`safeUrl`); images from
-//   other origins render as links unless `remoteImages` is set (a fetched URL can carry data out without a click).
+//   raw HTML in a response stays text and unsafe link / image URLs (`javascript:` …) are dropped (`safeUrl`).
 // - Source: `content` (a string or an accessor: streaming) or a string child. Each top-level block (`splitBlocks`) is a
 //   keyed `For` row: completed initial blocks use index + text; generated blocks retain their live character DOM.
 // - `isStreaming` (value or accessor): the last block gets `closeOpenMarks` (no raw `**` flashing) and a soft caret
@@ -50,11 +49,6 @@ type Override<P = unknown> = (props: MarkdownElementProps & P) => JSX.Element;
 interface MarkdownHeadingProps {
   readonly level: 1 | 2 | 3 | 4 | 5 | 6;
 }
-/** Component maps whose `Markdown` set `remoteImages` (per instance copy, so a shared map never leaks the permission). */
-const remoteAllowed = new WeakSet<object>();
-/** An absolute or protocol-relative URL (`/\\host` counts: browsers read it as `//host`). */
-const isRemote = (url: string): boolean => /^(?:[a-z][a-z0-9+.-]*:|[\\/]{2})/i.test(url);
-
 /**
  * Per-node-type element overrides of `Markdown` (`components` prop). Keys are HTML tag names; each component receives the
  * default `class`, the node's attributes and `children`, and returns the element rendered in place of the default one.
@@ -185,29 +179,6 @@ function renderInline(nodes: readonly MarkdownInline[], cx?: MarkdownComponents)
         );
         break;
       case "image":
-        if (!cx?.img && isRemote(node.src) && !(cx && remoteAllowed.has(cx))) {
-          // Not loaded: fetching a URL the model wrote can carry page data out without a click. A link needs one.
-          out.push(
-            custom(
-              cx,
-              "a",
-              () => ({
-                class: SLOTS.link(),
-                href: node.src,
-                title: node.title,
-                target: "_blank",
-                rel: "noopener noreferrer",
-                children: node.alt || node.src,
-              }),
-              () => (
-                <a class={SLOTS.link()} href={node.src} title={node.title} target="_blank" rel="noopener noreferrer">
-                  {node.alt || node.src}
-                </a>
-              ),
-            ),
-          );
-          break;
-        }
         out.push(
           custom(
             cx,
@@ -768,20 +739,13 @@ interface MarkdownProps extends Omit<JSX.IntrinsicElements["div"], "class" | "ch
   streamingSpeed?: number;
   /** Caret after the streamed text while `isStreaming`. @default true */
   showCaret?: boolean;
-  /**
-   * Load images from other origins. Off by default: Markdown is often model output, and fetching a URL it wrote can send page
-   * data to that host without a click. Blocked images render as a link (alt text, else the URL); relative URLs always load, and
-   * a `components.img` override decides for itself. Turn on only for content you trust. Read once at creation.
-   * @default false
-   */
-  remoteImages?: boolean;
   /** Per-node-type element overrides (`h1`, `p`, `a`, `code`, `pre`, …): see `MarkdownComponents`. Read once at creation. */
   components?: MarkdownComponents;
   class?: string;
 }
 
 const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class", "children", "content", "isStreaming", "remoteImages", "streamingSpeed", "showCaret", "components"]);
+  const [local, rest] = splitLive(props, ["class", "children", "content", "isStreaming", "streamingSpeed", "showCaret", "components"]);
   const source = (): string => {
     const value = local.content ?? local.children;
     const text = typeof value === "function" ? (value as () => unknown)() : value;
@@ -832,8 +796,7 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
     });
   };
   const caretOn = local.showCaret !== false;
-  const cx = local.remoteImages ? { ...local.components } : local.components;
-  if (local.remoteImages) remoteAllowed.add(cx!);
+  const cx = local.components;
   return (
     <div class={composeSlotClassName(SLOTS.base, local.class)} data-slot="markdown" data-streaming={() => (streaming() ? "true" : undefined)} {...rest}>
       <For each={rows} by={(row: MarkdownRow) => row.key}>
