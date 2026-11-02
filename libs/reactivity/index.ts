@@ -618,7 +618,12 @@ function computedRead(this: ComputedNode): unknown {
     // DIRTY runs directly (fewest frames per level on a first read of a deep chain).
     if (node.state === DIRTY) run(node); else if (node.state === CHECK) update(node);
   }
-  if (node.flags & FAILED) throw node.value;
+  // One bit test on the fast path: FAILED rethrows; RUNNING = a read during its own run (`run` marks the node CLEAN
+  // before `fn`, so a cycle would otherwise return the stale value).
+  if (node.flags & (FAILED | RUNNING)) {
+    if (node.flags & RUNNING) throw new Error('Circular computed dependency');
+    throw node.value;
+  }
   return node.value;
 }
 

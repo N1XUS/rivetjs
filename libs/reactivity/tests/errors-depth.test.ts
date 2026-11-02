@@ -290,3 +290,9 @@ test("createRoot attaches to the current owner (disposed with it — unlike Soli
   outer.dispose();
   assert.deepEqual(log, ["inner"]);
 });
+
+test("computeds reading each other throw 'Circular computed dependency' instead of recursing", () => {
+  const a: () => number = computed(() => b() + 1);
+  const b: () => number = computed(() => a() + 1);
+  assert.throws(() => a(), /Circular computed dependency/);
+});

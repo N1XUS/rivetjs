@@ -132,7 +132,7 @@ The names are familiar, but some behaviour differs from Preact signals, Solid, A
 | An effect throws | The `set()` that triggered it throws the first error, even if the effect is unrelated to the code that called `set()`. Other errors of the same update go to `reportError`. Use `catchError` to handle them where they happen. | Angular sends them to its `ErrorHandler`. |
 | Unused computeds | A `computed` stays connected to its signals until its scope is disposed, even when nothing reads it. It still computes only when read. | Preact, Angular and TC39 disconnect a computed that nothing watches. |
 | A computed throws | The error is kept: reads throw it again until a signal it read changes. | The same in Preact, Angular and TC39. |
-| Circular computeds | A computed that reads itself (directly or through others) gets its previous value, at first `undefined`. There is no error yet, so avoid cycles. | Preact, Angular and TC39 throw. |
+| Circular computeds | A computed that reads itself (directly or through others) throws `Circular computed dependency`; the readers rethrow it like any computed error. | The same in Preact, Angular and TC39. |
 | Equality | `Object.is`: `NaN` to `NaN` does not notify, `0` to `-0` does. | Preact and Solid compare with `===`. |
 | Endless updates | An effect that runs more than 10,000 times in one update stops with "Reactive effect did not settle". | Preact stops after 100 rounds. |
 | `catchError` handler | Runs inside the `catchError` scope: `useContext` and `getOwner()` work there, and it reads signals without subscribing. | |
