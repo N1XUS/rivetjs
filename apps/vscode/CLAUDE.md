@@ -29,7 +29,7 @@ VS Code extension shell around `@rivetjs/typescript-plugin`: contributes the plu
 ## Gotchas
 
 - No VSIX packaging / Marketplace yet (private packages).
-- Region tinting (`_rivet:sites` decorations) is VS Code only; refresh is debounced 300 ms on edit/save/editor change.
+- Region tinting (`_rivet:sites` decorations) is VS Code only; refresh is debounced 300 ms on edit/save/editor change; a late answer is dropped (newer refresh started via `latest.ts` `lastWins`, editor switched or document version changed: `tests/refresh.test.ts`).
 
 ## See also
 

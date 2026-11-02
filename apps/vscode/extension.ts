@@ -2,6 +2,7 @@
 // it runs inside the TypeScript server with bundled or workspace TypeScript): plugin settings,
 // Rivet: Doctor, a status bar item (resume | dom | off), resume inlay hints and optional region tinting.
 import * as vscode from "vscode";
+import { lastWins } from "./latest.ts";
 
 const PLUGIN = "@rivetjs/typescript-plugin";
 
@@ -71,11 +72,17 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(output, status, client, both);
 
   let timer: ReturnType<typeof setTimeout> | undefined;
+  // Each refresh supersedes the previous one: a `_rivet:sites` answer that arrives after a newer refresh started (or
+  // after the editor or its text changed) is dropped, so a slow answer never paints a stale editor's status.
+  const runs = lastWins();
   const refresh = (editor = vscode.window.activeTextEditor) => {
     clearTimeout(timer);
+    const current = runs.begin();
     timer = setTimeout(async () => {
       if (!tsx(editor)) return void status.hide();
+      const version = editor.document.version;
       const result = await request<{ resume: boolean; sites: Site[] }>("_rivet:sites", editor.document.uri.fsPath);
+      if (!current() || editor !== vscode.window.activeTextEditor || editor.document.version !== version) return;
       status.text = `Rivet: ${result ? (result.resume ? "resume" : "dom") : "off"}`;
       status.tooltip = result ? (result.resume ? "Compiled in resume mode (.rivet/editor.json)" : "Compiled as a DOM/server module") : "Rivet plugin not active: run Rivet: Doctor";
       status.show();
