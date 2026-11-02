@@ -684,7 +684,7 @@ export function groupComponents(
     if (!by) return "route:main";
     if (by.size === 1) return "route:" + [...by][0];
     let id = sets.get(by);
-    // Keyed by the sorted roots themselves (a hash could merge two sets' chunks).
+    // A per-file memo (the Map is keyed by this file's Set); the id spells the sorted roots (a hash could merge two sets' chunks).
     if (id === undefined) sets.set(by, (id = "route:shared:" + [...by].sort().join("\0")));
     return id;
   };

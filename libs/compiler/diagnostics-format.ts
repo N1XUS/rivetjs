@@ -135,6 +135,12 @@ export function formatDiagnostic(report: DiagnosticReport, options: FormatOption
 
 const FRAME = /^\s*at (?:(?:async )?(.+?) \()?(?:file:\/\/)?((?:\/|[A-Za-z]:[\\/])[^?()]*?)(?:\?[^():]*)?:(\d+):(\d+)\)?$/;
 
+/** A stack frame's file relative to the app root; null: framework, dependency or generated code. */
+function appRelative(file: string, root: string): string | null {
+  const rel = relative(root, file);
+  return !rel || rel.startsWith("..") || isAbsolute(rel) || /[/\\]node_modules[/\\]/.test(file) || rel.startsWith(".rivet") ? null : rel;
+}
+
 /**
  * App frames of a (source-mapped) stack: the first `max` frames whose file is inside `root` and outside `node_modules`,
  * as `at Name (src/routes/index.tsx:12:7) ← at …`; "" when none (framework-only stack). The dev server's
@@ -146,8 +152,8 @@ export function appFrames(stack: string, root: string, max = 2): string {
     const m = FRAME.exec(line);
     if (!m) continue;
     const file = m[2]!;
-    const rel = relative(root, file);
-    if (!rel || rel.startsWith("..") || isAbsolute(rel) || /[/\\]node_modules[/\\]/.test(file) || rel.startsWith(".rivet")) continue;
+    const rel = appRelative(file, root);
+    if (rel === null) continue;
     out.push("at " + (m[1] ? m[1].replace(/^Module\./, "") + " (" : "") + rel + ":" + m[3] + ":" + m[4] + (m[1] ? ")" : ""));
     if (out.length === max) break;
   }
@@ -161,9 +167,8 @@ export function stackLocation(stack: string, root: string): { file: string; line
   for (const line of stack.split("\n")) {
     const m = FRAME.exec(line);
     if (!m) continue;
-    const file = m[2]!,
-      rel = relative(root, file);
-    if (!rel || rel.startsWith("..") || isAbsolute(rel) || /[/\\]node_modules[/\\]/.test(file) || rel.startsWith(".rivet")) continue;
+    const file = m[2]!;
+    if (appRelative(file, root) === null) continue;
     return { file, line: Number(m[3]), column: Number(m[4]) };
   }
   return undefined;

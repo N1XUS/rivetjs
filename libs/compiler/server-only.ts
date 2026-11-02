@@ -10,13 +10,18 @@ export const SERVER_ONLY_MARKER = "@rivetjs/router/server-only";
 /** `x.server.ts` / `x.server.tsx` / `x.server` (secrets, server code): server-only by name. */
 export const SERVER_FILE = /\.server(?:\.[cm]?[jt]sx?)?$/;
 
+const withoutQuery = (path: string): string => {
+  const at = path.indexOf("?");
+  return at < 0 ? path : path.slice(0, at);
+};
+
 /**
  * Whether `specifier` (as written) or `id` (resolved, without query) names a server-only module: the marker, a
  * `*.server.*` file, or one of `patterns` (a string equals the specifier or the id; a RegExp matches either).
  */
 export function isServerOnly(patterns: readonly ServerOnlyPattern[], specifier: string, id?: string): boolean {
-  if (specifier === SERVER_ONLY_MARKER || SERVER_FILE.test(specifier.split("?")[0]!)) return true;
-  if (id !== undefined && SERVER_FILE.test(id.split("?")[0]!)) return true;
+  if (specifier === SERVER_ONLY_MARKER || SERVER_FILE.test(withoutQuery(specifier))) return true;
+  if (id !== undefined && SERVER_FILE.test(withoutQuery(id))) return true;
   return matchesServerOnly(patterns, specifier, id);
 }
 /** Whether `specifier` / `id` matches one of `patterns` (declared server-only modules only, no marker / `*.server.*` rule). */
@@ -36,7 +41,9 @@ export function declaredServerOnly(plugins: readonly unknown[]): ServerOnlyPatte
   return out;
 }
 
-const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
+// A name `export const <name>` may declare: reserved words take the `export { x as "name" }` form (rc2#37).
+const IDENTIFIER =
+  /^(?!(?:arguments|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|enum|eval|export|extends|false|finally|for|function|if|implements|import|in|instanceof|interface|let|new|null|package|private|protected|public|return|static|super|switch|this|throw|true|try|typeof|var|void|while|with|yield)$)[A-Za-z_$][\w$]*$/;
 /**
  * Browser stand-in of a server-only module (ES module source): every export (`default` plus `names`) is one Proxy that
  * throws `<id> is server-only; reached from <chain>` on any property access, call or construction — instead of a silent

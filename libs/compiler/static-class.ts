@@ -491,7 +491,15 @@ export interface ClassPlan {
 
 /** The build's static-class plan over the walked program (see the header). */
 export async function classPlan(input: ClassPlanInput): Promise<ClassPlan> {
-  const { texts, facts, target, resolveTag, namespaceOf, exportsComponent, callers, trace } = input;
+  const { texts, facts, target, resolveTag, namespaceOf, callers, trace } = input;
+  // Memoised (compiler#11): asked per local x family x module, each answer walks the target's exports.
+  const exportsMemo = new Map<string, boolean>();
+  const exportsComponent = (file: string, id: string): boolean => {
+    const key = file + "\0" + id;
+    let hit = exportsMemo.get(key);
+    if (hit === undefined) exportsMemo.set(key, (hit = input.exportsComponent(file, id)));
+    return hit;
+  };
   const plan: ClassPlan = { families: [], texts: new Map(), flags: new Map() };
   // Origin of a binding (`file#local`; `?spec#name` through an import the walk did not resolve). `seen` (per top-level
   // lookup) stops `export *` diamonds: a (module, name) pair already explored on this lookup found nothing (it would

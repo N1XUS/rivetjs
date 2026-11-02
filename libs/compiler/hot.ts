@@ -132,6 +132,18 @@ export function topLevel(code: string): { lines: boolean[]; commas: number[]; se
  * `locals`: names a resume-mode compile exports for its symbol chunks (dev resume); still exported,
  * but a change in them does not make importers update.
  */
+/** Index of the first entry of the ascending `list` above `value` (rc2#22: per exported line, not a scan from 0). */
+function firstAfter(list: readonly number[], value: number): number {
+  let low = 0,
+    high = list.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (list[mid]! > value) high = mid;
+    else low = mid + 1;
+  }
+  return low;
+}
+
 export function hotModule(code: string, id: string, source = code, locals?: ReadonlySet<string>): string | null {
   const lines = code.split("\n");
   const scan = topLevel(code);
@@ -140,8 +152,9 @@ export function hotModule(code: string, id: string, source = code, locals?: Read
   /** Two or more declarators (`export const A = …, B = 1`): a depth-0 comma before the statement's `;`. */
   const multiple = (i: number) => {
     const from = starts[i]!;
-    const end = scan.semis.find((s) => s > from) ?? code.length;
-    return scan.commas.some((c) => c > from && c < end);
+    const end = scan.semis[firstAfter(scan.semis, from)] ?? code.length;
+    const comma = scan.commas[firstAfter(scan.commas, from)];
+    return comma !== undefined && comma < end;
   };
   const components: { local: string; exported: string }[] = [];
   const values: string[] = [];
@@ -193,9 +206,11 @@ export function hotModule(code: string, id: string, source = code, locals?: Read
         if (!spec[2] && locals?.has(spec[1]!)) continue;
         listed.push(spec[2] ? `${spec[2]}: ${spec[1]}` : spec[1]!);
       }
-    } else if (/^export (?:async function|class) ([A-Za-z_$][\w$]*)/.test(line)) {
-      values.push(/^export (?:async function|class) ([A-Za-z_$][\w$]*)/.exec(line)![1]!);
-    } else return null;
+    } else {
+      const declared = /^export (?:async function|class) ([A-Za-z_$][\w$]*)/.exec(line);
+      if (!declared) return null;
+      values.push(declared[1]!);
+    }
   }
   if (!components.length) return null;
   const reset = /@refresh reset\b/.test(source);
