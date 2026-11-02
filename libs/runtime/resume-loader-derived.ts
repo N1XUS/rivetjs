@@ -23,6 +23,7 @@
 // it would leave is "not hovered"; the page's CSS `:hover` drew the hover meanwhile).
 // Fetch-ahead timing (`data-fw`, ZERO ONDEMAND): absent = after `load`, in the first idle period; `load` = right after
 // `load`; `intent` = nothing before the first intent. None in the background under Save-Data or a 2G connection.
+// Tap (COLD-WK-LINUX): a `touchstart` inside a boundary listening to `click` gives its target a no-op click listener.
 // Prime (LITE-BOOT): with the background fetch-ahead (not on `intent` pages, under Save-Data / 2G or on `data-boot` pages) the
 // runtime starts and loads the listening boundaries' modules (`rt.w(document)`): a first event after that adopts and runs
 // in its own task instead of waiting for an import (which resolves only after the next frame).
@@ -234,7 +235,14 @@ export function derivedLoader(): void {
   // Listed keyups already use on. Otherwise pair only queued keydowns by target/code, including chords/repeats.
   if (!events.split(" ").includes("keyup")) paired = new Map();
   listen("focusin", warm);
-  listen("touchstart", warm);
+  // WebKit touch: a tap synthesizes mouse events and `click` only when a node up to the body responds to clicks itself, and
+  // the delegated listener sits on the document. Decided after the touch ends, so a listener added now counts: cold and warm.
+  const tap = (): void => {};
+  listen("touchstart", (event) => {
+    const t = event.target as Element;
+    ids(t, "click").length && t.addEventListener("click", tap);
+    warm(event);
+  });
   // Triggers: start now. (`data-boot="<ids>"`, ZERO ABI-SPLIT: `DERIVED_LOADER_VISIBLE` runs `derivedVisibleBoot` here instead.)
   if (script.hasAttribute("data-boot")) boot(1).catch(fail);
   // Fetch-ahead (`data-fo`, DERIVED-C; timing `data-fw`, ZERO ONDEMAND): the runtime + the page's live boundary chunks +

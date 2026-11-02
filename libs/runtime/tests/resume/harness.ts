@@ -104,13 +104,15 @@ export interface PageOptions {
   delays?: Record<string, number | Promise<unknown>>;
   /** The engine (default Chromium; WebKit only where Playwright's WebKit is installed: `hasWebkit`). */
   engine?: "chromium" | "webkit";
+  /** A touch page (`hasTouch`: `page.tap`). */
+  touch?: boolean;
 }
 /** Playwright's WebKit is installed on this host (CI installs Chromium only). */
 export const hasWebkit = (): boolean => existsSync(webkit.executablePath());
 export async function withPage<T>(
   files: Record<string, Served>,
   fn: (page: Page, requests: string[], browser: Browser) => Promise<T>,
-  { offline = new Set<string>(), streams = {}, delays = {}, engine = "chromium" }: PageOptions = {},
+  { offline = new Set<string>(), streams = {}, delays = {}, engine = "chromium", touch = false }: PageOptions = {},
 ): Promise<T> {
   let http: Server | null = null,
     origin: string | null = null;
@@ -135,7 +137,7 @@ export async function withPage<T>(
   }
   const browser = await (engine === "webkit" ? webkit : chromium).launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage(touch ? { hasTouch: true } : {});
     const requests: string[] = [];
     page.on("request", (request) => requests.push(new URL(request.url()).pathname));
     await page.route("http://rivet.test/**", async (route) => {

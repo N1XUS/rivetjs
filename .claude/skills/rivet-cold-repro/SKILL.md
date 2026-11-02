@@ -18,6 +18,7 @@ Most missed bugs share one blind spot: the FIRST event on a cold resumed page, t
 - Engine: Chromium + WebKit (Playwright `webkit`); Firefox optional.
 - Input: mouse; touch (`devices["iPhone 15"]`, `hasTouch`, `page.tap`); keyboard first (Tab + Enter / Space / arrows); right click (`contextmenu`).
 - Storage: normal; fresh context (private-like); storage that throws (init script making `localStorage.setItem` / `sessionStorage.setItem` throw `QuotaExceededError`).
+- OS: Playwright WebKit differs per OS (a tap on a plain element clicks on macOS, not on Linux): CI-only WebKit reds reproduce in `mcr.microsoft.com/playwright:v<version>-noble` with its own `npm ci` in a Docker volume (`--memory=3g`).
 - Network: cache empty; slow (CDP throttle) so the event lands before chunks load.
 
 ## Per run assert

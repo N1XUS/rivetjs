@@ -63,6 +63,12 @@ Status: one model since M6-CUT (2026-10-22) — the derived model (plan [derived
 - Replay order (DOCS-FOLLOWUPS 2026-10-29): a replayed held event runs, like the browser, the capture listeners its adopt added (outermost first) → the delegated handlers → the bubbling listeners added (`late` phase 1 / 2); a capture listener that stops propagation skips the rest. Before: every added listener ran after the delegated ones, so a cold keydown ran `onKeyDown` before an ancestor's `onKeyDownCapture`. `on*Capture` handlers (compiled JSX or spread props) resume like the others: `libs/runtime/tests/derived-capture-browser.test.ts`.
 - Tests: `libs/runtime/tests/derived-cold-press-browser.test.ts`, `derived-cold-default-browser.test.ts` (Chromium + WebKit, full + lite), `libs/ui/tests-components/cold-focus-ring.test.ts`.
 
+## Tap on a plain element (COLD-WK-LINUX 2026-11-02)
+
+- WebKit touch sends a tap's compatibility mouse events and `click` only when the hit node or an ancestor responds to clicks itself; a delegated listener on the document does not count. Not a cold-only problem: a warm page lost them too.
+- A listener added at `touchstart` counts. The loader adds a shared no-op click listener to the target inside a boundary listening to `click` (no handler exists yet); `dom-events.ts` adds one to the innermost node with a delegated click (overlays outside every boundary, client apps).
+- Details and measurements: `libs/runtime/CLAUDE.md` "Tap on delegated clicks".
+
 ## Cold drag and drop (COLD-DND 2026-11-01)
 
 - What: a native (HTML5) mouse drag that starts, or starts and ends, before its boundary's code ran lands as on a loaded page (cdk Tree / GridList / Table / ListBox / DropZone, plain `onDragStart` / `onDrop` handlers). Before: cold `dragover` was held, not accepted → the browser fired no `drop`; `dragstart` / `dragend` were not in `data-events` → never held; a replay could not write or read the browser's DataTransfer (unreadable once its dispatch ended).
