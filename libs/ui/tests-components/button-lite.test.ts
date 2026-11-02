@@ -36,7 +36,8 @@ test("button lite: native markup (same classes, live disabled), first mouse clic
     await page.hover("#bl-inc");
     await page.mouse.down();
     assert.equal(await page.getAttribute("#bl-inc", "data-pressed"), null);
-    assert.equal(await page.$eval("#bl-inc", (el) => el.matches(":active")), true);
+    // Chromium applies `:active` from its hit test, which can trail the mousedown by a frame on a busy CI runner.
+    await page.waitForFunction(() => document.querySelector("#bl-inc")!.matches(":active"), undefined, { timeout: 2000 });
     await page.mouse.up();
     await count(page, 1);
     await page.waitForFunction(() => !(document.querySelector("#bl-reset") as HTMLButtonElement).disabled);

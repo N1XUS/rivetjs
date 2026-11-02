@@ -2,7 +2,7 @@
   {
     "id": "item-card-pressable",
     "cells": "webkit",
-    "reason": "platform: WebKit's Tab skips links by default (macOS \"Tab to links\" off) — the step expects a link focused; not a Rivet bug",
+    "reason": "platform: WebKit's Tab skips links by default (macOS \"Tab to links\" off) \u2014 the step expects a link focused; not a Rivet bug",
     "owner": "unassigned (COLD-HARNESS 2026-10-27 triage)"
   },
   {
@@ -10,5 +10,41 @@
     "cells": "webkit/mouse/*/*",
     "reason": "harness: Playwright WebKit's synthetic mouse drag fires no dragend and the next click comes without pointerdown (pointer still down), so usePress ignores it (React Aria: a non-virtual click without a press) and the chevron step after the drag is lost; the drag steps themselves pass",
     "owner": "unassigned (CDK-TREE-DND 2026-10-29)"
+  },
+  {
+    "id": "autocomplete-indicator",
+    "cells": "webkit/touch/*/*",
+    "reason": "Linux WebKit (CI runner) touch only: the first tap into the field / indicator / option is lost on a cold page (focus stays on body, popover or option press missing); passes on macOS WebKit touch and every Chromium cell. Seen in every CI run 2026-11-01..02. Needs a Linux WebKit repro (Playwright Docker image) of the loader's held touch press + focus replay",
+    "owner": "runtime loader (COLD-WK-LINUX, open 2026-11-02)"
+  },
+  {
+    "id": "autocomplete-shorthand",
+    "cells": "webkit/touch/*/*",
+    "reason": "Linux WebKit (CI runner) touch only: the first tap into the field / indicator / option is lost on a cold page (focus stays on body, popover or option press missing); passes on macOS WebKit touch and every Chromium cell. Seen in every CI run 2026-11-01..02. Needs a Linux WebKit repro (Playwright Docker image) of the loader's held touch press + focus replay",
+    "owner": "runtime loader (COLD-WK-LINUX, open 2026-11-02)"
+  },
+  {
+    "id": "autocomplete-virtualized",
+    "cells": "webkit/touch/*/*",
+    "reason": "Linux WebKit (CI runner) touch only: the first tap into the field / indicator / option is lost on a cold page (focus stays on body, popover or option press missing); passes on macOS WebKit touch and every Chromium cell. Seen in every CI run 2026-11-01..02. Needs a Linux WebKit repro (Playwright Docker image) of the loader's held touch press + focus replay",
+    "owner": "runtime loader (COLD-WK-LINUX, open 2026-11-02)"
+  },
+  {
+    "id": "combo-box-shorthand",
+    "cells": "webkit/touch/*/*",
+    "reason": "Linux WebKit (CI runner) touch only: the first tap into the field / indicator / option is lost on a cold page (focus stays on body, popover or option press missing); passes on macOS WebKit touch and every Chromium cell. Seen in every CI run 2026-11-01..02. Needs a Linux WebKit repro (Playwright Docker image) of the loader's held touch press + focus replay",
+    "owner": "runtime loader (COLD-WK-LINUX, open 2026-11-02)"
+  },
+  {
+    "id": "combo-box-virtualized",
+    "cells": "webkit/touch/*/*",
+    "reason": "Linux WebKit (CI runner) touch only: the first tap into the field / indicator / option is lost on a cold page (focus stays on body, popover or option press missing); passes on macOS WebKit touch and every Chromium cell. Seen in every CI run 2026-11-01..02. Needs a Linux WebKit repro (Playwright Docker image) of the loader's held touch press + focus replay",
+    "owner": "runtime loader (COLD-WK-LINUX, open 2026-11-02)"
+  },
+  {
+    "id": "input-group-default",
+    "cells": "webkit/touch/*/*",
+    "reason": "Linux WebKit (CI runner) touch only: the first tap into the field / indicator / option is lost on a cold page (focus stays on body, popover or option press missing); passes on macOS WebKit touch and every Chromium cell. Seen in every CI run 2026-11-01..02. Needs a Linux WebKit repro (Playwright Docker image) of the loader's held touch press + focus replay",
+    "owner": "runtime loader (COLD-WK-LINUX, open 2026-11-02)"
   }
 ]
