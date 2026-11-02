@@ -478,3 +478,20 @@ test("Mark outside a Slider renders nothing", () => {
   const root = render(() => <SliderMark value={1} />).container as HTMLElement;
   assert.equal(q(root, "[data-slot=slider-mark]"), null);
 });
+
+test("range track: data-fill-end at max for every lower value (no float equality miss, e.g. 34 – 100)", () => {
+  const misses: number[] = [];
+  for (const low of [0, 7, 34, 57, 99]) {
+    const { container, unmount } = render(() => (
+      <Slider defaultValue={[low, 100]}>
+        <Slider.Track>
+          <Slider.Thumb index={0} aria-label="a" />
+          <Slider.Thumb index={1} aria-label="b" />
+        </Slider.Track>
+      </Slider>
+    ));
+    if (q(container as HTMLElement, "[data-slot=slider-track]").getAttribute("data-fill-end") !== "true") misses.push(low);
+    unmount();
+  }
+  assert.deepEqual(misses, []);
+});

@@ -155,12 +155,13 @@ const SliderTrack = (props: SliderTrackProps): JSX.Element => {
         "data-fill-start": () => {
           if (!state) return undefined;
           const [start, end] = fillRange(state);
-          return (sliderValues(state).length === 1 ? end - start > 0 : start === 0) || undefined;
+          return (sliderValues(state).length === 1 ? end - start > 0 : start <= EPSILON) || undefined;
         },
         "data-fill-end": () => {
           if (!state) return undefined;
           const [start, end] = fillRange(state);
-          return (sliderValues(state).length === 1 ? (end - start) * 100 === 100 : start * 100 + (end - start) * 100 === 100) || undefined;
+          // Upstream compares `start * 100 + (end - start) * 100 === 100`: float sums miss (e.g. 34 – 100 → 99.99…); the fill ends at max.
+          return end >= 1 - EPSILON || undefined;
         },
       } as object)}
       {...(rest as object)}
