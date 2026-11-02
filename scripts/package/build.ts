@@ -25,11 +25,11 @@ export function mapTarget(condition: string, target: string): string {
 
 type Conditions = string | null | { [condition: string]: Conditions };
 
-/** Maps every path of an `exports` / `imports` value (nested conditions included). */
+/** Maps every path of an `exports` / `imports` value (nested conditions included; anything under `types` stays a declaration). */
 export function mapConditions(value: Conditions, condition = "default"): Conditions {
   if (typeof value === "string") return mapTarget(condition, value);
   if (value === null) return null;
-  return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, mapConditions(inner, key === "types" ? "types" : key)]));
+  return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, mapConditions(inner, condition === "types" ? "types" : key)]));
 }
 
 /** Every path string of an `exports` / `imports` value. */

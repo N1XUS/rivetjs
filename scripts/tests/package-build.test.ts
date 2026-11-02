@@ -28,6 +28,11 @@ test("manifest paths: types → .d.ts, .ts → .js, .tsx → .jsx (JSX kept for 
     browser: "./a/*-dom.js",
     default: "./a/*.js",
   });
+  // Conditions nested under `types` stay declarations (`types: { import, require }`).
+  assert.deepEqual(mapConditions({ types: { import: "./a.ts", require: "./a.cts" }, default: "./a.ts" }), {
+    types: { import: "./a.d.ts", require: "./a.cts" },
+    default: "./a.js",
+  });
   assert.deepEqual(targetsOf({ types: "./x.ts", node: { development: "./d.ts", default: "./x.ts" } }), ["./x.ts", "./d.ts", "./x.ts"]);
 });
 

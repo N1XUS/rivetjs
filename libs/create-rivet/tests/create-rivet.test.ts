@@ -361,6 +361,15 @@ test("deploy on a static template: adapter + gitignore, preview script kept for 
   assert.equal(JSON.parse(readFileSync(join(target, "package.json"), "utf8")).scripts.preview, "node serve.js");
 });
 
+test("deploy .gitignore edit keeps comments and blank lines, appends only missing entries", () => {
+  const dir = join(scratch, "projects", "gitignore-sections");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "vite.config.ts"), 'import { rivetRouter } from "@rivetjs/router/vite";\nexport default { plugins: [rivetRouter()] };\n');
+  writeFileSync(join(dir, ".gitignore"), "# deps\nnode_modules/\n\n# deploy\n.vercel/\n");
+  deployOverlay("vercel").edit!(dir);
+  assert.equal(readFileSync(join(dir, ".gitignore"), "utf8"), "# deps\nnode_modules/\n\n# deploy\n.vercel/\n.netlify/\n.wrangler/\n");
+});
+
 test("templateFiles skips OS folder metadata (.DS_Store, Thumbs.db) at any depth", () => {
   const dir = mkdtempSync(join(tmpdir(), "rivet-skip-"));
   try {

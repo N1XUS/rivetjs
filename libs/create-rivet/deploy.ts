@@ -67,8 +67,11 @@ export function deployOverlay(target: DeployTarget, pm: PackageManager = "npm"):
       const config = join(dir, "vite.config.ts");
       writeFileSync(config, addAdapter(readFileSync(config, "utf8"), target));
       const gitignore = join(dir, ".gitignore");
-      const lines = existsSync(gitignore) ? readFileSync(gitignore, "utf8").split("\n").filter(Boolean) : [];
-      writeFileSync(gitignore, [...lines, ...IGNORED.filter((entry) => !lines.includes(entry))].join("\n") + "\n");
+      // Append the missing entries; the existing text (comments, blank lines between sections) stays as written.
+      const text = existsSync(gitignore) ? readFileSync(gitignore, "utf8") : "";
+      const present = new Set(text.split(/\r?\n/).map((line) => line.trim()));
+      const missing = IGNORED.filter((entry) => !present.has(entry));
+      writeFileSync(gitignore, text + (text && !text.endsWith("\n") ? "\n" : "") + missing.map((entry) => entry + "\n").join(""));
       if (target === "netlify") {
         writeFileSync(join(dir, "netlify.toml"), `[build]\n  command = "${commands(pm).run("build")}"\n  publish = "dist/netlify"\n`);
         written.push("netlify.toml");

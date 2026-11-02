@@ -28,6 +28,18 @@ export function ThemeBuilder() {
   const mode = signal<ThemeMode>("light");
   const ready = signal(false);
   const copied = signal("");
+  // One "copied" timer: a second copy restarts it instead of an older timer clearing the newer label. A refused
+  // clipboard write (permissions, insecure context) leaves the label as it was.
+  let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+  const copy = (text: string, which: string) =>
+    navigator.clipboard.writeText(text).then(
+      () => {
+        copied.set(which);
+        clearTimeout(copiedTimer);
+        copiedTimer = setTimeout(() => copied.set(""), 1600);
+      },
+      () => {},
+    );
 
   const values = computed((): BuilderValues => ({
     lightness: lightness(),
@@ -224,16 +236,7 @@ export function ThemeBuilder() {
                 <Icon icon={RotateCcw} size={16} />
                 Reset
               </button>
-              <button
-                type="button"
-                class="tb-button"
-                onClick={() => {
-                  void navigator.clipboard.writeText(location.href).then(() => {
-                    copied.set("link");
-                    setTimeout(() => copied.set(""), 1600);
-                  });
-                }}
-              >
+              <button type="button" class="tb-button" onClick={() => void copy(location.href, "link")}>
                 <Icon icon={copied() === "link" ? Check : LinkIcon} size={16} />
                 {copied() === "link" ? "Link copied" : "Share link"}
               </button>
@@ -274,16 +277,7 @@ export function ThemeBuilder() {
                 theme.css
               </h2>
               <div class="tb-actions">
-                <button
-                  type="button"
-                  class="tb-button"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(css()).then(() => {
-                      copied.set("css");
-                      setTimeout(() => copied.set(""), 1600);
-                    });
-                  }}
-                >
+                <button type="button" class="tb-button" onClick={() => void copy(css(), "css")}>
                   <Icon icon={copied() === "css" ? Check : Copy} size={16} />
                   {copied() === "css" ? "Copied" : "Copy CSS"}
                 </button>
