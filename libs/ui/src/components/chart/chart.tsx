@@ -119,6 +119,7 @@ export interface Prepared {
   format: (v: number) => string;
   colors: string[];
   labels: string[];
+  keys: string[];
 }
 
 export function prepare(props: CartesianChartProps, stacked: boolean): Prepared {
@@ -151,6 +152,7 @@ export function prepare(props: CartesianChartProps, stacked: boolean): Prepared 
     format,
     colors: props.series.map(colorOf),
     labels: props.series.map((s) => s.label ?? s.key),
+    keys: props.series.map((s) => s.key),
   };
 }
 
@@ -161,12 +163,12 @@ const legendOf = (p: Prepared) => p.labels.map((label, i) => ({ label, color: p.
 export const hasValue = (row: Prepared["rows"][number], i: number) => row.has?.[i] !== false;
 
 /** The point handed to a `tooltip` render function (series without a value left out). */
-function pointOf(p: Prepared, row: Prepared["rows"][number], index: number, keys: string[]): ChartPoint {
+function pointOf(p: Prepared, row: Prepared["rows"][number], index: number): ChartPoint {
   return {
     index,
     label: row.label,
     items: row.values.flatMap((v, i) =>
-      hasValue(row, i) ? [{ key: keys[i]!, name: p.labels[i]!, value: v, formatted: p.format(v), color: p.colors[i]! }] : [],
+      hasValue(row, i) ? [{ key: p.keys[i]!, name: p.labels[i]!, value: v, formatted: p.format(v), color: p.colors[i]! }] : [],
     ),
   };
 }
@@ -251,14 +253,7 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
       title: r.label,
       dots: r.values.flatMap((v, si) => (hasValue(r, si) ? [{ top: pct(p.y(stacked ? r.sums[si]! : v)), color: p.colors[si]! }] : [])),
       rows: rowsOf(p, r),
-      custom: props.tooltip?.(
-        pointOf(
-          p,
-          r,
-          i,
-          props.series.map((s) => s.key),
-        ),
-      ),
+      custom: props.tooltip?.(pointOf(p, r, i)),
     };
   });
   return renderFrame(
@@ -495,14 +490,7 @@ const BarChart = (props: BarChartProps): JSX.Element => {
   const xOf = (i: number) => ((i + 0.5) / Math.max(1, n)) * 100;
   const base = p.y(Math.max(p.min, 0));
   const groups = p.rows.map((r, i) => ({
-    custom: props.tooltip?.(
-      pointOf(
-        p,
-        r,
-        i,
-        props.series.map((s) => s.key),
-      ),
-    ),
+    custom: props.tooltip?.(pointOf(p, r, i)),
     label: tooltipLabel(p, r),
     title: r.label,
     side: xOf(i) > 60 ? "start" : "end",
@@ -561,14 +549,7 @@ function horizontalBars(props: BarChartProps): JSX.Element {
     const ends = r.values.map((v, si) => (stacked ? xv(r.sums[si]!) : xv(v)));
     const end = Math.max(base, ...ends.filter((_, si) => hasValue(r, si)));
     return {
-      custom: props.tooltip?.(
-        pointOf(
-          p,
-          r,
-          i,
-          props.series.map((s) => s.key),
-        ),
-      ),
+      custom: props.tooltip?.(pointOf(p, r, i)),
       label: tooltipLabel(p, r),
       title: r.label,
       anchor: pct(end),

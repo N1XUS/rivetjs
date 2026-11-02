@@ -54,7 +54,17 @@ const ComposedChart = (props: ComposedChartProps): JSX.Element => {
   const min = ticks[0]!;
   const max = props.maxValue ?? ticks[ticks.length - 1]!;
   const y = (v: number) => 100 - ((v - min) / (max - min || 1)) * 100;
-  const p: Prepared = { rows, ticks: ticks.filter((t) => t <= max), min, max, y, format, colors, labels: series.map((s) => s.label ?? s.key) };
+  const p: Prepared = {
+    rows,
+    ticks: ticks.filter((t) => t <= max),
+    min,
+    max,
+    y,
+    format,
+    colors,
+    labels: series.map((s) => s.label ?? s.key),
+    keys: series.map((s) => s.key),
+  };
   const n = rows.length;
   const xOf = (i: number) => ((i + 0.5) / Math.max(1, n)) * 100;
   const base = y(Math.max(min, 0));

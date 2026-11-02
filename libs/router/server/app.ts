@@ -408,8 +408,6 @@ export function createApp(config: AppConfig): AppHandler {
     if (page.shell && devMode === "check") page.shell.plain = true;
     const dir = locals?.dir === "rtl" || locals?.dir === "ltr" ? locals.dir : undefined;
     const exports = page.head ? (levels.get(page.head) ?? ranked([page.head], config.head)) : ranked([], config.head);
-    // Root layout component entries stay in the browser (that layout never re-renders there).
-    const persistent = new Set<object>();
     const leanOption = config.preload?.lean;
     const prime = routeId !== undefined && pageManifest?.ready?.routes[routeId] !== undefined;
     const lean = typeof leanOption === "function" ? leanOption(page.url) : leanOption;
@@ -421,7 +419,9 @@ export function createApp(config: AppConfig): AppHandler {
       if (inlineStyles) input.inlineStyles = inlineStyles;
       if (locale) input.locale = locale;
       if (dir) input.dir = dir;
-      if (sink) input.managed = { persistent };
+      // Root layout component entries stay in the browser (that layout never re-renders there).
+      const persistent = sink ? new Set<object>() : undefined;
+      if (persistent) input.managed = { persistent };
       const options: RenderPageOptions = {
         document,
         signal,
@@ -439,7 +439,7 @@ export function createApp(config: AppConfig): AppHandler {
           head: () => {
             collected.close();
             for (const { level, head } of collected.entries)
-              if (level === 0) for (const list of [head.meta, head.links, head.scripts]) if (list) for (const entry of list) persistent.add(entry);
+              if (level === 0) for (const list of [head.meta, head.links, head.scripts]) if (list) for (const entry of list) persistent!.add(entry);
             const merged = rankMerge([...exports, ...collected.entries]);
             if (routeId !== undefined) hinter?.learn(routeId, merged);
             return merged;
