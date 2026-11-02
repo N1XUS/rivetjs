@@ -36,6 +36,7 @@ export function derivedLoader(): void {
     script = d.currentScript?.previousElementSibling as HTMLScriptElement | null | undefined;
   if (!script) return;
   let tail: BoundaryTail | undefined,
+    byId: Map<number, number> | undefined,
     rt: DerivedRuntime | undefined,
     booting: Promise<DerivedRuntime> | undefined,
     // The element a replay re-dispatches on (its own event is not handled again).
@@ -92,14 +93,23 @@ export function derivedLoader(): void {
   // The ids of the boundaries around a node whose name listens to `type` ("": to anything), innermost first (D5: tail v2
   // `n[i][2]` by name, a run's member through its template; a record not in the tail — streamed later — and a tail whose
   // names list no types: all).
+  const names = (t: BoundaryTail): Map<number, number> => {
+    // Each record's name index, a run's members through their template's slot; built once (a page's every event reads it).
+    // A tail whose names list no types has none: every record listens.
+    if (!byId) {
+      byId = new Map();
+      if (t.n.some((x) => x[2]))
+        for (const r of t.b as any[])
+          if (r[3] < 0) for (let k = r[4] * r[5].length; k--;) byId.set(r[0] + k, r[5][k % r[5].length][2]);
+          else byId.set(r[0], r[3]);
+    }
+    return byId;
+  };
   const ids = (node: Node | null, type: string): string[] => {
     const out: string[] = [],
       t = parse(),
-      e = t.n.some((x) => x[2]),
       add = (id: string): unknown => {
-        let x: any, k: number;
-        // The record's name index (a run's member: its template slot's).
-        if (e) for (const r of t.b as any[]) (k = +id - r[0]) < 0 || (r[3] < 0 ? k < r[4] * r[5].length && (x = r[5][k % r[5].length][2]) : k || (x = r[3]));
+        let x: any = names(t).get(+id);
         return (x == null || ((x = t.n[x]![2]) && (!type || x == "*" || (" " + x + " ").includes(" " + type + " ")))) && out.push(id);
       };
     for (let n = node; n && n.nodeType != 9; n = n.parentNode) {

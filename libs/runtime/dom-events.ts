@@ -61,7 +61,7 @@ export const _delegated = (event: Event): void => void ranTo.set(event, -1);
 function delegate(event: Event, stop: Node | null): boolean {
   const done = ranTo.get(event);
   if (done === -1) return true;
-  const key = "$r" + event.type,
+  const key = KEYS[event.type] ?? "$r" + event.type,
     // The propagation path the browser fixed when the dispatch started (as native listeners see it): a
     // handler that re-renders its node or an ancestor (state flushed after each handler) does not cut
     // the bubbling short. `parentNode` walk only where `composedPath` is missing.
