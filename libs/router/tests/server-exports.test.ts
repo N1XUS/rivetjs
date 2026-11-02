@@ -80,7 +80,7 @@ test("mergeServer: page + sibling by kind; one kind in both is an error; cached 
   assert.throws(() => mergeServer({ a: load(fn) }, { b: load(fn) }, ["a.tsx", "a.server.ts"]), /a\.tsx and a\.server\.ts both define the route's `load`/);
 });
 
-test("handler: in-file loader data, onRequest/onGet middleware outer to inner, Response ends the request", async () => {
+test("handler: in-file loader data, onRequest outer to inner, guards, then onGet outer to inner; Response ends the request", async () => {
   const log: string[] = [];
   const handler = app([
     {
@@ -99,10 +99,10 @@ test("handler: in-file loader data, onRequest/onGet middleware outer to inner, R
   const ok = await handler(new Request("http://x/p"));
   assert.equal(ok.status, 200);
   assert.deepEqual(JSON.parse(await ok.text()).data, [null, { n: 1 }]);
-  assert.deepEqual(log, ["layout onRequest", "layout onGet", "page onRequest", "page onGet", "guard"]);
+  assert.deepEqual(log, ["layout onRequest", "page onRequest", "guard", "layout onGet", "page onGet"]);
   log.length = 0;
   assert.equal(await (await handler(new Request("http://x/p?stop"))).text(), "stopped");
-  assert.deepEqual(log, ["layout onRequest", "layout onGet", "page onRequest"]);
+  assert.deepEqual(log, ["layout onRequest", "page onRequest"]);
 });
 
 test("handler: page routes accept methods their module handles; undefined renders the page; thrown redirects apply", async () => {

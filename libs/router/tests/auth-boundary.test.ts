@@ -1,4 +1,5 @@
-// A shared authentication boundary must also run before raw page handlers, which precede layout guards.
+// A shared authentication boundary (layout `onRequest`) runs before everything; layout guards run before every
+// `on<Method>` handler (page, nested layout, endpoint), loader and action.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { createHandler, type AppRoute, type ServerModule } from "../server/handler.ts";
@@ -113,4 +114,49 @@ test.each([true, false])("layout guard protects a loader or endpoint without han
   assert.equal(allowed.status, 200);
   assert.ok((await allowed.text()).includes(payload));
   assert.equal(calls, 1, "positive control: the guarded route is reachable");
+});
+
+test.each(["GET", "POST", "DELETE"])("layout guard runs before page and nested layout on<Method> handlers (%s)", async (method) => {
+  const calls: string[] = [];
+  const payload = "synthetic-private-payload";
+  const handlers = (who: string): ServerModule => ({
+    onGet: () => void calls.push(who),
+    onPost: () => void calls.push(who),
+    // The page's own handler answers DELETE (a page has no default for it).
+    onDelete: () => (calls.push(who), who === "page" ? new Response(payload) : undefined),
+  });
+  const handler = createHandler({
+    routes: [
+      {
+        id: "admin/users",
+        pattern: "/admin/users",
+        page: true,
+        layouts: [
+          mod({
+            guard(event) {
+              calls.push("guard");
+              if (event.cookies.get("fixture-session") !== "allowed") throw deny(403);
+            },
+          }),
+          mod(handlers("nested layout")),
+        ],
+        server: mod({ ...handlers("page"), load: () => payload }),
+      },
+    ],
+    render: (input) => Response.json(input.data),
+    renderError: ({ status }) => new Response("Denied", { status }),
+  });
+  const request = (cookie: string) =>
+    new Request("http://x/admin/users", { method, headers: { cookie, origin: "http://x", "content-type": "application/x-www-form-urlencoded" } });
+  for (const cookie of ["", "fixture-session=forged"]) {
+    calls.length = 0;
+    const denied = await handler(request(cookie));
+    assert.equal(denied.status, 403);
+    assert.ok(!(await denied.text()).includes(payload));
+    assert.deepEqual(calls, ["guard"], "no on<Method> handler runs before the enclosing guard denies");
+  }
+  calls.length = 0;
+  const allowed = await handler(request("fixture-session=allowed"));
+  assert.notEqual(allowed.status, 403);
+  assert.deepEqual(calls, ["guard", "nested layout", "page"], "positive control: handlers run outermost first after the guard");
 });

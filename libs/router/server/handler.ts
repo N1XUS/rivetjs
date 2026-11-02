@@ -89,8 +89,9 @@ type Result = unknown;
 type Handler = (event: RequestEvent) => Response | undefined | void | Promise<Response | undefined | void>;
 /**
  * A route's or layout's server exports, normalized by tag (`server/module.ts`): each key is the kind of
- * the wrapper that made the export (`export const loader = load(…)` arrives as `load`). `onRequest` and
- * `on<Method>` request handlers run outermost first before guards; a returned `Response` ends the request.
+ * the wrapper that made the export (`export const loader = load(…)` arrives as `load`). `onRequest`
+ * runs outermost first before the guards; `on<Method>` handlers run outermost first after every guard passed. A
+ * returned `Response` ends the request.
  */
 export interface ServerModule {
   onRequest?: Handler;
@@ -245,7 +246,7 @@ export interface AppOptions {
   /** Data requests: per layout of `route`, whether its loader may be skipped when the client keeps its data (default all). */
   keepable?(route: AppRoute): readonly boolean[] | undefined | Promise<readonly boolean[] | undefined>;
   /**
-   * Called once per HTML page GET / HEAD (no data request, no action) after the request handlers and before the guards
+   * Called once per HTML page GET / HEAD (no data request, no action) after the `onRequest` handlers and before the guards
    * and loaders: the moment a server can send `103 Early Hints` while it is still busy (`createApp({ earlyHints })`).
    */
   earlyHints?(route: AppRoute, request: Request): void;
@@ -731,9 +732,9 @@ export function createHandler(options: AppOptions): AppHandler {
             : (Object.keys(ON) as Method[]).filter((m) => own?.[ON[m]]).map((m) => (m === "GET" ? "GET, HEAD" : m))),
           ...(options ? ["OPTIONS"] : []),
         ].join(", ");
-      // Request handlers, for every method (before the method check): outermost first, `onRequest` then
-      // `on<Method>`; an endpoint route's own `on<Method>` produces its response below. OPTIONS: `onRequest` then
-      // `onOptions` (own module too).
+      // `onRequest` middleware, for every method (before the method check and the guards): outermost first. OPTIONS:
+      // `onRequest` then `onOptions` (own module too; preflights run no guards). `on<Method>` handlers of other methods
+      // run after the guards (below): a page's or a nested layout's `onPost` never runs before an enclosing guard.
       for (const module of modules) {
         if (!module) continue;
         const first = module.onRequest;
@@ -742,7 +743,7 @@ export function createHandler(options: AppOptions): AppHandler {
           if (result instanceof Response) return early(result);
           if (isHttpError(result)) throw result;
         }
-        const second = on && (route.page || module !== own || method === "OPTIONS") ? module[on] : undefined;
+        const second = method === "OPTIONS" ? module.onOptions : undefined;
         if (second) {
           const result: unknown = await second(event);
           if (result instanceof Response) return early(result);
@@ -779,6 +780,17 @@ export function createHandler(options: AppOptions): AppHandler {
         guarded++;
       }
       phase = "handler";
+      // `on<Method>` handlers once every guard passed: outermost first; an endpoint route's own handler produces its
+      // response below.
+      if (on)
+        for (const module of modules) {
+          const handler = module && (route.page || module !== own) ? module[on] : undefined;
+          if (handler) {
+            const result: unknown = await handler(event);
+            if (result instanceof Response) return early(result);
+            if (isHttpError(result)) throw result;
+          }
+        }
       for (const module of modules) {
         const extra = module?.headers?.(event);
         if (extra) new Headers(extra).forEach((value, name) => headers.set(name, value));

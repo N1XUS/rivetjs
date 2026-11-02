@@ -91,7 +91,7 @@ npx vitest run --project forms   # drives createHandler via ../../router/server/
 - A shell fill arms deferred in-order detection only when its handle is consumed, rather than when the loader promise settles: a cold page module can still be loading then. Delayed-render and true in-order consumption cases are paired in `tests/shell-cache.test.ts`.
 - `handler.ts` is imported by path from `libs/forms/tests/*.test.ts`: don't move/rename it.
 - Exporting both `load` and `load(…)` in one sibling, or one export in both page and sibling → error at first request (`module.ts`).
-- Request handlers run before guards: auth checks inside `onRequest(…)`/`on<Method>` are the handler's job.
+- `onRequest(…)` runs before the guards (auth checks there are its job); `on<Method>` handlers run after every guard passed (GUARD-ORDER 2026-11-02).
 
 ## Error pages, translated heads, lazy pages (R18N 2026-10-27)
 

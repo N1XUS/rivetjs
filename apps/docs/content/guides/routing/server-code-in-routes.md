@@ -66,11 +66,9 @@ export const GET = onGet(async (event: RequestEvent) =>
   event.url.searchParams.get("format") === "json" ? Response.json(await loader(event)) : undefined);
 ```
 
-:::warning
-Request handlers run **before** guards, including the guards of enclosing layouts. A `guard(…)` in `(private)/_layout.tsx` does not protect a page's `onGet(…)`. Check access inside the handler, or keep protected data out of it.
-:::
+Method handlers (`onGet(…)`, `onPost(…)`, …) run **after** the guards, the guards of enclosing layouts included: a `guard(…)` in `(private)/_layout.tsx` protects a page's `onGet(…)` and `onPost(…)`. `onRequest(…)` is the exception: it runs before the guards, for every method.
 
-For a shared authentication check that also covers page handlers, use `onRequest(…)` in the enclosing layout. Validate the session there and throw `deny(401)` when it is missing or invalid; assign the validated identity to `event.locals` before continuing. Resource-specific permission checks still belong to the operation that reads or changes that resource.
+For a shared authentication check that runs before everything else, use `onRequest(…)` in the enclosing layout. Validate the session there and throw `deny(401)` when it is missing or invalid; assign the validated identity to `event.locals` before continuing. Resource-specific permission checks still belong to the operation that reads or changes that resource.
 
 ## Endpoints in plain `.ts` files
 
@@ -136,7 +134,7 @@ npx rivet migrate server-exports             # rewrite (default folder: src/rout
 
 - **A loader without its wrapper.** `export const loader = async () => …` is a plain browser export. Wrap it: `export const loader = load(async () => …)`.
 - **A wrapper inside a function or condition.** `cond ? load(a) : load(b)` is an error. Pick the function inside one `load(…)` call.
-- **Protecting a page's `onGet(…)` with a layout guard.** Handlers run first; see the warning above.
+- **Protecting data with `onRequest(…)` alone in the page.** `onRequest(…)` runs before the guards; put access checks in a `guard(…)` or in the layout's `onRequest(…)`.
 - **Calling `load(…)` from an event handler.** It does not exist in the browser. Send changes through an action or an endpoint.
 
 ## See also

@@ -73,7 +73,7 @@ Server code lives in the page or layout file itself, as exports made by a wrappe
 | `headers((event) => …)` | Extra response headers. |
 | `entries(() => […])` | Parameter values to prerender for dynamic routes. |
 | `prerender` | Plain `boolean`. Force prerendering on or off (static mode). Default: on for static routes and routes with entries. |
-| `onRequest(…)`, `onGet(…)`, `onPost(…)`, `onPut(…)`, `onPatch(…)`, `onDelete(…)`, `onOptions(…)` | Request handlers. They run before guards, outermost module first, `onRequest(…)` before the method's handler. `onRequest(…)` runs for every method, before the 405 method check, so it can answer methods the route does not handle. A returned `Response` ends the request; `undefined` continues. |
+| `onRequest(…)`, `onGet(…)`, `onPost(…)`, `onPut(…)`, `onPatch(…)`, `onDelete(…)`, `onOptions(…)` | Request handlers, outermost module first. `onRequest(…)` runs for every method before the guards and the 405 method check, so it can answer methods the route does not handle; `onOptions(…)` follows it (preflights run no guards). The method's handler (`onGet(…)`, `onPost(…)`, …) runs after every guard passed. A returned `Response` ends the request; `undefined` continues. |
 
 Endpoint routes: a plain `.ts` file in `src/routes` that exports request handlers (for example `api/time.ts` with `export const GET = onGet(…)`). Its handler for the method must return a `Response`. Plain `.ts` files without handlers are helpers, not routes.
 

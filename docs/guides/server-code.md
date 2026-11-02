@@ -16,7 +16,7 @@ File routes (`@rivetjs/router`) keep server code next to the page. The compiler 
 - Request handlers (Qwik-style), in `.tsx` pages/layouts and plain `.ts` routes:
   - `onRequest(…)` (any method), `onGet(…)`, `onPost(…)`, `onPut(…)`, `onPatch(…)`, `onDelete(…)`, `onOptions(…)` (stripped from browser builds).
   - Order per request: CSRF check (unsafe methods, unknown ones too) → `onRequest(…)` (every method) → `on<Method>(…)` (per module, layouts outer → inner, then the route) → method check (405 + `Allow`: page = `GET, HEAD` + `POST` with `actions(…)` / `onPost(…)` + `PUT` / `PATCH` / `DELETE` with handlers; page with actions, `POST` without `?/name` → 400) → guards (outer → inner) → `headers(…)` → actions → loaders. Endpoint routes: the route's own `on<Method>(…)` answers after the guards.
-  - Request handlers run before guards (Qwik-style contract): a handler that must not run for unauthenticated users checks itself; the CSRF check still runs before every handler.
+  - `onRequest(…)` runs before the guards (middleware, every method); `on<Method>` handlers run after every guard passed (2026-11-02: a layout guard protects page and nested-layout handlers); the CSRF check still runs before every handler.
   - Returned `Response` ends the request; thrown `HttpError`/`redirect()` as for guards; `undefined` continues.
   - Page routes: `on<Method>` is middleware; a non-GET method is allowed when the route module defines `on<Method>` (`undefined` → page renders).
   - Endpoint routes: plain `api/x.ts` exporting a handler (or `x.server.ts` without a page); the route module's `on<Method>` must return the `Response`.

@@ -44,7 +44,7 @@ The layout component can simply render its `children`.
 
 ## Order and the `locals` object
 
-For one request, guards run one after another, from the outermost layout to the page. The first guard that returns a result stops the chain. Only when all guards pass do the loaders run, all at the same time.
+For one request, guards run one after another, from the outermost layout to the page. The first guard that returns a result stops the chain. Only when all guards pass do the loaders run, all at the same time. Request handlers (`onGet(…)`, `onPost(…)`, …) of the page and of its layouts also wait for every guard; only `onRequest(…)` runs before them.
 
 Use `locals` to hand information down the chain, so you check the session once:
 

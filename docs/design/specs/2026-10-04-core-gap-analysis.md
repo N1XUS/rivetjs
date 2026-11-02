@@ -208,7 +208,7 @@ Order: impact/effort, then dependency. Rust goals (🦀) run one at a time. Ever
 ### Extra findings (docs-site agent, 2026-10-04) — triage
 | # | Finding | Layer | Triage |
 |---|---|---|---|
-| E1 | `onGet`/`onPost` run before guards and skip CSRF | router | CSRF fixed by G2 (check before any handler); order `onRequest → on<Method> → guards` is the documented (Qwik-style) contract → keep, doc clarified in G17 |
+| E1 | `onGet`/`onPost` run before guards and skip CSRF | router | CSRF fixed by G2 (check before any handler); order `onRequest → on<Method> → guards` is the documented (Qwik-style) contract → keep, doc clarified in G17 | **Superseded 2026-11-02:** `on<Method>` handlers run after the guards (`onRequest → guards → on<Method>`).
 | E2 | `event.currentTarget` wrong in resumed handlers (delegated listener) | runtime resume | bug → G18 (shadow `currentTarget` on the event instance during dispatch) |
 | E3 | `cond() ? <jsx/> : null` with SSR `null` never shows after resume | compiler + resume | bug (known slots.md limitation) → G19 🦀 (empty region markers instead of text binding) |
 | E4 | `value={count()}` child prop stops updating (dom.ts component) | runtime | by design (snapshot props, user decision) → G18 dev warning |

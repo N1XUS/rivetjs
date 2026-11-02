@@ -462,6 +462,32 @@
    ]
   },
   {
+   "entry": "@rivetjs/router/sse",
+   "summary": "Server-Sent Events response for endpoints (eventStream): framing, heartbeat, backpressure, cleanup on disconnect.",
+   "runsOn": "server",
+   "href": "/api/rivetjs/router/sse/",
+   "symbols": [
+    "EventCleanup",
+    "EventFields",
+    "EventStreamOptions",
+    "SendEvent",
+    "eventStream",
+    "formatEvent"
+   ]
+  },
+  {
+   "entry": "@rivetjs/router/live-source",
+   "summary": "A signal-backed value kept current by a Server-Sent Events URL (liveSource).",
+   "runsOn": "both",
+   "href": "/api/rivetjs/router/live-source/",
+   "symbols": [
+    "LiveSource",
+    "LiveSourceOptions",
+    "LiveStatus",
+    "liveSource"
+   ]
+  },
+  {
    "entry": "@rivetjs/router/prefetch",
    "summary": "Document prefetch: speculation rules and fallback for links that load a document; whenActivated for prerendered pages.",
    "runsOn": "both",
@@ -1115,6 +1141,7 @@
    "runsOn": "server",
    "href": "/api/rivetjs/i18n/router/",
    "symbols": [
+    "AlternatesOptions",
     "I18nRouteConfig",
     "alternates",
     "delocalizeHref",
@@ -2481,8 +2508,8 @@
    "examples": [],
    "source": {
     "file": "libs/bridge/adapter.ts",
-    "line": 106,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/bridge/adapter.ts#L106"
+    "line": 114,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/bridge/adapter.ts#L114"
    },
    "href": "/api/rivetjs/bridge/adapter/islandRecovered/"
   },
@@ -4162,8 +4189,8 @@
    "entry": "@rivetjs/compiler",
    "name": "rivetCacheDir",
    "kind": "function",
-   "summary": "Root of Rivet's persistent build caches (compiler answers `compile/`, comptime results `comptime/`, `.image` / `.svg` outputs `images/`, router brotli sizes `css-brotli.json`, docs-kit page passes + example checks `docs/`): env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`.",
-   "remarks": "Root of Rivet's persistent build caches (compiler answers `compile/`, comptime results `comptime/`, `?image` / `?svg`\noutputs `images/`, router brotli sizes `css-brotli.json`, docs-kit page passes + example checks `docs/`):\nenv `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`. Deliberately OUTSIDE the project: Tailwind's automatic source\ndetection scans the app directory (its `node_modules/.vite` included), so cache files there turned compiled code /\nclass strings into extra utilities (INCR-BUILD-01 regression: starter-ui `.ring`, `[rivet:cdk]`). Entries are keyed by\neverything they depend on, so projects sharing the root never see each other's results.",
+   "summary": "Root of Rivet's persistent build caches (compiler answers `compile/`, comptime results `comptime/`, `.image` / `.svg` outputs `images/`, router brotli sizes `css-brotli.json`, docs-kit page passes + example checks `docs/`): env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache-<uid>` (`rivet-cache` where there are no uids).",
+   "remarks": "Root of Rivet's persistent build caches (compiler answers `compile/`, comptime results `comptime/`, `?image` / `?svg`\noutputs `images/`, router brotli sizes `css-brotli.json`, docs-kit page passes + example checks `docs/`):\nenv `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache-<uid>` (`rivet-cache` where there are no uids). Deliberately\nOUTSIDE the project: Tailwind's automatic source detection scans the app directory (its `node_modules/.vite`\nincluded), so cache files there turned compiled code / class strings into extra utilities (INCR-BUILD-01 regression:\nstarter-ui `.ring`, `[rivet:cdk]`). Entries are keyed by everything they depend on, so projects sharing the root never\nsee each other's results. Cached entries are spliced into compiled output, so the default root is per user, created\n`0700`, and refused (TypeError) when another user owns it or others can write it (a shared `/tmp` on a multi-user host:\ncache poisoning).",
    "signatures": [
     "function rivetCacheDir(): string"
    ],
@@ -4175,8 +4202,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/cache-dir.ts",
-    "line": 14,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/cache-dir.ts#L14"
+    "line": 20,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/cache-dir.ts#L20"
    },
    "href": "/api/rivetjs/compiler/rivetCacheDir/"
   },
@@ -5049,8 +5076,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 382,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L382"
+    "line": 385,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L385"
    },
    "href": "/api/rivetjs/compiler/vite/DevResume/"
   },
@@ -5077,7 +5104,7 @@
      "name": "cacheDir",
      "kind": "property",
      "signature": "cacheDir?: string",
-     "doc": "Root-relative; default `<rivetCacheDir()>/images` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`). Keep it out of\nthe app dir: Tailwind source detection reads the cached `?svg` sources.",
+     "doc": "Root-relative; default `<rivetCacheDir()>/images` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache-<uid>`). Keep it out of\nthe app dir: Tailwind source detection reads the cached `?svg` sources.",
      "optional": true
     },
     {
@@ -5228,7 +5255,7 @@
      "name": "compileCache",
      "kind": "property",
      "signature": "compileCache?: boolean",
-     "doc": "Persistent compiler cache (INCR-BUILD, default on): every compiler request (compile, module facts) is answered from\n`<rivetCacheDir()>/compile/` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache`; never inside the project, where\nTailwind source detection would read it) when the same request (source + options, cross-module facts included) was answered by\nthe same compiler module before (`wasm.ts` `setCallCache`; byte-identical output). Size cap: env\n`RIVET_COMPILE_CACHE_MB` (default 512, least recently used go first). `false` or env `RIVET_COMPILE_CACHE=0` turns it off.",
+     "doc": "Persistent compiler cache (INCR-BUILD, default on): every compiler request (compile, module facts) is answered from\n`<rivetCacheDir()>/compile/` (env `RIVET_CACHE_DIR`, else `<os tmpdir>/rivet-cache-<uid>`; never inside the project, where\nTailwind source detection would read it) when the same request (source + options, cross-module facts included) was answered by\nthe same compiler module before (`wasm.ts` `setCallCache`; byte-identical output). Size cap: env\n`RIVET_COMPILE_CACHE_MB` (default 512, least recently used go first). `false` or env `RIVET_COMPILE_CACHE=0` turns it off.",
      "optional": true
     },
     {
@@ -5305,7 +5332,7 @@
      "name": "staticIcons",
      "kind": "property",
      "signature": "staticIcons?: boolean",
-     "doc": "Compile-time icons (default true): `<Icon icon={Check} size={16} class=\"x\" />` (`Icon` from\n`@rivetjs/kit/icon`, `Check` imported from `lucide`, constant props only) compiles as the inline\n`<svg>` it renders — same markup, one static template, no component call. `false` keeps every call.",
+     "doc": "Compile-time icons (default true): `<Icon icon={Check} size={16} class=\"x\" />` (`Icon` from\n`@rivetjs/kit/icon`, `Check` imported from `lucide`, constant root props, optionally live class) compiles as the inline\n`<svg>` it renders — same markup, static shapes plus an optional class binding, no component call. `false` keeps every call.",
      "optional": true
     }
    ],
@@ -5503,8 +5530,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/server-only.ts",
-    "line": 30,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/server-only.ts#L30"
+    "line": 35,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/server-only.ts#L35"
    },
    "href": "/api/rivetjs/compiler/vite/declaredServerOnly/"
   },
@@ -5539,8 +5566,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 440,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L440"
+    "line": 443,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L443"
    },
    "href": "/api/rivetjs/compiler/vite/domListIn/"
   },
@@ -5569,8 +5596,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 299,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L299"
+    "line": 302,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L302"
    },
    "href": "/api/rivetjs/compiler/vite/foreignJsxPragma/"
   },
@@ -5611,8 +5638,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/server-only.ts",
-    "line": 17,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/server-only.ts#L17"
+    "line": 22,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/server-only.ts#L22"
    },
    "href": "/api/rivetjs/compiler/vite/isServerOnly/"
   },
@@ -5653,8 +5680,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/server-only.ts",
-    "line": 23,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/server-only.ts#L23"
+    "line": 28,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/server-only.ts#L28"
    },
    "href": "/api/rivetjs/compiler/vite/matchesServerOnly/"
   },
@@ -5684,8 +5711,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 768,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L768"
+    "line": 832,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L832"
    },
    "href": "/api/rivetjs/compiler/vite/rivet/"
   },
@@ -5727,8 +5754,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/server-only.ts",
-    "line": 45,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/server-only.ts#L45"
+    "line": 52,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/server-only.ts#L52"
    },
    "href": "/api/rivetjs/compiler/vite/serverOnlyStub/"
   },
@@ -6158,7 +6185,7 @@
      "name": "echo",
      "kind": "property",
      "signature": "readonly echo?: { exclude?: readonly string[] }",
-     "doc": "Extra paths/patterns never echoed after a failed POST; added to the always-on default (files, names matching /password|secret/i).",
+     "doc": "Extra paths/patterns never echoed after a failed POST; added to the always-on default (files, secret names: `secretName` — password, token, pin, cvv, card number, …).",
      "optional": true
     },
     {
@@ -6286,7 +6313,7 @@
      "name": "echo",
      "kind": "property",
      "signature": "echo?: { exclude?: readonly string[] }",
-     "doc": "Extra paths/patterns never echoed after a failed POST; added to the always-on default (files, names matching /password|secret/i).",
+     "doc": "Extra paths/patterns never echoed after a failed POST; added to the always-on default (files, secret names: `secretName` — password, token, pin, cvv, card number, …).",
      "optional": true
     },
     {
@@ -7139,8 +7166,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 90,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L90"
+    "line": 110,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L110"
    },
    "href": "/api/rivetjs/forms/autofocus/"
   },
@@ -7175,8 +7202,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/mutate.ts",
-    "line": 51,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/mutate.ts#L51"
+    "line": 52,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/mutate.ts#L52"
    },
    "href": "/api/rivetjs/forms/clearIssues/"
   },
@@ -7249,8 +7276,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/decode.ts",
-    "line": 77,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/decode.ts#L77"
+    "line": 82,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/decode.ts#L82"
    },
    "href": "/api/rivetjs/forms/decodeFormData/"
   },
@@ -7291,8 +7318,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 77,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L77"
+    "line": 97,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L97"
    },
    "href": "/api/rivetjs/forms/defaultChecked/"
   },
@@ -7327,8 +7354,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 67,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L67"
+    "line": 87,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L87"
    },
    "href": "/api/rivetjs/forms/defaultValue/"
   },
@@ -7400,8 +7427,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 143,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L143"
+    "line": 153,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L153"
    },
    "href": "/api/rivetjs/forms/describedBy/"
   },
@@ -7436,8 +7463,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 139,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L139"
+    "line": 149,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L149"
    },
    "href": "/api/rivetjs/forms/descriptionId/"
   },
@@ -7472,8 +7499,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 103,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L103"
+    "line": 123,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L123"
    },
    "href": "/api/rivetjs/forms/dirty/"
   },
@@ -7508,8 +7535,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 137,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L137"
+    "line": 147,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L147"
    },
    "href": "/api/rivetjs/forms/errorId/"
   },
@@ -7544,8 +7571,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 135,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L135"
+    "line": 145,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L145"
    },
    "href": "/api/rivetjs/forms/fieldId/"
   },
@@ -7574,8 +7601,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 29,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L29"
+    "line": 43,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L43"
    },
    "href": "/api/rivetjs/forms/fieldIssues/"
   },
@@ -7610,8 +7637,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/dom.ts",
-    "line": 65,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/dom.ts#L65"
+    "line": 66,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/dom.ts#L66"
    },
    "href": "/api/rivetjs/forms/focusFirstInvalid/"
   },
@@ -7640,8 +7667,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 131,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L131"
+    "line": 141,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L141"
    },
    "href": "/api/rivetjs/forms/formId/"
   },
@@ -7670,8 +7697,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 42,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L42"
+    "line": 56,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L56"
    },
    "href": "/api/rivetjs/forms/formIssues/"
   },
@@ -7742,8 +7769,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 23,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L23"
+    "line": 37,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L37"
    },
    "href": "/api/rivetjs/forms/isInvalid/"
   },
@@ -7778,8 +7805,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 14,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L14"
+    "line": 28,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L28"
    },
    "href": "/api/rivetjs/forms/issue/"
   },
@@ -7820,8 +7847,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 18,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L18"
+    "line": 32,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L32"
    },
    "href": "/api/rivetjs/forms/issueText/"
   },
@@ -7856,8 +7883,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 10,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L10"
+    "line": 24,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L24"
    },
    "href": "/api/rivetjs/forms/issues/"
   },
@@ -7886,8 +7913,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 62,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L62"
+    "line": 76,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L76"
    },
    "href": "/api/rivetjs/forms/lastResult/"
   },
@@ -7958,8 +7985,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/handlers.ts",
-    "line": 35,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L35"
+    "line": 36,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L36"
    },
    "href": "/api/rivetjs/forms/onBlur/"
   },
@@ -7980,8 +8007,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/handlers.ts",
-    "line": 32,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L32"
+    "line": 33,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L33"
    },
    "href": "/api/rivetjs/forms/onChange/"
   },
@@ -8022,8 +8049,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/handlers.ts",
-    "line": 21,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L21"
+    "line": 22,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L22"
    },
    "href": "/api/rivetjs/forms/onInput/"
   },
@@ -8064,8 +8091,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/handlers.ts",
-    "line": 77,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L77"
+    "line": 78,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L78"
    },
    "href": "/api/rivetjs/forms/onInvalid/"
   },
@@ -8106,8 +8133,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/handlers.ts",
-    "line": 55,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L55"
+    "line": 56,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/handlers.ts#L56"
    },
    "href": "/api/rivetjs/forms/onSubmit/"
   },
@@ -8142,8 +8169,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 133,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L133"
+    "line": 143,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L143"
    },
    "href": "/api/rivetjs/forms/path/"
   },
@@ -8172,8 +8199,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/mutate.ts",
-    "line": 60,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/mutate.ts#L60"
+    "line": 61,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/mutate.ts#L61"
    },
    "href": "/api/rivetjs/forms/reset/"
   },
@@ -8208,8 +8235,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/mutate.ts",
-    "line": 37,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/mutate.ts#L37"
+    "line": 38,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/mutate.ts#L38"
    },
    "href": "/api/rivetjs/forms/setIssues/"
   },
@@ -8256,8 +8283,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/mutate.ts",
-    "line": 12,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/mutate.ts#L12"
+    "line": 13,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/mutate.ts#L13"
    },
    "href": "/api/rivetjs/forms/setValue/"
   },
@@ -8286,8 +8313,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 54,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L54"
+    "line": 68,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L68"
    },
    "href": "/api/rivetjs/forms/submitCount/"
   },
@@ -8316,8 +8343,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 52,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L52"
+    "line": 66,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L66"
    },
    "href": "/api/rivetjs/forms/submitted/"
   },
@@ -8346,8 +8373,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 50,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L50"
+    "line": 64,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L64"
    },
    "href": "/api/rivetjs/forms/submitting/"
   },
@@ -8376,8 +8403,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 141,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L141"
+    "line": 151,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L151"
    },
    "href": "/api/rivetjs/forms/summaryId/"
   },
@@ -8472,8 +8499,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 46,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L46"
+    "line": 60,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L60"
    },
    "href": "/api/rivetjs/forms/touched/"
   },
@@ -8550,8 +8577,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 56,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L56"
+    "line": 70,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L70"
    },
    "href": "/api/rivetjs/forms/validating/"
   },
@@ -8586,8 +8613,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/reads.ts",
-    "line": 98,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L98"
+    "line": 118,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/reads.ts#L118"
    },
    "href": "/api/rivetjs/forms/value/"
   },
@@ -8622,8 +8649,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 169,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L169"
+    "line": 185,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L185"
    },
    "href": "/api/rivetjs/forms/array/applyArrayIntent/"
   },
@@ -8664,8 +8691,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 97,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L97"
+    "line": 107,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L107"
    },
    "href": "/api/rivetjs/forms/array/insert/"
   },
@@ -8700,8 +8727,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 156,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L156"
+    "line": 172,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L172"
    },
    "href": "/api/rivetjs/forms/array/insertIntent/"
   },
@@ -8730,8 +8757,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 166,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L166"
+    "line": 182,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L182"
    },
    "href": "/api/rivetjs/forms/array/isArrayIntent/"
   },
@@ -8766,8 +8793,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 44,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L44"
+    "line": 45,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L45"
    },
    "href": "/api/rivetjs/forms/array/keys/"
   },
@@ -8814,8 +8841,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 117,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L117"
+    "line": 127,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L127"
    },
    "href": "/api/rivetjs/forms/array/move/"
   },
@@ -8856,8 +8883,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 160,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L160"
+    "line": 176,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L176"
    },
    "href": "/api/rivetjs/forms/array/moveIntent/"
   },
@@ -8898,8 +8925,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 186,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L186"
+    "line": 202,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L202"
    },
    "href": "/api/rivetjs/forms/array/onArrayIntent/"
   },
@@ -8940,8 +8967,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 107,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L107"
+    "line": 117,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L117"
    },
    "href": "/api/rivetjs/forms/array/remove/"
   },
@@ -8976,8 +9003,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 158,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L158"
+    "line": 174,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L174"
    },
    "href": "/api/rivetjs/forms/array/removeIntent/"
   },
@@ -9018,8 +9045,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 135,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L135"
+    "line": 145,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L145"
    },
    "href": "/api/rivetjs/forms/array/replace/"
   },
@@ -9054,8 +9081,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 48,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L48"
+    "line": 49,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L49"
    },
    "href": "/api/rivetjs/forms/array/rows/"
   },
@@ -9102,8 +9129,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 126,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L126"
+    "line": 136,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L136"
    },
    "href": "/api/rivetjs/forms/array/swap/"
   },
@@ -9144,8 +9171,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/array.ts",
-    "line": 162,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L162"
+    "line": 178,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/array.ts#L178"
    },
    "href": "/api/rivetjs/forms/array/swapIntent/"
   },
@@ -9172,7 +9199,7 @@
      "name": "exclude",
      "kind": "property",
      "signature": "readonly exclude?: readonly string[]",
-     "doc": "Never saved (default: paths containing \"password\"/\"secret\"; files are never saved).",
+     "doc": "Paths / `$` patterns never saved, on top of secret names (`secretName`: password, token, pin, cvv, …) and files, which are never saved.",
      "optional": true
     },
     {
@@ -9188,8 +9215,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 24,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L24"
+    "line": 25,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L25"
    },
    "href": "/api/rivetjs/forms/autosave/AutosaveDefinition/"
   },
@@ -9260,8 +9287,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 37,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L37"
+    "line": 38,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L38"
    },
    "href": "/api/rivetjs/forms/autosave/AutosaveState/"
   },
@@ -9282,8 +9309,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 16,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L16"
+    "line": 17,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L17"
    },
    "href": "/api/rivetjs/forms/autosave/Patch/"
   },
@@ -9326,8 +9353,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 18,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L18"
+    "line": 19,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L19"
    },
    "href": "/api/rivetjs/forms/autosave/SaveContext/"
   },
@@ -9356,8 +9383,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 151,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L151"
+    "line": 172,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L172"
    },
    "href": "/api/rivetjs/forms/autosave/conflict/"
   },
@@ -9387,8 +9414,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 53,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L53"
+    "line": 54,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L54"
    },
    "href": "/api/rivetjs/forms/autosave/createAutosave/"
   },
@@ -9417,8 +9444,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 33,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L33"
+    "line": 34,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L34"
    },
    "href": "/api/rivetjs/forms/autosave/defineAutosave/"
   },
@@ -9453,8 +9480,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 95,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L95"
+    "line": 110,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L110"
    },
    "href": "/api/rivetjs/forms/autosave/flush/"
   },
@@ -9490,8 +9517,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 167,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L167"
+    "line": 188,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L188"
    },
    "href": "/api/rivetjs/forms/autosave/guardLeave/"
   },
@@ -9545,8 +9572,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 85,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L85"
+    "line": 100,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L100"
    },
    "href": "/api/rivetjs/forms/autosave/markChanged/"
   },
@@ -9587,8 +9614,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 73,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L73"
+    "line": 80,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L80"
    },
    "href": "/api/rivetjs/forms/autosave/onAutosave/"
   },
@@ -9617,8 +9644,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 179,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L179"
+    "line": 200,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L200"
    },
    "href": "/api/rivetjs/forms/autosave/postDraft/"
   },
@@ -9659,8 +9686,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 138,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L138"
+    "line": 159,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L159"
    },
    "href": "/api/rivetjs/forms/autosave/resolveConflict/"
   },
@@ -9689,8 +9716,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 149,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L149"
+    "line": 170,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L170"
    },
    "href": "/api/rivetjs/forms/autosave/saveError/"
   },
@@ -9719,8 +9746,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 147,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L147"
+    "line": 168,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L168"
    },
    "href": "/api/rivetjs/forms/autosave/savedAt/"
   },
@@ -9749,8 +9776,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 153,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L153"
+    "line": 174,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L174"
    },
    "href": "/api/rivetjs/forms/autosave/savedVersion/"
   },
@@ -9779,8 +9806,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 145,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L145"
+    "line": 166,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L166"
    },
    "href": "/api/rivetjs/forms/autosave/saving/"
   },
@@ -9809,8 +9836,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 160,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L160"
+    "line": 181,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L181"
    },
    "href": "/api/rivetjs/forms/autosave/shouldBlockLeave/"
   },
@@ -9839,8 +9866,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/autosave.ts",
-    "line": 155,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L155"
+    "line": 176,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/autosave.ts#L176"
    },
    "href": "/api/rivetjs/forms/autosave/unsaved/"
   },
@@ -9980,7 +10007,7 @@
      "name": "cookie",
      "kind": "property",
      "signature": "cookie?: string",
-     "doc": "Cookie name (default `__rivet_csrf`; `__Host-` prefixed in production).",
+     "doc": "Cookie name (default `__rivet_csrf`; `__Host-rivet_csrf` when `secure`).",
      "optional": true
     },
     {
@@ -9989,6 +10016,13 @@
      "signature": "secret: string",
      "doc": "HMAC key (at least 32 bytes of entropy; keep it out of the client).",
      "optional": false
+    },
+    {
+     "name": "secure",
+     "kind": "property",
+     "signature": "secure?: boolean",
+     "doc": "`Secure` nonce cookie (default: outside dev). Not taken from the request URL: behind a TLS-terminating proxy\nwithout `origin` / `trustProxy` the server sees `http:` while the browser is on https. `false` only for a\nproduction site served over plain http (browsers drop `Secure` cookies there, except on localhost).",
+     "optional": true
     },
     {
      "name": "session",
@@ -10039,8 +10073,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/csrf.ts",
-    "line": 23,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/csrf.ts#L23"
+    "line": 33,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/csrf.ts#L33"
    },
    "href": "/api/rivetjs/forms/csrf/csrfToken/"
   },
@@ -10069,8 +10103,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/csrf.ts",
-    "line": 35,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/csrf.ts#L35"
+    "line": 45,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/csrf.ts#L45"
    },
    "href": "/api/rivetjs/forms/csrf/verifyCsrf/"
   },
@@ -10201,8 +10235,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/errors.ts",
-    "line": 48,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/errors.ts#L48"
+    "line": 59,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/errors.ts#L59"
    },
    "href": "/api/rivetjs/forms/errors/fromBracketPath/"
   },
@@ -10231,8 +10265,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/errors.ts",
-    "line": 37,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/errors.ts#L37"
+    "line": 41,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/errors.ts#L41"
    },
    "href": "/api/rivetjs/forms/errors/fromPointer/"
   },
@@ -10261,8 +10295,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/errors.ts",
-    "line": 54,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/errors.ts#L54"
+    "line": 65,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/errors.ts#L65"
    },
    "href": "/api/rivetjs/forms/errors/issueRecord/"
   },
@@ -10449,7 +10483,7 @@
      "name": "exclude",
      "kind": "property",
      "signature": "exclude?: readonly string[]",
-     "doc": "Never stored (default: paths containing \"password\"/\"secret\").",
+     "doc": "Paths / `$` patterns never stored, on top of secret names (`secretName`: password, token, pin, cvv, …), which are never stored.",
      "optional": true
     },
     {
@@ -10516,8 +10550,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/server/wizard.ts",
-    "line": 85,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/wizard.ts#L85"
+    "line": 108,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/wizard.ts#L108"
    },
    "href": "/api/rivetjs/forms/server/LoadedWizard/"
   },
@@ -10538,8 +10572,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/server/action.ts",
-    "line": 116,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L116"
+    "line": 123,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L123"
    },
    "href": "/api/rivetjs/forms/server/ParseResult/"
   },
@@ -10676,8 +10710,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/server/action.ts",
-    "line": 64,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L64"
+    "line": 63,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L63"
    },
    "href": "/api/rivetjs/forms/server/action/"
   },
@@ -10713,8 +10747,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/server/draft.ts",
-    "line": 23,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/draft.ts#L23"
+    "line": 22,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/draft.ts#L22"
    },
    "href": "/api/rivetjs/forms/server/draftAction/"
   },
@@ -10792,8 +10826,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/server/action.ts",
-    "line": 101,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L101"
+    "line": 108,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L108"
    },
    "href": "/api/rivetjs/forms/server/invalid/"
   },
@@ -10841,8 +10875,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/server/wizard.ts",
-    "line": 94,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/wizard.ts#L94"
+    "line": 117,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/wizard.ts#L117"
    },
    "href": "/api/rivetjs/forms/server/loadWizard/"
   },
@@ -10884,8 +10918,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/server/action.ts",
-    "line": 119,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L119"
+    "line": 126,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L126"
    },
    "href": "/api/rivetjs/forms/server/parse/"
   },
@@ -10928,8 +10962,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/server/action.ts",
-    "line": 213,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L213"
+    "line": 237,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/server/action.ts#L237"
    },
    "href": "/api/rivetjs/forms/server/readForm/"
   },
@@ -11007,8 +11041,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 20,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L20"
+    "line": 26,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L26"
    },
    "href": "/api/rivetjs/forms/wizard/Draft/"
   },
@@ -11018,7 +11052,7 @@
    "name": "DraftStore",
    "kind": "interface",
    "summary": "The app's draft persistence (wizards, autosave).",
-   "remarks": "The app's draft persistence (wizards, autosave). Scope ids to the user/session in `load`/`save`.",
+   "remarks": "The app's draft persistence (wizards, autosave). Draft ids travel in URLs (`?draft=`) and form fields, so they leak\n(history, logs, `Referer`, shared links): bind every draft to its owner. `load` / `save` / `delete` get the\nrequest `event`: store the session's user (or session id) with a new draft and answer `load` with `undefined`, and\n`save` with a conflict, for a draft of anyone else. Wizard steps never adopt an unknown id (a fresh random id\ninstead).",
    "signatures": [
     "interface DraftStore<T = unknown>"
    ],
@@ -11051,8 +11085,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 11,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L11"
+    "line": 17,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L17"
    },
    "href": "/api/rivetjs/forms/wizard/DraftStore/"
   },
@@ -11073,8 +11107,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 18,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L18"
+    "line": 24,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L24"
    },
    "href": "/api/rivetjs/forms/wizard/DraftVersion/"
   },
@@ -11095,8 +11129,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 25,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L25"
+    "line": 31,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L31"
    },
    "href": "/api/rivetjs/forms/wizard/SaveResult/"
   },
@@ -11139,8 +11173,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 33,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L33"
+    "line": 40,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L40"
    },
    "href": "/api/rivetjs/forms/wizard/WizardDefinition/"
   },
@@ -11176,8 +11210,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 41,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L41"
+    "line": 48,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L48"
    },
    "href": "/api/rivetjs/forms/wizard/WizardDraft/"
   },
@@ -11220,8 +11254,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 57,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L57"
+    "line": 64,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L64"
    },
    "href": "/api/rivetjs/forms/wizard/WizardState/"
   },
@@ -11242,8 +11276,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 29,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L29"
+    "line": 36,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L36"
    },
    "href": "/api/rivetjs/forms/wizard/WizardValue/"
   },
@@ -11272,8 +11306,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 104,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L104"
+    "line": 114,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L114"
    },
    "href": "/api/rivetjs/forms/wizard/back/"
   },
@@ -11314,8 +11348,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 76,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L76"
+    "line": 86,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L86"
    },
    "href": "/api/rivetjs/forms/wizard/clampStep/"
   },
@@ -11351,8 +11385,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 67,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L67"
+    "line": 74,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L74"
    },
    "href": "/api/rivetjs/forms/wizard/createWizard/"
   },
@@ -11387,8 +11421,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 86,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L86"
+    "line": 96,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L96"
    },
    "href": "/api/rivetjs/forms/wizard/currentStep/"
   },
@@ -11417,8 +11451,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 48,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L48"
+    "line": 55,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L55"
    },
    "href": "/api/rivetjs/forms/wizard/defineWizard/"
   },
@@ -11447,8 +11481,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 94,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L94"
+    "line": 104,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L104"
    },
    "href": "/api/rivetjs/forms/wizard/draftId/"
   },
@@ -11489,8 +11523,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 109,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L109"
+    "line": 119,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L119"
    },
    "href": "/api/rivetjs/forms/wizard/goTo/"
   },
@@ -11525,8 +11559,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 74,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L74"
+    "line": 84,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L84"
    },
    "href": "/api/rivetjs/forms/wizard/indexOf/"
   },
@@ -11561,8 +11595,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 88,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L88"
+    "line": 98,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L98"
    },
    "href": "/api/rivetjs/forms/wizard/isComplete/"
   },
@@ -11591,8 +11625,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 90,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L90"
+    "line": 100,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L100"
    },
    "href": "/api/rivetjs/forms/wizard/isFirst/"
   },
@@ -11627,8 +11661,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 92,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L92"
+    "line": 102,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L102"
    },
    "href": "/api/rivetjs/forms/wizard/isLast/"
   },
@@ -11663,8 +11697,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 97,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L97"
+    "line": 107,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L107"
    },
    "href": "/api/rivetjs/forms/wizard/next/"
   },
@@ -11693,8 +11727,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 84,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L84"
+    "line": 94,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L94"
    },
    "href": "/api/rivetjs/forms/wizard/step/"
   },
@@ -11736,8 +11770,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 117,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L117"
+    "line": 127,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L127"
    },
    "href": "/api/rivetjs/forms/wizard/stepFromUrl/"
   },
@@ -11785,8 +11819,8 @@
    "examples": [],
    "source": {
     "file": "libs/forms/wizard.ts",
-    "line": 123,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L123"
+    "line": 133,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/forms/wizard.ts#L133"
    },
    "href": "/api/rivetjs/forms/wizard/stepHref/"
   },
@@ -12141,8 +12175,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 109,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L109"
+    "line": 127,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L127"
    },
    "href": "/api/rivetjs/i18n/resolve/browserSource/"
   },
@@ -12213,8 +12247,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 45,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L45"
+    "line": 51,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L51"
    },
    "href": "/api/rivetjs/i18n/resolve/localeCookie/"
   },
@@ -12223,8 +12257,8 @@
    "entry": "@rivetjs/i18n/resolve",
    "name": "localeCookieOptions",
    "kind": "function",
-   "summary": "Attributes of the locale cookie, shared by the server (`Set-Cookie`) and `document.cookie`: `Path=/`, `SameSite=Lax`, `Max-Age` from `cookie.maxAge` (none: a session cookie), `Secure` on https.",
-   "remarks": "Attributes of the locale cookie, shared by the server (`Set-Cookie`) and `document.cookie`:\n`Path=/`, `SameSite=Lax`, `Max-Age` from `cookie.maxAge` (none: a session cookie), `Secure` on\nhttps. Readable by scripts (the static root redirect and `resolveClient` read it).",
+   "summary": "",
+   "remarks": "",
    "signatures": [
     "function localeCookieOptions(config: ResolveConfig, secure: boolean): { readonly httpOnly: false; maxAge?: number; readonly path: \"/\"; readonly sameSite: \"lax\"; secure: boolean }"
    ],
@@ -12249,8 +12283,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 39,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L39"
+    "line": 45,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L45"
    },
    "href": "/api/rivetjs/i18n/resolve/localeCookieOptions/"
   },
@@ -12285,8 +12319,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 81,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L81"
+    "line": 92,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L92"
    },
    "href": "/api/rivetjs/i18n/resolve/localeFromPath/"
   },
@@ -12321,8 +12355,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 57,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L57"
+    "line": 68,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L68"
    },
    "href": "/api/rivetjs/i18n/resolve/match/"
   },
@@ -12351,8 +12385,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 88,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L88"
+    "line": 106,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L106"
    },
    "href": "/api/rivetjs/i18n/resolve/requestSource/"
   },
@@ -12388,8 +12422,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 162,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L162"
+    "line": 177,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L177"
    },
    "href": "/api/rivetjs/i18n/resolve/resolveClient/"
   },
@@ -12431,8 +12465,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 148,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L148"
+    "line": 167,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L167"
    },
    "href": "/api/rivetjs/i18n/resolve/resolveServer/"
   },
@@ -12461,10 +12495,47 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/resolve.ts",
-    "line": 118,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L118"
+    "line": 136,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/resolve.ts#L136"
    },
    "href": "/api/rivetjs/i18n/resolve/strategies/"
+  },
+  {
+   "key": "@rivetjs/i18n/router#AlternatesOptions",
+   "entry": "@rivetjs/i18n/router",
+   "name": "AlternatesOptions",
+   "kind": "interface",
+   "summary": "Options of `alternates()` (as kit `canonical()`).",
+   "remarks": "Options of `alternates()` (as kit `canonical()`).",
+   "signatures": [
+    "interface AlternatesOptions"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "query",
+     "kind": "property",
+     "signature": "query?: readonly string[]",
+     "doc": "Query parameters the canonical keeps (everything else and the hash are dropped).",
+     "optional": true
+    },
+    {
+     "name": "trailingSlash",
+     "kind": "property",
+     "signature": "trailingSlash?: TrailingSlash",
+     "doc": "Path form of every href, as the router's `trailingSlash`. Default: the app's `rivetRouter({ trailingSlash })` policy.",
+     "optional": true
+    }
+   ],
+   "runsOn": "server",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/i18n/router.ts",
+    "line": 59,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L59"
+   },
+   "href": "/api/rivetjs/i18n/router/AlternatesOptions/"
   },
   {
    "key": "@rivetjs/i18n/router#I18nRouteConfig",
@@ -12533,8 +12604,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/router.ts",
-    "line": 18,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L18"
+    "line": 9,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L9"
    },
    "href": "/api/rivetjs/i18n/router/I18nRouteConfig/"
   },
@@ -12543,10 +12614,10 @@
    "entry": "@rivetjs/i18n/router",
    "name": "alternates",
    "kind": "function",
-   "summary": "`hreflang` alternates for every locale, `x-default` (default locale) and the canonical URL.",
-   "remarks": "`hreflang` alternates for every locale, `x-default` (default locale) and the canonical URL.",
+   "summary": "`hreflang` alternates for every locale, `x-default` (default locale) and the canonical URL (query stripped except `query`, no hash).",
+   "remarks": "`hreflang` alternates for every locale, `x-default` (default locale) and the canonical URL (query stripped except `query`, no hash).",
    "signatures": [
-    "function alternates(url: URL, config: I18nRouteConfig): HeadLink[]"
+    "function alternates(url: URL, config: I18nRouteConfig, options?: AlternatesOptions): HeadLink[]"
    ],
    "params": [
     {
@@ -12560,6 +12631,13 @@
      "type": "I18nRouteConfig",
      "optional": false,
      "doc": ""
+    },
+    {
+     "name": "options",
+     "type": "AlternatesOptions",
+     "optional": true,
+     "doc": "",
+     "default": "{}"
     }
    ],
    "returns": "HeadLink[]",
@@ -12569,8 +12647,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/router.ts",
-    "line": 68,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L68"
+    "line": 67,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L67"
    },
    "href": "/api/rivetjs/i18n/router/alternates/"
   },
@@ -12612,8 +12690,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/router.ts",
-    "line": 50,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L50"
+    "line": 41,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L41"
    },
    "href": "/api/rivetjs/i18n/router/delocalizeHref/"
   },
@@ -12649,8 +12727,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/router.ts",
-    "line": 29,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L29"
+    "line": 20,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L20"
    },
    "href": "/api/rivetjs/i18n/router/dirOf/"
   },
@@ -12679,8 +12757,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/router.ts",
-    "line": 84,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L84"
+    "line": 92,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L92"
    },
    "href": "/api/rivetjs/i18n/router/errorLocale/"
   },
@@ -12709,8 +12787,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/router.ts",
-    "line": 112,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L112"
+    "line": 118,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L118"
    },
    "href": "/api/rivetjs/i18n/router/i18nGuard/"
   },
@@ -12758,8 +12836,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/router.ts",
-    "line": 58,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L58"
+    "line": 49,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L49"
    },
    "href": "/api/rivetjs/i18n/router/localizeHref/"
   },
@@ -12794,8 +12872,8 @@
    "examples": [],
    "source": {
     "file": "libs/i18n/router.ts",
-    "line": 158,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L158"
+    "line": 163,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/i18n/router.ts#L163"
    },
    "href": "/api/rivetjs/i18n/router/setLocale/"
   },
@@ -12984,8 +13062,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 78,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L78"
+    "line": 79,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L79"
    },
    "href": "/api/rivetjs/kit/AlternatesOptions/"
   },
@@ -13028,8 +13106,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 55,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L55"
+    "line": 56,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L56"
    },
    "href": "/api/rivetjs/kit/CanonicalOptions/"
   },
@@ -13132,8 +13210,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 185,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L185"
+    "line": 186,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L186"
    },
    "href": "/api/rivetjs/kit/HeadLinkProps/"
   },
@@ -13199,8 +13277,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 199,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L199"
+    "line": 200,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L200"
    },
    "href": "/api/rivetjs/kit/JsonLdProps/"
   },
@@ -13273,8 +13351,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 183,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L183"
+    "line": 184,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L184"
    },
    "href": "/api/rivetjs/kit/MetaProps/"
   },
@@ -13366,8 +13444,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 95,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L95"
+    "line": 96,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L96"
    },
    "href": "/api/rivetjs/kit/OpenGraphOptions/"
   },
@@ -13418,8 +13496,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 187,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L187"
+    "line": 188,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L188"
    },
    "href": "/api/rivetjs/kit/ScriptProps/"
   },
@@ -13532,8 +13610,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 154,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L154"
+    "line": 155,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L155"
    },
    "href": "/api/rivetjs/kit/SeoOptions/"
   },
@@ -13606,8 +13684,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 204,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L204"
+    "line": 205,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L205"
    },
    "href": "/api/rivetjs/kit/ThemeScriptProps/"
   },
@@ -13701,8 +13779,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 134,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L134"
+    "line": 135,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L135"
    },
    "href": "/api/rivetjs/kit/TwitterCardOptions/"
   },
@@ -13767,8 +13845,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 86,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L86"
+    "line": 87,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L87"
    },
    "href": "/api/rivetjs/kit/alternates/"
   },
@@ -13840,8 +13918,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 67,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L67"
+    "line": 68,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L68"
    },
    "href": "/api/rivetjs/kit/canonical/"
   },
@@ -13912,8 +13990,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 178,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L178"
+    "line": 179,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L179"
    },
    "href": "/api/rivetjs/kit/jsonLd-2/"
   },
@@ -13978,8 +14056,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 109,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L109"
+    "line": 110,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L110"
    },
    "href": "/api/rivetjs/kit/openGraph/"
   },
@@ -14045,8 +14123,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 164,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L164"
+    "line": 165,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L165"
    },
    "href": "/api/rivetjs/kit/seo/"
   },
@@ -14076,8 +14154,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 213,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L213"
+    "line": 214,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L214"
    },
    "href": "/api/rivetjs/kit/themeScript-2/"
   },
@@ -14107,8 +14185,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/shared.ts",
-    "line": 144,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L144"
+    "line": 145,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/shared.ts#L145"
    },
    "href": "/api/rivetjs/kit/twitterCard/"
   },
@@ -14167,8 +14245,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/dom.ts",
-    "line": 273,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L273"
+    "line": 286,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L286"
    },
    "href": "/api/rivetjs/kit/dom/Head/"
   },
@@ -14197,8 +14275,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/dom.ts",
-    "line": 279,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L279"
+    "line": 292,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L292"
    },
    "href": "/api/rivetjs/kit/dom/HeadLink/"
   },
@@ -14227,8 +14305,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/dom.ts",
-    "line": 283,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L283"
+    "line": 296,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L296"
    },
    "href": "/api/rivetjs/kit/dom/JsonLd/"
   },
@@ -14257,8 +14335,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/dom.ts",
-    "line": 277,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L277"
+    "line": 290,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L290"
    },
    "href": "/api/rivetjs/kit/dom/Meta/"
   },
@@ -14287,8 +14365,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/dom.ts",
-    "line": 281,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L281"
+    "line": 294,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L294"
    },
    "href": "/api/rivetjs/kit/dom/Script/"
   },
@@ -14317,8 +14395,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/dom.ts",
-    "line": 286,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L286"
+    "line": 299,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L299"
    },
    "href": "/api/rivetjs/kit/dom/ThemeScript/"
   },
@@ -14347,8 +14425,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/dom.ts",
-    "line": 275,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L275"
+    "line": 288,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/dom.ts#L288"
    },
    "href": "/api/rivetjs/kit/dom/Title/"
   },
@@ -14932,8 +15010,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/vite.ts",
-    "line": 122,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/vite.ts#L122"
+    "line": 133,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/vite.ts#L133"
    },
    "href": "/api/rivetjs/kit/vite/kit/"
   },
@@ -14969,8 +15047,8 @@
    "examples": [],
    "source": {
     "file": "libs/kit/vite.ts",
-    "line": 36,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/vite.ts#L36"
+    "line": 47,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/kit/vite.ts#L47"
    },
    "href": "/api/rivetjs/kit/vite/parseFontId/"
   },
@@ -18045,8 +18123,8 @@
    "examples": [],
    "source": {
     "file": "libs/reactivity/store.ts",
-    "line": 328,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/reactivity/store.ts#L328"
+    "line": 335,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/reactivity/store.ts#L335"
    },
    "href": "/api/rivetjs/reactivity/store/produce/"
   },
@@ -18112,8 +18190,8 @@
    "examples": [],
    "source": {
     "file": "libs/reactivity/store.ts",
-    "line": 348,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/reactivity/store.ts#L348"
+    "line": 355,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/reactivity/store.ts#L355"
    },
    "href": "/api/rivetjs/reactivity/store/reconcile/"
   },
@@ -20107,8 +20185,8 @@
    "entry": "@rivetjs/router",
    "name": "onGet",
    "kind": "function",
-   "summary": "GET / HEAD request handler (endpoint routes: must return the `Response`; pages: middleware before the guards).",
-   "remarks": "GET / HEAD request handler (endpoint routes: must return the `Response`; pages: middleware before the guards).",
+   "summary": "GET / HEAD request handler, after the guards (endpoint routes: must return the `Response`; pages: middleware before the loaders).",
+   "remarks": "GET / HEAD request handler, after the guards (endpoint routes: must return the `Response`; pages: middleware before the loaders).",
    "signatures": [
     "function onGet<P extends Record<string, string> = Record<string, string>>(fn: Handler<P>): ServerExport<\"onGet\", Handler<P>>"
    ],
@@ -20257,8 +20335,8 @@
    "entry": "@rivetjs/router",
    "name": "onRequest",
    "kind": "function",
-   "summary": "Any method, before guards (outer → inner); a returned `Response` ends the request.",
-   "remarks": "Any method, before guards (outer → inner); a returned `Response` ends the request.",
+   "summary": "Any method, before the guards (outer → inner); a returned `Response` ends the request.",
+   "remarks": "Any method, before the guards (outer → inner); a returned `Response` ends the request.",
    "signatures": [
     "function onRequest<P extends Record<string, string> = Record<string, string>>(fn: Handler<P>): ServerExport<\"onRequest\", Handler<P>>"
    ],
@@ -21166,8 +21244,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/client/leave.ts",
-    "line": 72,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/leave.ts#L72"
+    "line": 77,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/leave.ts#L77"
    },
    "href": "/api/rivetjs/router/client/beforeLeave/"
   },
@@ -22062,8 +22140,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/client/link.tsx",
-    "line": 62,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/link.tsx#L62"
+    "line": 64,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/link.tsx#L64"
    },
    "href": "/api/rivetjs/router/link/Link/"
   },
@@ -23707,7 +23785,7 @@
      "name": "prefetch",
      "kind": "property",
      "signature": "prefetch?: \"intent\" | \"none\" | \"document\" | \"prerender\"",
-     "doc": "`\"intent\"` (default): the client router loads data and page chunk on hover/focus. `\"none\"`: nothing\nbefore the click. `\"document\"` / `\"prerender\"`: when the click is a document load (`reload`, or an\napp without client routing), the browser fetches (or prerenders) the page ahead — Speculation Rules,\nelse `<link rel=prefetch>` / `fetch` on intent; links the client router handles keep `\"intent\"`\nbehaviour. Unset: `rivetRouter({ prefetch })`'s default, else `\"intent\"`; an explicit `\"intent\"` keeps the\nrouter's prefetch only (no document prefetch from the app default).",
+     "doc": "Unset (default): nothing loads before the click — link intent only boots the router — unless the app turns\nrouter intent prefetch on (`rivetRouter({ intentPrefetch: true })`). `\"intent\"`: the client router loads this\nlink's route data (its loaders run on the server) and page chunk on hover / focus (detected at build time; costs\nthe server work and memory even when the link is never clicked). `\"none\"`: nothing before the click, also with\n`intentPrefetch: true`. `\"document\"` / `\"prerender\"`: when the click is a document load (`reload`, or an app\nwithout client routing), the browser fetches (or prerenders) the page ahead — Speculation Rules, else\n`<link rel=prefetch>` / `fetch` on intent; on links the client router handles they act as unset.\nUnset also takes `rivetRouter({ prefetch })`'s document default; an explicit `\"intent\"` / `\"none\"` opts out of it.",
      "optional": true
     },
     {
@@ -23839,6 +23917,154 @@
     "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/link.tsx#L14"
    },
    "href": "/api/rivetjs/router/link/LinkProps/"
+  },
+  {
+   "key": "@rivetjs/router/live-source#LiveSource",
+   "entry": "@rivetjs/router/live-source",
+   "name": "LiveSource",
+   "kind": "interface",
+   "summary": "The latest value (a signal read); `status()` the connection state; `open()` connects and returns the close function.",
+   "remarks": "The latest value (a signal read); `status()` the connection state; `open()` connects and returns the close function.",
+   "signatures": [
+    "function LiveSource(): T"
+   ],
+   "params": [],
+   "returns": "T",
+   "members": [
+    {
+     "name": "open",
+     "kind": "method",
+     "signature": "open(): () => void",
+     "doc": "Connect (browser only): call it from a `clientEffect` — `clientEffect(source.open)` — whose cleanup closes it.",
+     "optional": false
+    },
+    {
+     "name": "status",
+     "kind": "method",
+     "signature": "status(): LiveStatus",
+     "doc": "",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/client/live-source.ts",
+    "line": 23,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/live-source.ts#L23"
+   },
+   "href": "/api/rivetjs/router/live-source/LiveSource-interface/"
+  },
+  {
+   "key": "@rivetjs/router/live-source#LiveSourceOptions",
+   "entry": "@rivetjs/router/live-source",
+   "name": "LiveSourceOptions",
+   "kind": "interface",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "interface LiveSourceOptions<T>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "event",
+     "kind": "property",
+     "signature": "event?: string | readonly string[]",
+     "doc": "Event type(s) that carry the value (default `message`: events sent without `event`).",
+     "optional": true
+    },
+    {
+     "name": "initial",
+     "kind": "property",
+     "signature": "initial?: T",
+     "doc": "Value before the first event (server render, adopt run): usually loader data.",
+     "optional": true
+    },
+    {
+     "name": "parse",
+     "kind": "property",
+     "signature": "parse?: (data: string, event: MessageEvent<string>) => T",
+     "doc": "Event data → value (default `JSON.parse`).",
+     "optional": true
+    },
+    {
+     "name": "withCredentials",
+     "kind": "property",
+     "signature": "withCredentials?: boolean",
+     "doc": "Send cookies on a cross-origin URL (`EventSource` `withCredentials`). Same-origin requests always send them.",
+     "optional": true
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/client/live-source.ts",
+    "line": 11,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/live-source.ts#L11"
+   },
+   "href": "/api/rivetjs/router/live-source/LiveSourceOptions/"
+  },
+  {
+   "key": "@rivetjs/router/live-source#LiveStatus",
+   "entry": "@rivetjs/router/live-source",
+   "name": "LiveStatus",
+   "kind": "type",
+   "summary": "`EventSource` state: `connecting` (also while it retries after a drop), `open`, `closed` (closed, or the browser gave up).",
+   "remarks": "`EventSource` state: `connecting` (also while it retries after a drop), `open`, `closed` (closed, or the browser gave up).",
+   "signatures": [
+    "type LiveStatus = \"connecting\" | \"open\" | \"closed\""
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/client/live-source.ts",
+    "line": 9,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/live-source.ts#L9"
+   },
+   "href": "/api/rivetjs/router/live-source/LiveStatus/"
+  },
+  {
+   "key": "@rivetjs/router/live-source#liveSource",
+   "entry": "@rivetjs/router/live-source",
+   "name": "liveSource",
+   "kind": "function",
+   "summary": "A value that follows a Server-Sent Events URL: each event's data (parsed) replaces it.",
+   "remarks": "A value that follows a Server-Sent Events URL: each event's data (parsed) replaces it. Create it in the component\n(the server renders `initial`), connect it from a client effect, which closes it on route leave:\n\n```tsx\nconst visitors = liveSource(\"/events\", { initial: data.visitors, parse: (text) => JSON.parse(text).visitors });\nclientEffect(visitors.open);\nreturn <p>{visitors()} ({visitors.status()})</p>;\n```\n\n`url` may be an accessor: reading it inside `open` (a client effect) reconnects when it changes. `EventSource`\nreconnects by itself after a network error (status `connecting`), sending the last event `id` as `Last-Event-ID`.",
+   "signatures": [
+    "function liveSource<T>(url: string | URL | (() => string | URL), options: LiveSourceOptions<T> & { initial: T }): LiveSource<T>",
+    "function liveSource<T>(url: string | URL | (() => string | URL), options?: LiveSourceOptions<T>): LiveSource<T | undefined>"
+   ],
+   "params": [
+    {
+     "name": "url",
+     "type": "string | URL | (() => string | URL)",
+     "optional": false,
+     "doc": ""
+    },
+    {
+     "name": "options",
+     "type": "LiveSourceOptions<T>",
+     "optional": true,
+     "doc": ""
+    }
+   ],
+   "returns": "LiveSource<T | undefined>",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/client/live-source.ts",
+    "line": 43,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/client/live-source.ts#L43"
+   },
+   "href": "/api/rivetjs/router/live-source/liveSource/"
   },
   {
    "key": "@rivetjs/router/navigation#IDLE",
@@ -24083,8 +24309,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 87,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L87"
+    "line": 88,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L88"
    },
    "href": "/api/rivetjs/router/node/CompressOptions/"
   },
@@ -24120,8 +24346,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 101,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L101"
+    "line": 102,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L102"
    },
    "href": "/api/rivetjs/router/node/DictionaryOptions/"
   },
@@ -24142,8 +24368,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/files.ts",
-    "line": 50,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/files.ts#L50"
+    "line": 51,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/files.ts#L51"
    },
    "href": "/api/rivetjs/router/node/Encoding/"
   },
@@ -24164,8 +24390,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 85,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L85"
+    "line": 86,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L86"
    },
    "href": "/api/rivetjs/router/node/Handler/"
   },
@@ -24289,8 +24515,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 80,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L80"
+    "line": 81,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L81"
    },
    "href": "/api/rivetjs/router/node/NodePlatform/"
   },
@@ -24340,8 +24566,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 220,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L220"
+    "line": 243,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L243"
    },
    "href": "/api/rivetjs/router/node/PrimaryServing/"
   },
@@ -24384,8 +24610,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 66,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L66"
+    "line": 67,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L67"
    },
    "href": "/api/rivetjs/router/node/RequestContext/"
   },
@@ -24401,6 +24627,13 @@
    ],
    "params": [],
    "members": [
+    {
+     "name": "allowedHosts",
+     "kind": "property",
+     "signature": "allowedHosts?: readonly string[]",
+     "doc": "Host names this server answers for (unset: any well-formed `Host`). A request whose host — `Host`, or with\n`trustProxy` the trusted `X-Forwarded-Host` — is not listed gets `421 Misdirected Request` before any\nhandler runs; checked even when `origin` is fixed. An entry starting with `.` also matches every subdomain\n(`\".shop.example\"`); ports are ignored; compared case-insensitively. Set it for servers reachable on a\nprivate network or `localhost`: a DNS-rebinding page (`evil.example` resolved to this server) otherwise\nsends `Host: evil.example` with a matching `Origin`, passes the cross-site check and reads the answers.",
+     "optional": true
+    },
     {
      "name": "base",
      "kind": "property",
@@ -24461,7 +24694,7 @@
      "name": "health",
      "kind": "property",
      "signature": "health?: false | { live?: string | false; ready?: string | false }",
-     "doc": "Health endpoints answered by the adapter itself, after the Host check and before static files and the app:\n`live` (default `/healthz`: 200 `ok` while the process serves) and `ready` (default `/readyz`: 200 `ready`, 503\n`draining` once `close()` started). A path of your own moves one, `false` turns it off (the app gets the path);\n`health: false` turns both off.",
+     "doc": "Health endpoints answered by the adapter itself, after the Host check and before static files and the app:\n`live` (default `/healthz`: 200 `ok` while the process serves) and `ready` (default `/readyz`: 200 `ready`, 503\n`starting` while the `ready` hook says false, 503 `draining` once `close()` started). A path of your own moves one,\n`false` turns it off (the app gets the path); `health: false` turns both off.",
      "optional": true
     },
     {
@@ -24486,6 +24719,13 @@
      "optional": true
     },
     {
+     "name": "onClose",
+     "kind": "property",
+     "signature": "onClose?: () => Promise<void>",
+     "doc": "Runs once on `close()` after the server stopped accepting and in-flight requests drained: close database pools,\nstop consumers, flush logs. Bounded by `grace` (counted from the start of `close()`): past it, or when the hook\nthrows, `close()` rejects (`closeOnSignals` then exits 1, else 0).",
+     "optional": true
+    },
+    {
      "name": "onError",
      "kind": "property",
      "signature": "onError?: (error: unknown, request?: Request, info?: ErrorInfo) => void",
@@ -24504,6 +24744,13 @@
      "kind": "property",
      "signature": "port?: number",
      "doc": "",
+     "optional": true
+    },
+    {
+     "name": "ready",
+     "kind": "property",
+     "signature": "ready?: () => boolean | Promise<boolean>",
+     "doc": "Dependency readiness for the `ready` health endpoint (`/readyz`): until it returns true the endpoint answers 503\n`starting` (database connected, migrations applied, caches warm…). Asked at most once per second (the answer is\ncached for 1 s, concurrent probes share one call); a throw counts as not ready and goes to `onError`. Unset:\n`/readyz` is \"not draining\" only.",
      "optional": true
     },
     {
@@ -24533,8 +24780,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 112,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L112"
+    "line": 113,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L113"
    },
    "href": "/api/rivetjs/router/node/ServeOptions/"
   },
@@ -24584,8 +24831,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 212,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L212"
+    "line": 235,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L235"
    },
    "href": "/api/rivetjs/router/node/ServerServing/"
   },
@@ -24606,8 +24853,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 210,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L210"
+    "line": 233,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L233"
    },
    "href": "/api/rivetjs/router/node/Serving/"
   },
@@ -24623,6 +24870,13 @@
    ],
    "params": [],
    "members": [
+    {
+     "name": "allowedHosts",
+     "kind": "property",
+     "signature": "allowedHosts?: readonly string[]",
+     "doc": "Host names this server answers for (unset: any well-formed `Host`). A request whose host — `Host`, or with\n`trustProxy` the trusted `X-Forwarded-Host` — is not listed gets `421 Misdirected Request` before any\nhandler runs; checked even when `origin` is fixed. An entry starting with `.` also matches every subdomain\n(`\".shop.example\"`); ports are ignored; compared case-insensitively. Set it for servers reachable on a\nprivate network or `localhost`: a DNS-rebinding page (`evil.example` resolved to this server) otherwise\nsends `Host: evil.example` with a matching `Origin`, passes the cross-site check and reads the answers.",
+     "optional": true
+    },
     {
      "name": "base",
      "kind": "property",
@@ -24683,7 +24937,7 @@
      "name": "health",
      "kind": "property",
      "signature": "health?: false | { live?: string | false; ready?: string | false }",
-     "doc": "Health endpoints answered by the adapter itself, after the Host check and before static files and the app:\n`live` (default `/healthz`: 200 `ok` while the process serves) and `ready` (default `/readyz`: 200 `ready`, 503\n`draining` once `close()` started). A path of your own moves one, `false` turns it off (the app gets the path);\n`health: false` turns both off.",
+     "doc": "Health endpoints answered by the adapter itself, after the Host check and before static files and the app:\n`live` (default `/healthz`: 200 `ok` while the process serves) and `ready` (default `/readyz`: 200 `ready`, 503\n`starting` while the `ready` hook says false, 503 `draining` once `close()` started). A path of your own moves one,\n`false` turns it off (the app gets the path); `health: false` turns both off.",
      "optional": true
     },
     {
@@ -24736,6 +24990,13 @@
      "optional": true
     },
     {
+     "name": "onClose",
+     "kind": "property",
+     "signature": "onClose?: () => Promise<void>",
+     "doc": "Runs once on `close()` after the server stopped accepting and in-flight requests drained: close database pools,\nstop consumers, flush logs. Bounded by `grace` (counted from the start of `close()`): past it, or when the hook\nthrows, `close()` rejects (`closeOnSignals` then exits 1, else 0).",
+     "optional": true
+    },
+    {
      "name": "onError",
      "kind": "property",
      "signature": "onError?: (error: unknown, request?: Request, info?: ErrorInfo) => void",
@@ -24761,6 +25022,13 @@
      "kind": "property",
      "signature": "preload?: { readonly ahead?: \"load\" | \"idle\" | \"intent\"; readonly lean?: boolean | ((url: URL) => boolean | undefined) }",
      "doc": "Preload planner (`createApp` `preload`): `ahead` (fetch-ahead timing: `\"idle\"` default / `\"load\"` / `\"intent\"`), `lean` (nothing before an interaction; per page when a function).",
+     "optional": true
+    },
+    {
+     "name": "ready",
+     "kind": "property",
+     "signature": "ready?: () => boolean | Promise<boolean>",
+     "doc": "Dependency readiness for the `ready` health endpoint (`/readyz`): until it returns true the endpoint answers 503\n`starting` (database connected, migrations applied, caches warm…). Asked at most once per second (the answer is\ncached for 1 s, concurrent probes share one call); a throw counts as not ready and goes to `onError`. Unset:\n`/readyz` is \"not draining\" only.",
      "optional": true
     },
     {
@@ -24832,8 +25100,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 1322,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L1322"
+    "line": 1474,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L1474"
    },
    "href": "/api/rivetjs/router/node/StartOptions/"
   },
@@ -24868,8 +25136,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 273,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L273"
+    "line": 296,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L296"
    },
    "href": "/api/rivetjs/router/node/byteRange/"
   },
@@ -24878,8 +25146,8 @@
    "entry": "@rivetjs/router/node",
    "name": "closeOnSignals",
    "kind": "function",
-   "summary": "Close on SIGTERM/SIGINT once; exits the process after draining.",
-   "remarks": "Close on SIGTERM/SIGINT once; exits the process after draining.",
+   "summary": "Close on SIGTERM/SIGINT once: drain, run `onClose`, then exit the process — 0, or 1 when closing failed (an `onClose` error or timeout, logged with console.error).",
+   "remarks": "Close on SIGTERM/SIGINT once: drain, run `onClose`, then exit the process — 0, or 1 when closing failed (an `onClose`\nerror or timeout, logged with console.error).",
    "signatures": [
     "function closeOnSignals(serving: Serving, signals?: Signals[]): void"
    ],
@@ -24904,8 +25172,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 1310,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L1310"
+    "line": 1459,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L1459"
    },
    "href": "/api/rivetjs/router/node/closeOnSignals/"
   },
@@ -24934,8 +25202,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 700,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L700"
+    "line": 761,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L761"
    },
    "href": "/api/rivetjs/router/node/createListener/"
   },
@@ -24970,8 +25238,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 261,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L261"
+    "line": 284,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L284"
    },
    "href": "/api/rivetjs/router/node/etagMatches/"
   },
@@ -25014,8 +25282,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/build.ts",
-    "line": 55,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/build.ts#L55"
+    "line": 69,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/build.ts#L69"
    },
    "href": "/api/rivetjs/router/node/loadBuild/"
   },
@@ -25051,8 +25319,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/files.ts",
-    "line": 76,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/files.ts#L76"
+    "line": 79,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/files.ts#L79"
    },
    "href": "/api/rivetjs/router/node/negotiate/"
   },
@@ -25118,8 +25386,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 1266,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L1266"
+    "line": 1409,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L1409"
    },
    "href": "/api/rivetjs/router/node/serve/"
   },
@@ -25149,8 +25417,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/node.ts",
-    "line": 1365,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L1365"
+    "line": 1517,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/node.ts#L1517"
    },
    "href": "/api/rivetjs/router/node/start/"
   },
@@ -25671,8 +25939,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 276,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L276"
+    "line": 288,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L288"
    },
    "href": "/api/rivetjs/router/server/AppHandler/"
   },
@@ -25722,8 +25990,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 259,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L259"
+    "line": 271,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L271"
    },
    "href": "/api/rivetjs/router/server/AppHandlerContext/"
   },
@@ -25771,7 +26039,7 @@
      "name": "earlyHints",
      "kind": "method",
      "signature": "earlyHints(route: AppRoute, request: Request): void",
-     "doc": "Called once per HTML page GET / HEAD (no data request, no action) after the request handlers and before the guards\nand loaders: the moment a server can send `103 Early Hints` while it is still busy (`createApp({ earlyHints })`).",
+     "doc": "Called once per HTML page GET / HEAD (no data request, no action) after the `onRequest` handlers and before the guards\nand loaders: the moment a server can send `103 Early Hints` while it is still busy (`createApp({ earlyHints })`).",
      "optional": true
     },
     {
@@ -25815,8 +26083,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 213,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L213"
+    "line": 225,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L225"
    },
    "href": "/api/rivetjs/router/server/AppOptions/"
   },
@@ -25825,8 +26093,8 @@
    "entry": "@rivetjs/router/server",
    "name": "AppRoute",
    "kind": "interface",
-   "summary": "One generated route-table entry.",
-   "remarks": "One generated route-table entry.",
+   "summary": "",
+   "remarks": "",
    "signatures": [
     "interface AppRoute"
    ],
@@ -25880,8 +26148,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 114,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L114"
+    "line": 126,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L126"
    },
    "href": "/api/rivetjs/router/server/AppRoute/"
   },
@@ -25902,8 +26170,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/security.ts",
-    "line": 25,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/security.ts#L25"
+    "line": 28,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/security.ts#L28"
    },
    "href": "/api/rivetjs/router/server/BodyLimit/"
   },
@@ -25945,7 +26213,7 @@
      "name": "directives",
      "kind": "property",
      "signature": "readonly directives?: Readonly<Record<string, string | true | readonly string[]>>",
-     "doc": "Extra directives (`{ \"script-src\": \"'wasm-unsafe-eval'\", \"worker-src\": [\"'self'\", \"blob:\"] }`).\n`script-src` (and `script-src-elem`, when given) sources are added to the generated ones (nonce /\nhashes, `'self'`); `object-src` / `base-uri` replace the generated `'none'`; other directives are\nappended. Names are checked (unknown → `TypeError`); Trusted Types go through `trustedTypes`.\nNothing is added implicitly (no `'unsafe-inline'`).",
+     "doc": "Extra directives (`{ \"script-src\": \"'wasm-unsafe-eval'\", \"worker-src\": [\"'self'\", \"blob:\"] }`).\n`script-src` (and `script-src-elem`, when given) sources are added to the generated ones (nonce /\nhashes, `'self'`); `object-src` / `base-uri` replace the generated `'none'`, `frame-ancestors` the generated\n`'self'` (header policies only); other directives are\nappended. Names are checked (unknown → `TypeError`); Trusted Types go through `trustedTypes`.\nNothing is added implicitly (no `'unsafe-inline'`).",
      "optional": true
     },
     {
@@ -26397,8 +26665,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 246,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L246"
+    "line": 258,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L258"
    },
    "href": "/api/rivetjs/router/server/ErrorInfo/"
   },
@@ -26490,8 +26758,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 192,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L192"
+    "line": 204,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L204"
    },
    "href": "/api/rivetjs/router/server/ErrorInput/"
   },
@@ -26512,8 +26780,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 244,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L244"
+    "line": 256,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L256"
    },
    "href": "/api/rivetjs/router/server/ErrorPhase/"
   },
@@ -26735,8 +27003,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 81,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L81"
+    "line": 83,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L83"
    },
    "href": "/api/rivetjs/router/server/Platform/"
   },
@@ -26863,8 +27131,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 126,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L126"
+    "line": 138,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L138"
    },
    "href": "/api/rivetjs/router/server/RenderInput/"
   },
@@ -27001,8 +27269,8 @@
    "entry": "@rivetjs/router/server",
    "name": "RequestEvent",
    "kind": "interface",
-   "summary": "`RequestEvent<\"items/[id]\">`: params of a file route id (`RouteParams`, generated).",
-   "remarks": "`RequestEvent<\"items/[id]\">`: params of a file route id (`RouteParams`, generated).",
+   "summary": "What guards, loaders, actions and endpoints receive.",
+   "remarks": "What guards, loaders, actions and endpoints receive. `locals` is shared along one request's chain.\n`RequestEvent<\"items/[id]\">`: params of a file route id (`RouteParams`, generated).",
    "signatures": [
     "interface RequestEvent<P extends Record<string, string> | RouteId = Record<string, string>>"
    ],
@@ -27096,7 +27364,7 @@
      "name": "setHeader",
      "kind": "method",
      "signature": "setHeader(name: string, value: string): void",
-     "doc": "Set a response header (HTML, data and action responses alike).",
+     "doc": "Set a response header (HTML, data and action responses alike); `set-cookie` is rejected (use `cookies.set`).",
      "optional": false
     },
     {
@@ -27112,8 +27380,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 48,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L48"
+    "line": 50,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L50"
    },
    "href": "/api/rivetjs/router/server/RequestEvent/"
   },
@@ -27254,7 +27522,7 @@
    "name": "ServerModule",
    "kind": "interface",
    "summary": "A route's or layout's server exports, normalized by tag (`server/module.ts`): each key is the kind of the wrapper that made the export (`export const loader = load(…)` arrives as `load`).",
-   "remarks": "A route's or layout's server exports, normalized by tag (`server/module.ts`): each key is the kind of\nthe wrapper that made the export (`export const loader = load(…)` arrives as `load`). `onRequest` and\n`on<Method>` request handlers run outermost first before guards; a returned `Response` ends the request.",
+   "remarks": "A route's or layout's server exports, normalized by tag (`server/module.ts`): each key is the kind of\nthe wrapper that made the export (`export const loader = load(…)` arrives as `load`). `onRequest`\nruns outermost first before the guards; `on<Method>` handlers run outermost first after every guard passed. A\nreturned `Response` ends the request.",
    "signatures": [
     "interface ServerModule"
    ],
@@ -27364,8 +27632,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 93,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L93"
+    "line": 96,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L96"
    },
    "href": "/api/rivetjs/router/server/ServerModule/"
   },
@@ -27452,8 +27720,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/shared/head.ts",
-    "line": 297,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/shared/head.ts#L297"
+    "line": 301,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/shared/head.ts#L301"
    },
    "href": "/api/rivetjs/router/server/bodyAttributes/"
   },
@@ -27489,8 +27757,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/shared/head.ts",
-    "line": 303,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/shared/head.ts#L303"
+    "line": 307,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/shared/head.ts#L307"
    },
    "href": "/api/rivetjs/router/server/bodyTags/"
   },
@@ -27549,8 +27817,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 456,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L456"
+    "line": 468,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L468"
    },
    "href": "/api/rivetjs/router/server/createHandler/"
   },
@@ -27591,8 +27859,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/handler.ts",
-    "line": 339,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L339"
+    "line": 351,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/handler.ts#L351"
    },
    "href": "/api/rivetjs/router/server/encodeData/"
   },
@@ -27664,8 +27932,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/shared/head.ts",
-    "line": 215,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/shared/head.ts#L215"
+    "line": 219,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/shared/head.ts#L219"
    },
    "href": "/api/rivetjs/router/server/headTags/"
   },
@@ -27701,8 +27969,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/shared/head.ts",
-    "line": 292,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/shared/head.ts#L292"
+    "line": 296,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/shared/head.ts#L296"
    },
    "href": "/api/rivetjs/router/server/htmlAttributes/"
   },
@@ -27731,8 +27999,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/module.ts",
-    "line": 99,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/module.ts#L99"
+    "line": 100,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/module.ts#L100"
    },
    "href": "/api/rivetjs/router/server/loadServer/"
   },
@@ -27803,8 +28071,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/server/module.ts",
-    "line": 81,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/module.ts#L81"
+    "line": 82,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/server/module.ts#L82"
    },
    "href": "/api/rivetjs/router/server/mergeServer/"
   },
@@ -27985,6 +28253,217 @@
    "href": "/api/rivetjs/router/server/strictCSP/"
   },
   {
+   "key": "@rivetjs/router/sse#EventCleanup",
+   "entry": "@rivetjs/router/sse",
+   "name": "EventCleanup",
+   "kind": "type",
+   "summary": "What the producer may return: its cleanup (stop timers, unsubscribe), also as a promise (an async producer).",
+   "remarks": "What the producer may return: its cleanup (stop timers, unsubscribe), also as a promise (an async producer).",
+   "signatures": [
+    "type EventCleanup = void | (() => void) | Promise<void | (() => void)>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "server",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/sse.ts",
+    "line": 23,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/sse.ts#L23"
+   },
+   "href": "/api/rivetjs/router/sse/EventCleanup/"
+  },
+  {
+   "key": "@rivetjs/router/sse#EventFields",
+   "entry": "@rivetjs/router/sse",
+   "name": "EventFields",
+   "kind": "interface",
+   "summary": "Fields of one event besides its data (SSE `event:` / `id:`).",
+   "remarks": "Fields of one event besides its data (SSE `event:` / `id:`). Neither may hold a line break.",
+   "signatures": [
+    "interface EventFields"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "event",
+     "kind": "property",
+     "signature": "event?: string",
+     "doc": "Event type (`event:` line): the browser dispatches it to `addEventListener(type)` instead of `onmessage`.",
+     "optional": true
+    },
+    {
+     "name": "id",
+     "kind": "property",
+     "signature": "id?: string | number",
+     "doc": "Event id (`id:` line): the browser sends the last one back as `Last-Event-ID` when it reconnects.",
+     "optional": true
+    }
+   ],
+   "runsOn": "server",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/sse.ts",
+    "line": 8,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/sse.ts#L8"
+   },
+   "href": "/api/rivetjs/router/sse/EventFields/"
+  },
+  {
+   "key": "@rivetjs/router/sse#EventStreamOptions",
+   "entry": "@rivetjs/router/sse",
+   "name": "EventStreamOptions",
+   "kind": "interface",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "interface EventStreamOptions"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "headers",
+     "kind": "property",
+     "signature": "headers?: HeadersInit",
+     "doc": "Extra response headers (`set-cookie`, `vary`, …); content type and caching headers are set by `eventStream`.",
+     "optional": true
+    },
+    {
+     "name": "heartbeat",
+     "kind": "property",
+     "signature": "heartbeat?: number | false",
+     "doc": "Comment line sent every `heartbeat` ms (default 15 000) so proxies and load balancers keep an idle connection open\n(many close it after 30–60 s without bytes). `false` / 0: none.",
+     "optional": true
+    },
+    {
+     "name": "highWaterMark",
+     "kind": "property",
+     "signature": "highWaterMark?: number",
+     "doc": "Bytes the stream queues before `send` returns false (default 64 KiB).",
+     "optional": true
+    },
+    {
+     "name": "retry",
+     "kind": "property",
+     "signature": "retry?: number",
+     "doc": "Reconnection delay the browser waits after the connection drops (`retry:` field, ms), sent first.",
+     "optional": true
+    }
+   ],
+   "runsOn": "server",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/sse.ts",
+    "line": 25,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/sse.ts#L25"
+   },
+   "href": "/api/rivetjs/router/sse/EventStreamOptions/"
+  },
+  {
+   "key": "@rivetjs/router/sse#SendEvent",
+   "entry": "@rivetjs/router/sse",
+   "name": "SendEvent",
+   "kind": "type",
+   "summary": "Send one event.",
+   "remarks": "Send one event. `data`: a string is sent as is (each line its own `data:` line, so multi-line text arrives intact),\nanything else as JSON. Returns false once the stream is closed, or while the client is behind (the queue holds\n`highWaterMark` bytes or more): wait for `ready()` before sending more when you produce faster than it reads.",
+   "signatures": [
+    "type SendEvent = (data: unknown, fields?: EventFields) => boolean"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "server",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/sse.ts",
+    "line": 20,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/sse.ts#L20"
+   },
+   "href": "/api/rivetjs/router/sse/SendEvent/"
+  },
+  {
+   "key": "@rivetjs/router/sse#eventStream",
+   "entry": "@rivetjs/router/sse",
+   "name": "eventStream",
+   "kind": "function",
+   "summary": "A Server-Sent Events response.",
+   "remarks": "A Server-Sent Events response. `producer(send, close, ready)` runs at once; `send(data, { event, id })` writes an event,\n`close()` ends the stream, `ready()` resolves when the client has room again (or the stream closed). The cleanup it\nreturns runs exactly once: when the client goes away (`event.signal` aborts, the body is cancelled), after `close()`,\nor when an async producer rejects (the stream then errors). A producer that throws synchronously throws out of\n`eventStream` (the handler's usual error path). `event`: the endpoint's `RequestEvent` (or a `Request`: anything with\nthe request's `signal`).\n\n```ts\nexport const GET = onGet((event) =>\n  eventStream(event, (send) => {\n    const timer = setInterval(() => send({ visitors: currentVisitors() }), 2000);\n    return () => clearInterval(timer);\n  }),\n);\n```",
+   "signatures": [
+    "function eventStream(event: { readonly signal: AbortSignal }, producer: (send: SendEvent, close: () => void, ready: () => Promise<void>) => EventCleanup, options?: EventStreamOptions): Response"
+   ],
+   "params": [
+    {
+     "name": "event",
+     "type": "{ readonly signal: AbortSignal }",
+     "optional": false,
+     "doc": ""
+    },
+    {
+     "name": "producer",
+     "type": "(send: SendEvent, close: () => void, ready: () => Promise<void>) => EventCleanup",
+     "optional": false,
+     "doc": ""
+    },
+    {
+     "name": "options",
+     "type": "EventStreamOptions",
+     "optional": true,
+     "doc": "",
+     "default": "{}"
+    }
+   ],
+   "returns": "Response",
+   "members": [],
+   "runsOn": "server",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/sse.ts",
+    "line": 80,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/sse.ts#L80"
+   },
+   "href": "/api/rivetjs/router/sse/eventStream/"
+  },
+  {
+   "key": "@rivetjs/router/sse#formatEvent",
+   "entry": "@rivetjs/router/sse",
+   "name": "formatEvent",
+   "kind": "function",
+   "summary": "One event in SSE framing: `event:` / `id:` lines, one `data:` line per data line, a blank line.",
+   "remarks": "One event in SSE framing: `event:` / `id:` lines, one `data:` line per data line, a blank line.",
+   "signatures": [
+    "function formatEvent(data: unknown, fields?: EventFields): string"
+   ],
+   "params": [
+    {
+     "name": "data",
+     "type": "unknown",
+     "optional": false,
+     "doc": ""
+    },
+    {
+     "name": "fields",
+     "type": "EventFields",
+     "optional": true,
+     "doc": ""
+    }
+   ],
+   "returns": "string",
+   "members": [],
+   "runsOn": "server",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/router/sse.ts",
+    "line": 44,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/sse.ts#L44"
+   },
+   "href": "/api/rivetjs/router/sse/formatEvent/"
+  },
+  {
    "key": "@rivetjs/router/static#COLOAD_ENV",
    "entry": "@rivetjs/router/static",
    "name": "COLOAD_ENV",
@@ -28082,8 +28561,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/coload.ts",
-    "line": 119,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/coload.ts#L119"
+    "line": 120,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/coload.ts#L120"
    },
    "href": "/api/rivetjs/router/static/ColoadReport/"
   },
@@ -28490,8 +28969,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/coload.ts",
-    "line": 106,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/coload.ts#L106"
+    "line": 107,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/coload.ts#L107"
    },
    "href": "/api/rivetjs/router/static/pageScripts/"
   },
@@ -28520,8 +28999,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/coload.ts",
-    "line": 130,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/coload.ts#L130"
+    "line": 131,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/coload.ts#L131"
    },
    "href": "/api/rivetjs/router/static/planCoload/"
   },
@@ -28581,8 +29060,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/adapters/static.ts",
-    "line": 310,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/static.ts#L310"
+    "line": 320,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/adapters/static.ts#L320"
    },
    "href": "/api/rivetjs/router/static/prerenderBuild/"
   },
@@ -28973,8 +29452,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/route-css.ts",
-    "line": 122,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/route-css.ts#L122"
+    "line": 129,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/route-css.ts#L129"
    },
    "href": "/api/rivetjs/router/vite/InlineStylesheets/"
   },
@@ -29100,6 +29579,13 @@
      "kind": "property",
      "signature": "inlineStylesheets?: InlineStylesheets",
      "doc": "Stylesheets written into the page as `<style>` instead of linked (Astro's `build.inlineStylesheets`), production\nserver / static pages, decided per page. `\"auto\"` (default): all of the page's sheets (global + route) when their\nbrotli sizes add up to at most 6 KB (the page then has no render-blocking stylesheet request), else each sheet of\nat most Vite's `build.assetsInlineLimit` (4096 raw bytes; a function limit counts as 4096). `{ maxTotalBrotli }`:\n`auto` with another total (bytes). `\"always\"`: every sheet; `\"never\"`: all linked. Sheets with relative `url()` /\n`@import` references stay linked. Inline styles carry the page's CSP nonce (static pages: hashed into a\n`style-src` you set).",
+     "optional": true
+    },
+    {
+     "name": "intentPrefetch",
+     "kind": "property",
+     "signature": "intentPrefetch?: boolean",
+     "doc": "Router intent prefetch: hovering / focusing a link the client router handles loads the target's route data\n(its loaders run on the server) and page chunk ahead of the click. Off by default (CPU, memory and server\nwork for links never clicked): link intent only boots the router. `true`: every routable link\n(`<Link prefetch=\"none\">` / `data-rivet-prefetch=\"none\"` opts one out). Default: only links marked\n`<Link prefetch=\"intent\">` / `data-rivet-prefetch=\"intent\"` (detected, `routerUsage`; none found: no prefetch\ncode ships). `false`: off, marks ignored. Document prefetch is separate (`prefetch`).",
      "optional": true
     },
     {
@@ -29259,6 +29745,13 @@
      "optional": false
     },
     {
+     "name": "intentLinks",
+     "kind": "property",
+     "signature": "intentLinks: boolean",
+     "doc": "`prefetch=\"intent\"` (`<Link>` prop or `data-rivet-prefetch` attribute): router intent prefetch for marked links.",
+     "optional": false
+    },
+    {
      "name": "navigate",
      "kind": "property",
      "signature": "navigate: boolean",
@@ -29292,8 +29785,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/vite.ts",
-    "line": 263,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/vite.ts#L263"
+    "line": 274,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/vite.ts#L274"
    },
    "href": "/api/rivetjs/router/vite/RouterUsage-interface/"
   },
@@ -29305,7 +29798,7 @@
    "summary": "Regenerate `.rivet/` for a project root; returns the resume modules and whether files changed.",
    "remarks": "Regenerate `.rivet/` for a project root; returns the resume modules and whether files changed.",
    "signatures": [
-    "function generateRoutes(root: string, options?: Pick<RivetRouterOptions, \"base\" | \"document\" | \"routeRules\" | \"routes\" | \"outDir\" | \"mode\" | \"transitions\" | \"announce\" | \"searchParams\" | \"navigate\" | \"forms\" | \"params\" | \"activeLinks\" | \"trailingSlash\" | \"prefetch\" | \"prefetchEagerness\" | \"prefetchPaths\" | \"clientRouter\"> & { documents?: readonly string[]; head?: \"components\" }): Promise<{ changed: boolean; resumeModules: readonly string[]; table: RouteTable }>"
+    "function generateRoutes(root: string, options?: Pick<RivetRouterOptions, \"base\" | \"document\" | \"routeRules\" | \"routes\" | \"outDir\" | \"mode\" | \"transitions\" | \"announce\" | \"searchParams\" | \"navigate\" | \"forms\" | \"params\" | \"activeLinks\" | \"trailingSlash\" | \"prefetch\" | \"prefetchEagerness\" | \"prefetchPaths\" | \"clientRouter\"> & { documents?: readonly string[]; head?: \"components\"; intentPrefetch?: \"all\" | \"marked\" }): Promise<{ changed: boolean; resumeModules: readonly string[]; table: RouteTable }>"
    ],
    "params": [
     {
@@ -29316,7 +29809,7 @@
     },
     {
      "name": "options",
-     "type": "Pick<RivetRouterOptions, \"base\" | \"document\" | \"routeRules\" | \"routes\" | \"outDir\" | \"mode\" | \"transitions\" | \"announce\" | \"searchParams\" | \"navigate\" | \"forms\" | \"params\" | \"activeLinks\" | \"trailingSlash\" | \"prefetch\" | \"prefetchEagerness\" | \"prefetchPaths\" | \"clientRouter\"> & { documents?: readonly string[]; head?: \"components\" }",
+     "type": "Pick<RivetRouterOptions, \"base\" | \"document\" | \"routeRules\" | \"routes\" | \"outDir\" | \"mode\" | \"transitions\" | \"announce\" | \"searchParams\" | \"navigate\" | \"forms\" | \"params\" | \"activeLinks\" | \"trailingSlash\" | \"prefetch\" | \"prefetchEagerness\" | \"prefetchPaths\" | \"clientRouter\"> & { documents?: readonly string[]; head?: \"components\"; intentPrefetch?: \"all\" | \"marked\" }",
      "optional": true,
      "doc": "",
      "default": "{}"
@@ -29329,8 +29822,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/vite.ts",
-    "line": 339,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/vite.ts#L339"
+    "line": 366,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/vite.ts#L366"
    },
    "href": "/api/rivetjs/router/vite/generateRoutes/"
   },
@@ -29378,8 +29871,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/route-css.ts",
-    "line": 89,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/route-css.ts#L89"
+    "line": 96,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/route-css.ts#L96"
    },
    "href": "/api/rivetjs/router/vite/mergeRouteCSS/"
   },
@@ -29409,8 +29902,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/vite.ts",
-    "line": 443,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/vite.ts#L443"
+    "line": 471,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/vite.ts#L471"
    },
    "href": "/api/rivetjs/router/vite/rivetRouter/"
   },
@@ -29446,8 +29939,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/vite.ts",
-    "line": 320,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/vite.ts#L320"
+    "line": 347,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/vite.ts#L347"
    },
    "href": "/api/rivetjs/router/vite/routerUsage/"
   },
@@ -30494,8 +30987,8 @@
    "entry": "@rivetjs/runtime/dom",
    "name": "clientEffect",
    "kind": "function",
-   "summary": "",
-   "remarks": "",
+   "summary": "Run browser-only work after the current mount as an owned effect; a returned function is its cleanup.",
+   "remarks": "Run browser-only work after the current mount as an owned effect; a returned function is its cleanup.",
    "signatures": [
     "function clientEffect(fn: () => void | (() => void) | Promise<unknown>, _options?: { when?: ClientWhen }): void"
    ],
@@ -30720,8 +31213,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 361,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L361"
+    "line": 360,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L360"
    },
    "href": "/api/rivetjs/runtime/dom/reconstruct/"
   },
@@ -32993,8 +33486,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-structural.ts",
-    "line": 316,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L316"
+    "line": 337,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L337"
    },
    "href": "/api/rivetjs/runtime/server/Dynamic/"
   },
@@ -33199,8 +33692,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-structural.ts",
-    "line": 283,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L283"
+    "line": 304,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L304"
    },
    "href": "/api/rivetjs/runtime/server/Match/"
   },
@@ -33259,8 +33752,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-structural.ts",
-    "line": 351,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L351"
+    "line": 372,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L372"
    },
    "href": "/api/rivetjs/runtime/server/Portal/"
   },
@@ -33475,8 +33968,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-structural.ts",
-    "line": 265,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L265"
+    "line": 286,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L286"
    },
    "href": "/api/rivetjs/runtime/server/Show/"
   },
@@ -33691,8 +34184,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-structural.ts",
-    "line": 287,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L287"
+    "line": 308,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-structural.ts#L308"
    },
    "href": "/api/rivetjs/runtime/server/Switch/"
   },
@@ -34760,8 +35253,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 691,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L691"
+    "line": 697,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L697"
    },
    "href": "/api/rivetjs/runtime/server-resume/renderResumable/"
   },
@@ -34797,8 +35290,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 685,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L685"
+    "line": 691,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L691"
    },
    "href": "/api/rivetjs/runtime/server-resume/resumableToString/"
   },

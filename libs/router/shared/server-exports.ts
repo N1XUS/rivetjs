@@ -98,11 +98,11 @@ export function headers<P extends Params = Record<string, string>>(
 }
 
 type Handler<P extends Params> = (event: RequestEvent<P>) => HandlerResult;
-/** Any method, before guards (outer → inner); a returned `Response` ends the request. */
+/** Any method, before the guards (outer → inner); a returned `Response` ends the request. */
 export function onRequest<P extends Params = Record<string, string>>(fn: Handler<P>): ServerExport<"onRequest", Handler<P>> {
   return wrap("onRequest", fn);
 }
-/** GET / HEAD request handler (endpoint routes: must return the `Response`; pages: middleware before the guards). */
+/** GET / HEAD request handler, after the guards (endpoint routes: must return the `Response`; pages: middleware before the loaders). */
 export function onGet<P extends Params = Record<string, string>>(fn: Handler<P>): ServerExport<"onGet", Handler<P>> {
   return wrap("onGet", fn);
 }
