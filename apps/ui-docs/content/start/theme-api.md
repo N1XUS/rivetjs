@@ -29,18 +29,18 @@ This entry exports functions, types and preset data, not JSX components. It comb
 
 ## API Reference
 
-| Export                                            | Purpose                                                                             |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `deriveTheme(params)`                             | Derive light and dark theme tokens from `ThemeParams`.                              |
-| `themeVariables(params, mode, tokens?)`           | Return the CSS custom-property values for one mode.                                 |
-| `themeCss(params, options?, tokens?)`             | Generate a stylesheet string; options include light/dark selectors and indentation. |
-| `RIVET_PRESET`, `CLASSIC_PRESET`, `THEME_PRESETS` | Shipped preset objects and the preset collection.                                   |
-| `resolveParams(params)`, `matchPreset(params)`    | Resolve preset parameters and find a matching preset.                               |
-| `auditContrast(params, mode, tokens?, pairs?)`    | Evaluate the selected contrast pairs for a derived theme.                           |
-| `auditVariables(vars, mode, pairs?)`              | Evaluate the contrast pairs against a CSS-variable map.                             |
-| `CONTRAST_PAIRS`                                  | The default semantic foreground/background checks.                                  |
-| `hexToOklch`, `oklchToHex`, `parseOklch`          | Convert or parse color values.                                                      |
-| `contrastRatio`, `apcaContrast`                   | Calculate WCAG contrast ratio or APCA contrast for RGB colors.                      |
+| Export                                            | Purpose                                                                                   |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `deriveTheme(params)`                             | Derive light and dark theme tokens from `ThemeParams`.                                    |
+| `themeVariables(params, mode, tokens?)`           | Return the CSS custom-property values for one mode.                                       |
+| `themeCss(params, options?, tokens?)`             | Generate a stylesheet string; options include light/dark selectors and indentation.       |
+| `RIVET_PRESET`, `CLASSIC_PRESET`, `THEME_PRESETS` | Shipped preset objects and the preset collection.                                         |
+| `resolveParams(params)`, `matchPreset(params)`    | Resolve preset parameters and find a matching preset.                                     |
+| `auditContrast(params, mode, tokens?, pairs?)`    | Evaluate the selected contrast pairs for a derived theme.                                 |
+| `auditVariables(vars, mode, pairs?)`              | Evaluate the contrast pairs against a CSS-variable map.                                   |
+| `CONTRAST_PAIRS`                                  | The default semantic foreground/background checks.                                        |
+| `hexToOklch`, `oklchToHex`, `parseOklch`          | Convert or parse color values (`hexToOklch`: 3 / 4 / 6 / 8 hex digits, throws otherwise). |
+| `contrastRatio`, `apcaContrast`                   | Calculate WCAG contrast ratio or APCA contrast for RGB colors.                            |
 
 `ThemeParams` defines the inputs; `ThemeTokens` and `ThemeMode` describe the outputs and selected mode. The default preset used by an app should be explicit: pass `RIVET_PRESET` for the Rivet look.
 

@@ -330,3 +330,17 @@ test("theme: motion.overlays sets the cdk motion token (spring overlays); unset 
   assert.equal(themeVariables({ ...RIVET_PRESET, motion: { overlays: "0.5 0" } }, "light")["--rv-motion-spring"], "0.5 0");
   assert.match(themeCss({ ...RIVET_PRESET, motion: { overlays: "spring" } }), /--rv-motion-spring: 0\.3 0\.2;/);
 });
+
+test("hexToOklch: #rgba / #rrggbbaa keep the colour channels and carry alpha; other input throws", () => {
+  const blue = hexToOklch("#0360fa");
+  const close = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+  for (const hex of ["#0360fa80", "0360FA80"]) {
+    const c = hexToOklch(hex);
+    assert.ok(close(c.l, blue.l) && close(c.c, blue.c) && close(c.h, blue.h), `${hex}: same colour as #0360fa`);
+    assert.ok(close(c.alpha ?? 1, 0x80 / 255), `${hex}: alpha`);
+  }
+  const short = hexToOklch("#fff8");
+  assert.ok(close(short.l, hexToOklch("#ffffff").l));
+  assert.ok(close(short.alpha ?? 1, 0x88 / 255));
+  for (const bad of ["#12345", "#ggg", "", "#1234567"]) assert.throws(() => hexToOklch(bad), TypeError, bad);
+});

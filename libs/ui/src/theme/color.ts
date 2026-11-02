@@ -36,12 +36,13 @@ export function parseOklch(value: string): Oklch | null {
   return { l: l > 1 ? l / 100 : l, c: parseFloat(m[3]!), h: m[4] === "none" ? 0 : parseFloat(m[4]!), alpha };
 }
 
-/** `#rgb` / `#rrggbb` → OKLCH. */
+/** `#rgb` / `#rgba` / `#rrggbb` / `#rrggbbaa` (`#` optional) → OKLCH (`alpha` from the alpha digits); `TypeError` for anything else. */
 export function hexToOklch(hex: string): Oklch {
-  let s = hex.replace("#", "");
-  if (s.length === 3) s = [...s].map((ch) => ch + ch).join("");
-  const n = parseInt(s, 16);
-  return oklabToOklch(rgbToOklab({ r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255, alpha: 1 }));
+  let s = hex.startsWith("#") ? hex.slice(1) : hex;
+  if (!/^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(s)) throw new TypeError(`hexToOklch: not a hex colour: ${JSON.stringify(hex)}`);
+  if (s.length <= 4) s = [...s].map((ch) => ch + ch).join("");
+  const channel = (i: number) => parseInt(s.slice(i, i + 2), 16) / 255;
+  return oklabToOklch(rgbToOklab({ r: channel(0), g: channel(2), b: channel(4), alpha: s.length === 8 ? channel(6) : 1 }));
 }
 
 /** OKLCH → hex (gamut-clamped per channel). */
