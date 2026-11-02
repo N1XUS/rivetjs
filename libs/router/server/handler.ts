@@ -639,14 +639,15 @@ export function createHandler(options: AppOptions): AppHandler {
     const merge = (response: Response): Response => {
       const cookies = headers.getSetCookie();
       let own = false;
-      for (const [name] of headers)
-        if (name !== "set-cookie") {
-          own = true;
-          break;
-        }
+      // forEach, not for-of: the router's types build without the DOM.Iterable lib (tests/data-of.test.ts strict tsc).
+      headers.forEach((_, name) => {
+        if (name !== "set-cookie") own = true;
+      });
       if (!cookies.length && !own) return response;
       const apply = (target: Headers) => {
-        for (const [name, value] of headers) if (name !== "set-cookie" && !target.has(name)) target.set(name, value);
+        headers.forEach((value, name) => {
+          if (name !== "set-cookie" && !target.has(name)) target.set(name, value);
+        });
         for (const cookie of cookies) target.append("set-cookie", cookie);
         if (setsCookie) privateCache(target);
       };
@@ -780,7 +781,7 @@ export function createHandler(options: AppOptions): AppHandler {
       phase = "handler";
       for (const module of modules) {
         const extra = module?.headers?.(event);
-        if (extra) for (const [name, value] of new Headers(extra)) headers.set(name, value);
+        if (extra) new Headers(extra).forEach((value, name) => headers.set(name, value));
       }
       // Route rule `shell` (document GET of a page): a hit sends the stored shell now; a fill tracks request reads.
       const shell =
