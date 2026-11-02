@@ -90,6 +90,12 @@ test("dev: a source that starts using navigate() / useParams() regenerates the A
   };
   try {
     assert.doesNotMatch(await app(), /rivet:go|RouteParamsContext/);
+    // A file added during the watcher's initial scan emits nothing (ignoreInitial): rewrite a probe until an event proves the
+    // scan is done, else the first real write can be missed on a slow runner. No event at all fails below, with the log.
+    for (let i = 0; i < 100 && !seen.length; i++) {
+      await writeFile(root + "src/watch-probe.ts", `export const probe = ${i};\n`);
+      await new Promise((done) => setTimeout(done, 50));
+    }
     await writeFile(
       root + "src/go.ts",
       'import { navigate, useParams } from "@rivetjs/router/client";\nexport const go = () => navigate("/");\nexport const p = useParams;\n',
