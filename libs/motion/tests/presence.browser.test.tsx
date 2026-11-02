@@ -19,6 +19,9 @@ const until = async (check: () => boolean, ms = 3000) => {
 };
 const byId = (id: string) => document.getElementById(id);
 const opacity = (id: string) => Number(getComputedStyle(byId(id)!).opacity);
+// A held unmount waits for the 200 ms exit; an unheld one lands within a frame or two. Motion times its animations on its
+// own frame clock, which on a loaded 2-vCPU CI runner ended a 200 ms exit 25–50 ms early in wall-clock time (149.5 ms).
+const HELD = 100;
 
 test("Presence: closing plays exit and unmounts after it; onExitComplete once", async () => {
   const open = signal(true);
@@ -37,7 +40,7 @@ test("Presence: closing plays exit and unmounts after it; onExitComplete once", 
   expect(byId("p")).not.toBeNull();
   expect(opacity("p")).toBeLessThan(1);
   await until(() => byId("p") === null);
-  expect(performance.now() - started).toBeGreaterThanOrEqual(180);
+  expect(performance.now() - started).toBeGreaterThanOrEqual(HELD);
   expect(completed).toBe(1);
 });
 
@@ -82,7 +85,7 @@ test("Motion exit inside a plain kit Transition (no Presence) holds its unmount"
   const started = performance.now();
   open.set(false);
   await until(() => byId("t") === null);
-  expect(performance.now() - started).toBeGreaterThanOrEqual(180);
+  expect(performance.now() - started).toBeGreaterThanOrEqual(HELD);
 });
 
 test("cdk Modal (no Presence): a Motion exit in its content plays on close and holds the unmount", async () => {
@@ -101,7 +104,7 @@ test("cdk Modal (no Presence): a Motion exit in its content plays on close and h
   // than two).
   await until(() => opacity("p") < 1);
   await until(() => byId("p") === null);
-  expect(performance.now() - started).toBeGreaterThanOrEqual(180);
+  expect(performance.now() - started).toBeGreaterThanOrEqual(HELD);
 });
 
 test("PresenceFor: a removed row stays at its index with data-exiting until its exit ends; re-adding restores it", async () => {
