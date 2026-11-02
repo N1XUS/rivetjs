@@ -346,7 +346,7 @@ export function bridgePlugin(entries: BridgeEntry[]): Plugin {
           closure(chunk.fileName, files);
         }
       }
-      for (const [page, frameworks] of [...pages].sort(([a], [b]) => a.localeCompare(b))) {
+      for (const [page, frameworks] of [...pages].sort(([a], [b]) => a.localeCompare(b, "en"))) {
         const parts = [...frameworks].map(([name, files]) => `${name} ${([...files].reduce((sum, file) => sum + br(file), 0) / 1024).toFixed(1)} KB br`);
         config?.logger.info(`[rivet:bridge] ${page}: ${parts.join(", ")}`);
       }

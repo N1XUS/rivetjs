@@ -90,7 +90,7 @@ export function createSearchIndex(docs: readonly McpDoc[]): SearchIndex {
         else if (terms.every((term) => title.includes(term))) score *= 1.5;
         hits.push({ id: item.doc.id, title: item.doc.title, description: item.doc.description, site: item.doc.site, kind: item.doc.kind, score, snippet: "" });
       }
-      hits.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+      hits.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id, "en"));
       const top = hits.slice(0, options.limit ?? 10);
       const byId = new Map(indexed.map((item) => [item.doc.id, item.doc]));
       for (const hit of top) hit.snippet = snippet(byId.get(hit.id)!.markdown, terms);

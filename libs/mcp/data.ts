@@ -144,7 +144,7 @@ export async function buildData(repo: string): Promise<McpData> {
       });
     }
   }
-  const list = [...components.values()].sort((a, b) => a.entry.localeCompare(b.entry));
+  const list = [...components.values()].sort((a, b) => a.entry.localeCompare(b.entry, "en"));
   const hash = createHash("sha256");
   for (const doc of docs) hash.update(doc.id + "\0" + doc.markdown + "\0");
   hash.update(JSON.stringify(list));

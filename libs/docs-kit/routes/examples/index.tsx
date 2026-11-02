@@ -12,7 +12,7 @@ export const head = {
 // Gallery cards need metadata only: keep every example's source files out of this route's payload.
 export const loader = load(() =>
   Object.values(examples)
-    .sort((a, b) => a.title.localeCompare(b.title))
+    .sort((a, b) => a.title.localeCompare(b.title, "en"))
     .map(({ id, title, summary, status, tags, codeOnly }) => ({ id, title, summary, status, tags, ...(codeOnly ? { codeOnly } : {}) })),
 );
 
