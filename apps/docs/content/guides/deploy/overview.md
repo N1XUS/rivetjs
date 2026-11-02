@@ -21,6 +21,7 @@ After reading this page you can choose a target and know what it builds.
 | [Cloudflare](cloudflare.md)     | `adapter: "cloudflare"` | `dist/cloudflare/`              | Cloudflare Workers with static assets      |
 | [Bun](bun.md)                   | `adapter: "bun"`        | `dist/server/bun.js`            | `bun`                                      |
 | [Deno](deno.md)                 | `adapter: "deno"`       | `dist/server/deno.js`           | `deno`                                     |
+| [Electron](electron.md)         | `adapter: "electron"`   | `dist/server/electron.js`       | `electron` (main process)                  |
 | Any web-standard runtime        | `adapter: "fetch"`      | `dist/server/fetch.js`          | Your own `fetch(request)` host             |
 
 ```ts title="vite.config.ts"

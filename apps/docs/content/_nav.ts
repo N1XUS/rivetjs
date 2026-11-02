@@ -152,6 +152,7 @@ export const nav: NavSection[] = [
           { path: "guides/deploy/cloudflare", tag: "new" },
           { path: "guides/deploy/bun", tag: "new" },
           { path: "guides/deploy/deno", tag: "new" },
+          { path: "guides/deploy/electron", tag: "new" },
         ],
       },
     ],

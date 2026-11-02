@@ -117,6 +117,10 @@
       "types": "./adapters/deno.ts",
       "default": "./adapters/deno.ts"
     },
+    "./electron": {
+      "types": "./adapters/electron.ts",
+      "default": "./adapters/electron.ts"
+    },
     "./head": {
       "types": "./shared/head.ts",
       "default": "./shared/head.ts"

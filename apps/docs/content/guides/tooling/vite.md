@@ -45,7 +45,7 @@ Options of `rivetRouter`:
 | `images` | off | Image processing, see [Images](../assets/images.md) |
 | `devtools` | `true` | Rivet DevTools on the dev server, see [DevTools](devtools.md) |
 | `outDir` | `".rivet"` | Folder for generated code |
-| `adapter` | node only | Deploy target: `"vercel"`, `"netlify"`, `"cloudflare"`, `"bun"`, `"deno"` or `"fetch"`. See [Deploy](../deploy/overview.md) |
+| `adapter` | node only | Deploy target: `"vercel"`, `"netlify"`, `"cloudflare"`, `"bun"`, `"deno"`, `"electron"` or `"fetch"`. See [Deploy](../deploy/overview.md) |
 
 All options, including `base`, `trailingSlash`, `transitions`, `intentPrefetch` and `prefetch`, are in the [config reference](../../reference/config.md#rivetrouter).
 

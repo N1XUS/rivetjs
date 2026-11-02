@@ -80,8 +80,18 @@ export interface BunAdapterOptions extends TargetOptions {
 export interface DenoAdapterOptions extends TargetOptions {
   readonly name: "deno";
 }
+/** Electron: `dist/server/electron.js` answers the app's `https` origin in the main process (`start({ session })`), no port. */
+export interface ElectronAdapterOptions extends TargetOptions {
+  readonly name: "electron";
+}
 export type AdapterOptions =
-  FetchAdapterOptions | VercelAdapterOptions | NetlifyAdapterOptions | CloudflareAdapterOptions | BunAdapterOptions | DenoAdapterOptions;
+  | FetchAdapterOptions
+  | VercelAdapterOptions
+  | NetlifyAdapterOptions
+  | CloudflareAdapterOptions
+  | BunAdapterOptions
+  | DenoAdapterOptions
+  | ElectronAdapterOptions;
 export type AdapterName = AdapterOptions["name"];
 
 /** Generated entry file name (`dist/server/<file>.js`) per target. */
@@ -92,6 +102,7 @@ export const ENTRY_FILE: Readonly<Record<AdapterName, string>> = {
   cloudflare: "worker",
   bun: "bun",
   deno: "deno",
+  electron: "electron",
 };
 /** Options that only shape the build output (never serialized into the entry). */
 const BUILD_ONLY = new Set(["name", "locales", "runtime", "nodeVersion", "regions", "maxDuration", "memory", "edge", "wrangler"]);
@@ -106,6 +117,7 @@ const runtimes = {
   cloudflare: fileURLToPath(new URL("./cloudflare.ts", import.meta.url)),
   bun: fileURLToPath(new URL("./bun.ts", import.meta.url)),
   deno: fileURLToPath(new URL("./deno.ts", import.meta.url)),
+  electron: fileURLToPath(new URL("./electron.ts", import.meta.url)),
 };
 
 /** `rivetRouter({ adapter })` value → options (a bare name = defaults). */
@@ -148,6 +160,16 @@ function runtimeOf(options: AdapterOptions): { path: string; name: string; tail:
           'const client = "../client/";',
           "export const start = (options = {}) => createTarget(entry, build, { client: new URL(client, import.meta.url), ...defaults, ...options });",
           "if (import.meta.main) start();",
+        ],
+      };
+    case "electron":
+      // Never starts itself: the main process starts it after `ready`, with its session.
+      return {
+        path: runtimes.electron,
+        name: "start",
+        tail: [
+          'const client = "../client/";',
+          "export const start = (options) => createTarget(entry, build, { client: new URL(client, import.meta.url), ...defaults, ...options });",
         ],
       };
   }

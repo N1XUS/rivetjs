@@ -1,4 +1,4 @@
-# @rivetjs/router — adapters (`/node`, `/fetch`, `/static`, `/csr`, platform targets)
+# @rivetjs/router — adapters (`/node`, `/fetch`, `/static`, `/csr`, platform targets, `/electron`)
 
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
@@ -16,6 +16,7 @@ Deploy targets over the app handler (`createApp`). Build: `vite build` (→ `dis
   - `/netlify` → `netlify.ts` (`(request, context) => Response | undefined`; address `context.ip`; `staticPaths` → `undefined` = Netlify serves the file, Edge Functions only).
   - `/cloudflare` → `cloudflare.ts` (`{ fetch(request, env, ctx) }`, address `CF-Connecting-IP`).
   - `/bun` → `bun.ts`, `/deno` → `deno.ts`: `start(entry, build, { client, port, hostname, signals, …FetchOptions })` → `Bun.serve` / `Deno.serve`; client files via `files.ts`; generated entry runs `start()` only `if (import.meta.main)`.
+  - `/electron` → `electron.ts` (2026-11-02): `start(entry, build, { session, origin = "https://rivet.invalid", client, …FetchOptions })` → `{ url, origin, close() }`, `storeCookie`; `session.protocol.handle("https", …)` (no port; other hosts `session.fetch` with `bypassCustomProtocolHandlers`), Electron passed in, no dependency; client files via `files.ts` (streamed, no `Range`); the generated entry never starts itself. A real https origin, not a custom scheme (tried first: opaque origin `null`, `Router location must use HTTP(S)`, Chromium refuses cookies). Measured in Electron 45: the handler gets no `Cookie`, `Set-Cookie` ignored (cookie bridge through `session.cookies`), `fetch` has no `Origin` (fail closed: only a same-origin `request.referrer` vouches, else `Origin: null` → CSRF 403; the first version took "no referrer" as own and a `file:` page POST got through; `Referrer-Policy: no-referrer` pages get 403), top-level `await app.whenReady()` hangs. Node APIs: `node:fs` / `node:stream` / `node:url`.
 
 ## Layout
 

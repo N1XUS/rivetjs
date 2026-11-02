@@ -1,4 +1,4 @@
-// Deploy targets (`rivetRouter({ adapter: "vercel" | "netlify" | "cloudflare" | "bun" | "deno" })`):
+// Deploy targets (`rivetRouter({ adapter: "vercel" | "netlify" | "cloudflare" | "bun" | "deno" | "electron" })`):
 // one fixture app built once per target. Checks the emitted layout against each platform's documented
 // contract (no platform accounts or deploys) and runs every entry that can run here: Vercel's Node.js
 // listener under node:http, the web-standard entries with synthetic Requests, `bun.js` under Bun when
@@ -440,6 +440,79 @@ test(
       assert.deepEqual([...(await imports(dist + "server/"))].sort(), ["node:async_hooks", "node:fs", "node:path", "node:url"]);
       const module = await load<{ start(options?: object): unknown }>(dist + "server/", "deno.js");
       assert.throws(() => module.start(), /runs under Deno/);
+    });
+
+    await t.test("electron: fake session: https origin, client files, cookie bridge, CSRF origin, other hosts to the network, close", async () => {
+      await target("electron", {}, true);
+      const module = await load<{ start(options: object): { url: string; origin: string; close(): void } }>(dist + "server/", "electron.js");
+      let handler!: (request: Request) => Promise<Response>;
+      let handled = "";
+      const jar = new Map<string, Record<string, unknown>>();
+      const passed: string[] = [];
+      const session = {
+        protocol: {
+          handle: (scheme: string, fn: typeof handler) => ((handled = scheme), (handler = fn)),
+          unhandle: (scheme: string) => (handled = handled === scheme ? "" : handled),
+        },
+        cookies: {
+          get: async () => [...jar.values()],
+          set: async (details: { name: string }) => void jar.set(details.name, details),
+          remove: async (_url: string, name: string) => void jar.delete(name),
+        },
+        fetch: async (request: Request, options: { bypassCustomProtocolHandlers: boolean }) => {
+          assert.equal(options.bypassCustomProtocolHandlers, true);
+          passed.push(request.url);
+          return new Response("network");
+        },
+      };
+      const serving = module.start({ session, client: dist + "client/" });
+      assert.equal(handled, "https");
+      assert.equal(serving.url, "https://rivet.invalid/");
+      assert.equal(serving.origin, "https://rivet.invalid");
+      const robots = await handler(new Request(serving.origin + "/robots.txt"));
+      assert.equal(await robots.text(), "User-agent: *\n");
+      assert.equal(robots.headers.get("x-content-type-options"), "nosniff");
+      const unchanged = await handler(new Request(serving.origin + "/robots.txt", { headers: { "if-none-match": robots.headers.get("etag")! } }));
+      assert.equal(unchanged.status, 304);
+      assert.equal(await (await handler(new Request("https://example.com/robots.txt"))).text(), "network");
+      assert.deepEqual(passed, ["https://example.com/robots.txt"]);
+      assert.equal((await handler(new Request(serving.origin + "/.vite/manifest.json"))).status, 404);
+      const page = await handler(new Request(serving.url));
+      assert.equal(page.status, 200);
+      assert.match(await page.text(), /<p id="platform">/);
+      // CSRF: Chromium hands the handler no `Origin` for `fetch`: only a same-origin referrer vouches for it, fail closed.
+      const form = { "content-type": "application/x-www-form-urlencoded" };
+      const post = (init: RequestInit) =>
+        handler(new Request(serving.origin + "/counter", { method: "POST", body: "a=1", ...init, headers: { ...form, ...init.headers } }));
+      assert.notEqual((await post({ referrer: serving.url })).status, 403);
+      assert.notEqual((await post({ headers: { origin: serving.origin } })).status, 403);
+      assert.equal((await post({})).status, 403);
+      assert.equal((await post({ headers: { origin: "https://evil.example" } })).status, 403);
+      serving.close();
+      assert.equal(handled, "");
+    });
+
+    await t.test("electron: Set-Cookie attributes reach the session's cookie store", async () => {
+      const { storeCookie } = await import("../adapters/electron.ts");
+      const calls: unknown[][] = [];
+      const session = {
+        cookies: {
+          set: async (details: unknown) => void calls.push(["set", details]),
+          remove: async (...args: unknown[]) => void calls.push(["remove", ...args]),
+        },
+      };
+      const fake = session as never;
+      const url = "https://rivet.invalid/a";
+      await storeCookie(fake, url, "s=a=b; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=60", 1_000_000);
+      await storeCookie(fake, url, "plain=1", 1_000_000);
+      await storeCookie(fake, url, "gone=; Max-Age=0", 1_000_000);
+      await storeCookie(fake, url, "old=1; Expires=Thu, 01 Jan 1970 00:00:00 GMT", 1_000_000);
+      assert.deepEqual(calls, [
+        ["set", { url, name: "s", value: "a=b", path: "/", secure: true, httpOnly: true, sameSite: "lax", expirationDate: 1060 }],
+        ["set", { url, name: "plain", value: "1" }],
+        ["remove", url, "gone"],
+        ["remove", url, "old"],
+      ]);
     });
 
     // FIX2 (r3-testgaps#9, router#3): Bun / Deno wiring driven in node through fake runtime globals (`serve` captures the
