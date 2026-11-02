@@ -45,36 +45,38 @@ import {
 // and release outside the handle. +51 B br plain, +36 visible, +49 lazy variants; no adoption before input.
 // FIX-CORE (2026-11-01): a rejected runtime import is not cached, the next event retries it: +7 B br plain, +20 visible,
 // +6 lazy, +15 visible+lazy (`tests/derived-boot-retry-browser.test.ts`).
-test("shipped derived loader is current, inline-safe and fits 1,834 B brotli", async () => {
+// COLD-WK-LINUX (2026-11-02): a `touchstart` inside a boundary hearing clicks gives its target a no-op click listener
+// (WebKit synthesizes no click otherwise): +21 B br plain, +23 visible, +19 lazy, +19 visible+lazy (`tests/derived-cold-tap-browser.test.ts`).
+test("shipped derived loader is current, inline-safe and fits 1,855 B brotli", async () => {
   assert.equal(DERIVED_LOADER, await minifiedDerived(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER));
   const size = brotliCompressSync(DERIVED_LOADER).length;
-  assert.ok(size <= 1834, `minified ${size} B`);
+  assert.ok(size <= 1855, `minified ${size} B`);
   console.log(`derived loader brotli: ${size} B`);
 });
 
 // ZERO ABI-SPLIT visible-only boot: the loader of a `data-boot="<ids>"` page = the loader above with `derivedVisibleBoot`
 // spliced in at its `data-boot` start (the other pages' loader is unchanged): 1,768 B brotli at landing (+184 B); 1,823 B
 // with SLIDER-KEY's `data-rk` hold; 1,953 B with the LITE-BOOT prime (it skips `data-boot` pages, the code ships anyway).
-test("shipped visible-boot loader is current, inline-safe and fits 2,010 B brotli", async () => {
+test("shipped visible-boot loader is current, inline-safe and fits 2,035 B brotli", async () => {
   assert.equal(DERIVED_LOADER_VISIBLE, await minifiedDerivedVisible(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER_VISIBLE));
   assert.ok(DERIVED_LOADER_VISIBLE.includes(".dataset.boot?(function("));
   new Function(DERIVED_LOADER_VISIBLE);
   const size = brotliCompressSync(DERIVED_LOADER_VISIBLE).length;
-  assert.ok(size <= 2010, `minified ${size} B`);
+  assert.ok(size <= 2035, `minified ${size} B`);
   console.log(`derived visible-boot loader brotli: ${size} B`);
 });
 
 // IDLE-PREFETCH lazy-part loaders: the loader of a page with `data-fl` = the loader above with `derivedFetchLater` spliced
 // in place of its fetch-ahead link loop (pages without lazy parts keep the plain loader): 1,719 B brotli at landing
 // (+83 B over the 1,636 B loader), 1,894 B with the visible boot too. LITE-BOOT prime: 1,840 / 2,022 B.
-test("shipped lazy-part loaders are current, inline-safe and fit 1,910 / 2,086 B brotli", async () => {
+test("shipped lazy-part loaders are current, inline-safe and fit 1,930 / 2,106 B brotli", async () => {
   assert.equal(DERIVED_LOADER_LATER, await minifiedDerivedLater(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.equal(DERIVED_LOADER_VISIBLE_LATER, await minifiedDerivedLater(true), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   for (const [loader, budget] of [
-    [DERIVED_LOADER_LATER, 1910],
-    [DERIVED_LOADER_VISIBLE_LATER, 2086],
+    [DERIVED_LOADER_LATER, 1930],
+    [DERIVED_LOADER_VISIBLE_LATER, 2106],
   ] as const) {
     assert.ok(!/<\/script|<!--/i.test(loader));
     assert.ok(loader.includes(".dataset.fl.split("), "the lazy-part fetch is spliced in");
@@ -90,12 +92,12 @@ test("shipped lazy-part loaders are current, inline-safe and fit 1,910 / 2,086 B
 // COLD-DND drag loaders (pages whose `data-events` lists a drag type): each loader variant with `derivedDrag` spliced in
 // (`$d` made first, asked before `rt?.on`, called on the held event); every other page keeps its loader byte for byte.
 // At landing (2026-11-01): 2,204 / 2,388 / 2,273 / 2,451 B brotli (+389 / +399 / +384 / +380 B over their plain variants).
-test("shipped drag loaders are current, inline-safe and fit 2,220 / 2,400 / 2,300 / 2,470 B brotli", async () => {
+test("shipped drag loaders are current, inline-safe and fit 2,245 / 2,420 / 2,320 / 2,490 B brotli", async () => {
   for (const [drag, plain, budget] of [
-    [DERIVED_LOADER_DRAG, DERIVED_LOADER, 2220],
-    [DERIVED_LOADER_VISIBLE_DRAG, DERIVED_LOADER_VISIBLE, 2400],
-    [DERIVED_LOADER_LATER_DRAG, DERIVED_LOADER_LATER, 2300],
-    [DERIVED_LOADER_VISIBLE_LATER_DRAG, DERIVED_LOADER_VISIBLE_LATER, 2470],
+    [DERIVED_LOADER_DRAG, DERIVED_LOADER, 2245],
+    [DERIVED_LOADER_VISIBLE_DRAG, DERIVED_LOADER_VISIBLE, 2420],
+    [DERIVED_LOADER_LATER_DRAG, DERIVED_LOADER_LATER, 2320],
+    [DERIVED_LOADER_VISIBLE_LATER_DRAG, DERIVED_LOADER_VISIBLE_LATER, 2490],
   ] as const) {
     assert.equal(drag, await minifiedDerivedDrag(plain), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
     assert.ok(!/<\/script|<!--/i.test(drag));

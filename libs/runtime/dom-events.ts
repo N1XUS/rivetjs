@@ -120,6 +120,13 @@ function delegate(event: Event, stop: Node | null): boolean {
   if (failed) throw failure;
   return stopped;
 }
+// WebKit touch: a tap synthesizes mouse events and `click` only when a node up to the body responds to clicks itself, and
+// the delegated listener sits on the document. Decided after the touch ends: the innermost delegated click's node gets a
+// no-op listener at `touchstart` (COLD-WK-LINUX; React's `trapClickOnNonInteractiveElement`, without a listener per bind).
+const noClick = (): void => {};
+function touched(event: Event): void {
+  (event.composedPath() as (EventTarget & Handlers)[]).find((node) => node.$rclick)?.addEventListener("click", noClick);
+}
 /** A handler value: a function, or undefined for null / undefined (anything else throws). */
 function checked(handler: unknown): ((event: Event) => unknown) | undefined {
   if (typeof handler === "function") return handler as (event: Event) => unknown;
@@ -152,6 +159,7 @@ export function _on(el: Element, type: string, handler: ((event: Event) => unkno
   if (!types!.has(type)) {
     types!.add(type);
     doc.addEventListener(type, dispatch);
+    if (type === "click") doc.addEventListener("touchstart", touched, { capture: true, passive: true });
   }
 }
 /** Compiler ABI: a direct (non-bubbling / capture) listener, removed with the owner. */
