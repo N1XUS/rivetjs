@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # Limit 0 = security updates only: benchmark lanes and upstream ports pin exact versions on purpose.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"
