@@ -72,3 +72,5 @@ npx vitest run --project runtime -t "shipped loader"          # by name
 - `derived-adopt-browser.test.ts`: a development runtime disposed while a page ready hook is pending never creates new component owners or handlers when that hook settles.
 
 - Codec payload regression (2026-11-01): `dom-v2-chunks.test.ts` builds real production eager/lazy entries and verifies boot excludes the lazy root value codec while the lazy chunk keeps it. The shared browser harness serves `resume-hooks.ts`; derived streamed Date/table adoption and lite fallback cases retain their existing assertions.
+
+- `derived-adopt-browser.test.ts` "adopt cost" (CI-FLAKES 2026-11-03): the ms ratio is a perf budget, enforced off CI only (`CI` unset or `RIVET_PERF_BUDGETS=1`, `docs/guides/testing.md`); the "no row materialised" assertion runs everywhere.

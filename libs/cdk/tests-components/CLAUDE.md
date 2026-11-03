@@ -105,3 +105,5 @@ Component tests for `@rivetjs/cdk`: resumed story app (production build + node a
 - `apps/cdk-docs/content/foundations/testing.md`, `docs/guides/resumability.md`, `docs/guides/aria.md`
 
 Scheduler T12: `scheduler-resume.test.ts` now verifies adopted SSRweek and shared day-view next/previous/Today navigation through actual date-bearing header and slot labels. `cold-latency.ts --targets scheduler-more --lean` disables router fetch-ahead for cold-network measurements; without `--lean` it retains default production preload behavior, which can download the renderer before input. `--trace` reports input-time requests/errors; sampled timings/encoded network bytes are distinct from per-file min+Brotli closure size.
+
+- `sidebar.test.ts` flick helper (CI-FLAKES 2026-11-03): the release force comes from real event times, so a stalled move on a loaded runner settles the sheet back open. `flick` runs the gesture up to 3 times (1.5 s wait each); checked with injected stalls: 2 stalled attempts pass, 3 fail.

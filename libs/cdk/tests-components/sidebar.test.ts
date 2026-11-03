@@ -204,20 +204,32 @@ const openSheet = async () => {
   return { ...opened, box };
 };
 const sheetTransform = (page: Page) => page.$eval('[data-mobile="true"]', (el) => (el as HTMLElement).style.transform);
+// The release force comes from real event times: on a loaded runner a stalled move reads as a slow drag, and the sheet
+// rightly settles back open. Such an attempt proves nothing, so the gesture runs again; a flick that never dismisses fails.
+const flick = async (page: Page, box: { x: number; y: number; width: number; height: number }, y: number) => {
+  let during = "";
+  for (let attempt = 1; ; attempt++) {
+    await page.mouse.move(box.x + box.width - 20, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width - 40, y, { steps: 2 });
+    await page.waitForTimeout(50);
+    during = await sheetTransform(page);
+    await page.mouse.move(box.x + box.width - 100, y, { steps: 3 });
+    const released = Date.now();
+    await page.mouse.up();
+    try {
+      await page.waitForFunction(() => !document.querySelector("[role=dialog]"), undefined, { timeout: 1500 });
+      return { during, released };
+    } catch (error) {
+      if (attempt === 3) throw error;
+    }
+  }
+};
 
 test("mobile sheet: the drag follows the pointer; a fast flick to the closed edge dismisses it", async () => {
   const { page, seen, context, box } = await openSheet();
-  const y = box.y + box.height / 2;
-  await page.mouse.move(box.x + box.width - 20, y);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width - 40, y, { steps: 2 });
-  await page.waitForTimeout(50);
-  const during = await sheetTransform(page);
+  const { during, released } = await flick(page, box, box.y + box.height / 2);
   assert.match(during, /^translateX\(-\d+(\.\d+)?px\)$/);
-  await page.mouse.move(box.x + box.width - 100, y, { steps: 3 });
-  const released = Date.now();
-  await page.mouse.up();
-  await page.waitForFunction(() => !document.querySelector("[role=dialog]"), undefined, { timeout: 5000 });
   // Closes once off-screen (not after the spring tail settles) and skips the exit replay: the underlay stops
   // blocking the page right away.
   assert.ok(Date.now() - released < 700, `dismissed after ${Date.now() - released} ms`);
@@ -228,14 +240,7 @@ test("mobile sheet: the drag follows the pointer; a fast flick to the closed edg
 test("mobile sheet: a flick that starts on a link dismisses (no native link drag) and does not follow the link", async () => {
   const { page, seen, context, box } = await openSheet();
   const home = (await page.locator('[data-mobile="true"] #home').boundingBox())!;
-  const y = home.y + home.height / 2;
-  await page.mouse.move(box.x + box.width - 20, y);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width - 40, y, { steps: 2 });
-  await page.waitForTimeout(50);
-  await page.mouse.move(box.x + box.width - 100, y, { steps: 3 });
-  await page.mouse.up();
-  await page.waitForFunction(() => !document.querySelector("[role=dialog]"), undefined, { timeout: 2000 });
+  await flick(page, box, home.y + home.height / 2);
   assert.equal(new URL(page.url()).hash, "");
   assert.deepEqual(seen.errors, []);
   await context.close();

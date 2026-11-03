@@ -129,3 +129,5 @@ CLI output tests remove inherited `FORCE_COLOR` before setting `NO_COLOR`, so No
 - Auth-boundary tests also retain the retired adversarial fixture's layout-guard contract: an enclosing guard denies a page loader and a plain endpoint before their payload code runs, with forged/absent cookies and an allowed-cookie positive control. Page and nested-layout `on<Method>` handlers run after the guards too (GUARD-ORDER 2026-11-02, "layout guard runs before page and nested layout on<Method> handlers").
 
 - Error-page layout loaders can set cookies after a guard denies the page; cookie cache privacy is finalized after those loaders finish (`tests/error-layout-cache.test.ts`). Data-error responses still skip fallback layout loaders.
+
+- `tests/dev-resume.test.ts` reload case (CI-FLAKES 2026-11-03): asserts at least one reload, of `/items/1` only, and no document request on the later client navigation. CI once logged three documents for one edit (not reproduced: 8/8 pass under 12 busy loops), so the exact count is not pinned.
