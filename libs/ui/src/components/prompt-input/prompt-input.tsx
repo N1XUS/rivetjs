@@ -257,7 +257,8 @@ interface PromptInputActionProps extends ButtonRootProps {
 }
 
 const PromptInputAction = (props: PromptInputActionProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class", "tooltip", "variant", "size", "isIconOnly"]);
+  const [local, rest] = splitLive(props, ["class", "tooltip", "variant", "size", "isIconOnly", "isDisabled"]);
+  const context = useContext(PromptInputContext);
   const tooltip = local.tooltip;
   const button = () => (
     <ButtonRoot
@@ -265,6 +266,7 @@ const PromptInputAction = (props: PromptInputActionProps): JSX.Element => {
       size={local.size ?? "sm"}
       isIconOnly={local.isIconOnly ?? true}
       class={composeSlotClassName(SLOTS.action, typeof local.class === "string" ? local.class : undefined)}
+      isDisabled={local.isDisabled ?? !!context.disabled?.()}
       data-slot="prompt-input-action"
       {...rest}
     />
@@ -293,7 +295,8 @@ const PromptInputSend = (props: PromptInputSendProps): JSX.Element => {
   const sendLabel = local["aria-label"] ?? "Send message";
   const stopLabel = local.stopLabel ?? "Stop generating";
   const isDisabled = (): boolean => {
-    if (local.isDisabled === true || context.disabled?.()) return true;
+    const own = local.isDisabled;
+    if ((typeof own === "function" ? own() : own) || context.disabled?.()) return true;
     const text = context.text ? context.text() : state ? state.value() : "";
     return !isRunning(status()) && !text.trim();
   };

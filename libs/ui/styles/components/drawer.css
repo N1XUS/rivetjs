@@ -40,6 +40,11 @@
   }
 }
 
+/* Rivet: a closing overlay takes no clicks: what the user presses during its exit animation reaches the page. */
+.drawer__backdrop[data-exiting="true"] {
+  pointer-events: none;
+}
+
 /**
  * Element: backdrop - the overlay behind the drawer
  */
@@ -267,8 +272,13 @@
 /**
  * Element: close-trigger - the close button
  */
+/* Two classes: per-component stylesheets load in import order, `.close-button` may come after this file. */
 .drawer__close-trigger {
   @apply absolute end-4 top-4;
+}
+
+.close-button.drawer__close-trigger {
+  position: absolute;
 }
 
 /*

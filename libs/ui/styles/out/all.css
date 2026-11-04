@@ -16661,6 +16661,10 @@
     transform: scale(.97);
   }
 
+  .alert-dialog__backdrop[data-exiting="true"], .alert-dialog__container[data-exiting="true"] {
+    pointer-events: none;
+  }
+
   .alert-dialog__backdrop {
     z-index: var(--z-index-overlay);
     height: var(--visual-viewport-height);
@@ -16957,6 +16961,10 @@
     position: absolute;
   }
 
+  .close-button.alert-dialog__close-trigger {
+    position: absolute;
+  }
+
   .alert-dialog__dialog {
     anchor-scope: --rv-alert-dialog-header-row;
   }
@@ -17016,6 +17024,10 @@
 
   .drawer__trigger:active, .drawer__trigger[data-pressed="true"] {
     transform: scale(.97);
+  }
+
+  .drawer__backdrop[data-exiting="true"] {
+    pointer-events: none;
   }
 
   .drawer__backdrop {
@@ -17246,6 +17258,10 @@
     position: absolute;
   }
 
+  .close-button.drawer__close-trigger {
+    position: absolute;
+  }
+
   .drawer__dialog {
     anchor-scope: --rv-drawer-header-row;
   }
@@ -17300,6 +17316,10 @@
     syntax: "<number>";
     inherits: false;
     initial-value: 1;
+  }
+
+  .sheet__backdrop[data-exiting="true"] {
+    pointer-events: none;
   }
 
   .sheet__backdrop {
@@ -17608,6 +17628,10 @@
   .sheet__close-trigger {
     inset-inline-end: calc(var(--spacing, .25rem) * 4);
     top: calc(var(--spacing, .25rem) * 4);
+    position: absolute;
+  }
+
+  .close-button.sheet__close-trigger {
     position: absolute;
   }
 
@@ -18189,6 +18213,10 @@
     transform: scale(.97);
   }
 
+  .modal__backdrop[data-exiting="true"], .modal__container[data-exiting="true"] {
+    pointer-events: none;
+  }
+
   .modal__backdrop {
     z-index: var(--z-index-overlay);
     height: var(--visual-viewport-height);
@@ -18518,6 +18546,10 @@
   .modal__close-trigger {
     inset-inline-end: calc(var(--spacing, .25rem) * 4);
     top: calc(var(--spacing, .25rem) * 4);
+    position: absolute;
+  }
+
+  .close-button.modal__close-trigger {
     position: absolute;
   }
 
@@ -21295,6 +21327,21 @@
 
   .kbd {
     word-spacing: -.25rem;
+  }
+
+  .button .kbd {
+    color: inherit;
+    background-color: currentColor;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button .kbd {
+      background-color: color-mix(in oklab, currentColor 16%, transparent);
+    }
+  }
+
+  .button .kbd--light {
+    background-color: #0000;
   }
 
   .kbd__abbr {
@@ -27598,7 +27645,7 @@
     border-color: #0000;
   }
 
-  .prompt-input[data-disabled="true"] .prompt-input__shell {
+  .prompt-input[data-disabled="true"] .prompt-input__content {
     opacity: var(--disabled-opacity);
     cursor: var(--cursor-disabled);
     pointer-events: none;

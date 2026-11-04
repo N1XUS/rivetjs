@@ -39,6 +39,21 @@
     word-spacing: -.25rem;
   }
 
+  .button .kbd {
+    color: inherit;
+    background-color: currentColor;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .button .kbd {
+      background-color: color-mix(in oklab, currentColor 16%, transparent);
+    }
+  }
+
+  .button .kbd--light {
+    background-color: #0000;
+  }
+
   .kbd__abbr {
     justify-content: center;
     align-items: center;

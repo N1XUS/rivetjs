@@ -47,6 +47,32 @@ test("chat-tool: approval", () => {
   r.unmount();
 });
 
+test("chat-tool: Approval isDisabled / isPending, value or accessor, live", async () => {
+  const { signal } = await import("@rivetjs/reactivity");
+  const offline = signal(true);
+  const pending = signal(false);
+  const calls: string[] = [];
+  const r = render(() => (
+    <ChatTool.Approval isDisabled={offline} isPending={pending()} onApprove={() => calls.push("approve")} onReject={() => calls.push("reject")} />
+  ));
+  const [reject, approve] = [...r.container.querySelectorAll("button")] as [HTMLButtonElement, HTMLButtonElement];
+  press(reject);
+  press(approve);
+  assert.deepEqual(calls, []);
+  offline.set(false);
+  await flush();
+  pending.set(true);
+  await flush();
+  press(reject);
+  press(approve);
+  assert.deepEqual(calls, []);
+  pending.set(false);
+  await flush();
+  press(approve);
+  assert.deepEqual(calls, ["approve"]);
+  r.unmount();
+});
+
 test("chat-tool: composable", () => {
   const r = render(() => (
     <ChatTool state="output-error" toolName="x" defaultExpanded>

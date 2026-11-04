@@ -92,7 +92,7 @@
     border-color: #0000;
   }
 
-  .prompt-input[data-disabled="true"] .prompt-input__shell {
+  .prompt-input[data-disabled="true"] .prompt-input__content {
     opacity: var(--disabled-opacity);
     cursor: var(--cursor-disabled);
     pointer-events: none;

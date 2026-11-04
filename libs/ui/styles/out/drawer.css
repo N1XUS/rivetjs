@@ -40,6 +40,10 @@
     transform: scale(.97);
   }
 
+  .drawer__backdrop[data-exiting="true"] {
+    pointer-events: none;
+  }
+
   .drawer__backdrop {
     z-index: var(--z-index-overlay);
     height: var(--visual-viewport-height);
@@ -265,6 +269,10 @@
   .drawer__close-trigger {
     inset-inline-end: calc(var(--spacing, .25rem) * 4);
     top: calc(var(--spacing, .25rem) * 4);
+    position: absolute;
+  }
+
+  .close-button.drawer__close-trigger {
     position: absolute;
   }
 

@@ -178,3 +178,29 @@ test("prompt-input: run status → stop", async () => {
   assert.deepEqual(submitted, ["Go"]);
   r.unmount();
 });
+
+test("prompt-input: Send honours isDisabled as a value and as an accessor; a disabled composer disables its Action, not other toolbar items", async () => {
+  const off = signal(true);
+  const a = render(() => (
+    <PromptInput value="hello">
+      <PromptInput.Send isDisabled={off} />
+    </PromptInput>
+  ));
+  const send = () => a.container.querySelector<HTMLButtonElement>('[data-slot="prompt-input-send"]')!;
+  assert.equal(send().disabled, true);
+  off.set(false);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(send().disabled, false);
+  a.unmount();
+  const b = render(() => (
+    <PromptInput isDisabled>
+      <PromptInput.Toolbar>
+        <PromptInput.Action aria-label="Add" />
+        <button id="chip" />
+      </PromptInput.Toolbar>
+    </PromptInput>
+  ));
+  assert.equal(b.container.querySelector<HTMLButtonElement>('[data-slot="prompt-input-action"]')!.disabled, true);
+  assert.equal(b.container.querySelector<HTMLButtonElement>("#chip")!.disabled, false);
+  b.unmount();
+});

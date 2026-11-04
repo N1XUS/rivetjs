@@ -281,21 +281,26 @@ interface ChatToolApprovalProps {
   approveLabel?: Content;
   /** @default "Reject" */
   rejectLabel?: Content;
+  /** The answer is being sent: both buttons take no press, Approve shows `data-pending`. Value or accessor. */
+  isPending?: boolean | (() => boolean);
+  /** Both buttons disabled (offline, paused). Value or accessor. */
+  isDisabled?: boolean | (() => boolean);
   class?: string;
 }
 
 const ChatToolApproval = (props: ChatToolApprovalProps): JSX.Element => {
-  const [local] = splitLive(props, ["children", "onApprove", "onReject", "approveLabel", "rejectLabel", "class"]);
+  const [local] = splitLive(props, ["children", "onApprove", "onReject", "approveLabel", "rejectLabel", "isPending", "isDisabled", "class"]);
+  const flag = (value: boolean | (() => boolean) | undefined): boolean => (typeof value === "function" ? value() : !!value);
   const onApprove = local.onApprove;
   const onReject = local.onReject;
   return (
     <div class={composeSlotClassName(SLOTS.approval, local.class)} data-slot="chat-tool-approval">
       <div class={SLOTS.approvalText()}>{local.children ?? "Allow this tool to run?"}</div>
       <div class={SLOTS.approvalActions()}>
-        <ButtonRoot variant="tertiary" size="sm" onPress={() => onReject?.()}>
+        <ButtonRoot variant="tertiary" size="sm" isDisabled={flag(local.isDisabled) || flag(local.isPending)} onPress={() => onReject?.()}>
           {local.rejectLabel ?? "Reject"}
         </ButtonRoot>
-        <ButtonRoot variant="primary" size="sm" onPress={() => onApprove?.()}>
+        <ButtonRoot variant="primary" size="sm" isDisabled={flag(local.isDisabled)} isPending={flag(local.isPending)} onPress={() => onApprove?.()}>
           {local.approveLabel ?? "Approve"}
         </ButtonRoot>
       </div>

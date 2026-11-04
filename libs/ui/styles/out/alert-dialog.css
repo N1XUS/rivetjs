@@ -40,6 +40,10 @@
     transform: scale(.97);
   }
 
+  .alert-dialog__backdrop[data-exiting="true"], .alert-dialog__container[data-exiting="true"] {
+    pointer-events: none;
+  }
+
   .alert-dialog__backdrop {
     z-index: var(--z-index-overlay);
     height: var(--visual-viewport-height);
@@ -333,6 +337,10 @@
   .alert-dialog__close-trigger {
     inset-inline-end: calc(var(--spacing, .25rem) * 4);
     top: calc(var(--spacing, .25rem) * 4);
+    position: absolute;
+  }
+
+  .close-button.alert-dialog__close-trigger {
     position: absolute;
   }
 

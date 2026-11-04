@@ -30,6 +30,10 @@
     initial-value: 1;
   }
 
+  .sheet__backdrop[data-exiting="true"] {
+    pointer-events: none;
+  }
+
   .sheet__backdrop {
     z-index: var(--z-index-overlay);
     height: var(--visual-viewport-height);
@@ -336,6 +340,10 @@
   .sheet__close-trigger {
     inset-inline-end: calc(var(--spacing, .25rem) * 4);
     top: calc(var(--spacing, .25rem) * 4);
+    position: absolute;
+  }
+
+  .close-button.sheet__close-trigger {
     position: absolute;
   }
 

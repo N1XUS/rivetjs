@@ -100,6 +100,7 @@ See the [full module API](/api/rivetjs/ui/chat-tool/) for every named export and
 | `defaultExpanded`                           | `boolean`        | `state === "requires-action"` |
 | `label` (`Args` / `Result`)                 | `Content`        | "Input" / "Result"            |
 | `approveLabel` / `rejectLabel` (`Approval`) | `Content`        | "Approve" / "Reject"          |
+| `isPending` / `isDisabled` (`Approval`) | `boolean \| () => boolean` | `false` |
 
 `ChatTool` and `ChatToolGroup` take the Disclosure props.
 

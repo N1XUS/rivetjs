@@ -127,6 +127,7 @@ See the [full module API](/api/rivetjs/ui/kanban/) for every named export and pa
 | `size`       | `"sm"` \| `"md"` \| `"lg"`       | `"md"`  | Column width, gap and card density                                  |
 | `disabled`   | `boolean`                        | `false` | Disable dragging on every list                                      |
 | `onCardMove` | `(move: KanbanCardMove) => void` | -       | Keyboard moves: `{ key, column, index, from }` per step (read once) |
+| `onCardDrop` | `(move: KanbanCardMove) => void` | -       | A keyboard move ended somewhere else: `from` = where it was picked up; not on Escape (read once). Pointer drags: `onDropped` |
 | `messages`   | `Partial<KanbanMessages>`        | English | Instructions and announcement texts of keyboard moves               |
 
 Also supports the cdk `DropListGroup` props and native attributes.

@@ -6,6 +6,16 @@
   word-spacing: -0.25rem;
 }
 
+/* Inside a Button: the button's text colour on a tint of it (muted grey on the primary accent is unreadable) */
+.button .kbd {
+  color: inherit;
+  background-color: color-mix(in oklab, currentColor 16%, transparent);
+}
+
+.button .kbd--light {
+  background-color: transparent;
+}
+
 /* Key abbreviation styles */
 .kbd__abbr {
   display: flex;

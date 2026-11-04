@@ -57,6 +57,20 @@ test("markdown SSR: string child + streaming repair and caret", async () => {
 });
 
 test("markdown SSR: images send no referrer (untrusted model output must not leak the page URL to image hosts)", async () => {
-  const html = await renderToString(() => <Markdown content={"![chart](https://img.example.com/c.png)"} />);
+  const html = await renderToString(() => <Markdown remoteImages content={"![chart](https://img.example.com/c.png)"} />);
   assert.match(html, /<img [^>]*src="https:\/\/img.example.com\/c.png"[^>]*referrerpolicy="no-referrer"/i);
+});
+
+test("markdown SSR: remote images are off by default, their alt text stands in; relative images and an img override still render", async () => {
+  for (const url of ["https://t.example/p.gif", "http://t.example/p.gif", "//t.example/p.gif"]) {
+    const html = await renderToString(() => <Markdown content={`![pixel](${url})`} />);
+    assert.doesNotMatch(html, /<img/);
+    assert.match(html, /data-slot="markdown-image-blocked"[^>]*>pixel</);
+  }
+  assert.match(await renderToString(() => <Markdown content={"![a](/a.png)"} />), /<img [^>]*src="\/a.png"/);
+  const custom = await renderToString(() => (
+    <Markdown content={"![a](/a.png) ![b](https://t.example/b.png)"} components={{ img: (props) => <em>{props.src}</em> }} />
+  ));
+  assert.match(custom, /<em[^>]*>\/a.png/);
+  assert.doesNotMatch(custom, /<em[^>]*>https:/);
 });

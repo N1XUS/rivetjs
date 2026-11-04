@@ -39,6 +39,11 @@
   initial-value: 1;
 }
 
+/* Rivet: a closing overlay takes no clicks: what the user presses during its exit animation reaches the page. */
+.sheet__backdrop[data-exiting="true"] {
+  pointer-events: none;
+}
+
 .sheet__backdrop {
   @apply fixed inset-0 z-(--z-index-overlay);
   @apply h-(--visual-viewport-height) w-full;
@@ -308,8 +313,13 @@
 /**
  * Element: close-trigger - the close (X) button
  */
+/* Two classes: per-component stylesheets load in import order, `.close-button` may come after this file. */
 .sheet__close-trigger {
   @apply absolute end-4 top-4;
+}
+
+.close-button.sheet__close-trigger {
+  position: absolute;
 }
 
 /*

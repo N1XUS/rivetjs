@@ -240,7 +240,7 @@ test("markdown: retained lists follow loose paragraph layout and ordered start c
 test("markdown: retained image nodes follow source replacement", async () => {
   const step = frames();
   const text = signal("");
-  const r = render(() => <Markdown content={text} isStreaming />);
+  const r = render(() => <Markdown content={text} isStreaming remoteImages />);
   await flush();
   text.set("![old](https://example.com/old.png)");
   await flush();

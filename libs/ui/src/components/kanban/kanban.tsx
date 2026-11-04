@@ -89,6 +89,11 @@ interface KanbanRootProps extends DropListGroupProps, KanbanVariants {
    * and put back with Escape; every step calls this with the target (`createKanban().onCardMove`). Read once.
    */
   onCardMove?: (move: KanbanCardMove) => void;
+  /**
+   * A keyboard move ended where it did not start (Space / Enter, or focus leaving a picked-up card): `from` = where it was picked up,
+   * Escape never fires it. Commit here what each `onCardMove` step only previews. Pointer drags: the list's `onDropped`. Read once.
+   */
+  onCardDrop?: (move: KanbanCardMove) => void;
   /** Screen reader texts of keyboard moves (English defaults). */
   messages?: Partial<KanbanMessages>;
 }
@@ -101,7 +106,7 @@ const loadKeyboard = retryableLoad(() => import("./keyboard.ts"));
 const MOVE_KEY = /^( |Enter|Escape|ArrowUp|ArrowDown|ArrowLeft|ArrowRight)$/;
 
 const KanbanRoot = (props: KanbanRootProps): JSX.Element => {
-  const { size, class: cls, children, onCardMove, messages, ...rest } = props;
+  const { size, class: cls, children, onCardMove, onCardDrop, messages, ...rest } = props;
   if (!onCardMove)
     return (
       <DropListGroup {...rest} class={slotsFor(size).base({ class: cls })} data-size={size ?? "md"} data-slot="kanban">
@@ -127,12 +132,12 @@ const KanbanRoot = (props: KanbanRootProps): JSX.Element => {
           return;
         event.preventDefault();
         const key = event.key;
-        if (keyboard) keyboard.kanbanKey(root, target, key, onCardMove, messages);
+        if (keyboard) keyboard.kanbanKey(root, target, key, onCardMove, messages, onCardDrop);
         // In order: every key queued during the load runs after it, first to last.
         else
           void loadKeyboard().then((m) => {
             keyboard = m;
-            m.kanbanKey(root, target, key, onCardMove, messages);
+            m.kanbanKey(root, target, key, onCardMove, messages, onCardDrop);
           });
       }}
       onFocusOut={(event: FocusEvent) => {
@@ -140,9 +145,18 @@ const KanbanRoot = (props: KanbanRootProps): JSX.Element => {
         const root = event.currentTarget as HTMLElement;
         const key = root.dataset.kanbanGrabbed;
         if (!key || root.dataset.kanbanMoving !== undefined || (event.relatedTarget as HTMLElement | null)?.dataset?.kanbanKey === key) return;
+        const from = JSON.parse(root.dataset.kanbanFrom ?? "null") as KanbanCardMove["from"] | null;
         delete root.dataset.kanbanGrabbed;
         delete root.dataset.kanbanFrom;
-        root.querySelector(`[data-kanban-key="${CSS.escape(key)}"]`)?.removeAttribute("data-grabbed");
+        const card = root.querySelector<HTMLElement>(`[data-kanban-key="${CSS.escape(key)}"]`);
+        card?.removeAttribute("data-grabbed");
+        const list = card?.parentElement;
+        const column = list?.dataset.kanbanColumn;
+        if (!onCardDrop || !from || !card || column === undefined) return;
+        const index = Array.from(list!.children)
+          .filter((c) => (c as HTMLElement).matches('[data-slot="kanban-card"]'))
+          .indexOf(card);
+        if (from.column !== column || from.index !== index) onCardDrop({ key, column, index, from });
       }}
     >
       <Provider token={KanbanContext} value={context}>

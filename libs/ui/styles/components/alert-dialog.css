@@ -41,6 +41,12 @@
   }
 }
 
+/* Rivet: a closing overlay takes no clicks: what the user presses during its exit animation reaches the page. */
+.alert-dialog__backdrop[data-exiting="true"],
+.alert-dialog__container[data-exiting="true"] {
+  pointer-events: none;
+}
+
 /**
  * Element: backdrop - the overlay behind the dialog
  */
@@ -296,8 +302,13 @@
 /**
  * Element: close-trigger - the optional x icon button to close the modal
  */
+/* Two classes: per-component stylesheets load in import order, `.close-button` may come after this file. */
 .alert-dialog__close-trigger {
   @apply absolute end-4 top-4;
+}
+
+.close-button.alert-dialog__close-trigger {
+  position: absolute;
 }
 
 /*

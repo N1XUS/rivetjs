@@ -98,6 +98,21 @@ function custom<K extends keyof MarkdownComponents>(
 // results joined in a template would count as an override source and pull tailwind-merge into every page with a Markdown).
 const ORDERED_LIST = "markdown__list markdown__list--ordered";
 
+// An image the source names on another host fetches as soon as it renders: in model output a tracking pixel, offline a broken
+// image. Off by default (`remoteImages`): its alt text stands in. A protocol-relative URL and any scheme count as remote.
+const REMOTE_IMAGE = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+const localImages = (cx: MarkdownComponents | undefined): MarkdownComponents => ({
+  ...cx,
+  img: (props) =>
+    REMOTE_IMAGE.test(props.src) ? (
+      <span data-slot="markdown-image-blocked">{props.alt}</span>
+    ) : cx?.img ? (
+      cx.img(props)
+    ) : (
+      <img class={props.class} src={props.src} alt={props.alt} title={props.title} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+    ),
+});
+
 const caret = (): Node => <span class={SLOTS.caret()} aria-hidden="true" data-slot="markdown-caret" />;
 
 function renderInline(nodes: readonly MarkdownInline[], cx?: MarkdownComponents): Node[] {
@@ -741,11 +756,13 @@ interface MarkdownProps extends Omit<JSX.IntrinsicElements["div"], "class" | "ch
   showCaret?: boolean;
   /** Per-node-type element overrides (`h1`, `p`, `a`, `code`, `pre`, …): see `MarkdownComponents`. Read once at creation. */
   components?: MarkdownComponents;
+  /** Load images on other hosts. Off: their alt text renders instead (no tracking pixels from model output, nothing to break offline). Read once. @default false */
+  remoteImages?: boolean;
   class?: string;
 }
 
 const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class", "children", "content", "isStreaming", "streamingSpeed", "showCaret", "components"]);
+  const [local, rest] = splitLive(props, ["class", "children", "content", "isStreaming", "streamingSpeed", "showCaret", "components", "remoteImages"]);
   const source = (): string => {
     const value = local.content ?? local.children;
     const text = typeof value === "function" ? (value as () => unknown)() : value;
@@ -796,7 +813,7 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
     });
   };
   const caretOn = local.showCaret !== false;
-  const cx = local.components;
+  const cx = local.remoteImages ? local.components : localImages(local.components);
   return (
     <div class={composeSlotClassName(SLOTS.base, local.class)} data-slot="markdown" data-streaming={() => (streaming() ? "true" : undefined)} {...rest}>
       <For each={rows} by={(row: MarkdownRow) => row.key}>

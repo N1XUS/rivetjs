@@ -58,6 +58,10 @@ function settle(root: HTMLElement, key: string, text: (card: string, column: str
     delete root.dataset.kanbanMoving;
     const at = where(root, key);
     if (!at) return release(root);
+    // The app moved focus on (a dialog it opened in the same tick, mounted or still placing its focus): the card does not take it back.
+    const active = document.activeElement;
+    const away = !!active && active !== document.body && !root.contains(active);
+    if (away || Array.from(document.querySelectorAll("[data-rv-contain]")).some((scope) => !scope.contains(root))) return release(root);
     // Still picked up (a drop / Escape may have run in between: keys load this module asynchronously).
     if (keepGrab && root.dataset.kanbanGrabbed === key) at.card.setAttribute("data-grabbed", "");
     if (document.activeElement !== at.card) at.card.focus({ preventScroll: true });
@@ -76,6 +80,7 @@ export function kanbanKey(
   pressed: string,
   onCardMove: (move: KanbanCardMove) => void,
   messages: Partial<KanbanMessages> | undefined,
+  onCardDrop?: (move: KanbanCardMove) => void,
 ): void {
   const key = target.dataset.kanbanKey;
   if (!key || target.closest('[data-slot="kanban"]') !== root) return;
@@ -86,8 +91,10 @@ export function kanbanKey(
   const name = target.getAttribute("aria-label") ?? key;
   if (pressed === " " || pressed === "Enter") {
     if (grabbed) {
+      const from = JSON.parse(root.dataset.kanbanFrom ?? "null") as { column: string; index: number } | null;
       release(root);
       say(text.dropped(name, columnName(at.list), at.index + 1, at.total));
+      if (from && (from.column !== at.column || from.index !== at.index)) onCardDrop?.({ key, column: at.column, index: at.index, from });
       return;
     }
     if (root.dataset.kanbanGrabbed) release(root);

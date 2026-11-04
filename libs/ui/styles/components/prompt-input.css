@@ -57,7 +57,9 @@
   @apply border-transparent bg-default shadow-none;
 }
 
-.prompt-input[data-disabled="true"] .prompt-input__shell {
+/* Rivet: only the input dims and takes no pointer: Send is disabled through context, and the app's toolbar items (a model or
+   limit chip) stay usable while the composer is paused. */
+.prompt-input[data-disabled="true"] .prompt-input__content {
   @apply status-disabled;
 }
 
