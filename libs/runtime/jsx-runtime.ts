@@ -13,16 +13,7 @@ export interface CompiledElement {
 type Scalar = string | number;
 type CrossOrigin = "" | "anonymous" | "use-credentials";
 type FetchPriority = "high" | "low" | "auto";
-type Children =
-  | CompiledElement
-  | string
-  | number
-  | bigint
-  | boolean
-  | null
-  | undefined
-  | readonly Children[]
-  | (() => Children);
+type Children = CompiledElement | string | number | bigint | boolean | null | undefined | readonly Children[] | (() => Children);
 /**
  * Slot content: a function rendering JSX, called where the component renders the slot (lazy; it sees
  * the context the component provides). `A` are scoped-slot arguments (`<slot r:args={[item]}>`).
@@ -52,43 +43,46 @@ type GlobalEvents = {
 type CustomEvents<E> = { [K in `on:${string}`]?: Handler<E, CustomEvent> } & { [K in `prop:${string}`]?: unknown };
 /** `class:name={on}` toggles one class; `style:prop={value}` sets one CSS property (kebab-case). */
 type Directives = { [K in `class:${string}`]?: unknown } & { [K in `style:${string}`]?: string | number | null | undefined | false };
-type Global<E> = Events<E> & GlobalEvents & CustomEvents<E> & Directives & {
-  children?: Children;
-  /** A `ref()` object or a callback receiving the native element once it exists in the browser; never set / called on the server. */
-  ref?: RefProp<E>;
-  /** Usage side of a named slot: this element becomes the parent component's `name` slot content. */
-  "r:slot"?: string;
-  id?: string;
-  /** A class string, an array of class values, or `{ name: condition }` (literal objects / arrays; pass others through `cx()`). */
-  class?: ClassValue;
-  className?: ClassValue;
-  /** A style object (`{ color: c, "--x": v }`); style strings are compile errors. */
-  style?: StyleObject;
-  title?: string;
-  role?: string;
-  hidden?: boolean | "until-found";
-  inert?: boolean;
-  tabIndex?: number;
-  lang?: string;
-  dir?: "ltr" | "rtl" | "auto";
-  draggable?: boolean | "true" | "false";
-  spellCheck?: boolean;
-  accessKey?: string;
-  translate?: "yes" | "no";
-  contentEditable?: boolean | "true" | "false" | "plaintext-only";
-  inputMode?: "none" | "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
-  enterKeyHint?: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
-  autoCapitalize?: "off" | "none" | "on" | "sentences" | "words" | "characters";
-  popover?: boolean | "auto" | "manual" | "hint";
-  /** Native (shadow DOM) slot assignment; Rivet slot content uses `r:slot`. */
-  slot?: string;
-  nonce?: string;
-  itemProp?: string;
-  itemScope?: boolean;
-  itemType?: string;
-  itemId?: string;
-  itemRef?: string;
-} & { [K in `data-${string}`]?: Scalar | boolean | null } & { [K in `aria-${string}`]?: Scalar | boolean | null };
+type Global<E> = Events<E> &
+  GlobalEvents &
+  CustomEvents<E> &
+  Directives & {
+    children?: Children;
+    /** A `ref()` object or a callback receiving the native element once it exists in the browser; never set / called on the server. */
+    ref?: RefProp<E>;
+    /** Usage side of a named slot: this element becomes the parent component's `name` slot content. */
+    "r:slot"?: string;
+    id?: string;
+    /** A class string, an array of class values, or `{ name: condition }` (literal objects / arrays; pass others through `cx()`). */
+    class?: ClassValue;
+    className?: ClassValue;
+    /** A style object (`{ color: c, "--x": v }`); style strings are compile errors. */
+    style?: StyleObject;
+    title?: string;
+    role?: string;
+    hidden?: boolean | "until-found";
+    inert?: boolean;
+    tabIndex?: number;
+    lang?: string;
+    dir?: "ltr" | "rtl" | "auto";
+    draggable?: boolean | "true" | "false";
+    spellCheck?: boolean;
+    accessKey?: string;
+    translate?: "yes" | "no";
+    contentEditable?: boolean | "true" | "false" | "plaintext-only";
+    inputMode?: "none" | "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url";
+    enterKeyHint?: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
+    autoCapitalize?: "off" | "none" | "on" | "sentences" | "words" | "characters";
+    popover?: boolean | "auto" | "manual" | "hint";
+    /** Native (shadow DOM) slot assignment; Rivet slot content uses `r:slot`. */
+    slot?: string;
+    nonce?: string;
+    itemProp?: string;
+    itemScope?: boolean;
+    itemType?: string;
+    itemId?: string;
+    itemRef?: string;
+  } & { [K in `data-${string}`]?: Scalar | boolean | null } & { [K in `aria-${string}`]?: Scalar | boolean | null };
 type Controls = {
   name?: string;
   disabled?: boolean;
@@ -189,126 +183,136 @@ type HTMLSpecific<K> = K extends "input"
             ? { for?: string; htmlFor?: string }
             : K extends "fieldset"
               ? { disabled?: boolean; name?: string; form?: string }
-            : K extends "a" | "area"
-              ? {
-                  href?: string;
-                  target?: string;
-                  rel?: string;
-                  download?: string | boolean;
-                  hreflang?: string;
-                  type?: string;
-                }
-              : K extends "iframe"
-                ? {
-                    src?: string;
-                    name?: string;
-                    width?: Scalar;
-                    height?: Scalar;
-                    allow?: string;
-                    allowFullScreen?: boolean;
-                    loading?: "eager" | "lazy";
-                    referrerPolicy?: ReferrerPolicy;
-                    /** Space-separated tokens (`allow-scripts allow-same-origin` …); `srcdoc` is not supported. */
-                    sandbox?: string;
-                  }
-              : K extends "time" | "del" | "ins"
-                ? { dateTime?: string; cite?: string }
-              : K extends "meta"
-                ? { charset?: string; charSet?: string; content?: string; name?: string; httpEquiv?: string; property?: string; media?: string }
-              : K extends "link"
+              : K extends "a" | "area"
                 ? {
                     href?: string;
-                    rel?: string;
-                    as?: string;
-                    type?: string;
-                    media?: string;
-                    sizes?: string;
-                    hreflang?: string;
-                    crossOrigin?: CrossOrigin;
-                    integrity?: string;
-                    fetchPriority?: FetchPriority;
-                    referrerPolicy?: ReferrerPolicy;
-                    imageSrcSet?: string;
-                    imageSizes?: string;
-                    disabled?: boolean;
-                    blocking?: "render";
-                  }
-              : K extends "script"
-                ? { src?: string; type?: string; async?: boolean; defer?: boolean; crossOrigin?: CrossOrigin; integrity?: string; noModule?: boolean; fetchPriority?: FetchPriority; referrerPolicy?: ReferrerPolicy }
-              : K extends "form"
-                ? {
-                    action?: string;
-                    method?: "get" | "post" | "dialog";
-                    encType?: string;
-                    noValidate?: boolean;
-                    name?: string;
                     target?: string;
+                    rel?: string;
+                    download?: string | boolean;
+                    hreflang?: string;
+                    type?: string;
                   }
-                : K extends "canvas"
-                  ? { width?: Scalar; height?: Scalar }
-                : K extends "img"
+                : K extends "iframe"
                   ? {
                       src?: string;
-                      alt?: string;
+                      name?: string;
                       width?: Scalar;
                       height?: Scalar;
-                      srcSet?: string;
-                      sizes?: string;
+                      allow?: string;
+                      allowFullScreen?: boolean;
                       loading?: "eager" | "lazy";
-                      decoding?: "sync" | "async" | "auto";
-                      fetchPriority?: FetchPriority;
-                      crossOrigin?: CrossOrigin;
                       referrerPolicy?: ReferrerPolicy;
+                      /** Space-separated tokens (`allow-scripts allow-same-origin` …); `srcdoc` is not supported. */
+                      sandbox?: string;
                     }
-                  : K extends "video" | "audio"
-                    ? {
-                        src?: string;
-                        controls?: boolean;
-                        autoPlay?: boolean;
-                        loop?: boolean;
-                        muted?: boolean;
-                        poster?: string;
-                        preload?: string;
-                        crossOrigin?: CrossOrigin;
-                        playsInline?: boolean;
-                        /** `nodownload` / `nofullscreen` / `noremoteplayback` tokens. */
-                        controlsList?: string;
-                        disableRemotePlayback?: boolean;
-                        disablePictureInPicture?: K extends "video" ? boolean : never;
-                        /** video only: intrinsic display size (reserves layout space before metadata loads). */
-                        width?: K extends "video" ? Scalar : never;
-                        height?: K extends "video" ? Scalar : never;
-                      }
-                    : K extends "source"
-                      ? { src?: string; srcSet?: string; type?: string; media?: string }
-                      : K extends "object"
-                        ? { data?: string; type?: string; name?: string; width?: Scalar; height?: Scalar }
-                      : K extends "td" | "th"
-                        ? { colSpan?: number; rowSpan?: number; headers?: string; scope?: string }
-                        : K extends "ol"
-                          ? { start?: number; reversed?: boolean; type?: string }
-                          : K extends "li" | "data"
-                            ? { value?: K extends "li" ? number : string }
-                            : K extends "progress" | "meter"
-                              ? { value?: number; min?: number; max?: number }
-                              : K extends "details" | "dialog"
+                  : K extends "time" | "del" | "ins"
+                    ? { dateTime?: string; cite?: string }
+                    : K extends "meta"
+                      ? { charset?: string; charSet?: string; content?: string; name?: string; httpEquiv?: string; property?: string; media?: string }
+                      : K extends "link"
+                        ? {
+                            href?: string;
+                            rel?: string;
+                            as?: string;
+                            type?: string;
+                            media?: string;
+                            sizes?: string;
+                            hreflang?: string;
+                            crossOrigin?: CrossOrigin;
+                            integrity?: string;
+                            fetchPriority?: FetchPriority;
+                            referrerPolicy?: ReferrerPolicy;
+                            imageSrcSet?: string;
+                            imageSizes?: string;
+                            disabled?: boolean;
+                            blocking?: "render";
+                          }
+                        : K extends "script"
+                          ? {
+                              src?: string;
+                              type?: string;
+                              async?: boolean;
+                              defer?: boolean;
+                              crossOrigin?: CrossOrigin;
+                              integrity?: string;
+                              noModule?: boolean;
+                              fetchPriority?: FetchPriority;
+                              referrerPolicy?: ReferrerPolicy;
+                            }
+                          : K extends "form"
+                            ? {
+                                action?: string;
+                                method?: "get" | "post" | "dialog";
+                                encType?: string;
+                                noValidate?: boolean;
+                                name?: string;
+                                target?: string;
+                              }
+                            : K extends "canvas"
+                              ? { width?: Scalar; height?: Scalar }
+                              : K extends "img"
                                 ? {
-                                    open?: boolean;
-                                    /** details: exclusive accordion group (one open per name). */
-                                    name?: K extends "details" ? string : never;
-                                    /** dialog: which user actions close it (light dismiss, Escape). */
-                                    closedby?: K extends "dialog" ? "any" | "closerequest" | "none" : never;
+                                    src?: string;
+                                    alt?: string;
+                                    width?: Scalar;
+                                    height?: Scalar;
+                                    srcSet?: string;
+                                    sizes?: string;
+                                    loading?: "eager" | "lazy";
+                                    decoding?: "sync" | "async" | "auto";
+                                    fetchPriority?: FetchPriority;
+                                    crossOrigin?: CrossOrigin;
+                                    referrerPolicy?: ReferrerPolicy;
                                   }
-                                : K extends "slot"
+                                : K extends "video" | "audio"
                                   ? {
-                                      /** Native (shadow DOM) slot name; Rivet slots use `r:name`. */
-                                      name?: string;
-                                      /** Rivet slot: the prop rendered here (default: `children`). */
-                                      "r:name"?: string;
-                                      /** Scoped slot arguments passed to the slot function. */
-                                      "r:args"?: readonly unknown[];
+                                      src?: string;
+                                      controls?: boolean;
+                                      autoPlay?: boolean;
+                                      loop?: boolean;
+                                      muted?: boolean;
+                                      poster?: string;
+                                      preload?: string;
+                                      crossOrigin?: CrossOrigin;
+                                      playsInline?: boolean;
+                                      /** `nodownload` / `nofullscreen` / `noremoteplayback` tokens. */
+                                      controlsList?: string;
+                                      disableRemotePlayback?: boolean;
+                                      disablePictureInPicture?: K extends "video" ? boolean : never;
+                                      /** video only: intrinsic display size (reserves layout space before metadata loads). */
+                                      width?: K extends "video" ? Scalar : never;
+                                      height?: K extends "video" ? Scalar : never;
                                     }
-                                  : {};
+                                  : K extends "source"
+                                    ? { src?: string; srcSet?: string; type?: string; media?: string }
+                                    : K extends "object"
+                                      ? { data?: string; type?: string; name?: string; width?: Scalar; height?: Scalar }
+                                      : K extends "td" | "th"
+                                        ? { colSpan?: number; rowSpan?: number; headers?: string; scope?: string }
+                                        : K extends "ol"
+                                          ? { start?: number; reversed?: boolean; type?: string }
+                                          : K extends "li" | "data"
+                                            ? { value?: K extends "li" ? number : string }
+                                            : K extends "progress" | "meter"
+                                              ? { value?: number; min?: number; max?: number }
+                                              : K extends "details" | "dialog"
+                                                ? {
+                                                    open?: boolean;
+                                                    /** details: exclusive accordion group (one open per name). */
+                                                    name?: K extends "details" ? string : never;
+                                                    /** dialog: which user actions close it (light dismiss, Escape). */
+                                                    closedby?: K extends "dialog" ? "any" | "closerequest" | "none" : never;
+                                                  }
+                                                : K extends "slot"
+                                                  ? {
+                                                      /** Native (shadow DOM) slot name; Rivet slots use `r:name`. */
+                                                      name?: string;
+                                                      /** Rivet slot: the prop rendered here (default: `children`). */
+                                                      "r:name"?: string;
+                                                      /** Scoped slot arguments passed to the slot function. */
+                                                      "r:args"?: readonly unknown[];
+                                                    }
+                                                  : {};
 type SVGAttrs = {
   viewBox?: string;
   preserveAspectRatio?: string;
@@ -325,6 +329,15 @@ type SVGAttrs = {
   r?: Scalar;
   rx?: Scalar;
   ry?: Scalar;
+  fx?: Scalar;
+  fy?: Scalar;
+  fr?: Scalar;
+  offset?: Scalar;
+  "stop-color"?: string;
+  "stop-opacity"?: Scalar;
+  gradientUnits?: "userSpaceOnUse" | "objectBoundingBox";
+  gradientTransform?: string;
+  spreadMethod?: "pad" | "reflect" | "repeat";
   d?: string;
   points?: string;
   fill?: string;
@@ -348,10 +361,12 @@ type SVGTags = {
 };
 /** Custom elements (`<my-widget>`): global attributes and events, plus any other attribute.
  * Unknown `on…` events and unsafe attributes stay compile errors, so they are excluded here. */
-type Letter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z";
+type Letter =
+  "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z";
 type NameChar<Not extends Letter> = Exclude<Letter, Not> | Uppercase<Exclude<Letter, Not>> | "_";
 /** Attribute names not starting with `on` (any case): the compiler reads every `on…` as an event. */
-type LooseName = `${NameChar<"o">}${string}` | `${"o" | "O"}${NameChar<"n"> | "-" | ":" | "." | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"}${string}`;
+type LooseName =
+  `${NameChar<"o">}${string}` | `${"o" | "O"}${NameChar<"n"> | "-" | ":" | "." | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"}${string}`;
 type CustomTags = {
   [K in `${string}-${string}`]: Global<HTMLElement> & { [N in LooseName]?: unknown } & {
     srcdoc?: never;
@@ -360,9 +375,7 @@ type CustomTags = {
   };
 };
 type MathTags = {
-  [K in Exclude<keyof MathMLElementTagNameMap, keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap>]: Global<
-    MathMLElementTagNameMap[K]
-  > & {
+  [K in Exclude<keyof MathMLElementTagNameMap, keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap>]: Global<MathMLElementTagNameMap[K]> & {
     display?: "block" | "inline";
     mathvariant?: string;
     mathsize?: Scalar;

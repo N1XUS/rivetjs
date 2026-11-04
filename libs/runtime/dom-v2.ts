@@ -1012,9 +1012,24 @@ function branches(select: () => Pick, keyed: (i: number) => boolean, content: (i
       _dispose(current.owner);
     }
     const next = { i, v, owner: null as Owner | null, value: undefined as unknown };
+    // The fallback is read in the insertion's binding, not here: what it reads directly (`fallback={msg()}`, a ternary) stays
+    // live, and an accessor it holds (a nested `Show` / `Switch` / `For`, a slot) is bound with its own tracking. Only a
+    // function asking for the value is a render function: untracked, as branch content.
+    if (i < 0) {
+      next.value = () => {
+        const c = content(i);
+        if (typeof c === "function") return c.length ? _untrack1(c as (get: () => unknown) => unknown, () => v) : c;
+        if (c === null || typeof c !== "object" || (c as Node).nodeType !== 11) return c;
+        // A fragment's nodes are captured once: inserting it empties it.
+        if (!eager.has(i)) eager.set(i, Array.from((c as Node).childNodes));
+        return eager.get(i);
+      };
+      current = next;
+      return next.value;
+    }
     const c = content(i);
     if (typeof c === "function") {
-      const get = i < 0 || keyed(i) ? () => v : live(i);
+      const get = keyed(i) ? () => v : live(i);
       next.value = _rootIn(owner, () => (c as (get: () => unknown) => unknown)(get), next);
     } else {
       if (!eager.has(i)) eager.set(i, c !== null && typeof c === "object" && (c as Node).nodeType === 11 ? Array.from((c as Node).childNodes) : c);
