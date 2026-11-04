@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.5 (2026-11-04)
+
+### Features
+
+- **router:** add fill routes and live pages in csr mode (1a72d2d5)
+
+### Fixes
+
+- **runtime:** keep Show and Switch fallback content reactive (4e1de712)
+- **cdk:** release focus containment while an overlay exits (a8c3afee)
+- **ui:** close gaps found building a csr desktop app (f18b4aa1)
+
+Not listed: 2 test, 2 docs, 3 chore.
+
 ## 0.1.0-alpha.4 (2026-11-02)
 
 ### Breaking changes
