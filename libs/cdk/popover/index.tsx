@@ -391,14 +391,14 @@ function PopoverInner(props: PopoverInnerProps) {
   // Submenus/subdialogs are mounted into the root popover's container.
   if (isSubPopover)
     return (
-      <Overlay shouldContainFocus={shouldContainFocus} portalContainer={groupCtx ?? undefined} onPlaced={() => placed.set(true)}>
+      <Overlay shouldContainFocus={shouldContainFocus} isExiting={isExiting} portalContainer={groupCtx ?? undefined} onPlaced={() => placed.set(true)}>
         {overlay()}
       </Overlay>
     );
 
   // A root popover renders an extra div to act as the portal container for submenus/subdialogs.
   return (
-    <Overlay shouldContainFocus={shouldContainFocus} onPlaced={() => placed.set(true)}>
+    <Overlay shouldContainFocus={shouldContainFocus} isExiting={isExiting} onPlaced={() => placed.set(true)}>
       {/* Own binding: reading `state.isOpen()` directly in the slot re-creates the whole overlay content on close (exit animation). */}
       {() =>
         !isNonModal && state.isOpen() ? (

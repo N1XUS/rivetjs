@@ -201,18 +201,21 @@ export function mountScope(mount: Mount): () => void {
   listen(scope, RESTORE_FOCUS_EVENT, stop);
 
   if (contain) {
-    listen(doc, "keydown", ((e: KeyboardEvent) => void containTab(scope, e, getActiveElement(doc))) as EventListener, false);
+    // Rivet: `contain` is live (React Aria's effect re-runs on it): `data-rv-contain` follows the prop, so an exiting overlay
+    // stops holding focus while its exit animation runs.
+    const holds = () => scope.hasAttribute(CONTAIN) && shouldContainFocus(scope);
+    listen(doc, "keydown", ((e: KeyboardEvent) => void (scope.hasAttribute(CONTAIN) && containTab(scope, e, getActiveElement(doc)))) as EventListener, false);
     const onFocus = (e: Event) => {
       const target = getEventTarget<Element>(e);
       // Focus in a child scope of the active scope: it becomes active. Moving to an ancestor is not allowed.
       if ((!g.activeScope || isAncestorScope(g.activeScope, scope)) && isElementInScope(target, scope)) {
         g.activeScope = scope;
         own.focusedNode = target as FocusableElement;
-      } else if (shouldContainFocus(scope) && !isElementInChildScope(target, scope)) {
+      } else if (holds() && !isElementInChildScope(target, scope)) {
         // Focus escaped (e.g. from the browser location bar): back to the last focused node or the first tabbable.
         if (own.focusedNode?.isConnected) focusElement(own.focusedNode);
         else if (g.activeScope) focusFirstInScope(g.activeScope);
-      } else if (shouldContainFocus(scope)) own.focusedNode = target as FocusableElement;
+      } else if (holds()) own.focusedNode = target as FocusableElement;
     };
     listen(doc, "focusin", onFocus, false);
     const onBlur = (e: Event) => {
@@ -224,7 +227,7 @@ export function mountScope(mount: Mount): () => void {
         const skip = (modality === "virtual" || modality === null) && isAndroid() && isChrome();
         // activeElement, not relatedTarget: clicks into iframes count.
         const active = getActiveElement(doc);
-        if (!skip && active && shouldContainFocus(scope) && !isElementInChildScope(active, scope)) {
+        if (!skip && active && holds() && !isElementInChildScope(active, scope)) {
           g.activeScope = scope;
           const target = getEventTarget<FocusableElement>(e);
           if (target && target.isConnected) {
@@ -374,7 +377,7 @@ export function FocusScope(props: FocusScopeProps) {
       class={props.class}
       style={{ display: "contents" }}
       data-rv-focus-scope={id}
-      data-rv-contain={contain ? "" : undefined}
+      data-rv-contain={props.contain ? "" : undefined}
       onKeyDown={contain ? (event) => scopeKeyDown(event) : undefined}
     >
       {props.children}

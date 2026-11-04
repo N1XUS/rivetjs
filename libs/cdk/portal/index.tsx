@@ -111,16 +111,19 @@ export interface OverlayProps {
  * not reach buttons inside the overlay.
  */
 export function Overlay(props: OverlayProps) {
-  const children = props.children,
-    exiting = props.isExiting;
-  const isExiting = typeof exiting === "function" ? !!exiting() : !!exiting;
+  const children = props.children;
+  // Live: containment ends when the exit starts, not when the overlay unmounts after its animation.
+  const isExiting = () => {
+    const exiting = props.isExiting;
+    return typeof exiting === "function" ? !!exiting() : !!exiting;
+  };
   return (
     <Portal mount={props.portalContainer} onPlaced={props.onPlaced}>
       <ClearPressResponder>
         {props.disableFocusManagement ? (
           children
         ) : (
-          <FocusScope restoreFocus contain={!!props.shouldContainFocus && !isExiting}>
+          <FocusScope restoreFocus contain={!!props.shouldContainFocus && !isExiting()}>
             {children}
           </FocusScope>
         )}
