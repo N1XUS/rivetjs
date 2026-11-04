@@ -180,6 +180,7 @@ export default function Products() {
 - `update` is a `URLSearchParams`, a plain object, or a function that gets a copy of the current params and changes it (or returns new ones). The hash is dropped.
 - A new query is a navigation: the route's loaders run again and the page renders again. Root layout state stays.
 - Apps that never call `useSearchParams()` ship none of its code.
+- A new query normally renders the page again, so its local state resets. To keep the page mounted when only the query changes, make it a live page with `export const live = true`: its `data()` updates in place and `useSearchParams()` follows. This works in every mode, including `csr`. See [loading data](./loading-data.md).
 
 ## Warn before leaving
 

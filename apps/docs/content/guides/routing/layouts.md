@@ -116,6 +116,23 @@ export default function Layout({ url, children }: LayoutProps) {
 
 The `aria-current` attributes update after each navigation, because they read `url()`.
 
+## Let a page fill the layout
+
+By default a page is only as tall as its content. A full-height screen, such as a chat, an editor or a dashboard, can take the whole content area of its layout instead:
+
+```tsx title="src/routes/chat.tsx"
+export const fill = true;
+
+export default function Chat() {
+  return <section class="flex flex-col">…</section>;
+}
+```
+
+- The page's root element stretches both ways, without wrappers. Pages that do not export `fill` keep their normal height.
+- The layout's content area needs a size of its own, for example `flex-1` inside a full-height flex column.
+- `export const fill = true` in a `_layout.tsx` applies to every page under it. A nested layout between the page and the root stretches too.
+- The value must be the literal `true`. The flag adds a small stylesheet only to apps that use it.
+
 ## Protect a group of pages
 
 A `guard(…)` in `_layout.tsx` runs before every page and [endpoint](./endpoints.md) below that folder. This is the usual way to protect a whole area, such as `(private)/` or `admin/`. See [guards](./guards.md).

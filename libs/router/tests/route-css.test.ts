@@ -7,7 +7,7 @@ import type { Rollup } from "vite";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BROTLI_SIZES, brotliLength, brotliSizes, bundleRouteCSS, dedupeTopLevel, inlineCSS, mergeRouteCSS } from "../build/route-css.ts";
+import { BROTLI_SIZES, brotliLength, brotliSizes, bundleRouteCSS, dedupeTopLevel, inlineCSS, mergeRouteCSS, staticImportCSS } from "../build/route-css.ts";
 import { assemble } from "../adapters/assemble.ts";
 import type { GeneratedEntry } from "../server/app.ts";
 import { headTags } from "../shared/head.ts";
@@ -214,4 +214,15 @@ test("brotliSizes (INCR-BUILD): memoized sizes = fresh ones, persisted per brotl
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("staticImportCSS: the whole static closure, dependencies first, cycles once, lazy chunks left out", () => {
+  const chunk = (imports: string[], css: string[]) => ({ type: "chunk", imports, viteMetadata: { importedCss: new Set(css) } });
+  const bundle = {
+    "entry.js": chunk(["shared.js", "modal.js"], ["entry.css"]),
+    "shared.js": chunk(["modal.js"], ["shared.css"]),
+    "modal.js": chunk(["shared.js"], ["modal.css"]),
+    "lazy.js": chunk([], ["lazy.css"]),
+  } as never;
+  assert.deepEqual([...staticImportCSS(bundle, "entry.js")], ["modal.css", "shared.css", "entry.css"]);
 });

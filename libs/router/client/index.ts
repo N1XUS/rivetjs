@@ -36,6 +36,7 @@ export { navigate, invalidate, revalidate, setSearchParams, _go, type NavigateOp
 export { useParams, useSearchParams, RouteParamsContext } from "./params.ts";
 export { SearchParams } from "./search.ts";
 export { _live, _livePage, _liveRouter, _armLive, _liveLevels, _serveLive, type LivePage } from "./live.ts";
+export { _fill } from "./fill.ts";
 // Server render input and action results (no `.tsx` imports: Node loads it in tests).
 import { ServerData, type ServerRoutePayload } from "./route-context.ts";
 export { ServerData, actionResult, type ServerRoutePayload } from "./route-context.ts";
@@ -177,7 +178,7 @@ export async function routeData(work: Work, match: { url: URL }, router: Navigat
     } else
       // Only HTTP(S) targets (never `javascript:`/`data:`): anything else loads the page's document,
       // where the browser applies the server's real answer.
-      location.assign(/^https?:$/.test(target.protocol) ? target.href : match.url.href);
+      location.assign(/^https?:$/.test(target.protocol) || target.protocol === location.protocol ? target.href : match.url.href);
     // The navigation replaces this region; never settle.
     return new Promise<RoutePayload>(() => {});
   }
@@ -234,7 +235,7 @@ export function routableAnchor(event: Event, modules?: ModuleTable): HTMLAnchorE
   if ((anchor.target && anchor.target !== "_self") || /(^|\s)external(\s|$)/.test(anchor.rel)) return null;
   const url = new URL(anchor.href);
   // Outside the app's URL base path: the browser loads it.
-  if (url.origin !== location.origin || !/^https?:$/.test(url.protocol) || !underBase(url.pathname)) return null;
+  if (url.origin !== location.origin || url.protocol !== location.protocol || !underBase(url.pathname)) return null;
   if (!modules) return anchor as HTMLAnchorElement;
   routable ??= (to) => isPage(to, modules);
   return isPage(url, modules) ? (anchor as HTMLAnchorElement) : null;

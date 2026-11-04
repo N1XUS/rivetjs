@@ -82,7 +82,8 @@ export function navigate(to: LinkHref | (string & {}) | URL, options: NavigateOp
   if (typeof document === "undefined") return Promise.reject(new Error("navigate() needs a browser"));
   // App paths (`/items/1`) get the URL base path; full and relative URLs are taken as they are.
   const url = new URL(typeof to === "string" ? withBase(to) : to, location.href);
-  if (!/^https?:$/.test(url.protocol)) return Promise.reject(new TypeError("navigate() requires an HTTP(S) URL"));
+  // The page's own scheme counts: a desktop shell may serve the app from a registered custom scheme (`app://`).
+  if (!/^https?:$/.test(url.protocol) && url.protocol !== location.protocol) return Promise.reject(new TypeError("navigate() requires an HTTP(S) URL"));
   const load = () => location[options.replace ? "replace" : "assign"](url.href);
   // Another origin, or outside the app's base path: a document load.
   if (url.origin !== location.origin || !underBase(url.pathname)) {

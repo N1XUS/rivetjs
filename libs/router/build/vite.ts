@@ -48,6 +48,7 @@ import {
   type InlineStylesheets,
   type PageSheet,
   type RouteSheets,
+  staticImportCSS,
 } from "./route-css.ts";
 import { devHandler, devReport, listenClientErrors } from "./dev-errors.ts";
 import { unexportHead } from "./head-strip.ts";
@@ -903,7 +904,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       const base = this.environment?.config?.base ?? "/";
       const entry = Object.values(bundle).find((output) => output.type === "chunk" && output.facadeModuleId === clientEntry());
       if (!entry || entry.type !== "chunk") return;
-      const css = new Set<string>(entry.viteMetadata?.importedCss ?? []);
+      const css = staticImportCSS(bundle, entry.fileName);
       const sources = new Set(styles.map((path) => posix(path)));
       for (const output of Object.values(bundle))
         if (output.type === "asset" && output.fileName.endsWith(".css") && output.originalFileNames.some((name) => sources.has(posix(name))))

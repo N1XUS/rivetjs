@@ -15,6 +15,8 @@ export interface RouteModule {
   readonly inline?: boolean;
   /** Page module with `export const live = true`: its `data` prop is an accessor revalidated in place. */
   readonly live?: boolean;
+  /** Page or layout module with `export const fill = true`: its route's regions stretch to the layout's content area. */
+  readonly fill?: boolean;
 }
 /** One matchable route. Optional segments expand into several entries sharing an `id`. */
 export interface RouteEntry extends RouteModule {
@@ -98,9 +100,10 @@ export function routeTable(files: readonly string[], exports: ReadonlyMap<string
     if (other) throw new Error(`${file} and ${other} are both server modules of ${base}; keep one`);
     servers.set(base, file);
   }
-  // `live` (a page flag `_serverExportsOf` reports with them) is not a server export.
-  const isInline = (page: string | undefined) => (page ? (exports.get(page)?.some((name) => name !== "live") ?? false) : false);
+  // `live` / `fill` (flags `_serverExportsOf` reports with them) are not server exports.
+  const isInline = (page: string | undefined) => (page ? (exports.get(page)?.some((name) => name !== "live" && name !== "fill") ?? false) : false);
   const isLive = (page: string) => exports.get(page)?.includes("live") ?? false;
+  const isFill = (page: string) => exports.get(page)?.includes("fill") ?? false;
   // Page files by extension-less name (first in `set` order wins, as a scan would): `special` runs per folder per file.
   const pages = new Map<string, string>();
   for (const file of set) if (PAGE.test(file) && !pages.has(file.replace(PAGE, ""))) pages.set(file.replace(PAGE, ""), file);
@@ -108,7 +111,14 @@ export function routeTable(files: readonly string[], exports: ReadonlyMap<string
     const base = (folder ? folder + "/" : "") + name;
     const page = pages.get(base);
     const server = servers.get(base);
-    return page || server ? { ...(page ? { page } : {}), ...(server ? { server } : {}), ...(isInline(page) ? { inline: true } : {}) } : undefined;
+    return page || server
+      ? {
+          ...(page ? { page } : {}),
+          ...(server ? { server } : {}),
+          ...(isInline(page) ? { inline: true } : {}),
+          ...(page && isFill(page) ? { fill: true } : {}),
+        }
+      : undefined;
   };
   const nearest = (folders: readonly string[], name: string): string | undefined => {
     for (let i = folders.length - 1; i >= 0; i--) {
@@ -133,7 +143,15 @@ export function routeTable(files: readonly string[], exports: ReadonlyMap<string
     const entry = modules.get(base) ?? {};
     modules.set(
       base,
-      server ? { ...entry, server: file } : { ...entry, page: file, ...(isInline(file) ? { inline: true } : {}), ...(isLive(file) ? { live: true } : {}) },
+      server
+        ? { ...entry, server: file }
+        : {
+            ...entry,
+            page: file,
+            ...(isInline(file) ? { inline: true } : {}),
+            ...(isLive(file) ? { live: true } : {}),
+            ...(isFill(file) ? { fill: true } : {}),
+          },
     );
   }
   type Draft = { id: string; segments: Segment[]; module: RouteModule; folders: string[] };
@@ -212,6 +230,8 @@ export async function scanRoutes(dir: string): Promise<RouteTable> {
 const PRERENDER = /^\s*export\s+(?:const|let|var)\s+prerender\b/m;
 // `export const live = true`: a live page (reported as `live`, not a server export; universal, kept in the browser).
 const LIVE = /^\s*export\s+const\s+live\s*=\s*true\b/m;
+// `export const fill = true`: a page or layout that fills the layout's content area (reported as `fill`, not a server export).
+const FILL = /^\s*export\s+const\s+fill\s*=\s*true\b/m;
 // Cheap prefilter (no candidate, no parse): a wrapper import, a server-only re-export, or a former magic name (RV3010).
 const CANDIDATE = /@rivetjs\/router["']|\.server\b|\b(server(Load|Guard|Actions|Entries|Headers)|on(Request|Get|Post|Put|Patch|Delete|Options))\b/;
 // Server-split errors that change what the route table would be: untagged magic names, duplicate kinds.
@@ -229,9 +249,10 @@ export async function _serverExportsOf(dir: string, files: readonly string[]): P
     if (IGNORED.test(file) || SERVER.test(file) || !(PAGE.test(file) || PLAIN.test(file))) continue;
     const source = await readFile(join(dir, file), "utf8");
     const live = PAGE.test(file) && LIVE.test(source);
+    const fill = PAGE.test(file) && FILL.test(source);
     const prerender = PAGE.test(file) && PRERENDER.test(source);
     const candidates = CANDIDATE.test(source);
-    if (!candidates && !live && !prerender) continue;
+    if (!candidates && !live && !fill && !prerender) continue;
     const kinds: string[] = [];
     if (candidates) {
       const facts = moduleFacts(source, file, { serverExports: true });
@@ -241,6 +262,7 @@ export async function _serverExportsOf(dir: string, files: readonly string[]): P
     }
     if (prerender) kinds.push("prerender");
     if (live) kinds.push("live");
+    if (fill) kinds.push("fill");
     if (kinds.length) out.set(file, kinds);
   }
   return out;

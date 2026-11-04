@@ -165,10 +165,18 @@ Every layout stays mounted while client navigation stays below it (Next/SvelteKi
 - Single flight: an enhanced action POST with `accept: application/json` and `x-rivet-revalidate: 1` that succeeds (status < 400) answers `{ action, data, head? }` (loaders re-run after the action). Failures skip loaders; requests without the header (field checks, autosave drafts) answer `{ action }` only. An action `redirect()` back to the page's own path (no query / fragment: post/redirect/get) answers `{ redirect, status, data, head?, deps? }` with the header (forms `follow` revalidates from it: no second data request); other redirect targets answer `{ redirect, status }`.
 - `@rivetjs/forms` does this after every successful enhanced submit that stays on the page (`defineForm({ revalidate: false })` opts out).
 
+## File routes: fill
+
+- Opt-in per page or layout module: `export const fill = true` (literal; scan regex `routes.ts` `FILL`, reported by `_serverExportsOf` as `fill`, not a server export; `RouteModule.fill`). A route fills when its page or any of its layouts carries the flag.
+- A filling route's regions (`[data-rivet-routes]`, each `[data-rivet-outlet]`) carry `data-rivet-fill`, on the server and after navigation. Generated `.rivet/fill.css` (imported by `app.tsx`, written only when a route fills) makes them a one-cell grid with `flex: 1 1 0; height: 100%`, so a single page root stretches inside block, flex and grid content areas.
+- Every route fills: a constant attribute (no router read, a static page stays 0 JS). Mixed: `_fill(router, table)` (`client/fill.ts`) matches the location with the same order as the route table, so a static route without the flag wins over a parameter route with it.
+- e2e `libs/router/tests/fill.test.ts` (`fixture-fill`).
+
 ## File routes: live pages
 
 Spec: [2026-10-08-partial-render-design.md](../design/specs/2026-10-08-partial-render-design.md).
 
+- Every mode, csr included (hrnss gap 12, 2026-11-04: `data()` stays `undefined` there, the point is the kept page; `source` = `none`, so `refresh` requests nothing).
 - Opt-in per page module: `export const live = true` (literal; scan regex `routes.ts` `LIVE`, reported by `_serverExportsOf` as `live`, not a server export — stays in the browser build, `RouteModule.live`). Layout / special-page flags ignored (layouts are live already).
 - Page props: `data` is an accessor (`LivePageProps<D, P>`: `data: () => PageData<D>`; `params` / `url` plain). One signal per page render (`_livePage`); another page → normal re-render with a fresh signal.
 - Same-URL revalidation of the shown live page — `invalidate()` / `revalidate(fresh)` (forms single flight), `invalidate(key)` matching the page loader — updates in place: one `batch` of `_refreshed` (layouts that reran) + `data.set(fresh page data)`; no page re-render, no Router commit, no transition / scroll / focus move. Page-local signals (open overlay, counters), DOM input values, focus survive. `invalidate(key)` with layouts only: unchanged (`refresh`).

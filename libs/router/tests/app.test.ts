@@ -424,6 +424,25 @@ test("CSR mode: index.html shell mounts the app; client navigation needs no serv
       documents.filter((path) => path !== "/about"),
       ["/", "/nowhere"],
     );
+    // A live page stays mounted across search-only navigations (hrnss gap 12); its search params follow.
+    await page.evaluate(() => {
+      history.pushState(null, "", "/live");
+      dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await page.waitForSelector("#live");
+    await page.click("#live-count");
+    await page.fill("#live-input", "draft");
+    await page.evaluate(() => ((document.querySelector("#live") as HTMLElement & { __mark?: number }).__mark = 1));
+    const liveSearch = (value: string) => page.waitForFunction((value) => document.querySelector("#live-search")?.textContent === value, value);
+    await page.click("#live-set");
+    await liveSearch("open");
+    await page.click("#live-link");
+    await liveSearch("link");
+    await page.goBack();
+    await liveSearch("open");
+    assert.equal(await page.textContent("#live-count"), "Live 1");
+    assert.equal(await page.inputValue("#live-input"), "draft");
+    assert.equal(await page.evaluate(() => (document.querySelector("#live") as HTMLElement & { __mark?: number }).__mark), 1);
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();

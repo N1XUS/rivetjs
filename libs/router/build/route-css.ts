@@ -8,6 +8,19 @@ import { posix, resolve } from "node:path";
 import type { Rollup, ViteDevServer } from "vite";
 import type { RouteTable } from "./routes.ts";
 
+/**
+ * The CSS of a chunk's whole static import closure, dependencies first (the order they evaluate in). A CSR shell loads that
+ * closure at once, so it links this; lazily imported chunks bring their own.
+ */
+export function staticImportCSS(bundle: Rollup.OutputBundle, fileName: string, css = new Set<string>(), seen = new Set<string>()): Set<string> {
+  const chunk = bundle[fileName];
+  if (seen.has(fileName) || chunk?.type !== "chunk") return css;
+  seen.add(fileName);
+  for (const dependency of chunk.imports) staticImportCSS(bundle, dependency, css, seen);
+  for (const file of (chunk as { viteMetadata?: { importedCss?: Set<string> } }).viteMetadata?.importedCss ?? []) css.add(file);
+  return css;
+}
+
 /** Client build asset: route id → stylesheet URLs (written only when some route has CSS). */
 export const ROUTE_CSS = ".vite/rivet-route-css.json";
 

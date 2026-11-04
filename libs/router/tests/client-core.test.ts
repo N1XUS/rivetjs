@@ -23,7 +23,15 @@ const main = {
 };
 
 const g = globalThis as Record<string, unknown>;
-const loc = { href: "http://x.test/start", origin: "http://x.test", pathname: "/start", search: "", hash: "", assign: (href: string) => assigned.push(href) };
+const loc = {
+  href: "http://x.test/start",
+  origin: "http://x.test",
+  protocol: "http:",
+  pathname: "/start",
+  search: "",
+  hash: "",
+  assign: (href: string) => assigned.push(href),
+};
 g.location = loc;
 g.history = {
   state: null,

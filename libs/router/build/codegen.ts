@@ -349,7 +349,13 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   // Data-driven: `Page` / `depth` are the matched table row's (see `routeTable`).
   // Live pages (`export const live = true`): `data` is an accessor the
   // App refreshes in place on same-URL revalidation (`_serveLive`); hoisted, so the prop stays static.
-  const live = mode !== "csr" ? pageRoutes.filter((route) => route.live) : [];
+  const live = pageRoutes.filter((route) => route.live);
+  // Fill routes (`export const fill = true` in the page or a layout): their regions carry `data-rivet-fill`. Constant
+  // when every route fills (no router read: a static page stays 0 JS), else `_fill` follows the location.
+  const routeFills = (route: RouteEntry): boolean => !!route.fill || route.layouts.some((layout) => layout.fill);
+  const anyFill = pageRoutes.some(routeFills);
+  const mixedFill = anyFill && !pageRoutes.every(routeFills);
+  const fillAttr = !anyFill ? "" : mixedFill ? " data-rivet-fill={fill()}" : ' data-rivet-fill=""';
   const pageData = live.length ? "data" : "result.data[depth]";
   const pageView = (): string => {
     const jsx = kit
@@ -401,7 +407,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const enterView = (key: string): string => {
     const [k, i, at] = key.split(":").map(Number) as [number, number, number];
     const name = layouts.get(layoutModulesList[i]!.page!)!;
-    const inner = `<div data-rivet-outlet="${k + 1}"><Router router={${eager}_level(router, nest, ${k + 1}, t)${eagerEnd}} routes={routes${i}} swap={${swapProp}} hold={() => heldRoutes(${k + 1})} notFound={() => null} /></div>`;
+    const inner = `<div data-rivet-outlet="${k + 1}"${fillAttr}><Router router={${eager}_level(router, nest, ${k + 1}, t)${eagerEnd}} routes={routes${i}} swap={${swapProp}} hold={() => heldRoutes(${k + 1})} notFound={() => null} /></div>`;
     const view = level(at, `<${name} data={${slot(i)}.d} params={${slot(i)}.p} url={${slot(i)}.u}>${inner}</${name}>`);
     return `_enter(${k}, result, url, (t) => ${params ? `<Provider token={RouteParamsContext} value={${slot(i)}.p}>${view}</Provider>` : view})`;
   };
@@ -567,7 +573,8 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
         ]
       : [`import type { BrowserRouter } from "@rivetjs/runtime/router/dom";`]),
-    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${single || mode === "csr" ? "" : "_onStopped, "}${liveImports}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single || !intentPrefetch ? "" : "prefetchData, "}${single || !intentPrefetch ? "" : "prefetchModule, "}loadModule${single || !(intentPrefetch || transitions) ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""} } from "@rivetjs/router/client";`,
+    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${single || mode === "csr" ? "" : "_onStopped, "}${liveImports}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single || !intentPrefetch ? "" : "prefetchData, "}${single || !intentPrefetch ? "" : "prefetchModule, "}loadModule${single || !(intentPrefetch || transitions) ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""}${mixedFill ? ", _fill" : ""} } from "@rivetjs/router/client";`,
+    ...(anyFill ? [`import "./fill.css";`] : []),
     `import { ${derived ? "HttpError, " : ""}isHttpError } from "@rivetjs/router";`,
     "",
     "// Route modules as this file renders them (strict-safe whatever props they declare): data comes",
@@ -698,6 +705,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "/** File-routed application: layouts wrap pages; client navigation fetches route data from the server. */",
     "export function App({ router }: { router: AppRouter }) {",
     ...(derived && weak ? [weak] : []),
+    ...(mixedFill ? [`  const fill = _fill(router, ${str(pageRoutes.map((route) => [at(route.pattern), routeFills(route) ? 1 : 0]))});`] : []),
     ...(useNest
       ? [
           "  // Layout props are App-level signals (resume state carries them): the request's data on the",
@@ -797,7 +805,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     // The Router sits directly inside an element so the compiler makes it (and `routes`) a resumable
     // region; the root layout wraps it outside that region and stays mounted.
     ...(derived ? ["  // Derived model: built where it renders (inside the root layout's adopt run), not passed in ready-made."] : []),
-    `  const view = ${derived ? "() => " : ""}<div data-rivet-routes=""${go ? ' data-rivet-go=""' : ""}><Router router={${eager}${nested ? "_level(router, nest, 0, 0)" : liveTop ? "_liveRouter(router, live)" : "router"}${eagerEnd}} routes={routes} swap={${swapProp}} hold={heldRoutes} notFound={(url) => (${unmatched})} /></div>;`,
+    `  const view = ${derived ? "() => " : ""}<div data-rivet-routes=""${go ? ' data-rivet-go=""' : ""}${fillAttr}><Router router={${eager}${nested ? "_level(router, nest, 0, 0)" : liveTop ? "_liveRouter(router, live)" : "router"}${eagerEnd}} routes={routes} swap={${swapProp}} hold={heldRoutes} notFound={(url) => (${unmatched})} /></div>;`,
     !rootLayout
       ? `  return view${derived ? "()" : ""};`
       : rootLayoutServer
@@ -1001,8 +1009,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     `import { createRouter } from "@rivetjs/runtime/router/dom";`,
     `import { App, _devError } from "./app.tsx";`,
     "",
-    `const container = document.getElementById("app");`,
-    `if (!container) throw new Error('CSR shell has no element with id "app"');`,
+    `const container = document.getElementById("app") ?? document.body.appendChild(Object.assign(document.createElement("div"), { id: "app" }));`,
     "// Dev: render errors no ErrorBoundary handles reach Vite's error overlay (then propagate as before).",
     "const guarded = (view: () => DOMValue) =>",
     "  import.meta.hot",
@@ -1228,15 +1235,23 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "",
   ].join("\n");
 
+  // Grid: a single page root stretches both ways; the sizes cover block, flex and grid content areas.
+  const fillFile: Record<string, string> = anyFill
+    ? {
+        "fill.css":
+          "/* Generated by @rivetjs/router. Do not edit. */\n[data-rivet-fill] {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr);\n  grid-template-rows: minmax(0, 1fr);\n  flex: 1 1 0;\n  height: 100%;\n  min-width: 0;\n  min-height: 0;\n}\n",
+      }
+    : {};
   // CSR pages mount in the browser: nothing resumes.
   const resumeModules =
     mode === "csr" ? [] : [posix.join(outDir, "app.tsx"), ...[...pages.keys(), ...layouts.keys(), ...specials.keys()].map((f) => posix.join(routesDir, f))];
   return {
     files:
       mode === "csr"
-        ? { "app.tsx": app, "entry.client.tsx": client, "routes.d.ts": types }
+        ? { "app.tsx": app, ...fillFile, "entry.client.tsx": client, "routes.d.ts": types }
         : {
             "app.tsx": app,
+            ...fillFile,
             "routes.ts": routesFile,
             "entry.server.tsx": entry,
             "entry.dev.tsx": dev,

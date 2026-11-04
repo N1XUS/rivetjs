@@ -38,6 +38,16 @@ test("a workspace .ts reached through a package specifier carries it (same insta
   assert.deepEqual(await resolve("@rivetjs/cdk/i18n", "/src/view.server.test.tsx"), { id: "/libs/cdk/i18n/index.ts?rivet-target=server" });
 });
 
+test("installed @rivetjs packages compile through the preset; other packages' JSX is left alone", () => {
+  const plugin = rivetTest({ target: "dom" });
+  const transform = plugin.transform as unknown as (code: string, id: string) => { code: string } | null;
+  const source = "export const A = () => <b />;";
+  assert.doesNotMatch(transform.call({ warn() {} }, source, "/app/node_modules/@rivetjs/ui/x/a.jsx")!.code, /<b \/>/);
+  assert.equal(transform.call({ warn() {} }, source, "/app/node_modules/other/a.jsx"), null);
+  const inline = (plugin.config as unknown as () => { test: { server: { deps: { inline: RegExp[] } } } })().test.server.deps.inline;
+  assert.ok(inline.some((pattern) => pattern.test("/app/node_modules/@rivetjs/ui/x/a.jsx")));
+});
+
 test("DOM-target importers tag nothing", async () => {
   assert.equal(await resolve("./index.ts", "/src/view.test.tsx"), null);
 });

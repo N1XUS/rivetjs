@@ -55,7 +55,10 @@ export function rivetTest(options: RivetTestOptions = {}): Plugin {
     name: "rivet:test",
     enforce: "pre",
     config() {
-      const test: { setupFiles?: string[]; snapshotSerializers?: string[] } = {};
+      // Installed `@rivetjs/*` packages ship JSX as `.jsx`: Vitest must not hand them to Node, which has no loader for it.
+      const test: { setupFiles?: string[]; snapshotSerializers?: string[]; server: { deps: { inline: RegExp[] } } } = {
+        server: { deps: { inline: [/\/@rivetjs\//] } },
+      };
       if (options.cleanup !== false) test.setupFiles = [fileURLToPath(new URL("./cleanup.ts", import.meta.url))];
       if (options.serializer !== false) test.snapshotSerializers = [fileURLToPath(new URL("./serializer.ts", import.meta.url))];
       return { test } as Record<string, unknown>;
@@ -81,7 +84,7 @@ export function rivetTest(options: RivetTestOptions = {}): Plugin {
     },
     transform(code, id) {
       const { path } = split(id);
-      if (!jsx.test(path) || path.includes("/node_modules/")) return null;
+      if (!jsx.test(path) || (path.includes("/node_modules/") && !path.includes("/node_modules/@rivetjs/"))) return null;
       const target = options.target ?? (isServerId(id) ? "server" : "dom");
       const result = compile(code, { target, filename: path, sourceMap: true });
       if (result.diagnostics.length)
