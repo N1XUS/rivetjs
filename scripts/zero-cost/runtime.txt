@@ -3,8 +3,8 @@
 @rivetjs/reactivity/track ce983b5ae9df 1943
 @rivetjs/reactivity/store 6cc49f481f96 10375
 @rivetjs/runtime/server b1d7820eec42 55044
-@rivetjs/runtime/dom 9f757a4242c0 50936
-@rivetjs/runtime/dom [resumed] 72ea025ad08b 52769
+@rivetjs/runtime/dom c099b58e7cb8 51134
+@rivetjs/runtime/dom [resumed] 5472aabf2054 52967
 @rivetjs/runtime/dev 488ee5df3c18 28
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176

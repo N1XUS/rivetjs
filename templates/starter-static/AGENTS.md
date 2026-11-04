@@ -218,6 +218,7 @@ export default function Layout({ data, children }: LayoutProps<typeof loader>) {
 ### Live pages
 
 - `export const live = true` + `LivePageProps<typeof loader>`: `data` becomes an accessor (`data().customers`). Same-URL revalidation (a `@rivetjs/forms` submit, `invalidate()`, search-param change) updates `data` in place: the page is not re-rendered, signals (an open drawer, typed input, focus) survive. Use it for forms in drawers / dialogs.
+- `export const fill = true` in a page or `_layout.tsx`: the page root takes the whole content area of its layout (full-height screens), no flex wrappers. The content area needs its own size.
 - Don't copy `data()` into a signal (it never updates). Render lists with `<For each={data().items} by={…}>`.
 
 ### Links and navigation
