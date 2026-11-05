@@ -120,9 +120,9 @@
   "stateBytes": 369,
   "inlineJsBytes": 6462,
   "files": 11,
-  "jsRaw": 156443,
-  "jsGz": 57106,
-  "jsBr": 51606,
+  "jsRaw": 156536,
+  "jsGz": 57137,
+  "jsBr": 51641,
   "urls": [
    "/assets/data-grid.js",
    "/assets/derived-runtime.js",

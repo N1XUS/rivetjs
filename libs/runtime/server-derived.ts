@@ -227,6 +227,11 @@ export interface DerivedRender {
   /** `Async`s whose load was pending (DERIVED-C2): every one, those changed since the last flush. */
   asyncs: DerivedAsyncState[];
   changed: Set<DerivedAsyncState>;
+  /** Streamed: settled segments that may be ready to write, a min-heap by id (validated when taken: `nextSegment`). */
+  ready: DerivedAsyncState[];
+  /** Every `asyncs` entry below `busy` has settled (states only move 0 → 3 → 1 / 2); below `rest` every one is out. */
+  busy: number;
+  rest: number;
   /** `Async`s with a fallback constructed outside every boundary. */
   an: number;
   /** The render streams (`renderDerived` with `stream`): a pending `Async` writes its fallback, its content follows the shell. */
@@ -322,6 +327,10 @@ interface DerivedAsyncState {
   an: number;
   /** Streamed only: the segment it renders in (written after it), its content's HTML (null: none), written yet. */
   parent: DerivedAsyncState | null;
+  /** Streamed: the segments constructed while its content rendered (their parent). */
+  kids: DerivedAsyncState[] | null;
+  /** Streamed: its pending entry is on the page (a tail / patch shipped it; patches do not repeat it). */
+  told: boolean;
   html: string | null;
   out: boolean;
   dispose: (() => void) | null;
@@ -369,6 +378,9 @@ export function createDerived(): DerivedRender {
     clicks: "",
     asyncs: [],
     changed: new Set(),
+    ready: [],
+    busy: 0,
+    rest: 0,
     an: 0,
     stream: !!options?.stream,
     segment: null,
@@ -1510,9 +1522,18 @@ _onIsland((entry) => {
   if (entry.on === "visible" && !ctx.tailed) ctx.lean.push(entry);
   return true;
 });
+/** Some `Async` is pending or rendering its content (scans on from the last pending one: no rescan of settled entries). */
+function loading(ctx: DerivedRender): boolean {
+  const list = ctx.asyncs;
+  for (; ctx.busy < list.length; ctx.busy++) {
+    const state = list[ctx.busy]!.state;
+    if (state === 0 || state === 3) return true;
+  }
+  return false;
+}
 /** Flush: `DEFER` / `MOD` on the dependent boundaries whose subtree is closed and heavy enough (`flags`), creator counts. */
 function deferFlags(ctx: DerivedRender, from: number): void {
-  if (ctx.stores || moduleStores || ctx.sources !== null || (ctx.stream && ctx.asyncs.some((a) => a.state === 0 || a.state === 3))) return;
+  if (ctx.stores || moduleStores || ctx.sources !== null || (ctx.stream && loading(ctx))) return;
   const list = ctx.boundaries;
   // Subtree weights, bottom-up over this flush's boundaries only (a boundary's subtree was opened after it; each boundary is
   // flushed once): `weight` holds its subtree's from here on.
@@ -1613,8 +1634,17 @@ _onDerivedResource({
     ctx.next = m.next;
     for (let i = m.asyncs; i < ctx.asyncs.length; i++) ctx.changed.delete(ctx.asyncs[i]!);
     ctx.asyncs.length = m.asyncs;
+    if (ctx.busy > m.asyncs) ctx.busy = m.asyncs;
+    if (ctx.rest > m.asyncs) ctx.rest = m.asyncs;
     // Streamed Suspenses the discarded build claimed: their contents never render (the build that renders claims again).
-    if (ctx.held && ctx.held.items.length > m.held) for (const h of ctx.held.items.splice(m.held)) ((h.done = true), heldDispose(h));
+    const held = ctx.held;
+    if (held && held.items.length > m.held) {
+      if (held.from > m.held) held.from = m.held;
+      for (const h of held.items.splice(m.held)) {
+        if (h.self !== null && held.by.get(h.self) === h) held.by.delete(h.self);
+        ((h.done = true), heldDispose(h));
+      }
+    }
     ctx.an = m.an;
     if (m.seg) m.seg.an = m.segAn;
     const at = m.at;
@@ -1652,6 +1682,8 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
         at,
         an: 0,
         parent: seg,
+        kids: null,
+        told: false,
         html: null,
         out: false,
         dispose: null,
@@ -1662,6 +1694,7 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
       const inplace = !ctx.stream || typeof fallback !== "function" || useContext(_SUSPENSE) !== null;
       if (ctx.stream && inplace) a.out = true;
       ctx.asyncs.push(a);
+      if (seg) (seg.kids ??= []).push(a);
       ctx.changed.add(a);
       // Shell cache fill (H-holes): a streamed top-level boundary the compiler marked `$hole` may be retained.
       if (hole && ctx.stream && !seg && ctx.sources) _shellRecorder()?.options.shell?.hole?.(hole, owner);
@@ -1739,6 +1772,7 @@ function settled(ctx: DerivedRender, a: DerivedAsyncState, value: unknown): void
     else a.state = 2;
   }
   ctx.changed.add(a);
+  if (ctx.stream && !a.out) heapPush(ctx.ready, a);
   const wake = ctx.wakeup;
   ctx.wakeup = null;
   wake?.();
@@ -1764,15 +1798,20 @@ async function segments(ctx: DerivedRender, writer: { write(chunk: string): unkn
   try {
     for (;;) {
       if (signal?.aborted) return;
-      const next = ctx.asyncs.find((a) => !a.out && (a.state === 1 || a.state === 2) && (!a.parent || a.parent.out));
+      const next = nextSegment(ctx);
       if (next) {
         next.out = true;
+        ctx.changed.add(next);
+        // Its settled children can go next (each settled one was queued, but waited for its parent).
+        if (next.kids) for (const k of next.kids) if (!k.out && (k.state === 1 || k.state === 2)) heapPush(ctx.ready, k);
         await writer.write(chunk(next));
         continue;
       }
-      const left = ctx.asyncs.filter((a) => !a.out);
-      if (!left.length) return;
+      const list = ctx.asyncs;
+      while (ctx.rest < list.length && list[ctx.rest]!.out) ctx.rest++;
+      if (ctx.rest === list.length) return;
       if (expired) {
+        const left = list.slice(ctx.rest).filter((a) => !a.out);
         for (const a of left) ((a.out = true), (a.state = 2), (a.html = null), ctx.changed.add(a));
         await writer.write(chunk(left[0]!));
         return;
@@ -1784,6 +1823,44 @@ async function segments(ctx: DerivedRender, writer: { write(chunk: string): unkn
     if (timer) clearTimeout(timer);
     release(ctx);
   }
+}
+// The earliest registered settled segment whose parent is out (the first `asyncs` entry that is, as a scan from the start
+// finds it): every one that became so was queued when it settled or its parent was written; stale entries (written,
+// discarded by a `cut`, or a parent not out yet: queued again with it) leave the heap here.
+function nextSegment(ctx: DerivedRender): DerivedAsyncState | null {
+  const heap = ctx.ready;
+  while (heap.length) {
+    const a = heap[0]!;
+    if (!a.out && (a.state === 1 || a.state === 2) && (!a.parent || a.parent.out) && ctx.asyncs[a.id - 1] === a) return a;
+    heapPop(heap);
+  }
+  return null;
+}
+function heapPush(heap: DerivedAsyncState[], a: DerivedAsyncState): void {
+  let i = heap.length;
+  heap.push(a);
+  while (i > 0) {
+    const p = (i - 1) >> 1;
+    if (heap[p]!.id <= a.id) break;
+    heap[i] = heap[p]!;
+    i = p;
+  }
+  heap[i] = a;
+}
+function heapPop(heap: DerivedAsyncState[]): void {
+  const last = heap.pop()!,
+    n = heap.length;
+  if (!n) return;
+  let i = 0;
+  for (;;) {
+    let c = 2 * i + 1;
+    if (c >= n) break;
+    if (c + 1 < n && heap[c + 1]!.id < heap[c]!.id) c++;
+    if (heap[c]!.id >= last.id) break;
+    heap[i] = heap[c]!;
+    i = c;
+  }
+  heap[i] = last;
 }
 // The stream is over: every streamed boundary's root goes (its content rendered, or it never will).
 function release(ctx: DerivedRender): void {
@@ -1830,6 +1907,9 @@ interface HeldSuspenses {
   open: boolean;
   addon: boolean;
   start: number;
+  /** Every item below `from` is done; `by`: each claim's pending flag → its item (the first claimed with it). */
+  from: number;
+  by: Map<object, HeldSuspense>;
 }
 const SUSPENDED = /* @__PURE__ */ Object.freeze(["<!--s", "-->", "<!--/s-->"]);
 /** The swap add-on of streamed Suspense contents (inline, once per page). */
@@ -1847,9 +1927,10 @@ _onSuspense(() => {
   let item: HeldSuspense | null = null;
   return {
     defer(value, fallback, owner, own, inside) {
-      const held = (ctx.held ??= { items: [], n: 0, open: true, addon: false, start: Date.now() });
-      item = { id: ++held.n, value, owner, parent, self: inside, dispose: null, own, done: false, written: false };
-      held.items.push(item);
+      const held: HeldSuspenses = (ctx.held ??= { items: [], n: 0, open: true, addon: false, start: Date.now(), from: 0, by: new Map() });
+      const claimed: HeldSuspense = { id: ++held.n, value, owner, parent, self: inside, dispose: null, own, done: false, written: false };
+      held.items.push((item = claimed));
+      if (!held.by.has(inside)) held.by.set(inside, claimed);
       // The fallback renders plainly (no boundary, keyed state or marker of this render): it leaves before the tail.
       const html = store.exit(() =>
         provide(DERIVED, null, () => renderToString(fallback(), { signal: ctx.options?.signal, variant: ctx.options?.variant } as never)),
@@ -1878,9 +1959,12 @@ function heldDispose(h: HeldSuspense): void {
 function nextHeld(held: HeldSuspenses): HeldSuspense | null {
   for (let again = true; again;) {
     again = false;
-    for (const h of held.items) {
+    const items = held.items;
+    while (held.from < items.length && items[held.from]!.done) held.from++;
+    for (let i = held.from; i < items.length; i++) {
+      const h = items[i]!;
       if (h.done) continue;
-      const around = h.parent === null ? undefined : held.items.find((x) => x.self === h.parent);
+      const around = h.parent === null ? undefined : held.by.get(h.parent);
       if (around === undefined || around.written) return h;
       if (around.done) ((h.done = true), heldDispose(h), (again = true));
     }
@@ -2358,17 +2442,16 @@ function flush(ctx: DerivedRender): FlushTail | null {
     tail.c = c;
   }
   if (ctx.changed.size) {
-    // A segment settled but not written yet ships as pending: its value comes with its own content.
-    const a: DerivedAsync[] = [],
-      later: DerivedAsyncState[] = [];
+    // A segment settled but not written yet ships as pending: its value comes with its own content (`segments` marks it
+    // changed again when it writes it). Its pending entry ships once: a repeat changes nothing in the browser (every
+    // patch repeating every settled, unwritten one was O(n²) work and bytes over a page's segments).
+    const a: DerivedAsync[] = [];
     for (const x of ctx.changed) {
-      const done = (x.state === 1 || x.state === 2) && (x.out || !ctx.stream);
-      a.push(done ? (x.state === 1 ? [x.id, x.b, x.k, x.enc ? 2 : 1, x.value] : [x.id, x.b, x.k, 0]) : [x.id, x.b, x.k]);
-      if (!done && x.state !== 0 && x.state !== 3) later.push(x);
+      if ((x.state === 1 || x.state === 2) && (x.out || !ctx.stream)) a.push(x.state === 1 ? [x.id, x.b, x.k, x.enc ? 2 : 1, x.value] : [x.id, x.b, x.k, 0]);
+      else if (!x.told) ((x.told = true), a.push([x.id, x.b, x.k]));
     }
     ctx.changed.clear();
-    for (const x of later) ctx.changed.add(x);
-    tail.a = a;
+    if (a.length) tail.a = a;
   }
   // Every boundary of this flush was a static conditional instance: nothing for the browser (no runtime, no chunk).
   if (!b.length && !tail.i && !tail.d && !tail.w && !tail.c && !tail.a) return null;
