@@ -83,6 +83,25 @@ describe("pipeline", () => {
       ["k", 1, "p"],
     ]);
   });
+  it("tree filter stays linear on a deep chain matching only at its leaf", () => {
+    const depth = 1000;
+    let leaf: Item = { id: "n" + depth, name: "needle", n: 0 };
+    for (let i = depth - 1; i >= 0; i--) leaf = { id: "n" + i, name: "x", n: 0, kids: [leaf] };
+    let filters = 0;
+    let children = 0;
+    const r = dataGridRows({
+      data: [leaf],
+      columns: cols,
+      getRowId: id,
+      getChildren: (x) => (children++, x.kids),
+      expandedKeys: "all",
+      filter: (x) => (filters++, x.name === "needle"),
+    });
+    expect(r.total).toBe(depth + 1);
+    // At most twice per item (its parent's subtree question, its own level), not once per ancestor.
+    expect(filters).toBeLessThanOrEqual(2 * (depth + 1));
+    expect(children).toBeLessThanOrEqual(3 * (depth + 1));
+  });
   it("flattens expanded rows with depth, posinset / setsize, index", () => {
     const tree: Item[] = [
       {

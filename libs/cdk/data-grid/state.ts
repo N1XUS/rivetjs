@@ -152,11 +152,19 @@ export function dataGridRows<T>(input: DataGridPipelineInput<T>): DataGridPipeli
   const direction = sort?.direction ?? "ascending";
   const out: DataGridRow<T>[] = [];
 
-  // Tree filter: an item stays when it or one of its descendants matches.
+  // Tree filter: an item stays when it or one of its descendants matches. Each expanded ancestor asks
+  // again for its subtree, so a deep chain matching only at its leaf was quadratic: the subtree answer
+  // of a non-matching parent is kept for this run (leaves and matches are cheap to ask twice).
+  let kept: Map<T, boolean> | undefined;
   const keep = (item: T): boolean => {
     if (!filter || filter(item)) return true;
     const children = getChildren?.(item);
-    return !!children && children.some(keep);
+    if (!children || !children.length) return false;
+    const known = kept?.get(item);
+    if (known !== undefined) return known;
+    const result = children.some(keep);
+    (kept ??= new Map()).set(item, result);
+    return result;
   };
 
   const sign = direction === "descending" ? -1 : 1;
