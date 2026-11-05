@@ -159,6 +159,10 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
   const dictionaries = writeDictionaries(client, base ? { base } : {}).dictionaries;
   log(`dictionaries: ${dictionaries.length} (${dictionaries.map((d) => d.prefix).join(", ")})`);
   lap("critical");
+  // The link check reads only the pages (no page links into /pagefind/, which holds no HTML): it runs while Pagefind
+  // (its own process) indexes them. A search error still wins (awaited first); `links` = the check's time left after it.
+  const links = import("./check-links.ts").then(({ checkLinks }) => checkLinks(dist));
+  links.catch(() => {});
   if (options.search === "reuse" && options.incremental && report.prerender === "incremental" && existsSync(resolve(options.incremental.previous, "pagefind")))
     await cp(resolve(options.incremental.previous, "pagefind"), resolve(client, "pagefind"), { recursive: true, mode: constants.COPYFILE_FICLONE });
   else if (options.search !== false) {
@@ -167,8 +171,7 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
     log(`search: ${indexed} pages indexed`);
   }
   lap("search");
-  const { checkLinks } = await import("./check-links.ts");
-  const problems = await checkLinks(dist);
+  const problems = await links;
   if (problems.length)
     throw new Error(`Broken links:\n  ${problems.slice(0, 50).join("\n  ")}${problems.length > 50 ? `\n  … ${problems.length - 50} more` : ""}`);
   lap("links");

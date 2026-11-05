@@ -10,6 +10,7 @@ import { copyFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises"
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { hashCSP } from "@rivetjs/router/static";
 import { restoreLinks } from "./critical-css.ts";
+import { pool } from "./concurrency.ts";
 import { highlightHTML, pageTokenizer } from "./highlight-pages.ts";
 // Deep imports (no package subpath): the build type and the wire constants the static adapter uses.
 import type { LoadedBuild } from "../../router/adapters/build.ts";
@@ -87,15 +88,6 @@ async function pageFiles(client: string): Promise<string[]> {
     .filter((e) => e.isFile())
     .map((e) => relative(client, join(e.parentPath, e.name)).split(sep).join("/"))
     .filter((file) => !/^(assets|\.vite|pagefind)\//.test(file) && !["404.html", "_headers", "speculation-rules.json"].includes(file));
-}
-
-async function pool<T>(items: readonly T[], size: number, fn: (item: T) => Promise<void>): Promise<void> {
-  let next = 0;
-  await Promise.all(
-    Array.from({ length: Math.min(size, items.length) }, async () => {
-      while (next < items.length) await fn(items[next++]!);
-    }),
-  );
 }
 
 /** Where two texts first differ (for the fallback reason). */

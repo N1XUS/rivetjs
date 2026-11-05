@@ -11,6 +11,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { buildCache, digest, sourceDigest, type BuildCache } from "./build-cache.ts";
+import { mapPool } from "./concurrency.ts";
 import { COMPILER_NAME, LANGS, langOf } from "../components/highlight-classes.ts";
 import type { Token } from "../components/highlighter.ts";
 import { sitePages } from "./critical-css.ts";
@@ -158,14 +159,14 @@ export async function highlightPages(
   const files = options.files ?? (await sitePages(client));
   const stats: HighlightStats = { blocks: 0, plain: 0, left: 0 };
   const cache = new Map<string, Token[][] | undefined>();
-  let pages = 0;
-  for (const file of files) {
+  // 8 pages at a time: reads and writes overlap the (synchronous) colouring of another page.
+  const changed = await mapPool(files, 8, async (file) => {
     const path = resolve(client, file);
     const html = await readFile(path, "utf8");
     const out = highlightHTML(html, tokenize, stats, cache);
-    if (out === html) continue;
+    if (out === html) return false;
     await writeFile(path, out);
-    pages++;
-  }
-  return { ...stats, pages };
+    return true;
+  });
+  return { ...stats, pages: changed.filter(Boolean).length };
 }

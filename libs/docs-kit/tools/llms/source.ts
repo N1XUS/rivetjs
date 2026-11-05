@@ -9,6 +9,7 @@ import { pathToFileURL } from "node:url";
 import type { BenchChartSpec } from "../../components/chart-model.ts";
 import type { ApiModel } from "../api.ts";
 import { loadApp, type DocsSite } from "../app.ts";
+import { mapPool, readTexts } from "../concurrency.ts";
 import { exampleIds, loadExample, shownFile } from "../examples.ts";
 import { splitFrontmatter, validateFrontmatter, type Frontmatter } from "../content/frontmatter.ts";
 import { glossaryTerms } from "../content/generate.ts";
@@ -62,18 +63,6 @@ export interface LlmsSource {
 const posix = (path: string) => path.split(sep).join("/");
 export const hrefOf = (path: string): string => "/" + path.replace(/(^|\/)index$/, "") + (path === "index" ? "" : "/");
 
-// Read at most 16 files at a time; consume results (including failures) in source order.
-// Parsing stays in the caller, so an earlier parse error still wins over a later read error.
-async function* readTexts(files: string[]): AsyncGenerator<string> {
-  for (let i = 0; i < files.length; i += 16) {
-    const results = await Promise.allSettled(files.slice(i, i + 16).map((file) => readFile(file, "utf8")));
-    for (const result of results) {
-      if (result.status === "rejected") throw result.reason;
-      yield result.value;
-    }
-  }
-}
-
 /** Load the site at `root` for the AI outputs. Throws on the same nav / frontmatter errors as the content build. */
 export async function loadLlmsSource(root: string): Promise<LlmsSource> {
   const { site, repo } = await loadApp(root);
@@ -126,8 +115,9 @@ export async function loadLlmsSource(root: string): Promise<LlmsSource> {
       if (!list.includes(page.path)) list.push(page.path);
       usedOn.set(match[1]!, list);
     }
-  const examples = new Map<string, LlmsExample>();
-  for (const id of await exampleIds(root)) {
+  // 16 examples at a time (config import + shown files), kept in id order; the first failing id's error wins.
+  const ids = await exampleIds(root);
+  const loaded = await mapPool(ids, 16, async (id) => {
     const config = await loadExample(root, id);
     const dir = resolve(root, "examples", id);
     const files: LlmsExample["files"] = [];
@@ -136,8 +126,9 @@ export async function loadLlmsSource(root: string): Promise<LlmsSource> {
       const source = (await shownTexts.next()).value!;
       files.push({ path, text: shownFile(path, source).text });
     }
-    examples.set(id, { id, title: config.title, summary: config.summary, tags: config.tags ?? [], files, usedOn: usedOn.get(id) ?? [] });
-  }
+    return { id, title: config.title, summary: config.summary, tags: config.tags ?? [], files, usedOn: usedOn.get(id) ?? [] } satisfies LlmsExample;
+  });
+  const examples = new Map<string, LlmsExample>(loaded.map((example) => [example.id, example]));
   return { root, app: posix(relative(repo, root)), site, areas, pages, api, examples, terms, charts };
 }
 

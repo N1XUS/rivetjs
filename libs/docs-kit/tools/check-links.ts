@@ -5,6 +5,7 @@
 import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
+import { readTexts } from "./concurrency.ts";
 
 async function htmlFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { recursive: true, withFileTypes: true });
@@ -43,8 +44,10 @@ export async function checkLinks(dist: string): Promise<string[]> {
     if (path.endsWith("/")) return existsSync(join(target, "index.html")) ? join(target, "index.html") : undefined;
     return existsSync(target) ? target : existsSync(join(target, "index.html")) ? join(target, "index.html") : undefined;
   };
+  // Pages read 16 ahead, checked in order (problems keep their order).
+  const texts = readTexts(files);
   for (const file of files) {
-    const html = await readFile(file, "utf8");
+    const html = (await texts.next()).value as string;
     const from = "/" + relative(client, file).split(sep).join("/");
     // Skip <script> contents (state JSON, loader), code listings and <input value> payloads.
     let markup = html

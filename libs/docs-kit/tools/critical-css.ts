@@ -20,6 +20,7 @@
 import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { buildCache, digest, sourceDigest, type BuildCache } from "./build-cache.ts";
+import { mapPool } from "./concurrency.ts";
 import { join, relative, resolve, sep } from "node:path";
 import { frameIdOf } from "../frame-theme.ts";
 
@@ -533,18 +534,13 @@ export async function inlineCriticalPages(
   };
   const cache = options.cache;
   const extraKey = JSON.stringify(extraList);
-  let pages = 0;
-  let bytes = 0;
-  const skipped: { file: string; why: string }[] = [];
-  for (const file of files) {
+  // 8 pages at a time (reads / writes overlap the selector matching); counts and skips are folded in page order.
+  const results = await mapPool(files, 8, async (file): Promise<{ why: string } | { bytes: number } | undefined> => {
     const path = resolve(client, file);
     const html = await readFile(path, "utf8");
     const source = restoreLinks(html);
     const why = criticalSkip(source);
-    if (why !== undefined) {
-      skipped.push({ file, why });
-      continue;
-    }
+    if (why !== undefined) return { why };
     const added = options.added?.(source);
     let out: string | undefined;
     const key = cache && digest(source, added?.source, added?.flags, extraKey);
@@ -569,10 +565,20 @@ export async function inlineCriticalPages(
         cache.set(key, JSON.stringify(entry));
       }
     }
-    if (out === html) continue;
+    if (out === html) return undefined;
     await writeFile(path, out);
-    pages++;
-    bytes += CRITICAL.exec(out)?.[0].length ?? 0;
-  }
+    return { bytes: CRITICAL.exec(out)?.[0].length ?? 0 };
+  });
+  let pages = 0;
+  let bytes = 0;
+  const skipped: { file: string; why: string }[] = [];
+  results.forEach((result, index) => {
+    if (!result) return;
+    if ("why" in result) skipped.push({ file: files[index]!, why: result.why });
+    else {
+      pages++;
+      bytes += result.bytes;
+    }
+  });
   return { pages, bytes, skipped, reused };
 }

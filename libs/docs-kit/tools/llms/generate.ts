@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { ApiSymbol } from "../api.ts";
+import { mapPool } from "../concurrency.ts";
 import { exampleMarkdown, llmsMarkdown, symbolMarkdown, type LlmsLinkTarget } from "./markdown.ts";
 import { loadLlmsSource, type LlmsSource } from "./source.ts";
 
@@ -192,11 +193,10 @@ function indexText(source: LlmsSource, docs: LlmsDoc[], link: (target: LlmsLinkT
 
 /** Write the outputs under `dir` (a built site's `dist/client`). Returns the file count. */
 export async function writeLlms(output: LlmsOutput, dir: string): Promise<number> {
-  for (const [file, contents] of output.files) {
-    const target = resolve(dir, file);
-    await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, contents);
-  }
+  // Directories first (once each), then the files 32 at a time; the first failing file (in output order) is thrown.
+  const files = [...output.files].map(([file, contents]) => [resolve(dir, file), contents] as const);
+  for (const folder of new Set(files.map(([target]) => dirname(target)))) await mkdir(folder, { recursive: true });
+  await mapPool(files, 32, ([target, contents]) => writeFile(target, contents));
   return output.files.size;
 }
 
