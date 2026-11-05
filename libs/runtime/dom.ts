@@ -4,7 +4,7 @@
 // reactive scope (spec docs/design/specs/2026-10-06-dom-v2-only-design.md).
 import { createRoot, effect, onCleanup, getOwner, runWithOwner, untrack, signal, provide, _scoped, _dispatch, computed } from "@rivetjs/reactivity";
 import { _constructionDoc, _root } from "./dom-base.ts";
-import { _adoption, _anchor, _c, _for, _insert, _match, _show, _spread, _switch } from "./dom-v2.ts";
+import { _adoption, _anchor, _c, _drop, _for, _insert, _match, _show, _spread, _switch } from "./dom-v2.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _restProps } from "./props.ts";
 import type { Slot } from "./slot.ts";
@@ -163,7 +163,8 @@ function nodes(out: Output): Node[] {
 function park(out: Output, into: DocumentFragment | null): void {
   for (const node of nodes(out))
     if (into) into.appendChild(node);
-    else (node as ChildNode).remove();
+    // Same hover rule as dom-v2 removals: a deferred first click's route swap hides the hovered old node until the rAF.
+    else if (node.parentNode) _drop(node.parentNode as Element, node);
 }
 /** @internal Output primitives for dom-suspense.ts. */
 export const _dom = { output, nodes, park };

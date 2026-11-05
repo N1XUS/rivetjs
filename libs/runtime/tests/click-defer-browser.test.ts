@@ -129,7 +129,7 @@ mount(() => {
     if (n)
       queueMicrotask(() => {
         const old = document.getElementById("s" + (n - 1));
-        m.log.push(["flushed", old ? getComputedStyle(old).display + (old.hidden ? " hidden" : "") : "removed"]);
+        m.log.push(["flushed", old ? getComputedStyle(old).position + " " + getComputedStyle(old).visibility + (old.hidden ? " hidden" : "") : "removed"]);
         requestAnimationFrame(() => requestAnimationFrame(() => m.log.push(["frame", document.getElementById("s" + (n - 1)) ? "kept" : "removed"])));
       });
     _on(root.lastChild, "click", (e) => {
@@ -143,6 +143,56 @@ mount(() => {
 window.ready = true;
 </script>`;
 
+// A route whose lazy part loads after the deferred flush keeps that flush's rule, and focus leaves the kept route at once.
+const lazyRoute = `<!doctype html><body><main id=app></main><script type=module>
+import { mount, lazyComponent } from "/dom.ts";
+import { createRouter, Router, defineRoute } from "/dom-router.ts";
+import { _tpl, _on } from "/dom-v2.ts";
+window.m = { log: [] };
+const list = _tpl("<section id=old><a id=go href=/next>go</a></section>"), next = _tpl("<article id=next>next</article>");
+const Next = lazyComponent(() => new Promise((done) => setTimeout(done, 5)).then(() => ({ default: () => {
+  // Runs in the commit's build, before the swap.
+  queueMicrotask(() => queueMicrotask(() => {
+    const old = document.getElementById("old");
+    m.log.push(["blurred", document.activeElement === document.body]);
+    m.log.push(["old", old ? getComputedStyle(old).position : "removed"]);
+    requestAnimationFrame(() => requestAnimationFrame(() => m.log.push(["frame", !!document.getElementById("old"), !!document.getElementById("next")])));
+  }));
+  return next();
+} })));
+mount(() => {
+  const router = createRouter();
+  return Router({ router, routes: [
+    defineRoute("/", { render: () => {
+      const root = list();
+      _on(root.firstChild, "click", (e) => {
+        e.preventDefault();
+        router.navigate("/next");
+      });
+      return root;
+    } }),
+    defineRoute("/next", { render: () => Next({}) }),
+  ] });
+}, document.getElementById("app"));
+window.ready = true;
+</script>`;
+
+test("first mouse click on a link to a lazy route: the postponed commit keeps the hovered old route until the frame", async () => {
+  await withPage({ "/": lazyRoute }, async (p) => {
+    await p.goto("http://rivet.test/");
+    await p.waitForFunction(() => (window as unknown as { ready?: boolean }).ready);
+    await p.focus("#go");
+    await p.click("#go");
+    await p.waitForFunction(() => (window as unknown as { m: { log: unknown[] } }).m.log.length >= 3);
+    const log = await p.evaluate(() => (window as unknown as { m: { log: unknown[] } }).m.log);
+    assert.deepEqual(log, [
+      ["blurred", true],
+      ["old", "absolute"],
+      ["frame", false, true],
+    ]);
+  });
+});
+
 test("first mouse click detaching the hovered element: kept hidden until the next frame, later clicks remove at once", async () => {
   await withPage({ "/": routes }, async (p) => {
     await p.goto("http://rivet.test/");
@@ -152,9 +202,10 @@ test("first mouse click detaching the hovered element: kept hidden until the nex
         .waitForFunction((n) => (window as unknown as { m: { log: unknown[] } }).m.log.length >= n, n)
         .then(() => p.evaluate(() => (window as unknown as { m: { log: unknown[] } }).m.log));
     await p.click("#s0 .go");
-    // Hidden (`hidden` too: DOM readers such as cdk DOM collections skip it before the rAF, FUZZ-UI 2026-10-29).
+    // Out of flow and invisible, box kept (`display: none` would detach it: the same hover task); `hidden` too: DOM readers
+    // such as cdk DOM collections skip it before the rAF (FUZZ-UI 2026-10-29).
     assert.deepEqual(await entries(2), [
-      ["flushed", "none hidden"],
+      ["flushed", "absolute hidden hidden"],
       ["frame", "removed"],
     ]);
     await p.click("#s1 .go");

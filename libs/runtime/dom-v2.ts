@@ -540,7 +540,7 @@ function replace(parent: Parent, current: Current, next: Node | null, marker: No
 
 /**
  * Remove `node` from `parent`. In a deferred first mouse click's flush (reactivity `_deferredFlush`) an element
- * under the pointer (`:hover`) is hidden instead (`display: none` + `hidden`) and removed in the next frame's rAF, before paint: detaching the
+ * under the pointer (`:hover`) is hidden instead (out of flow + invisible + `hidden`, focus moved off) and removed in the next frame's rAF, before paint: detaching the
  * hovered element posts Chrome's hover-update task, and the frame after a document's first click then waits
  * ~50 ms for its hover update (resume-bench navigate). Removed in the frame, the stall lands on the frame after
  * the paint. Every other removal (and every later click) is a plain `removeChild`.
@@ -549,6 +549,8 @@ function drop(parent: Parent, node: Node): void {
   if (hovered(node)) keep(parent, node as HTMLElement);
   else parent.removeChild(node);
 }
+/** @internal `drop` for `dom.ts` outputs (an `Async` / `Suspense` generation's removed nodes: a route swap). */
+export const _drop = drop;
 /** `replaceChild` (same hover rule as `drop`). */
 function swap(parent: Parent, next: Node, node: Node): void {
   if (hovered(node)) {
@@ -556,19 +558,31 @@ function swap(parent: Parent, next: Node, node: Node): void {
     keep(parent, node as HTMLElement);
   } else parent.replaceChild(next, node);
 }
-const hovered = (node: Node): boolean => _deferredFlush() && node.nodeType === 1 && (node as Element).matches(":hover");
+const hovered = (node: Node): boolean => (_deferredFlush() || _hoverRule.on) && node.nodeType === 1 && (node as Element).matches(":hover");
+/** @internal A route commit a deferred first click's flush postponed (`dom-router.ts`) keeps that flush's removal rule. */
+export const _hoverRule = { on: false };
 // The kept element is `hidden` too (FUZZ-UI 2026-10-29): code reading the DOM before that rAF (cdk DOM collections skip
 // `[hidden]` subtrees: a TagGroup's focused-key reset after a first-click removal saw the removed tag, focus fell to the
 // body) sees it gone.
 function keep(parent: Parent, el: HTMLElement): void {
   const style = el.style,
-    display = style.display,
-    hidden = el.hidden;
-  style.display = "none";
+    { display, position, visibility } = style,
+    hidden = el.hidden,
+    active = el.ownerDocument.activeElement as HTMLElement | null;
+  // Focus leaves now, as a removal's does (and the rAF's removal then forces no style recalculation of this subtree).
+  if (active && el.contains(active)) active.blur();
+  // Out of flow and invisible, its box kept: `display: none` detaches the hovered element's box at the next style
+  // recalculation, which posts the same hover-update task (it wins the race with the frame when the update ends early
+  // in the vsync interval; RESUME-NAV 2026-11-05). `display` overrides the `hidden` attribute's UA rule.
+  style.display = "block";
+  style.position = "absolute";
+  style.visibility = "hidden";
   el.hidden = true;
   requestAnimationFrame(() => {
-    if (el.parentNode === parent && style.display === "none") parent.removeChild(el);
+    if (el.parentNode === parent && style.visibility === "hidden") parent.removeChild(el);
     style.display = display;
+    style.position = position;
+    style.visibility = visibility;
     el.hidden = hidden;
   });
 }

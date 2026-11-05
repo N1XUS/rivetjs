@@ -270,6 +270,58 @@ export async function lateLazy(host) {
   return "passed";
 }
 
+// A navigation commits with the lazy components its route renders loaded: the shown route stays mounted and live
+// (no lazy fallback in between), then the new route appears in one step; the first route shows the lazy fallback.
+export async function lazyNav(host) {
+  history.replaceState(null, "", "/first");
+  const jobs = [];
+  const lazy = (name) => {
+    const job = deferred();
+    jobs.push(job);
+    return lazyComponent(() => job.promise.then(() => ({ default: () => <b>{name}</b> })), undefined, { fallback: () => <i>wait</i> });
+  };
+  const First = lazy("first"),
+    Second = lazy("second");
+  const count = signal(0);
+  let router;
+  const stop = mount(() => {
+    router = createRouter();
+    return (
+      <Router
+        router={router}
+        routes={[
+          defineRoute("/first", { render: () => <First /> }),
+          defineRoute("/plain", { render: () => <p>plain {count()}</p> }),
+          defineRoute("/second", { render: () => <Second /> }),
+        ]}
+      />
+    );
+  }, host);
+  assert(host.textContent === "wait", "first route shows the lazy fallback");
+  jobs[0].resolve();
+  await flush();
+  assert(host.textContent === "first", "first lazy commits");
+  router.navigate("/plain");
+  assert(host.textContent === "plain 0", "a route without pending lazy parts commits at once");
+  router.navigate("/second");
+  count.set(1);
+  assert(host.textContent === "plain 1", "the shown route stays mounted and live while the next route's lazy part loads");
+  await flush();
+  count.set(2);
+  assert(host.textContent === "plain 2", "the shown route stays live after the flush");
+  jobs[1].resolve();
+  await flush();
+  assert(host.textContent === "second", "the route commits with its lazy part loaded");
+  router.navigate("/first");
+  assert(host.textContent === "first", "a loaded lazy part renders synchronously");
+  router.navigate("/second");
+  router.navigate("/plain");
+  await flush();
+  assert(host.textContent === "plain 2", "a superseded navigation never commits");
+  stop();
+  return "passed";
+}
+
 // `hold` keeps the current route mounted until the next commits (its view shows while the first
 // route loads); `swap` wraps every route commit.
 export async function holdSwap(host) {

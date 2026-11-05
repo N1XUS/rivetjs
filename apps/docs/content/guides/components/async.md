@@ -176,6 +176,7 @@ const Chart = lazyComponent(() => import("../components/Chart.tsx"), undefined, 
 - The second argument picks a named export instead: `(module) => module.Chart`. Pass `undefined` for the default export.
 - Options: `fallback` and `error`.
 - On a resumed page the browser fetches the lazy components in the page's code at idle, after the rest of its code (not under Save-Data); a first render after that does not wait for the network. Only an importer written inline counts (`lazyComponent(() => import("…"))`); see [Preloading](../performance/preloading.md).
+- A route of a `Router` (`@rivetjs/runtime/router/dom`) that renders a lazy component not loaded yet commits once its code has loaded: on a navigation the current route stays on screen (and live) until then, and the new route appears in one step, without the lazy component's `fallback`. The first route shows the `fallback` as usual.
 
 ::api{symbol="@rivetjs/runtime/dom#lazyComponent"}
 

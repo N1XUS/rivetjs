@@ -84,7 +84,10 @@ export function Async<T>(props: AsyncProps<T>): DOMValue {
             // The callback can synchronously supersede/unmount this generation.
             return active ? value : null;
           });
-        const next = p.hold ? runWithOwner(outer, build) : build();
+        // `$k` (router levels, `dom-router.ts`): the boundary owns its output as with `hold`, so a generation can keep the
+        // shown one until it commits, but a pending load still commits its fallback.
+        const keep = p.hold || (p as { $k?: 1 }).$k,
+          next = keep ? runWithOwner(outer, build) : build();
         const discard = () => {
           try {
             next.dispose();
@@ -101,7 +104,7 @@ export function Async<T>(props: AsyncProps<T>): DOMValue {
           // Author cleanup can invalidate the load too; do not show replacement output.
           if (!active) return discard();
           branch = next;
-          if (p.hold) held = next;
+          if (keep) held = next;
           shown.set(next);
           if (failure) throw failure;
         };
@@ -208,6 +211,9 @@ export function ErrorBoundary(props: { fallback: (error: unknown, reset: () => v
   });
 }
 
+/** @internal Route commits (`dom-router.ts`): while set, a lazy component rendered unloaded adds its load here. */
+export const _lazyLoads: { q: Promise<unknown>[] | null } = { q: null };
+
 /** Load module.default only when mounted; cache functions, never rendered output or props. */
 export function lazyComponent<P>(
   importer: () => { default: Component<P> } | PromiseLike<{ default: Component<P> }>,
@@ -225,6 +231,7 @@ export function lazyComponent<M, P>(
   const lazy = (props: P) => {
     const loaded = reference.peek();
     if (loaded) return _c(loaded, props) as DOMValue;
+    if (_lazyLoads.q) _lazyLoads.q.push(reference.load());
     const p: AsyncProps<Component<P>> = {
       load: (work) => reference.load({ signal: work.signal }),
       children: (fn) => _c(fn, props) as DOMValue,

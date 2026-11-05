@@ -1,6 +1,7 @@
-import { batch, getOwner, onCleanup, signal, untrack } from "@rivetjs/reactivity";
-import { Async } from "./dom-async.ts";
+import { _deferredFlush, batch, getOwner, onCleanup, signal, untrack } from "@rivetjs/reactivity";
+import { Async, _lazyLoads } from "./dom-async.ts";
 import { DERIVED } from "./derived.ts";
+import { _hoverRule } from "./dom-v2.ts";
 import { routeMatcher, renderRoute, _popGate } from "./router.ts";
 import type { Signal } from "@rivetjs/reactivity";
 import type { AsyncWork, DOMValue } from "./dom.ts";
@@ -127,22 +128,55 @@ export function Router({
 }): DOMValue {
   // Route work tracks the URL without its fragment: a hash-only change keeps the route (no reload, no remount).
   const page = (router as { [PAGE]?: () => string })[PAGE];
-  return renderRoute(
+  // A navigation commits with the lazy components its route renders loaded: the shown route stays mounted and live
+  // until their chunks evaluated (one DOM change, no lazy fallback frame in between), as generated routers do with
+  // their page chunks. The first route (and an adopted one) commits at once. The level owns its output (`$k`) so a
+  // generation can keep the shown route; a pending route load still commits `fallback` (without `hold`).
+  let shown = false,
+    loads: Promise<unknown>[] = [];
+  const level = (props: Parameters<typeof Async>[0]) => {
+    const children = props.children;
+    const p = {
+      ...props,
+      children: (value: unknown) => {
+        const outer = _lazyLoads.q;
+        _lazyLoads.q = loads = [];
+        try {
+          return children(value);
+        } finally {
+          _lazyLoads.q = outer;
+        }
+      },
+      swap: (apply: () => void, next: ParentNode) => {
+        const wait = loads,
+          first = _deferredFlush(),
+          go = () => {
+            _hoverRule.on = first;
+            try {
+              if (swap) swap(apply, next);
+              else apply();
+            } finally {
+              _hoverRule.on = false;
+            }
+          };
+        loads = [];
+        if (wait.length && shown) Promise.all(wait).then(go, go);
+        else go();
+        shown = true;
+      },
+      hold: !!hold,
+      $k: 1,
+      fallback: hold || props.fallback,
+    };
     // Derived builds: a route level is the runtime's own `Async` (`$i`, as the server marks it: never a hole of its own).
-    swap || hold
-      ? (props) =>
-          Async(
-            DERIVED
-              ? ({ ...props, swap, hold: !!hold, fallback: hold || props.fallback, $i: 1 } as typeof props)
-              : { ...props, swap, hold: !!hold, fallback: hold || props.fallback },
-          )
-      : DERIVED
-        ? (props) => Async({ ...props, $i: 1 } as typeof props)
-        : Async,
-    routeMatcher(routes as Routes<DOMValue>),
-    page ? () => (page(), untrack(router.location)) : router.location,
-    { fallback, error, notFound },
-  );
+    if (DERIVED) (p as { $i?: 1 }).$i = 1;
+    return Async(p);
+  };
+  return renderRoute(level as never, routeMatcher(routes as Routes<DOMValue>), page ? () => (page(), untrack(router.location)) : router.location, {
+    fallback,
+    error,
+    notFound,
+  });
 }
 
 /** Preserve inferred loader data; heterogeneous registry erasure occurs only in Router's routes. */
