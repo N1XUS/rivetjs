@@ -2018,8 +2018,11 @@ function domEntries(t: BoundaryTail): void {
 
 // The records of the tail or of a streamed segment's patch (its names, keys and wake lists merged into the tail), then
 // its `Async` entries.
-function records(t: BoundaryTail, patch: boolean): void {
-  captureClasses(doc!);
+// Server classes (CX-CLS3): the whole document once, at start (it holds the segments that landed before); a streamed
+// segment's patch then snapshots the content it landed (`from` up to its closing comment `to`), not the document again.
+function records(t: BoundaryTail, patch: boolean, from?: Node | null, to?: Node | null): void {
+  if (!patch) captureClasses(doc!);
+  else for (let n = from ?? null; n !== null && n !== to; n = n.nextSibling) if (n.nodeType === 1) captureClasses(n as Element);
   const added: Rec[] = [],
     n = t.n;
   for (let i = 0; i < n.length; i++) {
@@ -2656,9 +2659,9 @@ const runtime: DerivedRuntime = {
     for (const id of lite.l?.keys() ?? []) recs.get(id) && (recs.get(id)!.done = true);
     for (const id of lite.x ?? []) recs.get(id) && fallen.add(recs.get(id)!);
     // Streamed segments (DERIVED-C2): patches that landed before the runtime started, then each one as it lands.
-    const sd = d as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail) => void };
+    const sd = d as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail, from?: Node | null, to?: Node | null) => void };
     for (const x of sd.$rd ?? []) records(x, true);
-    sd.$rdp = (x: BoundaryTail) => records(x, true);
+    sd.$rdp = (x: BoundaryTail, from?: Node | null, to?: Node | null) => records(x, true, from, to);
     // Stream over (document parsed) with `Async` holes still waiting: they render in the browser.
     if (d.readyState === "loading") d.addEventListener("DOMContentLoaded", () => [...waiting.values()].forEach(landAsync));
     for (const item of loader.q.splice(0)) runtime.cold(item);

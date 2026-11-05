@@ -438,6 +438,7 @@ function fromPlan(plan: RowPlan, list: Node[]): Answers {
 // a plugin addition as the baseline. Ordinary DOM builds never import this module.
 const serverClasses = new WeakMap<Element, string | null>();
 export function captureClasses(root: ParentNode): void {
+  if ((root as Node).nodeType === 1 && !serverClasses.has(root as Element)) serverClasses.set(root as Element, (root as Element).getAttribute("class"));
   for (const el of root.querySelectorAll("*")) if (!serverClasses.has(el)) serverClasses.set(el, el.getAttribute("class"));
 }
 /** Transfer the captured server classes; standalone row adopters without a snapshot use the probe baseline. */

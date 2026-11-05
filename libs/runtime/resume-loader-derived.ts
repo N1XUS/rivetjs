@@ -370,16 +370,20 @@ export function derivedDrag(): (event: Event, held?: 1) => unknown {
  * `segments`). `$rD(id)` runs at the end of each segment: its `<template data-a>` (when the segment has content) replaces
  * what is between `<!--a<id>-->` and its `<!--/a-->` (the fallback), its patch (`<script type="rivet/boundaries"
  * data-patch>`: new records, wake lists, chunk names, the settled `Async` entry) is queued on `document.$rd` for a runtime
- * that starts later, and handed to a started one (`document.$rdp`). Bound by position (the template, the patch, this call's
+ * that starts later, and handed to a started one (`document.$rdp`, with the landed content's first node and closing comment:
+ * the runtime snapshots the server classes of that content only). Bound by position (the template, the patch, this call's
  * own script), never by a document query an injected earlier copy would win.
  */
 export function derivedStream(): void {
-  const d = document as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail) => void };
+  const d = document as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail, from: Node | null, to: Node | null) => void };
   (window as Window & { $rD?: (id: number) => void }).$rD = (id: number) => {
     const s = d.currentScript!,
       p = s.previousElementSibling!,
       t = p.previousElementSibling as HTMLTemplateElement | null,
       x: BoundaryTail = JSON.parse(p.textContent!);
+    // The landed content (`f` up to the closing comment `e`): a started runtime snapshots its server classes only.
+    let f: Node | null = null,
+      e: Node | null = null;
     p.remove();
     s.remove();
     if (t?.getAttribute("data-a") == (id as unknown as string)) {
@@ -392,6 +396,8 @@ export function derivedStream(): void {
           v = c.nodeType == 8 ? (c as Comment).data : "";
         if (/^a\d+$/.test(v)) depth++;
         else if (v == "/a" && !depth--) {
+          f = t.content.firstChild;
+          e = c;
           c.before(t.content);
           break;
         }
@@ -401,6 +407,6 @@ export function derivedStream(): void {
       t.remove();
     }
     (d.$rd ??= []).push(x);
-    d.$rdp?.(x);
+    d.$rdp?.(x, f, e);
   };
 }

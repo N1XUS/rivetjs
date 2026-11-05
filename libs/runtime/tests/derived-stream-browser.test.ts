@@ -764,3 +764,18 @@ compiled("a table-encoded resource value adopts with the installed decoder (no f
       assert.deepEqual(errors, []);
     });
 });
+
+// A started runtime's `$rdp` gets the landed content (its first node up to the closing comment): it snapshots the server
+// classes of that content only, not the whole document per streamed patch.
+test("a streamed segment hands its landed content range to a started runtime", async () => {
+  const { DERIVED_STREAM } = await import("../resume-loader-derived.min.ts");
+  const html =
+    "<!doctype html><main><!--a1--><p>wait</p><!--/a--><i id='after'></i></main><script>" +
+    DERIVED_STREAM +
+    "</script><script>document.$rdp = (x, from, to) => (window.got = [x.v, from && from.id, from && from.nextSibling && from.nextSibling.id, to && to.data, to && to.nextSibling && to.nextSibling.id]);</script>" +
+    '<template data-a="1"><div id="first" class="s"></div><b id="second"></b></template><script type="rivet/boundaries" data-patch="1">{"v":2}</script><script>$rD(1)</script>';
+  await withPage({ "/": html }, async (page) => {
+    await page.goto("http://rivet.test/");
+    assert.deepEqual(await page.evaluate(() => (window as unknown as { got: unknown }).got), [2, "first", "second", "/a", "after"]);
+  });
+});
