@@ -23,7 +23,7 @@
 //   that replaces the default one; elements are still built from the AST (never innerHTML). Tight list-item paragraphs have
 //   no `<p>`, so `p` is not called for them. Style-only overrides: the `markdown__*` classes.
 import { followText } from "@rivetjs/cdk/chat/text-reveal";
-import { closeOpenMarks, parseMarkdown, splitBlocks } from "@rivetjs/cdk/markdown";
+import { closeOpenMarks, createBlockSplit, parseMarkdown } from "@rivetjs/cdk/markdown";
 import type { MarkdownBlock, MarkdownInline, MarkdownListItem } from "@rivetjs/cdk/markdown";
 import { clientEffect, For, Show } from "@rivetjs/runtime/dom";
 import { computed, signal, untrack } from "@rivetjs/reactivity";
@@ -790,6 +790,8 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
   // StreamingText. Replacing them with static text would cut their in-flight CSS fades short.
   const liveFrom = canStream ? signal(-1) : undefined;
   const speed = local.streamingSpeed;
+  // Incremental split: a growing response rescans only the text after its last finished block (O(n) over a stream).
+  const split = createBlockSplit();
   if (displayed && revealing && liveFrom)
     clientEffect(
       () =>
@@ -799,7 +801,7 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
             speed,
             onRevealingChange: (value) => {
               if (value) {
-                const start = Math.max(0, splitBlocks(untrack(displayed)).length - 1);
+                const start = Math.max(0, split(untrack(displayed)).length - 1);
                 const previous = untrack(liveFrom);
                 // Establish existing glyphs before enabling motion, so prior text never reanimates.
                 liveFrom.set(previous < 0 ? start : Math.min(previous, start));
@@ -811,17 +813,28 @@ const MarkdownRoot = (props: MarkdownProps): JSX.Element => {
       { when: "interaction" },
     );
   const streaming = (): boolean => inputStreaming() || revealing?.() === true;
+  // The previous rows: an unchanged row keeps its object (and key string), so neither its key nor the For row is rebuilt.
+  let previous: MarkdownRow[] = [];
   const rows = (): MarkdownRow[] => {
     // Streaming reads only the revealed text (`followText` writes it from `source`): reading `source` too re-split every
     // chunk write a second time, before the reveal caught up.
-    const blocks = splitBlocks(displayed ? displayed() : source());
+    const blocks = split(displayed ? displayed() : source());
     const live = streaming();
     const retained = liveFrom?.() ?? -1;
-    return blocks.map((raw, index) => {
+    const out: MarkdownRow[] = [];
+    for (let index = 0; index < blocks.length; index++) {
+      const raw = blocks[index]!;
       const last = index === blocks.length - 1;
       const tail = (live && last) || (retained >= 0 && index >= retained);
-      return { key: tail ? `${index}:~` : `${index}:${raw}`, raw, tail, last };
-    });
+      const row = previous[index];
+      out.push(
+        row !== undefined && row.raw === raw && row.tail === tail && row.last === last
+          ? row
+          : { key: tail ? `${index}:~` : `${index}:${raw}`, raw, tail, last },
+      );
+    }
+    previous = out;
+    return out;
   };
   const caretOn = local.showCaret !== false;
   const cx = local.remoteImages ? local.components : localImages(local.components);

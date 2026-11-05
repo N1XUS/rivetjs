@@ -21,9 +21,28 @@ export const StreamingTextRun = (props: StreamingTextRunProps): JSX.Element => {
   const content = props.content;
   const isRevealing = props.isRevealing;
   const characterClass = composeSlotClassName(SLOTS.character, props.characterClass);
+  // Appended text re-segments from the second-to-last grapheme only (a stream re-segmenting its whole text per update
+  // was O(n²)): grapheme boundaries (UAX #29) depend on the text before them, so an append can only extend the last
+  // cluster; one more is kept as margin. Any other change segments the whole text.
+  let text = "",
+    characters: string[] = [];
+  const graphemes = (): string[] => {
+    const next = content();
+    if (next === text) return characters;
+    const count = characters.length;
+    let out: string[];
+    if (count >= 2 && next.length > text.length && next.slice(0, text.length) === text) {
+      const from = text.length - characters[count - 1]!.length - characters[count - 2]!.length;
+      out = characters.slice(0, count - 2);
+      for (const character of textGraphemes(next.slice(from))) out.push(character);
+    } else out = textGraphemes(next);
+    text = next;
+    characters = out;
+    return out;
+  };
   return (
     <span data-slot="streaming-text-run">
-      <For each={() => textGraphemes(content())} by={(_character: string, index: number) => index}>
+      <For each={graphemes} by={(_character: string, index: number) => index}>
         {(character: () => string) => (
           <span class={characterClass} data-new={untrack(isRevealing) ? "true" : undefined}>
             {character()}

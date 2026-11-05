@@ -29,6 +29,7 @@ The renderer in the example maps each node type to an element, renders code bloc
 | `parseMarkdown` | `(source: string) => MarkdownBlock[]` | Headings, paragraphs, fenced code, blockquotes, lists, tables and thematic breaks. |
 | `parseInline` | `(source: string) => MarkdownInline[]` | Text, strong/emphasis, strikethrough, inline code, links, images and breaks. |
 | `splitBlocks` | `(source: string) => string[]` | Top-level chunks; keeps fenced code and continuing lists/quotes together. |
+| `createBlockSplit` | `() => (source: string) => string[]` | Incremental `splitBlocks` for a streamed source: same result; when the source extends the previous one, finished blocks are reused (same strings) and only the text after them is scanned (linear over a stream). |
 | `closeOpenMarks` | `(block: string) => string` | Repairs unfinished strong, strike and code marks for a streaming preview. |
 | `safeUrl` | `(url: string) => string \| undefined` | Allows relative URLs and http, https, mailto and tel schemes; rejects other schemes. |
 | `textOf` | `(nodes: readonly MarkdownInline[]) => string` | Extracts inline text, including image alt text. |

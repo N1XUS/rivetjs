@@ -272,3 +272,30 @@ test("markdown: retained links preserve and update their title", async () => {
   assert.equal(r.container.querySelector("a")?.title, "New title");
   r.unmount();
 });
+
+test("streaming text: appended text re-segments only its end, with the same characters as the whole text", async () => {
+  const { textGraphemes } = await import("@rivetjs/cdk/chat/text-reveal");
+  // ZWJ families, flags (regional indicator pairs), combining marks, skin tones, CJK, split surrogate pairs.
+  const full = "Hi 👨‍👩‍👧 and 🇺🇦🇺🇸🇯 é̃ 👍🏽 文字 áb — end 👩‍💻";
+  const text = signal("");
+  const r = render(() => <StreamingText content={text} isStreaming speed={0} />);
+  await flush();
+  const run = r.container.querySelector("[data-slot=streaming-text-run]")!;
+  const kept = new Set<Element>();
+  for (let n = 1; n <= full.length; n++) {
+    text.set(full.slice(0, n));
+    await flush();
+    const characters = [...run.children].map((node) => node.textContent);
+    assert.deepEqual(characters, textGraphemes(full.slice(0, n)), `prefix ${n}`);
+    if (n === 3) for (const node of run.children) kept.add(node);
+  }
+  for (const node of kept) assert.equal(node.isConnected, true, "earlier character nodes kept");
+  // A replacement segments the whole new text.
+  text.set("🇺🇦 new");
+  await flush();
+  assert.deepEqual(
+    [...run.children].map((node) => node.textContent),
+    textGraphemes("🇺🇦 new"),
+  );
+  r.unmount();
+});

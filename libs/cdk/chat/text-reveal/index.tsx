@@ -69,14 +69,17 @@ export function followText(source: () => string, target: Signal<string>, options
     const streaming = options.isStreaming?.() ?? true;
     const animate = streaming || wasStreaming || revealing;
     wasStreaming = streaming;
-    const appended = next.startsWith(previous);
+    // `slice ===` (memcmp) rather than `startsWith` (a character walk): a long response re-checks its whole text per chunk.
+    const appended = next.length >= previous.length && next.slice(0, previous.length) === previous;
     previous = next;
     if (!animate || !appended || !Number.isFinite(speed) || speed <= 0 || media?.matches || typeof requestAnimationFrame !== "function") {
       immediate();
       return;
     }
     // A UTF-16 transport chunk can end between the two halves of a surrogate pair.
-    const available = next.replace(/[\uD800-\uDBFF]$/, "");
+    // (A last-character check: an end-anchored regex scans the whole text.)
+    const end = next.charCodeAt(next.length - 1);
+    const available = end >= 0xd800 && end <= 0xdbff ? next.slice(0, -1) : next;
     pending = textGraphemes(available.slice(untrack(target).length));
     rate = Math.max(speed, pending.length / 0.24);
     if (!pending.length) return;

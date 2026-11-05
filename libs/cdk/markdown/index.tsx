@@ -76,17 +76,80 @@ const interrupts = (line: string): boolean => {
  * `parseMarkdown(chunk)` of each chunk equals the matching part of `parseMarkdown(source)`.
  */
 export function splitBlocks(source: string): string[] {
-  const lines = source.replace(/\r\n?/g, "\n").split("\n");
   const out: string[] = [];
+  scanBlocks(source.replace(/\r\n?/g, "\n").split("\n"), out, null);
+  return out;
+}
+
+/**
+ * Incremental `splitBlocks` for a streamed source: each call returns `splitBlocks(source)`. When `source` extends the
+ * previous call's source, the blocks finished before the last resume point (a line start between blocks whose split
+ * no later text can change) are kept (same strings) and only the text after it is scanned, so a response growing to
+ * n characters costs O(n) in all instead of O(n²). Any other source is split whole. Do not mutate the result.
+ */
+export function createBlockSplit(): (source: string) => string[] {
+  let last: string | null = null,
+    result: string[] = [];
+  // Resume point: `prefix` = the source before it (ends with a line break), `count` = blocks finished before it.
+  let prefix = "",
+    count = 0;
+  return (source) => {
+    if (source === last) return result;
+    let from = 0;
+    const out: string[] = [];
+    // `slice ===` compares flat strings with memcmp; `startsWith` walks characters (~50x slower at 100k).
+    if (count !== 0 && source.length >= prefix.length && source.slice(0, prefix.length) === prefix) {
+      from = prefix.length;
+      for (let i = 0; i < count; i++) out.push(result[i]!);
+    } else count = 0;
+    const tail = from === 0 ? source : source.slice(from);
+    // Lines and each one's start in `tail` (raw: separators are \n, \r\n or \r).
+    const lines: string[] = [];
+    const starts: number[] = [];
+    const separator = /\r\n?|\n/g;
+    let at = 0;
+    for (let m: RegExpExecArray | null; (m = separator.exec(tail)) !== null;) {
+      lines.push(tail.slice(at, m.index));
+      starts.push(at);
+      at = m.index + m[0].length;
+    }
+    lines.push(tail.slice(at));
+    starts.push(at);
+    let resume = -1,
+      resumeCount = 0;
+    scanBlocks(lines, out, (line, blocks) => {
+      // A start after a trailing lone \r is not final (a following \n joins that separator).
+      const offset = starts[line]!;
+      if (offset === tail.length && tail.charCodeAt(offset - 1) === 13) return;
+      resume = offset;
+      resumeCount = blocks;
+    });
+    if (resume > 0) {
+      prefix = source.slice(0, from + resume);
+      count = resumeCount;
+    }
+    last = source;
+    result = out;
+    return out;
+  };
+}
+
+// The `splitBlocks` line scan, appending to `out`. `resume(line, blocks)` hears each line start (after the first) where
+// the split so far is final: no open block, and no lookahead read the line or later (lines before it are complete:
+// they end with a separator).
+function scanBlocks(lines: readonly string[], out: string[], resume: ((line: number, blocks: number) => void) | null): void {
   let current: string[] = [];
   let kind: "none" | "fence" | "list" | "quote" | "text" = "none";
   let fence = "";
+  // Last line index a lookahead read.
+  let peeked = -1;
   const flush = () => {
     if (current.length) out.push(current.join("\n"));
     current = [];
     kind = "none";
   };
   for (let i = 0; i < lines.length; i++) {
+    if (resume !== null && kind === "none" && i > 0 && peeked < i) resume(i, out.length);
     const line = lines[i]!;
     if (kind === "fence") {
       current.push(line);
@@ -98,6 +161,7 @@ export function splitBlocks(source: string): string[] {
         // Keep a list / quote together when the next non-blank line continues it.
         let j = i + 1;
         while (j < lines.length && BLANK.test(lines[j]!)) j++;
+        if (j > peeked) peeked = j;
         const next = lines[j];
         if (next !== undefined && (kind === "list" ? ITEM.test(next) || /^[ \t]{2,}\S/.test(next) : QUOTE.test(next))) {
           // Keep the whole blank run at once (no rescan per blank line).
@@ -142,7 +206,6 @@ export function splitBlocks(source: string): string[] {
     current.push(line);
   }
   if (kind === "fence" || current.length) flush();
-  return out;
 }
 
 /* -------------------------------------------------------------------------------------------------
