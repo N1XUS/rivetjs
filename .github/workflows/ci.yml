@@ -92,6 +92,8 @@ jobs:
   cold:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      RIVET_CACHE_DIR: ${{ github.workspace }}/../rivet-cache
     strategy:
       fail-fast: false
       matrix:
@@ -103,6 +105,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Rivet build cache (compiler answers, comptime, images, docs page passes, example checks): content-keyed,
+      # so a restored entry never gives a stale result. Outside the checkout (Tailwind source detection).
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../rivet-cache
+          key: rivet-cache-cold-${{ strategy.job-index }}-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            rivet-cache-cold-${{ strategy.job-index }}-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+            rivet-cache-cold-${{ strategy.job-index }}-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium webkit
       - run: node libs/docs-kit/cli.ts cold apps/ui-docs --frames
         env:
@@ -209,6 +220,8 @@ jobs:
   size:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      RIVET_CACHE_DIR: ${{ github.workspace }}/../rivet-cache
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -216,6 +229,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Rivet build cache (compiler answers, comptime, images, docs page passes, example checks): content-keyed,
+      # so a restored entry never gives a stale result. Outside the checkout (Tailwind source detection).
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../rivet-cache
+          key: rivet-cache-size-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            rivet-cache-size-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+            rivet-cache-size-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium
       - run: npm run size-report -- --check
       # Real docs / ui-docs frame payloads (ZERO Z2): frames-only builds, ratchet against scripts/size-report/frames.json.
@@ -226,6 +248,8 @@ jobs:
   cdk-docs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      RIVET_CACHE_DIR: ${{ github.workspace }}/../rivet-cache
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -233,12 +257,23 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Rivet build cache (compiler answers, comptime, images, docs page passes, example checks): content-keyed,
+      # so a restored entry never gives a stale result. Outside the checkout (Tailwind source detection).
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../rivet-cache
+          key: rivet-cache-cdk-docs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            rivet-cache-cdk-docs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+            rivet-cache-cdk-docs-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium
       - run: npx nx run cdk-docs:build --output-style=static --skip-nx-cache
 
   ui-docs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      RIVET_CACHE_DIR: ${{ github.workspace }}/../rivet-cache
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -246,6 +281,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Rivet build cache (compiler answers, comptime, images, docs page passes, example checks): content-keyed,
+      # so a restored entry never gives a stale result. Outside the checkout (Tailwind source detection).
+      - uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/../rivet-cache
+          key: rivet-cache-ui-docs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            rivet-cache-ui-docs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+            rivet-cache-ui-docs-${{ runner.os }}-
       - run: npx playwright install --with-deps chromium
       - run: npx nx run ui-docs:build --output-style=static --skip-nx-cache
       # Home page contracts on the built site (apps/ui-docs/tests/home.test.ts skips without a build; required here).
