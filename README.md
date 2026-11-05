@@ -6,7 +6,7 @@
 
 Rivet is a compiled, resumable JSX framework: SSR-first streaming output, fine-grained signals, compiled DOM templates, resumable pages (the browser adopts the server's nodes, no hydration re-render), file routing, and compile-time i18n, styles and slots. The compiler is Rust/oxc built to WebAssembly. Pages with nothing interactive ship no JS; interactive pages load only the code of the component a user touches. Goal: beat Solid, Svelte, React, Qwik and ASP.NET Razor on SSR (CPU/page, p50, TTFB, peak memory), DOM and resume benchmarks, published with losses ([latest SSR comparison](docs/benchmarks/2026-10-28-ssr-comparison.md)).
 
-Around the framework: `@rivetjs/cdk` (headless components ported from React Aria / Angular CDK), `@rivetjs/ui` (styled components with a look and API similar to HeroUI v3, plus Pro-style data display, charts, scheduler and AI chat parts), `@rivetjs/motion`, `@rivetjs/forms`, `@rivetjs/i18n`, framework bridges for React and Preact islands, DevTools, an MCP server and editor tooling. Applications choose their own data-access tooling; gRPC is only used by the benchmark fixture.
+Around the framework: `@rivetjs/cdk` (headless components ported from React Aria / Angular CDK), `@rivetjs/ui` (styled components with a look and API similar to HeroUI v3, plus Pro-style data display, charts, scheduler and AI chat parts), `@rivetjs/motion`, `@rivetjs/forms`, `@rivetjs/i18n`, framework bridges for React, Preact, Solid, Vue and Svelte islands, DevTools, an MCP server and editor tooling. Applications choose their own data-access tooling; gRPC is only used by the benchmark fixture.
 
 Roadmap: [`ROADMAP.md`](ROADMAP.md) (now / next / later / not planned).
 
@@ -18,7 +18,7 @@ cd my-app
 npm run dev
 ```
 
-All 20 packages are available on npm (alpha releases; APIs may still change). Create an app with the command above.
+All 23 packages are available on npm (alpha releases; APIs may still change). Create an app with the command above.
 
 ## Documentation hosting
 
@@ -92,7 +92,7 @@ Contributor gates (run before commits that touch runtime, router, compiler or ki
 
 See [the example app](apps/playground/README.md), [latest SSR comparison](docs/benchmarks/2026-10-28-ssr-comparison.md), [perf scoreboard](docs/benchmarks/perf-scoreboard.md), [routing](docs/guides/routing.md), [forms](docs/guides/forms.md), [testing](docs/guides/testing.md), [Vite authoring](docs/guides/vite-integration.md), [DevTools](docs/guides/devtools.md), [large browser comparison](docs/benchmarks/large-dom-comparison.md), [runnable browser benchmark](docs/benchmarks/large-dom-benchmark.md), [batched SSR comparison](docs/benchmarks/batched-ssr-comparison.md), [earlier large-page SSR comparison](docs/benchmarks/optimized-ssr-comparison.md), [compiled/native SSR comparison](docs/benchmarks/compiled-ssr-comparison.md), [compiled runtime milestone](docs/design/compiled-runtime-milestone.md), [measured baseline and limitations](docs/benchmarks/ssr-foundation-results.md), [implementation notes](docs/design/ssr-foundation-implementation-notes.md), [benchmark instructions](apps/ssr-bench/README.md), the [approved architecture](docs/design/specs/2026-10-02-rivet-ssr-first-restart-design.md), and the [first implementation plan](docs/design/plans/2026-10-02-rivet-ssr-foundation.md).
 
-Next stages: [`ROADMAP.md`](ROADMAP.md); resumable boundaries (the derived model, [measured](docs/benchmarks/2026-10-20-derived-r5.md)) are the only resume model since plan M6; data from the page is on by default (`resume.domData: false` opts out). Native compiler and server work must justify their crossing costs in measurements. DI is deferred; framework components (React, Preact) render as islands through `@rivetjs/bridge`.
+Next stages: [`ROADMAP.md`](ROADMAP.md); resumable boundaries (the derived model, [measured](docs/benchmarks/2026-10-20-derived-r5.md)) are the only resume model since plan M6; data from the page is on by default (`resume.domData: false` opts out). Native compiler and server work must justify their crossing costs in measurements. DI is deferred; framework components (React, Preact, Solid, Vue, Svelte) render as islands through `@rivetjs/bridge`.
 
 ## Design skills for AI assistants
 
