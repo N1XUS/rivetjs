@@ -47,18 +47,38 @@ const hash = async (input, plugins) => {
   const line = `${createHash("sha256").update(code).digest("hex").slice(0, 12)} ${closure.reduce((n, chunk) => n + chunk.code.length, 0)}`;
   return line;
 };
+/** `fn` over `items`, 4 at a time (independent bundles overlap; rolldown is native), results by index. */
+const pool4 = async (items, fn) => {
+  const results = new Array(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(4, items.length) }, async () => {
+      while (next < items.length) {
+        const index = next++;
+        results[index] = await fn(items[index]);
+      }
+    }),
+  );
+  return results;
+};
+const exported = [];
 for (const pkg of ["libs/reactivity", "libs/runtime"]) {
   const json = JSON.parse(readFileSync(`${root}/${pkg}/package.json`, "utf8"));
   for (const [key, value] of Object.entries(json.exports)) {
     const file = typeof value === "string" ? value : value.default ?? value.import;
-    const name = json.name + key.slice(1);
-    const input = `${root}/${pkg}/${file}`;
-    const line = await hash(input, PLAIN);
-    out.push(`${name} ${line}`);
-    const resumed = await hash(input, RESUMED);
-    if (resumed !== line) out.push(`${name} [resumed] ${resumed}`);
-    const domData = await hash(input, DOM_DATA);
-    if (domData !== resumed) out.push(`${name} [domData] ${domData}`);
+    exported.push({ name: json.name + key.slice(1), input: `${root}/${pkg}/${file}` });
   }
 }
+// Lines stay in entry order (one entry's three bundles in turn; up to 4 entries at a time).
+const lines = await pool4(exported, async ({ name, input }) => {
+  const lines = [];
+  const line = await hash(input, PLAIN);
+  lines.push(`${name} ${line}`);
+  const resumed = await hash(input, RESUMED);
+  if (resumed !== line) lines.push(`${name} [resumed] ${resumed}`);
+  const domData = await hash(input, DOM_DATA);
+  if (domData !== resumed) lines.push(`${name} [domData] ${domData}`);
+  return lines;
+});
+out.push(...lines.flat());
 console.log(out.join("\n"));

@@ -133,28 +133,39 @@ function entries(pkg) {
   return list;
 }
 
-if (main) {
-  const out = [];
-  for (const pkg of PACKAGES) {
-    for (const { name, file, browser } of entries(pkg)) {
-      const input = `${root}/${pkg}/${file}`;
-      const dom = await hash(input, { target: "dom" });
-      if (!dom.tsx) out.push(`${name} ${dom.line}`);
-      else {
-        out.push(`${name} [dom] ${dom.line}`);
-        out.push(`${name} [server] ${(await hash(input, { target: "server" })).line}`);
+/** `fn` over `items`, 4 at a time (independent bundles overlap; rolldown is native), results by index. */
+async function pool4(items, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(4, items.length) }, async () => {
+      while (next < items.length) {
+        const index = next++;
+        results[index] = await fn(items[index]);
       }
-      if (browser) out.push(`${name} [browser] ${(await hash(`${root}/${pkg}/${browser}`, { target: "dom", browser: true })).line}`);
-    }
-  }
-  for (const [name, file] of CDK_ENTRIES) {
-    const input = `${root}/libs/cdk/${file}`;
+    }),
+  );
+  return results;
+}
+
+if (main) {
+  // One task per entry (its dom, server and browser bundles in turn), 4 entries at a time; lines in entry order.
+  const tasks = [
+    ...PACKAGES.flatMap((pkg) =>
+      entries(pkg).map(({ name, file, browser }) => ({ name, input: `${root}/${pkg}/${file}`, browser: browser && `${root}/${pkg}/${browser}` })),
+    ),
+    ...CDK_ENTRIES.map(([name, file]) => ({ name, input: `${root}/libs/cdk/${file}` })),
+  ];
+  const lines = await pool4(tasks, async ({ name, input, browser }) => {
+    const out = [];
     const dom = await hash(input, { target: "dom" });
     if (!dom.tsx) out.push(`${name} ${dom.line}`);
     else {
       out.push(`${name} [dom] ${dom.line}`);
       out.push(`${name} [server] ${(await hash(input, { target: "server" })).line}`);
     }
-  }
-  console.log(out.join("\n"));
+    if (browser) out.push(`${name} [browser] ${(await hash(browser, { target: "dom", browser: true })).line}`);
+    return out;
+  });
+  console.log(lines.flat().join("\n"));
 }
