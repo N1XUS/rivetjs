@@ -7,7 +7,7 @@ description: 'Build a validated form inside a drawer or dialog on a Rivet live p
 
 # Form in a drawer with a live page
 
-Reference implementation: `get_doc("docs:/guides/forms/forms-in-overlays/")` (example `docs:/examples/drawer-form/`). Read it first; the steps below are its shape.
+Reference implementation: `npx -y @rivetjs/mcp doc docs:/guides/forms/forms-in-overlays/` (MCP `get_doc`; example `docs:/examples/drawer-form/`; online `https://rivetjs.severyn.pro/guides/forms/forms-in-overlays.md`). Read it first; the steps below are its shape.
 
 1. Define the form once, shared by page and action (any Standard Schema library):
 

@@ -3,9 +3,23 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join, posix } from "node:path";
 import { describe, expect, it } from "vitest";
-import { aiOutputs, aiProblems, readSkills, REPO, staleOutputs } from "../ai/sync.ts";
+import { AGENTS_MAX_BYTES, aiOutputs, aiProblems, readSkills, REPO, staleOutputs, uiSubpaths } from "../ai/sync.ts";
 
 describe("ai sync", () => {
+  it("AGENTS.md stays under the Codex project-doc budget, starts with the lookup rules and lists every ui subpath", async () => {
+    const outputs = await aiOutputs();
+    const agents = outputs.get("templates/starter-ui/AGENTS.md")!;
+    expect(Buffer.byteLength(agents)).toBeLessThanOrEqual(AGENTS_MAX_BYTES);
+    expect(AGENTS_MAX_BYTES).toBeLessThan(32 * 1024);
+    expect(agents).not.toContain("{{ui-components}}");
+    // The rules agents need most come first (agents skim; Codex truncates the tail).
+    const head = agents.slice(0, 6000);
+    for (const text of ["npx -y @rivetjs/mcp component", "https://ui.rivetjs.severyn.pro/llms.txt", "npm run check", "@rivetjs/kit/icon", "React → Rivet"])
+      expect(head, text).toContain(text);
+    const subpaths = uiSubpaths();
+    expect(subpaths).toEqual(expect.arrayContaining(["button", "drawer", "modal", "select", "table", "textfield"]));
+    for (const name of subpaths) expect(agents).toContain(`\`${name}\``);
+  });
   it("generated files are checked in and current (node libs/mcp/ai/sync.ts)", async () => {
     expect(await aiProblems()).toEqual([]);
   });

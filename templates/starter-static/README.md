@@ -20,7 +20,7 @@ npm run check     # Rivet compiler diagnostics + tsgo (CI)
 - Add a page: a new file in `src/routes/` (`blog.tsx` → `/blog`, `blog/[slug].tsx` → `/blog/:slug`). Docs "File routes" (`guides/routing/file-routes`).
 - Deploy: `npm run build`, then upload `dist/client` to any static host (docs "Deploy", `guides/deploy/static-hosts`). Vercel / Netlify / Cloudflare: docs `guides/deploy/<target>` (one `adapter` option in `vite.config.ts`; new projects: `npm create rivet@latest -- --deploy <target>`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).
-- Docs: https://github.com/N1XUS/rivetjs/tree/main/apps/docs/content (guides, reference, recipes).
+- Docs: https://rivetjs.severyn.pro (framework), https://ui.rivetjs.severyn.pro (`@rivetjs/ui`), https://cdk.rivetjs.severyn.pro (`@rivetjs/cdk`). AI assistants: `AGENTS.md` / `CLAUDE.md`, and `npx -y @rivetjs/mcp component <Name>` / `search <words>` for offline lookups.
 
 ## Tooling
 

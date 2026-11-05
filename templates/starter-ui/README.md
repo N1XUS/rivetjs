@@ -23,7 +23,7 @@ npm run check     # Rivet compiler diagnostics + tsgo (CI)
 - Add a page: a new file in `src/routes/`. Docs "File routes" (`guides/routing/file-routes`).
 - Deploy: `npm run build`, then upload `dist/client` to any static host (docs `guides/deploy/static-hosts`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).
-- Docs: https://github.com/N1XUS/rivetjs/tree/main/apps/docs/content (guides, reference, recipes).
+- Docs: https://rivetjs.severyn.pro (framework), https://ui.rivetjs.severyn.pro (`@rivetjs/ui`), https://cdk.rivetjs.severyn.pro (`@rivetjs/cdk`). AI assistants: `AGENTS.md` / `CLAUDE.md`, and `npx -y @rivetjs/mcp component <Name>` / `search <words>` for offline lookups.
 
 ## Tooling
 

@@ -47,6 +47,21 @@ npx -y @rivetjs/mcp
 
 In a Rivet app, `npx rivet mcp` starts the copy installed in the project.
 
+### From a shell, without an MCP client
+
+Every tool also runs as a one-shot command, so an assistant that can run shell commands but has no MCP server configured gets the same answers. Run it from the app's folder:
+
+```sh
+npx -y @rivetjs/mcp component Drawer          # get_component: import path, parts, props, example source
+npx -y @rivetjs/mcp search form in drawer     # search_docs (--site docs|cdk|ui, --kind, --limit)
+npx -y @rivetjs/mcp doc ui:/components/drawer/  # get_doc
+npx -y @rivetjs/mcp components ui             # list_components
+npx -y @rivetjs/mcp check src/routes/index.tsx  # check_code; exits 1 on an error
+npx -y @rivetjs/mcp explain RV2001            # explain_diagnostic
+```
+
+The project instructions tell assistants to use these commands instead of reading the packages' sources in `node_modules`.
+
 ### Claude Code
 
 ```sh
@@ -89,7 +104,7 @@ To share it with your team, put it in `.mcp.json` at the project root instead:
 
 ## Project instructions
 
-Every starter, and every app that `npm create rivet` makes, has an `AGENTS.md` (read by Codex, Cursor, Copilot and others) and a `CLAUDE.md` (read by Claude Code) with the same content. It covers how Rivet differs from React and Solid, the resumability rules, routes, forms, i18n, styles, icons, the project's commands, and how to read `RV` diagnostics. Keep it in your app and add your own project rules below it.
+Every starter, and every app that `npm create rivet` makes, has an `AGENTS.md` (read by Codex, Cursor, Copilot and others) and a `CLAUDE.md` (read by Claude Code) with the same content. It starts with the five rules assistants miss most often (look APIs up, use the project skills, build from `@rivetjs/ui` in a UI app, lucide icons, `npm run check`) and a React → Rivet table, then covers how Rivet differs from React and Solid, the resumability rules, routes, forms, i18n, styles, icons, the project's commands, and how to read `RV` diagnostics. Keep it in your app and add your own project rules below it. It stays under 28 KB: Codex reads at most 32 KiB of project instructions and drops the rest.
 
 The starters also ship rules for other editors and task skills:
 
@@ -143,7 +158,7 @@ claude plugin install rivet@rivet
 
 ## A good loop for an assistant
 
-1. Look up what you are about to use: `search_docs`, then `get_doc` or `get_component`.
+1. Look up what you are about to use: `search_docs`, then `get_doc` or `get_component` (from a shell: `npx -y @rivetjs/mcp search …` / `component …`).
 2. Write the file.
 3. Run `check_code` on it and fix every `RV` error. `explain_diagnostic` explains the ones you do not know.
 4. Run the project's checks: `npm run check` and the tests.

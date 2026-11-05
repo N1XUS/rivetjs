@@ -33,5 +33,5 @@ Then fix what resuming requires:
 1. Move browser reads (`window`, `document`, `localStorage`, `matchMedia`) out of the component body into handlers or `clientEffect` (RV2001).
 2. Handlers: plain functions (inline arrows, local consts, imported functions); nothing they use needs to serialize. Keep values that differ between server and browser (`Date.now()`, random ids) in a signal or a handler.
 3. Render props and item renderers stay functions (`{(item) => …}`).
-4. Third-party React UI → `@rivetjs/ui` / `@rivetjs/cdk` equivalents: `list_components`, `get_component(name)`; React Aria-style names carry over (`onPress`, `isOpen={signal}`).
+4. Third-party React UI → `@rivetjs/ui` / `@rivetjs/cdk` equivalents: `npx -y @rivetjs/mcp components ui`, `npx -y @rivetjs/mcp component <Name>` (MCP: `list_components`, `get_component(name)`); React Aria-style names carry over (`onPress`, `isOpen={signal}`).
 5. `check_code` the result, fix every RV code (`explain_diagnostic`), then `npm run check`.

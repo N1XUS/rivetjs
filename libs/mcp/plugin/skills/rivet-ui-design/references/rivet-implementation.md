@@ -6,7 +6,7 @@
 
 Read project `AGENTS.md`/`CLAUDE.md`, dependencies, JSX/compiler configuration and styling setup. Rivet resembles React JSX but uses fine-grained signals and compiled/resumable output. Do not install React UI libraries or assume React examples run unchanged. Do not upgrade dependencies or replace a working app setup just to apply this skill.
 
-When Rivet MCP is connected, use `get_component(name, package)` with an explicit `ui` or `cdk` package to retrieve imports, signatures, compound parts and examples. `search_docs(query, site)` and `get_doc(path)` provide guides. Useful doc ids include:
+Without MCP, the same lookup runs in a shell: `npx -y @rivetjs/mcp component <Name> --package ui`. When Rivet MCP is connected, use `get_component(name, package)` with an explicit `ui` or `cdk` package to retrieve imports, signatures, compound parts and examples. `search_docs(query, site)` and `get_doc(path)` provide guides. Useful doc ids include:
 
 - `ui:/start/design-principles/`, `ui:/start/theming/`, `ui:/start/styling/`, `ui:/start/composition/`.
 - `ui:/components/app-layout/`, `ui:/components/typography/`, and the chosen component's page.

@@ -8,11 +8,12 @@ description: "Build a page or component from @rivetjs/ui components - correct su
 # Page with @rivetjs/ui components
 
 1. Setup (the `ui` starter has it): dependencies `@rivetjs/ui`, `@rivetjs/kit`, `lucide`; `src/styles.css` = `@import "tailwindcss";` then `@import "@rivetjs/ui/styles";` (other looks: `@rivetjs/ui/theme` presets, variables pasted after it).
-2. For every component: `get_component("Select")` (import path, parts, props, example source) or `get_doc("ui:/components/select/")`. Copy the structure of the docs example, not React component-library code.
+2. For every component, look it up before writing it: `npx -y @rivetjs/mcp component Select` in a shell (or the MCP tool `get_component("Select")`; page: `get_doc("ui:/components/select/")`, online `https://ui.rivetjs.severyn.pro/components/select.md`). Import path, parts, props and example source; copy the structure of the docs example, not React component-library code, and do not reverse-engineer `node_modules`.
 3. Rules that differ from React component libraries:
    - Subpath imports: `import { Select } from "@rivetjs/ui/select"`, `import { ListBox } from "@rivetjs/ui/list-box"`, `import { Label } from "@rivetjs/ui/label"`.
    - `class`, not `className`. Events follow React Aria: `onPress`, `onSelectionChange`, `onOpenChange`.
-   - Two-way props take a signal: `isOpen={open}`, `value={selected}`, `selectedKeys={keys}`; a plain value is one-way.
+   - Two-way props take the signal itself: `isOpen={open}`, `value={selected}`, `selectedKeys={keys}`. Not the React pair `isOpen={open()}` + `onOpenChange={…}`.
+   - Use the components for everything they cover (buttons, text fields, selects, dialogs, tables): no raw `<button>` / `<input>` / `role="dialog"` markup in a ui app. Dialog = `@rivetjs/ui/modal` or `alert-dialog`, side panel = `drawer`, text input = `textfield` + `input`.
    - Render props are accessors: `({ isPlaceholder }) => (isPlaceholder() ? … : …)`.
    - Icons: `<Icon icon={ChevronDown} />` (`@rivetjs/kit/icon` + lucide); never inline SVG paths or Unicode glyphs.
 
@@ -39,4 +40,4 @@ export default function Page() {
 ```
 
 4. Custom-styled widget instead: the headless `@rivetjs/cdk/<module>` (same parts, `rv-*` classes + `data-*` state, no styles).
-5. `check_code`, `npm run check`, then look at it in `npm run dev` (overlays render in a portal on the div overlay layer, never native `<dialog>` / `popover`).
+5. `npx -y @rivetjs/mcp check <file>` (or `check_code`), `npm run check`, then look at it in `npm run dev` (overlays render in a portal on the div overlay layer, never native `<dialog>` / `popover`).
