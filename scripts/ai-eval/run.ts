@@ -9,7 +9,8 @@
 //   node scripts/ai-eval/run.ts (--outputs dir | --reference) [task …] [--json file] [--keep]
 //
 // Per task, in order (a failing step skips the rest):
-//   files      every file the task names exists in the output; no forbidden pattern (React imports, SVG paths…)
+//   files      every file the task names exists in the output; no forbidden pattern (React imports / hooks, SVG paths…);
+//              every `require` pattern of the task present
 //   rv         Rivet compiler + language service (`check_code` of @rivetjs/mcp) on each output file: no RV errors
 //   build      the task's starter (templates/starter-*) + the output files, built like `npm run build`
 //   typecheck  `tsc -p` over the staged app
@@ -86,6 +87,11 @@ export function checkFiles(task: EvalTask, output: ReadonlyMap<string, string>):
   for (const [file, text] of output)
     for (const rule of [...(CODE.test(file) ? COMMON_FORBID : []), ...(task.forbid ?? [])])
       if (rule.pattern.test(text)) problems.push(`${file}: ${rule.why} (${rule.pattern})`);
+  const code = [...output]
+    .filter(([file]) => CODE.test(file))
+    .map(([, text]) => text)
+    .join("\n");
+  for (const rule of task.require ?? []) if (!rule.pattern.test(code)) problems.push(`missing: ${rule.why} (${rule.pattern})`);
   return { check: "files", ok: problems.length === 0, detail: problems.join("\n") || `${output.size} file(s)` };
 }
 
@@ -98,6 +104,12 @@ const COMMON_FORBID: { pattern: RegExp; why: string }[] = [
   { pattern: /<path\b[^>]*\bd=/, why: "hand-written SVG path (use lucide via @rivetjs/kit/icon)" },
   { pattern: /[\u2713\u2714\u2715\u2716\u2717\u2190-\u2193\u25b2-\u25bc\u2605\u2606]/u, why: "Unicode glyph used as an icon" },
   { pattern: /dangerouslySetInnerHTML|innerHTML\s*=/, why: "raw HTML injection" },
+  { pattern: /\buse(State|Effect|LayoutEffect|Memo|Callback|Reducer)\s*[<(]/, why: "React hooks (signal / computed / clientEffect)" },
+  {
+    // Seen in a cold run (2026-11-05): `<Drawer isOpen={open()} onOpenChange={…}>` never opened. Two-way props take the signal.
+    pattern: /\bisOpen=\{\s*[\w.]+\(\)\s*\}[^>]*\bonOpenChange=/,
+    why: "React-style controlled overlay (pass the signal: isOpen={open})",
+  },
 ];
 
 /** Rivet compiler + language-service diagnostics of every `.ts` / `.tsx` output file, in the staged app. */

@@ -30,6 +30,8 @@ export interface EvalTask {
   steps: EvalStep[];
   /** Extra patterns the output must not contain (on top of the common ones in run.ts). */
   forbid?: { pattern: RegExp; why: string }[];
+  /** Patterns the output (all code files together) must contain: the idiomatic building block the prompt leaves implicit. */
+  require?: { pattern: RegExp; why: string }[];
 }
 
 const index = "src/routes/index.tsx";
@@ -277,6 +279,66 @@ export const TASKS: EvalTask[] = [
       { click: "button:has-text('Choose a plan')" },
       { click: "[role=option]:has-text('Pro')" },
       { expect: ["#chosen", "Plan: pro"] },
+    ],
+  },
+  {
+    id: "ui-team-table",
+    title: "@rivetjs/ui table with a form in a drawer",
+    template: "ui",
+    prompt: `On the home page build a small team manager with @rivetjs/ui components. A @rivetjs/ui \`Table\` (accessible name "Team") with the columns Name and Role lists the members, starting with "Ada Lovelace" (Admin) and "Linus Torvalds" (Viewer). Each row also has an icon-only @rivetjs/ui \`Button\` showing the lucide \`Trash2\` icon, with the accessible name "Remove <name>" (an \`aria-label\`), that removes the row. \`<p id="count">\` shows "<n> members". A @rivetjs/ui \`Button\` \`#add\` ("Add member") opens a @rivetjs/ui \`Drawer\` with a @rivetjs/ui \`TextField\` labelled "Name" (its input has the id \`member-name\`), a @rivetjs/ui \`Select\` labelled "Role" (options Admin, Editor, Viewer with ids \`admin\`, \`editor\`, \`viewer\`; Viewer selected at first) and a \`Button\` \`#save\` ("Save"). Save adds the member to the table and closes the drawer; with an empty name it does nothing.`,
+    files: [index],
+    forbid: [{ pattern: /<svg\b/, why: "inline <svg> (use the Icon component)" }],
+    steps: [
+      { expect: ["#count", "2 members"] },
+      { expect: ['[aria-label="Team"]', "Linus Torvalds"] },
+      { click: "#add" },
+      { matches: '[role="dialog"]' },
+      { click: "#save" },
+      { matches: '[role="dialog"]' },
+      { expect: ["#count", "2 members"] },
+      { fill: ["#member-name", "Grace Hopper"] },
+      { click: '[role="dialog"] button:has-text("Viewer")' },
+      { click: '[role="option"]:has-text("Editor")' },
+      { click: "#save" },
+      { absent: '[role="dialog"]' },
+      { expect: ["#count", "3 members"] },
+      { expect: ['[aria-label="Team"]', "Grace Hopper"] },
+      { expect: ['[aria-label="Team"]', "Editor"] },
+      { click: '[aria-label="Remove Linus Torvalds"]' },
+      { expect: ["#count", "2 members"] },
+      { absent: '[aria-label="Remove Linus Torvalds"]' },
+    ],
+  },
+  {
+    id: "ui-settings",
+    title: "Settings page in a UI app (components not named)",
+    template: "ui",
+    prompt: `Add a settings page at \`/settings\` with the heading "Settings". It has a text field labelled "Display name" (input id \`display-name\`) and a button \`#save\` ("Save") that shows \`<p id="saved">Saved <name></p>\`. Below it, a \`#delete\` button ("Delete account") asks for confirmation in a dialog with the buttons \`#cancel\` ("Cancel") and \`#confirm\` ("Delete"); confirming closes the dialog and shows \`<p id="status">Account deleted</p>\`. Link to the page from the home page with \`#settings-link\` ("Settings", URL \`/settings/\`), keeping the existing home content. Make it look like the rest of the app.`,
+    files: [index, "src/routes/settings.tsx"],
+    forbid: [
+      { pattern: /role=["']dialog["']|role=["']alertdialog["']|<dialog\b/, why: "hand-rolled dialog (the app has @rivetjs/ui Modal / AlertDialog)" },
+      { pattern: /<svg\b/, why: "inline <svg> (use the Icon component)" },
+    ],
+    require: [
+      { pattern: /from\s+["']@rivetjs\/ui\/(modal|alert-dialog|drawer)["']/, why: "dialog from @rivetjs/ui (modal / alert-dialog)" },
+      { pattern: /from\s+["']@rivetjs\/ui\/button["']/, why: "buttons from @rivetjs/ui/button" },
+      { pattern: /from\s+["']@rivetjs\/ui\/(textfield|input)["']/, why: "text field from @rivetjs/ui (textfield + input)" },
+    ],
+    steps: [
+      { click: "#settings-link" },
+      { expect: ["h1", "Settings"] },
+      { fill: ["#display-name", "Ada"] },
+      { click: "#save" },
+      { expect: ["#saved", "Saved Ada"] },
+      { click: "#delete" },
+      { matches: '[role="dialog"], [role="alertdialog"]' },
+      { click: "#cancel" },
+      { absent: '[role="dialog"], [role="alertdialog"]' },
+      { absent: "#status" },
+      { click: "#delete" },
+      { click: "#confirm" },
+      { absent: '[role="dialog"], [role="alertdialog"]' },
+      { expect: ["#status", "Account deleted"] },
     ],
   },
   {

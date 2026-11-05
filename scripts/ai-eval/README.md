@@ -1,16 +1,16 @@
 # Rivet AI eval
 
-Measures whether an AI assistant writes correct Rivet: 21 small tasks in fresh starter apps (counter, todo list, tabs, routes, loaders, server actions, validated forms, a form in a drawer on a live page, `@rivetjs/ui` modal / select, lucide icons, client effects, live props, a React port). The runner never calls a model and needs no API key: it grades files.
+Measures whether an AI assistant writes correct Rivet: 23 small tasks in fresh starter apps (counter, todo list, tabs, routes, loaders, server actions, validated forms, a form in a drawer on a live page, `@rivetjs/ui` modal / select / table with a form in a drawer, a settings page that does not name its components, lucide icons, client effects, live props, a React port). The runner never calls a model and needs no API key: it grades files.
 
 Each task's output is checked in five steps; the first failure stops the task:
 
-| Check       | Passes when                                                                                                                 |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `files`     | every file the task names exists; no React / Solid import, hand-written SVG path, Unicode icon glyph or raw HTML            |
-| `rv`        | the Rivet compiler and language service report no `RV` error (same as the MCP tool `check_code`)                            |
-| `build`     | the starter plus the output builds like `npm run build` (SSR + prerender catch values that cannot resume)                   |
-| `typecheck` | `tsc -p .` reports no error in the app's files                                                                              |
-| `behaviour` | the built app is served and Chromium runs the task's steps (clicks, typing, keys, assertions) with no page or console error |
+| Check       | Passes when                                                                                                                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `files`     | every file the task names exists; no React / Solid import or hook, React-style controlled overlay, hand-written SVG path, Unicode icon glyph or raw HTML; the task's `require` patterns present |
+| `rv`        | the Rivet compiler and language service report no `RV` error (same as the MCP tool `check_code`)                                                                                                |
+| `build`     | the starter plus the output builds like `npm run build` (SSR + prerender catch values that cannot resume)                                                                                       |
+| `typecheck` | `tsc -p .` reports no error in the app's files                                                                                                                                                  |
+| `behaviour` | the built app is served and Chromium runs the task's steps (clicks, typing, keys, assertions) with no page or console error                                                                     |
 
 ## Commands (repo root)
 

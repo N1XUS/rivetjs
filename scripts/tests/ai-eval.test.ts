@@ -86,4 +86,27 @@ describe("ai-eval build script and file rules", () => {
     output.set("src/extra.tsx", "export const X = () => <span>\u2713</span>;");
     expect(checkFiles(task, output)).toMatchObject({ ok: false });
   });
+
+  it("React hooks and the React-style controlled overlay fail the files check", () => {
+    const task = TASKS[0]!;
+    const base = () => new Map(task.files.map((file) => [file, "export {};\n"] as const));
+    for (const code of ["const [n, setN] = useState(0);", "useEffect(() => {}, []);", "<Drawer isOpen={open()} onOpenChange={(v) => open.set(v)} />"]) {
+      const output = base();
+      output.set("src/extra.tsx", code);
+      expect(checkFiles(task, output), code).toMatchObject({ ok: false });
+    }
+    // Rivet's own use* helpers stay allowed.
+    const output = base();
+    output.set("src/extra.tsx", "const theme = useContext(Theme); const state = useOverlayState(); <Modal.Content isOpen={open} />;");
+    expect(checkFiles(task, output)).toMatchObject({ ok: true });
+  });
+
+  it("require rules: a task's idiomatic building block must appear in its code", () => {
+    const task = TASKS.find((t) => t.id === "ui-settings")!;
+    const output = new Map(task.files.map((file) => [file, 'import { Button } from "@rivetjs/ui/button";\n<div role="dialog" />'] as const));
+    const result = checkFiles(task, output);
+    expect(result.ok).toBe(false);
+    expect(result.detail).toMatch(/hand-rolled dialog/);
+    expect(result.detail).toMatch(/missing: dialog from @rivetjs\/ui/);
+  });
 });

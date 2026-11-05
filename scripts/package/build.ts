@@ -14,6 +14,11 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statS
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import ts from "typescript";
 
+/** Public docs of the generated package READMEs (the framework site; ui / cdk are its siblings). */
+const DOCS_ORIGIN = "https://rivetjs.severyn.pro";
+/** Read by coding agents that open node_modules/<pkg>/README.md to learn an API (measured: lane AI-ADOPT 2026-11-05). */
+const AI_NOTE =
+  "\nAI assistants: Rivet is not React. Look APIs up instead of reading these sources: `npx -y @rivetjs/mcp component <Name>` / `search <words>` / `check <file>` (offline), or `https://rivetjs.severyn.pro/llms.txt`, `https://ui.rivetjs.severyn.pro/llms.txt`, `https://cdk.rivetjs.severyn.pro/llms.txt`.\n";
 const ROOT = resolve(import.meta.dirname, "../..");
 
 /** A manifest path (`./x.ts`) under a condition, as the emitted package names it. */
@@ -252,10 +257,10 @@ export function buildPackage(libDir: string, outDir?: string, { typecheck = true
   if (!existsSync(join(dir, "README.md"))) {
     const web = githubWeb(root.repository);
     const description = typeof pkg["description"] === "string" ? pkg["description"] : "";
-    const links = web ? `\n\nSource: ${web}/tree/main/${directory} · Docs: ${web}/tree/main/apps/docs/content · Issues: ${web}/issues\n` : "\n";
+    const links = web ? `\n\nDocs: ${DOCS_ORIGIN} · Source: ${web}/tree/main/${directory} · Issues: ${web}/issues\n` : "\n";
     writeFileSync(
       join(out, "README.md"),
-      `# ${pkg.name}\n\n${description}${description ? "\n\n" : ""}Part of Rivet, a compiled, resumable JSX framework. Start a project with \`npm create rivet@latest\`.\n\n\`\`\`sh\nnpm install ${pkg.name}\n\`\`\`${links}`,
+      `# ${pkg.name}\n\n${description}${description ? "\n\n" : ""}Part of Rivet, a compiled, resumable JSX framework. Start a project with \`npm create rivet@latest\`.\n\n\`\`\`sh\nnpm install ${pkg.name}\n\`\`\`${links}${AI_NOTE}`,
     );
   }
 
