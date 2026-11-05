@@ -161,7 +161,7 @@ if (!args.includes("--no-pages")) {
     const manifest = JSON.parse(readFileSync(`${client}/.vite/manifest.json`, "utf8"));
     // App entries only: the compiler's entries (derived boundary modules, runtime, builtins) are in the resume manifest.
     const resume = JSON.parse(readFileSync(`${client}/.vite/rivet-resume.json`, "utf8"));
-    const compiler = new Set([resume.runtime, resume.builtins, ...Object.values(resume.symbols ?? {})].filter(Boolean));
+    const compiler = new Set([resume.runtime, resume.flat, resume.builtins, ...Object.values(resume.symbols ?? {})].filter(Boolean));
     const global = Object.values(manifest)
       .filter((r) => r.isEntry && !compiler.has("/" + r.file))
       .flatMap((r) => (r.file.endsWith(".css") ? [r.file] : (r.css ?? [])));

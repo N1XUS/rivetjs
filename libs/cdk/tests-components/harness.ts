@@ -85,6 +85,8 @@ export const scriptsBeforeDeferred = (page: Page): Promise<string[]> =>
 
 interface ResumeManifest {
   runtime: string;
+  /** FLAT: the list-free runtime copy (a page loads it or `runtime`). */
+  flat?: string;
   symbols: Record<string, string>;
   deps?: Record<string, string[]>;
 }
@@ -125,7 +127,9 @@ export const scriptsOf = (scripts: readonly string[], match: RegExp): string[] =
  */
 export const codeOf = (match: RegExp): Set<string> => {
   const own = chunksOf(match);
-  const always = closureOf([path(resumeManifest().runtime), ...chunksOf(/^\.rivet\/app\.tsx#/)]);
+  const m = resumeManifest();
+  // FLAT: a page loads the runtime entry or its list-free copy (`flat`).
+  const always = closureOf([path(m.runtime), ...(m.flat ? [path(m.flat)] : []), ...chunksOf(/^\.rivet\/app\.tsx#/)]);
   return new Set([...closureOf(own)].filter((chunk) => !always.has(chunk)));
 };
 

@@ -1,5 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { brotliCompressSync } from "node:zlib";
 import { chromium } from "playwright";
 
@@ -98,6 +99,20 @@ test("resumed home page: counter, filter, client navigation, back, cold detail a
     // Client-only widget mounts into its region.
     await page.waitForFunction(() => document.querySelector("#browser-widget")?.textContent!.includes("ready"));
     // Cold detail page: its back link resumes and navigates in the same document.
+    // FLAT: the detail page lists no `<For>`, so it boots the list-free runtime (manifest `flat`); `/` boots the full one.
+    const manifest = JSON.parse(await readFile(new URL("../dist/client/.vite/rivet-resume.json", import.meta.url), "utf8")) as {
+      runtime: string;
+      flat?: string;
+    };
+    const runtimeOf = (html: string) => html.match(/<script type="rivet\/boundaries"[^>]* data-rt="([^"]+)"/)?.[1];
+    assert.ok(manifest.flat && manifest.flat !== manifest.runtime);
+    assert.equal(runtimeOf(await (await fetch(origin + "/")).text()), manifest.runtime);
+    assert.equal(runtimeOf(await (await fetch(origin + "/items/3")).text()), manifest.flat);
+    const runtimes: string[] = [];
+    page.on("request", (request) => {
+      const path = new URL(request.url()).pathname;
+      if (path === manifest.runtime || path === manifest.flat) runtimes.push(path);
+    });
     documents = 0;
     await page.goto(origin + "/items/3");
     // Link interception attaches once the resumed runtime starts (until then links navigate natively).
@@ -106,6 +121,12 @@ test("resumed home page: counter, filter, client navigation, back, cold detail a
     await page.getByRole("link", { name: "Back to examples" }).click();
     await page.waitForFunction(() => document.querySelectorAll("#examples li").length === 3);
     assert.equal(new URL(page.url()).pathname, "/");
+    // The list page the flat runtime navigated to renders and updates (client-rendered: no server rows to adopt), counter too.
+    await page.getByLabel("Filter examples").fill("rout");
+    await page.waitForFunction(() => document.querySelectorAll("#examples li").length === 1);
+    await page.getByRole("button", { name: "Increase count" }).click();
+    await page.waitForFunction(() => document.querySelector<HTMLElement>("#count")!.textContent === "1");
+    assert.deepEqual(runtimes, [manifest.flat], "one runtime per document: the flat one, never the full one too");
     assert.equal(documents, 1);
     assert.deepEqual(errors, []);
   } finally {

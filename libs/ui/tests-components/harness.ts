@@ -58,6 +58,8 @@ export function watch(page: Page): Watch {
 
 interface ResumeManifest {
   runtime: string;
+  /** FLAT: the list-free runtime copy (a page loads it or `runtime`). */
+  flat?: string;
   loader?: string;
   symbols: Record<string, string>;
   deps?: Record<string, string[]>;
@@ -107,12 +109,13 @@ export const codeOf = (match: RegExp): Set<string> => {
  * Runtime chunks every resumed page may load before an interaction: the resume runtime entry, the router App (its
  * symbols: link handling; `resume-route_main` in route mode, `resume-App` in component mode) and the layouts sharing
  * its chunk, their static import closures (DOM runtime, reactivity, Vite's preload helper, merged shared chunks), and
+ * the list-free runtime copy (FLAT: pages without lists load it instead of the runtime entry),
  * the resume loader module (LOADER-DIET's deferred half of the inline loader; it evaluates no component code). Read
  * from the build manifest, so it follows `resume.chunks` / `resume.merge`.
  */
 const runtimeChunks = (): Set<string> => {
   const m = resumeManifest();
-  const out = closureOf([path(m.runtime), ...chunksOf(/^\.rivet\/app\.tsx#/)]);
+  const out = closureOf([path(m.runtime), ...(m.flat ? [path(m.flat)] : []), ...chunksOf(/^\.rivet\/app\.tsx#/)]);
   if (m.loader) out.add(path(m.loader));
   return out;
 };

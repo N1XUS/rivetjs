@@ -276,6 +276,9 @@ export interface DerivedRender {
   rl: RowList | null;
   rk: number;
   rs: Row | null;
+  /** FLAT: a keyed list started inside a boundary (`listStart`): the page needs the runtime's lazy rows (manifest `runtime`,
+   * not `flat`). */
+  listed: boolean;
 }
 
 /** H-holes (DERIVED-C3): what a fill's derived recorder retains for hits (`ShellHoles.derived`). */
@@ -403,6 +406,7 @@ export function createDerived(): DerivedRender {
     rl: null,
     rk: 0,
     rs: null,
+    listed: false,
   };
 }
 
@@ -412,6 +416,12 @@ export interface ResumeManifest {
   hash?: string;
   /** URL whose default export is the `@rivetjs/runtime/dom-derived` instance (`data-rt`). */
   runtime: string;
+  /**
+   * FLAT (2026-11-05): the list-free copy of `runtime` (`LISTS` folded: no lazy rows), built when the app has lists. The tail
+   * names it on a page whose render listed no keyed `<For>` inside a boundary and streams no `Async`. A page evaluates one
+   * runtime only: the plugin lists `flat` only when no other chunk holds or imports a runtime module.
+   */
+  flat?: string;
   /** Boundary name (`<module>#<Name>`) → URL of the chunk exporting the component. */
   symbols: Record<string, string>;
   /**
@@ -1229,6 +1239,7 @@ function listStart(): object {
   if (!ctx || !b || b.id < ctx.base || ctx.off) return NOT_LISTED;
   const parent = rowOf(b),
     j = parent === null ? b.lists++ : parent.lists++;
+  ctx.listed = true;
   return { b, at: (parent === null ? "" : rowPath(parent) + ".") + (j ? j + "_" : ""), x: ctx };
 }
 _onForList(listStart);
@@ -2587,7 +2598,11 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   // document clicks, nonce presence): frozen fragments memoised per manifest, so the attributes and the loader are encoded
   // once per process, not per request; the JSON and the nonce are slots.
   const manifest = options.manifest,
-    runtime = liteTail ? manifest.lite!.runtime : manifest.runtime!,
+    // FLAT: the list-free runtime (manifest `flat`, no lazy rows) when nothing on the page can hand it server rows: no keyed
+    // list inside a boundary, no streamed `Async` (a later patch may bring one), not a shell cache render (stored shells
+    // serve other renders' holes). It adopts any page correctly; a list it meets anyway adopts eagerly (slower, same result).
+    full = manifest.flat && !ctx.listed && !(ctx.stream && ctx.asyncs.length) && ctx.base === 0 && ctx.sources === null ? manifest.flat : manifest.runtime!,
+    runtime = liteTail ? manifest.lite!.runtime : full,
     nonce = options.nonce ? cleanNonce(options.nonce) : "",
     // RT-DIET2 mixed lite: ahead = the lite runtime + the live records' lite entries; the full runtime's list rides in the
     // tail (`F`, fetched on a link intent / fallback only).
@@ -2597,7 +2612,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
     // RT-DIET2: a page whose only live records are document click listeners (the router's links, nothing else listening,
     // no trigger) fetches nothing in the background: its full runtime + router chunks load on the first link intent.
     when = options.preload?.lean || (!options.preload?.ahead && linksOnly(tail)) ? "intent" : (options.preload?.ahead ?? "idle");
-  if (tail.l) tail.F = fetchAhead(manifest, tail, manifest.runtime!) || manifest.runtime!;
+  if (tail.l) tail.F = fetchAhead(manifest, tail, full) || full;
   // The prime may run that record's `ready`: what it loads is on the list (fetched ahead, so no request of its own).
   else if (prime && ahead) tail.p = prime[0];
   // IDLE-PREFETCH: the lazy parts the fetch-ahead list reaches (`data-fl`), fetched after it (not on lite pages).
@@ -2609,7 +2624,16 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
   const boot = ctx.boot ? visibleBoot(ctx) : null;
   // (`later` is a function of the manifest and `ahead`.)
-  const key = (nonce ? "n" : "-") + (boot === null ? "-" : "b" + boot) + (liteTail ? "l" : "-") + when + events + "\0" + ctx.clicks + "\0" + ahead;
+  const key =
+    (nonce ? "n" : "-") +
+    (boot === null ? "-" : "b" + boot) +
+    (liteTail ? "l" : runtime === manifest.flat ? "f" : "-") +
+    when +
+    events +
+    "\0" +
+    ctx.clicks +
+    "\0" +
+    ahead;
   let memo = tails.get(manifest);
   if (memo === undefined) tails.set(manifest, (memo = new Map()));
   let fragments = memo.get(key);
@@ -2642,7 +2666,8 @@ function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime:
   if (DOM_DATA_SERVER && tail.d) list.push(manifest.domData!);
   // A pure function of (manifest, names, islands): memoised per manifest (ZERO REGRESS: the closure over chunk deps cost a
   // routed page ~0.5 µs per request).
-  let key = runtime === manifest.runtime ? list.join(" ") : "\u0001" + list.join(" ");
+  // (Another runtime than `runtime`: the lite one, or `flat`.)
+  let key = runtime === manifest.runtime ? list.join(" ") : (runtime === manifest.flat ? "\u0003" : "\u0001") + list.join(" ");
   for (const name of names) key += "\0" + name;
   let memo = aheads.get(manifest);
   if (memo === undefined) aheads.set(manifest, (memo = new Map()));

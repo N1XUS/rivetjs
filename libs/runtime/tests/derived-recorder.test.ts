@@ -104,6 +104,36 @@ test("tail script: memoised attributes + loader per manifest; JSON and nonce sta
   assert.equal(other.replaceAll("/rt2.js", "/rt.js"), a);
 });
 
+// FLAT: with a list-free runtime in the manifest (`flat`), a render whose boundaries start no keyed list names it (data-rt +
+// fetch-ahead); a render with a `<For>` inside a boundary keeps `runtime`; the memoised fragments / lists keep them apart.
+test("tail script: manifest `flat` for a render without a keyed list inside a boundary, `runtime` with one", async () => {
+  const App = await loweredApp();
+  const solo = compile(
+    `import { _rB, _rBOut, _rBEnd, _rSig } from "@rivetjs/runtime/server-derived";
+export function Solo() {
+  const B = _rB("Solo", 0); try {
+  const n = _rSig("k-0", 0);
+  return _rBOut(B, (<button type="button" onClick={() => n.set(n() + 1)}>{n()}</button>));
+  } finally { _rBEnd(B); }
+}
+`,
+    { target: "server", filename: "solo.tsx" },
+  );
+  assert.deepEqual(solo.diagnostics, []);
+  const { Solo } = await importServer<{ Solo: () => ServerValue }>(solo.code);
+  const m = { ...manifest, flat: "/flat.js", symbols: { App: "/page.js", Layout: "/page.js", Page: "/page.js", Solo: "/solo.js" } };
+  for (let round = 0; round < 2; round++) {
+    const flat = (await derivedToString(() => Solo(), { manifest: m })) as string;
+    assert.match(flat, /<script type="rivet\/boundaries" data-rt="\/flat\.js"[ >]/);
+    assert.doesNotMatch(flat, /\/rt\.js/);
+    const listed = (await derivedToString(() => App({ data }), { manifest: m })) as string;
+    assert.match(listed, /<script type="rivet\/boundaries" data-rt="\/rt\.js" data-fo="\/rt\.js \/page\.js">/);
+  }
+  // Without `flat` (a build without lists, or not sound): `runtime` as before.
+  const plain = (await derivedToString(() => Solo(), { manifest: { ...m, flat: undefined } })) as string;
+  assert.match(plain, /data-rt="\/rt\.js"[ >]/);
+});
+
 test("hand-lowered page: boundary records, keyed values, wake lists, markers; nothing of the serialized state", async () => {
   const App = await loweredApp();
   const html = (await derivedToString(() => App({ data }), { manifest })) as string;

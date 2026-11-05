@@ -93,6 +93,7 @@ interface Built {
   html: string;
   manifest: {
     runtime: string;
+    flat?: string;
     symbols: Record<string, string>;
     builtins?: string;
     deps?: Record<string, string[]>;
@@ -100,7 +101,7 @@ interface Built {
     lazy?: Record<string, string[]>;
   };
 }
-async function buildApp(rows: Rows, roots: string[], domData?: boolean, files: Record<string, string> = {}): Promise<Built> {
+async function buildApp(rows: Rows, roots: string[], domData?: boolean, files: Record<string, string> = {}, modules: string[] = []): Promise<Built> {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-derived-" + rows + "-"));
   roots.push(root);
@@ -115,7 +116,7 @@ async function buildApp(rows: Rows, roots: string[], domData?: boolean, files: R
   const plugin = () =>
     rivet({
       serverExports: { modules: ["src/page.tsx"] },
-      resume: { modules: ["src/page.tsx", "src/counter.tsx"], ...(domData !== undefined ? { domData } : {}) },
+      resume: { modules: ["src/page.tsx", "src/counter.tsx", ...modules], ...(domData !== undefined ? { domData } : {}) },
     });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "client-dist", manifest: true } });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "server-dist", ssr: "src/server.tsx" } });
@@ -328,6 +329,53 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
         await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
         assert.equal(await page.evaluate(() => (document.querySelector("#count") as any).__t), 1, "server node adopted in place");
         assert.equal(requests.length, fetched, "the first input fetches nothing more");
+      });
+    } finally {
+      await browser.close();
+      for (const root of roots) await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
+// FLAT: a build with lists whose route module reaches none also emits the list-free runtime (manifest `flat`); the server
+// names it on a page that renders no keyed list inside a boundary. The flat page's cold click + keyed write adopt in place
+// and it never loads the full runtime. A build whose only route reaches a list emits no flat runtime (it could not be used).
+(hasDerivedModel() ? test : test.skip)(
+  "rivet({ resume }) with <For> elsewhere (FLAT): a list-free page boots the flat runtime, a listed page the full one",
+  async () => {
+    const browser = await chromium.launch({ headless: true });
+    const roots: string[] = [];
+    try {
+      const rowCode = /\/\^r\\d\*\\\[\$\//;
+      const tailOf = (html: string) => /<script type="rivet\/boundaries"[^>]* data-rt="([^"]+)"[^>]*>/.exec(html)?.[1];
+      // The list lives in a resume module the page never imports (the walk sees `<For>`, so `runtime` keeps the lazy rows).
+      const unused = `import { For } from "@rivetjs/runtime/dom";\nexport function List(props) {\n  return <ul><For each={() => props.rows} by={(r) => r.id}>{(r) => <li>{r().name}</li>}</For></ul>;\n}\n`;
+      const flat = await buildApp("none", roots, undefined, { "src/list.tsx": unused }, ["src/list.tsx"]);
+      const listed = await buildApp("static", roots);
+      assert.match(flat.manifest.flat!, /^\/assets\/derived-runtime-flat-.*\.js$/);
+      assert.notEqual(flat.manifest.flat, flat.manifest.runtime);
+      assert.equal(listed.manifest.flat, undefined, "the only route reaches a list: no flat runtime");
+      assert.equal(tailOf(listed.html), listed.manifest.runtime, "a page with a list boots the full runtime");
+      assert.equal(tailOf(flat.html), flat.manifest.flat, "a list-free page boots the flat runtime");
+      const full = await readFile(resolve(flat.root, "client-dist" + flat.manifest.runtime), "utf8"),
+        lean = await readFile(resolve(flat.root, "client-dist" + flat.manifest.flat), "utf8");
+      assert.match(full, rowCode);
+      assert.doesNotMatch(lean, rowCode);
+      assert.ok(lean.length < full.length - 8_000, "lazy rows fold away (> 8 KB min)");
+      // Same shared chunks (reactivity, dom-v2, events): only the runtime-private modules are copies.
+      const imports = (code: string) => [...code.matchAll(/from"(\.\/[^"]+)"/g)].map((m) => m[1]).sort();
+      assert.deepEqual(imports(lean), imports(full));
+      assert.ok(flat.manifest.deps![flat.manifest.flat!]!.length > 0);
+      await serve(flat, browser, async (page, requests) => {
+        await page.evaluate(() => ((document.querySelector("#count") as any).__t = 1));
+        await page.click("#inc");
+        await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+        await page.click("#dark");
+        await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
+        assert.equal(await page.evaluate(() => (document.querySelector("#count") as any).__t), 1, "server node adopted in place");
+        const paths = requests.map((r) => r.path);
+        assert.ok(paths.includes(flat.manifest.flat!));
+        assert.ok(!paths.includes(flat.manifest.runtime), "never the full runtime too");
       });
     } finally {
       await browser.close();

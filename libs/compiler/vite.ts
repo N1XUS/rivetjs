@@ -396,6 +396,31 @@ export interface DevResume {
 
 /** The derived runtime entry (manifest `runtime`, default export = the `dom-derived-runtime` instance). */
 const DERIVED_ENTRY = "\0rivet-derived-entry";
+/**
+ * FLAT (2026-11-05): the list-free runtime entry of a production client build that has lists (manifest `flat`, default
+ * export = a copy of the `dom-derived-runtime` instance with `LISTS = false`). The server's tail names it instead of
+ * `runtime` on a page whose render listed no keyed `<For>` inside a boundary and streams no `Async` (`server-derived.ts`
+ * `derivedTail`). Its modules are copies (the id + `?rivet-flat`) of the runtime-private modules only (`FLAT_COPY`, and
+ * `FLAT_HOOKS` when no app code shares it: the modules of the full runtime's own chunk); everything else (reactivity, dom-v2, events, the ABI) is the one shared
+ * instance. A page evaluates one of the two runtimes, never both (`flatSound` checks the chunk graph).
+ */
+const FLAT_ENTRY = "\0rivet-derived-flat";
+const FLAT_QUERY = /[?&]rivet-flat(?=&|$)/;
+const flatCopy = (id: string): string => id + (id.includes("?") ? "&" : "?") + "rivet-flat";
+/** The runtime-private modules the flat runtime copies (in a typical build, the modules of the full runtime's chunk; a copy
+ * of a module other chunks hold too is a second, unshared instance). Stateful: `dom-derived` (the runtime instance) and
+ * `dom-adopt-run` (server class cache) — `flatSound` checks no other chunk holds them. The rest is pure as the runtime uses
+ * it: `track` (read collectors over the shared reactivity core), `store` (`createStore` only: a plain `{ v: signal }`; the
+ * path caches belong to the reader functions, which stay in the app's instance), `dom-adopt` / `resume-tail` (functions),
+ * `dom-data` / `derived-features` (constants). */
+const FLAT_COPY =
+  /[\\/](?:(?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](?:dom-derived|dom-adopt-run|dom-adopt|resume-tail|dom-data|derived-features)|(?:libs[\\/]reactivity|@rivetjs[\\/]reactivity)[\\/](?:track|store))\.[cm]?[jt]s$/;
+/** `resume-hooks` (stateful: the build pass runner, the table decoder): copied only when no app code shares it. */
+const FLAT_HOOKS = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/]resume-hooks\.[cm]?[jt]s$/;
+/** A walked module importing the resume format (or its hooks): app code may share `resume-hooks`. */
+const HOOKS_USE = /@rivetjs\/runtime\/resume-(?:format|hooks)\b|[\\/]resume-(?:format|hooks)\.[cm]?[jt]s["']/;
+/** The stateful copies: their original must stay in the full runtime's chunk alone (else no `flat`). */
+const FLAT_STATEFUL = /[\\/](?:dom-derived|dom-adopt-run|resume-hooks)\.[cm]?[jt]s$/;
 /** Client resume builds: prefix of a boundary module's facade entry id (ZERO B6). */
 const BOUNDARY_ENTRY = "\0rivet-boundary:";
 const MANIFEST = ".vite/rivet-resume.json";
@@ -1237,6 +1262,12 @@ function rivetPlugin(
   // a chunk of its own by client builds; the `dom-data` switch serves its URL (`import.meta.ROLLUP_FILE_URL_<ref>`).
   let domReaderId: string | null = null,
     domReaderRef: string | null = null;
+  // FLAT: the resolved `dom-derived-runtime` module the flat entry re-exports a copy of (null: no flat runtime this build);
+  // the walk's verdicts: a page may use it (`flatUseful`), app code shares `resume-hooks` (`flatHooksShared`).
+  let flatRuntime: string | null = null,
+    flatUseful = false,
+    flatHooksShared = true;
+  const flatCopies = (file: string): boolean => FLAT_COPY.test(file) || (!flatHooksShared && FLAT_HOOKS.test(file));
   const toPosix = (path: string) => path.split(sep).join("/");
   const devResume: DevResume = {
     manifest: () => ({
@@ -1656,6 +1687,8 @@ function rivetPlugin(
     // `resume.domData`: resume modules that may hold a `<For>` (their source names it), checked after the verdicts.
     const forSources = new Map<string, string>();
     derivedLists = false;
+    // FLAT: the walked modules that may make a keyed list (`LIST_USE`).
+    const listFiles = new Set<string>();
     // Plain re-export modules (M6-PARITY 6b): app / source-package `.ts` / `.js` modules between resume modules (a package
     // `index.ts`, `meter/index.ts` with `Object.assign(MeterRoot, { … })`) join the walk without boundaries, so tags
     // resolve through them to the component's call sites; they are never compiled as resume modules.
@@ -1684,7 +1717,7 @@ function rivetPlugin(
               );
           facts.set(filename, f);
           if (!plain.has(filename) && resume?.domData !== false && FOR_USE.test(source)) forSources.set(filename, source);
-          if (!derivedLists && LIST_USE.test(source)) derivedLists = true;
+          if (LIST_USE.test(source)) ((derivedLists = true), listFiles.add(filename));
           // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
           const declared = plain.has(filename) ? [] : nativeFamilies(source);
           if (declared.length) families.set(filename, declared);
@@ -1966,6 +1999,31 @@ function rivetPlugin(
           f.reexports.size > 0 || [...f.exports].some(([exported, local]) => !own.has(local) && !own.has(exported) && !types.has(exported)),
         );
       }
+    // FLAT: whether the flat runtime can serve a page (routed builds: some route module's walked closure makes no list; other
+    // builds: always), and whether `resume-hooks` is shared with app code (a module the boundary modules reach imports the
+    // resume format: the router's App `_useTableDecoder`, cdk collections' `_rUnrecorded`) — then the flat runtime keeps
+    // the one instance; else it copies it with the other runtime-private modules (`flatSound` checks the guess).
+    const reach = (from: Iterable<string>): Set<string> => {
+      const seen = new Set<string>(),
+        stack = [...from];
+      for (let file; (file = stack.pop()) !== undefined;)
+        if (!seen.has(file)) {
+          seen.add(file);
+          for (const next of graph.get(file)?.values() ?? []) stack.push(next);
+        }
+      return seen;
+    };
+    // Not in co-load builds (env `RIVET_COLOAD`, docs-kit sites) yet: pass 1 plans groups without knowing which pages take the
+    // flat runtime, so the full runtime's group can take app modules a flat page needs (ui-docs: `cdk/i18n`), and dropping the
+    // group for flat leaves list pages +1 file / +1 KB br (FLAT 2026-11-05, report). Planner integration = follow-up.
+    flatUseful = !joinsDir && derivedLists && (!routeFiles.size || [...routeFiles].some((file) => ![...reach([file])].some((walked) => listFiles.has(walked))));
+    flatHooksShared = false;
+    if (flatUseful)
+      for (const file of reach([...derivedVerdicts].filter(([, verdict]) => verdict.boundaries.length).map(([file]) => file)))
+        if (HOOKS_USE.test(texts.get(file) ?? "")) {
+          flatHooksShared = true;
+          break;
+        }
     domDataLists = false;
     if (forSources.size) {
       const slots = await domSlotsHelper(ctx);
@@ -2010,6 +2068,9 @@ function rivetPlugin(
     const lite: Record<string, string> = {};
     const liteProps: string[] = [];
     let runtime: string | null = null,
+      flat: string | null = null,
+      runtimeChunk: Rollup.OutputChunk | null = null,
+      flatChunk: Rollup.OutputChunk | null = null,
       builtins: string | null = null,
       domReader: string | null = null,
       liteRuntime: string | null = null;
@@ -2020,6 +2081,13 @@ function rivetPlugin(
       if (output.facadeModuleId === DERIVED_ENTRY) {
         const real = _foldFacade(bundle, output, ["default"]);
         runtime = base + real.fileName;
+        runtimeChunk = real;
+        roots.push(real.fileName);
+      }
+      if (output.facadeModuleId === FLAT_ENTRY) {
+        const real = _foldFacade(bundle, output, ["default"]);
+        flat = base + real.fileName;
+        flatChunk = real;
         roots.push(real.fileName);
       }
       if (output.facadeModuleId === builtinsId) builtins = base + _foldFacade(bundle, output, []).fileName;
@@ -2069,6 +2137,8 @@ function rivetPlugin(
       roots.push(real.fileName);
     }
     if (liteRuntime) liteShared.call(this, chunks);
+    // FLAT: listed only when sound (one runtime instance per page).
+    if (flat && !flatSound.call(this, chunks, runtimeChunk, flatChunk)) flat = null;
     // Lazy parts (IDLE-PREFETCH): per chunk, the chunks of the lazy parts its modules import (`lazyImports`); those chunks
     // join the roots, so `deps` holds their static closures. The server's later fetch list (tail `data-fl`) = what the
     // fetch-ahead list reaches through these edges, minus the fetch-ahead list.
@@ -2164,6 +2234,7 @@ function rivetPlugin(
     // `resume.domData` (DERIVED-C5): the derived client reads list data from the page (`DOM_DATA` loaded); servers write `d` then.
     const body = {
       runtime,
+      ...(flat ? { flat } : {}),
       symbols,
       sizes,
       deps,
@@ -2181,6 +2252,44 @@ function rivetPlugin(
     };
     const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
     this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });
+  }
+  /** FLAT: the flat runtime is sound when no chunk but the full runtime's holds the original of a stateful module it copied (`FLAT_STATEFUL`) and
+   * no chunk imports either runtime chunk (the lite graph's `?rivet-lite` copies are another graph: a page on either of these
+   * runtimes never loads them) (each loads only by its manifest URL, so a page evaluates one of them); else warn
+   * and leave `flat` out of the manifest (every page then loads `runtime`). Also warns (bytes only) when the two runtimes
+   * share a chunk nothing else imports: the copy split one off the full runtime (`FLAT_COPY` misses a private module). */
+  function flatSound(
+    this: Rollup.PluginContext,
+    chunks: Map<string, Rollup.OutputChunk>,
+    full: Rollup.OutputChunk | null,
+    flat: Rollup.OutputChunk | null,
+  ): boolean {
+    if (!full || !flat || full === flat) return false;
+    const runtimes = new Set([full.fileName, flat.fileName]);
+    const imported = new Map<string, number>();
+    // The stateful modules the flat runtime copied: their originals must be the full runtime's alone.
+    const copied = new Set(
+      flat.moduleIds.filter((id) => FLAT_QUERY.test(id) && FLAT_STATEFUL.test(id.split("?", 1)[0]!)).map((id) => id.replace(FLAT_QUERY, "")),
+    );
+    for (const chunk of chunks.values()) {
+      const own = chunk === full ? null : chunk.moduleIds.find((id) => copied.has(id));
+      if (own) {
+        this.warn(`[rivet] flat runtime: ${chunk.fileName} holds ${own}; pages load the full runtime`);
+        return false;
+      }
+      // (A runtime entry's own facade, left behind when a co-load group moved the runtime: loaded by nothing.)
+      const facade = chunk.facadeModuleId === DERIVED_ENTRY || chunk.facadeModuleId === FLAT_ENTRY;
+      for (const file of [...chunk.imports, ...chunk.dynamicImports]) {
+        if (runtimes.has(file) && !facade) {
+          this.warn(`[rivet] flat runtime: ${chunk.fileName} imports the runtime chunk ${file}; pages load the full runtime`);
+          return false;
+        }
+        if (!runtimes.has(chunk.fileName) && !facade) imported.set(file, (imported.get(file) ?? 0) + 1);
+      }
+    }
+    const split = full.imports.filter((file) => flat.imports.includes(file) && !imported.has(file));
+    if (split.length) this.warn(`[rivet] flat runtime: the runtimes share ${split.join(", ")} (a runtime-private module outside FLAT_COPY)`);
+    return true;
   }
   /** ZERO LITE-WIRE: a chunk both graphs reach (static or dynamic imports) means the lite modules changed the ordinary
    * chunking (a module Vite / Rolldown injects into both, e.g. Rolldown's runtime helpers): warn, naming the chunks. */
@@ -2710,6 +2819,15 @@ function rivetPlugin(
         for (const [file, verdict] of derivedVerdicts)
           if (!verdict.boundaries.length && bridges.facade(file)) this.emitFile({ type: "chunk", id: file, preserveSignature: "strict" });
       this.emitFile({ type: "chunk", id: DERIVED_ENTRY, name: "derived-runtime", preserveSignature: "strict" });
+      // FLAT: a build with lists also gets the list-free runtime (a build without already folds `LISTS` in `runtime`).
+      flatRuntime = null;
+      if (flatUseful) {
+        const hit = await this.resolve("@rivetjs/runtime/dom-derived-runtime", join(root, "index.html"), { skipSelf: true });
+        if (hit && !hit.external && FLAT_COPY.test(hit.id.split("?", 1)[0]!)) {
+          flatRuntime = hit.id;
+          this.emitFile({ type: "chunk", id: FLAT_ENTRY, name: "derived-runtime-flat", preserveSignature: "strict" });
+        }
+      }
       if (builtinsId) this.emitFile({ type: "chunk", id: builtinsId, name: "resume-builtins", preserveSignature: "strict" });
       domReaderId = domReaderRef = null;
       if (domDataOn()) {
@@ -2742,6 +2860,15 @@ function rivetPlugin(
           hit && !hit.external ? { ...hit, id: hit.id.replace(/([/\\]dev[/\\])flag-on(\.[cm]?[jt]s)$/, "$1flag-off$2") } : hit,
         );
       if (id === LITE_RUNTIME || id === LITE_EMPTY || id.startsWith(LITE_PREFIX)) return id;
+      // FLAT: an import inside the flat runtime resolves as the ordinary one would, then names its copy when the module is
+      // runtime-private (`FLAT_COPY`); every other module stays the shared instance.
+      // Never in a co-load group (router `coload.ts`): a group merges chunks the same pages fetch, and a page on the full
+      // runtime that loads such a group would evaluate the flat copy too (two runtimes); the flat entry stays a chunk of its own.
+      if (id === FLAT_ENTRY) return { id, meta: { rivetCoload: false } };
+      if (flatRuntime && importer && FLAT_QUERY.test(importer) && !id.startsWith("\0"))
+        return this.resolve(id, importer.replace(FLAT_QUERY, "").replace(/\?$/, "")).then((hit) =>
+          hit && !hit.external && !hit.id.startsWith("\0") && flatCopies(hit.id.split("?", 1)[0]!) ? { ...hit, id: flatCopy(hit.id) } : hit,
+        );
       // Lite graph (ZERO LITE-WIRE): an import of a lite module resolves as the ordinary one would (this plugin's aliases
       // included), then names that module's copy; stylesheets → an empty module.
       const liteImporter = !!importer && !serve && (importer === LITE_RUNTIME || importer.startsWith(LITE_PREFIX) || LITE_QUERY.test(importer));
@@ -2865,8 +2992,9 @@ function rivetPlugin(
       }
       // RTSPLIT: the derived runtime's features this build can reach (`derived-features.ts`); dev serves the file (all on).
       if (resume && client && !serve && FEATURES_MODULE.test(clean))
-        return `export const LISTS = ${derivedLists};\nexport const ISLANDS = ${bridges !== null};\n`;
+        return `export const LISTS = ${derivedLists && !FLAT_QUERY.test(id)};\nexport const ISLANDS = ${bridges !== null};\n`;
       if (id === DERIVED_ENTRY) return 'export { default } from "@rivetjs/runtime/dom-derived-runtime";\n';
+      if (id === FLAT_ENTRY && flatRuntime) return `export { default } from ${JSON.stringify(flatCopy(flatRuntime))};\n`;
       // `resume.domData` (DERIVED-C5): the browser reader (`DOM_DATA` in `dom-derived.ts`) and the server's list registry +
       // `d` encoder (`dom-data-derived.ts` → `server-derived-dom.ts`); the resume manifest says so when the reader loaded.
       if (domDataOn()) {
