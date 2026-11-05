@@ -491,7 +491,10 @@ async function measure(browser: Browser, url: string, condition: string, scenari
   });
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.addInitScript(probe, { sync: rivet });
+  // The first-input sync probe (a document MutationObserver during the first click / input dispatch) runs in every
+  // lane: its records cost the mutating lane (a 900-row filter: ~2–6 ms at 4x CPU), so a Rivet-only probe slowed only
+  // Rivet's measured input (FILTER 2026-11-05). Only Rivet reports it.
+  await page.addInitScript(probe, { sync: true });
   await page.goto(url + "/", { waitUntil: "load" });
   const html = await page.content();
   const take = async () => (coverage ? coverageByPath((await cdp.send("Profiler.takePreciseCoverage")).result) : null);

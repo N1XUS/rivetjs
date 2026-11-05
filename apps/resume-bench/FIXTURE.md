@@ -74,7 +74,7 @@ it must reach the browser through each framework's own state mechanism (serializ
   - `prefetchBytes.<strategy>` = transfer bytes (`encodedDataLength`); `wastedBytes.<strategy>` = bytes of unused chunks;
   - `wastedForInteractionBytes.<strategy>` = bytes of chunks with no non-top-level function run after the first input (stricter: boot / client-effect use before input does not count); absent for `load`;
   - per-chunk detail in results JSON `runs[].prefetch`.
-- First input synchronous (Rivet only; click scenarios: first trusted `click`, `filter`: first trusted `input`):
+- First input synchronous (reported for Rivet only; the probe runs in every lane since FILTER 2026-11-05 — its mutation records cost the lane that mutates, so a Rivet-only probe slowed only Rivet's measured input; click scenarios: first trusted `click`, `filter`: first trusted `input`):
   - window capture listener (before any framework listener) starts a MutationObserver; window bubble listener (fallback `setTimeout 0`) ends the dispatch;
   - `firstInputSync` = the scenario's DOM update was already there at dispatch end (`count` / `detail` mark; `filter`: `#rows` subtree mutated) → handler ran in the input task, no fetch/await before dispatch;
   - `jsRequestsDuringFirstInput` = JS resource requests started between first pointerdown/keydown and that dispatch end;
