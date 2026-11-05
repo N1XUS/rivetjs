@@ -348,8 +348,12 @@ export function bindRef(target: Element, fn: ((element: Element) => void) | null
   const ref = fn as Partial<Signal<Element | undefined>> & (() => Element | undefined);
   if (!ref.set) return fn(target);
   ref.set(target);
-  // Unmount: back to undefined, unless a newer element took the ref meanwhile.
-  onCleanup(() => untrack(ref) === target && ref.set!(undefined));
+  resetRef(ref as Signal<Element | undefined>, target);
+}
+// Unmount: back to undefined, unless a newer element took the ref meanwhile. Own function: the closure would make
+// every `bindRef` call (callback refs too) allocate a context (MOUNT-01).
+function resetRef(ref: Signal<Element | undefined>, target: Element): void {
+  onCleanup(() => untrack(ref) === target && ref.set(undefined));
 }
 const passiveTypes = new Set(["scroll", "wheel", "touchstart", "touchmove", "touchend", "pointermove", "resize"]);
 /**

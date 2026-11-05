@@ -151,6 +151,26 @@ compiled("browser: row values come back from the page (escaping, numbers, litera
     });
 });
 
+// Chrome runs one idle callback per idle period (up to 50 ms apart without frames): the idle read takes time-budgeted
+// slices, not 16 items per callback — a 1,000-row list was still half unread a second after load and its first input
+// read the rest (FILTER 2026-11-05). The 40 rows here fit one slice.
+compiled("browser: the idle read takes the rows in one time-budgeted slice", async () => {
+  const served = await files();
+  await withPage(served, async (page) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as Record<string, unknown>;
+      w.sweeps = 0;
+      w.requestIdleCallback = (fn: (deadline: { timeRemaining(): number }) => void) => {
+        if (fn.name === "idleSweep") (w.sweeps as number)++;
+        return setTimeout(() => fn({ timeRemaining: () => 50 }), 0);
+      };
+    });
+    await page.goto("http://rivet.test/");
+    await page.waitForTimeout(300);
+    assert.equal(await page.evaluate(() => (window as unknown as Record<string, number>).sweeps), 1);
+  });
+});
+
 compiled("browser: a page without `d` entries never fetches the reader", async () => {
   const served = await files();
   const { html } = await render(false);

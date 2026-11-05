@@ -12,6 +12,7 @@ import {
   _dispose,
   _rootIn,
   _scoped,
+  _swapObserver,
   _tracking,
   _untrack1,
   computed,
@@ -100,7 +101,13 @@ export const _c: <P>(fn: (props: P) => unknown, props: P) => unknown = _untrack1
 
 /** Compiler ABI: a component whose props can read reactive state: props are an untracked snapshot. */
 export function _cp<P>(fn: (props: P) => unknown, props: () => P): unknown {
-  return untrack(() => fn(props()));
+  // `untrack` by hand: no closure + context per component call (MOUNT-01).
+  const previous = _swapObserver(null);
+  try {
+    return fn(props());
+  } finally {
+    _swapObserver(previous);
+  }
 }
 
 // ---- text ----
@@ -131,8 +138,15 @@ export function _t(el: Element, value: unknown): void {
   // An accessor (component content such as a `<For>`), or an array holding one: read in its own effect,
   // so the caller's binding does not track it and re-create the content (components, focused nodes)
   // on each of its updates (Solid `insertExpression`).
-  if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) nested(() => el, value, slot, null);
+  if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) nestedAt(el, value, slot, null);
   else assign(el, value, slot, null);
+}
+// MOUNT-01 (allocation): an ABI function that creates a closure over its parameters on some path makes V8 allocate a
+// context for them on every call, the scalar path too (16–28 B per call: a text / attribute binding per mounted field).
+// Closures live in separate functions (`nestedAt`, `bindAttr`, `bindWrite`, `bindClass`, `bindText`, `bindInsert`); pinned by
+// `tests/dom-v2-alloc.test.ts`.
+function nestedAt(parent: Parent, value: unknown, slot: Slot, marker: Node | null): void {
+  nested(marker === null ? () => parent : () => marker.parentNode as Parent, value, slot, marker);
 }
 /**
  * Compiler ABI: a sole dynamic text child bound to its template's placeholder Text node (`<a> </a>`, the binding
@@ -157,26 +171,28 @@ export function _tx(text: Text, value: unknown): void {
     text.data = "";
     (text as unknown as { $$s?: Slot }).$$s = slot = { current: null };
   }
-  if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) nested(() => text.parentNode as Parent, value, slot, text);
+  if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) nestedAt(text.parentNode as Parent, value, slot, text);
   else assign(text.parentNode as Parent, value, slot, text);
 }
 /** Compiler ABI: a sole-child static value: scalars written once, an accessor binds, nodes/arrays insert. */
 export function _textValue(el: Element, value: unknown): void {
-  if (typeof value === "function")
-    _bindingEffect(() => {
-      let next: unknown;
-      try {
-        next = (value as () => unknown)();
-      } catch (error) {
-        _t(el, null); // as `_insert`: a throwing read empties the element
-        throw error;
-      }
-      _t(el, next);
-    });
+  if (typeof value === "function") bindText(el, value as () => unknown);
   else if (value !== null && typeof value === "object") _insert(el, value);
   // Numbers go to the DOM as-is: `String(n)` would fill V8's number-string cache (0 is coerced: some DOMs drop a falsy value).
   else if (!(LAZY_ROWS && _adoption.live && soleText(el, coerce(value))))
     el.textContent = typeof value === "number" && value ? (value as unknown as string) : coerce(value);
+}
+function bindText(el: Element, value: () => unknown): void {
+  _bindingEffect(() => {
+    let next: unknown;
+    try {
+      next = value();
+    } catch (error) {
+      _t(el, null); // as `_insert`: a throwing read empties the element
+      throw error;
+    }
+    _t(el, next);
+  });
 }
 // The server node already shows `next` (one text, or text the build decorated: `dom-derived.ts` `decorated`).
 const soleText = (el: Element, next: string): boolean => el.textContent === next;
@@ -184,8 +200,11 @@ const soleText = (el: Element, next: string): boolean => el.textContent === next
 // ---- attributes (`write` / `coerce`: `dom-attr.ts`; adopt runs skip held writes: `put`) ----
 /** Compiler ABI: an identifier-only attribute value: written once unless it is an accessor. */
 export function _attrValue(el: Element, name: string, value: unknown): void {
-  if (typeof value === "function") _bindingEffect(() => (LAZY_ROWS ? put : write)(el, name, (value as () => unknown)()));
+  if (typeof value === "function") bindWrite(el, name, value as () => unknown);
   else (LAZY_ROWS ? put : write)(el, name, value);
+}
+function bindWrite(el: Element, name: string, value: () => unknown): void {
+  _bindingEffect(() => (LAZY_ROWS ? put : write)(el, name, value()));
 }
 /** `write`, unless an adopt run finds the value on the server's node already (`holds`). Resume builds only. */
 function put(el: Element, name: string, value: unknown): void {
@@ -214,8 +233,11 @@ function holds(el: Element, name: string, value: unknown): boolean {
  * namespaced or a form-control property). null/undefined remove; other values stringify.
  */
 export function _setAttr(el: Element, name: string, value: unknown): void {
-  if (typeof value === "function") _bindingEffect(() => plain(el, name, (value as () => unknown)()));
+  if (typeof value === "function") bindAttr(el, name, value as () => unknown);
   else plain(el, name, value);
+}
+function bindAttr(el: Element, name: string, value: () => unknown): void {
+  _bindingEffect(() => plain(el, name, value()));
 }
 function plain(el: Element, name: string, value: unknown): void {
   if (LAZY_ROWS && _adoption.classValue && name.toLowerCase() === "class") value = _adoption.classValue(el, value);
@@ -251,8 +273,11 @@ export const _attrSet: (el: Element, name: string, value: unknown) => void = pla
 export const _attrWrite: (el: Element, name: string, value: unknown) => void = LAZY_ROWS ? put : write;
 /** Compiler ABI: an HTML element's class (null/undefined/false/"" remove it); a function binds. */
 export function _className(el: Element, value: unknown): void {
-  if (typeof value === "function") _bindingEffect(() => className(el, (value as () => unknown)()));
+  if (typeof value === "function") bindClass(el, value as () => unknown);
   else className(el, value);
+}
+function bindClass(el: Element, value: () => unknown): void {
+  _bindingEffect(() => className(el, value()));
 }
 function className(el: Element, value: unknown): void {
   if (LAZY_ROWS && _adoption.classValue) {
@@ -300,6 +325,9 @@ export function _insert(parent: Parent | null, value: unknown, marker: Node | nu
     assign(parent ?? (marker!.parentNode as Parent), value, slot, marker);
     return;
   }
+  bindInsert(parent, value, marker, slot);
+}
+function bindInsert(parent: Parent | null, value: unknown, marker: Node | null, slot: Slot): void {
   // A null parent follows the marker (a list row's anchors move between parents).
   const at = (): Parent => parent ?? (marker!.parentNode as Parent);
   if (typeof value !== "function") return nested(at, value, slot, marker);
@@ -394,30 +422,36 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
   let nodes: Node[] | null = null,
     lists: unknown[] | null = null;
   let inner: unknown = null;
-  const evaluate = (): unknown => {
+  // Evaluated with `parent` as the insertion parent (`within`, by hand: no closure — MOUNT-01).
+  const outer = insertionParent;
+  insertionParent = parent;
+  try {
     if (typeof value === "function") {
       value = (value as () => unknown)();
       // An accessor returned by the read (a `<For>` / `<Show>` / component content), or an array holding
       // one (lazy children `[() => cond ? <a/> : null, <div/>]`): bound in a nested effect, so this binding
       // does not re-run — re-creating that content (the array's nodes) — on each of its updates.
-      if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) return (inner = value);
+      if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) inner = value;
     }
     // Derived builds: a lazily adopted `<For>` (`dom-derived.ts`) keeps the server rows the slot holds.
-    if (DERIVED && value !== null && typeof value === "object" && _adoption.keep?.has(value)) return value;
-    if (value !== null && typeof value === "object") {
+    if (
+      inner === null &&
+      !(DERIVED && value !== null && typeof value === "object" && _adoption.keep?.has(value)) &&
+      value !== null &&
+      typeof value === "object"
+    ) {
       // A `_for` node list is flat already (its own array, kept as the slot's current: see `_for`'s accessor).
       // Dropped at once: a module-level reference would retain a cleared list's nodes.
       if (value === forNodes) ((nodes = value as Node[]), (forNodes = null));
       else lists = flatten(Array.isArray(value) ? value : [value], (nodes = []), null);
     }
-    return value;
-  };
-  value = within(parent, evaluate);
+  } finally {
+    insertionParent = outer;
+  }
   if (DERIVED && value !== null && typeof value === "object" && _adoption.keep?.has(value)) return;
-  const read = inner as unknown; // set by `evaluate` (no control-flow narrowing through the closure)
   // Follow the marker, not `parent`: content first bound in a detached fragment (an `Output`, a row) moves with its
   // anchors, and an inner update must insert where the marker is now (`tests/dom-v2-children-browser.test.ts` movedParent).
-  if (read !== null) return nested(marker === null ? () => parent : () => marker.parentNode as Parent, read, slot, marker);
+  if (inner !== null) return nestedAt(parent, inner, slot, marker);
   place(parent, value, nodes, lists, slot, marker);
 }
 // Show an evaluated value in `slot`: a scalar as one text node, else its flattened `nodes` (`lists`: the lists they took).
@@ -546,6 +580,7 @@ function replace(parent: Parent, current: Current, next: Node | null, marker: No
  * the paint. Every other removal (and every later click) is a plain `removeChild`.
  */
 function drop(parent: Parent, node: Node): void {
+  if (DERIVED && node.nodeType === 8 && _adoption.inert?.(node)) return;
   if (hovered(node)) keep(parent, node as HTMLElement);
   else parent.removeChild(node);
 }
@@ -746,6 +781,12 @@ export const _adoption: {
    * (`dom-derived.ts` `on`): a row adopting over a half-moved range stamped its neighbour's nodes (one row twice, one lost).
    */
   moving?: boolean;
+  /**
+   * Derived builds (`DERIVED` only, FILTER 2026-11-05): a comment that is a lazy list row's server marker (`<!--r…[-->`
+   * opener or its `<!--]-->`, both of one row known). A dropped row leaves the pair in place (inert and empty: the event
+   * path's sibling scan counts it balanced): 2 of its 3 removals, and their mutation records, off a long list's first filter.
+   */
+  inert?: ((node: Node) => boolean) | null;
 } = { rows: null, same: null, dev: null };
 /**
  * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place

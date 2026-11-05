@@ -41,6 +41,13 @@ Measured by lanes LAZY-COST / LAZY-COST-2 / VIRT-LEAK 2026-10-21 (in-process sto
 - **Every `removeChild` costs; a comment's about a third of an element's.** Removing 1,800 marker comments next to 900 `<li>`s was +16 ms on a 46 ms removal pass (4×). A `Range.deleteContents` per contiguous run saves nothing (Blink removes node by node inside it); only a whole-parent wipe (`textContent = ""` / `replaceChildren`) is bulk, and it re-inserts what is kept (focus / media / animation state lost), so it stays limited to the nothing-kept path. Leave inert markers in place instead of removing them one by one (`dom-adopt.ts` `left`).
 
 
+Measured by lane FILTER 2026-11-05 (Chrome CPU profiles of the resume-bench first `filter` keystroke at 4× CPU, unminified lane build; event-timing processing time; runner A/B interleaved, slow, n = 18; numbers in `apps/resume-bench/CLAUDE.md`).
+
+- **Measure every lane under the same probes.** A MutationObserver costs the lane that mutates: the runner's first-input probe ran in the Rivet lane only and put its 2,700 removal records (~2–5 ms at 4×) on Rivet's input task alone. Probes, coverage and traces run in every lane or none.
+- **Idle work in time slices, not item counts.** Chrome runs one idle callback per idle period (up to 50 ms apart without frames); 16 DOM-data items per callback left 1,000 rows half unread a second after load, and the first input read the rest. Slices of ≤ 2 ms finish them in a few callbacks.
+- **Do the first change's bookkeeping before the input.** Finding and building a resumed list's 1,000 row records (~3 ms at 4×) runs at idle after the list's unit adopts, not inside the first keystroke.
+- **Leave dead markers.** A dropped server row's comment pair stays as an inert empty pair (900 instead of 2,700 removals). Together: first `filter` key `latency` 28.4 → 17.6 ms (Solid 1: 15.0–15.6), `filterKey` paint 73.8 → 62.3 (58.6–60.4).
+
 Measured by lane ZERO BE-RENDER 2026-10-25 (Node 26 in-process: `frames-cpu` over the ui-docs production server, interleaved; heap sampling profiles).
 
 - **`Object.keys`, not `Reflect.ownKeys`, for own enumerable keys.** `Reflect.ownKeys` builds a fresh key list every call (~90 ns, ~390 B for a 3-key props object); `Object.keys` takes V8's enum cache (~12 ns, ~70 B), + `Object.getOwnPropertySymbols` filtered by `propertyIsEnumerable` for the same order and symbols. runtime `splitProps` / `_restProps`: 195 → 166 ns, 873 → 559 B per live split; table-virtualization (1000 rows) 17.6 → 16.3 MB alloc / request.
@@ -86,6 +93,11 @@ Measured by lane DOMDATA-DEFAULT 2026-10-27 (`resume.domData` on by default, use
 Measured by lane SELF-WRITE 2026-10-27 (Node 26 in-process, 2 M writes, median of 9; host load ≈ 30):
 
 - **Untracked self-write: `x.set(x() + 1)`, not `x.update((v) => v + 1)`.** In a handler nothing is tracking, so the read returns early from `track`, while `update` allocates its closure and swaps the observer through `untrack`: 2.6 vs 5.8 ns per write when the signal has no subscribers, 44.0 vs 47.3 ns with one subscribed effect to flush. In an effect / computed the read subscribes the scope to its own write — use `update` there (RV1017, language service).
+
+Measured by lane MOUNT 2026-11-05 (dom-bench, Chromium 153, `alloc.ts` CDP heap sampling incl. collected objects; host load 10–50):
+
+- **No closure in the body of a per-call ABI function: put the closure path in a helper.** V8 allocates a function's context at entry as soon as any closure inside it captures a parameter — on every call, also when the branch that builds the closure is not taken (`_setAttr`'s `_bindingEffect(() => plain(el, name, value()))` for a function value made every scalar `_setAttr` allocate ~28 B). Moving those paths into helpers (`dom-v2.ts` `bindAttr` & co., reactivity `wrappedArg`) and replacing `within(parent, evaluate)` in `assign` by a hand-set `insertionParent`: dom-bench 1000-row mount 6145 → 5060 B allocated per row (−18 %; retained 3378 → 3374 B), GC time from the mount to 1.5 s after it 7.3 → 6.9 ms (1000 rows) and 31 → 26–28 ms (5000). The timed mount itself is unchanged (mount-quick 21 samples: 1000 −1.5 %, 5000 +1.8 %, ranges overlap): see the next point.
+- **Fewer bytes per mount do not shorten a timed mount unless a scavenge disappears.** The run.ts mount protocol times 2 scavenges at 1000 and 5000 rows for Rivet; less garbage moves them later into the mount, where each copies more live rows and processes more young DOM-wrapper handles (`--trace-gc-nvp`: `scavenge.roots` + `weak_global_handles` 4.8 ms of a 5.8 ms Rivet scavenge vs 2.6 of 3.8 for Solid 1.9, which runs one scavenge with a 32 MB young generation and leaves the rest of its GC after the timed window). Young-generation growth follows survived bytes (`survived_since_last_expansion`), so lower retained bytes delay it too. Judge allocation work by bytes per row and post-mount GC, not by the mount median.
 
 Measured by lane MD-STREAM 2026-11-05 (Node 26.5.1; happy-dom for components; host load 5–14):
 

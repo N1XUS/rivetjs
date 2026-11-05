@@ -316,6 +316,8 @@ const recs = new Map<number, Rec>(),
   modules = new Map<string, Record<string, unknown>>(),
   loads = new Map<string, Promise<void>>(),
   rowsByStart = new WeakMap<Node, LRow>(),
+  // Their closing markers: with the openers, the pairs a client `_for` leaves in place when it drops a row (`_adoption.inert`).
+  rowEnds = new WeakSet<Node>(),
   // Sole lists (`FHole.sole`) by their element: their rows are built on the first event inside one (`listAt`).
   listsIn = new WeakMap<Node, Lazy>(),
   // `_sig` getters: the only non-row captures a keyed row writer may take (they are the same in every row).
@@ -588,8 +590,23 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
     at,
   };
   _adoption.keep!.add(lazy.token);
-  if (hole.sole) listsIn.set(hole.sole, lazy);
-  else rowsOf(lazy);
+  if (hole.sole) {
+    listsIn.set(hole.sole, lazy);
+    // Its unit adopted (an event inside it): the list's first change (a filter's first key) needs its rows — found and
+    // built at idle, not in that input (FILTER 2026-11-05: ~4 ms of a 1,000-row filter's first input at 4x CPU). Reads the
+    // server rows only (their keys: DOM data read once, as the idle read does); a mismatch still shows on first use.
+    ((window.requestIdleCallback as ((fn: () => void) => number) | undefined) || setTimeout)(() => {
+      if (lazy.rows !== null || lazy.real !== null || !hole.sole!.isConnected) return;
+      building = true;
+      try {
+        rowsOf(lazy);
+      } catch {
+        // Its first use builds them again and reports.
+      } finally {
+        building = false;
+      }
+    });
+  } else rowsOf(lazy);
   u.fors.push(lazy);
   // While the items are the server's the slot keeps its server rows; their first change builds the client `_for`
   // (over the server rows, adopted by key) and the slot follows it from then on.
@@ -746,18 +763,18 @@ function itemRead(this: ForRow): unknown {
 function groupsOf(hole: FHole): [Node, Node][] {
   let groups = hole.groups;
   if (!groups) {
-    const ll = kids(hole.sole!);
+    // One sibling walk, balanced as `closeAt` counts (row openers up, `]` down; an unclosed group ends the scan), the
+    // regex only on comments that start with `r` and end with `[` (FILTER 2026-11-05: a node array + per-group rescan
+    // was ~1 ms of a 1,000-row filter's first input at 4x CPU).
     groups = [];
-    for (let j = 0; j < ll.length;) {
-      const d = data(ll[j]);
-      if (d === null || !R_OPEN.test(d)) {
-        j++;
-        continue;
-      }
-      const e = closeAt(ll, j, R_OPEN, "]");
-      if (e < 0) break;
-      groups.push([ll[j]!, ll[e]!]);
-      j = e + 1;
+    let depth = 0,
+      open: Node | null = null;
+    for (let n = hole.sole!.firstChild; n !== null; n = n.nextSibling) {
+      if (n.nodeType !== 8) continue;
+      const d = (n as Comment).data;
+      if (rowOpen(d)) {
+        if (depth++ === 0) open = n;
+      } else if (depth && d === "]" && --depth === 0) groups.push([open!, n]);
     }
     hole.groups = groups;
   }
@@ -803,6 +820,7 @@ function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unkn
     get: null,
   };
   rowsByStart.set(start, row);
+  rowEnds.add(end);
   return row;
 }
 function bad(lazy: Lazy): void {
@@ -958,6 +976,8 @@ interface UnitAlign extends Align {
   /** The probe's created nodes (built on first use, `decorated`). */
   made: () => Set<Node>;
 }
+// A row group opener (`<!--r…[-->`): the char checks skip the regex for other comments.
+const rowOpen = (d: string): boolean => d.charCodeAt(0) === 114 && d.charCodeAt(d.length - 1) === 91 && R_OPEN.test(d);
 const data = (n: Node | undefined): string | null => (n !== undefined && n.nodeType === 8 ? (n as Comment).data : null);
 // The index of the comment closing the range `ll[j]` opens (same kind, balanced), -1 when none.
 function closeAt(ll: Node[], j: number, open: RegExp, close: string): number {
@@ -2612,7 +2632,16 @@ const runtime: DerivedRuntime = {
     doc = d;
     api = loader;
     _adoption.same = same;
-    if (LISTS) _adoption.list = forHook as typeof _adoption.list;
+    if (LISTS) {
+      _adoption.list = forHook as typeof _adoption.list;
+      _adoption.inert = (n) => {
+        const row = rowsByStart.get(n);
+        // A dropped row is gone for good (its key comes back as a new row): never materialised, no writer runs over it —
+        // its markers stay connected, an empty pair.
+        if (row) return (row.done = true);
+        return rowEnds.has(n);
+      };
+    }
     _adoption.keep = new WeakSet();
     _adoption.snapshot = (nodes) => snapshots.get(nodes)?.() ?? nodes;
     // A pass whose output is inspected and discarded (`_rUnrecorded`: cdk's collection build pass, often first evaluated

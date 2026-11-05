@@ -159,15 +159,21 @@ export function sweep(): void {
   unread = null;
   if (all) for (const item of all) for (const key in item) void item[key];
 }
-// The idle read: 16 items per idle callback (a 1000-row page reads for ~9 ms at 4x CPU in all). Idle periods also come
-// while the first input waits for its chunks: a longer slice there delayed that input's DOM update (+8 ms at 4x).
+// The idle read: slices of at most SLICE ms per idle callback, at least 16 items (a 1000-row page reads for ~9 ms at 4x CPU
+// in all). Idle periods also come while the first input waits for its chunks: a long slice there delayed that input's DOM
+// update (+8 ms at 4x). Chrome runs one callback per idle period (up to 50 ms apart without frames): 16 items per callback
+// left a 1,000-row list half unread a second after load, read by the first input instead (FILTER 2026-11-05, resume-bench
+// filter: ~2 ms of its input task at 4x).
 type Idle = (fn: (deadline?: { timeRemaining(): number }) => void) => number;
+const SLICE = 2;
 let sweeping = false;
 function idleSweep(deadline?: { timeRemaining(): number }): void {
   const all = unread;
   if (!all) return void (sweeping = false);
   let i = 0;
-  while (i < all.length && i < 16 && (!deadline || deadline.timeRemaining() > 1)) for (const key in all[i++]!) void all[i - 1]![key];
+  const until = performance.now() + SLICE;
+  while (i < all.length && (i < 16 || performance.now() < until) && (!deadline || deadline.timeRemaining() > 1))
+    for (const key in all[i++]!) void all[i - 1]![key];
   all.splice(0, i);
   if (unread !== all) return void (sweeping = false);
   if (all.length) (((window.requestIdleCallback as Idle | undefined) || setTimeout) as Idle)(idleSweep);

@@ -967,7 +967,7 @@ export function _bindingEffect1<A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b
   argPin ??= new ArgNode(null, Object, null, null, null);
   const node = adopt(currentOwner, wrapEffect === null
     ? new ArgNode(currentOwner, fn as (a: unknown, b: unknown, c: unknown) => unknown, a, b, c)
-    : new ArgNode(currentOwner, wrapEffect(() => fn(a, b!, c!)), undefined, undefined, undefined));
+    : wrappedArg(fn as (a: unknown, b: unknown, c: unknown) => unknown, a, b, c));
   if (observedBindings) {
     initializeEffect(node);
     return;
@@ -982,6 +982,12 @@ export function _bindingEffect1<A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b
   if (!observedBindings && observations === seen && !node.disposed && node.sources === null &&
       node.first === null && node.cleanups === null && node.state === CLEAN && !(node.flags & RUNNING))
     dispose(node);
+}
+
+// The `_wrapEffects` branch of `_bindingEffect1`, in its own function: a closure over the parameters there would make V8
+// allocate a context for them on every call (MOUNT-01: 20 B per binding, wrapped or not).
+function wrappedArg(fn: (a: unknown, b: unknown, c: unknown) => unknown, a: unknown, b: unknown, c: unknown): ArgNode {
+  return new ArgNode(currentOwner, wrapEffect!(() => fn(a, b, c)), undefined, undefined, undefined);
 }
 
 /** @internal Runtime ABI (server-derived): wrap the function of every effect created from now on (null
