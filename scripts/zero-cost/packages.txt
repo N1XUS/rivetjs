@@ -18,7 +18,7 @@
 @rivetjs/router/link [server] d4342bebcbab 1945
 @rivetjs/router/node 5288d71714cd 30078
 @rivetjs/router/fetch 91499616f785 2924
-@rivetjs/router/static 84640145fb53 15032
+@rivetjs/router/static 4bb059be7f33 15226
 @rivetjs/router/csr bc5dafbcc9ff 407
 @rivetjs/router/vercel fbd47be44b25 25599
 @rivetjs/router/vercel-edge 04626adac103 3028
