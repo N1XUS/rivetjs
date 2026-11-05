@@ -4,7 +4,7 @@
 // values (no JS), the enhanced submit receives the same reply as JSON.
 import { ActionFailure, fail, HttpError, isActionFailure, type RequestEvent } from "@rivetjs/router";
 import type { FieldConfig, FormDefinition } from "../define.ts";
-import { FormDecodeError, rawValues } from "../decode.ts";
+import { decodedPaths, FormDecodeError, rawValues } from "../decode.ts";
 import { decodeWith, runSchema } from "../engine.ts";
 import { toIssues, type IssueMap } from "../issues.ts";
 import { byPattern, canonicalName, getAt, matchesPattern, secretName } from "../path.ts";
@@ -137,7 +137,6 @@ export async function parse<D extends FormDefinition<any>>(
     throw error;
   }
   const outcome: { value?: unknown; issues: IssueMap } = await runSchema(def, decoded);
-  const issues: Record<string, Issue[]> = { ...outcome.issues.fields };
   const form = [...outcome.issues.form];
   // Server field checks for submitted paths the schema accepted.
   const paths = new Set<string>();
@@ -145,6 +144,12 @@ export async function parse<D extends FormDefinition<any>>(
     const path = canonicalName(name);
     if (path) paths.add(path);
   }
+  // Decoding closes gaps in array indices: a check reads the decoded path, an issue names the control that was submitted.
+  const dense = decodedPaths(paths);
+  const submitted = new Map<string, string>();
+  for (const [from, to] of dense) submitted.set(to, from);
+  const issues: Record<string, Issue[]> = {};
+  for (const path in outcome.issues.fields) issues[submitted.get(path) ?? path] = outcome.issues.fields[path]!;
   const signal = context.event?.signal ?? new AbortController().signal;
   // Only paths with a check, at most CHECK_CONCURRENCY at once: one POST of 1000 `items.N.email` fields must not
   // start 1000 concurrent uniqueness queries (pool exhaustion).
@@ -153,7 +158,7 @@ export async function parse<D extends FormDefinition<any>>(
   const worker = async () => {
     while (next < todo.length) {
       const path = todo[next++]!;
-      const found = await runChecks(def, context.checks, path, decoded, context.event, signal);
+      const found = await runChecks(def, context.checks, dense.get(path) ?? path, decoded, context.event, signal);
       if (found.length) issues[path] = found;
     }
   };
@@ -217,7 +222,13 @@ async function validateField(
     throw error;
   }
   const outcome: { issues: IssueMap } = await runSchema(def, decoded);
-  const found = outcome.issues.fields[path] ?? (await runChecks(def, options.checks, path, decoded, event, event.signal));
+  const names: string[] = [];
+  for (const [name] of data) {
+    const submitted = canonicalName(name);
+    if (submitted) names.push(submitted);
+  }
+  const at = decodedPaths(names).get(path) ?? path;
+  const found = outcome.issues.fields[at] ?? (await runChecks(def, options.checks, at, decoded, event, event.signal));
   return { ok: found.length === 0, id, intent, issues: found.length ? { [path]: found } : {} };
 }
 

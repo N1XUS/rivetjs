@@ -180,7 +180,11 @@ export function toggleRow<T>(ctx: DataGridContext<T>, key: Key) {
   const mode = ctx.mode();
   if (mode === "none" || isDisabledKey(ctx, key)) return;
   const current = controlledValue(ctx.selection);
-  if (ctx.disallowEmpty() && isKeySelected(current, key) && (current === "all" ? false : current.size === 1)) return;
+  if (ctx.disallowEmpty() && isKeySelected(current, key)) {
+    // "all" means every enabled row: with one such row, unselecting it empties the selection too.
+    const selected = current === "all" ? ctx.rows().filter((row) => !isDisabledKey(ctx, row.key)).length : current.size;
+    if (selected === 1) return;
+  }
   setSelection(
     ctx,
     toggleKeySelection(current, key, mode, () => ctx.rows().map((r) => r.key), ctx.disabled()),
@@ -196,6 +200,8 @@ export function toggleAll<T>(ctx: DataGridContext<T>) {
     ctx.rows().map((r) => r.key),
     ctx.disabled(),
   );
+  // react-stately `clearSelection` is a no-op under disallowEmptySelection.
+  if (state === "all" && ctx.disallowEmpty()) return;
   setSelection(ctx, state === "all" ? new Set() : "all");
 }
 

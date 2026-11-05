@@ -35,3 +35,5 @@ Tests live in `../tests/` (`server.test.ts`, `wizard.test.ts`, `autosave.test.ts
 ## See also
 
 - `../CLAUDE.md`, `../../../docs/guides/forms.md` (Server, Layers), `../../../docs/guides/routing.md` (actions, CSRF)
+
+- Sparse array indices (2026-11-05): decoding closes gaps, so `parse()` / remote validation run checks at the decoded path (`decodedPaths`, `../decode.ts`; `items.5.email` alone reads `items.0.email`) and report issues, schema ones too, on the submitted name. Browser checks (`../engine.ts`) still read the submitted path: comfort only, the server decides. A check may return `null` (`toIssues`).

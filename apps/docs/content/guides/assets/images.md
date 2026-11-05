@@ -184,6 +184,7 @@ import Mark from "../assets/mark.svg?currentColor&svg";
 ```
 
 - `?currentColor&svg` replaces the fill and stroke colors with `currentColor`, so CSS `color` paints the SVG.
+- SVG files imported as assets are cleaned too, because a browser runs scripts in an SVG opened directly: scripts, embedded documents, event attributes, `javascript:` links, stylesheet instructions and doctypes are removed, whichever XML prefix they use.
 - Inline SVGs are cleaned: scripts, event attributes, `javascript:` links and `<style>` elements are removed (svgo first moves the style rules onto the elements). Ids get a prefix so two SVGs on one page never clash; `?prefixIds=false&svg` keeps them.
 - Without `title` or `aria-label`, the SVG is hidden from screen readers (`aria-hidden="true"`).
 - Turn optimization off with `images: { svgo: false }`, or pass svgo settings: `images: { svgo: { plugins, multipass, floatPrecision, prefixIds } }`.

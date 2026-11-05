@@ -108,7 +108,9 @@ export function checkCode(code: string, options: { filename?: string; resume?: b
   const typescript: CheckCodeResult["typescript"] = [];
   let note: string | undefined;
   if (options.types !== false) {
-    const host = ts.createCompilerHost(OPTIONS, true);
+    // JavaScript roots are analysed for Rivet's own rules; without `checkJs` they raise no type errors.
+    const compilerOptions = /\.[cm]?jsx?$/.test(filename) ? { ...OPTIONS, allowJs: true } : OPTIONS;
+    const host = ts.createCompilerHost(compilerOptions, true);
     const getSourceFile = host.getSourceFile.bind(host);
     host.getSourceFile = (file, language, onError, create) => {
       const path = resolve(file);
@@ -120,11 +122,15 @@ export function checkCode(code: string, options: { filename?: string; resume?: b
     const fileExists = host.fileExists.bind(host);
     host.fileExists = (file) => resolve(file) === absolute || fileExists(file);
     host.getCurrentDirectory = () => cwd;
-    const program = ts.createProgram([absolute], OPTIONS, host);
-    const file = program.getSourceFile(absolute)!;
+    const program = ts.createProgram([absolute], compilerOptions, host);
+    const file = program.getSourceFile(absolute);
+    if (!file) throw new Error(`@rivetjs/mcp: cannot check ${filename}: use a .ts, .tsx, .js or .jsx filename`);
     const all = [...program.getSyntacticDiagnostics(file), ...program.getSemanticDiagnostics(file)];
-    // TS2307 on a @rivetjs/* import, TS2875 (JSX runtime module missing): the app's packages are not reachable.
-    const unresolved = all.some((d) => (d.code === 2307 || d.code === 2875) && /@rivetjs\//.test(ts.flattenDiagnosticMessageText(d.messageText, "\n")));
+    // TS2307 on a @rivetjs/* import, TS2875 (JSX runtime module missing): the app's packages may not be reachable. Only if the
+    // runtime itself does not resolve: a misspelled `@rivetjs/typo` in a working app stays an ordinary error.
+    const unresolved =
+      all.some((d) => (d.code === 2307 || d.code === 2875) && /@rivetjs\//.test(ts.flattenDiagnosticMessageText(d.messageText, "\n"))) &&
+      !ts.resolveModuleName("@rivetjs/runtime/jsx-runtime", absolute, compilerOptions, host).resolvedModule;
     if (unresolved) note = `TypeScript checks skipped: the @rivetjs/* packages do not resolve from ${cwd} (run the server in a Rivet app).`;
     else
       for (const d of all) {

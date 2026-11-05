@@ -165,3 +165,34 @@ test("pipeline: SVG ?image descriptor from intrinsic size (no sharp), hashed opt
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("svg sanitizer: rules apply to the local name, whichever prefix or namespace it came with", async () => {
+  const svg = (body: string) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:s="http://www.w3.org/2000/svg" xmlns:h="http://www.w3.org/1999/xhtml" xmlns:x="http://www.w3.org/1999/xlink">${body}</svg>`;
+  const bad = [
+    "<s:script>window.P=1</s:script>",
+    "<h:script>window.P=1</h:script>",
+    '<foreignObject><h:iframe srcdoc="&lt;script>window.P=1&lt;/script>"/></foreignObject>',
+    '<a x:href="javascript:window.P=1"><text>t</text></a>',
+    '<a xml:base="javascript:window.P=1//" href="x"><text>t</text></a>',
+    '<rect width="1" height="1" x:onclick="window.P=1"/>',
+  ];
+  for (const options of [{}, false] as const)
+    for (const body of bad) {
+      const { data, warnings } = await optimizeSvg("evil.svg", svg(body), options);
+      assert.doesNotMatch(data, /window\.P/, `${body} survived`);
+      assert.ok(warnings.length > 0, `${body}: no warning`);
+    }
+  // Metadata prefixes and an ordinary xlink reference are untouched.
+  const kept = await optimizeSvg("ok.svg", svg('<defs><circle id="d" r="1"/></defs><use x:href="#d"/>'), false);
+  assert.match(kept.data, /x:href="#d"/);
+  assert.deepEqual(kept.warnings, []);
+});
+
+test("svg sanitizer: stylesheet instructions and doctypes do not reach a file; the xml declaration does", async () => {
+  const source = `<?xml version="1.0"?><?xml-stylesheet type="text/xsl" href="evil.xsl"?><!DOCTYPE svg [<!ENTITY e "x">]><svg xmlns="http://www.w3.org/2000/svg"/>`;
+  const { data, warnings } = await optimizeSvg("evil.svg", source, false);
+  assert.doesNotMatch(data, /xml-stylesheet|DOCTYPE/);
+  assert.match(data, /<\?xml version/);
+  assert.deepEqual(warnings, ["evil.svg: <?xml-stylesheet?> removed from SVG asset"]);
+});

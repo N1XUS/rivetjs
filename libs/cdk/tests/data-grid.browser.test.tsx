@@ -252,6 +252,48 @@ describe("DataGrid selection", () => {
   });
 });
 
+describe("DataGrid disallowEmptySelection", () => {
+  const grid = (props: { defaultSelectedKeys: Selection; data?: Person[]; onSelectionChange?: (keys: Selection) => void }) =>
+    mount(() => (
+      <DataGrid
+        aria-label="People"
+        data={props.data ?? people}
+        columns={columns}
+        selectionMode="multiple"
+        showSelectionCheckboxes
+        disallowEmptySelection
+        {...props}
+      />
+    ));
+
+  it("the select-all checkbox does not clear a fully selected grid", async () => {
+    const onSelectionChange = vi.fn();
+    const { container, rows } = grid({ defaultSelectedKeys: "all", onSelectionChange });
+    await userEvent.setup().click(container.querySelector<HTMLElement>("[data-rv-select-all]")!);
+    await settle();
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    for (const row of rows()) expect(row).toHaveAttribute("aria-selected", "true");
+  });
+
+  it('a lone row selected through "all" keeps its selection', async () => {
+    const onSelectionChange = vi.fn();
+    const { rows } = grid({ defaultSelectedKeys: "all", data: people.slice(0, 1), onSelectionChange });
+    await userEvent.setup().click(rows()[0]!.querySelector<HTMLElement>("input, [role=checkbox]")!);
+    await settle();
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    expect(rows()[0]).toHaveAttribute("aria-selected", "true");
+  });
+
+  it('with several rows, "all" can still lose one', async () => {
+    const onSelectionChange = vi.fn();
+    const { rows } = grid({ defaultSelectedKeys: "all", onSelectionChange });
+    await userEvent.setup().click(rows()[0]!.querySelector<HTMLElement>("input, [role=checkbox]")!);
+    await settle();
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
+    expect(rows()[0]).toHaveAttribute("aria-selected", "false");
+  });
+});
+
 describe("DataGrid keyboard navigation", () => {
   it("tabs into the grid, moves between rows, cells and headers", async () => {
     const user = userEvent.setup();

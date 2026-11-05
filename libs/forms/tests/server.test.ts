@@ -236,3 +236,59 @@ test("server checks of one request run at most 8 at once, every path still check
   assert.ok(peak <= 8, `peak ${peak}`);
   assert.deepEqual(Object.keys(result.issues), ["items.49.email"]);
 });
+
+test("parse: a server check reads the value at its decoded path when array indices have gaps", async () => {
+  const seen: unknown[] = [];
+  const def = defineForm({
+    name: "sparse",
+    schema: z.object({ items: z.array(z.object({ email: z.string().email() })) }),
+    fields: {
+      "items.$.email": {
+        server: true,
+        validate: (value, { path }) => {
+          seen.push([path, value]);
+          return value === "taken@x.co" ? "errors.taken" : undefined;
+        },
+      },
+    },
+  });
+  const form = (entries: [string, string][]) => {
+    const data = new FormData();
+    for (const [name, value] of entries) data.append(name, value);
+    return data;
+  };
+  // The issue names the control that was submitted; the check got the value at the decoded path.
+  assert.deepEqual(await parse(def, form([["items.5.email", "taken@x.co"]])), { ok: false, issues: { "items.5.email": [{ key: "errors.taken" }] }, form: [] });
+  assert.deepEqual(seen, [["items.0.email", "taken@x.co"]]);
+  // Several gaps, out of order, in bracket form.
+  seen.length = 0;
+  const mixed = await parse(
+    def,
+    form([
+      ["items[9][email]", "taken@x.co"],
+      ["items[2][email]", "free@x.co"],
+    ]),
+  );
+  assert.deepEqual(mixed, { ok: false, issues: { "items.9.email": [{ key: "errors.taken" }] }, form: [] });
+  // A schema issue goes back on the submitted name too, and that field's check is skipped.
+  seen.length = 0;
+  const invalid = await parse(def, form([["items.5.email", "nope"]]));
+  assert.equal(invalid.ok, false);
+  assert.deepEqual(Object.keys((invalid as { issues: object }).issues), ["items.5.email"]);
+  assert.deepEqual(seen, []);
+  // Dense names and clean values stay as they were.
+  assert.deepEqual(await parse(def, form([["items.0.email", "free@x.co"]])), { ok: true, value: { items: [{ email: "free@x.co" }] } });
+});
+
+test("parse: a check returning null passes, as FieldCheckResult documents", async () => {
+  const def = defineForm({ name: "nullcheck", schema: z.object({ email: z.string() }), fields: { email: { server: true, validate: () => null } } });
+  const data = new FormData();
+  data.set("email", "a@b.co");
+  assert.deepEqual(await parse(def, data), { ok: true, value: { email: "a@b.co" } });
+  const checks = { email: () => null };
+  const event = { signal: new AbortController().signal } as never;
+  assert.deepEqual(await parse(defineForm({ name: "own", schema: z.object({ email: z.string() }) }), data, { checks, event }), {
+    ok: true,
+    value: { email: "a@b.co" },
+  });
+});

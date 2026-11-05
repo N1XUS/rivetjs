@@ -99,12 +99,23 @@ function custom<K extends keyof MarkdownComponents>(
 const ORDERED_LIST = "markdown__list markdown__list--ordered";
 
 // An image the source names on another host fetches as soon as it renders: in model output a tracking pixel, offline a broken
-// image. Off by default (`remoteImages`): its alt text stands in. A protocol-relative URL and any scheme count as remote.
-const REMOTE_IMAGE = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+// image. Off by default (`remoteImages`): its alt text stands in. Decided on the URL the browser would fetch, not on the
+// text: `/\\host`, `/<tab>/host` and a leading space all resolve to another host. Any scheme and an unparsable URL count too.
+const IMAGE_BASE = "https://rivet.invalid/";
+const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+const remoteImage = (src: string): boolean => {
+  if (SCHEME.test(src)) return true;
+  try {
+    const url = new URL(src, IMAGE_BASE);
+    return url.protocol !== "https:" || url.host !== "rivet.invalid";
+  } catch {
+    return true;
+  }
+};
 const localImages = (cx: MarkdownComponents | undefined): MarkdownComponents => ({
   ...cx,
   img: (props) =>
-    REMOTE_IMAGE.test(props.src) ? (
+    remoteImage(props.src) ? (
       <span data-slot="markdown-image-blocked">{props.alt}</span>
     ) : cx?.img ? (
       cx.img(props)

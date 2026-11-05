@@ -121,7 +121,10 @@ export async function optimizeSvg(file: string, source: string, options: SvgoOpt
 /** Elements never inlined: script / embedded documents, and `<style>` (inline styles are inlined into attributes by
  * svgo first; a page `<style>` would also need a CSP nonce). Files keep `<style>`. */
 const DROP = new Set(["script", "style", "iframe", "frame", "frameset", "embed", "object", "link", "meta", "base", "handler", "listener"]);
-const URL_ATTRS = new Set(["href", "xlink:href", "src", "action", "formaction", "to", "from", "by", "values"]);
+const URL_ATTRS = new Set(["href", "src", "base", "action", "formaction", "to", "from", "by", "values"]);
+// Prefixes are author-chosen (`<s:script>`, `<h:iframe>`, `x:href`): the rules below apply to the local name, whichever
+// prefix and namespace it came with.
+const localName = (name: string) => name.slice(name.lastIndexOf(":") + 1).toLowerCase();
 const unsafeScheme = (value: string, kind: SvgKind) =>
   (kind === "inline" ? /^(?:javascript|vbscript|data):/i : /^(?:javascript|vbscript):/i).test(value.replace(/[\u0000-\u0020\u007f]/g, ""));
 const PAINT = ["fill", "stroke", "stop-color", "flood-color", "lighting-color", "color"];
@@ -132,9 +135,22 @@ function sanitizer(file: string, kind: SvgKind, directives: SvgDirectives, warni
   return {
     name: "rivet-sanitize",
     fn: () => ({
+      // `<?xml-stylesheet?>` runs XSLT when the file opens as a document. A doctype only declares entities, already expanded.
+      instruction: {
+        enter(node, parent) {
+          if (node.name.toLowerCase() === "xml") return;
+          warnings.push(`${file}: <?${node.name}?> removed from ${where}`);
+          parent.children = parent.children.filter((child) => child !== node);
+        },
+      },
+      doctype: {
+        enter(node, parent) {
+          parent.children = parent.children.filter((child) => child !== node);
+        },
+      },
       element: {
         enter(node: XastElement, parent: XastParent) {
-          const tag = node.name.toLowerCase();
+          const tag = localName(node.name);
           if (DROP.has(tag) && (kind === "inline" || tag !== "style")) {
             const text = node.children.some((c) => (c.type === "text" || c.type === "cdata") && c.value.trim());
             if (tag !== "style") warnings.push(`${file}: <${node.name}> removed from ${where}`);
@@ -144,10 +160,11 @@ function sanitizer(file: string, kind: SvgKind, directives: SvgDirectives, warni
           }
           for (const name of Object.keys(node.attributes)) {
             const value = node.attributes[name]!;
-            if (/^on/i.test(name)) {
+            const attr = localName(name);
+            if (attr.startsWith("on")) {
               warnings.push(`${file}: event attribute ${name} removed from ${where}`);
               delete node.attributes[name];
-            } else if (URL_ATTRS.has(name.toLowerCase()) && unsafeScheme(value, kind)) {
+            } else if (URL_ATTRS.has(attr) && unsafeScheme(value, kind)) {
               if (/^\s*data:image\//i.test(value) && tag === "image")
                 throw new Error(
                   `${file}: embedded data: image in <image ${name}> cannot be inlined (unsafe URL rule); import the SVG with ?image or reference the raster file`,

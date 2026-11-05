@@ -28,7 +28,7 @@
 @rivetjs/router/deno 1509759568df 6779
 @rivetjs/router/electron e60a8e40e48c 7725
 @rivetjs/router/head 529bf74931c1 7888
-@rivetjs/forms a3708cd0a825 4747
+@rivetjs/forms 789ec6351df3 4747
 @rivetjs/forms/array e7d1e96d5f86 4001
 @rivetjs/forms/components [dom] 74e8333a5362 2278
 @rivetjs/forms/components [server] 6026b96e4c7a 1797
@@ -36,7 +36,7 @@
 @rivetjs/forms/wizard 6778111f688a 1667
 @rivetjs/forms/autosave bb278e440676 4859
 @rivetjs/forms/errors 3595b2939e6a 1943
-@rivetjs/forms/server 0a591c01cf93 13056
+@rivetjs/forms/server cc2d3fc2ffc4 13644
 @rivetjs/forms/server [browser] d2c003c85936 117
 @rivetjs/forms/csrf ebf39807110c 798
 @rivetjs/forms/csrf [browser] d2c003c85936 117
@@ -52,8 +52,8 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 0d3750eb7938 568563 css f0ac60d2c300 1220808
-@rivetjs/ui [server] 7511fbbf66a2 505505 css f0ac60d2c300 1220808
+@rivetjs/ui [dom] e64b13cbb28c 568699 css f0ac60d2c300 1220808
+@rivetjs/ui [server] dbf07c722912 505639 css f0ac60d2c300 1220808
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
 @rivetjs/ui/surface [server] e67984866617 4226 css 319605878d70 769
@@ -357,8 +357,8 @@
 @rivetjs/ui/chat-list-view [server] 4e89a872d19f 5465 css 3ec0cca4cecc 1210506
 @rivetjs/ui/code-block [dom] 6241ee3ce4a0 9766 css 3ec0cca4cecc 1210506
 @rivetjs/ui/code-block [server] c560ec1d8ad7 9043 css 3ec0cca4cecc 1210506
-@rivetjs/ui/markdown [dom] 639d69888866 25804 css 3ec0cca4cecc 1210506
-@rivetjs/ui/markdown [server] 791c1ad2445e 23239 css 3ec0cca4cecc 1210506
+@rivetjs/ui/markdown [dom] fc6b39e9d0c4 25938 css 3ec0cca4cecc 1210506
+@rivetjs/ui/markdown [server] af70071b0613 23373 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chain-of-thought [dom] b1c47df346cd 10703 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chain-of-thought [server] c6ba2de91c43 9289 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-source [dom] e45fcc78457f 15983 css 3ec0cca4cecc 1210506

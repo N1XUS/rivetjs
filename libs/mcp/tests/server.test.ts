@@ -3,6 +3,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
+import { checkCode } from "../check.ts";
 import { buildData, dataProblems, type McpData } from "../data.ts";
 import { createRivetServer, findComponents, findDoc } from "../server.ts";
 import { tokens } from "../search.ts";
@@ -65,6 +66,19 @@ describe("@rivetjs/mcp", () => {
     const icon = await call("get_component", { name: "Icon" });
     expect(icon.text).toContain("@rivetjs/kit/icon");
   });
+  it("check_code takes JavaScript filenames and refuses others clearly", { timeout: 60_000 }, () => {
+    for (const filename of ["src/routes/review.jsx", "src/routes/util.js"])
+      expect(checkCode("export default function Page() { return null; }", { filename, cwd: repo }).typescript).toEqual([]);
+    expect(checkCode("const n: number = 1;\nexport { n };", { filename: "src/routes/a.tsx", cwd: repo }).typescript).toEqual([]);
+    expect(() => checkCode("x", { filename: "src/notes.md", cwd: repo })).toThrow(/use a \.ts, \.tsx, \.js or \.jsx filename/);
+  });
+
+  it("check_code: one misspelled @rivetjs import does not hide the snippet's other type errors", { timeout: 60_000 }, () => {
+    const code = `import { signal } from "@rivetjs/reactivity"; import { x } from "@rivetjs/typo"; export const s = signal(0); export const y = x; export const n: number = "bad";`;
+    const checked = checkCode(code, { filename: "src/routes/t.ts", cwd: repo });
+    expect(checked.typescript.map((d) => d.code).sort()).toEqual(["TS2307", "TS2322"]);
+  });
+
   it("check_code reports RV codes with fixes, and passes clean code", { timeout: 60_000 }, async () => {
     const bad = await call("check_code", {
       code: 'import { signal } from "@rivetjs/reactivity";\nconst save = () => {};\nexport default function Page() {\n  return <textarea model:value={signal("")}>x</textarea>;\n}\n',

@@ -11,9 +11,9 @@ export interface IssueMap {
 
 /** Normalize an issue: a string becomes `{ key }`. */
 export const toIssue = (value: IssueLike): Issue => (typeof value === "string" ? { key: value } : value);
-/** Normalize one issue, a list or `undefined` to a list of issues. */
-export const toIssues = (value: IssueLike | readonly IssueLike[] | undefined): Issue[] =>
-  value === undefined ? [] : Array.isArray(value) ? (value as readonly IssueLike[]).map(toIssue) : [toIssue(value as IssueLike)];
+/** Normalize one issue, a list, `undefined` or `null` to a list of issues. */
+export const toIssues = (value: IssueLike | readonly IssueLike[] | undefined | null): Issue[] =>
+  value === undefined || value === null ? [] : Array.isArray(value) ? (value as readonly IssueLike[]).map(toIssue) : [toIssue(value as IssueLike)];
 
 /** Dotted path of a Standard Schema issue path (`[ "items", 0, { key: "qty" } ]` → `items.0.qty`). */
 export function issuePath(path: StandardSchemaV1.Issue["path"]): string {

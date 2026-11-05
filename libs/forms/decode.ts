@@ -14,7 +14,7 @@ export interface DecodeLimits {
   readonly keyLength: number;
   /** Max path depth (default 8). */
   readonly depth: number;
-  /** Max array index (default 1000); sparse indices are compacted. */
+  /** Max array index (default 1000); sparse indices are compacted (`decodedPaths` maps a submitted path to its decoded one). */
   readonly index: number;
 }
 /** Options of FormData decoding: coercions, empty values and limits. */
@@ -132,6 +132,35 @@ function compact(node: Node): unknown {
     const value = unwrap(node.get(key));
     if (value !== undefined) out[key] = value;
   }
+  return out;
+}
+
+/**
+ * Each submitted path (and its prefixes) → its path in the decoded value. Decoding closes gaps in array indices, so a lone
+ * `items.5.email` is `items.0.email` there: server checks read values at the decoded path, issues go back on the submitted one.
+ */
+export function decodedPaths(paths: Iterable<string>): Map<string, string> {
+  const root: Node = new Map();
+  for (const path of paths) {
+    let node = root;
+    for (const segment of path.split(".")) {
+      let child = node.get(segment) as Node | undefined;
+      if (!child) node.set(segment, (child = new Map()));
+      node = child;
+    }
+  }
+  const out = new Map<string, string>();
+  const walk = (node: Node, from: string, to: string) => {
+    if (from) out.set(from, to);
+    const keys = [...node.keys()];
+    const indexed = keys.length > 0 && keys.every(isIndex);
+    if (indexed) keys.sort((a, b) => Number(a) - Number(b));
+    keys.forEach((key, position) => {
+      const at = indexed ? String(position) : key;
+      walk(node.get(key) as Node, from ? `${from}.${key}` : key, to ? `${to}.${at}` : at);
+    });
+  };
+  walk(root, "", "");
   return out;
 }
 const unwrap = (value: unknown): unknown => (value instanceof Map ? compact(value) : (value as Leaf)[LEAF]);
