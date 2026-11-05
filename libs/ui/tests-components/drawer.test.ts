@@ -165,3 +165,22 @@ test("drawer: backdrop fades in and out, panel slides (first open + reopen)", ()
     }
     assert.deepEqual(seen.errors, []);
   }));
+
+// AI-ADOPT 2026-11-05: overlays controlled by a plain value (`isOpen={open()}` + `onOpenChange`) and opened by a Button
+// outside the overlay root never opened on the resumed page. Drawer, Modal and AlertDialog: open, close through the
+// slot=close button (writes back through `onOpenChange`), reopen.
+for (const kind of ["drawer", "modal", "alert"] as const)
+  test(`${kind}: plain-value isOpen={open()} + onOpenChange opens from an outside Button on the resumed page`, () =>
+    onPage(async (page) => {
+      const seen = watch(page);
+      await page.goto(s.origin + "/overlay-controlled");
+      await page.waitForLoadState("networkidle");
+      assert.equal(await page.$(`#oc-${kind}-dialog`), null);
+      await page.click(`#oc-${kind}-open`);
+      await page.waitForSelector(`#oc-${kind}-dialog`, { timeout: 5000 });
+      await page.click(`#oc-${kind}-close`);
+      await page.waitForSelector(`#oc-${kind}-dialog`, { state: "detached" });
+      await page.click(`#oc-${kind}-open`);
+      await page.waitForSelector(`#oc-${kind}-dialog`, { timeout: 5000 });
+      assert.deepEqual(seen.errors, []);
+    }));

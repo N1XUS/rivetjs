@@ -252,6 +252,8 @@ interface Keyed {
   /** Written since the page loaded: a list made by a later adopt run (a unit whose chunk loaded after the write) whose
    * rows read it shows stale server rows, so it materialises at once (`sample`). */
   written?: true;
+  /** The record whose adopt run made it: its first write adopts that record's deferred children first (`before`). */
+  rec?: Rec;
 }
 /** A cold event the loader held: the event, its path at dispatch, its default's replay, the target's form state then. */
 export type HeldEvent = [
@@ -420,7 +422,7 @@ function sig<T>(key: string, init?: T, options?: EqualsOptions<T>): Signal<T> {
   if (!u || !rec) return make(init as T, options);
   const k = keyOf(u, key);
   const s = make((rec.values.has(k) ? rec.values.get(k) : init) as T, options);
-  const e: Keyed = { fors: null, wake: tail?.w?.[rec.id + "." + k], rows: null };
+  const e: Keyed = { fors: null, wake: tail?.w?.[rec.id + "." + k], rows: null, rec };
   const get = function () {
     collector?.add(e);
     return s();
@@ -463,6 +465,8 @@ function sigStore<T extends object>(key: string, init: T): Store<T> {
 // adopts the readers of its keys at once.
 /** Deferred `MOD` records: adopted before the first write to a signal no wake key names. */
 let loose: Set<Rec> | null = null;
+/** Deferred dependent records per parent record, claimed but not adopted yet (`child`, `before`). */
+let deferred: Map<Rec, Set<Rec>> | null = null;
 /** The derived alias of `signal` (`@rivetjs/runtime/derived-reactivity`; `_dsignal` in `dom-derived-abi.ts` runs it). */
 function dsignal<T>(init?: T, options?: EqualsOptions<T>): Signal<T> {
   const s = signal(init as T, options),
@@ -506,13 +510,29 @@ function counted(rec: Rec | null, n: number): void {
   for (const key in tail!.w) if (key.startsWith(prefix)) wakeAll(tail!.w![key]!);
 }
 
+/** `p`'s deferred children adopt now, then theirs (`before`). */
+function adoptDeferred(p: Rec): void {
+  const d = deferred?.get(p);
+  if (!d) return;
+  deferred!.delete(p);
+  for (const r of d) {
+    if (!r.done && r.hole) runHole(r);
+    adoptDeferred(r);
+  }
+}
 // The first write to a keyed signal: the boundaries on its wake list materialise, then the lazy lists whose rows read it
 // materialise every row — before the write notifies, so their bindings start from what the page shows. Wake list first:
 // a woken record's run may create a lazy list whose rows read this signal (it joins `e.fors`), and that list must take
 // this write too (TOGGLE-TABS-COLD: a cold arrow key selected a tab, the force-mounted panels' list — created by the
 // TabPanels wake — kept the server's visible panel until the second change).
 function before(e: Keyed): void {
+  // A parent's signal handed to a deferred child as a live prop (`isOpen={open()}`): the server evaluates the prop in the
+  // parent, so no wake key names the child. Its first write adopts the parent's still-deferred children first, over the
+  // server state their markup shows (OVERLAY-CTL 2026-11-05: a controlled Drawer adopted after the write stayed closed).
+  // The prop may travel further down (DrawerRoot → cdk DialogTrigger): the children those runs defer adopt too.
+  const at = !e.written && e.rec;
   e.written = true;
+  if (at && deferred?.has(at)) adoptDeferred(at);
   const wake = e.wake;
   if (wake) {
     e.wake = undefined;
@@ -1415,8 +1435,13 @@ function child(r: Rec, hole: BHole): void {
   r.hole = hole;
   if (r.flags & INDEPENDENT) return trigger(r);
   if (!(r.flags & DEFER)) return void runHole(r);
-  // Deferred (DERIVED-C4): its own event, a wake, a loose write (`MOD`), else idle.
+  // Deferred (DERIVED-C4): its own event, a wake, a loose write (`MOD`), a parent's keyed write (`before`), else idle.
   if (r.flags & MOD) (loose ??= new Set()).add(r);
+  if (r.parent) {
+    deferred ??= new Map();
+    const d = deferred.get(r.parent);
+    d ? d.add(r) : deferred.set(r.parent, new Set([r]));
+  }
   ((window.requestIdleCallback as ((fn: () => void) => number) | undefined) || setTimeout)(() => {
     if (!r.done) {
       const p = need(r);
@@ -1428,6 +1453,7 @@ function runHole(r: Rec): void {
   const hole = r.hole!;
   r.done = true;
   loose?.delete(r);
+  if (r.parent) deferred?.get(r.parent)?.delete(r);
   // The unit that claimed the hole is gone (a revalidation / navigation re-rendered the page before its idle / visible /
   // event trigger fired): its range left the page too, nothing to adopt (forms drawer: "Cannot run with a disposed owner").
   // Likewise a range the claiming unit removed itself before the idle adopt (a ternary / keyed Show step swapped on the

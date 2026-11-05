@@ -28,11 +28,11 @@ rivet-for.mjs 6964a1d99c8b
 rivet-router-bunserve.mjs 3326bc609d97
 rivet-router-uws.mjs f0d229bbf420
 rivet-router.mjs 3383d5cba9c8
-rivet-router/client/.vite/rivet-resume.json 9c707d5f5fe4
+rivet-router/client/.vite/rivet-resume.json d091dae408e8
 rivet-router/client/assets/_layout-DLcy1ZOH.js fae4e7c50482
 rivet-router/client/assets/_layout-DfJzAyJk.js 67cbb392f982
 rivet-router/client/assets/app-5RTJUPPn.js a09b90d758b8
-rivet-router/client/assets/derived-runtime-BsPV4fKn.js eef00aff02a3
+rivet-router/client/assets/derived-runtime-DWBeVTWf.js 7e534d303535
 rivet-router/client/assets/dom-data-reader-DebSi85y.js 5524efbf1e8b
 rivet-router/client/assets/dom-derived-abi-B85uB_cG.js 34c493e1e67e
 rivet-router/client/assets/index-CNOrrbuy.js 5bbd5a9101e6

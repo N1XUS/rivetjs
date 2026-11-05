@@ -283,3 +283,77 @@ compiled("browser: a submit adopts the deferred units inside its form first (the
       await page.waitForFunction(() => document.querySelector("#field")!.hasAttribute("data-invalid"));
     });
 });
+
+// A parent's keyed signal handed to a deferred child as a value prop (`open={open()}`: a getter in the browser, the
+// value on the server, read in the parent there — no wake key names the child). The first write adopts the deferred
+// child (and the children its run defers in turn) before it lands (OVERLAY-CTL 2026-11-05: a controlled ui Drawer
+// opened by a Button outside it stayed closed on the resumed page).
+const LIVE = `
+import { signal } from "@rivetjs/reactivity";
+import { make } from "/helper.js";
+
+export function Inner(props) {
+  const own = Array.from({ length: 8 }, (_, i) => make(i));
+  return (
+    <span id="inner" onClick={() => own[0].set(own[0]() + 1)}>
+      {props.open ? "inner-open" : "inner-closed"}
+    </span>
+  );
+}
+
+export function Panel(props) {
+  const own = Array.from({ length: 8 }, (_, i) => make(i));
+  return (
+    <section id="panel" onClick={() => own[0].set(own[0]() + 1)}>
+      <p id="state">{props.open ? "open" : "closed"}</p>
+      <Inner open={props.open} />
+    </section>
+  );
+}
+
+export function App() {
+  const open = signal(false);
+  return (
+    <main>
+      <button type="button" id="open" onClick={() => open.set(true)}>
+        Open
+      </button>
+      <Panel open={open()} />
+    </main>
+  );
+}
+`;
+const LIVE_RESUME = { module: "src/page.tsx", boundaries: ["App", "Panel", "Inner"], independent: ["App"] };
+
+compiled("browser: a parent's first keyed write adopts its deferred children (value props) before it lands", async () => {
+  const out = compile(LIVE, { target: "server", filename: "page.tsx", resume: LIVE_RESUME } as never);
+  assert.deepEqual(out.diagnostics, []);
+  const { App } = await importServer<{ App: () => ServerValue }>(
+    out.code.replaceAll('"@rivetjs/reactivity"', serverAlias).replaceAll('"/helper.js"', JSON.stringify(dataUrl(helper(serverAlias)))),
+  );
+  const symbols = Object.fromEntries(LIVE_RESUME.boundaries.map((name) => ["src/page.tsx#" + name, "/page.js"]));
+  const html = (await derivedToString(() => App(), { manifest: { hash: "t", runtime: "/rt.js", symbols } })) as string;
+  const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
+  for (const name of ["Panel", "Inner"]) assert.ok(tail.b.find((r) => r[3] === "src/page.tsx#" + name)![2] & DEFER, name + " defers");
+  const dom = compile(LIVE, { target: "dom", filename: "page.tsx", resume: LIVE_RESUME } as never);
+  assert.deepEqual(dom.diagnostics, []);
+  const served = {
+    ...DERIVED_BUILD,
+    "/": "<!doctype html><html><body>" + html + "</body></html>",
+    "/rt.js": 'export { default } from "/dom-derived.ts";',
+    "/page.js": rewrite(dom.code.replaceAll('"@rivetjs/reactivity"', '"/derived-reactivity.ts"')),
+    "/helper.js": helper('"/derived-reactivity.ts"'),
+  };
+  await withPage(served, async (page) => {
+    // Idle adoption off: only the write can adopt the deferred children.
+    await page.addInitScript(() => void ((window as unknown as Record<string, unknown>).requestIdleCallback = () => 0));
+    await page.goto("http://rivet.test/");
+    await page.evaluate(() => ((document.querySelector("#state") as unknown as Record<string, number>).__t = 1));
+    await page.click("#open");
+    await page.waitForFunction(() => document.querySelector("#state")!.textContent === "open");
+    await page.waitForFunction(() => document.querySelector("#inner")!.textContent === "inner-open");
+    assert.equal(await attached(page, "#panel"), true, "Panel adopted");
+    assert.equal(await attached(page, "#inner"), true, "Inner adopted");
+    assert.equal(await page.evaluate(() => (document.querySelector("#state") as unknown as Record<string, number>).__t), 1, "server node kept");
+  });
+});
