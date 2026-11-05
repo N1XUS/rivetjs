@@ -244586,8 +244586,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/masonry/behaviour.ts",
-    "line": 218,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/masonry/behaviour.ts#L218"
+    "line": 225,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/masonry/behaviour.ts#L225"
    },
    "href": "/api/rivetjs/ui/masonry/MasonryHandle/"
   },

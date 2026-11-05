@@ -100,6 +100,7 @@ The parameter type is `number`.
 | `{d, date}` | Default date format |
 | `{d, date, short}` | Also `medium`, `long`, `full` |
 | `{d, time, short}` | Time of day, same styles |
+| `{d, time, ::jmm}` | Date skeleton: `j` is the language's usual hour (`3:30 PM` in English, `15:30` in German); `H` / `h` force 24 / 12 hours |
 
 The parameter accepts a `Date` or a timestamp number. Set `timeZone` in the plugin options so the server and browser format the same way.
 

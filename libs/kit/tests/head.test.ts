@@ -22,12 +22,17 @@ test("rank merge: deeper levels win, components after the route export, title te
     ["page", "x"],
   );
   assert.equal(rankMerge([]), undefined);
+  // The title is inserted as text: `$&` / `$'` are not replacement patterns.
+  assert.equal(rankMerge([at(0, 0, 0, { titleTemplate: "%s | Site", title: "Save $& now $'" })])?.title, "Save $& now $' | Site");
 });
 
 test("dedupe keys: canonical once, hreflang alternates by locale, JSON-LD only by id", () => {
   const merged = rankMerge([
     at(0, 0, 0, { links: [{ rel: "canonical", href: "https://a.test/" }, ...alternates({ locales: { en: "/en", de: "/de" }, baseUrl: "https://a.test" })] }),
-    at(1, 0, 0, { links: [{ rel: "canonical", href: "https://a.test/x" }], scripts: [jsonLd({ a: 1 }), jsonLd({ b: 1 }), jsonLd({ c: 1 }, "org"), jsonLd({ d: 1 }, "org")] }),
+    at(1, 0, 0, {
+      links: [{ rel: "canonical", href: "https://a.test/x" }],
+      scripts: [jsonLd({ a: 1 }), jsonLd({ b: 1 }), jsonLd({ c: 1 }, "org"), jsonLd({ d: 1 }, "org")],
+    }),
   ]);
   assert.deepEqual(
     merged?.links?.map((l) => [l.rel, l.hreflang ?? "", l.href]),
@@ -62,9 +67,18 @@ test("headTags: capo order, nonce on scripts, JSON-LD without nonce, escaping", 
     },
     { styles: ["/route.css"], nonce: "n0nce" },
   );
-  const order = ["<title>", "preconnect", "a.js", "<script nonce", "route.css", "own.css", "preload", "defer.js", "description", "canonical", "ld+json"].map((s) => html.indexOf(s));
-  assert.ok(order.every((index) => index >= 0), html);
-  assert.deepEqual([...order].sort((a, b) => a - b), order, html);
+  const order = ["<title>", "preconnect", "a.js", "<script nonce", "route.css", "own.css", "preload", "defer.js", "description", "canonical", "ld+json"].map(
+    (s) => html.indexOf(s),
+  );
+  assert.ok(
+    order.every((index) => index >= 0),
+    html,
+  );
+  assert.deepEqual(
+    [...order].sort((a, b) => a - b),
+    order,
+    html,
+  );
   assert.match(html, /<title>A &lt;b&gt; &amp; c<\/title>/);
   assert.match(html, /content="say &quot;hi&quot;"/);
   assert.match(html, /<script async src="https:\/\/cdn.test\/a.js" nonce="n0nce">/);
@@ -77,8 +91,19 @@ const SCRIPT_BOOTSTRAP = _scriptBootstrap(["load", "idle", "interaction"]);
 
 test("deferred strategies: one inline bootstrap with the list, only the used strategies, ≤ 400 B gzip", async () => {
   const { gzipSync } = await import("node:zlib");
-  const html = headTags({ scripts: [{ src: "https://t.test/a.js", strategy: "idle" }, { src: "/b.js", strategy: "interaction", type: "module" }] }, { nonce: "n" });
-  assert.match(html, /<script id="rivet-scripts" nonce="n">\{let l=\[\{"u":"https:\/\/t.test\/a.js","k":1\},\{"u":"\/b.js","k":2,"type":"module"\}\],d=document,/);
+  const html = headTags(
+    {
+      scripts: [
+        { src: "https://t.test/a.js", strategy: "idle" },
+        { src: "/b.js", strategy: "interaction", type: "module" },
+      ],
+    },
+    { nonce: "n" },
+  );
+  assert.match(
+    html,
+    /<script id="rivet-scripts" nonce="n">\{let l=\[\{"u":"https:\/\/t.test\/a.js","k":1\},\{"u":"\/b.js","k":2,"type":"module"\}\],d=document,/,
+  );
   assert.doesNotMatch(html, /src="https:\/\/t.test/);
   assert.doesNotMatch(html, /r\(0\)/);
   assert.match(headTags({ scripts: [{ src: "/c.js", strategy: "load" }] }), /r\(0\)/);
@@ -112,7 +137,10 @@ test("inline styles: deduped by key / text, nonce, after stylesheets, closing ta
     merged?.styles?.map((s) => s.css),
     ["c{}", "b{}"],
   );
-  const html = headTags({ styles: [{ css: "p{}</style><b>", media: "print" }], links: [{ rel: "stylesheet", href: "/a.css" }] }, { nonce: "n1", managed: true });
+  const html = headTags(
+    { styles: [{ css: "p{}</style><b>", media: "print" }], links: [{ rel: "stylesheet", href: "/a.css" }] },
+    { nonce: "n1", managed: true },
+  );
   assert.equal(html, '<link rel="stylesheet" href="/a.css" data-rh=""><style media="print" nonce="n1">p{}<\\/style><b></style>');
 });
 
@@ -157,7 +185,15 @@ test("image preloads: one per art-direction media, mutually exclusive", () => {
 
 test("?font ids", () => {
   const request = parseFontId("/f/Inter-Variable.woff2?font&weight=100..900&fallback=Arial");
-  assert.deepEqual(request, { file: "/f/Inter-Variable.woff2", family: "Inter", weight: "100 900", style: "normal", display: "swap", fallback: "Arial", format: "woff2" });
+  assert.deepEqual(request, {
+    file: "/f/Inter-Variable.woff2",
+    family: "Inter",
+    weight: "100 900",
+    style: "normal",
+    display: "swap",
+    fallback: "Arial",
+    format: "woff2",
+  });
   assert.equal(parseFontId("/f/a.woff2?url"), null);
   assert.throws(() => parseFontId("/f/a.png?font"), /woff2/);
   assert.throws(() => parseFontId("/f/a.woff2?font&family=a%22b"), /invalid font family/);

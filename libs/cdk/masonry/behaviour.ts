@@ -79,7 +79,11 @@ export function toggleKey(ctx: MasonryContext, key: Key) {
   const mode = ctx.mode();
   if (mode === "none" || isDisabledKey(ctx, key)) return;
   const current = controlledValue(ctx.selection);
-  if (ctx.disallowEmpty() && isKeySelected(current, key) && current !== "all" && current.size === 1) return;
+  if (ctx.disallowEmpty() && isKeySelected(current, key)) {
+    // "all" means every enabled key: with one such key, unselecting it empties the selection too.
+    const selected = current === "all" ? ctx.keys().filter((k) => !isDisabledKey(ctx, k)).length : current.size;
+    if (selected === 1) return;
+  }
   setSelection(
     ctx,
     toggleKeySelection(current, key, mode, () => ctx.keys(), ctx.disabled()),
@@ -102,7 +106,10 @@ function extendTo(ctx: MasonryContext, key: Key) {
 /** Ctrl / Cmd + A: everything ↔ nothing (react-stately `toggleSelectAll`). */
 export function toggleAll(ctx: MasonryContext) {
   if (ctx.mode() !== "multiple") return;
-  setSelection(ctx, selectAllState(controlledValue(ctx.selection), ctx.keys(), ctx.disabled()) === "all" ? new Set() : "all");
+  const state = selectAllState(controlledValue(ctx.selection), ctx.keys(), ctx.disabled());
+  // react-stately `clearSelection` is a no-op under disallowEmptySelection.
+  if (state === "all" && ctx.disallowEmpty()) return;
+  setSelection(ctx, state === "all" ? new Set() : "all");
 }
 
 // ---------------------------------------------------------------------------------------------------------------

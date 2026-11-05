@@ -38,6 +38,17 @@ function styleOf<T>(style: unknown, named: Record<string, T>, where: string, kin
   return style ? (style as { parsedOptions: T }).parsedOptions : undefined;
 }
 
+/**
+ * ICU `j` / `J` / `C` (the locale's preferred hour) are dropped by formatjs's skeleton parser
+ * (`::jmm` → minutes only). Intl picks the locale's hour cycle when `hour` has no `hourCycle`.
+ */
+function preferredHour(style: unknown, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions {
+  const pattern = (style as { pattern?: string } | null)?.pattern;
+  if (typeof pattern !== "string" || options.hour) return options;
+  const hours = pattern.replace(/'[^']*'/g, "").match(/[jJC]+/)?.[0];
+  return hours ? { ...options, hour: hours.length > 1 ? "2-digit" : "numeric" } : options;
+}
+
 function convert(elements: MessageFormatElement[], where: string, pound: string | null): Part[] {
   const out: Part[] = [];
   const text = (s: string) => {
@@ -60,14 +71,9 @@ function convert(elements: MessageFormatElement[], where: string, pound: string 
       }
       case TYPE.date:
       case TYPE.time: {
-        const style = styleOf<"short" | "medium" | "long" | "full" | Intl.DateTimeFormatOptions>(
-          el.style,
-          DATE_STYLES,
-          where,
-          "date",
-        );
+        const style = styleOf<"short" | "medium" | "long" | "full" | Intl.DateTimeFormatOptions>(el.style, DATE_STYLES, where, "date");
         const f: Intl.DateTimeFormatOptions | undefined =
-          typeof style === "string" ? (el.type === TYPE.time ? { timeStyle: style } : { dateStyle: style }) : style;
+          typeof style === "string" ? (el.type === TYPE.time ? { timeStyle: style } : { dateStyle: style }) : style && preferredHour(el.style, style);
         out.push(f && Object.keys(f).length ? { d: el.value, f } : { d: el.value });
         break;
       }
@@ -80,15 +86,8 @@ function convert(elements: MessageFormatElement[], where: string, pound: string 
         if (!el.options.other) throw new I18nError(`${where}: {${el.value}} requires an "other" case`);
         if (el.type === TYPE.plural && el.offset) throw new I18nError(`${where}: plural offset is not supported`);
         const cases: Record<string, Part[]> = {};
-        for (const [k, option] of Object.entries(el.options))
-          cases[k] = convert(option.value, where, el.type === TYPE.plural ? el.value : pound);
-        out.push(
-          el.type === TYPE.select
-            ? { s: el.value, cases }
-            : el.pluralType === "ordinal"
-              ? { p: el.value, ord: true, cases }
-              : { p: el.value, cases },
-        );
+        for (const [k, option] of Object.entries(el.options)) cases[k] = convert(option.value, where, el.type === TYPE.plural ? el.value : pound);
+        out.push(el.type === TYPE.select ? { s: el.value, cases } : el.pluralType === "ordinal" ? { p: el.value, ord: true, cases } : { p: el.value, cases });
         break;
       }
       case TYPE.tag:

@@ -131,6 +131,10 @@ test("redirect(): same-origin by default, `external: true` for other origins", a
   // safeRedirect (user-supplied targets) lives in the router now.
   assert.equal(safeRedirect("/a?b#c"), "/a?b#c");
   assert.equal(safeRedirect("//evil", "/home"), "/home");
+  // Dot segments that normalize to a protocol-relative path.
+  for (const target of ["/.//evil.com", "/a/..//evil.com", "/%2e//evil.com", "/./\u0009/evil.com"])
+    assert.equal(safeRedirect(target, "/home"), "/home", target);
+  assert.equal(safeRedirect("/a/../b/./c"), "/b/c");
 });
 
 test("maxBody: oversized bodies answer 413 (Content-Length early, then while streaming); multipart default 10 MiB", async () => {

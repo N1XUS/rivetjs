@@ -213,7 +213,9 @@ function keyOf(el: Element): string | undefined {
 function sync(): void {
   const template = route?.titleTemplate;
   const final = (head: HeadFields): HeadFields =>
-    head.title !== undefined && template !== undefined && head.titleTemplate === undefined ? { ...head, title: template.replace("%s", head.title) } : head;
+    head.title !== undefined && template !== undefined && head.titleTemplate === undefined
+      ? { ...head, title: template.replace("%s", () => head.title!) }
+      : head;
   // Rank: layout components < the route head (final title) < page-level components.
   const entries: RankedHead[] = [];
   for (const m of mounted) if (m.level < pageLevel) entries.push({ level: 0, phase: 1, seq: m.seq, head: final(m.head) });

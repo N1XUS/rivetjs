@@ -24,7 +24,11 @@ function prefixOf(locale: string, config: I18nRouteConfig): string {
   const prefix = config.routing?.prefix ?? "as-needed";
   if (prefix === "never") return "";
   // Lower-case like resolve.ts `prefixes` and vite.ts `clientPathPattern`, which match the segment.
-  if (typeof prefix === "object") return "/" + (prefix[locale] ?? locale).replace(/^\/|\/$/g, "").toLowerCase();
+  if (typeof prefix === "object") {
+    // An empty mapped segment means no prefix (never `//a`).
+    const segment = (Object.hasOwn(prefix, locale) ? prefix[locale]! : locale).replace(/^\/|\/$/g, "").toLowerCase();
+    return segment ? "/" + segment : "";
+  }
   if (prefix === "as-needed" && locale === config.defaultLocale) return "";
   return "/" + locale.toLowerCase();
 }
@@ -42,17 +46,20 @@ export function delocalizeHref(href: string, config: I18nRouteConfig, base: stri
   const url = new URL(href, "http://x");
   const [at, path] = splitBase(url.pathname, base);
   const bare = localeFromPath(path, config) ? path.replace(/^\/[^/]+/, "") || "/" : path;
-  return at + bare + url.search + url.hash;
+  return noProtocolRelative(at + bare + url.search + url.hash);
 }
+
+/** A path never starts with `//` (browsers read that as another host): `/de//evil.com` stays on this origin. */
+const noProtocolRelative = (href: string) => href.replace(/^\/{2,}/, "/");
 
 /** `href` in `locale`: its locale prefix (after the app base, `BASE`) replaced by `locale`'s. */
 export function localizeHref(href: string, locale: string, config: I18nRouteConfig, base: string = BASE): string {
   const url = new URL(href, "http://x");
   const [at, path] = splitBase(url.pathname, base);
-  const bare = delocalizeHref(path + url.search + url.hash, config, "");
+  const bare = delocalizeHref(noProtocolRelative(path) + url.search + url.hash, config, "");
   const prefix = prefixOf(locale, config);
   // The localized root is the bare prefix (`/de`, not `/de/`).
-  return at + (prefix && /^\/(?:[?#]|$)/.test(bare) ? prefix + bare.slice(1) : prefix + bare);
+  return noProtocolRelative(at + (prefix && /^\/(?:[?#]|$)/.test(bare) ? prefix + bare.slice(1) : prefix + bare));
 }
 
 /** Options of `alternates()` (as kit `canonical()`). */

@@ -86,7 +86,7 @@ export function rankMerge(entries: readonly RankedHead[]): Head | undefined {
     if (head.scripts) for (const entry of head.scripts) (scripts ??= new Map()).set(scriptKey(entry), entry);
     if (head.styles) for (const entry of head.styles) (styles ??= new Map()).set(entry.key ?? entry.css, entry);
   }
-  if (title !== undefined && template !== undefined) title = template.replace("%s", title);
+  if (title !== undefined && template !== undefined) title = template.replace("%s", () => title!);
   // The template stays alongside the final title: client head updates template component titles.
   const merged: Head = {
     ...(title !== undefined ? { title } : {}),

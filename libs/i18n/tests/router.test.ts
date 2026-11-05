@@ -49,9 +49,14 @@ test("localize / delocalize", () => {
   assert.equal(localizeHref("/de/cart", "en", config), "/cart");
   assert.equal(localizeHref("/de", "en", config), "/");
   assert.equal(localizeHref("/", "de", config), "/de");
+  // A path left with a leading `//` would be protocol-relative (another host).
+  assert.equal(localizeHref("/de//evil.com", "en", config), "/evil.com");
+  assert.equal(localizeHref("/x/..//evil.com", "en", config), "/evil.com");
+  assert.equal(delocalizeHref("/de//evil.com", config), "/evil.com");
   assert.equal(delocalizeHref("/de/cart#a", config), "/cart#a");
   assert.equal(localizeHref("/cart", "en", { ...config, routing: { prefix: "always" } }), "/en/cart");
   assert.equal(localizeHref("/cart", "de", { ...config, routing: { prefix: { de: "/deutsch" } } }), "/deutsch/cart");
+  assert.equal(localizeHref("/cart", "en", { ...config, routing: { prefix: { en: "", de: "/deutsch" } } }), "/cart");
   assert.equal(localizeHref("/de/cart", "de", { ...config, routing: { prefix: "never" } }), "/de/cart");
 });
 

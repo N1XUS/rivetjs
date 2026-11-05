@@ -69,14 +69,18 @@ export function match(wanted: readonly string[], locales: readonly string[]): st
   let lower = lowered.get(locales);
   if (!lower) lowered.set(locales, (lower = locales.map((l) => l.toLowerCase())));
   for (const w of wanted) {
-    const want = w.toLowerCase();
-    const language = want.split("-")[0]!;
-    const exact = lower.indexOf(want);
-    if (exact >= 0) return locales[exact];
-    const base = lower.indexOf(language);
-    if (base >= 0) return locales[base];
-    const region = lower.findIndex((l) => l.split("-")[0] === language);
-    if (region >= 0) return locales[region];
+    const subtags = w.toLowerCase().split("-");
+    // RFC 4647 lookup: drop subtags from the end ("zh-Hant-TW" → "zh-Hant" → "zh") …
+    for (let n = subtags.length; n > 0; n--) {
+      const exact = lower.indexOf(subtags.slice(0, n).join("-"));
+      if (exact >= 0) return locales[exact];
+    }
+    // … then a more specific locale under the longest matching prefix ("zh-Hant-TW" → "zh-Hant-HK", not "zh-Hans").
+    for (let n = subtags.length; n > 0; n--) {
+      const head = subtags.slice(0, n).join("-") + "-";
+      const region = lower.findIndex((l) => l.startsWith(head));
+      if (region >= 0) return locales[region];
+    }
   }
   return undefined;
 }
@@ -84,7 +88,9 @@ export function match(wanted: readonly string[], locales: readonly string[]): st
 /** Locale → first path segment (lowercase, no slashes). */
 function prefixes(config: ResolveConfig): [string, string][] {
   const prefix = config.routing?.prefix;
-  if (prefix && typeof prefix === "object") return Object.entries(prefix).map(([locale, path]) => [locale, path.replace(/^\/|\/$/g, "").toLowerCase()]);
+  // A map may name only some locales: the rest keep their own segment, as router.ts `prefixOf` writes them.
+  if (prefix && typeof prefix === "object")
+    return config.locales.map((locale) => [locale, (Object.hasOwn(prefix, locale) ? prefix[locale]! : locale).replace(/^\/|\/$/g, "").toLowerCase()]);
   return config.locales.map((locale) => [locale, locale.toLowerCase()]);
 }
 

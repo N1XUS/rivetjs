@@ -34,9 +34,14 @@ const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/
 export function clientPathPattern(locale: string, config: Pick<I18nConfig, "locales" | "defaultLocale" | "routing">): string | null {
   const prefix = config.routing?.prefix ?? "as-needed";
   if (prefix === "never") return null;
-  const segment = (l: string) => (typeof prefix === "object" ? (prefix[l] ?? l).replace(/^\/|\/$/g, "").toLowerCase() : l.toLowerCase());
-  if (prefix !== "as-needed" || locale !== config.defaultLocale) return "^/" + escapeRegExp(segment(locale)) + "(?:/|$)";
-  const others = config.locales.filter((l) => l !== locale).map((l) => escapeRegExp(segment(l)));
+  const segment = (l: string) =>
+    typeof prefix === "object" ? (Object.hasOwn(prefix, l) ? prefix[l]! : l).replace(/^\/|\/$/g, "").toLowerCase() : l.toLowerCase();
+  // An unprefixed locale (as-needed default, or an empty mapped segment) serves every path no other locale's prefix claims.
+  const own = prefix === "as-needed" && locale === config.defaultLocale ? "" : segment(locale);
+  if (own) return "^/" + escapeRegExp(own) + "(?:/|$)";
+  const others = config.locales
+    .filter((l) => l !== locale && segment(l) && !(prefix === "as-needed" && l === config.defaultLocale))
+    .map((l) => escapeRegExp(segment(l)));
   return others.length ? "^(?!/(?:" + others.join("|") + ")(?:/|$))" : null;
 }
 

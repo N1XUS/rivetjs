@@ -23,6 +23,7 @@ beforeAll(async () => {
   await writeFile(join(dir, "docs", ".well-known", "x.txt"), "nested");
   await writeFile(join(dir, ".env"), "SECRET=1");
   await writeFile(join(dir, "about", "index.html"), "<p>about</p>");
+  await writeFile(join(dir, "reindex.html"), "<p>reindex</p>");
 });
 afterAll(() => rm(dir, { recursive: true, force: true }));
 
@@ -34,6 +35,9 @@ test("staticFiles: dot files skipped (root .well-known only), bad decodes / NUL 
     assert.equal(lookup(get(url), url), null, url);
   assert.ok(lookup(get("/.well-known/security.txt"), "/.well-known/security.txt"));
   for (const url of ["/about", "/about/"]) assert.match(lookup(get(url), url)!.path!, /about[\\/]index\.html$/, url);
+  // `reindex.html` is the page `/reindex`, not an index page of `/re`.
+  assert.equal(lookup(get("/re"), "/re"), null);
+  assert.match(lookup(get("/reindex"), "/reindex")!.path!, /reindex\.html$/);
   const plain = lookup(get("/about"), "/about")!;
   assert.equal(plain.headers["X-Content-Type-Options"], "nosniff");
   assert.equal(plain.headers["Cache-Control"], "no-cache");

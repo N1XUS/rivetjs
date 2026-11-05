@@ -21,18 +21,18 @@ test("selectordinal marks ord", () => {
   assert.equal(v[0]!.ord, true);
 });
 test("select, number, date, tags", () => {
-  assert.deepEqual(parseMessage("{g, select, f {she} other {they}}", "en:a"), [
-    { s: "g", cases: { f: [{ t: "she" }], other: [{ t: "they" }] } },
-  ]);
+  assert.deepEqual(parseMessage("{g, select, f {she} other {they}}", "en:a"), [{ s: "g", cases: { f: [{ t: "she" }], other: [{ t: "they" }] } }]);
   assert.deepEqual(parseMessage("{x, number, percent}", "en:a"), [{ n: "x", f: { style: "percent" } }]);
   assert.deepEqual(parseMessage("{d, date, short}", "en:a"), [{ d: "d", f: { dateStyle: "short" } }]);
   assert.deepEqual(parseMessage("{d, time, short}", "en:a"), [{ d: "d", f: { timeStyle: "short" } }]);
+  // `j` = the locale's preferred hour (formatjs drops it): hour without an hourCycle, Intl picks the cycle.
+  assert.deepEqual(parseMessage("{d, time, ::jmm}", "en:a"), [{ d: "d", f: { minute: "2-digit", hour: "numeric" } }]);
+  assert.deepEqual(parseMessage("{d, time, ::jjmm}", "en:a"), [{ d: "d", f: { minute: "2-digit", hour: "2-digit" } }]);
+  assert.deepEqual(parseMessage("{d, time, ::Hmm}", "en:a"), [{ d: "d", f: { hourCycle: "h23", hour: "numeric", minute: "2-digit" } }]);
   assert.deepEqual(parseMessage("Read <b>this</b>", "en:a"), [{ t: "Read " }, { tag: "b", c: [{ t: "this" }] }]);
 });
 test("number skeleton", () => {
-  assert.deepEqual(parseMessage("{x, number, ::currency/EUR}", "en:a"), [
-    { n: "x", f: { style: "currency", currency: "EUR" } },
-  ]);
+  assert.deepEqual(parseMessage("{x, number, ::currency/EUR}", "en:a"), [{ n: "x", f: { style: "currency", currency: "EUR" } }]);
 });
 test("plural without other is an error naming the location", () => {
   assert.throws(

@@ -39,7 +39,7 @@ Code imported by both server and client (and by `@rivetjs/kit`): handler ↔ cli
 
 ## Rules / invariants
 
-- `redirect()` throws at the call for `//x`, backslashes, control chars; `external: true` requires absolute http(s). Handler rejects other-origin absolute targets without `external` (500). User-supplied targets: `safeRedirect(target, fallback)`.
+- `redirect()` throws at the call for `//x`, backslashes, control chars; `external: true` requires absolute http(s). Handler rejects other-origin absolute targets without `external` (500). User-supplied targets: `safeRedirect(target, fallback)` (the normalized result is checked again: dot segments that resolve to `//host` — `/.//evil.com`, `/a/..//evil.com`, `/%2e//evil.com` — give `fallback`). Title templates insert the title as text (`replace("%s", () => title)`: `$&` in a title stays literal; same in kit `dom.ts`).
 - `fail()` only 4xx; `error()` only 4xx/5xx (`RangeError` otherwise).
 - `data.ts` field names are the wire format between `server/handler.ts` and `client/index.ts`/`client/layouts.ts`; change both sides together. Optional fields omitted when empty (byte-identical when unused).
 

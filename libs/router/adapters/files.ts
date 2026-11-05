@@ -128,7 +128,7 @@ export function staticFiles(
       ...(names.has(full + ".gz") ? { gz: full + ".gz" } : {}),
     };
     files.set(url, file);
-    const page = /^(.*?)(?:\/?index)?\.html$/.exec(key);
+    const page = /^(.*?)(?:(?:^|\/)index)?\.html$/.exec(key);
     if (page && key !== "404.html" && key !== "200.html") {
       const at = page[1] ? base + "/" + page[1] : base;
       for (const alias of [at || "/", at + "/"]) if (!files.has(alias)) files.set(alias, file);

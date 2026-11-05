@@ -126,6 +126,8 @@ test("clientPathPattern: the paths a client build's locale serves", async () => 
   assert.deepEqual(["/en", "/"].map(own("en", { prefix: "always" })!), [true, false]);
   assert.deepEqual(["/deutsch/x", "/de"].map(own("de", { prefix: { de: "/deutsch/" } })!), [true, false]);
   assert.equal(own("de", { prefix: "never" }), null);
+  // An empty mapped segment = unprefixed: every path the other prefixes do not claim.
+  assert.deepEqual(["/", "/cart", "/de/x"].map(own("en", { prefix: { en: "", de: "de", "pt-BR": "pt" } })!), [true, true, false]);
 });
 
 test("?image with per-locale client builds: URLs locale-free, files once beside the locale directories", async () => {

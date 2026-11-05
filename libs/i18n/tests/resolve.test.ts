@@ -16,6 +16,10 @@ test("match: exact, base language, region expansion", () => {
   assert.equal(match(["fr", "en-GB"], config.locales), "en");
   assert.equal(match(["DE-at"], config.locales), "de-AT");
   assert.equal(match(["de"], ["en", "de-AT"]), "de-AT");
+  // RFC 4647 lookup: the script subtag outranks the bare language's first region.
+  assert.equal(match(["zh-Hant-TW"], ["zh-Hans", "zh-Hant"]), "zh-Hant");
+  assert.equal(match(["zh-Hant-TW"], ["zh-Hans", "zh-Hant-HK"]), "zh-Hant-HK");
+  assert.equal(match(["zh-TW"], ["zh-Hans", "zh"]), "zh");
   assert.equal(match(["fr"], config.locales), undefined);
 });
 
@@ -25,27 +29,21 @@ test("path prefix and prefix map", () => {
   assert.equal(localeFromPath("/cart", config), undefined);
   assert.equal(localeFromPath("/", config), undefined);
   assert.equal(localeFromPath("/at/x", { ...config, routing: { prefix: { "de-AT": "/at" } } }), "de-AT");
+  // A partial map: unmapped locales keep their own segment (as localizeHref writes them).
+  assert.equal(localeFromPath("/de/x", { ...config, routing: { prefix: { "de-AT": "/at" } } }), "de");
   assert.equal(localeFromPath("/de/x", { ...config, routing: { prefix: "never" } }), undefined);
 });
 
 test("request source: q-sorted languages, wildcard and q=0 dropped, malformed cookie kept raw (not a locale → ignored by resolve)", () => {
-  const source = requestSource(
-    req("/x", { "accept-language": "fr;q=0.5, *;q=0.1, de-CH, en;q=0", cookie: "a=%E0; b=x%20y" }),
-  );
+  const source = requestSource(req("/x", { "accept-language": "fr;q=0.5, *;q=0.1, de-CH, en;q=0", cookie: "a=%E0; b=x%20y" }));
   assert.deepEqual(source.languages(), ["de-CH", "fr"]);
   assert.equal(source.cookie("a"), "%E0");
   assert.equal(source.cookie("b"), "x y");
 });
 
 test("server order: url beats cookie beats header", async () => {
-  assert.equal(
-    await resolveServer(req("/de/x", { cookie: "rivet_locale=de-AT", "accept-language": "en" }), config),
-    "de",
-  );
-  assert.equal(
-    await resolveServer(req("/x", { cookie: "rivet_locale=de-AT", "accept-language": "en" }), config),
-    "de-AT",
-  );
+  assert.equal(await resolveServer(req("/de/x", { cookie: "rivet_locale=de-AT", "accept-language": "en" }), config), "de");
+  assert.equal(await resolveServer(req("/x", { cookie: "rivet_locale=de-AT", "accept-language": "en" }), config), "de-AT");
   assert.equal(await resolveServer(req("/x", { "accept-language": "fr;q=0.9, de-CH;q=0.8" }), config), "de");
   assert.equal(await resolveServer(req("/x"), config), "en");
   assert.equal(await resolveServer(req("/x", { cookie: "rivet_locale=de" }), { ...config, cookie: false }), "en");

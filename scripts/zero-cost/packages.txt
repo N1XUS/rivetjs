@@ -1,5 +1,5 @@
-@rivetjs/router 965ee4bafd7e 3340
-@rivetjs/router/server ea8c2015f00e 32364
+@rivetjs/router 323f21943610 3365
+@rivetjs/router/server 301455688574 32364
 @rivetjs/router/route-cache f49c03f3006f 19228
 @rivetjs/router/server-only 56e1b0c10087 9
 @rivetjs/router/env 13d077a34a5e 1062
@@ -24,10 +24,10 @@
 @rivetjs/router/vercel-edge 04626adac103 3028
 @rivetjs/router/netlify 059407deedb1 3140
 @rivetjs/router/cloudflare 262e236b8ced 3003
-@rivetjs/router/bun 5decea2d4237 6710
-@rivetjs/router/deno 1509759568df 6779
-@rivetjs/router/electron e60a8e40e48c 7725
-@rivetjs/router/head 529bf74931c1 7888
+@rivetjs/router/bun 46809850926f 6715
+@rivetjs/router/deno e50d1b100cdd 6784
+@rivetjs/router/electron 5b2df4379ada 7730
+@rivetjs/router/head 97869798e784 7892
 @rivetjs/forms 789ec6351df3 4747
 @rivetjs/forms/array e7d1e96d5f86 4001
 @rivetjs/forms/components [dom] 74e8333a5362 2278
@@ -42,10 +42,10 @@
 @rivetjs/forms/csrf [browser] d2c003c85936 117
 @rivetjs/i18n 7355df89b417 482
 @rivetjs/i18n/runtime 7a7fdb9a6eb4 761
-@rivetjs/i18n/resolve 852c2889aa07 3040
-@rivetjs/i18n/router 02dd17de1238 5229
+@rivetjs/i18n/resolve 7bfd232d8078 3113
+@rivetjs/i18n/router afbf00b4d266 5400
 @rivetjs/kit ae06eebc74b8 4197
-@rivetjs/kit/dom 263cece7e492 8838
+@rivetjs/kit/dom 810d12f2fc46 8842
 @rivetjs/kit/image e797722ace66 751
 @rivetjs/kit/font cf507af495e6 131
 @rivetjs/kit/transition [dom] 142fbfcb13c9 4952
@@ -420,9 +420,9 @@
 @rivetjs/bridge-svelte/server 0632e158c63f 1059
 @rivetjs/bridge-svelte/client 4dc4c806fad5 1377
 @rivetjs/bridge-svelte/types 56e1b0c10087 9
-@rivetjs/cdk/masonry [dom] 6f7dbf5407c0 90003
+@rivetjs/cdk/masonry [dom] fd8741674fb8 90086
 @rivetjs/cdk/masonry [server] 5dee8f78dc6b 81233
-@rivetjs/cdk/masonry/behaviour 9a3cc9e6aabd 16055
+@rivetjs/cdk/masonry/behaviour 535dc96a527b 16138
 @rivetjs/cdk/flip 94e1c39bc99c 3782
 @rivetjs/cdk/scheduler [dom] 487dabe4f50d 199723
 @rivetjs/cdk/scheduler [server] b3b1d4330963 182463

@@ -338,6 +338,22 @@ describe("Masonry keyboard + selection", () => {
     expect([...(selected() as Set<Key>)].sort()).toEqual(["p0", "p1"]);
   });
 
+  it('disallowEmptySelection keeps one item when the selection is "all" (Ctrl+A, last enabled item)', async () => {
+    const selected = signal<Selection>("all");
+    const c = mount(() => <Gallery columns={3} selectionMode="multiple" selectedKeys={selected} disallowEmptySelection />);
+    await frame();
+    itemByKey(c, "p0").focus();
+    key(itemByKey(c, "p0"), "a", { ctrlKey: true });
+    expect(selected()).toBe("all");
+    cleanup();
+    const only = signal<Selection>("all");
+    const others = Array.from({ length: 23 }, (_, i) => `p${i + 1}`);
+    const c2 = mount(() => <Gallery columns={3} selectionMode="multiple" selectedKeys={only} disabledKeys={others} disallowEmptySelection />);
+    await frame();
+    click(itemByKey(c2, "p0"));
+    expect(only()).toBe("all");
+  });
+
   it("replace behaviour follows the focus; actions on Enter / double click / click when nothing is selectable", async () => {
     const actions: Key[] = [];
     const selected = signal<Selection>(new Set());

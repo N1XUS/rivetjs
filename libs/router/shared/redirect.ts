@@ -21,5 +21,8 @@ export function safeRedirect(target: unknown, fallback = "/"): string {
   } catch {
     return fallback;
   }
-  return url.origin === base ? url.pathname + url.search + url.hash : fallback;
+  if (url.origin !== base) return fallback;
+  // Dot segments can normalize to a leading `//` ("/.//evil.com", "/a/..//evil.com"): check the result too.
+  const path = url.pathname + url.search + url.hash;
+  return unsafeTarget(path) ? fallback : path;
 }
