@@ -34,9 +34,11 @@ export function Other(props) {
 }
 `;
 /** The page: `rows: "static"` renders plain rows, `"interactive"` rows with a handler + a class reading a keyed signal,
- * `"class-only"` interactive rows that show no value as text / plain attribute (no DOM data slots). */
-type Rows = "static" | "interactive" | "class-only";
+ * `"class-only"` interactive rows that show no value as text / plain attribute (no DOM data slots), `"none"` no list
+ * (RTSPLIT: no `<For>` in the build). */
+type Rows = "static" | "interactive" | "class-only" | "none";
 const ROW_BODY: Record<Rows, string> = {
+  none: "",
   static: "<li>{row().name}</li>",
   interactive: '<li class={selected() === row().id ? "on" : "off"} onClick={() => selected.set(row().id)}>{row().name}</li>',
   "class-only": '<li class={selected() === row().id ? "on " + row().name : "off"} onClick={() => selected.set(row().id)}><b>row</b></li>',
@@ -56,12 +58,16 @@ export default function Page(props) {
       <Counter start={5} />
       <button type="button" id="dark" onClick={() => theme.set("dark")}>Dark</button>
       <p id="theme">{theme()}</p>
-      <ul>
+${
+  rows === "none"
+    ? ""
+    : `      <ul>
         <For each={() => props.data.rows} by={(row) => row.id}>
           {(row) => ${ROW_BODY[rows]}}
         </For>
       </ul>
-      <Other label="other" />
+`
+}      <Other label="other" />
       <Footer />
     </main>
   );
@@ -289,6 +295,39 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
         assert.equal(await page.evaluate(() => document.querySelectorAll("ul li.on").length), 1);
         await page.click("#dark");
         await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
+      });
+    } finally {
+      await browser.close();
+      for (const root of roots) await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
+(hasDerivedModel() ? test : test.skip)(
+  "rivet({ resume }) without <For> (RTSPLIT): the runtime ships no lazy rows (`LISTS` folded), cold click + keyed write adopt",
+  async () => {
+    const browser = await chromium.launch({ headless: true });
+    const roots: string[] = [];
+    try {
+      const runtimeOf = async (built: Built) => readFile(resolve(built.root, "client-dist" + built.manifest.runtime), "utf8");
+      const listed = await buildApp("static", roots),
+        none = await buildApp("none", roots);
+      // The list hole's row-group opener test (`R_OPEN`) and the row writers' dry runs live only behind `LISTS`.
+      const rowCode = /\/\^r\\d\*\\\[\$\//;
+      assert.match(await runtimeOf(listed), rowCode);
+      const lean = await runtimeOf(none);
+      assert.doesNotMatch(lean, rowCode);
+      assert.ok(lean.length < (await runtimeOf(listed)).length - 8_000, "lazy rows fold away (> 8 KB min)");
+      await serve(none, browser, async (page, requests) => {
+        await page.waitForLoadState("networkidle");
+        const fetched = requests.length;
+        await page.evaluate(() => ((document.querySelector("#count") as any).__t = 1));
+        await page.click("#inc");
+        await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+        await page.click("#dark");
+        await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
+        assert.equal(await page.evaluate(() => (document.querySelector("#count") as any).__t), 1, "server node adopted in place");
+        assert.equal(requests.length, fetched, "the first input fetches nothing more");
       });
     } finally {
       await browser.close();

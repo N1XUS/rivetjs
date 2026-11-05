@@ -44,6 +44,8 @@ const sources: Record<string, string> = {
   "/lazy-rows.ts": "lazy-rows.ts",
   "/dom-data.ts": "dom-data.ts",
   "/dom-data-reader.ts": "dom-data-reader.ts",
+  // `LISTS` / `ISLANDS` as written (`true`): the plugin folds them only for builds without lists / bridges.
+  "/derived-features.ts": "derived-features.ts",
   "/derived.ts": "derived.ts",
   "/dom-derived.ts": "dom-derived.ts",
   "/dom-derived-abi.ts": "dom-derived-abi.ts",

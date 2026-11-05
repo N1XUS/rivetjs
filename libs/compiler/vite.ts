@@ -526,6 +526,10 @@ function switchOf(id: string, family: readonly string[]): string | null {
 // A module that may hold a `<For>`: the tag (namespaced too) or an aliased import; the bare word in prose asks for a
 // second compile (rc2#14: 50 -> 34 of the ui + cdk modules).
 const FOR_USE = /<\s*(?:[\w$]+\.)?For\b|\bFor\s+as\b/;
+/** RTSPLIT: a walked module that may make a keyed list in an adopt run (`FOR_USE`, or a direct `For(…)` / `_for(…)` call). */
+const LIST_USE = /<\s*(?:[\w$]+\.)?For\b|\bFor\s+as\b|\b(?:For|_for)\s*\(/;
+/** RTSPLIT: the derived runtime's feature switch (`derived-features.ts`), by path like `SWITCH_MODULE`. */
+const FEATURES_MODULE = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/]derived-features\.[cm]?[jt]s$/;
 const derivedSwitch = (id: string): string | null => switchOf(id, DERIVED_SWITCHES);
 /** `resume.domData` (DERIVED-C5): the runtime's switch modules (`dom-data.ts` for the browser, `dom-data-derived.ts` for
  * the server) → their opted-in content (`switches.ts` `DOM_DATA_SWITCHES`). */
@@ -1037,6 +1041,9 @@ function rivetPlugin(
   // whose walk saw a keyed `<For>` list mount with DOM slots (`domDataLists`): any other build is byte-identical to `false`.
   // Dev (no walk) serves it whenever on.
   let domDataLists = false;
+  // RTSPLIT (`derived-features.ts`): whether the walk saw a module that may make a keyed list (`LIST_USE`); production
+  // client builds without one serve `LISTS = false` (the runtime's lazy rows fold away). Dev (no walk): every feature.
+  let derivedLists = true;
   const domDataOn = (): boolean => resume !== undefined && resume.domData !== false && (serve || domDataLists);
   // Per resume module, the build's boundary verdicts (`facts-fixpoint.ts`, buildStart of every build environment: client
   // and server walk the same graph, so both targets get the same boundaries / names / keys); dev compiles without them
@@ -1648,6 +1655,7 @@ function rivetPlugin(
     placementMismatches.length = 0;
     // `resume.domData`: resume modules that may hold a `<For>` (their source names it), checked after the verdicts.
     const forSources = new Map<string, string>();
+    derivedLists = false;
     // Plain re-export modules (M6-PARITY 6b): app / source-package `.ts` / `.js` modules between resume modules (a package
     // `index.ts`, `meter/index.ts` with `Object.assign(MeterRoot, { … })`) join the walk without boundaries, so tags
     // resolve through them to the component's call sites; they are never compiled as resume modules.
@@ -1676,6 +1684,7 @@ function rivetPlugin(
               );
           facts.set(filename, f);
           if (!plain.has(filename) && resume?.domData !== false && FOR_USE.test(source)) forSources.set(filename, source);
+          if (!derivedLists && LIST_USE.test(source)) derivedLists = true;
           // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
           const declared = plain.has(filename) ? [] : nativeFamilies(source);
           if (declared.length) families.set(filename, declared);
@@ -2854,6 +2863,9 @@ function rivetPlugin(
         const code = derivedSwitch(clean);
         if (code !== null) return code;
       }
+      // RTSPLIT: the derived runtime's features this build can reach (`derived-features.ts`); dev serves the file (all on).
+      if (resume && client && !serve && FEATURES_MODULE.test(clean))
+        return `export const LISTS = ${derivedLists};\nexport const ISLANDS = ${bridges !== null};\n`;
       if (id === DERIVED_ENTRY) return 'export { default } from "@rivetjs/runtime/dom-derived-runtime";\n';
       // `resume.domData` (DERIVED-C5): the browser reader (`DOM_DATA` in `dom-derived.ts`) and the server's list registry +
       // `d` encoder (`dom-data-derived.ts` → `server-derived-dom.ts`); the resume manifest says so when the reader loaded.

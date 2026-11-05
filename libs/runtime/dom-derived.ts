@@ -43,6 +43,7 @@ import { _setUnrecorded, _tableDecoder } from "./resume-hooks.ts";
 import type { BoundaryTail, DerivedAsync, DerivedDom } from "./resume-format.ts";
 import { eachRecord } from "./resume-tail.ts";
 import { DOM_DATA, DOM_READER } from "./dom-data.ts";
+import { ISLANDS, LISTS } from "./derived-features.ts";
 import { DEV } from "#dev";
 import { _abi, _guard as guard } from "./dom-derived-abi.ts";
 
@@ -431,16 +432,16 @@ function sig<T>(key: string, init?: T, options?: EqualsOptions<T>): Signal<T> {
   keyedOf.set(s, e);
   get.set = (value) => {
     before(e);
-    const was = e.rows && untrack(s),
+    const was = LISTS && e.rows && untrack(s),
       out = s.set(value);
-    if (e.rows && untrack(s) !== was) rewrite(e, get, was);
+    if (LISTS && e.rows && untrack(s) !== was) rewrite(e, get, was);
     return out;
   };
   get.update = (fn) => {
     before(e);
-    const was = e.rows && untrack(s),
+    const was = LISTS && e.rows && untrack(s),
       out = s.update(fn);
-    if (e.rows && untrack(s) !== was) rewrite(e, get, was);
+    if (LISTS && e.rows && untrack(s) !== was) rewrite(e, get, was);
     return out;
   };
   return get;
@@ -538,7 +539,7 @@ function before(e: Keyed): void {
     e.wake = undefined;
     wakeAll(wake);
   }
-  const fors = e.fors;
+  const fors = LISTS && e.fors;
   if (fors) {
     e.fors = null;
     for (const lazy of fors) wakeFor(lazy);
@@ -928,7 +929,7 @@ function listAt(opener: Node, k: number): LRow | null | undefined {
 // A sole list or Async hole: leave its lazy snapshot unread while the slot returns its keep token.
 const soleOf = (a: UnitAlign, n: Node): boolean => {
   const hole = a.holes.get(n);
-  return hole !== undefined && ((hole.kind === 1 && hole.sole !== null) || hole.kind === 2);
+  return hole !== undefined && ((LISTS && hole.kind === 1 && hole.sole !== null) || hole.kind === 2);
 };
 // A slot's current, captured on first use: row adoption may insert anchors and an Async
 // segment may replace its fallback before reconciliation. Freeze then, so DOM mutations cannot shift it.
@@ -970,7 +971,7 @@ function closeAt(ll: Node[], j: number, open: RegExp, close: string): number {
 }
 const claimable = (hole: Hole, n: Node): boolean => {
   const d = data(n);
-  return hole.kind !== 3 && d !== null && (hole.kind === 2 ? A_OPEN : hole.kind ? R_OPEN : B_OPEN).test(d);
+  return hole.kind !== 3 && d !== null && (hole.kind === 2 ? A_OPEN : LISTS && hole.kind ? R_OPEN : B_OPEN).test(d);
 };
 function mismatch(a: UnitAlign, at: Node, server: Node | undefined, probe: Node | undefined): void {
   a.fail = true;
@@ -1017,7 +1018,7 @@ function runs(a: UnitAlign, fr: Node[], lr: Node[], at: Node, before: Node | nul
 }
 // A hole takes its server range at `ll[j]`: a For its `n` row groups, a boundary its `<!--bN-->` range or `data-b` element.
 function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): number {
-  if (hole.kind === 3) {
+  if (ISLANDS && hole.kind === 3) {
     const n = ll[j] as Element | undefined;
     if (n === undefined || n.nodeType !== 1 || n.localName !== "rivet-island" || !n.hasAttribute("data-ri")) return (mismatch(a, at, n, hole.nodes[0]), j);
     hole.el = n;
@@ -1040,7 +1041,7 @@ function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): numbe
     a.span.set(hole.nodes[1]!, []);
     return e + 1;
   }
-  if (hole.kind === 1) {
+  if (LISTS && hole.kind === 1) {
     const groups: [Node, Node][] = [],
       nodes: Node[] = [];
     for (let k = 0; k < hole.n; k++) {
@@ -1060,18 +1061,19 @@ function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): numbe
     a.span.set(hole.nodes[1]!, []);
     return j;
   }
+  // (`hole` is a BHole from here: the list / island tests above fold away with their feature, RTSPLIT.)
   const n = ll[j],
     d = data(n);
   let id = 0;
   if (d !== null && B_OPEN.test(d)) {
     const e = closeAt(ll, j, B_OPEN, "/b");
-    if (e < 0) return (mismatch(a, at, n, hole.nodes[0]), j);
+    if (e < 0) return (mismatch(a, at, n, (hole as BHole).nodes[0]), j);
     id = +d.slice(1);
-    hole.range = ll.slice(j, e + 1);
+    (hole as BHole).range = ll.slice(j, e + 1);
     j = e + 1;
   } else if (n !== undefined && n.nodeType === 1 && (n as Element).hasAttribute("data-b")) {
     id = +(n as Element).getAttribute("data-b")!;
-    hole.range = anchored(n as Element);
+    (hole as BHole).range = anchored(n as Element);
     j++;
   }
   let rec = recs.get(id);
@@ -1084,7 +1086,7 @@ function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): numbe
         id,
         parent: null,
         flags: 0,
-        name: hole.name,
+        name: (hole as BHole).name,
         values: new Map(),
         props: null,
         done: false,
@@ -1095,14 +1097,14 @@ function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): numbe
         sources: null,
       }),
     );
-  if (id && rec?.name === hole.name) {
-    hole.rec = rec;
-    hole.start = hole.range[0]!;
-    hole.end = hole.range[hole.range.length - 1]!;
-  } else if (id) return (mismatch(a, at, n, hole.nodes[0]), j);
+  if (id && rec?.name === (hole as BHole).name) {
+    (hole as BHole).rec = rec;
+    (hole as BHole).start = (hole as BHole).range[0]!;
+    (hole as BHole).end = (hole as BHole).range[(hole as BHole).range.length - 1]!;
+  } else if (id) return (mismatch(a, at, n, (hole as BHole).nodes[0]), j);
   // (No range: the server rendered nothing for it, a SILENT record; it stays inert.)
-  a.span.set(hole.nodes[0]!, hole.range);
-  a.span.set(hole.nodes[1]!, []);
+  a.span.set((hole as BHole).nodes[0]!, (hole as BHole).range);
+  a.span.set((hole as BHole).nodes[1]!, []);
   return j;
 }
 // Empty comment anchors around a `data-b` element: the range a unit runs between (comments: an inserted text node next to
@@ -1131,7 +1133,7 @@ function alignUnit(a: UnitAlign, fl: Node[], ll: Node[], at: Node, ref: Node | n
     // Was: the list claimed a false Show's empty region as its first row group, failed at the region's close and the unit
     // rendered in the browser (a cdk DataGrid's top spacer `<Show>` in `<tbody>`: every row re-created).
     let owed = 0;
-    if (hole !== undefined && hole.kind === 1) for (const n of fr) if (n.nodeType === 8) owed++;
+    if (LISTS && hole !== undefined && hole.kind === 1) for (const n of fr) if (n.nodeType === 8) owed++;
     while (j < ll.length && ll[j]!.nodeType !== 1 && !(hole && !owed && claimable(hole, ll[j]!))) {
       const d = owed ? data(ll[j]) : null;
       if (d !== null) {
@@ -1164,7 +1166,7 @@ function alignUnit(a: UnitAlign, fl: Node[], ll: Node[], at: Node, ref: Node | n
     const marked = deco || l.hasAttribute(DECORATED);
     if (marked && decorated(a, f, l)) {
       // Kept as the server has it (no pairs below: nothing of the probe's subtree is live).
-    } else if (only !== undefined && only.kind === 1 && fk[1] === only.nodes[1]) {
+    } else if (LISTS && only !== undefined && only.kind === 1 && fk[1] === only.nodes[1]) {
       // The list is the element's only content: its rows stay unscanned until needed (`rowsOf`), the slot holds the
       // element's children through a lazy view (O(1) adopt for a page's long list).
       only.sole = l;
@@ -1297,7 +1299,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
       : Array.isArray(current)
         ? current.length === 2 && soleOf(a, current[0]!) && a.holes.get(current[0]!)!.nodes[1] === current[1]
           ? a.span.get(current[0]!)!
-          : current.some((n) => a.holes.get(n)?.kind === 1)
+          : LISTS && current.some((n) => a.holes.get(n)?.kind === 1)
             ? lazyNodes(() => current.flatMap(one))
             : current.flatMap(one)
         : a.span.has(current)
@@ -1341,8 +1343,8 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   // 5. Child boundaries: dependent ones now, independent ones deferred; lists: which keyed signals their rows read.
   for (const hole of au.holes) if (hole.kind === 0 && hole.rec && !hole.rec.done) child(hole.rec, hole);
   for (const hole of au.holes) if (hole.kind === 2) landAsync(hole);
-  for (const hole of au.holes) if (hole.kind === 3) landIsland(hole);
-  for (const lazy of au.fors) sample(lazy);
+  if (ISLANDS) for (const hole of au.holes) if (hole.kind === 3) landIsland(hole);
+  if (LISTS) for (const lazy of au.fors) sample(lazy);
   // A lazy row's run makes the row's signals only: its count is not the record's (REDS-CDK 2026-10-28: every row
   // materialisation woke the readers of all the record's keys).
   if (!au.row) counted(rec, au.made);
@@ -2113,7 +2115,7 @@ function enclosing(node: Node | null): [kind: number, id: number, at: Node][] {
       if (d === "/b") b++;
       else if (d === "]") r++;
       else if (B_OPEN.test(d)) b ? b-- : out.push([0, +d.slice(1), s]);
-      else if (R_OPEN.test(d)) {
+      else if (LISTS && R_OPEN.test(d)) {
         if (!r) out.push((row = [1, 0, s]));
         else if (!--r && row) row[1]++;
       }
@@ -2155,7 +2157,7 @@ function around(target: EventTarget | null, type?: string): true | Promise<void>
     let step: true | Promise<void> | null = null;
     for (const [kind, id, at] of enclosing(target as Node | null)) {
       if (kind) {
-        const row = rowsByStart.get(at) ?? listAt(at, id);
+        const row = LISTS && (rowsByStart.get(at) ?? listAt(at, id));
         if (row && !row.done) {
           materialiseRow(row);
           step = true;
@@ -2610,7 +2612,7 @@ const runtime: DerivedRuntime = {
     doc = d;
     api = loader;
     _adoption.same = same;
-    _adoption.list = forHook as typeof _adoption.list;
+    if (LISTS) _adoption.list = forHook as typeof _adoption.list;
     _adoption.keep = new WeakSet();
     _adoption.snapshot = (nodes) => snapshots.get(nodes)?.() ?? nodes;
     // A pass whose output is inspected and discarded (`_rUnrecorded`: cdk's collection build pass, often first evaluated
@@ -2628,7 +2630,7 @@ const runtime: DerivedRuntime = {
       }
     });
     _adoption.async = asyncHook as typeof _adoption.async;
-    (globalThis as { [ISLAND]?: typeof islandHook })[ISLAND] = islandHook;
+    if (ISLANDS) (globalThis as { [ISLAND]?: typeof islandHook })[ISLAND] = islandHook;
     _adoption.resource = () => {
       const u = cur,
         rec = u?.rec;
