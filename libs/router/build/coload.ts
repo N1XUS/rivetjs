@@ -11,6 +11,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { Plugin } from "vite";
+import { readAhead } from "./read-ahead.ts";
 
 /** Env of a co-load build: the directory holding `chunks.json` (written by the client build) and `plan.json` (read). */
 export const COLOAD_ENV = "RIVET_COLOAD";
@@ -141,8 +142,7 @@ export async function planCoload(options: { dir: string; client: string; base?: 
     else if (list[list.length - 1] !== page) list.push(page);
   };
   let pages = 0;
-  for (const file of files) {
-    const html = await readFile(join(options.client, file), "utf8");
+  for await (const html of readAhead(files.map((file) => join(options.client, file)))) {
     const chunkFiles = (urls: string[]) => {
       const found = new Set<string>();
       for (const url of urls) {

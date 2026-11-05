@@ -1,6 +1,7 @@
 // File-based route table: maps `src/routes/**` files to router patterns, layouts and special pages.
-import { readdir, readFile } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
+import { readAhead } from "./read-ahead.ts";
 
 /** A layout or special page found along a route's folder chain. */
 export interface RouteModule {
@@ -245,9 +246,11 @@ const TABLE_ERRORS = /^(Untagged server export|Duplicate server export)/;
 export async function _serverExportsOf(dir: string, files: readonly string[]): Promise<Map<string, string[]>> {
   const { moduleFacts } = await import("@rivetjs/compiler");
   const out = new Map<string, string[]>();
-  for (const file of files) {
-    if (IGNORED.test(file) || SERVER.test(file) || !(PAGE.test(file) || PLAIN.test(file))) continue;
-    const source = await readFile(join(dir, file), "utf8");
+  // Module files read 16 ahead, checked in order (the first misdeclared module still throws first).
+  const modules = files.filter((file) => !IGNORED.test(file) && !SERVER.test(file) && (PAGE.test(file) || PLAIN.test(file)));
+  const sources = readAhead(modules.map((file) => join(dir, file)));
+  for (const file of modules) {
+    const source = (await sources.next()).value!;
     const live = PAGE.test(file) && LIVE.test(source);
     const fill = PAGE.test(file) && FILL.test(source);
     const prerender = PAGE.test(file) && PRERENDER.test(source);

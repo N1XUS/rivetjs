@@ -321,20 +321,29 @@ function featuresOf(text: string, into: RouterUsage): void {
 }
 /** Never sources: dot entries (`.rivet`, `.git`), `node_modules`, build output (`dist`, `dist-<lane>`, `dist.x`). */
 const OUTPUT = /^(?:\.|node_modules$|dist(?:$|[-_.]))/;
-async function scan(dir: string, into: RouterUsage, seen: Set<string>): Promise<void> {
-  if (seen.has(dir)) return;
+// Directories are listed concurrently; the file list keeps walk order (entry order, depth first).
+async function sources(dir: string, seen: Set<string>): Promise<string[]> {
+  if (seen.has(dir)) return [];
   seen.add(dir);
   // Concurrent builds may create or remove files mid-walk: a vanished entry is skipped (ENOENT).
-  for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (!OUTPUT.test(entry.name)) await scan(path, into, seen);
-    } else if (!entry.name.startsWith(".") && SOURCE.test(entry.name)) {
-      const text = await readFile(path, "utf8").catch((error: NodeJS.ErrnoException) => {
-        if (error.code === "ENOENT" || error.code === "EISDIR") return "";
-        throw error;
-      });
-      featuresOf(text, into);
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+  const lists = await Promise.all(
+    entries.map((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) return OUTPUT.test(entry.name) ? [] : sources(path, seen);
+      return !entry.name.startsWith(".") && SOURCE.test(entry.name) ? [path] : [];
+    }),
+  );
+  return lists.flat();
+}
+// Read 32 files at a time; results (and the first unexpected read error) are taken in walk order.
+async function scan(dir: string, into: RouterUsage, seen: Set<string>): Promise<void> {
+  const files = await sources(dir, seen);
+  for (let i = 0; i < files.length; i += 32) {
+    const texts = await Promise.allSettled(files.slice(i, i + 32).map((path) => readFile(path, "utf8")));
+    for (const result of texts) {
+      if (result.status === "fulfilled") featuresOf(result.value, into);
+      else if ((result.reason as NodeJS.ErrnoException).code !== "ENOENT" && (result.reason as NodeJS.ErrnoException).code !== "EISDIR") throw result.reason;
     }
   }
 }
