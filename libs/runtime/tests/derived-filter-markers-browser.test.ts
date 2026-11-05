@@ -2,7 +2,8 @@
 // filtered-out rows' `<li>`s only — their server row markers stay as inert empty pairs (`_adoption.inert`; 900 removals
 // instead of 2,700 on the resume-bench filter). The kept rows keep working (a click materialises the right row), a keyed
 // write's row writers skip the dropped rows (the empty pair's "next element" is a neighbour's), a cleared filter brings the
-// rows back as client rows, and a second filter drops earlier kept rows cleanly. Rows are primed at idle after the unit
+// rows back as client rows, and a second filter drops earlier kept rows cleanly (one `each` run per later key: the slot
+// follows the client list's rows, FILTER2). Rows are primed at idle after the unit
 // adopted (the same rows the first change would build). Compiled with the real derived server + DOM targets.
 import { test } from "vitest";
 import assert from "node:assert/strict";
@@ -23,7 +24,7 @@ export function List() {
       <input id="q" value={query()} onInput={(e) => query.set((e.currentTarget as HTMLInputElement).value)} />
       <output id="picked">{picked()}</output>
       <ul id="rows">
-        <For each={() => (query() ? ITEMS.filter((item) => item.label.includes(query())) : ITEMS)} by={(item) => item.id}>
+        <For each={() => ((globalThis as { eachRuns?: number }).eachRuns = ((globalThis as { eachRuns?: number }).eachRuns ?? 0) + 1, query() ? ITEMS.filter((item) => item.label.includes(query())) : ITEMS)} by={(item) => item.id}>
           {(item) => (
             <li class={picked() === item().id ? "row sel" : "row"} data-id={item().id}>
               <button type="button" onClick={() => picked.set(item().id)}>{item().label}</button>
@@ -100,9 +101,13 @@ compiled("first filter: dropped rows leave inert marker pairs; kept rows, keyed 
     assert.deepEqual((await state()).ids, ["1", "4", "7", "10", "13*", "16", "19", "22", "25", "28"]);
     // A second filter drops earlier kept rows; clearing it brings every row back (client rows for the dropped ones).
     await page.focus("#q");
+    const runs = () => page.evaluate(() => (globalThis as { eachRuns?: number }).eachRuns ?? 0);
+    const before = await runs();
     await page.keyboard.type("olf 1");
     await page.waitForFunction(() => document.querySelectorAll("#rows li").length === 3);
     assert.deepEqual((await state()).ids, ["13*", "16", "19"]);
+    // FILTER2 2026-11-05: once the client list exists the slot follows its rows only — one `each` run per key, not two.
+    assert.equal((await runs()) - before, 5);
     await page.fill("#q", "");
     await page.waitForFunction(() => document.querySelectorAll("#rows li").length === 30);
     s = await state();

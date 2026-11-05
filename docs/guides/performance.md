@@ -48,6 +48,13 @@ Measured by lane FILTER 2026-11-05 (Chrome CPU profiles of the resume-bench firs
 - **Do the first change's bookkeeping before the input.** Finding and building a resumed list's 1,000 row records (~3 ms at 4×) runs at idle after the list's unit adopts, not inside the first keystroke.
 - **Leave dead markers.** A dropped server row's comment pair stays as an inert empty pair (900 instead of 2,700 removals). Together: first `filter` key `latency` 28.4 → 17.6 ms (Solid 1: 15.0–15.6), `filterKey` paint 73.8 → 62.3 (58.6–60.4).
 
+Measured by lane FILTER2 2026-11-05 (resume-bench filter scenarios, Chrome 4× CPU, event-timing processing per keystroke, CPU profiles of every keystroke; runner A/B interleaved, slow, `--no-coverage --no-traces`; numbers in `apps/resume-bench/CLAUDE.md`).
+
+- **Profile every keystroke, not only the first.** A list effect that sees the same rows must publish nothing: the insertion otherwise re-collects and reconciles identical nodes on every key (`_for` unchanged pass).
+- **One evaluation per change.** Two consumers each running the same `each` (the lazy slot to detect the change, the list to reconcile) doubled the filter cost per key; once the list exists, only it tracks `each`.
+- **Removals need no map.** When the new nodes are a subsequence of the current ones, a merge walk finds what to drop; the keyed node Map (3,000 entries with server markers) was ~1 ms of the first filter key.
+- **Per-node facts as expandos or row fields, not WeakMaps / per-list Maps.** Marking 2,000 row markers and 1,000 adopted rows went through `WeakMap` / `WeakSet` / `Map` sets and lookups on the first key and at idle; a property is cheaper on both sides.
+
 Measured by lane ZERO BE-RENDER 2026-10-25 (Node 26 in-process: `frames-cpu` over the ui-docs production server, interleaved; heap sampling profiles).
 
 - **`Object.keys`, not `Reflect.ownKeys`, for own enumerable keys.** `Reflect.ownKeys` builds a fresh key list every call (~90 ns, ~390 B for a 3-key props object); `Object.keys` takes V8's enum cache (~12 ns, ~70 B), + `Object.getOwnPropertySymbols` filtered by `propertyIsEnumerable` for the same order and symbols. runtime `splitProps` / `_restProps`: 195 → 166 ns, 873 → 559 B per live split; table-virtualization (1000 rows) 17.6 → 16.3 MB alloc / request.

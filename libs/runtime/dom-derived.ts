@@ -315,9 +315,6 @@ const recs = new Map<number, Rec>(),
   readBack = new Map<string, string>(),
   modules = new Map<string, Record<string, unknown>>(),
   loads = new Map<string, Promise<void>>(),
-  rowsByStart = new WeakMap<Node, LRow>(),
-  // Their closing markers: with the openers, the pairs a client `_for` leaves in place when it drops a row (`_adoption.inert`).
-  rowEnds = new WeakSet<Node>(),
   // Sole lists (`FHole.sole`) by their element: their rows are built on the first event inside one (`listAt`).
   listsIn = new WeakMap<Node, Lazy>(),
   // `_sig` getters: the only non-row captures a keyed row writer may take (they are the same in every row).
@@ -611,9 +608,12 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
   // While the items are the server's the slot keeps its server rows; their first change builds the client `_for`
   // (over the server rows, adopted by key) and the slot follows it from then on.
   return () => {
+    // The client `_for` tracks `each` itself: the slot follows its rows only (a second `each` run per change was ~0.2 ms
+    // of each later key of a 1,000-row filter at 4x CPU, FILTER2 2026-11-05).
+    if (lazy.real !== null) return lazy.real();
     const each = props.each,
       next = typeof each === "function" ? (each as () => unknown)() : each;
-    if (lazy.real === null && !lazy.tick()) {
+    if (!lazy.tick()) {
       // A fresh array of the same items (an `each` building its array per read) is no change.
       const list = (next ?? []) as unknown[],
         now = lazy.items;
@@ -622,7 +622,7 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
       // the adopt run is over (as client rows, never inside the run — their boundaries would take its holes).
       if (cur !== null) return (queueMicrotask(() => lazy.tick.set(1)), lazy.token as never);
     }
-    lazy.real ??= realFor(lazy);
+    lazy.real = realFor(lazy);
     return lazy.real();
   };
 }
@@ -801,6 +801,10 @@ function rowsOf(lazy: Lazy): LRow[] {
     return row && row.start === start ? row : makeRow(lazy, k, start, end, by, indexed);
   }));
 }
+// A lazy row's server markers: the opener names its row, the closer is `true` — expandos, not a WeakMap / WeakSet (cheaper
+// to set at the idle row build and to test per node when a client `_for` drops rows: FILTER2 2026-11-05). With the
+// openers, the closers are the pairs a client `_for` leaves in place when it drops a row (`_adoption.inert`).
+type RowMark = Node & { $rw?: LRow | true };
 function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unknown, index: number) => unknown) | undefined, indexed: boolean): LRow {
   const item = lazy.items[k];
   const row: LRow = {
@@ -814,13 +818,15 @@ function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unkn
     end,
     owner: null,
     pass: 0,
+    // Adopted by the client `_for` as a row that did not read its index (`realFor`).
+    ad: -1,
     lz: lazy,
     done: false,
     els: null,
     get: null,
   };
-  rowsByStart.set(start, row);
-  rowEnds.add(end);
+  (start as RowMark).$rw = row;
+  (end as RowMark).$rw = true;
   return row;
 }
 function bad(lazy: Lazy): void {
@@ -901,7 +907,6 @@ function realFor(lazy: Lazy): () => Node[] {
       return {
         items: lazy.items.slice(),
         rows,
-        adopted: new Map<ForRow, number>(rows.map((row) => [row, -1])),
         changed: null,
         host: null,
       };
@@ -2177,7 +2182,8 @@ function around(target: EventTarget | null, type?: string): true | Promise<void>
     let step: true | Promise<void> | null = null;
     for (const [kind, id, at] of enclosing(target as Node | null)) {
       if (kind) {
-        const row = LISTS && (rowsByStart.get(at) ?? listAt(at, id));
+        const mark = LISTS && (at as RowMark).$rw;
+        const row = LISTS && ((typeof mark === "object" ? mark : undefined) ?? listAt(at, id));
         if (row && !row.done) {
           materialiseRow(row);
           step = true;
@@ -2635,11 +2641,12 @@ const runtime: DerivedRuntime = {
     if (LISTS) {
       _adoption.list = forHook as typeof _adoption.list;
       _adoption.inert = (n) => {
-        const row = rowsByStart.get(n);
+        const mark = (n as RowMark).$rw;
+        if (mark === undefined) return false;
         // A dropped row is gone for good (its key comes back as a new row): never materialised, no writer runs over it —
         // its markers stay connected, an empty pair.
-        if (row) return (row.done = true);
-        return rowEnds.has(n);
+        if (mark !== true) mark.done = true;
+        return true;
       };
     }
     _adoption.keep = new WeakSet();

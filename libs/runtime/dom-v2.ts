@@ -639,6 +639,20 @@ function reconcile(parent: Parent, a: Node[], b: Node[], marker: Node | null): v
   let last = aEnd - 1;
   while (last >= 0 && a[last].parentNode !== parent) last--;
   const after = last >= 0 ? a[last].nextSibling : marker;
+  // Removals only (`b` a subsequence of `a`: a filter, deleted rows): one merge walk, no node map (FILTER2 2026-11-05: a
+  // 1,000-row filter's first key walks 3,000 nodes — rows + their server markers — ~1 ms of map work at 4x CPU).
+  if (bLength < aEnd) {
+    let j = 0;
+    for (let i = 0; i < aEnd && j < bLength; i++) if (a[i] === b[j]) j++;
+    if (j === bLength) {
+      for (let i = 0, k = 0; i < aEnd; i++) {
+        const node = a[i];
+        if (k < bLength && node === b[k]) k++;
+        else if (node.parentNode === parent) drop(parent, node);
+      }
+      return;
+    }
+  }
   // Nothing kept and the list owns the parent: one native wipe, then append (replace all).
   if (marker === null && bLength > 0 && a[0] !== b[0] && parent.firstChild === a[0] && parent.lastChild === a[aEnd - 1] && !_deferredFlush()) {
     map = new Map();
@@ -796,8 +810,8 @@ export const _anchor = (doc: Document): Text => (LAZY_ROWS && _adoption.node ? _
 /** @internal Adopted server rows: their items, rows (server nodes between their markers) and server indexes (-1: index not read). */
 export interface AdoptedList {
   items: unknown[];
+  /** The server rows, each with its `ad` code set (see `_for`'s `adopted`). */
   rows: ForRow[];
-  adopted: Map<ForRow, number>;
   /** Rows at -3 (their own render read signals, unchanged so far): turns true once one changed — they are re-created then. */
   changed: (() => boolean) | null;
   /** Lazy rows (LAZY-ROWS T5): called once with the For's row function and item reader (kept rows materialise through them). */
@@ -818,6 +832,8 @@ export interface ForRow {
   owner: Owner | null;
   /** Reconcile pass stamp (`_for`): `-pass` = an old middle row free to match in that pass, `pass` = claimed / created in it. */
   pass: number;
+  /** An adopted server row's code (`_for`'s `adopted`), null for a client row: a field, not a per-list Map (FILTER2). */
+  ad: number | null;
 }
 const NO_NODES: Node[] = [],
   NO_ROWS: readonly ForRow[] = [];
@@ -869,20 +885,21 @@ export function _for<T, K>(props: {
     indexed = children.length > 1;
   let items: readonly T[] = [],
     list: ForRow[] = [],
-    // Resume: adopted server rows → their server index (-1: the row did not read it; -2: its own render read signals no
-    // site inside binds, so it is re-created on the first run, like a changed item). They keep their resumed
-    // bindings, which read the server item: a changed item (or read index) re-creates the row. A fresh item equal
-    // in data to the server one (refetched lists: same rows, new objects) keeps the row (`_adoption.same`). -3: its own
-    // render read signals that still hold their server values: kept until `changed` turns true, then re-created
-    // (a client row's own reads are untracked, but the server row has no binding for what they decided).
-    adopted: Map<ForRow, number> | null = null,
+    // Resume: whether `list` may hold adopted server rows. Their `ad` code: their server index (-1: the row did not read
+    // it; -2: its own render read signals no site inside binds, so it is re-created on the first run, like a changed
+    // item). They keep their resumed bindings, which read the server item: a changed item (or read index) re-creates the
+    // row. A fresh item equal in data to the server one (refetched lists: same rows, new objects) keeps the row
+    // (`_adoption.same`). -3: its own render read signals that still hold their server values: kept until `changed` turns
+    // true, then re-created (a client row's own reads are untracked, but the server row has no binding for what they
+    // decided).
+    adopted = false,
     changed: (() => boolean) | null = null,
     // Every current row by key, kept across passes: matching and duplicate detection are O(changed rows), no
     // per-pass Set over kept rows (append 1k to 10k). null: rebuilt from `list` (first pass, after a throwing pass).
     keys: Map<unknown, ForRow> | null = null;
   if (_adoption.rows !== null) {
     const taken = _adoption.rows(owner, by as (item: never, index: number) => unknown, indexed);
-    if (taken !== null) ({ items: items as unknown[], rows: list, adopted, changed } = taken as AdoptedList);
+    if (taken !== null) ((adopted = true), ({ items: items as unknown[], rows: list, changed } = taken as AdoptedList));
     if (LAZY_ROWS) taken?.host?.(children as (item: () => unknown, index: () => number) => unknown, itemRead);
   }
   const build = (row: ForRow): void => {
@@ -903,7 +920,7 @@ export function _for<T, K>(props: {
     _insert(null, out, end);
   };
   const create = (value: T, i: number, key: unknown): ForRow => {
-    const row: ForRow = { value, key, sig: null, index: indexed ? signal(i) : null, nodes: null, start: null, end: null, owner: null, pass: forPass };
+    const row: ForRow = { value, key, sig: null, index: indexed ? signal(i) : null, nodes: null, start: null, end: null, owner: null, pass: forPass, ad: null };
     _rootIn(owner, build, row);
     return row;
   };
@@ -913,12 +930,13 @@ export function _for<T, K>(props: {
   // here would be stale. Like mapArray: rows whose item is unchanged at the common prefix/suffix are
   // kept without key work; keys are matched in the middle.
   const out = signal<readonly ForRow[]>(NO_ROWS, { equals: false });
+  let published = false;
   effect(() => {
     const each = props.each,
       next = typeof each === "function" ? (each as () => readonly T[])() : each;
     if (changed !== null && changed()) {
       changed = null;
-      for (const [row, at] of adopted!) if (at === -3) adopted!.set(row, -2);
+      for (const row of list) if (row.ad === -3) row.ad = -2;
     }
     const outer = insertionParent;
     insertionParent = parent;
@@ -930,8 +948,8 @@ export function _for<T, K>(props: {
           for (let i = 0; i < m; i++) _dispose(list[i]!.owner);
           items = [];
           list = [];
-          adopted = keys = null;
-          changed = null;
+          adopted = false;
+          keys = changed = null;
           out.set(NO_ROWS);
           return;
         }
@@ -939,13 +957,18 @@ export function _for<T, K>(props: {
           end = m,
           newEnd = n;
         const limit = n < m ? n : m;
-        // Adopted rows go through the keyed path (their item and index are checked).
-        while (adopted === null && start < limit && next[start] === items[start]) start++;
+        // An adopted prefix row keeps its row when it passed last pass at this index: same item (`items` holds the values
+        // the rows took), an index it did not read (-1), one it read and still shows, or a row kept until `changed` (-3; a
+        // flip turned those -2 above: the keyed path re-creates them).
+        if (!adopted) while (start < limit && next[start] === items[start]) start++;
+        else
+          for (let at: number | null; start < limit && next[start] === items[start]; start++)
+            if ((at = list[start]!.ad) !== null && at !== -1 && at !== -3 && at !== start) break;
         // A prefix row keeps its index (so its key). A suffix row moves when the length changes: keep it only while its key
         // holds at the new index (an index-keyed `by` gives a moved equal item another key; keeping the row left its stale
         // key in `keys`, and the new row taking that key threw "Duplicate For key").
         while (
-          adopted === null &&
+          !adopted &&
           end > start &&
           newEnd > start &&
           next[newEnd - 1] === items[end - 1] &&
@@ -954,6 +977,11 @@ export function _for<T, K>(props: {
           end--;
           newEnd--;
         }
+        // Same items in the same order after the rows were published (a filter's later keys keeping its rows): no row
+        // work, and the rows signal stays — the list insertion does not re-collect and reconcile identical nodes (ranged
+        // rows re-render in their own effects; the next read refreshes them). FILTER2 2026-11-05: ~0.5 ms of each later key
+        // of a 1,000-row filter at 4x CPU. (A first pass over adopted rows equal to its items still publishes them.)
+        if (start === n && n === m && published) return;
         const rows: ForRow[] = new Array(n);
         for (let i = 0; i < start; i++) rows[i] = list[i]!;
         for (let i = newEnd; i < n; i++) {
@@ -970,6 +998,7 @@ export function _for<T, K>(props: {
         // Old middle rows are free to match in this pass; any other row found by a new key (a kept prefix / suffix
         // row, or one matched or created earlier in this pass) is a duplicate.
         for (let i = start; i < end; i++) list[i]!.pass = -pass;
+        let claimed = 0;
         for (let i = start; i < newEnd; i++) {
           const value = next[i]!,
             key = by ? by(value, i) : value;
@@ -977,8 +1006,9 @@ export function _for<T, K>(props: {
           if (row !== undefined) {
             if (row.pass !== -pass) throw Error("Duplicate For key");
             row.pass = pass;
-            if (adopted !== null && adopted.has(row)) {
-              const at = adopted.get(row)!;
+            claimed++;
+            const at = row.ad;
+            if (at !== null) {
               if (at === -2 || (row.value !== value && !_adoption.same!(row.value, value)) || (at >= 0 && at !== i)) {
                 _dispose(row.owner);
                 row = undefined;
@@ -994,22 +1024,28 @@ export function _for<T, K>(props: {
           } else map.set(key, (row = create(value, i, key)));
           rows[i] = row;
         }
+        // More rows dropped than kept (a filter): a fresh map of the kept rows, not one delete per dropped row.
+        const fresh = end - start - claimed > n;
         for (let i = start; i < end; i++) {
           const row = list[i]!;
           if (row.pass === -pass) {
-            map.delete(row.key);
+            if (!fresh) map.delete(row.key);
             _dispose(row.owner);
           }
+        }
+        if (fresh) {
+          map = new Map();
+          for (let i = 0; i < n; i++) map.set(rows[i]!.key, rows[i]!);
         }
         keys = map;
         items = next.slice();
         list = rows;
-        if (adopted !== null) {
-          const kept = new Map<ForRow, number>();
-          for (let i = 0; i < n; i++) if (adopted.has(rows[i]!)) kept.set(rows[i]!, adopted.get(rows[i]!)!);
-          adopted = kept.size ? kept : null;
-          if (adopted === null) changed = null;
+        if (adopted) {
+          let i = 0;
+          while (i < n && rows[i]!.ad === null) i++;
+          if (i === n) ((adopted = false), (changed = null));
         }
+        published = true;
         out.set(rows);
       });
     } finally {
