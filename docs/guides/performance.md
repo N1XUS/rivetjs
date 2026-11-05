@@ -87,6 +87,12 @@ Measured by lane SELF-WRITE 2026-10-27 (Node 26 in-process, 2 M writes, median o
 
 - **Untracked self-write: `x.set(x() + 1)`, not `x.update((v) => v + 1)`.** In a handler nothing is tracking, so the read returns early from `track`, while `update` allocates its closure and swaps the observer through `untrack`: 2.6 vs 5.8 ns per write when the signal has no subscribers, 44.0 vs 47.3 ns with one subscribed effect to flush. In an effect / computed the read subscribes the scope to its own write — use `update` there (RV1017, language service).
 
+Measured by lane MD-STREAM 2026-11-05 (Node 26.5.1; happy-dom for components; host load 5–14):
+
+- **Prefix check: `s.length >= p.length && s.slice(0, p.length) === p`, not `s.startsWith(p)`.** V8's `startsWith` walks characters (~2.6 ns/char); string equality of flat strings is memcmp: 6,250 checks of a growing 100k-char text 340 → 6.6 ms (sliced strings), 135 → 15.6 ms (cons strings). Same for an end-anchored regex (`/x$/` scans the whole string): read the last char code. `followText`, cdk `createBlockSplit`, `StreamingTextRun`.
+- **Streamed text: never re-derive from the whole text per update.** Reuse what an append cannot change (finished Markdown blocks: cdk `createBlockSplit`; graphemes before the last two: `StreamingTextRun`) and keep unchanged row objects so keyed `For` neither rebuilds key strings nor updates rows. 100k-char Markdown stream (6,250 updates): 7.8 s → 0.95 s, per update ~flat.
+- **Dependency dedup: scan, then index.** A run whose nested computeds read the same sources re-checks its links (`linked`); past 32 links and 8 long scans per run it indexes them in a Set (5k interleaved reads 21.6 → 0.6 ms). Building the Set eagerly at 64–320 links was 1.8x slower than scanning: keep the budget.
+
 ## Incremental lists (INCR2 2026-10-26, opt-in)
 
 - `rivetRouter({ resume: { incr: true } })` + `start({ incr: createIncrCache() })`: compiler proves row purity (`libs/compiler/rust/src/compile/incr.rs`), runtime reuses row bytes per list (`libs/runtime/incr/`). Byte-identical (differential `libs/runtime/tests/server-incr.test.ts`).

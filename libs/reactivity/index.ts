@@ -286,6 +286,8 @@ function detach(node: Node): void {
 
 // Settle the run's reads: a run that only read a prefix of the previous order unlinks the rest.
 function commit(node: Node): void {
+  if (scanning === node) scanning = null;
+  if (indexed !== null && indexed.delete(node) && indexed.size === 0) indexed = null;
   // cursor -1: the run diverged from the previous order (its links are exact already).
   if (node.cursor >= 0) while (count(node.sources) > node.cursor) unsubscribeLast(node);
 }
@@ -376,12 +378,28 @@ function track(source: Tracked): void {
 }
 
 // Whether `node` already links `source` in this run (reads before the cursor, or all once diverged).
+// A scan, until one run's checks of SCAN+ links pass SCANS: then an index of its links (`indexed`, extended by
+// later checks: a run's links only grow at the end and hold no duplicates, so `size` is the indexed prefix).
+// Interleaved nested computed reads over thousands of sources cost O(n), not O(n²); a run with a few long
+// checks (one dirty nested computed among many) keeps the scan — building the index costs ~10 scans.
+// `scanning` counts the current long-checking run's scans (one slot: an interleaved long run resets it, which
+// only delays the index). `commit` drops both.
+const SCAN = 32, SCANS = 8;
+let indexed: Map<Node, Set<Tracked>> | null = null, scanning: Node | null = null, scans = 0;
 function linked(node: Node, source: Tracked): boolean {
   const sources = node.sources;
   if (sources === null) return false;
   if (!isArray(sources)) return sources === source && node.cursor !== 0;
-  for (let i = 0, n = node.cursor >= 0 ? node.cursor : sources.length; i < n; i++) if (sources[i] === source) return true;
+  const n = node.cursor >= 0 ? node.cursor : sources.length;
+  if (n > SCAN && (scanning === node ? ++scans : ((scanning = node), (scans = 1))) > SCANS) return has(node, sources as Tracked[], n, source);
+  for (let i = 0; i < n; i++) if (sources[i] === source) return true;
   return false;
+}
+function has(node: Node, sources: Tracked[], n: number, source: Tracked): boolean {
+  let set = (indexed ??= new Map()).get(node);
+  if (set === undefined) indexed.set(node, (set = new Set<Tracked>()));
+  for (let i = set.size; i < n; i++) set.add(sources[i]);
+  return set.has(source);
 }
 
 // Mark consumers: DIRTY for direct observers, CHECK below a computed. An effect is queued on its
