@@ -116,7 +116,8 @@ export function derivedLoader(): void {
     for (let n = node; n && n.nodeType != 9; n = n.parentNode) {
       const b = (n as Element).getAttribute?.("data-b");
       if (b) add(b);
-      for (let s = n.previousSibling, depth = 0; s; s = s.previousSibling)
+      // A sole list's row opener (`$rs`, set by the runtime): the siblings before it are whole rows (dom-derived `RowMark`).
+      for (let s = n.previousSibling, depth = 0; s && !(s as Node & { $rs?: 1 }).$rs; s = s.previousSibling)
         if (s.nodeType == 8) {
           const x = (s as Comment).data;
           x == "/b" ? depth++ : /^b\d+$/.test(x) && (depth ? depth-- : add(x.slice(1)));
@@ -212,10 +213,11 @@ export function derivedLoader(): void {
   };
   const im = window as Window & { __rvIM?: string };
   // Intent inside a listening record, or on a document click listener's match (`data-g`: the router's links); with held
-  // hover events (records that listen to hover), always.
+  // hover events (records that listen to hover), always. Once the runtime runs it finds the records itself (`rt.w`: the
+  // same listening records / `g` matches), at once: no second walk, no promise hop per event (KEYDOWN 2026-11-06).
   const warm = (event: Event): unknown => {
     const t = event.target as Element;
-    return (q.length || ids(t, "").length || t.closest?.(script.dataset.g!)) && boot().then((r) => r.w(t), fail);
+    return rt ? rt.w(t) : (q.length || ids(t, "").length || t.closest?.(script.dataset.g!)) && boot().then((r) => r.w(t), fail);
   };
   let dwell: ReturnType<typeof setTimeout> | undefined;
   listen("pointerdown", (event) => ((im.__rvIM = (event as PointerEvent).pointerType || "mouse"), warm(event)));

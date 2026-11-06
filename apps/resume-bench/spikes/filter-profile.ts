@@ -97,7 +97,7 @@ for (let r = 0; r < reps; r++)
     if (arg("pre")) (await page.keyboard.type(arg("pre")!), await page.waitForTimeout(500));
     if (profile) {
       await cdp.send("Profiler.enable");
-      await cdp.send("Profiler.setSamplingInterval", { interval: 50 });
+      await cdp.send("Profiler.setSamplingInterval", { interval: Number(arg("interval", "50")) });
       await cdp.send("Profiler.start");
     }
     await page.evaluate(() => {
@@ -141,6 +141,9 @@ for (let r = 0; r < reps; r++)
       .forEach((e, i) => i && ((out["input" + i] ??= []).push(e[3] - e[2]), (out["inputStart" + i] ??= []).push(e[1] - kd)));
     (out.inputDur ??= []).push(input ? input[4] : NaN);
     (out.keydownProc ??= []).push(keydown ? keydown[3] - keydown[2] : NaN);
+    // Input delay of the first keydown (an in-flight task when the key arrived) and keydown start → first input's end.
+    (out.keydownDelay ??= []).push(keydown ? keydown[2] - keydown[1] : NaN);
+    (out.toInputEnd ??= []).push(keydown && input ? input[3] - keydown[1] : NaN);
     (out.paint ??= []).push(paint - kd);
     if (profile) {
       const { profile: p } = await cdp.send("Profiler.stop");

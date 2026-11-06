@@ -816,7 +816,11 @@ function rowsOf(lazy: Lazy): LRow[] {
 // A lazy row's server markers: the opener names its row, the closer is `true` — expandos, not a WeakMap / WeakSet (cheaper
 // to set at the idle row build and to test per node when a client `_for` drops rows: FILTER2 2026-11-05). With the
 // openers, the closers are the pairs a client `_for` leaves in place when it drops a row (`_adoption.inert`).
-type RowMark = Node & { $rw?: LRow | true };
+// A sole list's row openers also carry `$rs` (KEYDOWN 2026-11-06): the list is its element's only content, so the siblings
+// before a built row's opener are whole rows (balanced) — the per-event walks (`enclosing`, the loader's `ids`) stop there
+// instead of scanning every earlier row (1.4 ms per pointerdown on row 900 of 1,000 at 4x CPU); `enclosing` counts an unbuilt
+// row's index from the nearest built row before it (`at`).
+type RowMark = Node & { $rw?: LRow | true; $rs?: 1 };
 function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unknown, index: number) => unknown) | undefined, indexed: boolean): LRow {
   const item = lazy.items[k];
   const row: LRow = {
@@ -839,6 +843,7 @@ function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unkn
   };
   (start as RowMark).$rw = row;
   (end as RowMark).$rw = true;
+  if (lazy.hole.sole) (start as RowMark).$rs = 1;
   return row;
 }
 function bad(lazy: Lazy): void {
@@ -2154,8 +2159,19 @@ function enclosing(node: Node | null): [kind: number, id: number, at: Node][] {
       else if (d === "]") r++;
       else if (B_OPEN.test(d)) b ? b-- : out.push([0, +d.slice(1), s]);
       else if (LISTS && R_OPEN.test(d)) {
-        if (!r) out.push((row = [1, 0, s]));
-        else if (!--r && row) row[1]++;
+        // A sole list's built row opener (`$rs`): the earlier siblings are whole rows, nothing there encloses the node.
+        // Its own row's opener ends the walk (the row is on its marker, `around`); a built row before it gives the count.
+        const rs = (s as RowMark).$rs;
+        if (!r) {
+          out.push((row = [1, 0, s]));
+          if (rs) break;
+        } else if (!--r) {
+          if (row) row[1]++;
+          if (rs) {
+            if (row) row[1] += ((s as RowMark).$rw as LRow).at;
+            break;
+          }
+        }
       }
     }
   }
@@ -2179,8 +2195,10 @@ function around(target: EventTarget | null, type?: string): true | Promise<void>
   // the facts cannot see: ui `Stepper` / `ChainOfThought`), which a standalone adopt would run without its provider.
   // ZERO CALLSITE: not when the listening record's unit (it, or its nearest independent ancestor: the one `need` adopts
   // standalone) is `CTXFREE` (the build proved no provider above it sets a context its unit reads).
-  let all = false;
-  for (const [kind, id] of enclosing(target as Node | null)) {
+  let all = false,
+    // One walk for the scan below and the first step; a step that adopted something walks again (its run changed the DOM).
+    units: ReturnType<typeof enclosing> | null = enclosing(target as Node | null);
+  for (const [kind, id] of units) {
     const r = kind ? undefined : recs.get(id);
     if (r && listens(r, type)) {
       let u = r;
@@ -2193,7 +2211,7 @@ function around(target: EventTarget | null, type?: string): true | Promise<void>
   }
   for (let guard = 0; guard < 256; guard++) {
     let step: true | Promise<void> | null = null;
-    for (const [kind, id, at] of enclosing(target as Node | null)) {
+    for (const [kind, id, at] of units ?? enclosing(target as Node | null)) {
       if (kind) {
         const mark = LISTS && (at as RowMark).$rw;
         const row = LISTS && ((typeof mark === "object" ? mark : undefined) ?? listAt(at, id));
@@ -2214,6 +2232,7 @@ function around(target: EventTarget | null, type?: string): true | Promise<void>
     }
     if (step === null) return true;
     if (step !== true) return step;
+    units = null;
   }
   return true;
 }

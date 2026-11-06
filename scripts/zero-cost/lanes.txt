@@ -28,12 +28,12 @@ rivet-for.mjs 6964a1d99c8b
 rivet-router-bunserve.mjs 3326bc609d97
 rivet-router-uws.mjs f0d229bbf420
 rivet-router.mjs 3383d5cba9c8
-rivet-router/client/.vite/rivet-resume.json 3f579dd4b312
+rivet-router/client/.vite/rivet-resume.json 7a52c5e86dd1
 rivet-router/client/assets/_layout-B25Xrsgt.js 596da9656332
 rivet-router/client/assets/_layout-DJBAMu1O.js 81bbb4a21002
 rivet-router/client/assets/app-DPcyXXPX.js c26b8accac4e
-rivet-router/client/assets/derived-runtime-BMc9uOOj.js be9a3c47c8c0
-rivet-router/client/assets/derived-runtime-flat-BOoFRmTM.js 1a4b798b498e
+rivet-router/client/assets/derived-runtime-BZBxDJ4b.js 4f59badcc445
+rivet-router/client/assets/derived-runtime-flat-BuYBy3XJ.js 580e53d6c274
 rivet-router/client/assets/dom-data-reader-C7P9gDiN.js 4662806d87eb
 rivet-router/client/assets/dom-derived-abi-B2FMn5UD.js 4830788f7db7
 rivet-router/client/assets/index-C8XaROOv.js 910d374ff711
@@ -56,7 +56,7 @@ rivet-router/server/assets/resume-format-BZk4adwO.js d79ea061491a
 rivet-router/server/assets/route-cache-Dne4k5m3.js 0f908a2e844d
 rivet-router/server/assets/server-cache-BQnLdqHL.js d4b0efd6b25b
 rivet-router/server/assets/strict-csp-Dx0g6O2K.js 8ea4024867a5
-rivet-router/server/entry.server.js ac626b1514a0
+rivet-router/server/entry.server.js 448b96c15feb
 rivet.mjs 1d7f24edb7f5
 server-uws.mjs cb8c978a4da4
 server.mjs 68a3f8f56e37
