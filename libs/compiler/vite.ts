@@ -402,7 +402,8 @@ const DERIVED_ENTRY = "\0rivet-derived-entry";
  * `runtime` on a page whose render listed no keyed `<For>` inside a boundary and streams no `Async` (`server-derived.ts`
  * `derivedTail`). Its modules are copies (the id + `?rivet-flat`) of the runtime-private modules only (`FLAT_COPY`, and
  * `FLAT_HOOKS` when no app code shares it: the modules of the full runtime's own chunk); everything else (reactivity, dom-v2, events, the ABI) is the one shared
- * instance. A page evaluates one of the two runtimes, never both (`flatSound` checks the chunk graph).
+ * instance. A page starts one of the two runtimes and evaluates only it (`flatSound` checks the chunk graph), except after a
+ * co-load pass 2 grouped app modules into the full runtime's chunk (COFLAT: a page loading them evaluates it inert, `TWO`).
  */
 const FLAT_ENTRY = "\0rivet-derived-flat";
 const FLAT_QUERY = /[?&]rivet-flat(?=&|$)/;
@@ -2013,10 +2014,9 @@ function rivetPlugin(
         }
       return seen;
     };
-    // Not in co-load builds (env `RIVET_COLOAD`, docs-kit sites) yet: pass 1 plans groups without knowing which pages take the
-    // flat runtime, so the full runtime's group can take app modules a flat page needs (ui-docs: `cdk/i18n`), and dropping the
-    // group for flat leaves list pages +1 file / +1 KB br (FLAT 2026-11-05, report). Planner integration = follow-up.
-    flatUseful = !joinsDir && derivedLists && (!routeFiles.size || [...routeFiles].some((file) => ![...reach([file])].some((walked) => listFiles.has(walked))));
+    // Co-load builds too (COFLAT 2026-11-06): pass 1 renders with both runtimes, so the planner sees which pages fetch which
+    // one and groups into the full runtime's chunk only what exactly its pages fetch and reach (`flatSound`).
+    flatUseful = derivedLists && (!routeFiles.size || [...routeFiles].some((file) => ![...reach([file])].some((walked) => listFiles.has(walked))));
     flatHooksShared = false;
     if (flatUseful)
       for (const file of reach([...derivedVerdicts].filter(([, verdict]) => verdict.boundaries.length).map(([file]) => file)))
@@ -2265,6 +2265,11 @@ function rivetPlugin(
     flat: Rollup.OutputChunk | null,
   ): boolean {
     if (!full || !flat || full === flat) return false;
+    // COFLAT: a co-load pass 2 (`plan.json` in the `RIVET_COLOAD` dir) may have grouped app modules into the full runtime's
+    // chunk: the planner merged only chunks the same pages fetch before input and reach at all, measured on pass 1's pages
+    // (both runtimes on), so a page on the flat runtime never loads that chunk. Were one to load it anyway, the full runtime
+    // evaluates without taking over (`dom-derived-abi.ts` `_abi`: the started runtime keeps the ABI): bytes, not behaviour.
+    const grouped = joinsDir !== null && existsSync(join(joinsDir, "plan.json"));
     const runtimes = new Set([full.fileName, flat.fileName]);
     const imported = new Map<string, number>();
     // The stateful modules the flat runtime copied: their originals must be the full runtime's alone.
@@ -2280,7 +2285,7 @@ function rivetPlugin(
       // (A runtime entry's own facade, left behind when a co-load group moved the runtime: loaded by nothing.)
       const facade = chunk.facadeModuleId === DERIVED_ENTRY || chunk.facadeModuleId === FLAT_ENTRY;
       for (const file of [...chunk.imports, ...chunk.dynamicImports]) {
-        if (runtimes.has(file) && !facade) {
+        if (runtimes.has(file) && !facade && !(grouped && file === full.fileName && chunk !== flat)) {
           this.warn(`[rivet] flat runtime: ${chunk.fileName} imports the runtime chunk ${file}; pages load the full runtime`);
           return false;
         }
@@ -2992,7 +2997,7 @@ function rivetPlugin(
       }
       // RTSPLIT: the derived runtime's features this build can reach (`derived-features.ts`); dev serves the file (all on).
       if (resume && client && !serve && FEATURES_MODULE.test(clean))
-        return `export const LISTS = ${derivedLists && !FLAT_QUERY.test(id)};\nexport const ISLANDS = ${bridges !== null};\n`;
+        return `export const LISTS = ${derivedLists && !FLAT_QUERY.test(id)};\nexport const ISLANDS = ${bridges !== null};\nexport const TWO = ${flatUseful && joinsDir !== null};\n`;
       if (id === DERIVED_ENTRY) return 'export { default } from "@rivetjs/runtime/dom-derived-runtime";\n';
       if (id === FLAT_ENTRY && flatRuntime) return `export { default } from ${JSON.stringify(flatCopy(flatRuntime))};\n`;
       // `resume.domData` (DERIVED-C5): the browser reader (`DOM_DATA` in `dom-derived.ts`) and the server's list registry +

@@ -43,7 +43,7 @@ import { _setUnrecorded, _tableDecoder } from "./resume-hooks.ts";
 import type { BoundaryTail, DerivedAsync, DerivedDom } from "./resume-format.ts";
 import { eachRecord } from "./resume-tail.ts";
 import { DOM_DATA, DOM_READER } from "./dom-data.ts";
-import { ISLANDS, LISTS } from "./derived-features.ts";
+import { ISLANDS, LISTS, TWO } from "./derived-features.ts";
 import { DEV } from "#dev";
 import { _abi, _guard as guard } from "./dom-derived-abi.ts";
 
@@ -2634,6 +2634,7 @@ const runtime: DerivedRuntime = {
   start(t, d, loader) {
     // Dev: disposed before the loader booted it (DevTools inspection, then a first event): held events act natively.
     if (DEV && disposed) return void loader.q.splice(0).forEach((item) => item[2]?.());
+    if (TWO) _abi({ b, s: sig, st: sigStore, d: dsignal, l: wakeLoose });
     tail = t;
     doc = d;
     api = loader;
@@ -2804,7 +2805,11 @@ if (DEV)
     globalThis.document.querySelector('script[type="rivet/boundaries"]')?.removeAttribute("data-g");
     for (const owner of roots.splice(0)) _dispose(owner);
   };
-// The component ABI (`dom-derived-abi.ts`, `@rivetjs/runtime/dom-derived`) runs these from now on.
-_abi({ b, s: sig, st: sigStore, d: dsignal, l: wakeLoose });
+// The component ABI (`dom-derived-abi.ts`, `@rivetjs/runtime/dom-derived`) runs these from now on. COFLAT (`TWO`: the build
+// also ships the list-free copy, manifest `flat`): a co-load group may put an app module into the full runtime's chunk, so a
+// page started on one copy can evaluate the other later; that one must not take the ABI over (`_adoption.same` = a runtime
+// started), and `start` installs its own again (another copy may have been evaluated in between).
+// (Written out twice: a build without the copy folds `TWO` to the one call it always had.)
+if (!TWO || !_adoption.same) _abi({ b, s: sig, st: sigStore, d: dsignal, l: wakeLoose });
 export { _b, _sig, _sigStore, _dsignal } from "./dom-derived-abi.ts";
 export default runtime;

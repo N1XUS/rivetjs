@@ -101,7 +101,14 @@ interface Built {
     lazy?: Record<string, string[]>;
   };
 }
-async function buildApp(rows: Rows, roots: string[], domData?: boolean, files: Record<string, string> = {}, modules: string[] = []): Promise<Built> {
+async function buildApp(
+  rows: Rows,
+  roots: string[],
+  domData?: boolean,
+  files: Record<string, string> = {},
+  modules: string[] = [],
+  client: { rolldownOptions?: object } = {},
+): Promise<Built> {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-derived-" + rows + "-"));
   roots.push(root);
@@ -118,7 +125,7 @@ async function buildApp(rows: Rows, roots: string[], domData?: boolean, files: R
       serverExports: { modules: ["src/page.tsx"] },
       resume: { modules: ["src/page.tsx", "src/counter.tsx", ...modules], ...(domData !== undefined ? { domData } : {}) },
     });
-  await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "client-dist", manifest: true } });
+  await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "client-dist", manifest: true, ...client } });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "server-dist", ssr: "src/server.tsx" } });
   const manifest = JSON.parse(await readFile(resolve(root, "client-dist/.vite/rivet-resume.json"), "utf8"));
   const { render } = await import(pathToFileURL(resolve(root, "server-dist/server.js")).href);
@@ -376,6 +383,85 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
         const paths = requests.map((r) => r.path);
         assert.ok(paths.includes(flat.manifest.flat!));
         assert.ok(!paths.includes(flat.manifest.runtime), "never the full runtime too");
+      });
+    } finally {
+      await browser.close();
+      for (const root of roots) await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
+// COFLAT: a co-load pass 2 (`plan.json` in the `RIVET_COLOAD` dir) may group an app module into the full runtime's chunk
+// (the planner proved that only the full runtime's pages fetch it): the manifest keeps `flat`, the list-free page boots it,
+// and evaluating the full runtime after the flat one started (a chunk importing that group) leaves the started one in charge.
+(hasDerivedModel() ? test : test.skip)(
+  "rivet({ resume }) co-load pass 2 (COFLAT): an app module grouped into the full runtime keeps flat; a late full runtime stays inert",
+  async () => {
+    const browser = await chromium.launch({ headless: true });
+    const roots: string[] = [];
+    const before = process.env.RIVET_COLOAD;
+    const dir = await mkdtemp(resolve(".artifacts/vite-derived-coload-"));
+    roots.push(dir);
+    try {
+      // The list module imports a helper that the group below moves into the full runtime's chunk.
+      const list = `import { For } from "@rivetjs/runtime/dom";\nimport { label } from "./shared.ts";\nexport function List(props) {\n  return <ul><For each={() => props.rows} by={(r) => r.id}>{(r) => <li>{label(r().name)}</li>}</For></ul>;\n}\n`;
+      const files = { "src/list.tsx": list, "src/shared.ts": 'export const label = (name) => "row: " + name;\n' };
+      const runtimeGroup =
+        /[\\/]libs[\\/](?:runtime[\\/](?:dom-derived|dom-adopt|dom-adopt-run|dom-data|resume-tail|resume-hooks|derived-features)|reactivity[\\/](?:track|store))\.ts$|^\0rivet-derived-entry$|[\\/]src[\\/]shared\.ts$/;
+      const client = {
+        rolldownOptions: {
+          output: {
+            codeSplitting: { groups: [{ name: "derived-runtime", test: (id: string) => runtimeGroup.test(id), includeDependenciesRecursively: false }] },
+          },
+        },
+      };
+      const warnings: string[] = [];
+      const warn = console.warn;
+      console.warn = (...args: unknown[]) => void warnings.push(args.join(" "));
+      process.env.RIVET_COLOAD = dir;
+      let built: Built;
+      try {
+        // Without a plan (a one-pass build or pass 1): an app chunk importing the full runtime's chunk drops `flat`.
+        const unplanned = await buildApp("none", roots, undefined, files, ["src/list.tsx"], client);
+        assert.equal(unplanned.manifest.flat, undefined, "no plan: flat left out");
+        await writeFile(resolve(dir, "plan.json"), JSON.stringify({ v: 1, groups: [] }) + "\n");
+        built = await buildApp("none", roots, undefined, files, ["src/list.tsx"], client);
+      } finally {
+        console.warn = warn;
+        if (before === undefined) delete process.env.RIVET_COLOAD;
+        else process.env.RIVET_COLOAD = before;
+      }
+      const listChunk = await readFile(resolve(built.root, "client-dist" + built.manifest.symbols["src/list.tsx#List"]!), "utf8");
+      // The full runtime's files: its entry and the code chunk the group made (`derived-runtime-*`, not the flat one).
+      const fullFiles = [built.manifest.runtime, ...built.manifest.deps![built.manifest.runtime]!].filter((file) => /\/derived-runtime-(?!flat)/.test(file));
+      assert.ok(
+        fullFiles.some((file) => listChunk.includes("./" + basename(file))),
+        "the list chunk imports the full runtime's chunk",
+      );
+      assert.match(built.manifest.flat!, /^\/assets\/derived-runtime-flat-.*\.js$/, "co-load pass 2: flat kept");
+      assert.equal(/data-rt="([^"]+)"/.exec(built.html)?.[1], built.manifest.flat);
+      await serve(built, browser, async (page, requests) => {
+        await page.evaluate(() => ((document.querySelector("#count") as any).__t = (document.querySelector("#theme") as any).__t = 1));
+        await page.click("#inc");
+        await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+        assert.ok(!requests.some((r) => fullFiles.includes(r.path)), "the flat page never fetches the full runtime");
+        // A chunk importing the full runtime's group loads after the flat runtime started: the started runtime keeps the ABI.
+        await page.evaluate((url) => import(url), built.manifest.symbols["src/list.tsx#List"]!);
+        assert.ok(
+          requests.some((r) => fullFiles.includes(r.path)),
+          "the full runtime's chunk loaded",
+        );
+        // Later events: the started (flat) runtime keeps serving, over the server nodes.
+        await page.click("#dark");
+        await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
+        await page.click("#inc");
+        await page.waitForFunction(() => document.querySelector("#count")!.textContent === "7");
+        assert.deepEqual(
+          await page.evaluate(() => [(document.querySelector("#theme") as any).__t, (document.querySelector("#count") as any).__t]),
+          [1, 1],
+          "server nodes adopted in place after the full runtime evaluated",
+        );
+        assert.equal(await page.evaluate(() => (globalThis as any).__componentRuns), undefined, "the untouched boundary stays a hole");
       });
     } finally {
       await browser.close();
