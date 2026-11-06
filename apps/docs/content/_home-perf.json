@@ -1,19 +1,19 @@
 {
   "loader": {
-    "bytes": 4139,
-    "brotli": 1855
+    "bytes": 4157,
+    "brotli": 1866
   },
   "cdk": {
-    "tests": 5507,
-    "a11y": 668
+    "tests": 5517,
+    "a11y": 669
   },
   "inlineJs": {
-    "bytes": 12365,
+    "bytes": 12383,
     "scripts": 3
   },
   "html": {
-    "bytes": 113321,
-    "brotli": 21230
+    "bytes": 113239,
+    "brotli": 21258
   },
   "lighthouse": {
     "date": "2026-10-12",

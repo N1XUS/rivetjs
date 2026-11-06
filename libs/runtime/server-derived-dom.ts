@@ -68,18 +68,20 @@ function domList(dom: DomList[], items: readonly unknown[], plan: ListPlan, mark
   // Both halves share the tape (row 0 / rows 1..): no copy of the rows' captures (SSR-MEM: the slice was ~10 KB per
   // 100-row page, a tenth of the resumable bench page's allocation).
   const List = list.constructor;
-  return [new List(firstPlan(marked, n), list.tape, 1), new List(marked, list.tape, list.rows, 1)];
+  return [new List(firstPlan(marked, n, marked === plan), list.tape, 1), new List(marked, list.tape, list.rows, 1)];
 }
 // Row 0's plan per (marked plan, anchor number): one object per process, so the byte writers' per-plan caches (encoded
-// fragments, the row emitter's table) hold across requests instead of re-encoding the row template per render.
+// fragments, the row emitter's table) hold across requests instead of re-encoding the row template per render. A bare
+// plan (one root element, no row markers: MARKERS 2026-11-06) gets the anchor pair around row 0 only.
 const firstPlans = new WeakMap<ListPlan, ListPlan[]>();
-function firstPlan(marked: ListPlan, n: number): ListPlan {
+function firstPlan(marked: ListPlan, n: number, bare: boolean): ListPlan {
   let plans = firstPlans.get(marked);
   if (plans === undefined) firstPlans.set(marked, (plans = []));
   let plan = plans[n];
   if (plan === undefined) {
     const first = marked.fragments.slice();
-    first[0] = "<!--r0" + n + "[-->" + first[0]!.slice(9);
+    first[0] = "<!--r0" + n + "[-->" + (bare ? first[0]! : first[0]!.slice(9));
+    if (bare) first[first.length - 1] += "<!--]-->";
     plan = plans[n] = { fragments: Object.freeze(first), attributes: marked.attributes, bytes: null, fixed: 0, rows: marked.rows };
   }
   return plan;

@@ -2166,8 +2166,19 @@ function settle(ctx: DerivedRender): void {
 // render (or without a list mount): the ordinary `For`. Same evaluation order as `For` under the row hook: `each`, every
 // `by`, then the rows in order under the For's root.
 const ROW = /* @__PURE__ */ Object.freeze(["<!--r[-->", "<!--]-->"]);
-const rowPlans = new WeakMap<ListPlan, ListPlan>();
-function rowPlan(plan: ListPlan): ListPlan {
+const rowPlans = new WeakMap<ListPlan, ListPlan>(),
+  barePlans = new WeakMap<ListPlan, boolean>();
+// MARKERS (2026-11-06): a plan proven to render exactly one root element (`oneRoot`) writes its rows bare — the row is its
+// element, the derived client claims an element at a list's top level as one row group (`dom-derived.ts` `groupsOf` /
+// `claim`, `dom-lite-list.ts`). A 1,000-row page: 2,000 comment nodes (17 KB) less to parse, and a filter that drops 900
+// rows removes 900 nodes, not 2,700. Any other plan keeps its row region markers, and so does an incremental list (`$incr`):
+// `server-incr` writes its cached rows marked, so its cold render (no cache, a cache miss) must write the same bytes.
+function rowPlan(plan: ListPlan, incr: boolean): ListPlan {
+  if (!incr) {
+    let bare = barePlans.get(plan);
+    if (bare === undefined) barePlans.set(plan, (bare = oneRoot(plan)));
+    if (bare) return plan;
+  }
   let marked = rowPlans.get(plan);
   if (marked === undefined) {
     const fragments = plan.fragments.slice(),
@@ -2178,6 +2189,65 @@ function rowPlan(plan: ListPlan): ListPlan {
   }
   return marked;
 }
+// Elements without an end tag, and those whose content is raw text (a `<` there is no tag: not scanned, never proven).
+const VOID_TAG = /^(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/i,
+  RAW_TAG = /^(?:script|style|textarea|title|xmp|iframe|noembed|noframes|noscript|plaintext)$/i;
+/**
+ * The plan renders exactly one root element whatever its slots hold: its fragments open one element first, close it last,
+ * and every value slot (child or attribute; a flattened child's OPEN / CLOSE bounds write nothing) sits inside that
+ * element's start tag or content. No text, comment (a boundary's `<!--bN-->`, a region marker) or second element at the
+ * top. Conservative: anything the scan does not recognise (raw text elements, an unterminated comment) is not proven.
+ */
+function oneRoot(plan: Pick<ListPlan, "fragments" | "attributes">): boolean {
+  const fragments = plan.fragments,
+    slots = plan.attributes;
+  // depth: open elements; tag: inside a start tag (its name), quote: inside a quoted attribute value; done: root closed.
+  let depth = 0,
+    tag: string | null = null,
+    quote = "",
+    done = false;
+  for (let f = 0; f < fragments.length; f++) {
+    if (f > 0 && typeof slots[f - 1] !== "number" && (done || (tag === null && depth === 0))) return false;
+    const s = fragments[f]!;
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i]!;
+      if (tag !== null) {
+        if (quote) c === quote && (quote = "");
+        else if (c === '"' || c === "'") quote = c;
+        else if (c === ">") {
+          const name = tag;
+          tag = null;
+          if (RAW_TAG.test(name)) return false;
+          if (VOID_TAG.test(name) || s[i - 1] === "/") depth === 0 && (done = true);
+          else depth++;
+        }
+        continue;
+      }
+      if (c !== "<") {
+        if (depth === 0) return false;
+        continue;
+      }
+      if (s.startsWith("<!--", i)) {
+        const end = s.indexOf("-->", i + 4);
+        if (depth === 0 || end < 0) return false;
+        i = end + 2;
+      } else if (s[i + 1] === "/") {
+        const end = s.indexOf(">", i);
+        if (end < 0 || depth === 0) return false;
+        i = end;
+        if (--depth === 0) done = true;
+      } else {
+        const m = /^<([A-Za-z][^\s/>]*)/.exec(s.slice(i, i + 64));
+        if (m === null || done) return false;
+        tag = m[1]!;
+        i += m[0].length - 1;
+      }
+    }
+  }
+  return done && tag === null && depth === 0;
+}
+/** @internal Test hook: `oneRoot` over a plan (`tests/derived-rows.test.ts`). */
+export const _oneRoot = oneRoot;
 type ForProps = Parameters<typeof For>[0];
 const noRow = (): never => {
   throw new Error("unreachable");
@@ -2230,7 +2300,7 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
     // constructor, then each index).
     if (dense) {
       const fill = $list[1] as (tape: unknown[], base: number, item: unknown, index: number) => void,
-        marked = rowPlan($list[0]),
+        marked = rowPlan($list[0], props.$incr !== undefined),
         list = _list(
           items,
           noRow,

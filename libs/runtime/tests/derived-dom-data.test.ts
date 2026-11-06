@@ -49,7 +49,12 @@ const props = (n: number): Props => ({
 });
 const tailOf = (html: string): { b: unknown[][]; d?: unknown[][] } =>
   tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
-const body = (html: string): string => html.replace(/<script type="rivet\/boundaries".*$/s, "").replace(/<!--r0\d+\[-->/g, "<!--r[-->");
+// A bare list (one-root rows, MARKERS 2026-11-06) has the anchor pair around row 0 only.
+const body = (html: string): string =>
+  html
+    .replace(/<script type="rivet\/boundaries".*$/s, "")
+    .replace(/<!--r0\d+\[-->(<li\b.*?<\/li>)<!--\]-->/gs, "$1")
+    .replace(/<!--r0\d+\[-->/g, "<!--r[-->");
 
 async function bytes(factory: () => ServerValue, domData: boolean): Promise<string> {
   const parts: Buffer[] = [];
@@ -89,6 +94,9 @@ async function bytes(factory: () => ServerValue, domData: boolean): Promise<stri
     assert.equal(tail.d!.length, 1);
     assert.deepEqual(tail.d![0]!.slice(0, 4), [record[0], 0, ["rows"], n]);
     assert.equal((on.match(/<!--r00\[-->/g) ?? []).length, 1);
+    // The rows are bare: no row markers but the anchor pair around row 0.
+    assert.equal((off.match(/<!--r\[--><li data-id/g) ?? []).length, 0);
+    assert.equal((on.match(/<li data-id/g) ?? []).length, n);
     // No row value is written into the tail (the labels are in the page only).
     assert.doesNotMatch(JSON.stringify(tail), /row 1/);
   }

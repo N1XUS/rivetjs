@@ -18,7 +18,9 @@ let anchors: Map<number, Comment> | null = null,
   doc: Document | null = null;
 const domRows = new Map<number, (Element | null)[]>();
 // Row k's root = the first element inside its `<!--r…[-->` … `<!--]-->` group (balance as `closeAt` counts it: row
-// openers up, `]` down), the groups in a run from the anchor. One pass over the siblings, no regex per node.
+// openers up, `]` down), or a bare row's element (an element at the top: a one-root plan's rows carry no markers but the
+// anchor pair around row 0, MARKERS 2026-11-06), the rows in a run from the anchor. One pass over the siblings, no regex
+// per node.
 const rowOpen = (d: string): boolean => d.charCodeAt(0) === 114 && d.charCodeAt(d.length - 1) === 91 && R_OPEN.test(d);
 function rowRoots(n: number): (Element | null)[] {
   let roots = domRows.get(n);
@@ -42,10 +44,14 @@ function rowRoots(n: number): (Element | null)[] {
       const d = (x as Comment).data;
       if (rowOpen(d)) {
         if (depth++ === 0) root = null;
-      } else if (depth === 0) break;
-      else if (d === "]" && --depth === 0) roots.push(root);
-    } else if (depth === 0) break;
-    else if (root === null && x.nodeType === 1) root = x as Element;
+      } else if (depth === 0) {
+        // A materialised bare row's empty anchors (`dom-derived.ts` `anchorRow`) sit between rows.
+        if (d !== "") break;
+      } else if (d === "]" && --depth === 0) roots.push(root);
+    } else if (depth === 0) {
+      if (x.nodeType !== 1) break;
+      roots.push(x as Element);
+    } else if (root === null && x.nodeType === 1) root = x as Element;
   }
   domRows.set(n, roots);
   return roots;

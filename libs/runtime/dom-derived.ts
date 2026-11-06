@@ -213,6 +213,11 @@ interface Lazy {
   plain: RowPlanCache | null | false;
   /** ROW-KEYS: its rows' path before the row's place (`rowsAt`). */
   at: string;
+  /**
+   * A sole list's server rows are bare elements (MARKERS: a one-root row plan, no row markers); null: not looked yet —
+   * looked on the server's nodes, at the first event walk or before the client `_for` changes them (`isBare`).
+   */
+  bare: boolean | null;
 }
 interface LRow extends ForRow {
   lz: Lazy;
@@ -585,10 +590,13 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
     woken: false,
     plain: null,
     at,
+    bare: null,
   };
   _adoption.keep!.add(lazy.token);
   if (hole.sole) {
     listsIn.set(hole.sole, lazy);
+    // The event walk's test per ancestor (`bareRow`): an expando, not a WeakMap lookup.
+    (hole.sole as Element & { $rl?: Lazy }).$rl = lazy;
     // Its unit adopted (an event inside it): the list's first change (a filter's first key) needs its rows — found and
     // built at idle, not in that input (FILTER 2026-11-05: ~4 ms of a 1,000-row filter's first input at 4x CPU). Reads the
     // server rows only (their keys: DOM data read once, as the idle read does); a mismatch still shows on first use.
@@ -781,8 +789,19 @@ function groupsOf(hole: FHole): [Node, Node][] {
     groups = [];
     let depth = 0,
       open: Node | null = null;
-    for (let n = hole.sole!.firstChild; n !== null; n = n.nextSibling) {
-      if (n.nodeType !== 8) continue;
+    for (let n: Node | null = hole.sole!.firstChild; n !== null; n = n.nextSibling) {
+      if (n.nodeType !== 8) {
+        // A bare row (MARKERS: an element at the top is one row group).
+        if (!depth && n.nodeType === 1) groups.push([n, n]);
+        continue;
+      }
+      // A materialised bare row: its anchors (`anchorRow`), whatever it renders between them.
+      const mark = (n as RowMark).$re;
+      if (!depth && mark !== undefined) {
+        groups.push([n, mark.end!]);
+        n = mark.end!;
+        continue;
+      }
       const d = (n as Comment).data;
       if (rowOpen(d)) {
         if (depth++ === 0) open = n;
@@ -810,7 +829,7 @@ function rowsOf(lazy: Lazy): LRow[] {
   return (lazy.rows = groups.map(([start, end], k) => {
     const row = part?.[k];
     // A row built on demand stands for the same server group (`rowAt` counts the groups the same way).
-    return row && row.start === start ? row : makeRow(lazy, k, start, end, by, indexed);
+    return row && (row.start === start || (start as RowMark).$re === row) ? row : makeRow(lazy, k, start, end, by, indexed);
   }));
 }
 // A lazy row's server markers: the opener names its row, the closer is `true` — expandos, not a WeakMap / WeakSet (cheaper
@@ -820,7 +839,10 @@ function rowsOf(lazy: Lazy): LRow[] {
 // before a built row's opener are whole rows (balanced) — the per-event walks (`enclosing`, the loader's `ids`) stop there
 // instead of scanning every earlier row (1.4 ms per pointerdown on row 900 of 1,000 at 4x CPU); `enclosing` counts an unbuilt
 // row's index from the nearest built row before it (`at`).
-type RowMark = Node & { $rw?: LRow | true; $rs?: 1 };
+// A bare row (MARKERS 2026-11-06: one root element, no markers) is its element: `$re` names its row (not `$rw`, so a
+// client `_for` that drops it removes it — nothing stays in place); once materialised (`anchorRow`) its start anchor
+// carries `$re` too and its end anchor `$rz`.
+type RowMark = Node & { $rw?: LRow | true; $rs?: 1; $re?: LRow; $rz?: LRow };
 function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unknown, index: number) => unknown) | undefined, indexed: boolean): LRow {
   const item = lazy.items[k];
   const row: LRow = {
@@ -841,8 +863,11 @@ function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unkn
     els: null,
     get: null,
   };
-  (start as RowMark).$rw = row;
-  (end as RowMark).$rw = true;
+  if (start === end) (start as RowMark).$re = row;
+  else {
+    (start as RowMark).$rw = row;
+    (end as RowMark).$rw = true;
+  }
   if (lazy.hole.sole) (start as RowMark).$rs = 1;
   return row;
 }
@@ -869,16 +894,18 @@ function rowAt(lazy: Lazy, k: number, start?: Node): LRow | null {
     if (groups) [s, e] = groups[k] ?? [null, null];
     else {
       s = start ?? seek(lazy, part, k);
-      // The group's close (balanced: rows of a nested list sit at the same level).
-      for (let n = s, depth = 0; n !== null; n = n.nextSibling) {
-        const d = data(n);
-        if (d === null) continue;
-        if (R_OPEN.test(d)) depth++;
-        else if (d === "]" && --depth === 0) {
-          e = n;
-          break;
+      // A bare row is its element; else the group's close (balanced: rows of a nested list sit at the same level).
+      if (s !== null && s.nodeType === 1) e = s;
+      else
+        for (let n = s, depth = 0; n !== null; n = n.nextSibling) {
+          const d = data(n);
+          if (d === null) continue;
+          if (R_OPEN.test(d)) depth++;
+          else if (d === "]" && --depth === 0) {
+            e = n;
+            break;
+          }
         }
-      }
     }
   }
   if (!s || !e) return (bad(lazy), null);
@@ -892,7 +919,14 @@ function seek(lazy: Lazy, part: LRow[], k: number): Node | null {
     depth = 0;
   for (let n = j >= 0 ? part[j]!.end!.nextSibling : lazy.hole.sole!.firstChild; n !== null; n = n.nextSibling) {
     const d = data(n);
-    if (d === null) continue;
+    if (d === null) {
+      // A bare row (MARKERS).
+      if (!depth && n.nodeType === 1) {
+        if (count === k) return n;
+        count++;
+      }
+      continue;
+    }
     if (R_OPEN.test(d)) {
       if (!depth && count === k) return n;
       depth++;
@@ -905,6 +939,7 @@ function seek(lazy: Lazy, part: LRow[], k: number): Node | null {
 function realFor(lazy: Lazy, first: AdoptedList["first"]): () => Node[] {
   // Rows are about to move / change: the DOM data still unread is read first (snapshot rule).
   if (DOM_DATA && domReader) domReader.sweep();
+  isBare(lazy);
   building = true;
   let rows: LRow[];
   try {
@@ -1089,7 +1124,8 @@ function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): numbe
       nodes: Node[] = [];
     for (let k = 0; k < hole.n; k++) {
       const d = data(ll[j]),
-        e = d !== null && R_OPEN.test(d) ? closeAt(ll, j, R_OPEN, "]") : -1;
+        // A bare row is its element (MARKERS), else a balanced row group.
+        e = d !== null ? (R_OPEN.test(d) ? closeAt(ll, j, R_OPEN, "]") : -1) : ll[j]?.nodeType === 1 ? j : -1;
       if (e < 0) return (mismatch(a, at, ll[j], hole.nodes[0]), j);
       groups.push([ll[j]!, ll[e]!]);
       for (let x = j; x <= e; x++) nodes.push(ll[x]!);
@@ -1622,7 +1658,15 @@ const SAMPLE_ALL = 16;
 // Two server row groups of one tree shape (node types and element names at every depth; no text, no attributes): rows
 // of one template match, a row from another template (a function-child item among links) does not.
 function shaped(a: [Node, Node], b: [Node, Node]): boolean {
-  return sameTree(a[0].nextSibling, a[1], b[0].nextSibling, b[1]);
+  // A bare row's group is its element (MARKERS).
+  return a[0] === a[1] || b[0] === b[1]
+    ? sameTree(
+        a[0] === a[1] ? a[0] : a[0].nextSibling,
+        a[0] === a[1] ? a[0].nextSibling : a[1],
+        b[0] === b[1] ? b[0] : b[0].nextSibling,
+        b[0] === b[1] ? b[0].nextSibling : b[1],
+      )
+    : sameTree(a[0].nextSibling, a[1], b[0].nextSibling, b[1]);
 }
 function sameTree(x: Node | null, xEnd: Node | null, y: Node | null, yEnd: Node | null): boolean {
   for (; x !== null && x !== xEnd && y !== null && y !== yEnd; x = x.nextSibling, y = y.nextSibling)
@@ -1830,13 +1874,35 @@ function element(row: LRow, slot: number, path: number[], name: string): Element
   const els = (row.els ??= []);
   let el = els[slot];
   if (el === undefined) {
-    let n: Node | null = row.start!.nextSibling;
-    for (let i = path[0]!; n !== null && n !== row.end; n = n.nextSibling) if (n.nodeType === 1 && i-- === 0) break;
-    el = n !== null && n !== row.end ? (n as Element) : null;
+    if (row.start === row.end) el = path[0] === 0 ? (row.start as Element) : null;
+    else {
+      let n: Node | null = row.start!.nextSibling;
+      for (let i = path[0]!; n !== null && n !== row.end; n = n.nextSibling) if (n.nodeType === 1 && i-- === 0) break;
+      el = n !== null && n !== row.end ? (n as Element) : null;
+    }
     for (let d = 1; el !== null && d < path.length; d++) el = el.children[path[d]!] ?? null;
     els[slot] = el = el !== null && el.localName === name ? el : null;
   }
   return el;
+}
+// A bare row adopts like a marked one, between two empty comment anchors put around its element now (an adopt run's range
+// is strictly between its bounds, and a row that renders in the browser instead keeps its place: `client`). Only rows that
+// materialise pay them; `$re` / `$rz` keep the row findable (`groupsOf`, `enclosing`, `rowsOf`). False: the row's element
+// left the page.
+function anchorRow(row: LRow): boolean {
+  const el = row.start!,
+    parent = el.parentNode;
+  if (parent === null) return false;
+  const s = el.ownerDocument!.createComment(""),
+    e = el.ownerDocument!.createComment("");
+  parent.insertBefore(s, el);
+  parent.insertBefore(e, el.nextSibling);
+  (s as RowMark).$re = row;
+  (e as RowMark).$rz = row;
+  if (row.lz.hole.sole) (e as RowMark).$rs = 1;
+  row.start = s;
+  row.end = e;
+  return true;
 }
 function wakeFor(lazy: Lazy): void {
   if (lazy.woken) return;
@@ -1848,6 +1914,7 @@ function materialiseRow(row: LRow): void {
   if (row.done || !lazy.children) return;
   row.done = true;
   if (DOM_DATA && domReader) domReader.readRow(row.value);
+  if (row.start === row.end && !anchorRow(row)) return;
   const run = () => lazy.children!(lazy.read!.bind(row) as () => unknown, row.index as unknown as () => number);
   try {
     if (lazy.plain) row.owner = _adoptRow(lazy.owner, (fn) => fn(), run, row.start!, row.end!, null, lazy.plain);
@@ -2158,6 +2225,7 @@ function enclosing(node: Node | null): [kind: number, id: number, at: Node][] {
   const out: [number, number, Node][] = [];
   for (let n = node; n !== null && n.nodeType !== 9; n = n.parentNode ?? (n as unknown as ShadowRoot).host ?? null) {
     if (n.nodeType === 1 && (n as Element).hasAttribute("data-b")) out.push([0, +(n as Element).getAttribute("data-b")!, n]);
+    if (LISTS && n.nodeType === 1 && bareRow(n, out)) continue;
     let b = 0,
       r = 0,
       row: [number, number, Node] | null = null;
@@ -2185,6 +2253,63 @@ function enclosing(node: Node | null): [kind: number, id: number, at: Node][] {
     }
   }
   return out.reverse();
+}
+// `n` at the top of a sole list of bare rows (MARKERS): its row unit — a built row by its `$re`, else the row counted from
+// the nearest built row before it (`listAt`); a row element the client `_for` made (every server row built) none. True
+// when handled: no boundary opener sits among a bare list's rows. False: not a bare list's row (DOM-data's marked row 0
+// included), the ordinary sibling scan follows.
+function bareRow(n: Node, out: [number, number, Node][]): boolean {
+  const re = (n as RowMark).$re;
+  if (re !== undefined) return (out.push([1, 0, n]), true);
+  const lazy = (n.parentNode as (Node & { $rl?: Lazy }) | null)?.$rl;
+  if (lazy === undefined || !isBare(lazy)) return false;
+  let s = n.previousSibling;
+  if (s !== null && s.nodeType === 8 && rowOpen((s as Comment).data)) return false;
+  if (lazy.rows !== null) return true;
+  let k = 0;
+  for (; s !== null; s = s.previousSibling) {
+    const mark = s as RowMark;
+    if (s.nodeType === 1) {
+      if (mark.$re !== undefined) {
+        k += mark.$re.at + 1;
+        break;
+      }
+      k++;
+    } else if (s.nodeType === 8) {
+      if (mark.$re !== undefined) return (out.push([1, 0, s]), true);
+      if (mark.$rz !== undefined) {
+        k += mark.$rz.at + 1;
+        break;
+      }
+      const d = (s as Comment).data;
+      // DOM-data's marked row 0 (its closer), or the list's own slot opener: nothing before.
+      if (d === "]") {
+        k++;
+        break;
+      }
+      if (d === "[") break;
+    }
+  }
+  out.push([1, k, n]);
+  return true;
+}
+// A sole list's server rows are bare (MARKERS): an element at the top before a second row group (DOM-data's anchored row
+// 0 holds one element and is followed by bare rows). A few nodes: the scan ends at the first element at the top or the
+// second group.
+// Cached once: a client `_for` later puts unmarked client rows at the top of a marked list too (`realFor` looks first).
+const isBare = (lazy: Lazy): boolean => (lazy.bare ??= lazy.hole.sole !== null && bareList(lazy.hole.sole));
+function bareList(sole: Element): boolean {
+  for (let n = sole.firstChild, depth = 0, groups = 0; n !== null; n = n.nextSibling) {
+    if (n.nodeType === 1) {
+      if (depth === 0) return true;
+      if (groups) return false;
+    } else if (n.nodeType === 8) {
+      const d = (n as Comment).data;
+      if (rowOpen(d)) depth++;
+      else if (d === "]" && depth && --depth === 0 && ++groups > 1) return false;
+    }
+  }
+  return false;
 }
 // D5 listening records (ZERO R2, ruling R-30): the record's unit listens to `type` (tail v2 `n[i][2]`, by boundary NAME —
 // the union over that name's instances; any type when `type` is undefined; every record while no name lists types). An
@@ -2222,7 +2347,7 @@ function around(target: EventTarget | null, type?: string): true | Promise<void>
     let step: true | Promise<void> | null = null;
     for (const [kind, id, at] of units ?? enclosing(target as Node | null)) {
       if (kind) {
-        const mark = LISTS && (at as RowMark).$rw;
+        const mark = LISTS && ((at as RowMark).$rw ?? (at as RowMark).$re);
         const row = LISTS && ((typeof mark === "object" ? mark : undefined) ?? listAt(at, id));
         if (row && !row.done) {
           materialiseRow(row);

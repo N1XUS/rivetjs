@@ -9,7 +9,7 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
-import { _rB, _rBEnd, _rBOut, _rFor, _setDerivedRows, derivedToString, renderDerived } from "@rivetjs/runtime/server-derived";
+import { _oneRoot, _rB, _rBEnd, _rBOut, _rFor, _setDerivedRows, derivedToString, renderDerived } from "@rivetjs/runtime/server-derived";
 import { _listPlan, attribute, compiledTemplate, renderToString } from "@rivetjs/runtime/server";
 import { NodeStreamWriter } from "@rivetjs/runtime/node";
 import { Writable } from "node:stream";
@@ -65,6 +65,9 @@ const groups = [
   { name: "c<", items: ["z&"] },
 ];
 const ids = (html: string): string => html.replace(/<!--r\d*\[-->/g, "<!--r[-->");
+// Bare rows (MARKERS 2026-11-06: a one-root row plan writes no row markers): compared with the row hook's marked rows with
+// every row region marker dropped (`<!--]-->` also closes other regions: dropped on both sides alike).
+const unmarked = (html: string): string => html.replace(/<!--r\d*\[-->|<!--\]-->/g, "");
 
 const derived = hasDerivedModel();
 type AppModule = { App: (p: { data: Data }) => ServerValue };
@@ -107,13 +110,17 @@ async function both(App: AppModule["App"], data: Data): Promise<{ tape: [string,
     const data = { rows: rows(n), groups };
     const { tape, rows: perRow } = await both(App, data);
     assert.equal(tape[0], tape[1], `rows=${n}: string and byte writer agree`);
-    assert.equal(ids(tape[0]), ids(perRow[0]), `rows=${n}: string writer`);
-    assert.equal(ids(tape[1]), ids(perRow[1]), `rows=${n}: byte writer`);
-    // Tape rows: each in its own `<!--r[-->` group, no id (Show branches keep their marker ids).
-    assert.equal((tape[0].match(/<!--r\[--><li /g) ?? []).length, n);
+    assert.equal(unmarked(tape[0]), unmarked(perRow[0]), `rows=${n}: string writer`);
+    assert.equal(unmarked(tape[1]), unmarked(perRow[1]), `rows=${n}: byte writer`);
+    // Tape rows: one root element each, bare (no row markers); the row hook's rows keep theirs.
+    assert.equal((tape[0].match(/<!--r\[--><li /g) ?? []).length, 0);
+    assert.equal((tape[0].match(/<li data-row/g) ?? []).length, n);
+    assert.equal((perRow[0].match(/<!--r\d*\[--><li /g) ?? []).length, n);
     // `Cell` is a boundary (never a flattened twin): no list mount, its rows keep the row hook (and their ids).
     assert.equal((tape[0].match(/<!--r\d*\[--><td /g) ?? []).length, n);
-    assert.equal((tape[0].match(/<!--r\[--><section /g) ?? []).length, groups.length);
+    // A row whose nested list and Show sit inside its root element is bare too.
+    assert.equal((tape[0].match(/<!--r\[--><section /g) ?? []).length, 0);
+    assert.equal((tape[0].match(/<section data-group/g) ?? []).length, groups.length);
   }
   // The cross-boundary read (App's `theme` read in Page's rows) still wakes Page.
   const html = (await derivedToString(() => App({ data: { rows: rows(2), groups } }), { manifest })) as string;
@@ -146,9 +153,45 @@ test("holes and array subclasses: row by row, same markers and content as the ro
     _setDerivedRows(false);
     const perRow = (await derivedToString(page(items), { manifest })) as string;
     _setDerivedRows(true);
-    assert.equal(ids(tape), ids(perRow));
-    assert.equal((tape.match(/<!--r\[-->/g) ?? []).length, items.length);
+    // Holes / subclasses keep their row markers; a plain dense array of one-root rows is bare (MARKERS).
+    const plain = Object.getPrototypeOf(items) === Array.prototype && Object.keys(items).length === items.length;
+    assert.equal(plain ? unmarked(tape) : ids(tape), plain ? unmarked(perRow) : ids(perRow));
+    assert.equal((tape.match(/<!--r\[-->/g) ?? []).length, plain ? 0 : items.length);
   }
   // Outside a derived render `_rFor` is `For`: no markers.
   assert.equal(renderToString(page(["q"])() as never), '<p data-i="0">q</p>');
+});
+
+// MARKERS (2026-11-06): which row plans are proven to render exactly one root element (their rows ship bare).
+test("one-root proof: one element around every slot, nothing at the top", () => {
+  const plan = (fragments: string[], entries: (readonly [string, "html"] | null)[]) => _listPlan(fragments, entries);
+  const yes = [
+    plan(["<li>", "</li>"], [null]),
+    plan(["<li", ">", "</li>"], [["class", "html"], null]),
+    plan(['<li data-x="a>b">', "<span>", "</span></li>"], [null, null]),
+    plan(["<tr><td>", "</td><!--c--><td>", "</td></tr>"], [null, null]),
+    plan(["<input", ">"], [["value", "html"]]),
+    plan(['<svg viewBox="0 0 1 1"><path d="M0"/>', "</svg>"], [null]),
+    plan(["<li>", "<br>", "</li>"], [null, null]),
+    // A flattened child component inside the root (its OPEN / CLOSE bounds write nothing).
+    _listPlan(["<li>", "</li>"], [_listPlan(["<b>", "</b>"], [null])]),
+  ];
+  const no = [
+    plan(["", "<li>x</li>"], [null]),
+    plan(["<li>x</li>", ""], [null]),
+    plan(["<li>a</li><li>b</li>"], []),
+    plan(["<!--b-->", "<li>x</li>"], [null]),
+    plan([" <li>x</li>"], []),
+    plan(["<li>x</li> "], []),
+    plan(["<li>", ""], [null]),
+    plan(["<br><br>"], []),
+    plan(["<li><textarea>", "</textarea></li>"], [null]),
+    plan(["text"], []),
+    plan([""], []),
+    // A flattened child at the top (its own root beside nothing: the child's fragments decide).
+    _listPlan(["", ""], [_listPlan(["<b>", "</b><i></i>"], [null])]),
+  ];
+  for (const p of yes) assert.equal(_oneRoot(p), true, JSON.stringify(p.fragments));
+  for (const p of no) assert.equal(_oneRoot(p), false, JSON.stringify(p.fragments));
+  assert.equal(_oneRoot(_listPlan(["", ""], [_listPlan(["<b>", "</b>"], [null])])), true, "a flattened one-root child alone");
 });

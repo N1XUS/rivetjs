@@ -6,8 +6,8 @@ import { build, type LiteSpec } from "./dom-lite-spec.ts";
 export type { LiteSpec } from "./dom-lite-spec.ts";
 type Row<T> = [key: unknown, item: Signal<T>, index: Signal<number>, nodes: Node[], effects: Eff[]];
 /**
- * A keyed list (`<For each by>`; RT-DIET lite v2): `at` = its content opener; server rows `<!--r[-->el<!--]-->` are
- * adopted in order (one per item of `each()`, else `LiteMiss`), each through `row(el, item, index)`; later lists
+ * A keyed list (`<For each by>`; RT-DIET lite v2): `at` = its content opener; server rows `<!--r[-->el<!--]-->` or bare
+ * `el` (MARKERS 2026-11-06: a one-root row plan writes no row markers; new rows are bare too) are adopted in order (one per item of `each()`, else `LiteMiss`), each through `row(el, item, index)`; later lists
  * reconcile by key — kept rows get their new item / index, new rows are built from `spec` (`0`: copies of the first server row), removed rows release their
  * bindings, the rest move into order.
  */
@@ -24,8 +24,8 @@ export function _lf<T>(
       const x = signal(item),
         i = signal(index),
         mine: Eff[] = [];
-      nodes ??= [d.createComment("r["), spec ? build(d, spec) : tpl!.cloneNode(true), d.createComment("]")];
-      own(mine, () => row(nodes[1] as Element, x, i));
+      nodes ??= [spec ? build(d, spec) : tpl!.cloneNode(true)];
+      own(mine, () => row(nodes[nodes.length >> 1] as Element, x, i));
       return [by(item, index), x, i, nodes, mine];
     };
   let rows: Row<T>[] = [],
@@ -34,9 +34,14 @@ export function _lf<T>(
   untracked(() => {
     const items = each();
     for (let n = at.nextSibling, i = 0; n != end; n = n!.nextSibling, i++) {
+      if (i >= items.length) miss("row");
+      if (n!.nodeType == 1) {
+        rows.push(make(items[i]!, i, [n!]));
+        continue;
+      }
       const el = n!.nextSibling,
         close = el?.nextSibling;
-      if (i >= items.length || n!.nodeType != 8 || !(n as Comment).data.startsWith("r") || el?.nodeType != 1 || (close as Comment)?.data != "]") miss("row");
+      if (n!.nodeType != 8 || !(n as Comment).data.startsWith("r") || el?.nodeType != 1 || (close as Comment)?.data != "]") miss("row");
       rows.push(make(items[i]!, i, [n!, el!, close!]));
       n = close!;
     }
@@ -44,7 +49,7 @@ export function _lf<T>(
     // RT-DIET2: a row holding a static component child (spec `0`) is built as a copy of the first server row (its live
     // parts are the row's bindings, rewritten when they run); a boundary inside it (its own record) is not copied.
     // (Its current state does not matter: a copy's bindings rewrite every live part.)
-    spec || (rows.length && !/--b\d|data-b/.test((tpl = rows[0]![3][1] as Element).outerHTML)) || miss("copy");
+    spec || (rows.length && !/--b\d|data-b/.test((tpl = rows[0]![3][rows[0]![3].length >> 1] as Element).outerHTML)) || miss("copy");
   });
   effect(() => {
     const next = each();
@@ -62,7 +67,7 @@ export function _lf<T>(
     for (const r of out) {
       const ref = after.nextSibling;
       if (ref != r[3][0]) for (const n of r[3]) end.parentNode!.insertBefore(n, ref);
-      after = r[3][2]!;
+      after = r[3][r[3].length - 1]!;
     }
     rows = out;
   });
