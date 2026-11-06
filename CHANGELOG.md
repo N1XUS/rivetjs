@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.1.0-alpha.6 (2026-11-06)
+
+### Features
+
+- **mcp:** shell lookups and front-loaded AGENTS.md for cold agents (65c46afd)
+
+### Fixes
+
+- close review findings in svg, forms, markdown, data-grid and mcp (ec8323f5)
+- open redirect, i18n prefixes and lookup, title `$&`, masonry, files index (2abc909e)
+- **runtime:** adopt deferred children before a parent's first keyed write (a171df8f)
+- **resume-bench:** run the first-input sync probe in every lane (2847a7e5)
+
+### Performance
+
+- **cdk:** keep DataGrid tree-filter subtree answers per pipeline run (53cef111)
+- **runtime:** stream Async segments without rescans or repeated pending entries (50372ac1)
+- **reactivity:** index duplicate-link checks of long runs (c749be05)
+- **ui,cdk:** stream long Markdown / StreamingText in linear time (e000f8b5)
+- **runtime:** commit lazy routes in one step and keep the hovered route (f89533d6)
+- **runtime:** snapshot server classes of a streamed segment only (ad6e9120)
+- **docs-kit:** overlap independent build I/O with bounded pools (a22d8ba3)
+- **router:** concurrent source scan and read-ahead in build-time walks (fd55c294)
+- **scripts:** zero-cost hash scripts bundle 4 entries at a time (a1597853)
+- **runtime,compiler:** fold lazy-row and island adoption out of list-free builds (e0d9e264)
+- **runtime,reactivity:** cheaper first filter input and fewer closure contexts per mount (6ea9585f)
+
+Not listed: 1 ci, 1 docs, 2 chore, 1 test.
+
 ## 0.1.0-alpha.5 (2026-11-04)
 
 ### Features

@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/bridge",
-  "version": "0.1.0-alpha.5",
+  "version": "0.1.0-alpha.6",
   "description": "Framework bridges for Rivet: React, Preact, Solid, Vue and Svelte islands inside a resumable page.",
   "license": "MIT",
   "private": true,
@@ -55,9 +55,9 @@
     }
   },
   "peerDependencies": {
-    "@rivetjs/compiler": "0.1.0-alpha.5",
-    "@rivetjs/reactivity": "0.1.0-alpha.5",
-    "@rivetjs/runtime": "0.1.0-alpha.5",
+    "@rivetjs/compiler": "0.1.0-alpha.6",
+    "@rivetjs/reactivity": "0.1.0-alpha.6",
+    "@rivetjs/runtime": "0.1.0-alpha.6",
     "vite": "^8.3.2"
   },
   "peerDependenciesMeta": {

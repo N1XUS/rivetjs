@@ -5,16 +5,16 @@
   "type": "module",
   "dependencies": {
     "@rivetjs/docs-kit": "0.0.0-experimental",
-    "@rivetjs/motion": "0.1.0-alpha.5",
-    "@rivetjs/reactivity": "0.1.0-alpha.5",
-    "@rivetjs/router": "0.1.0-alpha.5",
-    "@rivetjs/runtime": "0.1.0-alpha.5",
-    "@rivetjs/ui": "0.1.0-alpha.5",
+    "@rivetjs/motion": "0.1.0-alpha.6",
+    "@rivetjs/reactivity": "0.1.0-alpha.6",
+    "@rivetjs/router": "0.1.0-alpha.6",
+    "@rivetjs/runtime": "0.1.0-alpha.6",
+    "@rivetjs/ui": "0.1.0-alpha.6",
     "lucide": "1.52.0",
     "motion": "14.1.0"
   },
   "devDependencies": {
-    "@rivetjs/compiler": "0.1.0-alpha.5",
+    "@rivetjs/compiler": "0.1.0-alpha.6",
     "@tailwindcss/vite": "4.3.3",
     "tailwindcss": "4.3.3",
     "vite": "8.3.2"
