@@ -44,7 +44,7 @@
     "color-space": "^1.16.0",
     "delta-e": "^0.0.8",
     "fast-check": "^4.10.2",
-    "happy-dom": "20.14.5",
+    "happy-dom": "21.0.4",
     "motion": "14.1.0",
     "nx": "23.2.1",
     "playwright": "1.63.0",
