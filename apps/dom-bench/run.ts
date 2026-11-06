@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { cpus, platform, arch, totalmem, loadavg } from "node:os";
 import { createHash } from "node:crypto";
 import { startServer } from "./server.ts";
-import { hostElements, selectFields, summarize, type Summary } from "./metrics.ts";
+import { fieldRevisions, hostElements, selectFields, summarize, type Summary } from "./metrics.ts";
 
 interface Sample {
   wallMs: number;
@@ -21,6 +21,8 @@ interface Options {
   samples: number;
   out: string;
   frameworks: string[] | null;
+  /** First lane rotation (repeat r starts at lane (offset + r) % n): rotate lanes across runs split into one-repeat invocations. */
+  offset: number;
 }
 interface Manifest {
   artifacts: { framework: string; sha256: string; inputs: { path: string; sha256: string }[] }[];
@@ -31,7 +33,7 @@ interface DomBenchOperations {
   update: [indices: number[], revision: number];
   dispose: [];
 }
-const options: Options = { rows: [100, 1000, 5000], repeats: 3, samples: 5, out: ".artifacts/dom-bench/latest", frameworks: null };
+const options: Options = { rows: [100, 1000, 5000], repeats: 3, samples: 5, out: ".artifacts/dom-bench/latest", frameworks: null, offset: 0 };
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i]!.replace(/^--/, "") as keyof Options;
   if (!(key in options) || !process.argv[i + 1]) throw Error(`Unknown or missing option ${process.argv[i]}`);
@@ -46,7 +48,9 @@ for (let i = 2; i < process.argv.length; i += 2) {
 }
 if (
   options.rows.some((n) => !Number.isSafeInteger(n) || n < 1) ||
-  ![options.repeats, options.samples].every((n) => Number.isSafeInteger(n) && n > 0)
+  ![options.repeats, options.samples].every((n) => Number.isSafeInteger(n) && n > 0) ||
+  !Number.isSafeInteger(options.offset) ||
+  options.offset < 0
 )
   throw Error("Counts must be positive integers");
 const manifest = JSON.parse(await readFile(resolve(root, "dist/builds.json"), "utf8")) as Manifest;
@@ -88,27 +92,29 @@ const started = new Date().toISOString();
 const destination = resolve(options.out);
 await mkdir(destination, { recursive: true });
 
+// Protocol nowrap-2026-11-06: page checks create no JS wrapper for page nodes (XPath count() + #host textContent,
+// metrics.ts FIELD_TEXT), so every lane's timed updates / dispose and heap see only the wrappers the framework made.
 async function validate(page: Page, rows: number, expected: number[]) {
-  await page.evaluate(
-    ({ rows, elements, expected }) => {
-      const host = document.querySelector("#host")!,
-        fields = [...host.querySelectorAll("[data-field]")];
-      if (
-        host.querySelectorAll("[data-row]").length !== rows ||
-        fields.length !== rows * 10 ||
-        host.querySelectorAll("*").length !== elements
-      )
-        throw Error("Incorrect page size");
-      fields.forEach((field, index) => {
-        if (
-          field.getAttribute("data-field") !== String(index) ||
-          field.textContent !== `value-${index}-${expected[index]}`
-        )
-          throw Error(`Incorrect field ${index}`);
-      });
-    },
-    { rows, elements: hostElements(rows), expected },
-  );
+  const { counts, text } = await page.evaluate(() => {
+    const host = document.querySelector("#host")!,
+      count = (path: string) => document.evaluate(path, host, null, XPathResult.NUMBER_TYPE, null).numberValue;
+    return {
+      counts: [
+        count("count(.//*[@data-row])"),
+        count("count(.//*[@data-field])"),
+        count("count(.//*)"),
+        // Every field's own text starts with its index (exact text + order: `fieldRevisions` below).
+        count("count(.//*[@data-field][not(starts-with(., concat('value-', @data-field, '-')))])"),
+      ],
+      text: host.textContent!,
+    };
+  });
+  if (counts[0] !== rows || counts[1] !== rows * 10 || counts[2] !== hostElements(rows) || counts[3] !== 0) throw Error("Incorrect page size");
+  const revisions = fieldRevisions(text);
+  if (revisions.length !== rows * 10) throw Error("Incorrect field count");
+  revisions.forEach((revision, index) => {
+    if (revision !== expected[index]) throw Error(`Incorrect field ${index}`);
+  });
 }
 
 async function settle(page: Page) {
@@ -175,17 +181,11 @@ async function trial(framework: string, rows: number, repeat: number) {
     await validate(page, rows, expected);
     const size = await page.evaluate(() => {
       const host = document.querySelector("#host")!,
-        walk = document.createTreeWalker(host, NodeFilter.SHOW_ALL);
-      let nodes = 0,
-        comments = 0;
-      while (walk.nextNode()) {
-        nodes++;
-        if (walk.currentNode.nodeType === 8) comments++;
-      }
+        count = (path: string) => document.evaluate(path, host, null, XPathResult.NUMBER_TYPE, null).numberValue;
       return {
-        elements: host.querySelectorAll("*").length,
-        nodes,
-        comments,
+        elements: count("count(.//*)"),
+        nodes: count("count(.//node())"),
+        comments: count("count(.//comment())"),
         htmlBytes: new TextEncoder().encode(host.innerHTML).length,
       };
     });
@@ -302,8 +302,11 @@ const result = () => ({
   manifest,
   experimentSources,
   methodology: {
-    /** Mount protocol id; scoreboard.ts compares it with competitors.json `dom.provenance.protocol` (mismatch = n/a). */
-    protocol: "rewarm-2026-10-21",
+    /**
+     * Protocol id; scoreboard.ts compares it with competitors.json `dom.provenance.protocol` (mismatch = n/a).
+     * nowrap-2026-11-06 = rewarm-2026-10-21 mount + wrapper-free page checks (`pageChecks`).
+     */
+    protocol: "nowrap-2026-11-06",
     updates:
       "Synchronous committed DOM; performance.now in-page. React flushSync, Solid preview flush, Solid stable synchronous signals, Rivet batch. No virtualization.",
     cpu: "Chromium TaskDuration with threadTicks: main-thread task CPU delta including evaluation/CDP bookkeeping; excludes GPU/workers and is not isolated framework CPU.",
@@ -312,6 +315,8 @@ const result = () => ({
       "Chromium forced-GC JavaScript heap, not browser process RSS. Warmed page baseline; five disposal cycles; caches intentionally remain.",
     mount:
       "Warm-up mount + dispose, forced GC (baseline heap), one unforced mount + dispose cycle, two frames, one macrotask, then the timed mount (no forced GC right before it: V8's incremental-marking finalization delay would otherwise depend on task history).",
+    pageChecks:
+      "Size, page-size and field checks read XPath count() and #host textContent only (no node lists, walkers or childNodes), so the harness creates no JS wrapper for page nodes before or between timed phases; three fields + their text are wrapped for the per-update identity check. Before 2026-11-06 a TreeWalker size count after the mount wrapped every node (~335k at 5000 rows) before the updates, dispose and mounted heap.",
     sampling:
       "Fresh browser context per framework/row/repeat. Framework order rotates each repeat. Three warmup updates before sampled updates at each percentage. Validation outside measurement.",
   },
@@ -324,7 +329,7 @@ try {
         .map((artifact) => artifact.framework)
         .filter((framework) => !options.frameworks || options.frameworks.includes(framework));
       for (let offset = 0; offset < frameworks.length; offset++) {
-        const framework = frameworks[(offset + repeat) % frameworks.length]!;
+        const framework = frameworks[(offset + repeat + options.offset) % frameworks.length]!;
         console.log(`Running ${framework} ${rows} rows repeat ${repeat + 1}/${options.repeats}`);
         trials.push(await trial(framework, rows, repeat));
         await writeFile(resolve(destination, "results.json"), JSON.stringify(result(), null, 2) + "\n");

@@ -183,11 +183,12 @@ async function domSuite() {
     protocol: { measured: results.methodology?.protocol ?? null, reference: competitors.dom.provenance?.protocol ?? null },
   };
   const domNote = drift === "major" ? `browser drift: competitors ${competitors.dom.provenance?.browser}, this run ${results.environment.browser}` : undefined;
-  // Mount numbers depend on the run.ts mount protocol (forced GC / re-warm before the timed mount): compare like with like.
-  const mountNote =
+  // Every timed / heap number depends on the run.ts protocol (mount: forced GC / re-warm before the timed mount; updates,
+  // dispose, heap: wrapper-free page checks since nowrap-2026-11-06): compare like with like.
+  const protocolNote =
     domNote ??
     (results.methodology?.protocol !== competitors.dom.provenance?.protocol
-      ? `mount protocol mismatch: competitors ${competitors.dom.provenance?.protocol ?? "pre-2026-10-21"}, this run ${results.methodology?.protocol ?? "pre-2026-10-21"}`
+      ? `protocol mismatch: competitors ${competitors.dom.provenance?.protocol ?? "pre-2026-10-21"}, this run ${results.methodology?.protocol ?? "pre-2026-10-21"}`
       : undefined);
   for (const rows of [1000, 5000]) {
     const trials = results.trials.filter((t) => t.rows === rows);
@@ -199,7 +200,7 @@ async function domSuite() {
         unit,
         better: "lower",
         rivet: stat(values),
-        note: id === "mount" ? mountNote : domNote,
+        note: protocolNote,
         competitors: Object.fromEntries(Object.entries(ref).map(([k, v]) => [k, (v as Record<string, Stored>)[id]])),
       });
     metric(
@@ -571,7 +572,7 @@ const lines = [
   ...header,
   ...micro.map(row),
   "",
-  "Notes: real = apps/resume-bench/real-pages (all lanes same run, fresh context per sample, rotating lane order); dom = apps/dom-bench (5k rows = 285k elements, 50k reactive fields; Chromium bundled with Playwright; mount = warm-up cycle, forced GC (heap baseline), one unforced re-warm cycle, one macrotask, timed mount — protocol rewarm-2026-10-21); krausest = ratios to vanillajs (local Rivet/local vanilla vs published framework/vanillajs, Chrome 154), sizes absolute kB; resume = Slow 4G + 4x CPU, input → paint of the update; ssr = c1 closed loop, rivet-compiled vs static peers (Razor, Solid 1 hydratable:false), rivet-resume vs hydratable/resumable peers (Solid, Qwik), same generator/window/GC profile. Methodology: apps/dom-bench/README.md.",
+  "Notes: real = apps/resume-bench/real-pages (all lanes same run, fresh context per sample, rotating lane order); dom = apps/dom-bench (5k rows = 285k elements, 50k reactive fields; Chromium bundled with Playwright; mount = warm-up cycle, forced GC (heap baseline), one unforced re-warm cycle, one macrotask, timed mount; wrapper-free page checks — protocol nowrap-2026-11-06); krausest = ratios to vanillajs (local Rivet/local vanilla vs published framework/vanillajs, Chrome 154), sizes absolute kB; resume = Slow 4G + 4x CPU, input → paint of the update; ssr = c1 closed loop, rivet-compiled vs static peers (Razor, Solid 1 hydratable:false), rivet-resume vs hydratable/resumable peers (Solid, Qwik), same generator/window/GC profile. Methodology: apps/dom-bench/README.md.",
 ];
 const markdown = lines.join("\n") + "\n";
 console.log("\n" + markdown);

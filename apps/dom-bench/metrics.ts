@@ -37,3 +37,21 @@ export function summarize(samples: readonly number[]): Summary {
     max: sorted[n - 1],
   };
 }
+
+/**
+ * Wrapper-free page checks (protocol `nowrap-2026-11-06`): counts and texts come from XPath `count()` and `#host`
+ * `textContent`, never from node lists, walkers or `childNodes`, so measuring a page creates no JS wrapper for any of its
+ * nodes. A harness-made wrapper per node (the pre-2026-11-06 TreeWalker size count) changes later update / dispose timings
+ * and the mounted heap differently per framework.
+ */
+export const FIELD_TEXT = String.raw`(?<=Field \d)value-(\d+)-(\d+)(?=Increase)`;
+
+/** Field revisions in document order from `#host` `textContent` (`FIELD_TEXT`); throws when field `i` is not `value-i-<rev>`. */
+export function fieldRevisions(text: string): number[] {
+  const revisions: number[] = [];
+  for (const match of text.matchAll(new RegExp(FIELD_TEXT, "g"))) {
+    if (Number(match[1]) !== revisions.length) throw Error(`Incorrect field ${revisions.length}`);
+    revisions.push(Number(match[2]));
+  }
+  return revisions;
+}
