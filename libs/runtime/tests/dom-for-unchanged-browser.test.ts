@@ -2,7 +2,9 @@
 // is not republished, so the list insertion neither re-collects the rows' nodes nor reconciles them. A first pass over
 // adopted rows (`_adoption.rows`) whose items equal `each` still publishes its rows. Removal-only reconciles (the new
 // nodes a subsequence of the current ones) take a merge walk: order, identity and nodes already gone stay right; a pass
-// that also moves rows takes the general path.
+// that also moves rows takes the general path. An adopted first pass that filters (EACH 2026-11-06) matches its rows by
+// identity in order (no old-key map); the derived slot's `each` hand-off (`AdoptedList.first`, DERIVED builds only) is
+// pinned by `derived-filter-markers-browser.test.ts`.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { withPage } from "./resume/harness.ts";
@@ -72,6 +74,50 @@ export function adoptedFirstPass() {
   out.push(ids(ul), ul.children[0] === server[1]);
   return JSON.stringify(out);
 }
+// Server rows adopted by a first pass that is a filter (EACH 2026-11-06): its items the old ones in order, matched by a
+// merge walk (no map of the old keys).
+function adopted(keys, by) {
+  const target = host();
+  const ul = document.createElement("ul");
+  target.append(ul);
+  // Detached: the insertion starts empty, so what shows is exactly the rows the pass kept (by identity) and created.
+  const server = keys.map((x) => { const li = document.createElement("li"); li.textContent = "s" + x; return li; });
+  const rows = server.map((li, i) => ({ value: keys[i], key: by(keys[i], i), sig: null, index: null, nodes: li, start: null, end: null, owner: null, pass: 0, ad: -1 }));
+  const counts = { each: 0 };
+  const outer = _adoption.rows, same = _adoption.same;
+  _adoption.rows = () => ((_adoption.rows = outer), { items: keys.slice(), rows, changed: null, host: null });
+  _adoption.same = (a, b) => a === b;
+  return { ul, server, counts, mount: (items) => {
+    try {
+      mount(() => {
+        _insert(ul, _for({ each: () => (counts.each++, items()), by, children: (item) => { const li = document.createElement("li"); li.textContent = "c" + item(); return li; } }));
+        return document.createTextNode("");
+      }, target);
+    } finally {
+      _adoption.rows = outer;
+      _adoption.same = same;
+    }
+  } };
+}
+export function adoptedFilter() {
+  const out = [];
+  const items = signal([2, 4, 6]);
+  const a = adopted([1, 2, 3, 4, 5, 6], (x) => x);
+  a.mount(items);
+  out.push(ids(a.ul), [1, 3, 5].every((at, i) => a.ul.children[i] === a.server[at]));
+  // The kept rows' key map after the pass: a duplicate still throws, later passes match by key.
+  items.set([6, 2, 7]);
+  out.push(ids(a.ul), a.ul.children[0] === a.server[5], a.ul.children[1] === a.server[1]);
+  // Index keys: the same items at other indexes are other keys — the walk's key check falls back to the key map.
+  const b = adopted([1, 2, 3, 4], (x, i) => i);
+  b.mount(signal([2, 4]));
+  out.push(ids(b.ul));
+  // Not in order (a sort): the key map.
+  const c = adopted([1, 2, 3, 4], (x) => x);
+  c.mount(signal([3, 1]));
+  out.push(ids(c.ul), c.ul.children[0] === c.server[2], c.ul.children[1] === c.server[0]);
+  return JSON.stringify(out);
+}
 export function rangedUnchanged() {
   const items = signal([1, 2, 3]);
   const { ul, counts } = list(items, true);
@@ -117,4 +163,8 @@ test("dom v2 For: ranged rows after an unchanged pass", async () => {
 
 test("dom v2 For: removal-only reconciles keep order and identity", async () => {
   assert.deepEqual(await run("removals"), ["2 4 6 7 10", true, "7", "2 1"]);
+});
+
+test("dom v2 For: an adopted first pass that filters matches its rows by a merge walk (EACH)", async () => {
+  assert.deepEqual(await run("adoptedFilter"), ["s2 s4 s6", true, "s6 s2 c7", true, true, "c2 c4", "s3 s1", true, true]);
 });

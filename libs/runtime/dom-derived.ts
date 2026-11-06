@@ -35,7 +35,7 @@ import { createStore } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { _adoption, _delegateBelow, _for, _insert, _on } from "./dom-v2.ts";
 import { _delegated } from "./dom-events.ts";
-import type { ForRow, InsertSlot } from "./dom-v2.ts";
+import type { AdoptedList, ForRow, InsertSlot } from "./dom-v2.ts";
 import { same } from "./dom-adopt.ts";
 import { _adoptRow, adopt, between, captureClasses, copyIn, describe, dirtyOf, gone, kids, mappedClasses, probeRow, save, textOf } from "./dom-adopt-run.ts";
 import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt-run.ts";
@@ -611,8 +611,20 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
     // The client `_for` tracks `each` itself: the slot follows its rows only (a second `each` run per change was ~0.2 ms
     // of each later key of a 1,000-row filter at 4x CPU, FILTER2 2026-11-05).
     if (lazy.real !== null) return lazy.real();
-    const each = props.each,
-      next = typeof each === "function" ? (each as () => unknown)() : each;
+    // `each` runs under a collector; the slot then tracks the signals it read, and a change hands its items and those
+    // signals to the client `_for` (`AdoptedList.first`): one `each` run at the list's first change, not two (EACH
+    // 2026-11-06). A throwing `each` runs again tracked, so the slot still follows what it read before the throw.
+    const each = props.each;
+    let next: unknown = each,
+      signals: readonly (() => unknown)[] | null = null;
+    if (typeof each === "function") {
+      try {
+        ({ value: next, signals } = _trackReads(each as () => unknown));
+      } catch {
+        next = (each as () => unknown)();
+      }
+      if (signals !== null) for (let i = 0; i < signals.length; i++) signals[i]!();
+    }
     if (!lazy.tick()) {
       // A fresh array of the same items (an `each` building its array per read) is no change.
       const list = (next ?? []) as unknown[],
@@ -622,7 +634,7 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
       // the adopt run is over (as client rows, never inside the run — their boundaries would take its holes).
       if (cur !== null) return (queueMicrotask(() => lazy.tick.set(1)), lazy.token as never);
     }
-    lazy.real = realFor(lazy);
+    lazy.real = realFor(lazy, signals && { value: next as unknown[], signals });
     return lazy.real();
   };
 }
@@ -885,7 +897,7 @@ function seek(lazy: Lazy, part: LRow[], k: number): Node | null {
 }
 // The client `_for` of a lazy list, under the list's owner: takes the server rows (adopted by key, materialised ones keep
 // their owners) unless they did not match (`bad`: rendered in the browser, the slot's server nodes replaced).
-function realFor(lazy: Lazy): () => Node[] {
+function realFor(lazy: Lazy, first: AdoptedList["first"]): () => Node[] {
   // Rows are about to move / change: the DOM data still unread is read first (snapshot rule).
   if (DOM_DATA && domReader) domReader.sweep();
   building = true;
@@ -909,6 +921,7 @@ function realFor(lazy: Lazy): () => Node[] {
         rows,
         changed: null,
         host: null,
+        first,
       };
     };
   const unitOuter = cur;

@@ -1,9 +1,10 @@
 // Filter first-input profile (lane FILTER): per lane dist, 4x CPU, first "g" keystroke into #filter.
 // Reports event-timing processing time of keydown/input (no MutationObserver probe) and, with --profile,
 // a CPU profile (50 µs) aggregated by self time.
-// node apps/resume-bench/spikes/filter-profile.ts --dist apps/resume-bench/dist/rivet[,…] --reps 5 [--profile] [--port 4521]
+// node apps/resume-bench/spikes/filter-profile.ts --dist apps/resume-bench/dist/rivet[,…] --reps 5 [--profile [--save <prefix>]] [--port 4521]
 import { chromium } from "playwright";
 import { resolve } from "node:path";
+import { writeFileSync } from "node:fs";
 import { serve } from "../serve.ts";
 import { chromeTarget } from "../../../scripts/bench/shared.ts";
 
@@ -35,6 +36,31 @@ for (let r = 0; r < reps; r++)
       }).observe({ type: "event", buffered: true, durationThreshold: 16 } as any);
       w.__paint = null;
     });
+    // --rmtime (lane EACH): time spent inside removeChild / remove / replaceChild / insertBefore (wrapped; adds overhead to all lanes).
+    if (process.argv.includes("--rmtime"))
+      await page.addInitScript(() => {
+        const w = window as any;
+        w.__rm = { removeChild: [0, 0], remove: [0, 0], insertBefore: [0, 0], replaceChild: [0, 0] };
+        for (const [proto, name] of [
+          [Node.prototype, "removeChild"],
+          [Element.prototype, "remove"],
+          [CharacterData.prototype, "remove"],
+          [Node.prototype, "insertBefore"],
+          [Node.prototype, "replaceChild"],
+        ] as const) {
+          const fn = (proto as any)[name];
+          (proto as any)[name] = function (this: unknown, ...args: unknown[]) {
+            const t = performance.now();
+            try {
+              return fn.apply(this, args);
+            } finally {
+              const e = w.__rm[name];
+              e[0] += performance.now() - t;
+              e[1]++;
+            }
+          };
+        }
+      });
     // --mo: the runner's first-input sync probe (run.ts `probe` with `sync`), installed in every lane.
     if (process.argv.includes("--mo"))
       await page.addInitScript(() => {
@@ -76,6 +102,7 @@ for (let r = 0; r < reps; r++)
     }
     await page.evaluate(() => {
       const w = window as any;
+      if (w.__rm) for (const e of Object.values(w.__rm) as number[][]) e[0] = e[1] = 0;
       const check = () => {
         if (document.querySelectorAll("#rows li").length !== 100 || (document.querySelector("#filter") as HTMLInputElement).value !== w.__want) return false;
         w.__rows = performance.now();
@@ -97,7 +124,15 @@ for (let r = 0; r < reps; r++)
     await page.waitForTimeout(300);
     const lane = dist.split("/").filter(Boolean).pop() + (li ? "#" + li : "");
     const out = (results[lane] ??= {});
-    const { ev, kd, paint } = await page.evaluate(() => ({ ev: (window as any).__ev, kd: (window as any).__kd, paint: (window as any).__paint }));
+    const { ev, kd, paint, rm } = await page.evaluate(() => ({
+      ev: (window as any).__ev,
+      kd: (window as any).__kd,
+      paint: (window as any).__paint,
+      rm: (window as any).__rm,
+    }));
+    if (rm)
+      for (const [k, [t, n]] of Object.entries(rm as Record<string, [number, number]>))
+        if (n) ((out["ms:" + k] ??= []).push(t), (out["n:" + k] ??= []).push(n));
     const input = (ev as any[]).filter((e) => e[0] === "input" && e[1] >= kd - 1)[0];
     const keydown = (ev as any[]).filter((e) => e[0] === "keydown" && e[1] >= kd - 1)[0];
     (out.inputProc ??= []).push(input ? input[3] - input[2] : NaN);
@@ -109,6 +144,8 @@ for (let r = 0; r < reps; r++)
     (out.paint ??= []).push(paint - kd);
     if (profile) {
       const { profile: p } = await cdp.send("Profiler.stop");
+      // --save <prefix>: the raw profile per lane + repeat (`<prefix>-<lane>-r<rep>.cpuprofile`, DevTools / tree tools).
+      if (arg("save")) writeFileSync(`${arg("save")}-${dist.split("/").filter(Boolean).pop()}-r${r}.cpuprofile`, JSON.stringify(p));
       const self = (selfAll[lane] ??= new Map());
       const byId = new Map(p.nodes.map((n: any) => [n.id, n]));
       const dt = p.timeDeltas;

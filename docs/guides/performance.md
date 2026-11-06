@@ -55,6 +55,13 @@ Measured by lane FILTER2 2026-11-05 (resume-bench filter scenarios, Chrome 4× C
 - **Removals need no map.** When the new nodes are a subsequence of the current ones, a merge walk finds what to drop; the keyed node Map (3,000 entries with server markers) was ~1 ms of the first filter key.
 - **Per-node facts as expandos or row fields, not WeakMaps / per-list Maps.** Marking 2,000 row markers and 1,000 adopted rows went through `WeakMap` / `WeakSet` / `Map` sets and lookups on the first key and at idle; a property is cheaper on both sides.
 
+Measured by lane EACH 2026-11-06 (resume-bench first filter key, Chrome 4× CPU, 50 µs CPU profiles of the unminified lane + event-timing processing of the minified one; runner A/B interleaved; numbers in `apps/resume-bench/CLAUDE.md`).
+
+- **Hand an evaluation over, do not repeat it.** The lazy slot that detects a list's first change already ran `each`; collecting the signals it read (`_trackReads`) lets the client `_for` it builds track them and take the items as they are (one filter run per first key instead of two).
+- **Cheap JS tests before DOM getters.** `nodeType` / `parentNode` are binding calls; an expando read on the JS wrapper decides the 1,800 inert row markers of a 1,000-row filter without them.
+- **Identity before hashing.** A filter's new items are the old ones in order: a merge walk with `===` (keys checked) matches them without a 1,000-key Map; `Map.has` costs about what `Map.set` does on small int keys, so replacing sets by lookups gains nothing.
+- **Native removal is the floor.** After these, Rivet's first-key JS is below Solid 1's; the rest is `removeChild` of 900 rows, and its server row markers (comment siblings) add a little to each removal.
+
 Measured by lane ZERO BE-RENDER 2026-10-25 (Node 26 in-process: `frames-cpu` over the ui-docs production server, interleaved; heap sampling profiles).
 
 - **`Object.keys`, not `Reflect.ownKeys`, for own enumerable keys.** `Reflect.ownKeys` builds a fresh key list every call (~90 ns, ~390 B for a 3-key props object); `Object.keys` takes V8's enum cache (~12 ns, ~70 B), + `Object.getOwnPropertySymbols` filtered by `propertyIsEnumerable` for the same order and symbols. runtime `splitProps` / `_restProps`: 195 → 166 ns, 873 → 559 B per live split; table-virtualization (1000 rows) 17.6 → 16.3 MB alloc / request.

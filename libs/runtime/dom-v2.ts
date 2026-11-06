@@ -580,7 +580,8 @@ function replace(parent: Parent, current: Current, next: Node | null, marker: No
  * the paint. Every other removal (and every later click) is a plain `removeChild`.
  */
 function drop(parent: Parent, node: Node): void {
-  if (DERIVED && node.nodeType === 8 && _adoption.inert?.(node)) return;
+  // `_adoption.inert` reads an expando (no `nodeType` DOM call per removed node, EACH 2026-11-06).
+  if (DERIVED && _adoption.inert?.(node)) return;
   if (hovered(node)) keep(parent, node as HTMLElement);
   else parent.removeChild(node);
 }
@@ -648,7 +649,9 @@ function reconcile(parent: Parent, a: Node[], b: Node[], marker: Node | null): v
       for (let i = 0, k = 0; i < aEnd; i++) {
         const node = a[i];
         if (k < bLength && node === b[k]) k++;
-        else if (node.parentNode === parent) drop(parent, node);
+        // A lazy row's server markers are inert (left in place): the expando test first, no `parentNode` DOM call for
+        // them (EACH 2026-11-06: 1,800 of a 1,000-row filter's 2,700 dropped nodes).
+        else if (!(DERIVED && _adoption.inert?.(node)) && node.parentNode === parent) drop(parent, node);
       }
       return;
     }
@@ -799,6 +802,7 @@ export const _adoption: {
    * Derived builds (`DERIVED` only, FILTER 2026-11-05): a comment that is a lazy list row's server marker (`<!--r…[-->`
    * opener or its `<!--]-->`, both of one row known). A dropped row leaves the pair in place (inert and empty: the event
    * path's sibling scan counts it balanced): 2 of its 3 removals, and their mutation records, off a long list's first filter.
+   * Called with any node about to be removed (an expando read: false for every other node, EACH 2026-11-06).
    */
   inert?: ((node: Node) => boolean) | null;
 } = { rows: null, same: null, dev: null };
@@ -816,6 +820,12 @@ export interface AdoptedList {
   changed: (() => boolean) | null;
   /** Lazy rows (LAZY-ROWS T5): called once with the For's row function and item reader (kept rows materialise through them). */
   host?: ((children: (item: () => unknown, index: () => number) => unknown, read: (this: ForRow) => unknown) => void) | null;
+  /**
+   * Derived builds (`DERIVED` only, EACH 2026-11-06): the items a derived lazy list's slot just evaluated (the change that
+   * builds this `_for`) and the signals that evaluation read. The first pass takes these items and subscribes to those
+   * signals instead of running `each` again (~0.4 ms of a 1,000-row filter's first key at 4x CPU).
+   */
+  first?: { value: unknown[]; signals: readonly (() => unknown)[] } | null;
 }
 // ---- lists ----
 /** @internal A `_for` row (exported for `dom-adopt.ts`). */
@@ -857,6 +867,33 @@ function rowNodes(rows: readonly ForRow[], nodes: Node[]): boolean {
   }
   return ranged;
 }
+// `_for`'s merge walk (EACH): the new middle items `next[start..newEnd)` are old middle items in order, each one's key its
+// old row's — those rows into `rows` (true), else false (the caller maps the old keys; `rows` is overwritten).
+function inOrder(
+  rows: ForRow[],
+  list: ForRow[],
+  items: readonly unknown[],
+  next: readonly unknown[],
+  by: ((item: never, index: number) => unknown) | undefined,
+  start: number,
+  end: number,
+  newEnd: number,
+): boolean {
+  let j = start;
+  for (let i = start; i < end && j < newEnd; i++)
+    if (next[j] === items[i]) {
+      const row = list[i]!;
+      if ((by ? by(next[j] as never, j) : next[j]) !== row.key) return false;
+      rows[j++] = row;
+    }
+  return j === newEnd;
+}
+// `_for`'s first pass over a derived slot's evaluation (`AdoptedList.first`): read (track) its signals, return its items.
+function handed(first: NonNullable<AdoptedList["first"]>, _cleared: null): unknown[] {
+  const signals = first.signals;
+  for (let i = 0; i < signals.length; i++) signals[i]!();
+  return first.value;
+}
 // A row's item accessor: one bound function per row (no closure context).
 function itemRead(this: ForRow): unknown {
   return this.sig !== null ? this.sig() : _tracking() ? (this.sig = signal(this.value))() : this.value;
@@ -896,10 +933,12 @@ export function _for<T, K>(props: {
     changed: (() => boolean) | null = null,
     // Every current row by key, kept across passes: matching and duplicate detection are O(changed rows), no
     // per-pass Set over kept rows (append 1k to 10k). null: rebuilt from `list` (first pass, after a throwing pass).
-    keys: Map<unknown, ForRow> | null = null;
+    keys: Map<unknown, ForRow> | null = null,
+    first: AdoptedList["first"] = null;
   if (_adoption.rows !== null) {
     const taken = _adoption.rows(owner, by as (item: never, index: number) => unknown, indexed);
     if (taken !== null) ((adopted = true), ({ items: items as unknown[], rows: list, changed } = taken as AdoptedList));
+    if (DERIVED && taken !== null) first = (taken as AdoptedList).first ?? null;
     if (LAZY_ROWS) taken?.host?.(children as (item: () => unknown, index: () => number) => unknown, itemRead);
   }
   const build = (row: ForRow): void => {
@@ -932,8 +971,9 @@ export function _for<T, K>(props: {
   const out = signal<readonly ForRow[]>(NO_ROWS, { equals: false });
   let published = false;
   effect(() => {
+    // The derived slot's evaluation of this change (`AdoptedList.first`, taken once): its items, its signals tracked.
     const each = props.each,
-      next = typeof each === "function" ? (each as () => readonly T[])() : each;
+      next = DERIVED && first ? (handed(first, (first = null)) as readonly T[]) : typeof each === "function" ? (each as () => readonly T[])() : each;
     if (changed !== null && changed()) {
       changed = null;
       for (const row of list) if (row.ad === -3) row.ad = -2;
@@ -989,10 +1029,16 @@ export function _for<T, K>(props: {
           if (row.index !== null && n !== m) row.index.set(i);
         }
         const pass = ++forPass;
+        // No key map yet (an adopted list's first pass; DERIVED builds only — elsewhere only a pass after a throw has
+        // none) and fewer new middle items than old middle rows: when the new middle items are the old ones in order (a
+        // filter), each is matched to its old row by a merge walk (identity, its key checked) — no map of the m old keys
+        // (EACH 2026-11-06: 1,000 sets of a 1,000-row filter's first key, ~0.3 ms at 4x CPU); the kept rows' map is built
+        // after the pass.
+        const sub = DERIVED && keys === null && newEnd - start < end - start && inOrder(rows, list, items, next, by, start, end, newEnd);
         let map = keys;
         if (map === null) {
           map = new Map();
-          for (let i = 0; i < m; i++) map.set(list[i]!.key, list[i]!);
+          for (let i = 0; !sub && i < m; i++) map.set(list[i]!.key, list[i]!);
         }
         keys = null; // a throw below (duplicate key, row error) leaves it to be rebuilt from the untouched `list`
         // Old middle rows are free to match in this pass; any other row found by a new key (a kept prefix / suffix
@@ -1001,8 +1047,8 @@ export function _for<T, K>(props: {
         let claimed = 0;
         for (let i = start; i < newEnd; i++) {
           const value = next[i]!,
-            key = by ? by(value, i) : value;
-          let row = map.get(key);
+            key = sub ? rows[i]!.key : by ? by(value, i) : value;
+          let row = sub ? rows[i] : map.get(key);
           if (row !== undefined) {
             if (row.pass !== -pass) throw Error("Duplicate For key");
             row.pass = pass;
@@ -1025,7 +1071,7 @@ export function _for<T, K>(props: {
           rows[i] = row;
         }
         // More rows dropped than kept (a filter): a fresh map of the kept rows, not one delete per dropped row.
-        const fresh = end - start - claimed > n;
+        const fresh = sub || end - start - claimed > n;
         for (let i = start; i < end; i++) {
           const row = list[i]!;
           if (row.pass === -pass) {

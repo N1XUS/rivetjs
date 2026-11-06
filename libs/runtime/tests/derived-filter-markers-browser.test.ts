@@ -3,7 +3,7 @@
 // instead of 2,700 on the resume-bench filter). The kept rows keep working (a click materialises the right row), a keyed
 // write's row writers skip the dropped rows (the empty pair's "next element" is a neighbour's), a cleared filter brings the
 // rows back as client rows, and a second filter drops earlier kept rows cleanly (one `each` run per later key: the slot
-// follows the client list's rows, FILTER2). Rows are primed at idle after the unit
+// follows the client list's rows, FILTER2; one at the first key too: the slot hands its run to the client list, EACH). Rows are primed at idle after the unit
 // adopted (the same rows the first change would build). Compiled with the real derived server + DOM targets.
 import { test } from "vitest";
 import assert from "node:assert/strict";
@@ -80,8 +80,12 @@ compiled("first filter: dropped rows leave inert marker pairs; kept rows, keyed 
     assert.equal((await state()).ids.length, 30);
     await page.click("#q");
     await page.waitForTimeout(50);
+    const eachRuns = () => page.evaluate(() => (globalThis as { eachRuns?: number }).eachRuns ?? 0);
+    const first = await eachRuns();
     await page.keyboard.type("g");
     await page.waitForFunction(() => document.querySelectorAll("#rows li").length === 10);
+    // EACH 2026-11-06: the first key's `each` runs once — the slot's run, handed to the client `_for` it builds.
+    assert.equal((await eachRuns()) - first, 1);
     let s = await state();
     assert.deepEqual(s.ids, ["1", "4", "7", "10", "13", "16", "19", "22", "25", "28"]);
     assert.equal(s.comments, 60, "every server row's marker pair stays (10 kept rows, 20 inert empty pairs)");
