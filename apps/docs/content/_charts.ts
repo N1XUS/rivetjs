@@ -4,8 +4,8 @@
 // - SSR: docs/benchmarks/2026-10-23-ssr-comparison.json; resume: 2026-10-19-fair-comparison.json (not re-measured).
 //   apps/dom-bench/competitors.json stores the matching SSR and resume competitor numbers.
 // - Krausest: docs/benchmarks/2026-10-23-krausest.json, local Rivet/vanilla only (Chrome 155 vs published Chrome 154).
-// - DOM (browser mount / update): docs/benchmarks/2026-10-21-dom-mount-2.json `runTs.baseline` — every lane re-measured
-//   interleaved in the same runs under the run.ts mount protocol rewarm-2026-10-21; apps/dom-bench/competitors.json
+// - DOM (browser mount / update): docs/benchmarks/2026-11-06-dom-nowrap.json `runTs.baseline` — every lane re-measured
+//   interleaved in the same runs under the run.ts protocol nowrap-2026-11-06; apps/dom-bench/competitors.json
 //   `dom` stores the same competitor numbers (`fair-report.ts --dom … --store-competitors`).
 // tests/charts.test.ts re-checks every value against those files and the verdicts (≥ 3% and non-overlapping trial
 // ranges, apps/dom-bench/verdict.ts) behind every win / tie / loss the page and the homepage state.
@@ -14,14 +14,14 @@ import { advantage, formatValue, type BenchChartSpec, type ChartPoint } from "@r
 import fair from "../../../docs/benchmarks/2026-10-23-ssr-comparison.json" with { type: "json" };
 import resumeRun from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
 import krausest from "../../../docs/benchmarks/2026-10-23-krausest.json" with { type: "json" };
-import domRun from "../../../docs/benchmarks/2026-10-21-dom-mount-2.json" with { type: "json" };
+import domRun from "../../../docs/benchmarks/2026-11-06-dom-nowrap.json" with { type: "json" };
 import reactRun from "../../../docs/benchmarks/2026-10-27-ssr-comparison-react.json" with { type: "json" };
 
 const REPO = "https://github.com/N1XUS/rivetjs/blob/main/";
 const FAIR = { label: "SSR comparison 2026-10-23 (full report)", href: REPO + "docs/benchmarks/2026-10-23-ssr-comparison.md" };
 const RESUME = { label: "Resume comparison 2026-10-20 (full report)", href: REPO + "docs/benchmarks/2026-10-19-fair-comparison.md" };
 const KRAUSEST = { label: "Krausest local run 2026-10-23 (full report)", href: REPO + "docs/benchmarks/2026-10-23-krausest.md" };
-const DOM = { label: "DOM mount report 2026-10-21 (full report)", href: REPO + "docs/benchmarks/2026-10-21-dom-mount-2.md" };
+const DOM = { label: "DOM report 2026-11-06 (full report)", href: REPO + "docs/benchmarks/2026-11-06-dom-nowrap.md" };
 
 interface Stat {
   median: number;
@@ -47,8 +47,13 @@ const grid1000 = fair.ssr["tuned+grid"]["1000"]["1"];
 const resume = resumeRun.resume as unknown as Record<string, Record<string, Stat>>;
 const paint = (scenario: string, lane: string): Stat => resume[`slow/${scenario}/${lane}`]!.paintLatency!;
 const firstChange = (scenario: string, lane: string): Stat => resume[`slow/${scenario}/${lane}`]!.latency!;
-// domRun.runTs.baseline[rows][lane].<metric> — 2026-10-21-dom-mount-2.md "Re-stored competitors".
+// domRun.runTs.baseline[rows][lane].<metric> — 2026-11-06-dom-nowrap.md "Re-stored competitors".
 const dom = domRun.runTs.baseline;
+/** 1-minute load range over every DOM trial (`baseline[rows][lane].load1` = "min–max"). */
+function loadRange() {
+  const bounds = Object.values(dom).flatMap((lanes) => Object.values(lanes).flatMap((lane) => lane.load1.split("–").map(Number)));
+  return `${Math.floor(Math.min(...bounds))}–${Math.ceil(Math.max(...bounds))}`;
+}
 
 const SSR_CAPTION = {
   // 2026-10-23-ssr-comparison.md "Methodology" + "Rerun methodology".
@@ -67,11 +72,13 @@ const RESUME_CAPTION = {
   source: RESUME,
 };
 const DOM_CAPTION = {
-  // 2026-10-21-dom-mount-2.md header + "Re-stored competitors".
-  machine: "Apple M4 Pro, Playwright Chromium 153, cross-origin isolated",
-  date: "2026-10-21",
+  // 2026-11-06-dom-nowrap.md header + "Re-stored competitors".
+  machine: "Apple M4 Pro, Playwright Chromium " + domRun.runTs.browser.split(".")[0] + ", cross-origin isolated",
+  date: domRun.date,
   method:
-    "dom-bench run.ts, every lane interleaved, 3 runs × 3 trials × 5 samples; median of trial medians, whiskers = min–max. Other test suites shared the host (1-minute load 2–8).",
+    "dom-bench run.ts, every lane interleaved, 9 trials × 5 samples per lane; median of trial medians, whiskers = min–max. The benchmark's own checks create no JavaScript objects for the page's nodes. Ordinary desktop apps remained active; no other benchmark ran (1-minute load " +
+    loadRange() +
+    ").",
   source: DOM,
 };
 const KRAUSEST_CAPTION = {
@@ -508,7 +515,7 @@ const smallRivet = valueOf(pointsOf("ssr-resumable-cpu-100-c10", 0), "Rivet resu
 
 const FAIR_LINE = { text: "SSR comparison, 2026-10-23 · Apple M4 Pro", href: FAIR.href };
 const RESUME_LINE = { text: "Resume comparison, 2026-10-20 · Apple M4 Pro", href: RESUME.href };
-const DOM_LINE = { text: "DOM mount report, 2026-10-21 · Apple M4 Pro", href: DOM.href };
+const DOM_LINE = { text: `DOM report, ${domRun.date} · Apple M4 Pro`, href: DOM.href };
 
 export const homeStrip: HomeChart[] = [
   {

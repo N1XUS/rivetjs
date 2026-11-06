@@ -10,7 +10,7 @@ import { verdict, type Stat } from "../../dom-bench/verdict.ts";
 import fair from "../../../docs/benchmarks/2026-10-23-ssr-comparison.json" with { type: "json" };
 import resumeRun from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
 import krausest from "../../../docs/benchmarks/2026-10-23-krausest.json" with { type: "json" };
-import domRun from "../../../docs/benchmarks/2026-10-21-dom-mount-2.json" with { type: "json" };
+import domRun from "../../../docs/benchmarks/2026-11-06-dom-nowrap.json" with { type: "json" };
 import competitors from "../../dom-bench/competitors.json" with { type: "json" };
 import reactRun from "../../../docs/benchmarks/2026-10-27-ssr-comparison-react.json" with { type: "json" };
 
@@ -186,7 +186,7 @@ test("resume charts equal the report; competitors.json stores the same numbers; 
   for (const peer of ["qwik-stable", "qwik"]) assert.equal(resumeVerdict("load", "jsBytesBeforeInteraction", peer), "WIN", `js vs ${peer}`);
 });
 
-test("DOM charts equal the interleaved 2026-10-21 run; mount level with Solid at 1,000 and 5,000 rows; updates win", () => {
+test("DOM charts equal the interleaved 2026-11-06 run; mount level with Solid at 1,000 and 5,000 rows; updates win", () => {
   for (const [lane, label] of [
     ["solid-stable", "Solid 1.9.15"],
     ["solid", "Solid 2.0.0-rc.13"],
@@ -207,7 +207,7 @@ test("DOM charts equal the interleaved 2026-10-21 run; mount level with Solid at
     for (const peer of ["solid-stable", "solid"] as const) assert.equal(domVerdict(rows, "mount", peer), "TIE", `mount ${rows} vs ${peer}`);
     assert.equal(domVerdict(rows, "mount", "react"), "WIN");
   }
-  assert.equal(domRun.runTs.protocol, competitors.dom.provenance.protocol, "charts and stored competitors share the mount protocol");
+  assert.equal(domRun.runTs.protocol, competitors.dom.provenance.protocol, "charts and stored competitors share the run.ts protocol");
 });
 
 test("homepage strip: values equal the reports, big ratios computed and backed by their verdicts", () => {
@@ -286,7 +286,7 @@ test("benchmarks page: the findings carry no typed numbers (charts render them f
   assert.ok(findings.length > 1000);
   assert.doesNotMatch(findings, /\d+(\.\d+)?\s?(×|ms\b|MiB|KB\b|%)/, "no typed measurements above the method section");
   for (const chart of findings.matchAll(/::chart\{id=([\w-]+)\}/g)) assert.ok(charts[chart[1]!], `chart ${chart[1]} exists`);
-  for (const report of ["2026-10-23-ssr-comparison.md", "2026-10-23-krausest.md", "2026-10-19-fair-comparison.md", "2026-10-21-dom-mount-2.md", "2026-10-20-dom-mount.md", "2026-10-09-fair-comparison.md", "perf-scoreboard.md"]) {
+  for (const report of ["2026-10-23-ssr-comparison.md", "2026-10-23-krausest.md", "2026-10-19-fair-comparison.md", "2026-11-06-dom-nowrap.md", "2026-10-21-dom-mount-2.md", "2026-10-20-dom-mount.md", "2026-10-09-fair-comparison.md", "perf-scoreboard.md"]) {
     assert.ok(page.includes(`docs/benchmarks/${report}`), `links ${report}`);
     assert.ok(existsSync(repo + "docs/benchmarks/" + report), `${report} exists`);
   }

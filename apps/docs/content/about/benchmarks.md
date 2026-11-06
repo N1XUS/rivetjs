@@ -5,7 +5,7 @@ template: page
 related: [about/roadmap, guides/performance/measuring]
 ---
 
-Rivet's goal is to render pages on the server faster than ASP.NET Razor, with less CPU and memory, and to beat Solid, React and Qwik in the browser. The server and local keyed-table charts below use the 2026-10-23 runs. The newer server comparison with React is linked under [Runs](#runs). The separate browser-mount and resume results remain dated 2026-10-21 and 2026-10-20; those suites were not rerun in this update:
+Rivet's goal is to render pages on the server faster than ASP.NET Razor, with less CPU and memory, and to beat Solid, React and Qwik in the browser. The server and local keyed-table charts below use the 2026-10-23 runs. The newer server comparison with React is linked under [Runs](#runs). The browser mount and update charts use the 2026-11-06 run. The separate resume results remain dated 2026-10-20; that suite was not rerun in this update:
 
 - **Static pages** use less CPU than Razor and static Solid in every measured integer-page case, including the smallest page one request at a time.
 - **Text-heavy pages** (1,000 rows of short strings, the case that favours Razor) are now a win too: less CPU, more pages per second and a faster median response than Razor. This run measured them at one request at a time only.
@@ -16,7 +16,7 @@ Rivet's goal is to render pages on the server faster than ASP.NET Razor, with le
 
 This page explains what was measured. Each chart reads its numbers from the report it names: the [server report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-ssr-comparison.md), [local keyed-table report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-krausest.md), [earlier resume report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md), or [browser mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md). The reports retain the conditions, trial ranges and remaining losses.
 
-All numbers come from short runs on one machine (an Apple M4 Pro Mac, Docker Linux ARM64 for the servers). Ordinary desktop applications remained active during the new runs; no benchmark builds or tests were started during their timed phases. Earlier mount and resume runs shared the host with other test suites. Each chart names its date and conditions. Treat small gaps as noise: the server and earlier browser comparisons require at least a three-percent median gap and non-overlapping trial ranges for a win or loss. The local keyed-table charts show the measured ranges without ranking published frameworks. These are exploratory numbers for one implementation.
+All numbers come from short runs on one machine (an Apple M4 Pro Mac, Docker Linux ARM64 for the servers). Ordinary desktop applications remained active during the new runs; no benchmark builds or tests were started during their timed phases. The earlier mount and resume runs shared the host with other test suites. Each chart names its date and conditions. Treat small gaps as noise: the server and earlier browser comparisons require at least a three-percent median gap and non-overlapping trial ranges for a win or loss. The local keyed-table charts show the measured ranges without ranking published frameworks. These are exploratory numbers for one implementation.
 
 ## Latest results
 
@@ -70,13 +70,13 @@ Before the first input, Rivet's page downloads more JavaScript than both Solid l
 
 ### Building the page in the browser
 
-Client-side mount and updates, with every framework measured in the same interleaved runs. Rivet updates 1,000 rows faster than every lane. Mounting 1,000 rows, Rivet and both Solid versions are level:
+Client-side mount and updates, with every framework measured in the same interleaved runs. The benchmark's own checks (page size, field texts) read counts and text only, so they create no JavaScript object for any of the page's nodes; an earlier node count after the mount did, for every framework, and slowed later updates and inflated memory differently per framework. Rivet updates 1,000 rows faster than every lane. Mounting 1,000 rows, Rivet and both Solid versions are level:
 
 ::chart{id=dom-mount-1000}
 
 ::chart{id=dom-update-1000}
 
-Mounting 5,000 rows is level too. An earlier protocol forced a garbage collection right before the timed mount; when V8 then finished its next collection depended on the page's earlier tasks, which put Solid 1.9 ahead at 5,000 rows ([2026-10-20 mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md)). The benchmark now runs one untimed mount after that collection, and every framework was measured again under it ([2026-10-21 mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md)):
+Mounting 5,000 rows is level too. An earlier protocol forced a garbage collection right before the timed mount; when V8 then finished its next collection depended on the page's earlier tasks, which put Solid 1.9 ahead at 5,000 rows ([2026-10-20 mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md)). The benchmark now runs one untimed mount after that collection ([2026-10-21 mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md)), and every framework was measured again under the current protocol ([2026-11-06 DOM report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-11-06-dom-nowrap.md)):
 
 ::chart{id=dom-mount-5000}
 
@@ -123,7 +123,8 @@ The reports use these measures:
 | [SSR comparison 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-ssr-comparison.md) | The ten-lane Docker matrix used by these charts: integer pages at concurrency 1 and 10, plus the text grid at concurrency 1. The server charts and homepage server numbers read it. |
 | [Krausest local run 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-krausest.md) | Fresh local Rivet/vanilla CPU, memory, startup and size measurements. Published framework comparisons are not comparable because Chrome major versions differ. The keyed-table charts read this run. |
 | [Fair comparison 2026-10-19](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md) | The earlier server comparison and the resume run in Chrome 155, with the [scoreboard](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/perf-scoreboard.md). The resume charts still read it; its server data is superseded by the 2026-10-23 run. |
-| [DOM mount 2026-10-21](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md) | The browser benchmark's mount protocol fix and every browser lane measured again under it, with how much memory each framework allocates per row. The browser charts above read it. |
+| [DOM 2026-11-06](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-11-06-dom-nowrap.md) | The browser benchmark's checks no longer create a JavaScript object per page node, and every browser lane measured again under that protocol. The browser charts above read it. |
+| [DOM mount 2026-10-21](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md) | The browser benchmark's mount protocol fix and every browser lane measured again under it, with how much memory each framework allocates per row. Superseded by the 2026-11-06 report. |
 | [DOM mount 2026-10-20](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md) | Every browser lane re-measured interleaved, plus the attribution of the 5,000-row mount gap to the benchmark's forced garbage collection. Superseded by the 2026-10-21 report. |
 | [Fair comparison 2026-10-09](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-09-fair-comparison.md) | The previous run of every lane, with the text grid at concurrency 10 and a 1,000-row browser re-measure. Superseded by the 2026-10-19 report. |
 | [Fair comparison 2026-10-06](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-06-fair-comparison.md) | The first like-for-like run of every lane (static and resumable classes, Bun and Deno, escaping, default GC). Superseded by the 2026-10-09 report. |
