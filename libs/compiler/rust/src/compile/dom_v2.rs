@@ -27,7 +27,7 @@ mod dom_v2_text;
 pub(super) const V2_ABI: &[&str] = &[
     "_tpl", "_c", "_textValue", "_setAttr", "_attrValue", "_className", "_on",
     "_listen", "_insert", "_for", "_fx", "_fx1", "_cls", "_t", "_attrSet", "_attrWrite", "_spread", "_ref", "_show",
-    "_switch", "_match", "_setProp", "_select", "_model", "_rcdata", "_scoped", "_tplNs", "_cond", "_tx",
+    "_switch", "_match", "_setProp", "_select", "_model", "_rcdata", "_scoped", "_tplNs", "_cond", "_tx", "_te",
 ];
 
 /// Bubbling events delegated to one document listener (dom-expressions' set).
@@ -945,6 +945,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
             } else {
                 match (scalar, accessor) {
                     // IMPL-DOM F2: a placeholder Text node in the template takes the writes (`_tx`, `dom_v2_text.rs`).
+                    // GC-01: client-only modules bind the element itself when the writer lifts to `_fx1` (`_te`, no placeholder).
+                    (_, true) if self.text_placeholder(tag, *source) && self.text_element(&printed, *source) => self.sole_text_element_v2(&target, &printed, *source),
                     (_, true) if self.text_placeholder(tag, *source) => self.sole_text_v2(b, &mut children, &printed, *source),
                     // `_text` takes any value: scalars write text, the first node/array switches to insertion.
                     // A read that throws empties the element (v1 `_insert` clears its range), then rethrows;

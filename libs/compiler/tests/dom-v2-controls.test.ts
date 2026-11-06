@@ -26,7 +26,7 @@ test("static select / option / optgroup / textarea lower through v2", async () =
   assert.match(r.code, /__rivet_tpl\(/);
   assert.ok(
     r.code.includes(
-      String.raw`__rivet_tpl("<form><select name=s><option value=a>A</option><optgroup label=g><option value=b selected> </option></optgroup></select><textarea name=t>hi there</textarea>")`,
+      String.raw`__rivet_tpl("<form><select name=s><option value=a>A</option><optgroup label=g><option value=b selected></option></optgroup></select><textarea name=t>hi there</textarea>")`,
     ),
     r.code,
   );

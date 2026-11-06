@@ -984,6 +984,13 @@ export function _bindingEffect1<A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b
     dispose(node);
 }
 
+/** @internal DOM text binding (`_te`, GC-01): the running `_bindingEffect1` binding whose first capture is `from` gets `to`
+ * there instead (its next runs see `to`). No-op under any other observer. */
+export function _rebind1(from: unknown, to: unknown): void {
+  const node = currentObserver;
+  if (node instanceof ArgNode && node.a === from) node.a = to;
+}
+
 // The `_wrapEffects` branch of `_bindingEffect1`, in its own function: a closure over the parameters there would make V8
 // allocate a context for them on every call (MOUNT-01: 20 B per binding, wrapped or not).
 function wrappedArg(fn: (a: unknown, b: unknown, c: unknown) => unknown, a: unknown, b: unknown, c: unknown): ArgNode {

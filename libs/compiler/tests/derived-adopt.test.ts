@@ -16,7 +16,10 @@ const PAGE = fixture("page.tsx");
 const RESUME = { module: "src/page.tsx", boundaries: ["App", "Header", "Counter"], independent: ["App", "Counter"] };
 const derived = (source: string, target: "dom" | "server", resume: object = RESUME): CompileResult =>
   compile(source, { target, filename: "page.tsx", resume } as never);
-const plain = (source: string): CompileResult => compile(source, { target: "dom", filename: "page.tsx" });
+// The plain DOM lowering of a module in a resume build (no boundaries): resumed modules keep the `" "` placeholder + `_tx`
+// text binding (GC-01 `_te` is client-only modules' lowering), so this is what the derived output wraps.
+const plain = (source: string): CompileResult =>
+  compile(source, { target: "dom", filename: "page.tsx", resume: { module: "src/page.tsx", boundaries: [] } } as never);
 /** First string argument of every `callee(` call, in order. */
 const args = (code: string, callee: string) => [...code.matchAll(new RegExp(callee.replace(/\$/g, "\\$") + '\\("([^"]*)"', "g"))].map((m) => m[1]!);
 /** The binding / structure calls and hoisted templates / writers of a DOM module (what the adopt walk replays). */
@@ -146,7 +149,7 @@ export function Tabs() { const tab = signal(0); return <div onClick={() => tab.s
       .slice(code.indexOf("const tab"), code.lastIndexOf("return _el$"))
       .split("\n")
       .map((line) => line.trim());
-  assert.deepEqual(inner(switched.code.replace(/__rivetR_sig\("[^"]+", /, "signal(")), inner(plain(TABS).code));
+  assert.deepEqual(inner(switched.code.replace(/__rivetR_sig\("[^"]+", /, "signal(")), inner(compile(TABS, { target: "dom", filename: "page.tsx" }).code));
 });
 
 it("component calls: dependent and independent children are both plain _c(Child, props); independence is the server record's flag", () => {

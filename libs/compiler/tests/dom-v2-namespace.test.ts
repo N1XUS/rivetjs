@@ -64,7 +64,7 @@ const Link = (p: any) => <a href={p.href} class={p.cls}>{p.label}</a>;
 export const A = () => <svg><Link href="#s" cls="k" label="s" /><g><For each={items} by={(x) => x}>{(x) => <Link href={"#" + x()} label={x()} />}</For></g></svg>;
 export const B = () => <p><Link href="#h" cls="k" label="h" /></p>;`);
   assert.deepEqual(r.diagnostics, []);
-  assert.match(r.code, /_tplNs\("<a> <\/a>"\)/, r.code);
+  assert.match(r.code, /_tplNs\("<a><\/a>"\)/, r.code);
   const { host } = setup();
   const { A, B, items } = await load(r.code);
   const { mount } = await import(runtime);

@@ -5,14 +5,14 @@ test("DOM static trees have one template and ordered targeted bindings", () => {
   const r = compile(`const App=()=> <section><h1>Static</h1><button onClick={handler} title={title()}>{count()}</button></section>`, { target: "dom" });
   assert.deepEqual(r.diagnostics, []);
   assert.equal((r.code.match(/= \/\* @__PURE__ \*\/ __rivet_tpl\(/g) || []).length, 1);
-  assert.match(r.code, /__rivet_tpl\("<section><h1>Static<\/h1><button> "\)/);
+  assert.match(r.code, /__rivet_tpl\("<section><h1>Static<\/h1><button>"\)/);
   assert.match(r.code, /__rivet_on\(_el\$2, "click", handler\)/);
-  // Sole dynamic text child: the template's placeholder Text node is walked and bound through `_tx`.
-  assert.match(r.code, /_el\$3 = _el\$2\.firstChild;/);
+  // Sole dynamic text child in a client-only module (GC-01): no placeholder Text, the element is bound through `_te`.
+  assert.doesNotMatch(r.code, /_el\$3/);
   // Closure-free bindings (OPT-D): writers hoisted to module level, bound in source order.
   assert.match(r.code, /const (__rivetFx\d+) = \(_el\$2\) => __rivet_attrSet\(_el\$2, "title", title\(\)\);/);
-  assert.match(r.code, /const __rivetFx\d+ = \(_el\$3\) => \{\s*try \{\s*__rivet_tx\(_el\$3, count\(\)\);/);
-  assert.match(r.code, /__rivet_on\(_el\$2, "click", handler\);\n\s*__rivet_fx1\(__rivetFx0, _el\$2\);\n\s*__rivet_fx1\(__rivetFx1, _el\$3\);/);
+  assert.match(r.code, /const __rivetFx\d+ = \(_el\$2\) => \{\s*try \{\s*__rivet_te\(_el\$2, count\(\)\);/);
+  assert.match(r.code, /__rivet_on\(_el\$2, "click", handler\);\n\s*__rivet_fx1\(__rivetFx0, _el\$2\);\n\s*__rivet_fx1\(__rivetFx1, _el\$2\);/);
   assert.doesNotMatch(r.code, /createElement|runtime\/server/);
 });
 test("components own props factory and provider provenance defers children", () => {

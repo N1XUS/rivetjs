@@ -9,6 +9,7 @@ import {
   _bindingEffect,
   _deferredFlush,
   _bindingEffect1,
+  _rebind1,
   _dispose,
   _rootIn,
   _scoped,
@@ -173,6 +174,40 @@ export function _tx(text: Text, value: unknown): void {
   }
   if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) nestedAt(text.parentNode as Parent, value, slot, text);
   else assign(text.parentNode as Parent, value, slot, text);
+}
+/**
+ * Compiler ABI (GC-01): a sole dynamic text child of a placeholder-free element (`<strong></strong>`), client-created DOM
+ * only. The binding starts with the element (`_fx1(fx, el, …)`, `el` used by nothing else in `fx`): the first scalar write
+ * sets `textContent` — no placeholder Text is cloned and no Text wrapper is created during the mount (one DOM wrapper less
+ * per bound field: scavenge roots / weak handles, `docs/guides/performance.md`). The first later write takes the Text node
+ * and hands it to the binding in place of the element (`_rebind1`): later runs get the Text, whose `firstChild` is null, so
+ * the same scalar path writes its `textContent` (= its data; an expando or a `firstChild` + wrapper read on the element
+ * per update costs +10…+40 % per update). A write while the element is still empty (`""` so far) writes `textContent`
+ * again. The first non-scalar switches to `_insert` semantics for good (`$$s`: on the element, or `_tx`'s on the Text).
+ */
+export function _te(node: Element | Text, value: unknown): void {
+  const slot = (node as unknown as { $$s?: Slot }).$$s;
+  if (slot === undefined && (typeof value === "string" || value == null || (typeof value !== "object" && typeof value !== "function"))) {
+    // Numbers go to the DOM as-is (see `_textValue`).
+    const next = typeof value === "string" ? value : typeof value === "number" && value ? (value as unknown as string) : coerce(value);
+    const text = node.firstChild;
+    if (text === null) node.textContent = next;
+    else {
+      if (!(LAZY_ROWS && _adoption.live && (text as Text).data === next)) (text as Text).data = next;
+      _rebind1(node, text);
+    }
+    return;
+  }
+  if (node.nodeType === 3) return _tx(node as Text, value);
+  insertInto(node as Element & { $$s?: Slot }, value, slot);
+}
+function insertInto(el: Element & { $$s?: Slot }, value: unknown, slot: Slot | undefined): void {
+  if (slot === undefined) {
+    el.textContent = "";
+    el.$$s = slot = { current: null };
+  }
+  if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) nestedAt(el, value, slot, null);
+  else assign(el, value, slot, null);
 }
 /** Compiler ABI: a sole-child static value: scalars written once, an accessor binds, nodes/arrays insert. */
 export function _textValue(el: Element, value: unknown): void {

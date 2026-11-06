@@ -60,6 +60,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
         Some(names)
     }
 
+    /// GC-01: whether `fx_bind` lifts a writer with these captures and value text to `_fx1` (else it keeps the `_fx` closure).
+    pub(super) fn fx_liftable(&self, captures: &Option<Vec<String>>, value: &str) -> bool {
+        captures.as_ref().is_some_and(|c| c.len() <= MAX_CAPTURES) && self.generated_names_module_level(value)
+    }
+
     /// One binding effect over `body` (an expression, or a `{ … }` block): `_fx1` + a hoisted writer when
     /// `captures` fit and every compiler-generated name in the lowered value text is module-level
     /// (`generated_names_module_level`), else today's `_fx(() => body)`. `target` is the element variable (`_el$N`, unique per module), reused

@@ -326,6 +326,7 @@ export {
   _cls,
   _t,
   _tx,
+  _te,
   _attrSet,
   _attrWrite,
   _spread,

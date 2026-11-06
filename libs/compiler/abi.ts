@@ -12,6 +12,8 @@ import { dirname, join } from "node:path";
  * libs/runtime/package.json whenever compiled output and runtime helpers change in a way the other
  * side must match (new/removed/renamed helper, changed arguments, template/marker/resume format).
  */
+// 14: GC-01 (2026-11-06): `_te(el, value)` — a sole dynamic text child of a placeholder-free element in client-only
+// modules (`_fx1` writer; reactivity `_rebind1` hands the binding the Text node after its first update).
 // 13: ZERO CALLSITE (2026-10-26): `_rS(props)` (a proven call site marks the props object it passes), `_rB` flag `SITE`
 // (8192, compile-only: independent where `_rS` marked its props) and wire flag `CTXFREE` (4096: standalone adopt without
 // the ancestors, `dom-derived.ts` `around`).
@@ -22,7 +24,7 @@ import { dirname, join } from "node:path";
 // 10: derived model `_rHandler` (STATIC-ZERO T3: conditional handlers of boundary bodies record their value on the server).
 // 9: derived model `_rFor` (DERIVED-S: list-mounted `<For>` rows from one tape on the derived server target).
 // 8: Function Bridge (_rMod, thunk captures, _rCell, _rBound, _rFn member, _rStorePaths, _rClass).
-export const RUNTIME_ABI = 13;
+export const RUNTIME_ABI = 14;
 
 /** The @rivetjs/runtime package owning `file` (any resolved runtime module). */
 export interface RuntimePackage {

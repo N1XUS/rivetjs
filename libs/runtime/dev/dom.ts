@@ -461,6 +461,13 @@ export function _tx(text: Text, value: unknown): void {
   wrote(devtoolsHook(), text.parentNode ?? text, "child", null);
   dom._tx(text, checked);
 }
+/** Compiler ABI `_te` (sole dynamic text child of a placeholder-free element, GC-01): `_t`'s checks + reports. */
+export function _te(node: Element | Text, value: unknown): void {
+  const owner = getOwner(),
+    checked = guard(value, owner);
+  wrote(devtoolsHook(), node.nodeType === 3 ? (node.parentNode ?? node) : node, "child", null);
+  dom._te(node, checked);
+}
 /** Compiler ABI `_textValue` (sole static child or accessor). */
 export function _textValue(el: Element, value: unknown): void {
   const owner = getOwner();

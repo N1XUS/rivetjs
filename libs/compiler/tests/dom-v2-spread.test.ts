@@ -20,7 +20,7 @@ test("spread element: `_tpl` + one `_spread` with the merged object (thunk when 
   assert.doesNotMatch(r.code, /__rivetSpec|data-rivet-s|spreadAttributes/);
   assert.match(r.code, /import \{[^}]*_spread as __rivet_spread[^}]*\} from "@rivetjs\/runtime\/dom"/);
   // IMPL-SPREAD F1: attributes after the last spread lower on their own — static ones are template text.
-  assert.ok(r.code.includes('__rivet_tpl("<div><a>x</a><span data-x=1></span><i> ")'), r.code);
+  assert.ok(r.code.includes('__rivet_tpl("<div><a>x</a><span data-x=1></span><i>")'), r.code);
   // Dynamic part (`id()`) after the spread: one `_attrs` binding after the spread, its name excluded from the spread;
   // the explicit `onClick` is delegated and emitted before the spread; `class` before the spread stays in the object.
   assert.match(
@@ -30,11 +30,11 @@ test("spread element: `_tpl` + one `_spread` with the merged object (thunk when 
   // A lone identifier spread with only static trailing attributes passes uncopied (flag 2) + content flag 1.
   assert.match(r.code, /__rivet_spread\(_el\$3, attrs, 3, null, "data-x"\);/);
   // JSX children: no content flag; the child binding is the element's own.
-  // Closure-free text binding (OPT-D): hoisted writer on the placeholder Text (`_tx`), `id` passed as a capture.
-  assert.match(r.code, /const __rivetFx0 = \((_el\$\d+), id\) => \{\n\s*try \{\n\s*__rivet_tx\(\1, id\(\)\);/);
+  // Closure-free text binding (OPT-D): hoisted writer on the element (`_te`, GC-01 client-only module), `id` a capture.
+  assert.match(r.code, /const __rivetFx0 = \(_el\$4, id\) => \{\n\s*try \{\n\s*__rivet_te\(_el\$4, id\(\)\);/);
   // A lone identifier spread passes uncopied (flag 2: read inside the spread effect).
-  assert.match(r.code, /__rivet_spread\(_el\$4, attrs, 2\);\n\s*__rivet_fx1\(__rivetFx0, (_el\$\d+), id\);/);
-  assert.match(r.code, /(_el\$\d+) = _el\$4\.firstChild/);
+  assert.match(r.code, /__rivet_spread\(_el\$4, attrs, 2\);\n\s*__rivet_fx1\(__rivetFx0, _el\$4, id\);/);
+  assert.doesNotMatch(r.code, /_el\$4\.firstChild/);
 });
 
 test("spread element: `class:` toggles wrap the object in `_spreadClass`; a dynamic toggle makes it a thunk", () => {

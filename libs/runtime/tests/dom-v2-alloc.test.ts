@@ -5,7 +5,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { getHeapSpaceStatistics } from "node:v8";
-import { _attrValue, _className, _cp, _insert, _setAttr, _t, _textValue, _tx } from "../dom-v2.ts";
+import { _attrValue, _className, _cp, _insert, _setAttr, _t, _te, _textValue, _tx } from "../dom-v2.ts";
 import { _bindingEffect1 } from "@rivetjs/reactivity";
 
 const closure = /=>|\bfunction\b/;
@@ -16,7 +16,7 @@ const body = (fn: (...args: never[]) => unknown): string =>
     .replace(/"[^"]*"/g, '""');
 
 test("hot DOM ABI functions create no closure in their own body", () => {
-  for (const fn of [_setAttr, _attrValue, _className, _textValue, _t, _tx, _insert, _cp])
+  for (const fn of [_setAttr, _attrValue, _className, _textValue, _t, _tx, _te, _insert, _cp])
     assert.doesNotMatch(body(fn as never), closure, `${fn.name} creates a closure: ${String(fn)}`);
 });
 
@@ -41,11 +41,16 @@ function perCall(call: (i: number) => void): number {
 test("scalar attribute / text writes allocate nothing per call", () => {
   const el = { setAttribute() {}, removeAttribute() {}, set className(_: string) {}, set textContent(_: string) {} } as unknown as Element;
   const text = { data: "" } as unknown as Text;
+  // `_te` on an element still empty (the mount write) and on its Text node (later writes, after `_rebind1`).
+  const empty = { firstChild: null, set textContent(_: string) {} } as unknown as Element;
+  const bound = { firstChild: null, nodeType: 3, set textContent(_: string) {} } as unknown as Text;
   const strings = ["a", "b"];
   const cases: [string, (i: number) => void][] = [
     ["_setAttr", (i) => _setAttr(el, "data-x", strings[i & 1])],
     ["_className", (i) => _className(el, strings[i & 1])],
     ["_tx", (i) => _tx(text, strings[i & 1])],
+    ["_te (element)", (i) => _te(empty, strings[i & 1])],
+    ["_te (text)", (i) => _te(bound, strings[i & 1])],
   ];
   for (const [name, call] of cases) {
     perCall(call); // warm-up (feedback vectors, ICs)

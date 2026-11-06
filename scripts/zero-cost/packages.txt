@@ -30,7 +30,7 @@
 @rivetjs/router/head 97869798e784 7892
 @rivetjs/forms 789ec6351df3 4747
 @rivetjs/forms/array e7d1e96d5f86 4001
-@rivetjs/forms/components [dom] 74e8333a5362 2278
+@rivetjs/forms/components [dom] da5994b8781f 2239
 @rivetjs/forms/components [server] 6026b96e4c7a 1797
 @rivetjs/forms/scope 4ccc7479e694 179
 @rivetjs/forms/wizard 6778111f688a 1667
@@ -48,11 +48,11 @@
 @rivetjs/kit/dom 810d12f2fc46 8842
 @rivetjs/kit/image e797722ace66 751
 @rivetjs/kit/font cf507af495e6 131
-@rivetjs/kit/transition [dom] 142fbfcb13c9 4952
+@rivetjs/kit/transition [dom] 6d62e1fd702d 4936
 @rivetjs/kit/transition [server] 12cce6077a07 4522
-@rivetjs/kit/icon [dom] 0e663327bde1 2618
+@rivetjs/kit/icon [dom] 0cea8b43befe 2602
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 3fcee5594490 569035 css f0ac60d2c300 1220808
+@rivetjs/ui [dom] 86b61a61fb92 567778 css f0ac60d2c300 1220808
 @rivetjs/ui [server] 42bf3ef302a7 505971 css f0ac60d2c300 1220808
 @rivetjs/ui/tv-merge 4bdebdc0d9a2 143
 @rivetjs/ui/surface [dom] 39a9dfe5b40f 4344 css 319605878d70 769
@@ -91,11 +91,11 @@
 @rivetjs/ui/alert [server] fdf0b1db4c3a 5879 css 3ec0cca4cecc 1210506
 @rivetjs/ui/typography [dom] 3ea7734ef810 5774 css 3ec0cca4cecc 1210506
 @rivetjs/ui/typography [server] 750d526745a4 5591 css 3ec0cca4cecc 1210506
-@rivetjs/ui/lightbox [dom] 604685a563ed 12118 css 96fef72b6d0a 29891
+@rivetjs/ui/lightbox [dom] 0e7409b0911b 12102 css 96fef72b6d0a 29891
 @rivetjs/ui/lightbox [server] 2b66a48bdc42 10934 css 96fef72b6d0a 29891
 @rivetjs/ui/link [dom] 75316bd578d4 5049 css 3ec0cca4cecc 1210506
 @rivetjs/ui/link [server] a9a8bc172360 4868 css 3ec0cca4cecc 1210506
-@rivetjs/ui/button [dom] 7074b3023ef6 6393 css 3ec0cca4cecc 1210506
+@rivetjs/ui/button [dom] 014021b745e6 6377 css 3ec0cca4cecc 1210506
 @rivetjs/ui/button [server] 7f2f6cae4e9a 6107 css 3ec0cca4cecc 1210506
 @rivetjs/ui/button-group [dom] 2b3cd0bdf930 5979 css 3ec0cca4cecc 1210506
 @rivetjs/ui/button-group [server] 2515302cebff 5858 css 3ec0cca4cecc 1210506
@@ -103,7 +103,7 @@
 @rivetjs/ui/toggle-button [server] 834f961733ec 4419 css 3ec0cca4cecc 1210506
 @rivetjs/ui/toggle-button-group [dom] 6c94f8ab4f0c 6232 css 3ec0cca4cecc 1210506
 @rivetjs/ui/toggle-button-group [server] 646d9941f4aa 6026 css 3ec0cca4cecc 1210506
-@rivetjs/ui/close-button [dom] efe3c862ba61 5637 css 3ec0cca4cecc 1210506
+@rivetjs/ui/close-button [dom] 69ef40100339 5621 css 3ec0cca4cecc 1210506
 @rivetjs/ui/close-button [server] 43b444b82df9 5400 css 3ec0cca4cecc 1210506
 @rivetjs/ui/avatar [dom] f23e71c6cbb9 6862 css 3ec0cca4cecc 1210506
 @rivetjs/ui/avatar [server] d67e3c0c0c63 6627 css 3ec0cca4cecc 1210506
@@ -125,7 +125,7 @@
 @rivetjs/ui/popover [server] c64689c54f72 6747 css 3ec0cca4cecc 1210506
 @rivetjs/ui/sidebar [dom] 763f1eab3ffc 15029 css bd7079971da2 83460
 @rivetjs/ui/sidebar [server] 7d01abc3b9b4 14278 css bd7079971da2 83460
-@rivetjs/ui/app-layout [dom] eef473f51a8f 30726 css 3ec0cca4cecc 1210506
+@rivetjs/ui/app-layout [dom] 9166ea943941 30646 css 3ec0cca4cecc 1210506
 @rivetjs/ui/app-layout [server] 414671c62837 25822 css 3ec0cca4cecc 1210506
 @rivetjs/ui/stepper [dom] 40fe00f25bf9 9087 css 3ec0cca4cecc 1210506
 @rivetjs/ui/stepper [server] 8561e93bccb0 8186 css 3ec0cca4cecc 1210506
@@ -145,11 +145,11 @@
 @rivetjs/ui/breadcrumbs [server] 8321e51b8963 6249 css 3ec0cca4cecc 1210506
 @rivetjs/ui/toolbar [dom] d9296cbe979c 4611 css 3ec0cca4cecc 1210506
 @rivetjs/ui/toolbar [server] 9f7497c2affb 4508 css 3ec0cca4cecc 1210506
-@rivetjs/ui/modal [dom] 773e7aa5b9d6 12074 css 3ec0cca4cecc 1210506
+@rivetjs/ui/modal [dom] 20d2f8e34db6 12058 css 3ec0cca4cecc 1210506
 @rivetjs/ui/modal [server] 10a180f886f9 11011 css 3ec0cca4cecc 1210506
 @rivetjs/ui/input-group [dom] dc8e8dabc4e5 6514 css 3ec0cca4cecc 1210506
 @rivetjs/ui/input-group [server] db8a483f6de6 6286 css 3ec0cca4cecc 1210506
-@rivetjs/ui/search-field [dom] d9860cca63d1 10337 css 3ec0cca4cecc 1210506
+@rivetjs/ui/search-field [dom] cdfcb86809f7 10321 css 3ec0cca4cecc 1210506
 @rivetjs/ui/search-field [server] 3c77d799a212 9354 css 3ec0cca4cecc 1210506
 @rivetjs/ui/number-field [dom] 077efe5e14fb 8501 css 3ec0cca4cecc 1210506
 @rivetjs/ui/number-field [server] 59d9f0ded388 7789 css 3ec0cca4cecc 1210506
@@ -159,23 +159,23 @@
 @rivetjs/ui/list-box-item [server] f53bd3569cbd 5456 css 3ec0cca4cecc 1210506
 @rivetjs/ui/list-box-section [dom] 559ccd38686a 3615 css 229105696f76 1325
 @rivetjs/ui/list-box-section [server] 3dd560cfc005 3493 css 229105696f76 1325
-@rivetjs/ui/tag [dom] 790d7899833e 7201 css 3ec0cca4cecc 1210506
+@rivetjs/ui/tag [dom] 60f1121b8062 7185 css 3ec0cca4cecc 1210506
 @rivetjs/ui/tag [server] 4937672f2eff 6773 css 3ec0cca4cecc 1210506
 @rivetjs/ui/tag-group [dom] 9c698ce52461 6900 css 3ec0cca4cecc 1210506
 @rivetjs/ui/tag-group [server] 07c5d84e8f65 6225 css 3ec0cca4cecc 1210506
-@rivetjs/ui/alert-dialog [dom] 2095de979a00 12144 css 3ec0cca4cecc 1210506
+@rivetjs/ui/alert-dialog [dom] b13ec2abd60c 12128 css 3ec0cca4cecc 1210506
 @rivetjs/ui/alert-dialog [server] f434be4fa31a 11368 css 3ec0cca4cecc 1210506
 @rivetjs/ui/calendar [dom] 7bc04014a41d 20257 css 3ec0cca4cecc 1210506
 @rivetjs/ui/calendar [server] ee36440dc5ce 18704 css 3ec0cca4cecc 1210506
 @rivetjs/ui/calendar-year-picker [dom] 9281f06cc553 12071 css 3ec0cca4cecc 1210506
 @rivetjs/ui/calendar-year-picker [server] a2a005c938d3 11508 css 3ec0cca4cecc 1210506
-@rivetjs/ui/drawer [dom] fae5e5b7f27d 14196 css 3ec0cca4cecc 1210506
+@rivetjs/ui/drawer [dom] 8c17030614d0 14180 css 3ec0cca4cecc 1210506
 @rivetjs/ui/drawer [server] 2f5ed5a0c213 13449 css 3ec0cca4cecc 1210506
 @rivetjs/ui/navbar [dom] cb4a12832402 12734 css 3ec0cca4cecc 1210506
 @rivetjs/ui/navbar [server] 66b9ed415848 11403 css 3ec0cca4cecc 1210506
 @rivetjs/ui/action-bar [dom] 0cef626a9194 7547 css 3ec0cca4cecc 1210506
 @rivetjs/ui/action-bar [server] 23fa8238a3a4 7125 css 3ec0cca4cecc 1210506
-@rivetjs/ui/sheet [dom] a622e8e76615 18093 css 3ec0cca4cecc 1210506
+@rivetjs/ui/sheet [dom] 694a3c328fb5 18077 css 3ec0cca4cecc 1210506
 @rivetjs/ui/sheet [server] 79d89ff6632f 17072 css 3ec0cca4cecc 1210506
 @rivetjs/ui/menu [dom] 76eff8709687 6707 css 3ec0cca4cecc 1210506
 @rivetjs/ui/menu [server] 65b51a144f92 6410 css 3ec0cca4cecc 1210506
@@ -185,9 +185,9 @@
 @rivetjs/ui/menu-section [server] 6fcd1aa70a79 3470 css dc49d036cc17 1023
 @rivetjs/ui/dropdown [dom] f98b5ca97488 12853 css 3ec0cca4cecc 1210506
 @rivetjs/ui/dropdown [server] 390f84959ae2 11580 css 3ec0cca4cecc 1210506
-@rivetjs/ui/range-calendar [dom] eb5515cdfe5e 21049 css 3ec0cca4cecc 1210506
+@rivetjs/ui/range-calendar [dom] 27e8d4535997 21033 css 3ec0cca4cecc 1210506
 @rivetjs/ui/range-calendar [server] 21c75e042240 19411 css 3ec0cca4cecc 1210506
-@rivetjs/ui/input-otp [dom] 034c73f3798e 15451 css 3ec0cca4cecc 1210506
+@rivetjs/ui/input-otp [dom] d65d437dcea0 15435 css 3ec0cca4cecc 1210506
 @rivetjs/ui/input-otp [server] f0feb564302e 13680 css 3ec0cca4cecc 1210506
 @rivetjs/ui/date-input-group [dom] 4579aeeca79f 6601 css 3ec0cca4cecc 1210506
 @rivetjs/ui/date-input-group [server] 878b767f354b 6342 css 3ec0cca4cecc 1210506
@@ -195,7 +195,7 @@
 @rivetjs/ui/date-field [server] f530461c7421 7023 css 3ec0cca4cecc 1210506
 @rivetjs/ui/time-field [dom] ddff417897a3 7354 css 3ec0cca4cecc 1210506
 @rivetjs/ui/time-field [server] f981be196ccd 7023 css 3ec0cca4cecc 1210506
-@rivetjs/ui/toast [dom] 497f0cca655d 28096 css 3ec0cca4cecc 1210506
+@rivetjs/ui/toast [dom] 3ebbc1904e3f 28064 css 3ec0cca4cecc 1210506
 @rivetjs/ui/toast [server] 39cacb269843 26686 css 3ec0cca4cecc 1210506
 @rivetjs/ui/checkbox [dom] ea141351af9c 9735 css 3ec0cca4cecc 1210506
 @rivetjs/ui/checkbox [server] f6073334a1f0 9081 css 3ec0cca4cecc 1210506
@@ -237,11 +237,11 @@
 @rivetjs/ui/color-picker [server] 39bc9c965b17 5772 css 3ec0cca4cecc 1210506
 @rivetjs/ui/disclosure-group [dom] 2fc2376f3b8d 4896 css 3ec0cca4cecc 1210506
 @rivetjs/ui/disclosure-group [server] 4407cdc7e70d 4789 css 3ec0cca4cecc 1210506
-@rivetjs/ui/autocomplete [dom] c874dbd71e95 18943 css 3ec0cca4cecc 1210506
+@rivetjs/ui/autocomplete [dom] 2f7e4e33ca33 18927 css 3ec0cca4cecc 1210506
 @rivetjs/ui/autocomplete [server] 4cac37d7de4d 16821 css 3ec0cca4cecc 1210506
-@rivetjs/ui/accordion [dom] 105a480dbb3e 11447 css 3ec0cca4cecc 1210506
+@rivetjs/ui/accordion [dom] 1bf44a34f277 11399 css 3ec0cca4cecc 1210506
 @rivetjs/ui/accordion [server] 61fa39786f5f 10263 css 3ec0cca4cecc 1210506
-@rivetjs/ui/segment [dom] 482217935f2a 6923 css 3ec0cca4cecc 1210506
+@rivetjs/ui/segment [dom] 206c27992f5b 6907 css 3ec0cca4cecc 1210506
 @rivetjs/ui/segment [server] 6020754eb8e2 6583 css 3ec0cca4cecc 1210506
 @rivetjs/ui/native-select [dom] 46a2a1c7d5f7 9374 css 3ec0cca4cecc 1210506
 @rivetjs/ui/native-select [server] 435212bbded8 8488 css 3ec0cca4cecc 1210506
@@ -249,7 +249,7 @@
 @rivetjs/ui/checkbox-button-group [server] f1b09f0d6ee8 8505 css 3ec0cca4cecc 1210506
 @rivetjs/ui/radio-button-group [dom] 237037142cb3 9179 css 3ec0cca4cecc 1210506
 @rivetjs/ui/radio-button-group [server] 776f6b69a5c4 8277 css 3ec0cca4cecc 1210506
-@rivetjs/ui/number-stepper [dom] 9c4da99203fc 8549 css 3ec0cca4cecc 1210506
+@rivetjs/ui/number-stepper [dom] ec136e2d19cf 8517 css 3ec0cca4cecc 1210506
 @rivetjs/ui/number-stepper [server] 18ad5dc241c4 7541 css 3ec0cca4cecc 1210506
 @rivetjs/ui/cell-slider [dom] e05df7c57f6c 6248 css 3ec0cca4cecc 1210506
 @rivetjs/ui/cell-slider [server] df204442cfa6 6012 css 3ec0cca4cecc 1210506
@@ -257,35 +257,35 @@
 @rivetjs/ui/cell-select [server] 3bd1d457d10e 9615 css 3ec0cca4cecc 1210506
 @rivetjs/ui/inline-select [dom] a742aba33bc4 9818 css 3ec0cca4cecc 1210506
 @rivetjs/ui/inline-select [server] 765aca3e50d4 9103 css 3ec0cca4cecc 1210506
-@rivetjs/ui/pagination [dom] e966104a9d99 10341 css 3ec0cca4cecc 1210506
+@rivetjs/ui/pagination [dom] 0f36184ccecc 10309 css 3ec0cca4cecc 1210506
 @rivetjs/ui/pagination [server] a40ff31c9ce2 9487 css 3ec0cca4cecc 1210506
-@rivetjs/ui/table [dom] aa7bdee65f46 15169 css 3ec0cca4cecc 1210506
+@rivetjs/ui/table [dom] 3b957d6b1e9c 15105 css 3ec0cca4cecc 1210506
 @rivetjs/ui/table [server] 0ef42ea6788d 13045 css 3ec0cca4cecc 1210506
 @rivetjs/ui/tabs [dom] f97dbcf650d0 12610 css 3ec0cca4cecc 1210506
 @rivetjs/ui/tabs [server] 31a91197b65a 11686 css 3ec0cca4cecc 1210506
-@rivetjs/ui/morph [dom] 246b5a60f213 10681 css 3ec0cca4cecc 1210506
+@rivetjs/ui/morph [dom] 6a3261466c6e 10665 css 3ec0cca4cecc 1210506
 @rivetjs/ui/morph [server] 40795b89ae8f 9918 css 3ec0cca4cecc 1210506
 @rivetjs/ui/compare [dom] b874dc542943 5522 css 3ec0cca4cecc 1210506
 @rivetjs/ui/compare [server] 259a1125f63b 5282 css 3ec0cca4cecc 1210506
-@rivetjs/ui/scheduler [dom] 1422b57818e3 15894 css 3ec0cca4cecc 1210506
+@rivetjs/ui/scheduler [dom] 2bb219fe4957 15846 css 3ec0cca4cecc 1210506
 @rivetjs/ui/scheduler [server] 09e5296cd729 14686 css 3ec0cca4cecc 1210506
 @rivetjs/ui/masonry [dom] 32d524d17021 4428 css 3ec0cca4cecc 1210506
 @rivetjs/ui/masonry [server] 9400458e19ce 4264 css 3ec0cca4cecc 1210506
-@rivetjs/ui/item-morph [dom] 4155c15c7d31 8485 css 3ec0cca4cecc 1210506
+@rivetjs/ui/item-morph [dom] 85ad8906f5d2 8469 css 3ec0cca4cecc 1210506
 @rivetjs/ui/item-morph [server] ce6286f5ff5e 7986 css 3ec0cca4cecc 1210506
 @rivetjs/ui/time-picker [dom] f39e4f8e6ace 8158 css 3ec0cca4cecc 1210506
 @rivetjs/ui/time-picker [server] 283dc9d95a9d 7618 css 3ec0cca4cecc 1210506
-@rivetjs/ui/rating [dom] dbeaff8ed777 6566 css 8bed477dfc53 5510
+@rivetjs/ui/rating [dom] 4d0a110fb7f1 6543 css 8bed477dfc53 5510
 @rivetjs/ui/rating [server] 8f23dbfb8ffe 6558 css 8bed477dfc53 5510
 @rivetjs/ui/trend-chip [dom] c7ec04a8774d 5358 css 3ec0cca4cecc 1210506
 @rivetjs/ui/trend-chip [server] e20aa20d7dca 5223 css 3ec0cca4cecc 1210506
 @rivetjs/ui/kpi [dom] 5a1cb46a898a 7925 css 3ec0cca4cecc 1210506
 @rivetjs/ui/kpi [server] b2844890eb3d 7615 css 3ec0cca4cecc 1210506
-@rivetjs/ui/chart [dom] bb53254eb634 23723 css cb382e635ad4 17692
+@rivetjs/ui/chart [dom] 6f3f0fef9386 23637 css cb382e635ad4 17692
 @rivetjs/ui/chart [server] cf32ac5659ce 26469 css cb382e635ad4 17692
 @rivetjs/ui/kpi-group [dom] 996ac20c6e57 4225 css 3ec0cca4cecc 1210506
 @rivetjs/ui/kpi-group [server] a2694c478b6e 4232 css 3ec0cca4cecc 1210506
-@rivetjs/ui/number-value [dom] df5793d8eb73 6288 css 3ec0cca4cecc 1210506
+@rivetjs/ui/number-value [dom] 6a4977488e9a 6208 css 3ec0cca4cecc 1210506
 @rivetjs/ui/number-value [server] 7cec0d1b8f89 5804 css 3ec0cca4cecc 1210506
 @rivetjs/ui/widget [dom] f2d7497b8e08 5533 css 3ec0cca4cecc 1210506
 @rivetjs/ui/widget [server] 50598dffd443 5335 css 3ec0cca4cecc 1210506
@@ -295,7 +295,7 @@
 @rivetjs/ui/feature-list [server] ff257c8d4e14 4365 css 21f5c48f1d40 1211853
 @rivetjs/ui/status [dom] 98cd57079e7d 3936 css 96546e2a17f2 1770
 @rivetjs/ui/status [server] 40d94c3cc038 4001 css 96546e2a17f2 1770
-@rivetjs/ui/qr-code [dom] 0ddfcb73190b 7261 css a1ef4a4606c9 5235
+@rivetjs/ui/qr-code [dom] cf33c20ea732 7245 css a1ef4a4606c9 5235
 @rivetjs/ui/qr-code [server] bbe11533323d 6996 css a1ef4a4606c9 5235
 @rivetjs/ui/item-card [dom] 83dfa65dd605 6481 css 5e12faad4d53 1212277
 @rivetjs/ui/item-card [server] 32d40f5ba601 6321 css 5e12faad4d53 1212277
@@ -313,13 +313,13 @@
 @rivetjs/ui/emoji-reaction-button [server] 734abc7738de 5197 css 3ec0cca4cecc 1210506
 @rivetjs/ui/context-menu [dom] e199aa57bb3d 15994 css 3ec0cca4cecc 1210506
 @rivetjs/ui/context-menu [server] b1d842db22a5 14416 css 3ec0cca4cecc 1210506
-@rivetjs/ui/command [dom] 6ff07cb199e2 18239 css 3ec0cca4cecc 1210506
+@rivetjs/ui/command [dom] 99333e3a4ef1 18206 css 3ec0cca4cecc 1210506
 @rivetjs/ui/command [server] 37530d422655 16395 css 3ec0cca4cecc 1210506
-@rivetjs/ui/drop-zone [dom] fa92bd70a45c 15663 css 3ec0cca4cecc 1210506
+@rivetjs/ui/drop-zone [dom] e1876f2eebb6 15631 css 3ec0cca4cecc 1210506
 @rivetjs/ui/drop-zone [server] 5512893e392c 14001 css 3ec0cca4cecc 1210506
 @rivetjs/ui/list-view [dom] cd334635f254 12633 css 3ec0cca4cecc 1210506
 @rivetjs/ui/list-view [server] 3e43bf97ff33 11622 css 3ec0cca4cecc 1210506
-@rivetjs/ui/file-tree [dom] 3fced3aa314a 14005 css 3ec0cca4cecc 1210506
+@rivetjs/ui/file-tree [dom] d8ff6419e35c 13989 css 3ec0cca4cecc 1210506
 @rivetjs/ui/file-tree [server] efc135d7844f 12773 css 3ec0cca4cecc 1210506
 @rivetjs/ui/pressable-feedback [dom] 25c3a7c223ea 10348 css 3ec0cca4cecc 1210506
 @rivetjs/ui/pressable-feedback [server] 71104c490567 7101 css 3ec0cca4cecc 1210506
@@ -327,57 +327,57 @@
 @rivetjs/ui/holo-card [server] 33ed9986e29e 7896 css 3ec0cca4cecc 1210506
 @rivetjs/ui/floating-toc [dom] 06cfc4eb7ebc 6597 css 3ec0cca4cecc 1210506
 @rivetjs/ui/floating-toc [server] b82f541c7165 6142 css 3ec0cca4cecc 1210506
-@rivetjs/ui/cell-color-picker [dom] 7051426b324b 8961 css 3ec0cca4cecc 1210506
+@rivetjs/ui/cell-color-picker [dom] 3f293394ab88 8945 css 3ec0cca4cecc 1210506
 @rivetjs/ui/cell-color-picker [server] cd2de558c820 8293 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chart-tooltip [dom] 2d99df5a6896 5668 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chart-tooltip [server] e77fb9dccfdc 5569 css 3ec0cca4cecc 1210506
-@rivetjs/ui/pie-chart [dom] 3ae16d1d11a3 11232 css 44c54c1755b7 18524
+@rivetjs/ui/pie-chart [dom] e08acfa14f86 11179 css 44c54c1755b7 18524
 @rivetjs/ui/pie-chart [server] b8a46f72139f 14335 css 44c54c1755b7 18524
-@rivetjs/ui/radar-chart [dom] aea1d9d4dbff 12331 css 2f0dafd1ef45 19329
+@rivetjs/ui/radar-chart [dom] f7e4865f92c6 12251 css 2f0dafd1ef45 19329
 @rivetjs/ui/radar-chart [server] e9e8b4cec65e 15605 css 2f0dafd1ef45 19329
-@rivetjs/ui/radial-chart [dom] b35bf0f8544c 9962 css d5b8ed5ebb8e 18464
+@rivetjs/ui/radial-chart [dom] 59c38c14397e 9898 css d5b8ed5ebb8e 18464
 @rivetjs/ui/radial-chart [server] 7a197ff47568 13263 css d5b8ed5ebb8e 18464
-@rivetjs/ui/composed-chart [dom] 1d169a539d14 14440 css 8b779158df7b 18342
+@rivetjs/ui/composed-chart [dom] 8683d7d0454d 14376 css 8b779158df7b 18342
 @rivetjs/ui/composed-chart [server] 6dfd410b1c58 18204 css 8b779158df7b 18342
-@rivetjs/ui/kanban [dom] 1df045fc3503 26204 css 3ec0cca4cecc 1210506
+@rivetjs/ui/kanban [dom] d1f6083c2f41 26140 css 3ec0cca4cecc 1210506
 @rivetjs/ui/kanban [server] 0aaaa2a7a30b 23977 css 3ec0cca4cecc 1210506
 @rivetjs/ui/text-shimmer [dom] d93e9446d0b1 3789 css 91b77d4ecd3a 1993
 @rivetjs/ui/text-shimmer [server] 22ba6e5dd0c2 3757 css 91b77d4ecd3a 1993
-@rivetjs/ui/streaming-text [dom] bac79d64fde1 4874 css 3ec0cca4cecc 1210506
+@rivetjs/ui/streaming-text [dom] 06a6237cf0d1 4858 css 3ec0cca4cecc 1210506
 @rivetjs/ui/streaming-text [server] e9723f78992e 4935 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-loader [dom] d5c8bc861e63 7725 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-loader [server] f6097f822242 7442 css 3ec0cca4cecc 1210506
-@rivetjs/ui/chat-message [dom] 31413dd8957b 9682 css 3ec0cca4cecc 1210506
+@rivetjs/ui/chat-message [dom] 33cacd112f10 9666 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-message [server] 66bad0db5a04 9120 css 3ec0cca4cecc 1210506
-@rivetjs/ui/chat-message-actions [dom] f2cea208ee45 8445 css 3ec0cca4cecc 1210506
+@rivetjs/ui/chat-message-actions [dom] 449fd3a66b6a 8429 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-message-actions [server] 0a2c74a70ab0 7964 css 3ec0cca4cecc 1210506
 @rivetjs/ui/prompt-suggestion [dom] a108531e7316 6493 css 3ec0cca4cecc 1210506
 @rivetjs/ui/prompt-suggestion [server] deff9190d506 6155 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-list-view [dom] 1dbcf6f20642 5510 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-list-view [server] 4e89a872d19f 5465 css 3ec0cca4cecc 1210506
-@rivetjs/ui/code-block [dom] 6241ee3ce4a0 9766 css 3ec0cca4cecc 1210506
+@rivetjs/ui/code-block [dom] f5b6d5dbed8f 9729 css 3ec0cca4cecc 1210506
 @rivetjs/ui/code-block [server] c560ec1d8ad7 9043 css 3ec0cca4cecc 1210506
-@rivetjs/ui/markdown [dom] 99e64197cb8e 26274 css 3ec0cca4cecc 1210506
+@rivetjs/ui/markdown [dom] a22f1a23dbfb 26050 css 3ec0cca4cecc 1210506
 @rivetjs/ui/markdown [server] 1c0c9da3ae64 23708 css 3ec0cca4cecc 1210506
-@rivetjs/ui/chain-of-thought [dom] b1c47df346cd 10703 css 3ec0cca4cecc 1210506
+@rivetjs/ui/chain-of-thought [dom] cd1c4a52d839 10687 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chain-of-thought [server] c6ba2de91c43 9289 css 3ec0cca4cecc 1210506
-@rivetjs/ui/chat-source [dom] e45fcc78457f 15983 css 3ec0cca4cecc 1210506
+@rivetjs/ui/chat-source [dom] e8c78680f753 15871 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-source [server] b6d590ce3521 13931 css 3ec0cca4cecc 1210506
-@rivetjs/ui/chat-tool [dom] 902497b80581 19645 css 3ec0cca4cecc 1210506
+@rivetjs/ui/chat-tool [dom] 0c3d473b8b42 19545 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-tool [server] d5ad483c0e7f 17012 css 3ec0cca4cecc 1210506
-@rivetjs/ui/chat-conversation [dom] 53b402083991 9039 css 3ec0cca4cecc 1210506
+@rivetjs/ui/chat-conversation [dom] 656aa2488e54 9023 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-conversation [server] c3c67940cf7c 8483 css 3ec0cca4cecc 1210506
-@rivetjs/ui/chat-attachment [dom] aad2a65c5527 16226 css 3ec0cca4cecc 1210506
+@rivetjs/ui/chat-attachment [dom] 6f92599c5190 16162 css 3ec0cca4cecc 1210506
 @rivetjs/ui/chat-attachment [server] fecdd899a134 14195 css 3ec0cca4cecc 1210506
-@rivetjs/ui/prompt-input [dom] de0dd25aa49d 19246 css 3ec0cca4cecc 1210506
+@rivetjs/ui/prompt-input [dom] 16441bd2cfcc 19230 css 3ec0cca4cecc 1210506
 @rivetjs/ui/prompt-input [server] 7935e1f4e69b 17218 css 3ec0cca4cecc 1210506
-@rivetjs/ui/prompt-input-tokens [dom] a0bee1c3db28 13724 css 3ec0cca4cecc 1210506
+@rivetjs/ui/prompt-input-tokens [dom] f1749b1605ff 13692 css 3ec0cca4cecc 1210506
 @rivetjs/ui/prompt-input-tokens [server] 934515e50c2a 12441 css 3ec0cca4cecc 1210506
 @rivetjs/ui/prompt-input-queue-reorder [dom] c2f18f63a2ec 2109
 @rivetjs/ui/prompt-input-queue-reorder [server] 38b70d125f89 1850
 @rivetjs/ui/table-tanstack 3be7eaa54140 2918
 @rivetjs/ui/theme b9c003d3ef1e 23697
-@rivetjs/motion [dom] e32370185231 46378
+@rivetjs/motion [dom] 44d49ae44eec 45562
 @rivetjs/motion [server] b8de0817759d 38618
 @rivetjs/motion/presence [dom] 55d641294d3b 1481
 @rivetjs/motion/presence [server] a65bb5cf6a91 1354
@@ -420,10 +420,10 @@
 @rivetjs/bridge-svelte/server 0632e158c63f 1059
 @rivetjs/bridge-svelte/client 4dc4c806fad5 1377
 @rivetjs/bridge-svelte/types 56e1b0c10087 9
-@rivetjs/cdk/masonry [dom] fd8741674fb8 90086
+@rivetjs/cdk/masonry [dom] c1b170dc78e4 90054
 @rivetjs/cdk/masonry [server] 5dee8f78dc6b 81233
 @rivetjs/cdk/masonry/behaviour 535dc96a527b 16138
 @rivetjs/cdk/flip 94e1c39bc99c 3782
-@rivetjs/cdk/scheduler [dom] 487dabe4f50d 199723
+@rivetjs/cdk/scheduler [dom] a97f550af0b1 199423
 @rivetjs/cdk/scheduler [server] b3b1d4330963 182463
 @rivetjs/cdk/scheduler/layout f4c2c747b346 23962

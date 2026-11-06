@@ -6,15 +6,15 @@ test("untagged template children are scalar text: a static one folds to textCont
   for (const expression of ["`value-${read()}`", "(`value-${read()}`)"]) {
     const result = compile(`export const A = () => <p>{${expression}}</p>`, { target: "dom", filename: "text.tsx" });
     assert.deepEqual(result.diagnostics, []);
-    // Closure-free binding (OPT-D): the hoisted writer takes the template's placeholder Text (`_tx`, IMPL-DOM F2);
-    // `read` is a global.
-    assert.ok(result.code.includes('__rivet_tpl("<p> ")'), result.code);
-    assert.match(result.code, /_el\$1 = __rivetTpl\d+\(\),\s*_el\$2 = _el\$1\.firstChild/);
+    // Closure-free binding (OPT-D) in a client-only module (GC-01): no placeholder, the hoisted writer takes the element
+    // (`_te`); `read` is a global.
+    assert.ok(result.code.includes('__rivet_tpl("<p>")'), result.code);
+    assert.match(result.code, /const _el\$1 = __rivetTpl\d+\(\);/);
     assert.match(
       result.code,
-      /const __rivetFx0 = \(_el\$2\) => \{\s*try \{\s*__rivet_tx\(_el\$2, `value-\$\{read\(\)\}`\);\s*\} catch \((\w+)\) \{\s*__rivet_tx\(_el\$2, null\);/,
+      /const __rivetFx0 = \(_el\$1\) => \{\s*try \{\s*__rivet_te\(_el\$1, `value-\$\{read\(\)\}`\);\s*\} catch \((\w+)\) \{\s*__rivet_te\(_el\$1, null\);/,
     );
-    assert.match(result.code, /__rivet_fx1\(__rivetFx0, _el\$2\);/);
+    assert.match(result.code, /__rivet_fx1\(__rivetFx0, _el\$1\);/);
     assert.doesNotMatch(result.code, /__rivet_t\(/);
     assert.doesNotMatch(result.code, /_insert|_textValue/);
   }
@@ -25,11 +25,18 @@ test("untagged template children are scalar text: a static one folds to textCont
 });
 
 test("tagged templates and unknown child values keep the generic child writer and RCDATA stays specialized", () => {
-  // No JSX in the value: the placeholder Text writer (`_tx` switches to insertion at runtime for node values).
+  // No JSX in the value: the element text writer (`_te`, GC-01 client-only module; switches to insertion at runtime for
+  // node values). Resumed modules keep the placeholder Text writer `_tx`.
   for (const expression of ["tag`value-${read()}`", "read()"]) {
     const result = compile(`export const A = () => <p>{${expression}}</p>`, { target: "dom", filename: "child.tsx" });
     assert.deepEqual(result.diagnostics, []);
-    assert.match(result.code, /__rivet_tx\(_el\$2, /);
+    assert.match(result.code, /__rivet_te\(_el\$1, /);
+    const resumed = compile(`export const A = () => <p>{${expression}}</p>`, {
+      target: "dom",
+      filename: "child.tsx",
+      resume: { module: "src/child.tsx", boundaries: [] },
+    } as never);
+    assert.match(resumed.code, /__rivet_tx\(_el\$2, /);
     assert.doesNotMatch(result.code, /textContent|__rivet_t\(/);
   }
   // Slot content and JSX inside the value: no placeholder, the element-level writers.
