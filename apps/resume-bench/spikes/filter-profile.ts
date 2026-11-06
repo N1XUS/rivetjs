@@ -18,7 +18,8 @@ const profile = process.argv.includes("--profile");
 const port = Number(arg("port", "4521"));
 const text = arg("text", "g")!;
 
-const browser = await chromium.launch({ ...chromeTarget(), headless: true });
+// --js-flags <flags>: V8 flags for the browser (cold-code experiments, e.g. `--no-lazy`).
+const browser = await chromium.launch({ ...chromeTarget(), headless: true, args: arg("js-flags") ? ["--js-flags=" + arg("js-flags")] : [] });
 const results: Record<string, Record<string, number[]>> = {};
 const selfAll: Record<string, Map<string, number>> = {};
 for (let r = 0; r < reps; r++)
@@ -89,12 +90,30 @@ for (let r = 0; r < reps; r++)
         );
         addEventListener("input", end);
       });
+    // --nooplisten <n> (experiment): n no-op capture keydown listeners on the document in every lane.
+    if (arg("nooplisten"))
+      await page.addInitScript(
+        (n) => {
+          for (let i = 0; i < n; i++) document.addEventListener("keydown", () => {}, true);
+        },
+        Number(arg("nooplisten")),
+      );
     await page.goto(server.url);
     await page.waitForTimeout(Number(arg("wait", "1500")));
     await page.click("#filter");
     await page.waitForTimeout(Number(arg("gap", "300")));
     // --pre <text>: typed (and settled) before the measured keys: later keys' cost alone.
     if (arg("pre")) (await page.keyboard.type(arg("pre")!), await page.waitForTimeout(500));
+    // --warm (upper-bound experiment): synthetic keydown + input on #filter (value unchanged) before the measured keys.
+    if (process.argv.includes("--warm"))
+      (await page.evaluate(() => {
+        const f = document.getElementById("filter")!;
+        for (let i = 0; i < Number((window as any).__warmN ?? 1); i++) {
+          f.dispatchEvent(new KeyboardEvent("keydown", { key: "Shift", bubbles: true, composed: true }));
+          f.dispatchEvent(new InputEvent("input", { bubbles: true, composed: true }));
+        }
+      }),
+        await page.waitForTimeout(300));
     if (profile) {
       await cdp.send("Profiler.enable");
       await cdp.send("Profiler.setSamplingInterval", { interval: Number(arg("interval", "50")) });
@@ -145,6 +164,10 @@ for (let r = 0; r < reps; r++)
     (out.keydownDelay ??= []).push(keydown ? keydown[2] - keydown[1] : NaN);
     (out.toInputEnd ??= []).push(keydown && input ? input[3] - keydown[1] : NaN);
     (out.paint ??= []).push(paint - kd);
+    // --events: every event-timing entry from the first keydown on (name, start, processing start / end, relative to the keydown).
+    if (process.argv.includes("--events"))
+      for (const e of (ev as any[]).filter((e) => e[1] >= kd - 1))
+        ((out["ev:" + e[0] + ":ps"] ??= []).push(e[2] - kd), (out["ev:" + e[0] + ":proc"] ??= []).push(e[3] - e[2]));
     if (profile) {
       const { profile: p } = await cdp.send("Profiler.stop");
       // --save <prefix>: the raw profile per lane + repeat (`<prefix>-<lane>-r<rep>.cpuprofile`, DevTools / tree tools).

@@ -659,6 +659,32 @@ function keep(parent: Parent, el: HTMLElement): void {
 }
 
 /**
+ * `reconcile`'s removals-only pass: when `b` is a subsequence of `a[0..aEnd)` (a filter, deleted rows) drop the rest in one
+ * merge walk — no node map (FILTER2 2026-11-05: a 1,000-row filter's first key walks 3,000 nodes, rows + their server
+ * markers, ~1 ms of map work at 4x CPU) — and return true; else false (nothing done). Its own function: `reconcile`'s
+ * general path keeps its size (krausest swap).
+ */
+function removals(parent: Parent, a: Node[], b: Node[], aEnd: number): boolean {
+  const bLength = b.length;
+  let j = 0;
+  for (let i = 0; i < aEnd && j < bLength; i++) if (a[i] === b[j]) j++;
+  if (j !== bLength) return false;
+  // The hover rule (`drop`) is the same for every node of one pass: read once; outside it a dropped node is a plain
+  // `removeChild` (FILTER3 2026-11-06: per node, `drop` re-tested the marker and called `_deferredFlush`, ~2,700 cold
+  // calls of a 1,000-row filter's first key).
+  const hover = _deferredFlush() || _hoverRule.on;
+  for (let i = 0, k = 0; i < aEnd; i++) {
+    const node = a[i];
+    if (k < bLength && node === b[k]) k++;
+    // A lazy row's server markers are inert (left in place): the expando test inline, no call and no `parentNode`
+    // DOM call for the other nodes (EACH 2026-11-06: 1,800 of a 1,000-row filter's 2,700 dropped nodes).
+    else if (DERIVED && (node as Node & { $rw?: unknown }).$rw !== undefined) _adoption.inert!(node);
+    else if (node.parentNode === parent) hover ? drop(parent, node) : parent.removeChild(node);
+  }
+  return true;
+}
+
+/**
  * Reconcile `a` (current, non-empty; nodes may have left `parent`) to `b` by node identity: common ends, swapped ends,
  * then keyed moves that keep runs in place (dom-expressions' reconcileArrays / udomdiff).
  */
@@ -670,27 +696,13 @@ function reconcile(parent: Parent, a: Node[], b: Node[], marker: Node | null): v
     bStart = 0,
     map: Map<Node, number> | null = null,
     copied = false;
+  // Removals only (`b` a subsequence of `a`: a filter, deleted rows): one merge walk (`removals`).
+  if (bLength < aEnd && removals(parent, a, b, aEnd)) return;
   // The node after the list: past the last current node still here (a disposed output's nodes have
   // already left), else the marker.
   let last = aEnd - 1;
   while (last >= 0 && a[last].parentNode !== parent) last--;
   const after = last >= 0 ? a[last].nextSibling : marker;
-  // Removals only (`b` a subsequence of `a`: a filter, deleted rows): one merge walk, no node map (FILTER2 2026-11-05: a
-  // 1,000-row filter's first key walks 3,000 nodes — rows + their server markers — ~1 ms of map work at 4x CPU).
-  if (bLength < aEnd) {
-    let j = 0;
-    for (let i = 0; i < aEnd && j < bLength; i++) if (a[i] === b[j]) j++;
-    if (j === bLength) {
-      for (let i = 0, k = 0; i < aEnd; i++) {
-        const node = a[i];
-        if (k < bLength && node === b[k]) k++;
-        // A lazy row's server markers are inert (left in place): the expando test first, no `parentNode` DOM call for
-        // them (EACH 2026-11-06: 1,800 of a 1,000-row filter's 2,700 dropped nodes).
-        else if (!(DERIVED && _adoption.inert?.(node)) && node.parentNode === parent) drop(parent, node);
-      }
-      return;
-    }
-  }
   // Nothing kept and the list owns the parent: one native wipe, then append (replace all).
   if (marker === null && bLength > 0 && a[0] !== b[0] && parent.firstChild === a[0] && parent.lastChild === a[aEnd - 1] && !_deferredFlush()) {
     map = new Map();
@@ -1111,7 +1123,8 @@ export function _for<T, K>(props: {
           const row = list[i]!;
           if (row.pass === -pass) {
             if (!fresh) map.delete(row.key);
-            _dispose(row.owner);
+            // An adopted row the browser never ran owns nothing: no call (900 of a 1,000-row filter's first key).
+            if (row.owner !== null) _dispose(row.owner);
           }
         }
         if (fresh) {
