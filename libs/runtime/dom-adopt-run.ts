@@ -119,6 +119,8 @@ export interface RowPlan {
   slots: (number | number[])[];
   /** `_t` / `_tx` state: [index, 0 `$$t` text | 1 `$$t` slot | 2 `$$s` slot, current (slots)]. */
   exp: [number, number, number | number[]][];
+  /** The row's probe made class writes: a planned row takes class ownership from its elements' server snapshots. */
+  classes?: 1;
 }
 /** Per For (`dom-resume-lazy.ts`): its plan once built; false after a miss or when no row aligned exactly within 3 tries. */
 export interface RowPlanCache {
@@ -315,8 +317,10 @@ export function _adoptRow(
   if (gone(parent)) return null;
   const row = flatRow(start, end),
     plan = cache?.p;
-  if (plan && plan.sig === row.sig && !DEV) {
-    const owner = adopt(parent, enter, rowFn, end, fromPlan(plan, row.list), row.controls, outer, true);
+  // (A row element without a server class snapshot: its class ownership needs the probe's value.)
+  const fromCache = plan && plan.sig === row.sig && !DEV ? fromPlan(plan, row.list) : null;
+  if (fromCache) {
+    const owner = adopt(parent, enter, rowFn, end, fromCache, row.controls, outer, true);
     if (owner !== MISS) return owner;
     // A creation the plan did not foresee: this For adopts with the probe from now on.
     cache!.p = false;
@@ -377,10 +381,13 @@ export function _adoptRow(
     slots: probe.slots.map((slot) => mapped(slot.current)),
     classes: mappedClasses(probe, map),
   };
-  // Class ownership is per row, not per structure: a plan cannot carry another row's first value.
-  if (cache && probe.classes.size) cache.p = false;
+  // Class ownership is per row, not per structure: a plan cannot carry another row's first value — but a row whose
+  // elements all have their server class captured (`captureClasses`) takes ownership from that snapshot, as the probe
+  // path does (`mappedClasses`), so its plan holds (FIRSTCLICK 2026-11-06: a `class` binding made every lazy row probe).
+  if (cache && probe.classes.size && !answers.classes!.every(([el]) => serverClasses.has(el))) cache.p = false;
   else if (cache && !a.copied && (cache.p === undefined || (DEV && cache.p && cache.p.sig === row.sig))) {
     const built = toPlan(answers, exp, row.list, row.sig);
+    if (built && probe.classes.size) built.classes = 1;
     if (cache.p === undefined) {
       if (built) cache.p = built;
       else if ((cache.tries = (cache.tries ?? 0) + 1) >= 3) cache.p = false;
@@ -415,7 +422,7 @@ function toPlan(a: Answers, exp: [Node, number, Current][], list: Node[], sig: s
   };
   return ok ? plan : null;
 }
-function fromPlan(plan: RowPlan, list: Node[]): Answers {
+function fromPlan(plan: RowPlan, list: Node[]): Answers | null {
   const node = (i: number): Node | null | undefined => (i === -2 ? null : i < 0 ? undefined : list[i]);
   const cur = (c: number | number[]): Current => (Array.isArray(c) ? (c.map(node) as Node[]) : (node(c) ?? null));
   for (const [i, kind, c] of plan.exp) {
@@ -425,11 +432,21 @@ function fromPlan(plan: RowPlan, list: Node[]): Answers {
     else if (kind === 1) to.$$t = { current: cur(c) };
     else to.$$s = { current: cur(c) };
   }
+  let classes: [Element, string | null][] | undefined;
+  if (plan.classes) {
+    classes = [];
+    for (const n of list)
+      if (n.nodeType === 1) {
+        if (!serverClasses.has(n as Element)) return null;
+        classes.push([n as Element, serverClasses.get(n as Element)!]);
+      }
+  }
   return {
     made: plan.made.map((l) => l.map((i) => (i < 0 ? undefined : list[i]))) as Answers["made"],
     names: plan.names,
     shapes: plan.shapes.map((shape) => shape.map(node)),
     slots: plan.slots.map(cur),
+    classes,
   };
 }
 // Capture before any boundary runs: a parent's refs can decorate a child whose chunk loads later, and its state can
@@ -517,7 +534,7 @@ export function adopt(
   // a token still works. A class binding absent from the planned sample needs its own probe.
   const classes = new Map<Element, string | null | Set<string>>(a.classes);
   _adoption.classValue = (el, value) => {
-    if (planned && a.shapes.some((shape) => shape.includes(el))) return ((miss = true), el.getAttribute("class"));
+    if (planned && !classes.has(el) && a.shapes.some((shape) => shape.includes(el))) return ((miss = true), el.getAttribute("class"));
     if (!primitiveClass(value)) return value;
     let owned = classes.get(el);
     // A ref can synchronously update an already-live binding outside this unit. It still owns its whole class.

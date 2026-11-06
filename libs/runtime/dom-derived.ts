@@ -1750,9 +1750,13 @@ function writeRow(lazy: Lazy, row: LRow, writers: Writer[]): void {
 // to row while equal: the writers overwrite what they write (attribute, class, style, text, form property), so equal
 // elements before a run end unequal exactly when the run's writes differ.
 function touched(lazy: Lazy, writers: Writer[], get: unknown, was: unknown): void {
+  // One untracked scope for the whole pass (FIRSTCLICK 2026-11-06: a closure + `untrack` per dry run was ~2,000 per
+  // write on a 1,000-row list); `writeRow` untracks its own runs.
+  untrack(() => touchedRows(lazy, writers, get, () => was));
+}
+function touchedRows(lazy: Lazy, writers: Writer[], get: unknown, before: () => unknown): void {
   const items = lazy.items,
-    known = lazy.rows ?? lazy.part,
-    before = () => was;
+    known = lazy.rows ?? lazy.part;
   for (let k = 0; k < items.length; k++) {
     const row = known?.[k];
     if (row && (row.done || !row.start!.isConnected)) continue;
@@ -1787,25 +1791,29 @@ function differs(w: Writer, item: () => unknown, get: unknown, before: () => unk
   }
   return false;
 }
+// (Runs inside `touched`'s untracked scope.)
 function dryRun(w: Writer, el: Element, item: () => unknown, get: unknown, value: unknown): boolean {
-  let a: unknown, b: unknown, c: unknown;
-  for (let j = 0; j < 3; j++) {
-    const arg = w.args[j]!,
-      v = arg[0] === 0 ? (arg[1] === get ? value : arg[1]) : arg[0] === 2 ? item : el;
-    j === 0 ? (a = v) : j === 1 ? (b = v) : (c = v);
-  }
+  const args = w.args,
+    a = args[0]!,
+    b = args[1]!,
+    c = args[2]!;
   try {
-    untrack(() => w.fn(a, b, c));
+    w.fn(
+      a[0] === 0 ? (a[1] === get ? value : a[1]) : a[0] === 2 ? item : el,
+      b[0] === 0 ? (b[1] === get ? value : b[1]) : b[0] === 2 ? item : el,
+      c[0] === 0 ? (c[1] === get ? value : c[1]) : c[0] === 2 ? item : el,
+    );
     return true;
   } catch {
     return false;
   }
 }
-// Form state and expandos (`_t`'s `$$t`) of two dry-run elements `isEqualNode` found equal.
+// Form state and expandos (`_t`'s `$$t`) of two dry-run elements `isEqualNode` found equal. Form state: only a form
+// control's (`value` / `checked` / `selected` are not its attributes); an `li`'s or `button`'s `value` reflects one.
 function alike(w: Writer, x: Element, y: Element): boolean {
   const p = x as unknown as Record<string, unknown>,
     q = y as unknown as Record<string, unknown>;
-  if ("value" in x && (p.value !== q.value || p.checked !== q.checked || p.selected !== q.selected)) return false;
+  if (FORM_STATE.test(x.localName) && (p.value !== q.value || p.checked !== q.checked || p.selected !== q.selected)) return false;
   if (w.keys === 0) {
     // The first dry run tells whether this writer leaves expandos at all.
     const own = Object.keys(x);
@@ -1815,6 +1823,7 @@ function alike(w: Writer, x: Element, y: Element): boolean {
   if (w.keys === 1) for (const key of Object.keys(x)) if (p[key] !== q[key]) return false;
   return w.keys !== 2;
 }
+const FORM_STATE = /^(input|select|textarea|option)$/;
 // The row's element at an element-index path from its start (cached per writer slot), null when the server row's
 // elements are not the sampled ones.
 function element(row: LRow, slot: number, path: number[], name: string): Element | null {

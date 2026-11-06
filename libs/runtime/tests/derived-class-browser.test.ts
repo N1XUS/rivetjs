@@ -159,6 +159,55 @@ for (const firstBinds of [true, false])
     );
   });
 
+// FIRSTCLICK 2026-11-06: rows whose elements have server class snapshots (`captureClasses`, as the derived runtime takes at
+// start) keep the For's plan with a class binding — no probe per row — and take ownership from the snapshot like the probe
+// path: the binding's server tokens go, a plugin's later addition stays.
+for (const snapshot of [true, false])
+  test(`a lazy-row plan takes class ownership from the server snapshot (snapshot=${snapshot})`, async () => {
+    await withPage(
+      {
+        ...DERIVED_BUILD,
+        "/": '<!doctype html><main><!--a--><div class="slide row-0"></div><!--b--><div class="slide row-1"></div><!--c--><div class="slide row-2"></div><!--d--></main>',
+        "/rows.js": `
+        import { _adoptRow, captureClasses } from "/dom-adopt-run.ts";
+        import { _tpl, _cls } from "/dom-v2.ts";
+        if (${snapshot}) captureClasses(document);
+        // A plugin decorates the server rows after the snapshot.
+        for (const el of document.querySelectorAll("main > div")) el.classList.add("is-snapped");
+        const template = _tpl("<div></div>");
+        const cache = {}, runs = [];
+        const nodes = [...document.querySelector("main").childNodes];
+        for (let i = 0; i < 3; i++) {
+          runs[i] = 0;
+          _adoptRow(null, fn => fn(), () => {
+            runs[i]++;
+            const el = template();
+            _cls(el, el.isConnected ? "slide picked" : "slide row-" + i);
+            return el;
+          }, nodes[i * 2], nodes[i * 2 + 2], null, cache);
+        }
+        window.runs = runs;
+      `,
+      },
+      async (page) => {
+        await page.goto("http://rivet.test/");
+        const result = await page.evaluate(async () => {
+          const before = [...document.querySelectorAll("main > div")];
+          const path = "/rows.js";
+          await import(/* @vite-ignore */ path);
+          return {
+            classes: before.map((el, i) => (el === document.querySelectorAll("main > div")[i] ? el.className : "replaced")),
+            runs: (window as unknown as { runs: number[] }).runs,
+          };
+        });
+        // With the snapshot: owned server tokens (`row-N`) dropped, the plugin's kept; without it the binding's first
+        // value is the baseline (the probe's), so the plugin token is kept too — but every row probes.
+        assert.deepEqual(result.classes, ["slide picked is-snapped", "slide picked is-snapped", "slide picked is-snapped"]);
+        assert.deepEqual(result.runs, snapshot ? [2, 1, 1] : [2, 2, 2]);
+      },
+    );
+  });
+
 for (const planned of [false, true])
   for (const next of ["", "next"]) {
     test(`adoption leaves unrelated live class bindings in control (planned=${planned}, next=${JSON.stringify(next)})`, async () => {
