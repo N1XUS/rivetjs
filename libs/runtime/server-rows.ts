@@ -11,6 +11,7 @@
 // fails over to the caller's path, silently and for the life of the process.
 // Pulled in by `_listPlan` only: a server bundle without compiled list rows carries none of it.
 import { ROWS_LAYOUT as M, ROWS_WASM } from "./server-rows-wasm.ts";
+import { shownRows } from "./server-rows-shown.ts";
 
 /** A plan slot as server.ts's PlanSlot: null = child, a number = a flattened component's bounds (writes nothing), else an attribute. */
 type Slot = null | number | { readonly raw: { readonly text: string; readonly url: string | null; readonly list?: boolean } | null };
@@ -183,6 +184,9 @@ export function _listRows(
     pending = "",
     units = 0,
     ints = 0,
+    first = row,
+    // DOM data registered this tape (`server-rows-shown.ts`): its proven row prefix, tracked while chunks continue it.
+    proven = shownRows.get(tape),
     waiting: unknown;
   const put = (): void => {
     if (pending !== "") ((real += utf8(pending, real, M.out)), (pending = ""));
@@ -191,7 +195,16 @@ export function _listRows(
   // first wait is kept).
   const flush = (): void => {
     if (n === 0) return;
+    // Rows first..first+n-1 continue the proven prefix when their strings (all in `pending`: an early `put` stops the
+    // tracking) hold no CR / NUL (memchr scans of the flat chunk string, ~free next to its encode) and no lone surrogate
+    // (UTF-8 bytes = UTF-16 units: ASCII; else `isWellFormed` of the joined string).
+    const tracked = proven === first,
+      text = pending;
     put();
+    if (tracked)
+      if (text.indexOf("\r") < 0 && text.indexOf("\0") < 0 && (real - M.input === units || (text as { isWellFormed?(): boolean }).isWellFormed?.() === true))
+        shownRows.set(tape, (proven = first + n));
+      else proven = undefined;
     const end = emit(n, width, M.input, M.lens, M.out, M.table);
     n = li = ints = units = 0;
     at = real = M.input;
@@ -239,7 +252,7 @@ export function _listRows(
           at += size;
           units += child.length;
           pending += child;
-          if ((child.charCodeAt(child.length - 1) & 0xfc00) === 0xd800) put();
+          if ((child.charCodeAt(child.length - 1) & 0xfc00) === 0xd800) (put(), (proven = undefined));
           lens[li + k] = child.length;
         } else if (typeof child === "number") {
           if ((child | 0) !== child) break;
@@ -257,7 +270,7 @@ export function _listRows(
           else nums[li] = id;
         }
         li += width;
-        n++;
+        if (n++ === 0) first = r;
         if (n * fixed + units * ESCAPED + ints * DIGITS >= CHUNK) {
           flush();
           if (waiting !== undefined) return { wait: waiting, row: r + 1 };

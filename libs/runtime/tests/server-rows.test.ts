@@ -9,6 +9,7 @@ import { escapeAttribute, escapeText } from "../escape.ts";
 import { renderToString, renderToWriter, compiledTemplate, _list, _listPlan } from "../server.ts";
 import type { ListPlan, ServerValue } from "../server.ts";
 import { _listRows, _setListRows } from "../server-rows.ts";
+import { shownRows } from "../server-rows-shown.ts";
 
 afterEach(() => _setListRows(true));
 
@@ -38,6 +39,9 @@ const alphabet = [
   "\u0080",
   "ÿ",
   "\n",
+  "\r",
+  "\0",
+  "\ufffd",
   "&amp;",
 ];
 function text(max: number): string {
@@ -301,4 +305,59 @@ test("fallback: without WebAssembly (or when compiling from bytes throws) the em
   }
   _setListRows(true);
   assert.equal(_listRows(plan, ["x"], 0, 1, new Slab(), undefined), 1);
+});
+
+// SSR2 (2026-11-06): for a tape DOM data registered (`shownRows`, n = 0), the emitter records the row prefix whose strings
+// hold no CR, NUL or lone surrogate, so DOM data skips its per-string KEPT regex; unregistered tapes are not tracked.
+const KEPT = /[\r\0]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
+test("row emitter: shownRows proves a registered tape's rows only when no string holds CR, NUL or a lone surrogate", () => {
+  for (let t = 0; t < 1500; t++) {
+    const width = 1 + rnd(4);
+    const fragments = Array.from({ length: width + 1 }, (_, k) => "<f" + k + ">");
+    const entries = Array.from({ length: width }, (_, k) => (rnd(2) ? ([`data-${k}`, "html"] as const) : null));
+    const plan = _listPlan(fragments, entries);
+    const rows = 1 + rnd(8);
+    const tape: unknown[] = [];
+    for (let i = 0; i < rows * width; i++) tape.push(rnd(3) ? value() : rnd(2) ? "x".repeat(rnd(40)) : "é€漢𝄞\ufffd".repeat(rnd(3)));
+    shownRows.set(tape, 0);
+    const slab = new Slab();
+    drive(plan, tape, rows, slab);
+    assert.deepEqual(slab.out(), expected(plan, tape, rows), `case ${t}: output`);
+    const dirty = tape.some((v) => typeof v === "string" && KEPT.test(v));
+    // Sound: never proven with such a string. Complete on clean tapes unless a slot ends in a high surrogate half
+    // (paired with the next slot's low half: written early, tracking stops).
+    const proven = shownRows.get(tape)! >= rows;
+    if (dirty) assert.equal(proven, false, `case ${t}: ${JSON.stringify(tape)}`);
+    else if (!tape.some((v) => typeof v === "string" && (v.charCodeAt(v.length - 1) & 0xfc00) === 0xd800)) assert.equal(proven, true, `case ${t}`);
+  }
+});
+
+test("row emitter: shownRows tracks registered tapes from their proven prefix only, and stops at an unproven chunk", () => {
+  const plan = _listPlan(["<i>", "</i>"], [null]);
+  const slab = new Slab();
+  const untracked = ["a", "b"];
+  _listRows(plan, untracked, 0, 2, slab, undefined);
+  assert.equal(shownRows.get(untracked), undefined, "not registered: not tracked");
+  const tape = ["a", "b", "c\rd", "e", "f"];
+  shownRows.set(tape, 0);
+  assert.equal(_listRows(plan, tape, 0, 2, slab, undefined), 2);
+  assert.equal(shownRows.get(tape), 2);
+  assert.equal(_listRows(plan, tape, 2, 5, slab, undefined), 5);
+  assert.equal(shownRows.get(tape), 2, "the CR chunk is not proven");
+  const later = ["a", "b", "c"];
+  shownRows.set(later, 0);
+  assert.equal(_listRows(plan, later, 1, 3, slab, undefined), 3);
+  assert.equal(shownRows.get(later), 0, "a call not continuing the proven prefix proves nothing");
+  for (const ch of ["\0", "\ud800", "x\udc00", "\r", "\ud800\ud800"]) {
+    const one = ["x".repeat(20) + ch + "y".repeat(20)];
+    shownRows.set(one, 0);
+    _listRows(plan, one, 0, 1, slab, undefined);
+    assert.equal(shownRows.get(one), 0, JSON.stringify(ch));
+  }
+  for (const text of ["x".repeat(40) + "&<>\"'\n", "é€漢𝄞\ufffd"]) {
+    const clean = [text];
+    shownRows.set(clean, 0);
+    _listRows(plan, clean, 0, 1, slab, undefined);
+    assert.equal(shownRows.get(clean), 1, JSON.stringify(text));
+  }
 });

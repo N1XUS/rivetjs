@@ -129,3 +129,29 @@ export function App(props) {
   const html2 = (await derivedToString(() => App({ rows: mixed as never }), { manifest: { ...manifest, domData: "/dom-data-reader.ts" } })) as string;
   assert.deepEqual(Object.keys(tailOf(html2).d![0]![7] as object), ["2"]);
 });
+
+// SSR2 (2026-11-06): with the byte writer's row emitter, a list whose strings were all proven (no CR / NUL / lone surrogate)
+// skips the per-string KEPT test (server-rows-shown.ts); rows holding one still ship whole on both writers.
+(hasDerivedModel() ? test : test.skip)("domData: rows with CR / NUL / lone surrogate text ship whole on the string and the byte writer", async () => {
+  const out = compile(source, { target: "server", filename: "page.tsx", resume: RESUME } as never);
+  assert.deepEqual(out.diagnostics, []);
+  const { App } = await importServer<{ App: (p: Props) => ServerValue }>(out.code);
+  const on = { manifest: { ...manifest, domData: "/dom-data-reader.ts" } };
+  // One odd row per page: a single flagged string must keep the whole list on the checked path.
+  for (const label of ["a\rb", "x\0y", "lone \ud800", "\udc00 low", "a\ufffd"]) {
+    const p = props(40);
+    p.rows[7]!.label = label;
+    const str = (await derivedToString(() => App(p), on)) as string;
+    const byte = await bytes(() => App(p), true);
+    // U+FFFD is kept by the parser: no whole row for it.
+    const whole = label === "a\ufffd" ? undefined : ["7"];
+    for (const html of [str, byte]) {
+      const rows = tailOf(html).d![0]![7] as object | undefined;
+      assert.deepEqual(rows && Object.keys(rows), whole, JSON.stringify(label));
+    }
+  }
+  // Clean rows: nothing ships whole (the emitter proved every string).
+  const clean = props(40);
+  for (const html of [(await derivedToString(() => App(clean), on)) as string, await bytes(() => App(clean), true)])
+    assert.equal(tailOf(html).d![0]![7], undefined);
+});

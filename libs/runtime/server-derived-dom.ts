@@ -2,6 +2,7 @@
 // default; `false` opts out) reach this module — the compiler plugin serves
 // `dom-data-derived.ts` with `_derivedDom` from here (default: null), so other derived servers carry none of it.
 import type { DerivedDom } from "./resume-format.ts";
+import { shownRows } from "./server-rows-shown.ts";
 import { rowTexts } from "./server-resume-paths.ts";
 import type { ListPlan } from "./server.ts";
 
@@ -63,6 +64,7 @@ function domList(dom: DomList[], items: readonly unknown[], plan: ListPlan, mark
   const n = dom.length,
     width = marked.attributes.length;
   dom.push({ items, tape: list.tape, width, slots, n, done: false });
+  if (!shownRows.has(list.tape)) shownRows.set(list.tape, 0);
   // Both halves share the tape (row 0 / rows 1..): no copy of the rows' captures (SSR-MEM: the slice was ~10 KB per
   // 100-row page, a tenth of the resumable bench page's allocation).
   const List = list.constructor;
@@ -120,16 +122,18 @@ type Check = (value: unknown, base: number, lits: unknown[]) => boolean;
  * (a `#` path parses a number), shown as written; a literal leaf: any non-object; an array: same length; a plain object:
  * the same keys in the same order.
  */
-function checker(skel: unknown, tape: readonly unknown[], leaf: readonly number[], paths: readonly string[]): Check {
+function checker(skel: unknown, tape: readonly unknown[], leaf: readonly number[], paths: readonly string[], kept: boolean): Check {
   if (typeof skel === "number") {
     if (skel === 0) return (value, _base, lits) => (value === null || typeof value !== "object") && (lits.push(value), true);
     const slot = leaf[skel - 1]!;
     return paths[skel - 1]!.charCodeAt(0) === 35
       ? (value, base) => value === tape[base + slot] && typeof value === "number" && value - value === 0 && !Object.is(value, -0)
-      : (value, base) => value === tape[base + slot] && typeof value === "string" && !KEPT.test(value);
+      : kept
+        ? (value, base) => value === tape[base + slot] && typeof value === "string"
+        : (value, base) => value === tape[base + slot] && typeof value === "string" && !KEPT.test(value);
   }
   if (Array.isArray(skel)) {
-    const kids = skel.map((s) => checker(s, tape, leaf, paths)),
+    const kids = skel.map((s) => checker(s, tape, leaf, paths, kept)),
       length = kids.length;
     return (value, base, lits) => {
       if (!Array.isArray(value) || value.length !== length) return false;
@@ -138,7 +142,7 @@ function checker(skel: unknown, tape: readonly unknown[], leaf: readonly number[
     };
   }
   const keys = Object.keys(skel as object),
-    kids = keys.map((key) => checker((skel as Record<string, unknown>)[key], tape, leaf, paths)),
+    kids = keys.map((key) => checker((skel as Record<string, unknown>)[key], tape, leaf, paths, kept)),
     length = keys.length;
   return (value, base, lits) => {
     if (value === null || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) return false;
@@ -157,7 +161,9 @@ function encodeDom(record: number, list: DomList, path: (string | number)[]): De
   if (!paths.length) return null;
   const lits: unknown[] = [],
     whole: Record<number, unknown> = {},
-    check = checker(skel, list.tape, leaf, paths);
+    // Every row's strings already written by the row emitter with none an HTML parser changes (`shownRows`): the
+    // per-string KEPT test (~9% of a 1000-row text-grid resume render) is proven false for all of them.
+    check = checker(skel, list.tape, leaf, paths, (shownRows.get(list.tape) ?? 0) >= list.items.length);
   let kept = false;
   for (let r = 0; r < list.items.length; r++) {
     const mark = lits.length;
