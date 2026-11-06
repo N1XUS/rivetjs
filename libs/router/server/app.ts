@@ -457,11 +457,14 @@ export function createApp(config: AppConfig): AppHandler {
       if (config.stream) options.stream = config.stream;
       else if (page.deferred || page.shell) options.stream = {};
       // ROUTER-PRIME: a route the manifest lists (`ready`): its page chunk joins the fetch-ahead list, the prime runs `Root.ready`.
-      if (lean || config.preload?.ahead || prime) {
+      // COFLAT: early hints with `runtime` learn per route the runtime its page boots (the full or list-free `flat` one).
+      const seen = hinter && routeId !== undefined ? hinter.runtimeSink(routeId) : undefined;
+      if (lean || config.preload?.ahead || prime || seen) {
         const preload: NonNullable<RenderPageOptions["preload"]> = {};
         if (lean) preload.lean = lean;
         else if (config.preload?.ahead) preload.ahead = config.preload.ahead;
         if (prime) preload.route = routeId;
+        if (seen) preload.runtime = seen;
         options.preload = preload;
       }
       if (nonce !== undefined) options.nonce = nonce;

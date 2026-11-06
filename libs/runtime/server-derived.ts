@@ -485,6 +485,11 @@ export interface PreloadOptions {
   lean?: boolean;
   /** ROUTER-PRIME: the page's route id (the router sets it): its manifest `ready.routes` entry joins the fetch-ahead list. */
   route?: string;
+  /**
+   * @internal COFLAT (router early hints, `earlyHints: { runtime: true }`): told the runtime URL the page boots (its tail's
+   * `data-rt`: the full, list-free `flat` or lite runtime), or "" when it boots none, so later responses hint that file.
+   */
+  runtime?: (url: string) => void;
 }
 /** Options of resumable server rendering: manifest, CSP nonce, locale variant. */
 export interface ResumableOptions {
@@ -2588,7 +2593,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   // Lean islands (M6-PARITY): their records + the bridge's boot, before the boundaries tail (each script reads the one
   // right before it). A page whose only boundaries are such islands ships nothing else.
   const lean = ctx.lean.length ? ctx.lean[0]!.tail(ctx.lean, options?.manifest as never, options?.nonce ? cleanNonce(options.nonce) : "") : "";
-  if (!tail) return lean ? template([lean]) : null;
+  if (!tail) return (options?.preload?.runtime?.(""), lean ? template([lean]) : null);
   if (!options?.manifest?.runtime) return template([lean + '<script type="rivet/boundaries">' + encodeTail(tail) + "</script>"]);
   // Fetch-ahead (DERIVED-C): the runtime, the chunks of the page's boundaries (tail `m`) and their static import closures
   // (manifest `deps`) as modulepreloads (`data-fo`; fetched + compiled; in the background the loader's prime then evaluates them, LITE-BOOT): in the background
@@ -2612,6 +2617,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
     // RT-DIET2: a page whose only live records are document click listeners (the router's links, nothing else listening,
     // no trigger) fetches nothing in the background: its full runtime + router chunks load on the first link intent.
     when = options.preload?.lean || (!options.preload?.ahead && linksOnly(tail)) ? "intent" : (options.preload?.ahead ?? "idle");
+  options.preload?.runtime?.(runtime);
   if (tail.l) tail.F = fetchAhead(manifest, tail, full) || full;
   // The prime may run that record's `ready`: what it loads is on the list (fetched ahead, so no request of its own).
   else if (prime && ahead) tail.p = prime[0];

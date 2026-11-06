@@ -1,5 +1,6 @@
 // Early hints (`createApp({ earlyHints })`): `Link` header values for a page — its linked stylesheets, the build-asset
-// font preloads its head carried last time (learned per route), `links` / the resume runtime the app asked for. The
+// font preloads its head carried last time (learned per route), `links` / the resume runtime the app asked for (the one
+// the route's last render booted: full or list-free `flat`). The
 // node adapter sends them as `103 Early Hints` before guards and loaders run; every page response carries them as a
 // `Link` header too, which CDNs (Cloudflare, Fastly) turn into 103s for later requests. Web-standard, no state here.
 // Preloads only for build assets (`<base>/assets/…`: hashed, immutable): Chromium reuses an early-hint preload only
@@ -11,7 +12,11 @@ import type { Head, HeadLink } from "../shared/data.ts";
 
 /** `createApp({ earlyHints })`. */
 export interface EarlyHintsOptions {
-  /** Also hint the resume runtime entry (`rel=modulepreload`): pages that start it early (visible preloads). Default false. */
+  /**
+   * Also hint the resume runtime entry (`rel=modulepreload`): pages that start it early (visible preloads). Per route, the
+   * runtime its last render booted (COFLAT: the full one or the list-free `flat` copy; none when the page boots none); the
+   * manifest's `runtime` until the route rendered once. Default false.
+   */
   readonly runtime?: boolean;
   /** Extra `Link` values sent as given, e.g. `"<https://cdn.example>; rel=preconnect"`. */
   readonly links?: readonly string[];
@@ -64,6 +69,8 @@ export interface Hinter {
   header(routeId: string): string;
   /** A render's merged head: its build-asset font preloads become the route's from now on. */
   learn(routeId: string, head: Head | undefined): void;
+  /** With `runtime`: the route's sink for the runtime URL its render boots (`PreloadOptions.runtime`; memoised), else undefined. */
+  runtimeSink(routeId: string): ((url: string) => void) | undefined;
 }
 
 /** `createApp`'s hinter: `styles` + the route's `routeStyles` (not inlined), learned head links, `links`, the runtime. */
@@ -77,11 +84,13 @@ export function createHinter(
     readonly runtime?: string | undefined;
   },
 ): Hinter {
-  const extra =
-    option === true
-      ? []
-      : [...(option.links ?? []), ...(option.runtime && app.runtime && SAFE.test(app.runtime) ? [`<${app.runtime}>; rel=modulepreload`] : [])];
+  const extra = option === true ? [] : (option.links ?? []);
+  const hintRuntime = option !== true && !!option.runtime;
+  const runtimeLink = (url: string | undefined) => (url && SAFE.test(url) ? [`<${url}>; rel=modulepreload`] : []);
   const learned = new Map<string, string>();
+  // Per route: the runtime URL its last render booted ("" none); sinks memoised per route (no closure per request).
+  const runtimes = new Map<string, string>();
+  const sinks = new Map<string, (url: string) => void>();
   const memo = new Map<string, readonly string[]>();
   const headers = new Map<string, string>();
   const hinter: Hinter = {
@@ -96,9 +105,26 @@ export function createHinter(
       const own = app.routeStyles && typeof app.routeStyles !== "function" ? app.routeStyles[routeId] : undefined;
       const list = own?.length ? [...app.styles, ...own] : app.styles;
       const head = learned.get(routeId);
-      links = [...styleLinks(list, app.inlineFor?.(list), app.base), ...(head ? head.split("\n") : []), ...extra];
+      links = [
+        ...styleLinks(list, app.inlineFor?.(list), app.base),
+        ...(head ? head.split("\n") : []),
+        ...extra,
+        ...(hintRuntime ? runtimeLink(runtimes.get(routeId) ?? app.runtime) : []),
+      ];
       memo.set(routeId, links);
       return links;
+    },
+    runtimeSink(routeId) {
+      if (!hintRuntime) return undefined;
+      let sink = sinks.get(routeId);
+      if (!sink)
+        sinks.set(
+          routeId,
+          (sink = (url) => {
+            if (runtimes.get(routeId) !== url) (runtimes.set(routeId, url), memo.delete(routeId), headers.delete(routeId));
+          }),
+        );
+      return sink;
     },
     learn(routeId, head) {
       const value = headLinks(head, app.base).join("\n");

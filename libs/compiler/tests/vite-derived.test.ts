@@ -470,6 +470,67 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
   },
 );
 
+// COFLAT: early hints with `runtime` hint per route the runtime its page boots: a list-free route's response preloads the
+// flat runtime, a route that renders a keyed list inside a boundary the full one — each the file its page's `data-rt` names.
+(hasDerivedModel() ? test : test.skip)("createApp earlyHints runtime (COFLAT): the hinted runtime is the page's data-rt, flat or full per route", async () => {
+  const roots: string[] = [];
+  try {
+    const list = `import { signal } from "@rivetjs/reactivity";
+import { For } from "@rivetjs/runtime/dom";
+export function List(props) {
+  const picked = signal(0);
+  return (
+    <ul id="list">
+      <For each={() => props.rows} by={(r) => r.id}>
+        {(r) => <li class={picked() === r().id ? "on" : "off"} onClick={() => picked.set(r().id)}>{r().name}</li>}
+      </For>
+    </ul>
+  );
+}
+`;
+    const server = `import { createApp } from "@rivetjs/router/server";
+import Page from "./page.tsx";
+import { List } from "./list.tsx";
+const rows = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, name: "row " + (i + 1) }));
+const entry = {
+  routes: [
+    { id: "list", pattern: "/list", page: true, layouts: [] },
+    { id: "p", pattern: "/*rest", page: true, layouts: [] },
+  ],
+  universal: {},
+  page: (input) => () => (input.url.pathname === "/list" ? List({ rows }) : Page({ data: { title: "Records", rows } })),
+  document: () => ({ start: "<!doctype html><html><body>", end: "</body></html>" }),
+};
+export const render = async (manifest) => {
+  const app = createApp({ entry, manifest, csp: false, earlyHints: { runtime: true } });
+  const out = {};
+  for (const path of ["/", "/list"]) {
+    const first = await app(new Request("http://x" + path));
+    const before = first.headers.get("link");
+    await first.text();
+    const second = await app(new Request("http://x" + path));
+    out[path] = { before, link: second.headers.get("link"), html: await second.text() };
+  }
+  return JSON.stringify(out);
+};
+`;
+    const built = await buildApp("none", roots, undefined, { "src/list.tsx": list, "src/server.tsx": server }, ["src/list.tsx"]);
+    const pages = JSON.parse(built.html) as Record<string, { before: string | null; link: string | null; html: string }>;
+    const { flat, runtime } = built.manifest;
+    assert.ok(flat && flat !== runtime);
+    const rt = (html: string) => /<script type="rivet\/boundaries"[^>]* data-rt="([^"]+)"/.exec(html)?.[1];
+    const hinted = (link: string | null) => [...(link ?? "").matchAll(/<([^>]+)>; rel=modulepreload/g)].map((m) => m[1]);
+    assert.equal(rt(pages["/"]!.html), flat, "the list-free route boots the flat runtime");
+    assert.equal(rt(pages["/list"]!.html), runtime, "the list route boots the full runtime");
+    assert.deepEqual(hinted(pages["/"]!.link), [flat], "list-free route: hints the flat runtime");
+    assert.deepEqual(hinted(pages["/list"]!.link), [runtime], "list route: hints the full runtime");
+    // Before a route rendered once: the manifest's runtime.
+    assert.deepEqual(hinted(pages["/"]!.before), [runtime]);
+  } finally {
+    for (const root of roots) await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("_lazyParts: inline lazyComponent importers only", () => {
   assert.deepEqual(
     _lazyParts(`const A = lazyComponent(() => import("./a.tsx"));

@@ -41,9 +41,10 @@ export interface RenderPageOptions {
   /**
    * Preload planner (`renderResumable` `preload`, `PreloadOptions`): fetch-ahead timing `ahead` (`idle` default / `load` /
    * `intent`); `lean` = `intent`: nothing before an interaction; `route` (ROUTER-PRIME): the page's route id, whose manifest
-   * `ready` entry (the page chunk `Root.ready` loads) joins the fetch-ahead list.
+   * `ready` entry (the page chunk `Root.ready` loads) joins the fetch-ahead list; `runtime` (early hints): told the runtime
+   * URL the page boots ("" when none).
    */
-  preload?: { ahead?: "idle" | "load" | "intent"; lean?: boolean; route?: string };
+  preload?: { ahead?: "idle" | "load" | "intent"; lean?: boolean; route?: string; runtime?: (url: string) => void };
   signal?: AbortSignal;
   nonce?: string;
   /**
