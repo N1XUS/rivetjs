@@ -34,8 +34,7 @@ import { LAZY_ROWS } from "./lazy-rows.ts";
 import { DERIVED } from "./derived.ts";
 
 type Parent = Node & ParentNode;
-const HTML = "http://www.w3.org/1999/xhtml",
-  SVG = "http://www.w3.org/2000/svg";
+const SVG = "http://www.w3.org/2000/svg";
 const host = { doc: _constructionDoc };
 // The parent the running insertion read inserts into (`within`): `_tplNs` roots take its namespace.
 let insertionParent: Node | null = null;
@@ -128,7 +127,7 @@ export function _t(el: Element, value: unknown): void {
       if (next === last) return;
       const node = last === undefined ? null : el.firstChild;
       if (node !== null) (node as Text).data = next;
-      else if (!(LAZY_ROWS && _adoption.live && soleText(el, next))) el.textContent = next;
+      else if (!(LAZY_ROWS && _adoption.live && el.textContent === next)) el.textContent = next; // the server node shows it
       (el as unknown as { $$t?: string }).$$t = next;
       return;
     }
@@ -214,7 +213,7 @@ export function _textValue(el: Element, value: unknown): void {
   if (typeof value === "function") bindText(el, value as () => unknown);
   else if (value !== null && typeof value === "object") _insert(el, value);
   // Numbers go to the DOM as-is: `String(n)` would fill V8's number-string cache (0 is coerced: some DOMs drop a falsy value).
-  else if (!(LAZY_ROWS && _adoption.live && soleText(el, coerce(value))))
+  else if (!(LAZY_ROWS && _adoption.live && el.textContent === coerce(value)))
     el.textContent = typeof value === "number" && value ? (value as unknown as string) : coerce(value);
 }
 function bindText(el: Element, value: () => unknown): void {
@@ -229,8 +228,6 @@ function bindText(el: Element, value: () => unknown): void {
     _t(el, next);
   });
 }
-// The server node already shows `next` (one text, or text the build decorated: `dom-derived.ts` `decorated`).
-const soleText = (el: Element, next: string): boolean => el.textContent === next;
 
 // ---- attributes (`write` / `coerce`: `dom-attr.ts`; adopt runs skip held writes: `put`) ----
 /** Compiler ABI: an identifier-only attribute value: written once unless it is an accessor. */
@@ -244,25 +241,29 @@ function bindWrite(el: Element, name: string, value: () => unknown): void {
 /** `write`, unless an adopt run finds the value on the server's node already (`holds`). Resume builds only. */
 function put(el: Element, name: string, value: unknown): void {
   if (_adoption.classValue && name.toLowerCase() === "class") value = _adoption.classValue(el, value);
-  if (!(_adoption.live && holds(el, name, value))) write(el, name, value);
+  if (!(_adoption.live && holds!(el, name, value))) write(el, name, value);
 }
 /**
  * ADOPT-CONTENT (2026-10-26), adopt runs (`_adoption.live`, `LAZY_ROWS` builds): `el` already holds what writing `value`
  * to attribute `name` would leave (`write`'s rules), so the write is skipped — the server rendered it, and a re-set is not
  * free: an `<iframe src>` re-set reloads the frame's document, every write queues a mutation record and restyles.
+ * An inline arrow behind `LAZY_ROWS`, not a declaration: esbuild folds imported constants only after tree shaking, so a
+ * declaration stayed in its client-rendered bundles (BUNDLE 2026-11-10).
  */
-function holds(el: Element, name: string, value: unknown): boolean {
-  const lower = name.toLowerCase();
-  if (el.namespaceURI === HTML) {
-    // `<details>` / `<dialog>` `open` is the user's once the page is live (a toggle changes the attribute): the run keeps it.
-    if (lower === "open" && (el.localName === "details" || el.localName === "dialog")) return true;
-    if (lower === "defaultvalue" || lower === "defaultchecked" || lower === "popover") return false;
-    // Boolean attributes follow truthiness (a `checked` / `selected` default kept: the control's state is not reset).
-    if (_booleans.test(lower) && !(lower === "hidden" && typeof value === "string" && value)) return el.hasAttribute(name) === !!value;
-  }
-  if (value == null) return !el.hasAttribute(name);
-  return (typeof value === "string" || typeof value === "number" || typeof value === "boolean") && el.getAttribute(name) === String(value);
-}
+const holds = LAZY_ROWS
+  ? (el: Element, name: string, value: unknown): boolean => {
+      const lower = name.toLowerCase();
+      if (el.namespaceURI === "http://www.w3.org/1999/xhtml") {
+        // `<details>` / `<dialog>` `open` is the user's once the page is live (a toggle changes the attribute): the run keeps it.
+        if (lower === "open" && (el.localName === "details" || el.localName === "dialog")) return true;
+        if (lower === "defaultvalue" || lower === "defaultchecked" || lower === "popover") return false;
+        // Boolean attributes follow truthiness (a `checked` / `selected` default kept: the control's state is not reset).
+        if (_booleans.test(lower) && !(lower === "hidden" && typeof value === "string" && value)) return el.hasAttribute(name) === !!value;
+      }
+      if (value == null) return !el.hasAttribute(name);
+      return (typeof value === "string" || typeof value === "number" || typeof value === "boolean") && el.getAttribute(name) === String(value);
+    }
+  : null;
 /**
  * Compiler ABI: a plain attribute (compiler-classified: HTML/SVG name that is not boolean, URL-bearing,
  * namespaced or a form-control property). null/undefined remove; other values stringify.
@@ -276,7 +277,7 @@ function bindAttr(el: Element, name: string, value: () => unknown): void {
 }
 function plain(el: Element, name: string, value: unknown): void {
   if (LAZY_ROWS && _adoption.classValue && name.toLowerCase() === "class") value = _adoption.classValue(el, value);
-  if (LAZY_ROWS && _adoption.live && holds(el, name, value)) return;
+  if (LAZY_ROWS && _adoption.live && holds!(el, name, value)) return;
   if (value == null) el.removeAttribute(name);
   else el.setAttribute(name, value as string);
 }
@@ -294,7 +295,8 @@ export const _fx: (fn: () => void) => void = _bindingEffect;
 export const _fx1: <A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b?: B, c?: C) => void = DERIVED || LAZY_ROWS ? derivedFx1 : _bindingEffect1;
 // Derived / lazy rows builds (`DERIVED`, `LAZY_ROWS`): a row sample run of the adopt runtime (`_adoption.fx`:
 // `dom-derived.ts`, `dom-resume-lazy.ts`) sees each binding with its captures (DERIVED-C keyed row writers, LAZY-BLOCKERS
-// shared-read row writers); folded away elsewhere.
+// shared-read row writers); folded away elsewhere. A declaration (esbuild client bundles keep its 57 B): as an inline
+// arrow the resumed `dom` entry measured +28 B br (BUNDLE 2026-11-10).
 function derivedFx1<A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b?: B, c?: C): void {
   const hook = _adoption.fx;
   if (hook) hook(fn as never, a, b, c);
@@ -317,7 +319,7 @@ function bindClass(el: Element, value: () => unknown): void {
 function className(el: Element, value: unknown): void {
   if (LAZY_ROWS && _adoption.classValue) {
     value = _adoption.classValue(el, value === false ? null : value);
-    if (_adoption.live && holds(el, "class", value === "" ? null : value)) return;
+    if (_adoption.live && holds!(el, "class", value === "" ? null : value)) return;
   }
   // An empty class removes the attribute: a fresh row has none, so no write (and no style
   // invalidation) happens for it (krausest 01 / 07 / 08 +2–3% with the write).
@@ -797,7 +799,7 @@ export const _adoption: {
   slot?: ((slot: InsertSlot) => void) | null;
   /**
    * True during an adopt run: element content is never wiped (`_spread` children, `_rcdata`), it is the server's; writes
-   * the server's node already holds are skipped (`holds`, `soleText`; ADOPT-CONTENT).
+   * the server's node already holds are skipped (`holds`, a sole text equal to the server's; ADOPT-CONTENT).
    */
   live?: boolean;
   /** Adoption-scoped class ownership: probe records the first binding value; adopt keeps only foreign tokens. */
@@ -916,31 +918,37 @@ function rowNodes(rows: readonly ForRow[], nodes: Node[]): boolean {
 }
 // `_for`'s merge walk (EACH): the new middle items `next[start..newEnd)` are old middle items in order, each one's key its
 // old row's — those rows into `rows` (true), else false (the caller maps the old keys; `rows` is overwritten).
-function inOrder(
-  rows: ForRow[],
-  list: ForRow[],
-  items: readonly unknown[],
-  next: readonly unknown[],
-  by: ((item: never, index: number) => unknown) | undefined,
-  start: number,
-  end: number,
-  newEnd: number,
-): boolean {
-  let j = start;
-  for (let i = start; i < end && j < newEnd; i++)
-    if (next[j] === items[i]) {
-      const row = list[i]!;
-      if ((by ? by(next[j] as never, j) : next[j]) !== row.key) return false;
-      rows[j++] = row;
+// DERIVED builds only (an inline arrow behind the constant, like `holds`: no declaration left in other builds).
+const inOrder = DERIVED
+  ? (
+      rows: ForRow[],
+      list: ForRow[],
+      items: readonly unknown[],
+      next: readonly unknown[],
+      by: ((item: never, index: number) => unknown) | undefined,
+      start: number,
+      end: number,
+      newEnd: number,
+    ): boolean => {
+      let j = start;
+      for (let i = start; i < end && j < newEnd; i++)
+        if (next[j] === items[i]) {
+          const row = list[i]!;
+          if ((by ? by(next[j] as never, j) : next[j]) !== row.key) return false;
+          rows[j++] = row;
+        }
+      return j === newEnd;
     }
-  return j === newEnd;
-}
+  : null;
 // `_for`'s first pass over a derived slot's evaluation (`AdoptedList.first`): read (track) its signals, return its items.
-function handed(first: NonNullable<AdoptedList["first"]>, _cleared: null): unknown[] {
-  const signals = first.signals;
-  for (let i = 0; i < signals.length; i++) signals[i]!();
-  return first.value;
-}
+// DERIVED builds only (see `inOrder`).
+const handed = DERIVED
+  ? (first: NonNullable<AdoptedList["first"]>, _cleared: null): unknown[] => {
+      const signals = first.signals;
+      for (let i = 0; i < signals.length; i++) signals[i]!();
+      return first.value;
+    }
+  : null;
 // A row's item accessor: one bound function per row (no closure context).
 function itemRead(this: ForRow): unknown {
   return this.sig !== null ? this.sig() : _tracking() ? (this.sig = signal(this.value))() : this.value;
@@ -1020,7 +1028,7 @@ export function _for<T, K>(props: {
   effect(() => {
     // The derived slot's evaluation of this change (`AdoptedList.first`, taken once): its items, its signals tracked.
     const each = props.each,
-      next = DERIVED && first ? (handed(first, (first = null)) as readonly T[]) : typeof each === "function" ? (each as () => readonly T[])() : each;
+      next = DERIVED && first ? (handed!(first, (first = null)) as readonly T[]) : typeof each === "function" ? (each as () => readonly T[])() : each;
     if (changed !== null && changed()) {
       changed = null;
       for (const row of list) if (row.ad === -3) row.ad = -2;
@@ -1081,7 +1089,7 @@ export function _for<T, K>(props: {
         // filter), each is matched to its old row by a merge walk (identity, its key checked) — no map of the m old keys
         // (EACH 2026-11-06: 1,000 sets of a 1,000-row filter's first key, ~0.3 ms at 4x CPU); the kept rows' map is built
         // after the pass.
-        const sub = DERIVED && keys === null && newEnd - start < end - start && inOrder(rows, list, items, next, by, start, end, newEnd);
+        const sub = DERIVED && keys === null && newEnd - start < end - start && inOrder!(rows, list, items, next, by, start, end, newEnd);
         let map = keys;
         if (map === null) {
           map = new Map();
