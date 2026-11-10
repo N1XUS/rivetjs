@@ -79,7 +79,9 @@ let held: (() => void) | null = null;
 let observations = 0;
 let observedBindings = false;
 
-// Owners link children in a doubly linked list, newest first (O(1) add/remove; no tail slot). Reactive nodes
+// Owners link children in a doubly linked list, newest first (O(1) add/remove; no tail slot): `next` = the older
+// sibling (the oldest's is null), `prev` = the newer one, except the newest's `prev`, which is the oldest (the list
+// is circular through `prev` only, so the oldest child is `first.prev` without a walk). Reactive nodes
 // initialize common fields in one order; computeds append their cached-value/source fields through
 // a separate constructor, so effects do not reserve those slots. Collections allocate on first use.
 class Owner {
@@ -221,7 +223,8 @@ function adopt<N extends Owner>(parent: Owner | null, node: N): N {
   if (parent === null) return node;
   if (parent.disposed) throw new Error('Cannot create a child of a disposed owner');
   const first = parent.first;
-  if (first !== null) { first.prev = node; node.next = first; }
+  if (first !== null) { node.prev = first.prev; first.prev = node; node.next = first; }
+  else node.prev = node;
   parent.first = node;
   return node;
 }
@@ -233,8 +236,11 @@ const reactive = (fn: () => unknown): Node => adopt(currentOwner, new Node(EFFEC
 function unlink(node: Owner): void {
   const parent = node.parent;
   if (parent === null) return;
-  if (node.prev !== null) node.prev.next = node.next; else parent.first = node.next;
-  if (node.next !== null) node.next.prev = node.prev;
+  const next = node.next, prev = node.prev!;
+  // The newest child: the next older one becomes the newest and takes over the oldest link (its own `prev` when it
+  // was the oldest itself). Else the newer sibling skips it, and the oldest's removal moves the newest's oldest link.
+  if (node === parent.first) { parent.first = next; if (next !== null) next.prev = prev; }
+  else { prev.next = next; if (next !== null) next.prev = prev; else parent.first!.prev = prev; }
   node.prev = node.next = null;
 }
 
@@ -312,45 +318,53 @@ function dispose(node: Owner): void {
   if (node.disposed) return;
   // Only the top node leaves its parent's list; descendants go with their (disposed) parents.
   unlink(node);
-  // Depth-first without a stack: entering a node marks and detaches it, then descends to its oldest
-  // child (children are linked newest first, so the tail); leaving it runs its cleanups, then moves to
-  // the next newer sibling (`prev`), else leaves the parent. Children go in creation order, before
-  // their parents' cleanups.
-  let errors: unknown[] | null = null, item: Owner = node;
-  for (;;) {
-    item.disposed = true;
-    if (item.kind !== OWNER) detach(item as Node);
-    let child = item.first;
-    if (child !== null) {
-      while (child.next !== null) child = child.next;
-      // Skip children disposed meanwhile (a sibling's cleanup may dispose them; they unlink then).
-      item = child;
-      continue;
-    }
-    // Leave `item` and every ancestor whose children are all done.
+  node.disposed = true;
+  if (node.kind !== OWNER) detach(node as Node);
+  // Depth-first without a stack over the descendants, one visit per node: entering a node marks and detaches it, then
+  // descends to its oldest child (`first.prev`); leaving it runs its cleanups, then moves to the next newer sibling
+  // (`prev`, until the parent's newest), else leaves the parent. Children go in creation order, before their parents'
+  // cleanups. The top node is entered and left outside the loop and every leave reads `parent` at one site: the loop's
+  // property sites see each descendant class early, so its OSR code is not deoptimized by a class first met at the end
+  // of the walk (the top owner, the newest child's parent).
+  let errors: unknown[] | null = null, item: Owner | null = node.first;
+  if (item !== null) {
+    item = item.prev!;
     for (;;) {
-      item.first = null;
-      if (item.cleanups !== null) errors = cleanCallbacks(item, errors);
-      if (item === node) { if (errors !== null) fail(errors); return; }
-      // A cleanup may have disposed (and unlinked) newer siblings: `prev` skips them.
-      let newer = item.prev;
-      while (newer !== null && newer.disposed) newer = newer.prev;
-      if (newer !== null) { item = newer; break; }
-      item = item.parent!;
+      item.disposed = true;
+      if (item.kind !== OWNER) detach(item as Node);
+      const child: Owner | null = item.first;
+      if (child !== null) {
+        item = child.prev!;
+        continue;
+      }
+      // Leave `item` and every ancestor below the top whose children are all done.
+      for (;;) {
+        const parent: Owner = item.parent!;
+        item.first = null;
+        if (item.cleanups !== null) errors = cleanCallbacks(item, errors);
+        // A cleanup may have disposed newer siblings: they unlinked themselves, so `prev` skips them.
+        const newer: Owner | null = item === parent.first ? null : item.prev;
+        if (newer !== null || parent === node) { item = newer; break; }
+        item = parent;
+      }
+      if (item === null) break;
     }
   }
+  node.first = null;
+  if (node.cleanups !== null) errors = cleanCallbacks(node, errors);
+  if (errors !== null) fail(errors);
 }
 
-// Dispose the children in creation order (the list is newest first: walk to the oldest, then back
-// through `prev`), then run the node's cleanups; null when nothing failed. Allocates only on failure.
+// Dispose the children in creation order (from the oldest, `first.prev`, through `prev` up to the newest), then run
+// the node's cleanups; null when nothing failed. Allocates only on failure.
 function reset(node: Owner): unknown[] | null {
   let errors: unknown[] | null = null;
-  // Re-scan if a cleanup disposed a sibling still to visit (its links are cleared then).
+  // Re-scan if a cleanup disposed a sibling still to visit (it unlinked itself, or went with `node` — whose list is
+  // then empty — so its links are stale: never follow a disposed child's `prev`).
   while (node.first !== null) {
-    let child: Owner | null = node.first;
-    while (child.next !== null) child = child.next;
-    while (child !== null) {
-      const newer: Owner | null = child.prev;
+    let child: Owner | null = node.first.prev;
+    while (child !== null && !child.disposed) {
+      const newer: Owner | null = child === node.first ? null : child.prev;
       try { dispose(child); } catch (error) { (errors ??= []).push(error); }
       child = newer;
     }
