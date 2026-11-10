@@ -24,6 +24,7 @@ interface Probe {
 declare global {
   interface Window {
     __real: Probe;
+    __realDone: Promise<void>;
   }
 }
 function probe() {
@@ -45,7 +46,7 @@ function probe() {
     true,
   );
 }
-async function sample(browser: Browser, url: string, lane: RealLane, kind: RealPage, condition: string, repeat: number): Promise<Sample> {
+export async function sample(browser: Browser, url: string, lane: RealLane, kind: RealPage, condition: string, repeat: number): Promise<Sample> {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
   page.setDefaultTimeout(15000);
@@ -85,26 +86,33 @@ async function sample(browser: Browser, url: string, lane: RealLane, kind: RealP
     }));
     const js = loaded.filter((r) => r.type === "Script");
     const main = mainInteraction[kind];
-    // Same rAF -> MessageChannel paint proxy as resume-bench/run.ts; observer armed before input.
+    // Same rAF -> MessageChannel paint proxy as resume-bench/run.ts; observer armed before input. The paint is awaited
+    // through a promise the arming call made (an evaluate sent before the click), not `waitForFunction`: its first call
+    // compiles Playwright's injected script in the page's main world (~13 ms at 4x CPU, REALCPU 2026-11-10), which then
+    // landed between the input and the paint it measures.
     await page.evaluate(({ result, text }) => {
-      const observer = new MutationObserver(() => {
-        if (document.querySelector(result)?.textContent !== text) return;
-        observer.disconnect();
-        window.__real.mutation = performance.now();
-        requestAnimationFrame(() => {
-          const channel = new MessageChannel();
-          channel.port1.onmessage = () => {
-            window.__real.paint = performance.now();
-            channel.port1.close();
-            channel.port2.close();
-          };
-          channel.port2.postMessage(0);
+      window.__realDone = new Promise((done) => {
+        const observer = new MutationObserver(() => {
+          if (document.querySelector(result)?.textContent !== text) return;
+          observer.disconnect();
+          window.__real.mutation = performance.now();
+          requestAnimationFrame(() => {
+            const channel = new MessageChannel();
+            channel.port1.onmessage = () => {
+              window.__real.paint = performance.now();
+              channel.port1.close();
+              channel.port2.close();
+              done();
+            };
+            channel.port2.postMessage(0);
+          });
         });
+        observer.observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
       });
-      observer.observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
     }, main);
+    const painted = page.evaluate(() => window.__realDone);
     await page.locator(main.target).first().click();
-    await page.waitForFunction(() => window.__real.paint > 0);
+    await painted;
     const after = await page.evaluate(() => window.__real);
     if (errors.length) throw Error(errors.join("; "));
     return {
