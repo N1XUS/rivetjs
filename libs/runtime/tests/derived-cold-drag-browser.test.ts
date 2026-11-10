@@ -11,7 +11,8 @@ import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString } from "@rivetjs/runtime/server-derived";
-import { DERIVED_LOADER } from "../resume-loader-derived.min.ts";
+import { DERIVED_LOADER, DERIVED_LOADER_CUTS, DERIVED_LOADER_DRAG } from "../resume-loader-derived.min.ts";
+import { applyCuts } from "../build-loader.ts";
 import type { Page } from "playwright";
 import { importServer } from "./resume/compile.ts";
 import { DERIVED_BUILD, hasWebkit, rewrite, withPage } from "./resume/harness.ts";
@@ -86,13 +87,18 @@ async function board(): Promise<{ html: string; chunk: string }> {
   const html = (await derivedToString(() => Board(), { manifest: { hash: "t", runtime: "/rt.js", symbols }, preload: { lean: true } } as never)) as string;
   return { html, chunk: rewrite(dom.code) };
 }
+// HTMLBYTES: the server ships a loader variant with the parts the page provably never runs cut (`loaderCuts`).
+const ships = (html: string, loader: string): boolean => {
+  for (let cut = 0; cut < 64; cut++) if (html.includes("<script>" + applyCuts(loader, DERIVED_LOADER_CUTS, cut) + "</script>")) return true;
+  return false;
+};
 const text = (page: Page, id: string) => page.evaluate((id) => document.getElementById(id)!.textContent, id);
 
 compiled("cold drag: the page lists the drag types and ships the drag loader; a page without drag listeners keeps the plain one", async () => {
   const { html } = await board();
   const events = / data-events="([^"]*)"/.exec(html)?.[1]?.split(" ") ?? [];
   for (const type of ["dragstart", "drag", "dragend", "dragenter", "dragover", "drop"]) assert.ok(events.includes(type), type + " in data-events: " + events);
-  assert.ok(!html.includes(DERIVED_LOADER), "drag pages ship the drag loader");
+  assert.ok(!ships(html, DERIVED_LOADER) && ships(html, DERIVED_LOADER_DRAG), "drag pages ship the drag loader");
   const plain = compile(PLAIN, {
     target: "server",
     filename: "plain.tsx",
@@ -103,7 +109,7 @@ compiled("cold drag: the page lists the drag types and ships the drag loader; a 
     manifest: { hash: "t", runtime: "/rt.js", symbols: { "src/plain.tsx#Plain": "/plain.js" } },
     preload: { lean: true },
   } as never)) as string;
-  assert.ok(page.includes("<script>" + DERIVED_LOADER + "</script>"), "the plain loader, byte for byte");
+  assert.ok(ships(page, DERIVED_LOADER), "the plain loader, byte for byte (less the cut parts)");
 });
 
 for (const engine of ["chromium", "webkit"] as const)

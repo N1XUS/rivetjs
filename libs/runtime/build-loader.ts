@@ -82,6 +82,49 @@ export const dragSplice = async (loader: string): Promise<[string, string][]> =>
 const spliced = (loader: string, pairs: [string, string][]): string => pairs.reduce((l, [from, to]) => l.replace(from, () => to), loader);
 /** A drag loader (`DERIVED_LOADER_DRAG` …): `loader` = one of the minified variants. */
 export const minifiedDerivedDrag = async (loader: string): Promise<string> => spliced(loader, await dragSplice(await minifiedDerived()));
+/**
+ * HTMLBYTES: loader parts a page provably never runs, by bit (`server-derived.ts` `loaderCuts`): per bit, [regex, replacement]
+ * pairs; each regex finds one minified text, replaced by the replacement (default: deleted). 0 the cold-key hold (`data-rk` /
+ * tail `k`: no record listens to `keydown`), 1 the cold pointer capture (`data-rv-capture`: no record listens to
+ * `pointerdown`), 2 the `invalid` / `contextmenu` hold (neither in `data-events`), 3 the `data-g` document clicks (no
+ * `data-g`), 4 the `intent` hover hold + pruning (`data-fw` is not `intent`: the flag is gone), 5 the `data-boot` start +
+ * prime check (no `data-boot`; never on a visible-boot loader, whose `data-boot` start is spliced — keep it last).
+ */
+const CUTS: [RegExp, string?][][] = [
+  [[/const \w+=\w+\.key;[^}]*?\.preventDefault\(\)(?=\})/]],
+  [[/if\(\w+=="pointerdown"&&\w+\.button==0\)try\{[^}]*\}catch\{\}/]],
+  [[/else if\(\w+=="invalid"\|\|\w+=="contextmenu"&&\w+\.closest\?\.\("\[data-cm\]"\)\)\w+=\(\)=>\{\};/]],
+  [[/\w+\.length\|\|!\w+\.closest\?\.\(\w+\.dataset\.g\)\|\|\w+\.push\(""\),/], [/\|\|\w+\.closest\?\.\(\w+\.dataset\.g\)/]],
+  [
+    [/,([\w$]+)=[\w$]+=="intent"(?=,)/],
+    [/,[\w$]+=\/\^\(pointer\|mouse\)\(over\|enter\)\$\/(?=,)/],
+    [
+      /if\([\w$]+\)for\(let [\w$]+=[\w$]+\.length;[\w$]+--;\)[\w$]+\.test\([\w$]+\[[\w$]+\]\[0\]\.type\)&&![\w$]+\([\w$]+\[[\w$]+\]\[0\]\.target\)&&[\w$]+\.splice\([\w$]+,1\)/,
+    ],
+    [/\([\w$]+\|\|!\([\w$]+&&[\w$]+\.test\([\w$]+\)\)\)&&/],
+    [/;[\w$]+\|\|(?=[\w$]+\?\.saveData)/, ";"],
+  ],
+  [[/,\w+\.hasAttribute\("data-boot"\)&&\w+\(1\)\.catch\(\w+\)(?=;)/], [/\w+\.hasAttribute\("data-boot"\)\|\|/]],
+];
+/** The cut [text, replacement] pairs of the minified loader, by bit. */
+export const loaderCuts = (loader: string): [string, string][][] => {
+  const cuts = CUTS.map((group, bit) =>
+    group.map(([re, to = ""]): [string, string] => {
+      const hit = loader.match(re)?.[0];
+      if (!hit || loader.indexOf(hit) !== loader.lastIndexOf(hit)) throw Error("build-loader: cut " + bit + " not found once in the minified loader");
+      return [hit, to];
+    }),
+  );
+  // The intent cut drops the flag's and the hover regex's declarations: no other reference to their names may remain.
+  if (intentRead(applyCuts(loader, cuts, 1 << 4), cuts)) throw Error("build-loader: an intent declaration is still read after its cut");
+  return cuts;
+};
+/** Whether a loader still names a declaration the intent cut drops (as an identifier). */
+const intentRead = (loader: string, cuts: [string, string][][]): boolean =>
+  cuts[4]!.slice(0, 2).some(([text]) => new RegExp("(?<![\\w$.])" + /,([\w$]+)=/.exec(text)![1]!.replace(/\$/g, "\\$") + "(?![\\w$])").test(loader));
+/** A loader variant with the parts of `cut`'s bits replaced (as `server-derived.ts` does). */
+export const applyCuts = (loader: string, cuts: readonly (readonly (readonly [string, string])[])[], cut: number): string =>
+  cuts.reduce((l, pairs, bit) => (cut & (1 << bit) ? pairs.reduce((x, [from, to]) => x.replace(from, () => to), l) : l), loader);
 /** Minified stream add-on (`$rD`), shipped once before a page's first streamed segment. */
 export const minifiedDerivedStream = (): Promise<string> => minify(derivedStream);
 
@@ -90,10 +133,27 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
     [at, splice] = await visibleSplice(derived),
     [from, to, laterText] = await laterSplice(derived),
     derivedAdd = await minifiedDerivedStream(),
-    drags = await dragSplice(derived);
+    drags = await dragSplice(derived),
+    cuts = loaderCuts(derived);
   if (to > at) throw Error("build-loader: the fetch-ahead loop follows the data-boot start");
   // In the lazy-part loader the data-boot start moved by the length difference of the replaced loop.
   const atLater = at + laterText.length - (to - from);
+  // Every cut applies to every variant (the splices touch other places) and leaves a parseable loader, in any combination.
+  {
+    const later = derived.slice(0, from) + laterText + derived.slice(to),
+      plain = [derived, later],
+      visible = [derived.slice(0, at) + splice + derived.slice(at), later.slice(0, atLater) + splice + later.slice(atLater)];
+    for (const [list, mask] of [
+      [plain, CUTS.length],
+      [visible, CUTS.length - 1],
+    ] as const)
+      for (const v of list.flatMap((l) => [l, spliced(l, drags)])) {
+        for (const [text] of cuts.slice(0, mask).flat())
+          if (v.indexOf(text) < 0 || v.indexOf(text) !== v.lastIndexOf(text)) throw Error("build-loader: cut text not once in a variant");
+        for (let cut = 0; cut < 1 << mask; cut++) new Function(applyCuts(v, cuts, cut));
+        if (intentRead(applyCuts(v, cuts, 1 << 4), cuts)) throw Error("build-loader: an intent declaration is still read after its cut");
+      }
+  }
   await writeFile(
     new URL("./resume-loader-derived.min.ts", import.meta.url),
     "// Generated by build-loader.ts from resume-loader-derived.ts. Do not edit.\n" +
@@ -113,6 +173,10 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
       "export const DERIVED_LOADER_VISIBLE_DRAG = drag(DERIVED_LOADER_VISIBLE);\n" +
       "export const DERIVED_LOADER_LATER_DRAG = drag(DERIVED_LOADER_LATER);\n" +
       "export const DERIVED_LOADER_VISIBLE_LATER_DRAG = drag(DERIVED_LOADER_VISIBLE_LATER);\n" +
+      "/** HTMLBYTES: loader parts a page provably never runs, by bit (`server-derived.ts` `loaderCuts`): [text, replacement] pairs, any variant. */\n" +
+      "export const DERIVED_LOADER_CUTS: readonly (readonly (readonly [string, string])[])[] = " +
+      JSON.stringify(cuts) +
+      ";\n" +
       "export const DERIVED_STREAM = " +
       JSON.stringify(derivedAdd) +
       ";\n",

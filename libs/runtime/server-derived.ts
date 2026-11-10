@@ -69,6 +69,7 @@ import {
   DERIVED_LOADER_VISIBLE_DRAG,
   DERIVED_LOADER_VISIBLE_LATER,
   DERIVED_LOADER_VISIBLE_LATER_DRAG,
+  DERIVED_LOADER_CUTS,
   DERIVED_STREAM,
 } from "./resume-loader-derived.min.ts";
 import { _onEager, _onIsland, _onWeak } from "./derived-eager.ts";
@@ -2698,9 +2699,11 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   let events = "";
   dragTypes(ctx.events);
   for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
-  const boot = ctx.boot ? visibleBoot(ctx) : null;
+  const boot = ctx.boot ? visibleBoot(ctx) : null,
+    cut = loaderCuts(ctx, tail, events, boot, !!ahead && when === "intent");
   // (`later` is a function of the manifest and `ahead`.)
   const key =
+    cut +
     (nonce ? "n" : "-") +
     (boot === null ? "-" : "b" + boot) +
     (liteTail ? "l" : runtime === manifest.flat ? "f" : "-") +
@@ -2714,7 +2717,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   if (memo === undefined) tails.set(manifest, (memo = new Map()));
   let fragments = memo.get(key);
   if (fragments === undefined) {
-    fragments = tailFragments(runtime, ahead, when, events, ctx, boot, !!nonce, later);
+    fragments = tailFragments(runtime, ahead, when, events, ctx, boot, !!nonce, later, cut);
     // Bounded: an app with more page shapes than this re-builds the rest per request.
     if (memo.size < 512) memo.set(key, fragments);
   }
@@ -2823,6 +2826,7 @@ function tailFragments(
   boot: string | null,
   nonce: boolean,
   later: string,
+  cut: number,
 ): readonly string[] {
   // The derived client: attributes the loader reads, then the loader (same nonce sanitising as the serialized loader).
   const attrs =
@@ -2837,7 +2841,7 @@ function tailFragments(
   const open = '<script type="rivet/boundaries"' + attrs + ">",
     // Lazy parts (IDLE-PREFETCH): the loader whose fetch-ahead also fetches `data-fl` once the list loaded (`derivedFetchLater`);
     // drag types (COLD-DND): with the cold drag add-on (`derivedDrag`).
-    loader = DERIVED_LOADERS[(boot ? 1 : 0) | (later ? 2 : 0) | (DRAG.test(events) ? 4 : 0)]!;
+    loader = loaderOf((boot ? 1 : 0) | (later ? 2 : 0) | (DRAG.test(events) ? 4 : 0), cut);
   return Object.freeze(nonce ? [open, '</script><script nonce="', '">' + loader + "</script>"] : [open, "</script><script>" + loader + "</script>"]);
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`); `data-events` = these + the page's
@@ -2857,6 +2861,42 @@ const DERIVED_LOADERS = [
   DERIVED_LOADER_LATER_DRAG,
   DERIVED_LOADER_VISIBLE_LATER_DRAG,
 ];
+// HTMLBYTES: per [variant, cut bits] the loader with those parts deleted, made on first use.
+const LOADERS: string[] = [];
+const loaderOf = (variant: number, cut: number): string =>
+  (LOADERS[variant * 64 + cut] ??= DERIVED_LOADER_CUTS.reduce(
+    (loader, pairs, bit) => (cut & (1 << bit) ? pairs.reduce((l, [from, to]) => l.replace(from, () => to), loader) : loader),
+    DERIVED_LOADERS[variant]!,
+  ));
+/**
+ * HTMLBYTES: the loader parts this page provably never runs (`DERIVED_LOADER_CUTS` bits, `build-loader.ts`): 1 the cold-key
+ * hold and 2 the cold pointer capture when no record listens to `keydown` / `pointerdown` (nor to `*`) and the tail has no
+ * `k` — their `data-rk` / `data-rv-capture` belong to widgets whose handlers make their record listen —, only when the
+ * listened types cover every record the loader can meet (no `Async`: a streamed record listens to everything; no shell
+ * cache render, no island); 4 the `invalid` / `contextmenu` hold without either in `data-events`; 8 the document click
+ * listeners' match without `data-g`; 16 the hover hold + pruning of `intent` pages on any other `data-fw`; 32 the
+ * `data-boot` checks without `data-boot`.
+ */
+function loaderCuts(ctx: DerivedRender, tail: FlushTail, events: string, boot: string | null, intent: boolean): number {
+  let cut = (/(?:^| )(?:invalid|contextmenu)(?: |$)/.test(events) ? 0 : 4) | (ctx.clicks ? 0 : 8) | (intent ? 0 : 16) | (boot === null ? 32 : 0);
+  if (ctx.listened && !ctx.asyncs.length && ctx.base === 0 && ctx.sources === null && !ctx.lean.length && !tail.i) {
+    let typed = false,
+      keys = !tail.k,
+      press = true;
+    for (const types of ctx.listened.values())
+      if (types) {
+        typed = true;
+        if (types === "*") keys = press = false;
+        else {
+          const list = " " + types + " ";
+          if (list.includes(" keydown ")) keys = false;
+          if (list.includes(" pointerdown ")) press = false;
+        }
+      }
+    if (typed) cut |= (keys ? 1 : 0) | (press ? 2 : 0);
+  }
+  return cut;
+}
 const attr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 /** A streamed segment's patch (records + wake lists added since the last flush), "" when nothing was added. */

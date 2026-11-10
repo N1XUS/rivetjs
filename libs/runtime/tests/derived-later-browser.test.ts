@@ -9,7 +9,8 @@ import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString } from "@rivetjs/runtime/server-derived";
-import { DERIVED_LOADER, DERIVED_LOADER_LATER } from "../resume-loader-derived.min.ts";
+import { DERIVED_LOADER, DERIVED_LOADER_CUTS, DERIVED_LOADER_LATER } from "../resume-loader-derived.min.ts";
+import { applyCuts } from "../build-loader.ts";
 import type { Page } from "playwright";
 import { importServer } from "./resume/compile.ts";
 import { DERIVED_BUILD, rewrite, withPage } from "./resume/harness.ts";
@@ -61,6 +62,11 @@ function site(html: string): Record<string, string> {
     "/nested.js": mark("nested"),
   };
 }
+// HTMLBYTES: the server ships a loader variant with the parts the page provably never runs cut (`loaderCuts`).
+const ships = (html: string, loader: string): boolean => {
+  for (let cut = 0; cut < 64; cut++) if (html.includes("<script>" + applyCuts(loader, DERIVED_LOADER_CUTS, cut) + "</script>")) return true;
+  return false;
+};
 const attr = (html: string, name: string): string[] | undefined => new RegExp(`\\b${name}="([^"]*)"`).exec(html)?.[1]!.split(" ");
 const links = (page: Page) =>
   page.$$eval('link[rel="modulepreload"]', (list) => list.map((l) => [l.getAttribute("href"), (l as HTMLLinkElement).fetchPriority]));
@@ -73,10 +79,10 @@ compiled(
       lazy = await render({ lazy: LAZY });
     assert.deepEqual(attr(lazy, "data-fo"), ["/rt.js", "/inner.js", "/shared.js"]);
     assert.deepEqual(attr(lazy, "data-fl"), ["/part.js", "/part-dep.js", "/nested.js"], "transitive, closures included, the list's /shared.js left out");
-    assert.ok(lazy.includes(DERIVED_LOADER_LATER) && !plain.includes(DERIVED_LOADER_LATER));
+    assert.ok(ships(lazy, DERIVED_LOADER_LATER) && !ships(plain, DERIVED_LOADER_LATER));
     // A page without lazy parts: no attribute, the plain loader (0 bytes for pages that use none).
     assert.equal(attr(plain, "data-fl"), undefined);
-    assert.ok(plain.includes(DERIVED_LOADER));
+    assert.ok(ships(plain, DERIVED_LOADER));
     // An edge from a chunk the page does not fetch ahead, or to a chunk already in the list: nothing later.
     assert.equal(attr(await render({ lazy: { "/other.js": ["/part.js"] } }), "data-fl"), undefined);
     assert.equal(attr(await render({ lazy: { "/inner.js": ["/shared.js"] } }), "data-fl"), undefined);

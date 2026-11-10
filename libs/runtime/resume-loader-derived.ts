@@ -29,6 +29,10 @@
 // in its own task instead of waiting for an import (which resolves only after the next frame).
 // Lazy parts (`data-fl`, IDLE-PREFETCH): pages with one ship the loader with `derivedFetchLater` in place of the fetch-ahead's
 // link loop: once every fetch-ahead link loaded, the lazy parts follow in the next idle period, at low priority.
+// Cuts (HTMLBYTES): the server deletes the parts a page provably never runs from the minified loader (`build-loader.ts`
+// `CUTS` regexes find them: keep the cold-key hold, the pointer capture, the `invalid` / `contextmenu` branch, the two
+// `data-g` reads, the `intent` flag's reads and the two `data-boot` checks removable as they are; the build fails when one
+// is not found once).
 import type { DerivedLoaderApi, DerivedRuntime, HeldEvent } from "./dom-derived.ts";
 import type { BoundaryTail } from "./resume-format.ts";
 
