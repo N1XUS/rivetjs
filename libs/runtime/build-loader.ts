@@ -1,4 +1,5 @@
 // Regenerate resume-loader-derived.min.ts from resume-loader-derived.ts: node libs/runtime/build-loader.ts
+// Minified names may hold `$`: the splice patterns match `[\w$]+`.
 // Sources are serialized with Function#toString: Node's type stripping leaves whitespace where
 // annotations were, and esbuild's minifier normalizes it, so the output is independent of types.
 // The resume-loader test fails when the generated file is stale.
@@ -10,7 +11,7 @@ const minify = async (fn: () => void): Promise<string> => (await transform("(" +
 /** Minified inline loader, shipped after the boundaries tail. */
 export const minifiedDerived = (): Promise<string> => minify(derivedLoader);
 /** The loader's minified `data-boot` start (`<script>.hasAttribute("data-boot")&&<boot>(1).catch(<fail>)`). */
-const START = /(\w+)\.hasAttribute\("data-boot"\)&&(\w+)\(1\)\.catch\((\w+)\)/;
+const START = /([\w$]+)\.hasAttribute\("data-boot"\)&&([\w$]+)\(1\)\.catch\(([\w$]+)\)/;
 /**
  * ZERO ABI-SPLIT: the visible-boot loader (pages whose only triggers are `visible` ones, `data-boot="<ids>"`) = the loader
  * with its `data-boot` start made `s.dataset.boot ? (derivedVisibleBoot)(s, boot, fail) : <start>` — spliced into the
@@ -31,7 +32,7 @@ export const minifiedDerivedVisible = async (): Promise<string> => {
 };
 /** The loader's minified fetch-ahead link loop (`<fo>.split(" ").map(<h>=><d>.head.append(Object.assign(…)))`). */
 const AHEAD =
-  /(\w+)\.split\(" "\)\.map\((\w+)=>(\w+)\.head\.append\(Object\.assign\(\3\.createElement\("link"\),\{rel:"modulepreload",href:\2,fetchPriority:(\w+)\|\|"low"\}\)\)\)/;
+  /([\w$]+)\.split\(" "\)\.map\(([\w$]+)=>([\w$]+)\.head\.append\(Object\.assign\(\3\.createElement\("link"\),\{rel:"modulepreload",href:\2,fetchPriority:([\w$]+)\|\|"low"\}\)\)\)/;
 /**
  * IDLE-PREFETCH: the lazy-part loader (pages with `data-fl`) = the loader with its fetch-ahead link loop replaced by
  * `(derivedFetchLater)(<script>, <fo>, <priority>)`, spliced into the minified loader like `visibleSplice`.
@@ -55,8 +56,8 @@ export const minifiedDerivedLater = async (visible?: boolean): Promise<string> =
 };
 /** The loader's minified start, its `rt?.on(event)` ask and its held item (after a press's / held event's `preventDefault`). */
 const HEAD = /^\(function\(\)\{/,
-  ASK = /\|\|(\w+)\?\.on\((\w+)\)\)return;/,
-  HOLD = /(\w+)&&(\w+)\.preventDefault\(\);const (\w+)=\[\2,\2\.composedPath\(\)/;
+  ASK = /\|\|([\w$]+)\?\.on\(([\w$]+)\)\)return;/,
+  HOLD = /([\w$]+)&&([\w$]+)\.preventDefault\(\);const ([\w$]+)=\[\2,\2\.composedPath\(\)/;
 /**
  * COLD-DND: the drag loaders (pages whose `data-events` lists a drag type) = a loader with `derivedDrag` spliced in: its
  * instance `$d` made first thing, `!$d(<event>)&&` before the `rt?.on(<event>)` ask and `$d(<event>,1);` before the held

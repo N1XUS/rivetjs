@@ -50,6 +50,10 @@ import {
 // KEYDOWN (2026-11-06): `ids` stops at a sole list's row opener (`$rs`) and intent after boot goes straight to `rt.w`
 // (pointerdown on row 900 of 1,000: 1.4 ms → 26 µs per event at 4x CPU): +11 B br plain, +7 visible, +11 lazy, −1
 // visible+lazy, +14 / +8 / +17 / +9 drag (`tests/derived-rows-walk-browser.test.ts`).
+// KEYS (2026-11-10): the intent listeners for pointerdown / keydown / focusin fold into the delegated one (one capture
+// listener per type) and, once the runtime runs, its walk (`rt.i`) replaces the loader's: 1,853 B br plain (−13), 2,030
+// visible (−10), 1,932 lazy (−8), 2,107 visible+lazy (+3), 2,242 / 2,425 / 2,314 / 2,499 drag (−16 / −1 / −19 / +2):
+// budgets 2,107 visible+lazy, 2,499 its drag variant.
 test("shipped derived loader is current, inline-safe and fits 1,866 B brotli", async () => {
   assert.equal(DERIVED_LOADER, await minifiedDerived(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER));
@@ -74,12 +78,12 @@ test("shipped visible-boot loader is current, inline-safe and fits 2,040 B brotl
 // IDLE-PREFETCH lazy-part loaders: the loader of a page with `data-fl` = the loader above with `derivedFetchLater` spliced
 // in place of its fetch-ahead link loop (pages without lazy parts keep the plain loader): 1,719 B brotli at landing
 // (+83 B over the 1,636 B loader), 1,894 B with the visible boot too. LITE-BOOT prime: 1,840 / 2,022 B.
-test("shipped lazy-part loaders are current, inline-safe and fit 1,940 / 2,106 B brotli", async () => {
+test("shipped lazy-part loaders are current, inline-safe and fit 1,940 / 2,107 B brotli", async () => {
   assert.equal(DERIVED_LOADER_LATER, await minifiedDerivedLater(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.equal(DERIVED_LOADER_VISIBLE_LATER, await minifiedDerivedLater(true), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   for (const [loader, budget] of [
     [DERIVED_LOADER_LATER, 1940],
-    [DERIVED_LOADER_VISIBLE_LATER, 2106],
+    [DERIVED_LOADER_VISIBLE_LATER, 2107],
   ] as const) {
     assert.ok(!/<\/script|<!--/i.test(loader));
     assert.ok(loader.includes(".dataset.fl.split("), "the lazy-part fetch is spliced in");
@@ -95,12 +99,12 @@ test("shipped lazy-part loaders are current, inline-safe and fit 1,940 / 2,106 B
 // COLD-DND drag loaders (pages whose `data-events` lists a drag type): each loader variant with `derivedDrag` spliced in
 // (`$d` made first, asked before `rt?.on`, called on the held event); every other page keeps its loader byte for byte.
 // At landing (2026-11-01): 2,204 / 2,388 / 2,273 / 2,451 B brotli (+389 / +399 / +384 / +380 B over their plain variants).
-test("shipped drag loaders are current, inline-safe and fit 2,258 / 2,426 / 2,333 / 2,497 B brotli", async () => {
+test("shipped drag loaders are current, inline-safe and fit 2,258 / 2,426 / 2,333 / 2,499 B brotli", async () => {
   for (const [drag, plain, budget] of [
     [DERIVED_LOADER_DRAG, DERIVED_LOADER, 2258],
     [DERIVED_LOADER_VISIBLE_DRAG, DERIVED_LOADER_VISIBLE, 2426],
     [DERIVED_LOADER_LATER_DRAG, DERIVED_LOADER_LATER, 2333],
-    [DERIVED_LOADER_VISIBLE_LATER_DRAG, DERIVED_LOADER_VISIBLE_LATER, 2497],
+    [DERIVED_LOADER_VISIBLE_LATER_DRAG, DERIVED_LOADER_VISIBLE_LATER, 2499],
   ] as const) {
     assert.equal(drag, await minifiedDerivedDrag(plain), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
     assert.ok(!/<\/script|<!--/i.test(drag));

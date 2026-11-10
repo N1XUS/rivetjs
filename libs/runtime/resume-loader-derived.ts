@@ -14,9 +14,12 @@
 // runtime replays it once the boundary chunks loaded (`rt.cold`). An event outside every listening boundary whose target is inside
 // a `data-g` selector match goes to the document click listener's boundary (tail `g`, the router's links; M2-R5). Once boot
 // starts, keydowns outside boundaries join its pending queue too (a window shortcut after a nonfocusable first click). Intent
-// (pointerdown, focusin, touchstart, keydown, a mouse / pen pointer resting 80 ms on an element) inside a listening
+// (pointerdown, focusin, touchstart, keydown, a mouse / pen pointer resting 80 ms on an element; pointerdown / keydown /
+// focusin run first inside the delegated listener — `data-events` always lists them —, KEYS) inside a listening
 // boundary starts the runtime, fetches the page's fetch-ahead list at once (`data-fo`, high priority: no import
-// waterfall) and loads the chunks of the listening boundaries around the target (`rt.w`). One chunk per boundary: tail
+// waterfall) and loads the chunks of the listening boundaries around the target (`rt.w`). Once the runtime runs it also
+// answers which boundaries listen around a target (`rt.i`, the loader's `ids`), walking each event's target once for
+// `rt.w` / `rt.i` / `rt.on`. One chunk per boundary: tail
 // `m`. Hover events (`pointerover` / `mouseover` / `…enter`) of a listening boundary boot like any held event (a pointer
 // passing over adopts before the press: no click pays the adopt). With `data-fw="intent"` (ZERO ONDEMAND) they never boot
 // by themselves: they are held until the pointer rests, and a held one whose target the pointer left is dropped (the state
@@ -76,7 +79,6 @@ export function derivedLoader(): void {
       } catch {}
   };
   const retry = (url: string): Promise<Record<string, unknown>> => import(url).catch(() => import(url + (url.includes("?") ? "&" : "?") + "r=" + Date.now()));
-  const api: DerivedLoaderApi = { q, m: retry, f: fail, i: (node, type) => ids(node, type) };
   // Starts the runtime; an event / intent (not a trigger, `bg`) also fetches the fetch-ahead list at high priority.
   const boot = (bg?: unknown): Promise<DerivedRuntime> => (
     bg || ahead("high"),
@@ -129,9 +131,18 @@ export function derivedLoader(): void {
     }
     return out;
   };
+  // (After `ids`: the runtime's handle on the loader's queue, import, failure report and walk; `boot` reads it later.)
+  const api: DerivedLoaderApi = { q, m: retry, f: fail, i: ids };
   const on = (event: Event): unknown => {
     const type = event.type,
       target = event.target as HTMLInputElement;
+    // Intent first (KEYS 2026-11-10: `data-events` always lists pointerdown / keydown / focusin, so this listener is their
+    // only capture listener), with the cdk modality hint (`__rvIM`).
+    if (type == "pointerdown") ((im.__rvIM = (event as PointerEvent).pointerType || "mouse"), warm(event));
+    else if (type == "keydown")
+      ((event as KeyboardEvent).metaKey || (event as KeyboardEvent).ctrlKey || (event as KeyboardEvent).key == "Shift" || (im.__rvIM = "keyboard"),
+        warm(event));
+    else if (type == "focusin") warm(event);
     // A replay's own click / submit (resume-loader.ts `on`).
     if (target == skip) return (type != "click" || skip!.localName == "a" || event.stopImmediatePropagation(), (skip = null));
     // The records around the target listening to this type: an event no record hears acts natively (not held, no boot).
@@ -142,7 +153,8 @@ export function derivedLoader(): void {
     // natively — a held press replays the cold-press focus emulation after the native activation already focused.
     const nc = target.closest?.("[data-nc]");
     if (nc && /^(pointer|mouse)(down|up)$/.test(type)) return;
-    const at = ids(target, rt || booting || type == "submit" || (target.form && !nc) ? "" : type);
+    // Once the runtime runs it walks (`rt.i`: listening to anything; one walk per event, shared with `rt.w` / `rt.on`).
+    const at = rt ? rt.i(event) : ids(target, booting || type == "submit" || (target.form && !nc) ? "" : type);
     // Outside every boundary inside a `data-g` match (the router's links): the document click listener's (tail `g`).
     at.length || !target.closest?.(script.dataset.g!) || at.push("");
     // A nonfocusable first click leaves keys targeting body, outside every boundary. Once boot started, keep those
@@ -221,15 +233,9 @@ export function derivedLoader(): void {
   // same listening records / `g` matches), at once: no second walk, no promise hop per event (KEYDOWN 2026-11-06).
   const warm = (event: Event): unknown => {
     const t = event.target as Element;
-    return rt ? rt.w(t) : (q.length || ids(t, "").length || t.closest?.(script.dataset.g!)) && boot().then((r) => r.w(t), fail);
+    return rt ? rt.w(event) : (q.length || ids(t, "").length || t.closest?.(script.dataset.g!)) && boot().then((r) => r.w(event), fail);
   };
   let dwell: ReturnType<typeof setTimeout> | undefined;
-  listen("pointerdown", (event) => ((im.__rvIM = (event as PointerEvent).pointerType || "mouse"), warm(event)));
-  listen("keydown", (event) => {
-    const e = event as KeyboardEvent;
-    if (!(e.metaKey || e.ctrlKey || e.key == "Shift")) im.__rvIM = "keyboard";
-    warm(event);
-  });
   // Hover intent: a mouse / pen pointer rests 80 ms. Before the runtime boots, the held hover events the pointer left are
   // dropped first: nothing held and nothing listening around the target, nothing loads.
   listen("pointerover", (event) => {
@@ -239,8 +245,7 @@ export function derivedLoader(): void {
   const events = script.dataset.events || "click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout";
   events.split(" ").map((type) => listen(type, on, !/^(touch|wheel|scroll)/.test(type)));
   // Listed keyups already use on. Otherwise pair only queued keydowns by target/code, including chords/repeats.
-  if (!events.split(" ").includes("keyup")) paired = new Map();
-  listen("focusin", warm);
+  if (!events.includes("keyup")) paired = new Map();
   // WebKit touch: a tap synthesizes mouse events and `click` only when a node up to the body responds to clicks itself, and
   // the delegated listener sits on the document. Decided after the touch ends, so a listener added now counts: cold and warm.
   const tap = (): void => {};

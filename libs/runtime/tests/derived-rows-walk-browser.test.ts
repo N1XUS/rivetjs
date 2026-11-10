@@ -87,3 +87,53 @@ test("rows built on demand (no idle build): an unbuilt row's index counts from t
     assert.deepEqual(errors, []);
   });
 });
+
+// One walk per event (KEYS 2026-11-10): once the runtime runs, the loader's merged capture listener asks it three times
+// about one event — intent (`rt.w`), its listening records (`rt.i`, in place of the loader's own `ids` walk), the live run
+// (`rt.on` → `around`) — and the runtime walks the target's ancestors and their earlier siblings once for all three (base:
+// three walks for a keydown / pointerdown / focusin, two for an input).
+test("after boot, one event walks its target's ancestors once", async () => {
+  await withPage(await files(), async (page) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.goto("http://rivet.test/");
+    await page.click("#bump");
+    await page.waitForFunction(() => document.querySelector("#bump")!.textContent === "1");
+    await page.waitForTimeout(300);
+    const reads = await page.evaluate(() => {
+      const el = document.querySelector("#bump")!;
+      // One walk: each ancestor's earlier siblings, up to the null that ends the scan.
+      let walk = 0;
+      for (let n: Node | null = el; n && n.nodeType !== 9; n = n.parentNode) for (let s = n.previousSibling; ; s = s.previousSibling) if ((walk++, !s)) break;
+      const d = Object.getOwnPropertyDescriptor(Node.prototype, "previousSibling")!;
+      const out: Record<string, number> = { walk };
+      let n = 0;
+      Object.defineProperty(Node.prototype, "previousSibling", {
+        configurable: true,
+        get: function (this: Node) {
+          return (n++, d.get!.call(this));
+        },
+      });
+      try {
+        for (const [type, make] of [
+          ["keydown", () => new KeyboardEvent("keydown", { bubbles: true, composed: true, key: "x", code: "KeyX" })],
+          ["pointerdown", () => new PointerEvent("pointerdown", { bubbles: true, composed: true, pointerType: "mouse", isPrimary: true })],
+          ["focusin", () => new FocusEvent("focusin", { bubbles: true, composed: true })],
+          ["input", () => new InputEvent("input", { bubbles: true, composed: true })],
+        ] as const) {
+          n = 0;
+          el.dispatchEvent(make());
+          out[type] = n;
+        }
+      } finally {
+        Object.defineProperty(Node.prototype, "previousSibling", d);
+      }
+      return out;
+    });
+    for (const type of ["keydown", "pointerdown", "focusin", "input"])
+      assert.ok(reads[type]! <= reads.walk!, `${type}: ${reads[type]} reads, one walk ${reads.walk}`);
+    assert.ok(reads.walk! > 3, "the button has earlier siblings to scan");
+    assert.equal(await page.textContent("#bump"), "1");
+    assert.deepEqual(errors, []);
+  });
+});

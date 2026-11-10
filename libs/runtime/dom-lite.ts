@@ -276,8 +276,9 @@ const runtime: DerivedRuntime = {
     if (full) return full.cold(item);
     if (queue.push(item) == 1) void drain();
   },
-  w(target) {
-    if (full) return full.w(target);
+  w(x) {
+    if (full) return full.w(x);
+    const target = x instanceof Event ? x.target : (x as EventTarget | null);
     // The loader's prime (LITE-BOOT, target = the document): every lite record's module, loaded quietly (a failure
     // surfaces when an event adopts that record), so the first event adopts inside its own task.
     if (target == doc) {
@@ -292,6 +293,8 @@ const runtime: DerivedRuntime = {
     if (!rs) return void fallback().then((rt) => rt.w(target), report);
     for (const r of rs) if (!r[4]) void Promise.resolve(load(r)).catch(report);
   },
+  // The loader's walk once a runtime runs: the lite runtime's own is the loader's (type "": any listening record).
+  i: (event) => (full ? full.i(event) : api.i(event.target as Node | null, "")),
   m(id) {
     if (full) return full.m(id);
     const r = recs.get(id);

@@ -2,7 +2,9 @@
 // (`#filter` click + a typed "g"), dispatches N synthetic events per kind on fixed targets and reports µs per event
 // (median of the rounds). Synthetic events pass the same capture / delegated listeners as trusted ones (no default
 // action: no `input` follows a keydown, no click activation), so this isolates loader + runtime + delegation cost.
-// node apps/resume-bench/spikes/event-overhead.ts --dist <a>[,<b>…] [--reps 6] [--n 200] [--rounds 5] [--port 4550]
+// node apps/resume-bench/spikes/event-overhead.ts --dist <a>[,<b>…] [--reps 6] [--n 200] [--rounds 5] [--port 4550] [--listeners]
+// --listeners (KEYS): the document / window listeners (type, capture, passive, script position) after load + idle and after
+// boot, per dist (first rep), via CDP `DOMDebugger.getEventListeners`.
 import { chromium } from "playwright";
 import { resolve } from "node:path";
 import { serve } from "../serve.ts";
@@ -43,8 +45,18 @@ for (let r = 0; r < reps; r++)
     const page = await context.newPage();
     const cdp = await context.newCDPSession(page);
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+    // Listener inventory: `type(c)p@script:line:col` per document / window listener.
+    const listeners = async (label: string) => {
+      for (const expr of ["document", "window"]) {
+        const { result } = await cdp.send("Runtime.evaluate", { expression: expr });
+        const { listeners: all } = await cdp.send("DOMDebugger.getEventListeners", { objectId: result.objectId! });
+        const list = all.map((l) => `${l.type}${l.useCapture ? "(c)" : ""}${l.passive ? "p" : ""}@${l.scriptId}:${l.lineNumber}:${l.columnNumber}`);
+        console.log(`${dist.split("/").filter(Boolean).pop()} ${label} ${expr} (${list.length}): ${list.join(" ")}`);
+      }
+    };
     await page.goto(server.url);
     await page.waitForTimeout(1500);
+    if (process.argv.includes("--listeners") && r === 0) await listeners("load+idle");
     if (!process.argv.includes("--click-far")) await page.click("#filter");
     await page.waitForTimeout(300);
     // --click-far: trusted mouse clicks on the `pick` buttons of rows 900, 901, 902 (first one adopts): pointerdown
@@ -96,6 +108,7 @@ for (let r = 0; r < reps; r++)
     // --no-type: the full 1,000-row server list (rows adopt lazily); else "g" first (100 rows).
     if (!process.argv.includes("--no-type")) await page.keyboard.type("g");
     await page.waitForTimeout(800);
+    if (process.argv.includes("--listeners") && r === 0) await listeners("booted");
     // --profile <kind>: a 20 µs CPU profile of 2,000 dispatches of that kind, self time per frame (first rep, first dist).
     const prof = arg("profile");
     if (prof && r === 0 && li === 0) {

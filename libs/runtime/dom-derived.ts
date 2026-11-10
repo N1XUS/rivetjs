@@ -287,8 +287,12 @@ export interface DerivedRuntime {
   on(event: Event): boolean;
   /** A held event: materialised (chunks loaded), then its delegated handlers run over its path and its default replays. */
   cold(item: HeldEvent): void;
-  /** Intent (pointerdown / focus): load the chunk the target's boundary needs, nothing runs. */
-  w(target: EventTarget | null): void;
+  /** Intent (pointerdown / focus): load the chunk the target's boundary needs, nothing runs. An event (the loader's
+   * intent listeners once the runtime runs): its target, walked once for `w` / `i` / `on`. */
+  w(target: EventTarget | Event | null): void;
+  /** The loader's walk once the runtime runs (`DerivedLoaderApi.i` with type ""): the records around the event's target
+   * that listen to anything (or that the runtime does not know). */
+  i(event: Event): (number | string)[];
   /** Materialise boundary `id` (and what it needs first). */
   m(id: number): Promise<void>;
   /** Dev only: stop resuming — dispose every adopted unit; later events are left to the page (the dev server's client-render
@@ -1910,6 +1914,7 @@ function wakeFor(lazy: Lazy): void {
   for (const row of rowsOf(lazy)) if (!row.done && row.start!.isConnected) materialiseRow(row);
 }
 function materialiseRow(row: LRow): void {
+  walked = null;
   const lazy = row.lz;
   if (row.done || !lazy.children) return;
   row.done = true;
@@ -2077,6 +2082,7 @@ function need(r: Rec): true | Promise<void> {
   // recreate adopted owners after dispose() already tore down the resume runtime.
   if (DEV && disposed) return true;
   if (r.done) return true;
+  walked = null;
   // DOM data: no unit runs before the reader rebuilt the tail's items (its props hold `0` there until then).
   if (DOM_DATA && domWait) return domWait.then(() => void need(r));
   if (r.hole) return (runHole(r), true);
@@ -2218,6 +2224,18 @@ function unwatch(r: Rec): void {
   if (io) (io.disconnect(), watching.delete(r));
 }
 
+// One walk per dispatch (KEYS 2026-11-10): the loader asks about one event up to three times over the same target —
+// intent (`w`), its listening records (`i`), the live run (`on` → `around`); nothing else runs between those asks (the
+// loader's capture listeners on the document are adjacent). The units of the last event asked (and its target) are kept
+// until anything adopts or replays (`need`, `materialiseRow`, `enter`: the DOM around the target may change); another
+// event walks again. Held events (`drain`) always walk.
+let walked: Event | null = null,
+  walkedAt: EventTarget | null = null,
+  walkedUnits: [kind: number, id: number, at: Node][] = [];
+const unitsOf = (event: Event): [kind: number, id: number, at: Node][] =>
+  event === walked && event.target === walkedAt
+    ? walkedUnits
+    : ((walked = event), (walkedAt = event.target), (walkedUnits = enclosing(walkedAt as Node | null)));
 // The units around `node`, outermost first: boundary ranges (`data-b` elements, `<!--bN-->` openers) and region
 // openers (`<!--rN[-->`: lazy rows, with the count of row groups before them at their level; Show branches are no
 // units and are skipped by the caller).
@@ -2323,7 +2341,7 @@ function listens(r: Rec, type?: string): boolean {
 }
 // Materialise the units around `target` an event of `type` needs, outermost first (records: those listening to it; lazy
 // rows of adopted lists: every one): true when done now, a promise while a chunk loads.
-function around(target: EventTarget | null, type?: string): true | Promise<void> {
+function around(target: EventTarget | null, type?: string, event?: Event): true | Promise<void> {
   // Intake 3: once a record around the target listens to the event, every record around it adopts (outermost first, as
   // before D5): an independent unit's dependent descendants may read a context an ancestor unit provides (a `use…` hook
   // the facts cannot see: ui `Stepper` / `ChainOfThought`), which a standalone adopt would run without its provider.
@@ -2331,7 +2349,8 @@ function around(target: EventTarget | null, type?: string): true | Promise<void>
   // standalone) is `CTXFREE` (the build proved no provider above it sets a context its unit reads).
   let all = false,
     // One walk for the scan below and the first step; a step that adopted something walks again (its run changed the DOM).
-    units: ReturnType<typeof enclosing> | null = enclosing(target as Node | null);
+    // (`on`'s live event: the walk its intent / listening-records asks made, KEYS.)
+    units: ReturnType<typeof enclosing> | null = event ? unitsOf(event) : enclosing(target as Node | null);
   for (const [kind, id] of units) {
     const r = kind ? undefined : recs.get(id);
     if (r && listens(r, type)) {
@@ -2756,6 +2775,7 @@ function enter(event: Event, path: EventTarget[]): void {
   const type = (event as PointerEvent).pointerType;
   if (!adopted || !/^(pointer|mouse)(down|over|move|up|enter)$|^click$/.test(event.type) || type === "touch") return;
   adopted = false;
+  walked = null;
   const { clientX, clientY } = event as MouseEvent,
     init = { clientX, clientY, pointerType: type || "mouse", pointerId: (event as PointerEvent).pointerId || 1, isPrimary: true },
     els: Element[] = [];
@@ -2886,7 +2906,7 @@ const runtime: DerivedRuntime = {
     live = event;
     let step: true | Promise<void>;
     try {
-      step = around(event.target, event.type);
+      step = around(event.target, event.type, event);
     } finally {
       live = null;
     }
@@ -2934,7 +2954,9 @@ const runtime: DerivedRuntime = {
     record(1);
     if (pending.push(item) === 1) void drain();
   },
-  w(target) {
+  w(x) {
+    const event = x instanceof Event ? x : null,
+      target = event ? event.target : (x as EventTarget | null);
     // Intent (D5): the units of the listening records around the target (innermost first; while no name lists types the
     // outermost record's), else of the document click listeners matching it (tail `g`): the chunk, then what its component needs
     // before adopting (`ready`), nothing runs.
@@ -2948,7 +2970,7 @@ const runtime: DerivedRuntime = {
     // The loader's prime (LITE-BOOT, target = the document): every listening record's chunk, quietly (a failure surfaces
     // when an event needs that record), so the first event adopts inside its own task.
     if (target === doc) return void recs.forEach((r) => listens(r) && warm(r, 1));
-    const units = enclosing(target as Node | null).filter(([kind, id]) => !kind && recs.has(id));
+    const units = (event ? unitsOf(event) : enclosing(target as Node | null)).filter(([kind, id]) => !kind && recs.has(id));
     if (!listened) return warm(recs.get(units[0]?.[1]!));
     let found = false;
     for (let i = units.length; i--;) {
@@ -2956,6 +2978,15 @@ const runtime: DerivedRuntime = {
       if (listens(r)) ((found = true), warm(r));
     }
     if (!found) for (const [id, match] of tail?.g ?? []) if ((target as Element | null)?.closest?.(match)) warm(recs.get(id));
+  },
+  i(event) {
+    const out: number[] = [];
+    for (const [kind, id] of unitsOf(event))
+      if (!kind) {
+        const r = recs.get(id);
+        (r && !listens(r)) || out.push(id);
+      }
+    return out;
   },
   m(id) {
     const r = recs.get(id);
